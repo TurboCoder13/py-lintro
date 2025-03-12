@@ -400,4 +400,33 @@ def test_print_summary_direct():
     print_summary(results, "Checking", file=file_obj)
     output = file_obj.getvalue()
     assert "black" in output
-    assert "flake8" in output 
+    assert "flake8" in output
+
+
+def test_get_table_columns_black_no_code():
+    """Test that Black output doesn't include a Code column."""
+    # Create sample issues for Black
+    issues = [
+        {
+            "file": "test.py",
+            "code": "FORMAT",
+            "line": "N/A",
+            "message": "Formatting required"
+        },
+        {
+            "file": "another.py",
+            "code": "FORMAT",
+            "line": "N/A",
+            "message": "Formatting required"
+        }
+    ]
+    
+    # Get columns for Black
+    display_columns, code_columns = get_table_columns(issues, "black", "none")
+    
+    # Verify that "Code" is not in the display columns
+    assert "Code" not in display_columns
+    
+    # Verify that the expected columns are present
+    assert "File" in display_columns
+    assert "Message" in display_columns 

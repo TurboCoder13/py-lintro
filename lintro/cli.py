@@ -342,6 +342,14 @@ def get_table_columns(
         "Message": "message"
     }
     
+    # Special case for Black: remove the Code column since it's always "FORMAT"
+    if tool_name == "black":
+        columns_map = {
+            "File": "file",
+            "Line": "line",
+            "Message": "message"
+        }
+    
     # Add pylint-specific columns
     if tool_name == "pylint":
         # Insert Position right after Line
@@ -390,7 +398,7 @@ def get_table_columns(
     if group_by == "file":
         # When grouped by file, exclude the file column
         columns_to_check = {k: v for k, v in columns_map.items() if k != "File"}
-    elif group_by == "code":
+    elif group_by == "code" and code_column in columns_map:
         # When grouped by code, exclude the code column
         columns_to_check = {k: v for k, v in columns_map.items() if k != code_column}
     else:
