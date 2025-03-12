@@ -26,6 +26,24 @@ A comprehensive CLI tool that unifies various code formatting, linting, and qual
 - terraform (Terraform formatting)
 - yamllint (YAML linting)
 
+## Dependency Management
+
+This project uses [Renovate](https://github.com/renovatebot/renovate) for automated dependency updates. Renovate will automatically create pull requests when updates are available for:
+
+- Python dependencies in requirements.txt and requirements-dev.txt
+- GitHub Actions in workflow files
+- Docker base images in Dockerfile
+
+The Renovate configuration is defined in `renovate.json` in the root of the repository. Updates are scheduled to run daily during non-working hours to minimize disruption.
+
+### Renovate Features
+
+- Automatic grouping of minor and patch updates to reduce PR noise
+- Separate PRs for major updates that might include breaking changes
+- Special grouping for related packages (e.g., pytest and its plugins)
+- Dependency dashboard for monitoring update status
+- Configurable schedule and rate limiting
+
 ## Installation
 
 ### Standard Installation

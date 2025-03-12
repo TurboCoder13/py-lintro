@@ -1,0 +1,48 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base"
+  ],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    },
+    {
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "all major dependencies",
+      "groupSlug": "all-major"
+    },
+    {
+      "matchPackagePatterns": ["^pytest"],
+      "groupName": "pytest packages",
+      "groupSlug": "pytest"
+    }
+  ],
+  "pip_requirements": {
+    "fileMatch": ["^requirements.*\\.txt$"]
+  },
+  "python": {
+    "enabled": true
+  },
+  "docker": {
+    "enabled": true
+  },
+  "github-actions": {
+    "enabled": true
+  },
+  "schedule": ["after 10pm and before 5am"],
+  "timezone": "UTC",
+  "labels": ["dependencies"],
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "rangeStrategy": "pin",
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "Dependency Dashboard",
+  "commitMessagePrefix": "chore(deps):",
+  "prBodyTemplate": "{{{template \"pr-body-template.md\" .}}}",
+  "prBodyFiles": [".github/renovate-pr-template.md"]
+} 
