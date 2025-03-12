@@ -340,89 +340,28 @@ def format_as_table(
     Format issues as a table.
 
     Args:
-        issues: List of issue dictionaries
+        issues: List of issues to format
         tool_name: Name of the tool that generated the issues
-        group_by: How to group the issues (file, code, or none)
+        group_by: How to group the issues (file, code, none, or auto)
 
     Returns:
         Formatted table as a string
     """
-    if not TABULATE_AVAILABLE:
-        return "Table formatting requires the tabulate package. Install with 'pip install tabulate'."
-
     if not issues:
-        return "No issues found."
+        return ""
 
-    # Add tool name to the table if provided
-    title = ""
-    if tool_name:
-        title = f"Results for {tool_name}:"
+    result = []
 
-    # Auto-determine the best grouping method if 'auto' is specified
+    # Determine appropriate grouping
     if group_by == "auto":
-        # Count unique files and codes
-        unique_files = len(set(issue["path"] for issue in issues))
-        unique_codes = len(set(issue["code"] for issue in issues))
-
-        # If there are more unique files than codes, group by code
-        # This is more efficient when many files have the same few error types
-        if unique_files > unique_codes and unique_codes <= 5:
+        # For flake8, group by code
+        if tool_name == "flake8":
             group_by = "code"
         else:
             group_by = "file"
 
-    # Format based on grouping option
-    result = []
-    if title:
-        result.append(title)
-
-    # Define tool-specific table formats
-    if tool_name == "black":
-        # Black only needs file paths for formatting
-        if group_by == "file":
-            # Not applicable for Black - just list files
-            for file_path in sorted(set(issue["path"] for issue in issues)):
-                result.append(f"\nFile: {file_path}")
-                result.append("  Formatting required")
-        else:
-            # For Black, we don't need to group by code since there's only one type of issue
-            table_data = []
-            for issue in issues:
-                table_data.append([issue["path"]])
-
-            headers = ["File"]
-
-            table = tabulate(
-                table_data, headers=headers, tablefmt="pretty", colalign=("left",)
-            )
-
-            result.append("\nFiles requiring formatting:")
-            result.append(table)
-
-    elif tool_name == "isort":
-        # isort only needs file paths for import sorting
-        if group_by == "file":
-            # Not applicable for isort - just list files
-            for file_path in sorted(set(issue["path"] for issue in issues)):
-                result.append(f"\nFile: {file_path}")
-                result.append("  Import sorting required")
-        else:
-            # For isort, we don't need to group by code since there's only one type of issue
-            table_data = []
-            for issue in sorted(issues, key=lambda x: x["path"]):
-                if issue["path"] != "ERROR":  # Skip the ERROR placeholder
-                    table_data.append([issue["path"]])
-
-            headers = ["File"]
-
-            table = tabulate(
-                table_data, headers=headers, tablefmt="pretty", colalign=("left",)
-            )
-
-            result.append("\nFiles requiring import sorting:")
-            result.append(table)
-
-    elif tool_name == "flake8":
+    # Format based on tool and grouping
+    if tool_name == "flake8":
         # flake8 has detailed error codes and line numbers
         if group_by == "file":
             # Group by file
@@ -489,8 +428,7 @@ def format_as_table(
             table_data = []
             for issue in issues:
                 table_data.append(
-                    [issue["path"], issue["line"], issue["code"], issue["message"]]
-                )
+                    [issue["path"], issue["line"], issue["code"], issue["message"]])
 
             # Format as a table with headers - use left alignment
             headers = ["File", "Line", "PEP Code", "Message"]
@@ -505,15 +443,15 @@ def format_as_table(
             result.append(table)
 
     else:
-        # Generic format for other tools
+        # Generic format for other tools (darglint, hadolint, etc.)
         if group_by == "file":
             # Group by file
             issues_by_file = {}
             for issue in issues:
-                file_path = issue["path"]
-                if file_path not in issues_by_file:
-                    issues_by_file[file_path] = []
-                issues_by_file[file_path].append(issue)
+                path = issue["path"]
+                if path not in issues_by_file:
+                    issues_by_file[path] = []
+                issues_by_file[path].append(issue)
 
             for file_path, file_issues in sorted(issues_by_file.items()):
                 # Add file header
@@ -571,8 +509,7 @@ def format_as_table(
             table_data = []
             for issue in issues:
                 table_data.append(
-                    [issue["path"], issue["line"], issue["code"], issue["message"]]
-                )
+                    [issue["path"], issue["line"], issue["code"], issue["message"]])
 
             # Format as a table with headers - use left alignment
             headers = ["File", "Line", "Code", "Message"]
@@ -610,6 +547,10 @@ def format_tool_output(
     if not output:
         return "No output"
 
+    # Special case for "No issues found" messages
+    if output.strip() == "No docstring issues found." or output.strip() == "No Dockerfile issues found.":
+        return output
+
     # Remove trailing whitespace and ensure ending with newline
     output = output.rstrip() + "\n"
 
@@ -621,6 +562,7 @@ def format_tool_output(
     file_paths = []
     line_numbers = []
     error_codes = []
+    skipped_files = 0
 
     if tool_name == "black":
         for line in output.splitlines():
@@ -643,7 +585,6 @@ def format_tool_output(
 
     elif tool_name == "isort":
         # Extract file paths from isort output
-        skipped_files = 0
         for line in output.splitlines():
             # Match the actual isort output format: "ERROR: /path/to/file.py Imports are incorrectly sorted..."
             match = re.match(r"ERROR: (.*?) Imports are incorrectly sorted", line)
@@ -699,6 +640,82 @@ def format_tool_output(
                     }
                 )
 
+    elif tool_name == "darglint":
+        # Extract and format darglint errors
+        for line in output.splitlines():
+            # Match darglint output format: file:method:line: code message
+            # Example: /path/to/file.py:method_name:10: DAR101 Missing parameter(s) in Docstring: ['param']
+            match = re.match(r"(.+):([^:]+):(\d+): ([A-Z]+\d{3}) (.+)", line)
+            if match:
+                file_path = match.group(1)
+                method_name = match.group(2)
+                line_num = match.group(3)
+                error_code = match.group(4)
+                message = match.group(5)
+                rel_path = get_relative_path(file_path)
+
+                file_paths.append(rel_path)
+                line_numbers.append(line_num)
+                error_codes.append(error_code)
+
+                # Add to issues list for table formatting
+                issues.append(
+                    {
+                        "path": rel_path,
+                        "line": line_num,
+                        "code": error_code,
+                        "message": f"{message} (in method {method_name})",
+                    }
+                )
+            elif "Skipped" in line and "timeout" in line:
+                # Handle skipped files due to timeout
+                match = re.match(r"Skipped (.+) \(timeout", line)
+                if match:
+                    file_path = match.group(1)
+                    rel_path = get_relative_path(file_path)
+                    file_paths.append(rel_path)
+                    line_numbers.append("N/A")
+                    error_codes.append("TIMEOUT")
+
+                    # Add to issues list for table formatting
+                    issues.append(
+                        {
+                            "path": rel_path,
+                            "line": "N/A",
+                            "code": "TIMEOUT",
+                            "message": "skipped due to timeout",
+                        }
+                    )
+
+    elif tool_name == "hadolint":
+        # Extract and format hadolint errors
+        for line in output.splitlines():
+            # Match hadolint output format: file:line DL/SC code message
+            match = re.match(r"(.+):(\d+) ((?:DL|SC)\d{4}) (.+)", line)
+            if match:
+                file_path = match.group(1)
+                line_num = match.group(2)
+                error_code = match.group(3)
+                message = match.group(4)
+                rel_path = get_relative_path(file_path)
+
+                file_paths.append(rel_path)
+                line_numbers.append(line_num)
+                error_codes.append(error_code)
+
+                # Add to issues list for table formatting
+                issues.append(
+                    {
+                        "path": rel_path,
+                        "line": line_num,
+                        "code": error_code,
+                        "message": message,
+                    }
+                )
+            elif "No Dockerfile files found" in line:
+                # Handle case where no Dockerfile files are found
+                return "No Dockerfile files found in the specified paths."
+
     # If tabulate is available, table format is requested, and we have issues, format as a table
     if TABULATE_AVAILABLE and use_table_format and issues:
         table = format_as_table(issues, tool_name, group_by)
@@ -721,6 +738,24 @@ def format_tool_output(
                 table += "\n" + click.style(
                     f"Note: Skipped {skipped_files} files", fg="blue"
                 )
+
+            # Add any skipped files notes for darglint
+            if tool_name == "darglint" and "Skipped" in output and "files due to timeout" in output:
+                match = re.search(r"Skipped (\d+) files due to timeout", output)
+                if match:
+                    skipped_count = match.group(1)
+                    table += "\n" + click.style(
+                        f"Note: Skipped {skipped_count} files due to timeout", fg="blue"
+                    )
+
+            # Add any skipped files notes for hadolint
+            if tool_name == "hadolint" and "Skipped" in output and "files due to timeout" in output:
+                match = re.search(r"Skipped (\d+) files due to timeout", output)
+                if match:
+                    skipped_count = match.group(1)
+                    table += "\n" + click.style(
+                        f"Note: Skipped {skipped_count} files due to timeout", fg="blue"
+                    )
 
             return table
 
@@ -801,9 +836,59 @@ def format_tool_output(
                 # Keep other non-empty, non-separator lines
                 formatted_lines.append(line)
 
+    elif tool_name == "darglint":
+        # Format darglint errors
+        for line in output.splitlines():
+            # Match darglint output format: file:method:line: code message
+            match = re.match(r"(.+):([^:]+):(\d+): ([A-Z]+\d{3}) (.+)", line)
+            if match:
+                file_path = match.group(1)
+                method_name = match.group(2)
+                line_num = match.group(3)
+                error_code = match.group(4)
+                message = match.group(5)
+                rel_path = get_relative_path(file_path)
+
+                # Convert to standardized format with color and dynamic alignment
+                formatted_lines.append(
+                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
+                    + click.style(f" : {line_num:<{line_width}}", fg="blue")
+                    + click.style(f" : {error_code:<{code_width}}", fg="red")
+                    + f" : {message} (in method {method_name})"
+                )
+            elif "Skipped" in line:
+                # Handle skipped files due to timeout
+                formatted_lines.append(click.style(line, fg="blue"))
+            elif line.strip() and not line.startswith("---"):
+                # Keep other non-empty, non-separator lines
+                formatted_lines.append(line)
+
+    elif tool_name == "hadolint":
+        # Format hadolint errors
+        for line in output.splitlines():
+            # Match hadolint output format: file:line DL/SC code message
+            match = re.match(r"(.+):(\d+) ((?:DL|SC)\d{4}) (.+)", line)
+            if match:
+                file_path = match.group(1)
+                line_num = match.group(2)
+                error_code = match.group(3)
+                message = match.group(4)
+                rel_path = get_relative_path(file_path)
+
+                # Convert to standardized format with color and dynamic alignment
+                formatted_lines.append(
+                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
+                    + click.style(f" : {line_num:<{line_width}}", fg="blue")
+                    + click.style(f" : {error_code:<{code_width}}", fg="red")
+                    + f" : {message}"
+                )
+            elif line.strip() and not line.startswith("---"):
+                # Keep other non-empty, non-separator lines
+                formatted_lines.append(line)
+
     else:
-        # For other tools, keep the original output
-        formatted_lines = output.splitlines()
+        # For other tools, just return the original output
+        return output
 
     return "\n".join(formatted_lines) + "\n"
 
@@ -851,6 +936,18 @@ def cli():
     is_flag=True,
     help="Ignore tool conflicts and run all specified tools",
 )
+@click.option(
+    "--darglint-timeout",
+    type=int,
+    default=None,
+    help="Timeout in seconds for darglint per file (default: 10)",
+)
+@click.option(
+    "--hadolint-timeout",
+    type=int,
+    default=None,
+    help="Timeout in seconds for hadolint per file (default: 10)",
+)
 def check(
     paths: list[str],
     tools: str | None,
@@ -860,6 +957,8 @@ def check(
     table_format: bool,
     group_by: str,
     ignore_conflicts: bool,
+    darglint_timeout: int | None,
+    hadolint_timeout: int | None,
 ):
     """Check files for issues without fixing them."""
     if not paths:
@@ -926,6 +1025,20 @@ def check(
                     exclude_patterns=exclude_patterns, include_venv=include_venv
                 )
 
+            # Set tool-specific options
+            if name == "darglint" and darglint_timeout is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    timeout=darglint_timeout,
+                )
+            elif name == "hadolint" and hadolint_timeout is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    timeout=hadolint_timeout,
+                )
+
             print_tool_header(name, "check", output_file, table_format)
 
             success, output_text = tool.check(list(paths))
@@ -943,7 +1056,10 @@ def check(
                 click.echo(formatted_output, file=output_file)
 
             # Use issues_count to determine success
-            success = issues_count == 0
+            # For tools that return success=True but have issues, override the success status
+            if issues_count > 0:
+                success = False
+
             print_tool_footer(success, issues_count, output_file, table_format)
 
             results.append(
@@ -960,22 +1076,15 @@ def check(
 
         print_summary(results, "check", output_file, table_format)
 
-        # If output file is specified, print a summary to the console as well
-        if output_file:
-            total_issues = sum(result.issues_count for result in results)
-            if total_issues == 0:
-                click.secho("No issues found in your code.", fg="green")
-            else:
-                click.secho(
-                    f"Found {total_issues} issues in your code. See {output} for details.",
-                    fg="red",
-                )
-
-        sys.exit(exit_code)
-    finally:
-        # Close the output file if it was opened
         if output_file:
             output_file.close()
+
+        sys.exit(exit_code)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        if output_file:
+            output_file.close()
+        sys.exit(1)
 
 
 @cli.command()
@@ -1014,6 +1123,18 @@ def check(
     is_flag=True,
     help="Ignore tool conflicts and run all specified tools",
 )
+@click.option(
+    "--darglint-timeout",
+    type=int,
+    default=None,
+    help="Timeout in seconds for darglint per file (default: 10)",
+)
+@click.option(
+    "--hadolint-timeout",
+    type=int,
+    default=None,
+    help="Timeout in seconds for hadolint per file (default: 10)",
+)
 def fmt(
     paths: list[str],
     tools: str | None,
@@ -1023,6 +1144,8 @@ def fmt(
     table_format: bool,
     group_by: str,
     ignore_conflicts: bool,
+    darglint_timeout: int | None,
+    hadolint_timeout: int | None,
 ):
     """Format files to fix issues."""
     if not paths:
@@ -1087,6 +1210,20 @@ def fmt(
                     exclude_patterns=exclude_patterns, include_venv=include_venv
                 )
 
+            # Set tool-specific options
+            if name == "darglint" and darglint_timeout is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    timeout=darglint_timeout,
+                )
+            elif name == "hadolint" and hadolint_timeout is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    timeout=hadolint_timeout,
+                )
+
             print_tool_header(name, "fix", output_file, table_format)
 
             success, output_text = tool.fix(list(paths))
@@ -1104,7 +1241,10 @@ def fmt(
                 click.echo(formatted_output, file=output_file)
 
             # Use issues_count to determine success
-            success = issues_count == 0
+            # For tools that return success=True but have issues, override the success status
+            if issues_count > 0:
+                success = False
+                
             print_tool_footer(success, issues_count, output_file, table_format)
 
             results.append(
@@ -1121,22 +1261,15 @@ def fmt(
 
         print_summary(results, "format", output_file, table_format)
 
-        # If output file is specified, print a summary to the console as well
-        if output_file:
-            total_issues = sum(result.issues_count for result in results)
-            if total_issues == 0:
-                click.secho("All files formatted successfully.", fg="green")
-            else:
-                click.secho(
-                    f"Found {total_issues} issues while formatting. See {output} for details.",
-                    fg="red",
-                )
-
-        sys.exit(exit_code)
-    finally:
-        # Close the output file if it was opened
         if output_file:
             output_file.close()
+
+        sys.exit(exit_code)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        if output_file:
+            output_file.close()
+        sys.exit(1)
 
 
 @cli.command()
