@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  lintro:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ${PWD:-./}:/code
+    # The command will be overridden when running docker-compose
+    # Example: docker-compose run --rm lintro check --table-format --group-by code 

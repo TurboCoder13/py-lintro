@@ -1,0 +1,60 @@
+name: Docker Build and Test
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'lintro-docker.sh'
+      - '.github/workflows/docker.yml'
+      - 'requirements.txt'
+      - 'requirements-dev.txt'
+      - 'lintro/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'lintro-docker.sh'
+      - '.github/workflows/docker.yml'
+      - 'requirements.txt'
+      - 'requirements-dev.txt'
+      - 'lintro/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: false
+        load: true
+        tags: lintro:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Test Docker image
+      run: |
+        docker run --rm lintro:test list-tools
+        
+        # Create a test file
+        echo 'def test_function():
+            """This is a test function."""
+            print("Hello, world!")
+        ' > test_sample.py
+        
+        # Run lintro on the test file
+        docker run --rm -v $(pwd):/code lintro:test check test_sample.py --tools black,flake8 --table-format
+        
+        # Clean up
+        rm test_sample.py 
