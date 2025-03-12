@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import TextIO
 
 import click
+import subprocess
 
 try:
     from tabulate import tabulate
@@ -85,6 +86,36 @@ def count_issues(
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
 
 
+def get_tool_emoji(tool_name: str) -> str:
+    """
+    Get an emoji for a tool.
+
+    Args:
+        tool_name: Name of the tool
+
+    Returns:
+        Emoji for the tool
+    """
+    # Map tools to emojis
+    tool_emojis = {
+        "black": "🖤",
+        "flake8": "❄️",
+        "isort": "🔄",
+        "mypy": "🔍",
+        "pylint": "🐍",
+        "bandit": "🔒",
+        "darglint": "📝",
+        "pydocstyle": "📚",
+        "hadolint": "🐳",
+        "prettier": "💅",
+        "eslint": "🔧",
+        "stylelint": "💄",
+    }
+    
+    # Return the emoji for the tool, or a default emoji
+    return tool_emojis.get(tool_name, "✨")
+
+
 def print_tool_header(
     tool_name: str,
     action: str,
@@ -97,28 +128,24 @@ def print_tool_header(
     Args:
         tool_name: Name of the tool
         action: Action being performed (check or fix)
-        file: File to write output to
+        file: File to write to (default: stdout)
         use_table_format: Whether to use table formatting
     """
-    if not use_table_format:
-        # Standard format
-        click.secho("\n" + "=" * 60, fg="blue")
-        click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True)
-        click.secho("=" * 60, fg="blue")
-
-        # Also write to file if specified
-        if file:
-            click.secho("\n" + "=" * 60, fg="blue", file=file)
-            click.secho(
-                f" Running {tool_name} ({action})", fg="blue", bold=True, file=file
-            )
-            click.secho("=" * 60, fg="blue", file=file)
-    else:
-        # Table format
-        header = "\n" + "-" * 60 + f"\n Running {tool_name} ({action})\n" + "-" * 60
-        click.secho(header, fg="blue", bold=True)
-        if file:
-            click.secho(header, fg="blue", bold=True, file=file)
+    # Get emoji for the tool
+    emoji = get_tool_emoji(tool_name)
+    
+    # Create a decorative header with the tool name
+    emojis = f"{emoji} {emoji} {emoji} {emoji} {emoji}"
+    tool_info = f"✨  Running {tool_name} ({action})"
+    border = "=" * 70
+    
+    # Format the header
+    formatted_header = f"{border}\n{tool_info}    {emojis}\n{border}\n"
+    
+    # Output to console and file if specified
+    click.echo(formatted_header, file=None)
+    if file:
+        click.echo(formatted_header, file=file)
 
 
 def print_tool_footer(
@@ -126,6 +153,7 @@ def print_tool_footer(
     issues_count: int,
     file: TextIO | None = None,
     use_table_format: bool = False,
+    tool_name: str = "",
 ):
     """
     Print a footer for a tool's output.
@@ -133,40 +161,26 @@ def print_tool_footer(
     Args:
         success: Whether the tool ran successfully
         issues_count: Number of issues found
-        file: File to write output to
+        file: File to write to (default: stdout)
         use_table_format: Whether to use table formatting
+        tool_name: Name of the tool
     """
-    if not use_table_format:
-        # Standard format
-        # Always use issues_count to determine success/failure
-        if issues_count == 0:
-            click.secho(f"\n✓ No issues found", fg="green")
-            if file:
-                click.secho(f"\n✓ No issues found", fg="green", file=file)
-        else:
-            click.secho(f"\n✗ Found {issues_count} issues", fg="red")
-            if file:
-                click.secho(f"\n✗ Found {issues_count} issues", fg="red", file=file)
-
-        click.secho(f"{'-' * 60}", fg="blue")
-        if file:
-            click.secho(f"{'-' * 60}", fg="blue", file=file)
+    # Create a message based on the number of issues
+    if issues_count == 0:
+        status = click.style("✓", fg="green", bold=True)
+        message = click.style("No issues found", fg="green", bold=True)
     else:
-        # Table format
-        if issues_count == 0:
-            footer = f"\n✓ No issues found"
-            click.secho(footer, fg="green")
-            if file:
-                click.secho(footer, fg="green", file=file)
-        else:
-            footer = f"\n✗ Found {issues_count} issues"
-            click.secho(footer, fg="red")
-            if file:
-                click.secho(footer, fg="red", file=file)
-
-        click.secho(f"{'-' * 60}", fg="blue")
-        if file:
-            click.secho(f"{'-' * 60}", fg="blue", file=file)
+        status = click.style("✗", fg="red", bold=True)
+        issue_text = "issue" if issues_count == 1 else "issues"
+        message = click.style(f"Found {issues_count} {issue_text}", fg="red", bold=True)
+    
+    # Format the footer
+    formatted_footer = f"\n{status} {message}\n\n"
+    
+    # Output to console and file if specified
+    click.echo(formatted_footer, file=None)
+    if file:
+        click.echo(formatted_footer, file=file)
 
 
 def print_summary(
@@ -176,143 +190,70 @@ def print_summary(
     use_table_format: bool = False,
 ):
     """
-    Print a summary of all tool results.
+    Print a summary of the results.
 
     Args:
         results: List of tool results
         action: Action that was performed (check or fix)
-        file: File to write output to
+        file: File to write to (default: stdout)
         use_table_format: Whether to use table formatting
     """
+    # Count total issues
     total_issues = sum(result.issues_count for result in results)
-
-    if not use_table_format:
-        # Standard format
-        click.secho("\n" + "=" * 60, fg="blue")
-        click.secho(" Summary (" + action + ")", fg="blue", bold=True)
-        click.secho("=" * 60, fg="blue")
-
+    
+    # Create a summary header
+    border = "=" * 70
+    summary_title = f"📊  Summary of {action}"
+    emojis = "📊 📊 📊 📊 📊"
+    
+    # Format the summary header
+    header = f"{border}\n{summary_title}    {emojis}\n{border}\n"
+    
+    # Format the summary
+    if use_table_format:
+        # Create a table with tool names, status, and issue counts
+        table_data = []
         for result in results:
-            if result.issues_count == 0:
-                click.secho(f" ✓ {result.name}: No issues", fg="green")
-            else:
-                click.secho(f" ✗ {result.name}: {result.issues_count} issues", fg="red")
-
-        click.secho("-" * 60, fg="blue")
-
-        if total_issues == 0:
-            click.secho(" Total: No issues found", fg="green")
-        else:
-            click.secho(f" Total: {total_issues} issues found", fg="red")
-
-        click.secho("=" * 60, fg="blue")
-
-        # Also write to file if specified
-        if file:
-            click.secho("\n" + "=" * 60, fg="blue", file=file)
-            click.secho(" Summary (" + action + ")", fg="blue", bold=True, file=file)
-            click.secho("=" * 60, fg="blue", file=file)
-
-            for result in results:
-                if result.issues_count == 0:
-                    click.secho(f" ✓ {result.name}: No issues", fg="green", file=file)
-                else:
-                    click.secho(
-                        f" ✗ {result.name}: {result.issues_count} issues",
-                        fg="red",
-                        file=file,
-                    )
-
-            click.secho("-" * 60, fg="blue", file=file)
-
-            if total_issues == 0:
-                click.secho(" Total: No issues found", fg="green", file=file)
-            else:
-                click.secho(f" Total: {total_issues} issues found", fg="red", file=file)
-
-            click.secho("=" * 60, fg="blue", file=file)
-    else:
-        # Table format
-        header = f"\n{'-' * 60}\n Summary ({action})\n{'-' * 60}"
-        click.secho(header, fg="blue", bold=True)
-        if file:
-            click.secho(header, fg="blue", bold=True, file=file)
-
-    # Create a table for the summary if using table format
-    if use_table_format and TABULATE_AVAILABLE:
-        summary_data = []
-        for result in results:
-            status = "✓" if result.issues_count == 0 else "✗"
-            status_color = "green" if result.issues_count == 0 else "red"
-            message = (
-                "No issues"
-                if result.issues_count == 0
-                else f"{result.issues_count} issues"
-            )
-
-            summary_data.append(
-                [
-                    click.style(status, fg=status_color),
-                    result.name,
-                    click.style(message, fg=status_color),
-                ]
-            )
-
-        summary_table = tabulate(
-            summary_data,
-            headers=["Status", "Tool", "Result"],
+            emoji = get_tool_emoji(result.name)
+            status = "✓" if result.success else "✗"
+            table_data.append([f"{emoji} {result.name}", status, result.issues_count])
+        
+        # Create the table with left alignment for the Tool column
+        table = tabulate(
+            table_data,
+            headers=["Tool", "Status", "Issues"],
             tablefmt="pretty",
-            colalign=("left", "left", "left"),  # Left align all columns
+            colalign=("left", "center", "center"),
         )
-
-        click.echo(summary_table)
-        if file:
-            click.echo(summary_table, file=file)
-
-        # Add total line
+        
+        # Add a fun line based on the total number of issues
         if total_issues == 0:
-            total_line = click.style(f"\nTotal: No issues found", fg="green")
+            fun_line = "🎉 No issues found! Your code is looking great! 🎉"
+        elif total_issues < 10:
+            fun_line = "🔨 A few issues to fix, but you're almost there! 💪"
         else:
-            total_line = click.style(f"\nTotal: {total_issues} issues found", fg="red")
-
-        click.echo(total_line)
-        if file:
-            click.echo(total_line, file=file)
-
-        click.secho(f"{'-' * 60}", fg="blue")
-        if file:
-            click.secho(f"{'-' * 60}", fg="blue", file=file)
+            fun_line = "🧹 Time for some cleanup! Let's make this code shine! ✨"
+        
+        # Format the summary
+        summary = f"{header}{table}\n\n{fun_line}\n"
     else:
-        # Standard format for summary items
+        # Create a simple summary
+        summary_lines = []
         for result in results:
-            if result.issues_count == 0:
-                status = click.style("✓", fg="green")
-                message = click.style("No issues", fg="green")
-            else:
-                status = click.style("✗", fg="red")
-                message = click.style(f"{result.issues_count} issues", fg="red")
-
-            click.echo(f" {status} {result.name}: {message}")
-            if file:
-                click.echo(f" {status} {result.name}: {message}", file=file)
-
-        click.secho(f"{'-' * 60}", fg="blue")
-        if file:
-            click.secho(f"{'-' * 60}", fg="blue", file=file)
-
-        if total_issues == 0:
-            status = click.style("✓", fg="green")
-            message = click.style("No issues found", fg="green")
-        else:
-            status = click.style("✗", fg="red")
-            message = click.style(f"{total_issues} issues found", fg="red")
-
-        click.echo(f" Total: {message}")
-        click.secho(f"{'=' * 60}", fg="blue")
-
-        if file:
-            click.echo(f" Total: {message}", file=file)
-            click.secho(f"{'=' * 60}", fg="blue", file=file)
+            emoji = get_tool_emoji(result.name)
+            status = "✓" if result.success else "✗"
+            summary_lines.append(f"{emoji} {result.name}: {status} ({result.issues_count} issues)")
+        
+        summary_lines.append(f"Total issues: {total_issues}")
+        summary_text = "\n".join(summary_lines)
+        
+        # Format the summary
+        summary = f"{header}{summary_text}\n"
+    
+    # Output to console and file if specified
+    click.echo(summary, file=None)
+    if file:
+        click.echo(summary, file=file)
 
 
 def parse_tool_list(tools_str: str | None) -> list[str]:
@@ -360,66 +301,69 @@ def get_table_columns(
         group_by: How the issues are grouped (file, code, none)
 
     Returns:
-        Tuple of (headers, column_keys) where:
-        - headers: List of column headers to display
-        - column_keys: List of keys to extract from each issue
+        Tuple of (display_columns, code_columns) where:
+        - display_columns: List of column headers to display
+        - code_columns: List of keys for code columns used in grouping
     """
-    # Get appropriate code column name based on tool
+    # Define code column names based on tool
     if tool_name == "flake8":
         code_column = "PEP Code"
-    elif tool_name == "darglint":
-        code_column = "Docstring Code"
-    elif tool_name == "pydocstyle":
+    elif tool_name in ["darglint", "pydocstyle"]:
         code_column = "Docstring Code"
     elif tool_name == "hadolint":
         code_column = "Dockerfile Code"
     else:
         code_column = "Code"
 
-    # Define location column name based on tool
-    location_column = "Method" if tool_name == "darglint" else "Location"
+    # Define all possible columns and their corresponding keys in the issues dict
+    columns_map = {
+        "File": "file",
+        code_column: "code",
+        "Line": "line",
+        "Method": "method",
+        "Message": "message"
+    }
 
-    # Define all possible columns based on grouping
+    # Determine which columns to include based on grouping
     if group_by == "file":
-        # When grouped by file, file is in the header
-        all_headers = [code_column, "Line", location_column, "Message"]
-        all_keys = ["code", "line", "location", "message"]
+        # When grouped by file, exclude the file column
+        columns_to_check = {k: v for k, v in columns_map.items() if k != "File"}
     elif group_by == "code":
-        # When grouped by code, code is in the header
-        all_headers = ["File", "Line", location_column, "Message"]
-        all_keys = ["path", "line", "location", "message"]
-    else:  # No grouping
-        all_headers = ["File", code_column, "Line", location_column, "Message"]
-        all_keys = ["path", "code", "line", "location", "message"]
+        # When grouped by code, exclude the code column
+        columns_to_check = {k: v for k, v in columns_map.items() if k != code_column}
+    else:
+        # No grouping, include all columns
+        columns_to_check = columns_map.copy()
 
     # Check which columns have meaningful values
-    has_meaningful_values = {key: False for key in all_keys}
+    columns_to_include = []
     
-    for issue in issues:
-        for key in all_keys:
-            if key == "location":
-                # For darglint, get method from the method field
-                if tool_name == "darglint":
-                    value = issue.get("method", "N/A")
-                else:
-                    value = "N/A"
-            else:
-                value = issue.get(key, "N/A")
+    for header, key in columns_to_check.items():
+        # Check if any issue has a meaningful value for this column
+        has_values = False
+        for issue in issues:
+            if key in issue and issue[key] and issue[key] != "N/A":
+                has_values = True
+                break
+                
+        # Special case for darglint method column
+        if key == "method" and tool_name == "darglint":
+            has_values = True
             
-            # If any issue has a non-N/A value for this column, keep it
-            if value != "N/A":
-                has_meaningful_values[key] = True
-
-    # Filter out columns with no meaningful values
-    headers = []
-    column_keys = []
+        if has_values:
+            columns_to_include.append(header)
     
-    for header, key in zip(all_headers, all_keys):
-        if has_meaningful_values[key] or key == "message":  # Always keep message column
-            headers.append(header)
-            column_keys.append(key)
+    # Always include message column
+    if "Message" not in columns_to_include:
+        columns_to_include.append("Message")
+        
+    # Get the keys corresponding to the headers
+    display_columns = columns_to_include
     
-    return headers, column_keys
+    # Return the list of code column names for grouping
+    code_columns = ["code"]
+    
+    return display_columns, code_columns
 
 
 def format_as_table(
@@ -432,8 +376,8 @@ def format_as_table(
 
     Args:
         issues: List of issues to format
-        tool_name: Name of the tool that generated the issues
-        group_by: How to group the issues (file, code, none, or auto)
+        tool_name: Name of the tool that produced the issues
+        group_by: How to group issues (file, code, or none)
 
     Returns:
         Formatted table as a string
@@ -441,159 +385,151 @@ def format_as_table(
     if not issues:
         return ""
 
-    result = []
+    # Get columns to display based on the data
+    display_columns, code_columns = get_table_columns(issues, tool_name or "", group_by)
 
-    # Determine appropriate grouping
-    if group_by == "auto":
-        # For flake8, group by code
-        if tool_name == "flake8":
-            group_by = "code"
-        else:
-            group_by = "file"
+    # Create a list to store all table rows
+    all_rows = []
 
-    # Format based on tool and grouping
-    if group_by == "file":
-        # Group by file
-        issues_by_file = {}
-        for issue in issues:
-            path = issue["path"]
-            if path not in issues_by_file:
-                issues_by_file[path] = []
-            issues_by_file[path].append(issue)
+    # Define column mapping based on tool
+    if tool_name == "flake8":
+        code_key = "code"
+    elif tool_name in ["darglint", "pydocstyle"]:
+        code_key = "code"
+    elif tool_name == "hadolint":
+        code_key = "code"
+    else:
+        code_key = "code"
 
-        for file_path, file_issues in sorted(issues_by_file.items()):
-            # Add file header
-            result.append(f"\nFile: {file_path}")
+    # Map display column headers to issue keys
+    column_map = {
+        "File": "file",
+        "PEP Code": "code",
+        "Docstring Code": "code",
+        "Dockerfile Code": "code",
+        "Code": "code",
+        "Line": "line",
+        "Method": "method",
+        "Message": "message"
+    }
 
-            # Prepare issues with location field
-            prepared_issues = []
-            for issue in file_issues:
-                prepared_issue = issue.copy()
-                
-                # Set location field based on tool
-                if tool_name == "darglint":
-                    prepared_issue["location"] = issue.get("method", "N/A")
-                else:
-                    prepared_issue["location"] = "N/A"
-                
-                prepared_issues.append(prepared_issue)
-
-            # Get dynamic columns based on data
-            headers, column_keys = get_table_columns(prepared_issues, tool_name, group_by)
-
-            # Convert issues to a list of lists for tabulate
-            table_data = []
-            for issue in prepared_issues:
-                row = [issue.get(key, "N/A") for key in column_keys]
-                table_data.append(row)
-
-            # Format as a table with headers - use left alignment
-            colalign = tuple("left" for _ in headers)
-            
-            table = tabulate(
-                table_data,
-                headers=headers,
-                tablefmt="pretty",
-                colalign=colalign,
-            )
-
-            result.append(table)
-
-    elif group_by == "code":
-        # Group by error code
-        issues_by_code = {}
-        for issue in issues:
-            code = issue["code"]
-            if code not in issues_by_code:
-                issues_by_code[code] = []
-            issues_by_code[code].append(issue)
-
-        # Get appropriate code column name based on tool
-        if tool_name == "flake8":
-            code_column = "PEP Code"
-        elif tool_name == "darglint":
-            code_column = "Docstring Code"
-        elif tool_name == "pydocstyle":
-            code_column = "Docstring Code"
-        elif tool_name == "hadolint":
-            code_column = "Dockerfile Code"
-        else:
-            code_column = "Code"
-
-        for code, code_issues in sorted(issues_by_code.items()):
-            # Add code header
-            result.append(f"\n{code_column}: {code}")
-
-            # Prepare issues with location field
-            prepared_issues = []
-            for issue in code_issues:
-                prepared_issue = issue.copy()
-                
-                # Set location field based on tool
-                if tool_name == "darglint":
-                    prepared_issue["location"] = issue.get("method", "N/A")
-                else:
-                    prepared_issue["location"] = "N/A"
-                
-                prepared_issues.append(prepared_issue)
-
-            # Get dynamic columns based on data
-            headers, column_keys = get_table_columns(prepared_issues, tool_name, group_by)
-
-            # Convert issues to a list of lists for tabulate
-            table_data = []
-            for issue in prepared_issues:
-                row = [issue.get(key, "N/A") for key in column_keys]
-                table_data.append(row)
-
-            # Format as a table with headers - use left alignment
-            colalign = tuple("left" for _ in headers)
-            
-            table = tabulate(
-                table_data,
-                headers=headers,
-                tablefmt="pretty",
-                colalign=colalign,
-            )
-
-            result.append(table)
-
-    else:  # No grouping
-        # Prepare issues with location field
-        prepared_issues = []
-        for issue in issues:
-            prepared_issue = issue.copy()
-            
-            # Set location field based on tool
-            if tool_name == "darglint":
-                prepared_issue["location"] = issue.get("method", "N/A")
-            else:
-                prepared_issue["location"] = "N/A"
-            
-            prepared_issues.append(prepared_issue)
-
-        # Get dynamic columns based on data
-        headers, column_keys = get_table_columns(prepared_issues, tool_name, group_by)
-
-        # Convert issues to a list of lists for tabulate
-        table_data = []
-        for issue in prepared_issues:
-            row = [issue.get(key, "N/A") for key in column_keys]
-            table_data.append(row)
-
-        # Format as a table with headers - use left alignment
-        colalign = tuple("left" for _ in headers)
+    # Group issues by file or code if requested
+    if group_by == "file" and "file" in issues[0]:
+        # Get unique files and sort them
+        files = sorted(set(issue["file"] for issue in issues))
         
-        table = tabulate(
-            table_data,
-            headers=headers,
-            tablefmt="pretty",
-            colalign=colalign,
-        )
+        for file_idx, file in enumerate(files):
+            # Add a file header
+            file_issues = [issue for issue in issues if issue["file"] == file]
+            
+            # Add a separator between files (except before the first one)
+            if file_idx > 0:
+                all_rows.append(["~" * 80] + [""] * (len(display_columns) - 1))
+            
+            # Add file header with appropriate emoji based on issue severity
+            has_error = any(issue.get("type") == "error" for issue in file_issues)
+            has_warning = any(issue.get("type") == "warning" for issue in file_issues)
+            
+            if has_error:
+                file_emoji = "🔴"  # Red circle for errors
+            elif has_warning:
+                file_emoji = "🟡"  # Yellow circle for warnings
+            else:
+                file_emoji = "🔵"  # Blue circle for info/other
+                
+            all_rows.append([f"{file_emoji} File: {file}"] + [""] * (len(display_columns) - 1))
+            
+            # Add the issues for this file
+            for issue in file_issues:
+                row = []
+                for col in display_columns:
+                    key = column_map.get(col)
+                    if key and key in issue:
+                        row.append(str(issue[key]))
+                    else:
+                        row.append("")
+                all_rows.append(row)
+                
+    elif group_by == "code" and code_key in issues[0]:
+        # Get unique codes and sort them
+        codes = sorted(set(issue[code_key] for issue in issues if code_key in issue))
+        
+        for code_idx, code in enumerate(codes):
+            # Add a separator between codes (except before the first one)
+            if code_idx > 0:
+                all_rows.append(["~" * 80] + [""] * (len(display_columns) - 1))
+            
+            # Add code header with appropriate emoji based on code
+            if tool_name == "flake8":
+                # For flake8, use different emojis based on the error code prefix
+                if code.startswith("E"):
+                    code_emoji = "🔴"  # Red circle for errors
+                elif code.startswith("W"):
+                    code_emoji = "🟡"  # Yellow circle for warnings
+                elif code.startswith("F"):
+                    code_emoji = "⚫"  # Black circle for fatal errors
+                else:
+                    code_emoji = "🔵"  # Blue circle for other
+            elif tool_name == "pydocstyle":
+                code_emoji = "📚"  # Books for documentation
+            else:
+                code_emoji = "🔍"  # Magnifying glass for generic codes
+            
+            # Get the appropriate code column name
+            if tool_name == "flake8":
+                code_column = "PEP Code"
+            elif tool_name in ["darglint", "pydocstyle"]:
+                code_column = "Docstring Code"
+            elif tool_name == "hadolint":
+                code_column = "Dockerfile Code"
+            else:
+                code_column = "Code"
+                
+            all_rows.append([f"{code_emoji} {code_column}: {code}"] + [""] * (len(display_columns) - 1))
+            
+            # Add the issues for this code
+            code_issues = [issue for issue in issues if code_key in issue and issue[code_key] == code]
+            for issue in code_issues:
+                row = []
+                for col in display_columns:
+                    key = column_map.get(col)
+                    if key and key in issue:
+                        row.append(str(issue[key]))
+                    else:
+                        row.append("")
+                all_rows.append(row)
+    else:
+        # No grouping, just add all issues
+        for issue in issues:
+            row = []
+            for col in display_columns:
+                key = column_map.get(col)
+                if key and key in issue:
+                    row.append(str(issue[key]))
+                else:
+                    row.append("")
+            all_rows.append(row)
 
-        result.append(table)
+    # Format the table with left alignment for all columns
+    colalign = tuple("left" for _ in display_columns)
+    table = tabulate(
+        all_rows,
+        headers=display_columns,
+        tablefmt="pretty",
+        colalign=colalign,
+    )
 
-    return "\n".join(result)
+    # Add spacing before and after the table
+    table = "\n" + table + "\n"
+
+    # Add any summary lines for black
+    if tool_name == "black" and "Oh no!" in "".join(str(issue.get("message", "")) for issue in issues):
+        for issue in issues:
+            if "message" in issue and "Formatting required" in issue["message"]:
+                count = len([i for i in issues if "message" in i and "Formatting required" in i["message"]])
+                table += f"\nOh no! 💥 💔 💥\n{count} files would be reformatted."
+
+    return table
 
 
 def format_tool_output(
@@ -638,6 +574,55 @@ def format_tool_output(
     skipped_files = 0
 
     if tool_name == "black":
+        # Handle the "Oh no!" message separately
+        if "Oh no!" in output:
+            # Extract the number of files that would be reformatted
+            match = re.search(r"(\d+) files? would be reformatted", output)
+            if match:
+                num_files = int(match.group(1))
+                # Extract actual file paths if available
+                file_paths = []
+                for line in output.splitlines():
+                    if "would reformat" in line:
+                        file_path = line.replace("would reformat ", "").strip()
+                        rel_path = get_relative_path(file_path)
+                        file_paths.append(rel_path)
+                
+                # If we have actual file paths, use them
+                if file_paths:
+                    for file_path in file_paths:
+                        issues.append({
+                            "file": file_path,
+                            "code": "FORMAT",
+                            "line": "N/A",
+                            "message": "Formatting required"
+                        })
+                else:
+                    # Otherwise use placeholders
+                    for i in range(num_files):
+                        issues.append({
+                            "file": f"File {i+1}",
+                            "code": "FORMAT",
+                            "line": "N/A",
+                            "message": "Formatting required"
+                        })
+                
+                # Extract the summary line
+                summary_line = ""
+                for line in output.splitlines():
+                    if "files would be reformatted" in line and "files would be left unchanged" in line:
+                        summary_line = line
+                        break
+                
+                # Return the formatted table with just the summary line
+                if use_table_format:
+                    if summary_line:
+                        return format_as_table(issues, tool_name, group_by) + f"\n{summary_line}"
+                    else:
+                        return format_as_table(issues, tool_name, group_by)
+                return output
+        
+        # Normal processing for black output
         for line in output.splitlines():
             if "would reformat" in line:
                 file_path = line.replace("would reformat ", "").strip()
@@ -647,14 +632,12 @@ def format_tool_output(
                 error_codes.append("FORMAT")
 
                 # Add to issues list for table formatting
-                issues.append(
-                    {
-                        "path": rel_path,
-                        "line": "N/A",
-                        "code": "FORMAT",
-                        "message": "formatting required",
-                    }
-                )
+                issues.append({
+                    "file": rel_path,
+                    "code": "FORMAT",
+                    "line": "N/A",
+                    "message": "Formatting required"
+                })
 
     elif tool_name == "isort":
         # Extract file paths from isort output
@@ -666,86 +649,110 @@ def format_tool_output(
                 rel_path = get_relative_path(file_path)
                 file_paths.append(rel_path)
                 line_numbers.append("N/A")
-                error_codes.append("ISORT")
+                error_codes.append("SORT")
 
                 # Add to issues list for table formatting
-                issues.append(
-                    {
-                        "path": rel_path,
-                        "line": "N/A",
-                        "code": "ISORT",
-                        "message": "import sorting required",
-                    }
-                )
+                issues.append({
+                    "file": rel_path,
+                    "code": "SORT",
+                    "line": "N/A",
+                    "message": "Imports are incorrectly sorted"
+                })
             elif "Skipped" in line and "files" in line:
                 # Count skipped files but don't include in issues
-                skipped_match = re.search(r"Skipped (\d+) files", line)
-                if skipped_match:
-                    skipped_files = int(skipped_match.group(1))
-
-        # If we only have skipped files and no actual errors, return success message
-        if not file_paths and skipped_files > 0:
-            return click.style("All imports are correctly sorted.", fg="green")
+                match = re.search(r"Skipped (\d+) files", line)
+                if match:
+                    skipped_files = int(match.group(1))
+                    # Add a note about skipped files
+                    if use_table_format:
+                        return "Note: Skipped " + match.group(1) + " files"
 
     elif tool_name == "flake8":
-        # Extract and format flake8 errors
+        # Extract file paths, line numbers, and error codes from flake8 output
         for line in output.splitlines():
-            # Match flake8 output format: file:line:col: code message
-            match = re.match(r"(.+):(\d+):(\d+): ([A-Z]\d{3}) (.+)", line)
+            # Match the flake8 output format: "/path/to/file.py:123:45: E123 message"
+            match = re.match(r"(.*?):(\d+):(\d+): ([A-Z]\d+) (.*)", line)
             if match:
-                file_path = match.group(1)
+                file_path = match.group(1).strip()
+                rel_path = get_relative_path(file_path)
                 line_num = match.group(2)
                 error_code = match.group(4)
-                message = match.group(5)
-                rel_path = get_relative_path(file_path)
+                message = match.group(5).strip()
+                
+                # Clean up the message by removing the leading dash and whitespace
+                if message.startswith('-'):
+                    message = message[1:].strip()
 
                 file_paths.append(rel_path)
                 line_numbers.append(line_num)
                 error_codes.append(error_code)
 
                 # Add to issues list for table formatting
-                issues.append(
-                    {
-                        "path": rel_path,
-                        "line": line_num,
-                        "code": error_code,
-                        "message": message,
-                    }
-                )
+                issues.append({
+                    "file": rel_path,
+                    "code": error_code,
+                    "line": line_num,
+                    "message": message,
+                    "type": "error" if error_code.startswith("E") or error_code.startswith("F") else "warning"
+                })
 
     elif tool_name == "darglint":
-        # Extract and format darglint errors
+        # Extract file paths, line numbers, and error codes from darglint output
         for line in output.splitlines():
-            # Match darglint output format: file:method:line: code: message
-            match = re.match(r"(.+):([^:]+):(\d+): ([A-Z]+\d{3}): (.+)", line)
-            if match:
-                file_path = match.group(1)
+            # Match the darglint output format: "/path/to/file.py:function:123: I123: message"
+            # Also handle the format without the method: "/path/to/file.py:123: I123: message"
+            match = re.match(r"(.*?):([^:]+):(\d+): ([A-Z]+\d+): (.*)", line)
+            if not match:
+                # Try alternative format without method
+                match = re.match(r"(.*?):(\d+): ([A-Z]+\d+): (.*)", line)
+                if match:
+                    file_path = match.group(1).strip()
+                    rel_path = get_relative_path(file_path)
+                    line_num = match.group(2)
+                    error_code = match.group(3)
+                    message = match.group(4).strip()
+                    method_name = "N/A"
+                    
+                    # Clean up the message by removing the leading dash and whitespace
+                    if message.startswith('-'):
+                        message = message[1:].strip()
+
+                    file_paths.append(rel_path)
+                    line_numbers.append(line_num)
+                    error_codes.append(error_code)
+
+                    # Add to issues list for table formatting
+                    issues.append({
+                        "file": rel_path,
+                        "code": error_code,
+                        "line": line_num,
+                        "method": method_name,
+                        "message": message
+                    })
+            elif match:
+                file_path = match.group(1).strip()
+                rel_path = get_relative_path(file_path)
                 method_name = match.group(2)
                 line_num = match.group(3)
                 error_code = match.group(4)
-                message = match.group(5)
+                message = match.group(5).strip()
                 
                 # Clean up the message by removing the leading dash and whitespace
-                message = message.strip()
                 if message.startswith('-'):
                     message = message[1:].strip()
-                
-                rel_path = get_relative_path(file_path)
 
                 file_paths.append(rel_path)
                 line_numbers.append(line_num)
                 error_codes.append(error_code)
 
                 # Add to issues list for table formatting
-                issues.append(
-                    {
-                        "path": rel_path,
-                        "line": line_num,
-                        "code": error_code,
-                        "message": message,
-                        "method": method_name,
-                    }
-                )
+                issues.append({
+                    "file": rel_path,
+                    "code": error_code,
+                    "line": line_num,
+                    "method": method_name,
+                    "message": message
+                })
             elif "Skipped" in line and "timeout" in line:
                 # Handle skipped files due to timeout
                 match = re.match(r"Skipped (.+) \(timeout", line)
@@ -757,41 +764,37 @@ def format_tool_output(
                     error_codes.append("TIMEOUT")
 
                     # Add to issues list for table formatting
-                    issues.append(
-                        {
-                            "path": rel_path,
-                            "line": "N/A",
-                            "code": "TIMEOUT",
-                            "message": "skipped due to timeout",
-                            "method": "N/A",
-                        }
-                    )
+                    issues.append({
+                        "file": rel_path,
+                        "code": "TIMEOUT",
+                        "line": "N/A",
+                        "method": "N/A",
+                        "message": "Skipped due to timeout"
+                    })
 
     elif tool_name == "hadolint":
-        # Extract and format hadolint errors
+        # Extract file paths, line numbers, and error codes from hadolint output
         for line in output.splitlines():
-            # Match hadolint output format: file:line DL/SC code message
-            match = re.match(r"(.+):(\d+) ((?:DL|SC)\d{4}) (.+)", line)
+            # Match the hadolint output format: "/path/to/Dockerfile:123 DL3000 message"
+            match = re.match(r"(.*?):(\d+) ([A-Z0-9]+) (.*)", line)
             if match:
-                file_path = match.group(1)
+                file_path = match.group(1).strip()
+                rel_path = get_relative_path(file_path)
                 line_num = match.group(2)
                 error_code = match.group(3)
                 message = match.group(4)
-                rel_path = get_relative_path(file_path)
 
                 file_paths.append(rel_path)
                 line_numbers.append(line_num)
                 error_codes.append(error_code)
 
                 # Add to issues list for table formatting
-                issues.append(
-                    {
-                        "path": rel_path,
-                        "line": line_num,
-                        "code": error_code,
-                        "message": message,
-                    }
-                )
+                issues.append({
+                    "file": rel_path,
+                    "code": error_code,
+                    "line": line_num,
+                    "message": message
+                })
             elif "No Dockerfile files found" in line:
                 # Handle case where no Dockerfile files are found
                 return "No Dockerfile files found in the specified paths."
@@ -806,48 +809,44 @@ def format_tool_output(
                     error_codes.append("TIMEOUT")
 
                     # Add to issues list for table formatting
-                    issues.append(
-                        {
-                            "path": rel_path,
-                            "line": "N/A",
-                            "code": "TIMEOUT",
-                            "message": "skipped due to timeout",
-                        }
-                    )
+                    issues.append({
+                        "file": rel_path,
+                        "code": "TIMEOUT",
+                        "line": "N/A",
+                        "message": "Skipped due to timeout"
+                    })
 
     elif tool_name == "pydocstyle":
-        # Extract and format pydocstyle errors
+        # Extract file paths, line numbers, and error codes from pydocstyle output
         current_file = None
         current_line = None
         current_code = None
-        
+
         for line in output.splitlines():
-            # Match pydocstyle file line
-            file_match = re.match(r"(.+):(\d+)", line)
-            # Match pydocstyle error code line
-            code_match = re.search(r"([D]\d{3}):(.*)", line)
-            
+            # Match the file path line: "/path/to/file.py:123 at module level:"
+            file_match = re.match(r"(.*?):(\d+)", line)
+            # Match the error code line: "        D100: Missing docstring in public module"
+            code_match = re.match(r"\s+([A-Z]\d+): (.*)", line)
+
             if file_match:
-                current_file = file_match.group(1)
+                current_file = file_match.group(1).strip()
                 current_line = file_match.group(2)
             elif code_match and current_file:
                 current_code = code_match.group(1)
-                message = code_match.group(2).strip()
+                message = code_match.group(2)
+
                 rel_path = get_relative_path(current_file)
-                
                 file_paths.append(rel_path)
                 line_numbers.append(current_line)
                 error_codes.append(current_code)
-                
+
                 # Add to issues list for table formatting
-                issues.append(
-                    {
-                        "path": rel_path,
-                        "line": current_line,
-                        "code": current_code,
-                        "message": message,
-                    }
-                )
+                issues.append({
+                    "file": rel_path,
+                    "code": current_code,
+                    "line": current_line,
+                    "message": message
+                })
             elif "Skipped" in line and "timeout" in line:
                 # Handle skipped files due to timeout
                 match = re.match(r"Skipped (.+) \(timeout", line)
@@ -859,280 +858,93 @@ def format_tool_output(
                     error_codes.append("TIMEOUT")
 
                     # Add to issues list for table formatting
-                    issues.append(
-                        {
-                            "path": rel_path,
-                            "line": "N/A",
-                            "code": "TIMEOUT",
-                            "message": "skipped due to timeout",
-                        }
-                    )
+                    issues.append({
+                        "file": rel_path,
+                        "code": "TIMEOUT",
+                        "line": "N/A",
+                        "message": "Skipped due to timeout"
+                    })
 
     elif tool_name == "prettier":
-        # Extract and format prettier errors
+        # Extract file paths from prettier output
         for line in output.splitlines():
-            # Match prettier output format: [warn] file would be formatted
-            match = re.match(r"\[warn\] (.+) would be formatted", line)
-            if match:
-                file_path = match.group(1)
+            if line.endswith(" would be formatted"):
+                file_path = line.replace(" would be formatted", "").strip()
                 rel_path = get_relative_path(file_path)
                 file_paths.append(rel_path)
                 line_numbers.append("N/A")
                 error_codes.append("FORMAT")
 
                 # Add to issues list for table formatting
-                issues.append(
-                    {
-                        "path": rel_path,
-                        "line": "N/A",
-                        "code": "FORMAT",
-                        "message": "formatting required",
-                    }
-                )
+                issues.append({
+                    "file": rel_path,
+                    "code": "FORMAT",
+                    "line": "N/A",
+                    "message": "Formatting required"
+                })
+            elif "Prettier check timed out" in line:
+                # Handle timeout
+                return f"Prettier check timed out after {line.split(' ')[-2]} seconds."
 
     # If tabulate is available, table format is requested, and we have issues, format as a table
-    if TABULATE_AVAILABLE and use_table_format and issues:
-        table = format_as_table(issues, tool_name, group_by)
-        if table:
-            # Add any summary lines
-            if tool_name == "black":
-                for line in output.splitlines():
-                    if (
-                        "All done!" in line
-                        or "Oh no!" in line
-                        or "files would be" in line
-                    ):
-                        if "All done!" in line:
-                            table += "\n" + click.style(line, fg="green")
-                        else:
-                            table += "\n" + click.style(line, fg="red")
-
-            # Add any skipped files notes for isort
-            if tool_name == "isort" and skipped_files > 0:
-                table += "\n" + click.style(
-                    f"Note: Skipped {skipped_files} files", fg="blue"
-                )
-
-            # Add any skipped files notes for darglint
-            if tool_name == "darglint" and "Skipped" in output and "files due to timeout" in output:
-                match = re.search(r"Skipped (\d+) files due to timeout", output)
-                if match:
-                    skipped_count = match.group(1)
-                    table += "\n" + click.style(
-                        f"Note: Skipped {skipped_count} files due to timeout", fg="blue"
-                    )
-
-            # Add any skipped files notes for hadolint
-            if tool_name == "hadolint" and "Skipped" in output and "files due to timeout" in output:
-                match = re.search(r"Skipped (\d+) files due to timeout", output)
-                if match:
-                    skipped_count = match.group(1)
-                    table += "\n" + click.style(
-                        f"Note: Skipped {skipped_count} files due to timeout", fg="blue"
-                    )
-
-            # Add any skipped files notes for pydocstyle
-            if tool_name == "pydocstyle" and "Skipped" in output and "files due to timeout" in output:
-                match = re.search(r"Skipped (\d+) files due to timeout", output)
-                if match:
-                    skipped_count = match.group(1)
-                    table += "\n" + click.style(
-                        f"Note: Skipped {skipped_count} files due to timeout", fg="blue"
-                    )
-
-            return table
-
-    # Calculate optimal column widths (min 10, max 60)
-    path_width = max([len(p) for p in file_paths] + [10]) if file_paths else 30
-    path_width = min(path_width + 2, 60)  # Add some padding but cap at 60
-
-    line_width = max([len(l) for l in line_numbers] + [4]) if line_numbers else 6
-    line_width = min(line_width + 2, 10)  # Add some padding but cap at 10
-
-    code_width = max([len(c) for c in error_codes] + [6]) if error_codes else 8
-    code_width = min(code_width + 2, 12)  # Add some padding but cap at 12
-
-    # Second pass to format with calculated widths
-    if tool_name == "black":
-        for line in output.splitlines():
-            if "would reformat" in line:
-                file_path = line.replace("would reformat ", "").strip()
-                rel_path = get_relative_path(file_path)
-                # Convert to standardized format with color and dynamic alignment
-                formatted_lines.append(
-                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
-                    + click.style(f" : {'N/A':<{line_width}}", fg="blue")
-                    + click.style(f" : {'FORMAT':<{code_width}}", fg="red")
-                    + f" : formatting required"
-                )
-            elif "All done!" in line or "Oh no!" in line or "files would be" in line:
-                # Keep summary lines with color
-                if "All done!" in line:
-                    formatted_lines.append(click.style(line, fg="green"))
-                else:
-                    formatted_lines.append(click.style(line, fg="red"))
-            elif line.strip() and not line.startswith("---"):
-                # Keep other non-empty, non-separator lines
-                formatted_lines.append(line)
-
-    elif tool_name == "isort":
-        # Extract file paths from isort output
-        for line in output.splitlines():
-            if "ERROR:" in line and ":" in line:
-                parts = line.split(":", 1)
-                file_path = parts[0].strip()
-                rel_path = get_relative_path(file_path)
-                # Convert to standardized format with color and dynamic alignment
-                formatted_lines.append(
-                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
-                    + click.style(f" : {'N/A':<{line_width}}", fg="blue")
-                    + click.style(f" : {'ISORT':<{code_width}}", fg="red")
-                    + f" : import sorting required"
-                )
-            elif "Skipped" in line and "files" in line:
-                # Count skipped files but don't include in issues
-                formatted_lines.append(click.style(f"Note: {line}", fg="blue"))
-            elif line.strip() and not line.startswith("---"):
-                # Keep other non-empty, non-separator lines
-                formatted_lines.append(line)
-
-    elif tool_name == "flake8":
-        # Extract and format flake8 errors
-        for line in output.splitlines():
-            # Match flake8 output format: file:line:col: code message
-            match = re.match(r"(.+):(\d+):(\d+): ([A-Z]\d{3}) (.+)", line)
-            if match:
-                file_path = match.group(1)
-                line_num = match.group(2)
-                error_code = match.group(4)
-                message = match.group(5)
-                rel_path = get_relative_path(file_path)
-
-                # Convert to standardized format with color and dynamic alignment
-                formatted_lines.append(
-                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
-                    + click.style(f" : {line_num:<{line_width}}", fg="blue")
-                    + click.style(f" : {error_code:<{code_width}}", fg="red")
-                    + f" : {message}"
-                )
-            elif line.strip() and not line.startswith("---"):
-                # Keep other non-empty, non-separator lines
-                formatted_lines.append(line)
-
-    elif tool_name == "darglint":
-        # Format darglint errors
-        for line in output.splitlines():
-            # Match darglint output format: file:method:line: code message
-            match = re.match(r"(.+):([^:]+):(\d+): ([A-Z]+\d{3}) (.+)", line)
-            if match:
-                file_path = match.group(1)
-                method_name = match.group(2)
-                line_num = match.group(3)
-                error_code = match.group(4)
-                message = match.group(5)
-                
-                # Clean up the message by removing the leading dash and whitespace
-                message = message.strip()
-                if message.startswith('-'):
-                    message = message[1:].strip()
-                
-                rel_path = get_relative_path(file_path)
-
-                file_paths.append(rel_path)
-                line_numbers.append(line_num)
-                error_codes.append(error_code)
-
-                # Add to issues list for table formatting
-                issues.append(
-                    {
-                        "path": rel_path,
-                        "line": line_num,
-                        "code": error_code,
-                        "message": message,
-                        "method": method_name,
-                    }
-                )
-            elif "Skipped" in line:
-                # Handle skipped files due to timeout
-                formatted_lines.append(click.style(line, fg="blue"))
-            elif line.strip() and not line.startswith("---"):
-                # Keep other non-empty, non-separator lines
-                formatted_lines.append(line)
-
-    elif tool_name == "hadolint":
-        # Format hadolint errors
-        for line in output.splitlines():
-            # Match hadolint output format: file:line DL/SC code message
-            match = re.match(r"(.+):(\d+) ((?:DL|SC)\d{4}) (.+)", line)
-            if match:
-                file_path = match.group(1)
-                line_num = match.group(2)
-                error_code = match.group(3)
-                message = match.group(4)
-                rel_path = get_relative_path(file_path)
-
-                # Convert to standardized format with color and dynamic alignment
-                formatted_lines.append(
-                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
-                    + click.style(f" : {line_num:<{line_width}}", fg="blue")
-                    + click.style(f" : {error_code:<{code_width}}", fg="red")
-                    + f" : {message}"
-                )
-            elif line.strip() and not line.startswith("---"):
-                # Keep other non-empty, non-separator lines
-                formatted_lines.append(line)
-
-    elif tool_name == "pydocstyle":
-        # Format pydocstyle errors
-        for line in output.splitlines():
-            # Match pydocstyle output format: file:line [code] message
-            match = re.match(r"(.+):(\d+).*?([D]\d{3})(.*)", line)
-            if match:
-                file_path = match.group(1)
-                line_num = match.group(2)
-                error_code = match.group(3)
-                message = match.group(4).strip()
-                rel_path = get_relative_path(file_path)
-
-                # Convert to standardized format with color and dynamic alignment
-                formatted_lines.append(
-                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
-                    + click.style(f" : {line_num:<{line_width}}", fg="blue")
-                    + click.style(f" : {error_code:<{code_width}}", fg="red")
-                    + f" : {message}"
-                )
-            elif "Skipped" in line:
-                # Handle skipped files due to timeout
-                formatted_lines.append(click.style(line, fg="blue"))
-            elif line.strip() and not line.startswith("---"):
-                # Keep other non-empty, non-separator lines
-                formatted_lines.append(line)
-
-    elif tool_name == "prettier":
-        # Format prettier errors
-        for line in output.splitlines():
-            # Match prettier output format: [warn] file would be formatted
-            match = re.match(r"\[warn\] (.+) would be formatted", line)
-            if match:
-                file_path = match.group(1)
-                rel_path = get_relative_path(file_path)
-
-                # Convert to standardized format with color and dynamic alignment
-                formatted_lines.append(
-                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
-                    + click.style(f" : {'N/A':<{line_width}}", fg="blue")
-                    + click.style(f" : {'FORMAT':<{code_width}}", fg="red")
-                    + f" : formatting required"
-                )
-            elif line.strip() and not line.startswith("---"):
-                # Keep other non-empty, non-separator lines
-                formatted_lines.append(line)
-
-    else:
-        # For other tools, just return the original output
+    if use_table_format and TABULATE_AVAILABLE and issues:
+        return format_as_table(issues, tool_name, group_by)
+    
+    # If we have no issues but we're using table format, return the original output
+    if use_table_format and not issues:
         return output
 
-    return "\n".join(formatted_lines) + "\n"
+    # Calculate optimal column widths (min 10, max 60)
+    path_width = max(min(max([len(p) for p in file_paths] or [10]), 60), 10)
+    line_width = max(min(max([len(str(l)) for l in line_numbers] or [5]), 10), 5)
+    code_width = max(min(max([len(c) for c in error_codes] or [10]), 20), 10)
+
+    # Format each line with consistent spacing and colors
+    for i, (path, line, code) in enumerate(zip(file_paths, line_numbers, error_codes)):
+        if tool_name == "black":
+            formatted_lines.append(
+                click.style(f"- {path:<{path_width}}", fg="yellow")
+                + click.style(f" : {'N/A':<{line_width}}", fg="blue")
+                + click.style(f" : {'FORMAT':<{code_width}}", fg="red")
+                + f" : formatting required"
+            )
+        elif tool_name == "isort":
+            formatted_lines.append(
+                click.style(f"- {path:<{path_width}}", fg="yellow")
+                + click.style(f" : {'N/A':<{line_width}}", fg="blue")
+                + click.style(f" : {'SORT':<{code_width}}", fg="red")
+                + f" : import sorting required"
+            )
+        else:
+            # Get the message for this issue
+            message = ""
+            for issue in issues:
+                if (
+                    issue.get("file") == path
+                    and str(issue.get("line")) == str(line)
+                    and issue.get("code") == code
+                ):
+                    message = issue.get("message", "")
+                    break
+
+            formatted_lines.append(
+                click.style(f"- {path:<{path_width}}", fg="yellow")
+                + click.style(f" : {line:<{line_width}}", fg="blue")
+                + click.style(f" : {code:<{code_width}}", fg="red")
+                + f" : {message}"
+            )
+
+    # Add a note about skipped files for isort
+    if tool_name == "isort" and skipped_files > 0:
+        formatted_lines.append(
+            click.style(f"Note: Skipped {skipped_files} files", fg="blue")
+        )
+
+    # Join all lines with newlines
+    if formatted_lines:
+        return "\n".join(formatted_lines)
+    else:
+        return output
 
 
 @click.group()
@@ -1342,7 +1154,7 @@ def check(
             if issues_count > 0:
                 success = False
 
-            print_tool_footer(success, issues_count, output_file, table_format)
+            print_tool_footer(success, issues_count, output_file, table_format, name)
 
             results.append(
                 ToolResult(
@@ -1351,7 +1163,6 @@ def check(
                     output=output_text,
                     issues_count=issues_count,
                 )
-            )
 
             if not success:
                 exit_code = 1
@@ -1546,7 +1357,7 @@ def fmt(
                     timeout=prettier_timeout,
                 )
 
-            print_tool_header(name, "fix", output_file, table_format)
+            print_tool_header(name, "format", output_file, table_format)
 
             success, output_text = tool.fix(list(paths))
 
@@ -1567,7 +1378,7 @@ def fmt(
             if issues_count > 0:
                 success = False
                 
-            print_tool_footer(success, issues_count, output_file, table_format)
+            print_tool_footer(success, issues_count, output_file, table_format, name)
 
             results.append(
                 ToolResult(
@@ -1576,7 +1387,6 @@ def fmt(
                     output=output_text,
                     issues_count=issues_count,
                 )
-            )
 
             if not success:
                 exit_code = 1
