@@ -4,7 +4,7 @@ A comprehensive CLI tool that unifies various code formatting, linting, and qual
 
 [![Test and Coverage](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml/badge.svg)](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml)
 [![Coverage](https://raw.githubusercontent.com/yourusername/lintro/main/coverage-badge.svg)](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml)
-[![Lintro Report](https://github.com/yourusername/lintro/actions/workflows/lintro-report.yml/badge.svg)](https://yourusername.github.io/lintro/)
+[![Lintro Report](https://github.com/yourusername/lintro/actions/workflows/lintro-report.yml/badge.svg)](https://github.com/yourusername/lintro/actions/workflows/lintro-report.yml)
 
 ## Features
 
@@ -20,7 +20,7 @@ A comprehensive CLI tool that unifies various code formatting, linting, and qual
 Lintro is integrated into the CI/CD pipeline with the following features:
 
 - **PR Checks**: Automatically runs Lintro on changed files in pull requests and posts results as comments
-- **Lintro Report**: Generates a comprehensive report of the entire codebase's linting status, available at [https://yourusername.github.io/lintro/](https://yourusername.github.io/lintro/)
+- **Lintro Report**: Generates a comprehensive report of the entire codebase's linting status, available as a workflow artifact in GitHub Actions (will be published to GitHub Pages when the repository is public)
 - **Test Coverage**: Tracks test coverage and displays it as a badge in the README
 
 ## Supported Tools

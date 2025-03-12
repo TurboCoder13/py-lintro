@@ -20,12 +20,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 jobs:
   lintro-report:
@@ -85,18 +79,50 @@ jobs:
         echo "</pre>" >> lintro-report/index.html
         
         echo "</body></html>" >> lintro-report/index.html
+        
+        # Also create a text version for easier viewing in GitHub Actions
+        echo "# Lintro Report" > lintro-report/report.md
+        echo "" >> lintro-report/report.md
+        echo "Generated on $(date)" >> lintro-report/report.md
+        echo "" >> lintro-report/report.md
+        echo "## Available Tools" >> lintro-report/report.md
+        echo '```' >> lintro-report/report.md
+        lintro list-tools >> lintro-report/report.md
+        echo '```' >> lintro-report/report.md
+        echo "" >> lintro-report/report.md
+        echo "## Check Results" >> lintro-report/report.md
+        echo '```' >> lintro-report/report.md
+        lintro check . --table-format --exclude ".git,__pycache__,htmlcov,.pytest_cache,.mypy_cache" >> lintro-report/report.md || true
+        echo '```' >> lintro-report/report.md
     
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-    
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v2
+    - name: Upload HTML report artifact
+      uses: actions/upload-artifact@v3
       with:
-        path: 'lintro-report'
+        name: lintro-html-report
+        path: lintro-report/index.html
+        retention-days: 90
     
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v3
+    - name: Upload Markdown report artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: lintro-markdown-report
+        path: lintro-report/report.md
+        retention-days: 90
+    
+    # The following steps are commented out for now and can be uncommented when the repo is public
+    # or if GitHub Pages is enabled for private repos
+    
+    # - name: Setup Pages
+    #   uses: actions/configure-pages@v4
+    # 
+    # - name: Upload artifact for Pages
+    #   uses: actions/upload-pages-artifact@v2
+    #   with:
+    #     path: 'lintro-report'
+    # 
+    # - name: Deploy to GitHub Pages
+    #   id: deployment
+    #   uses: actions/deploy-pages@v3
       
   notify:
     needs: lintro-report
@@ -104,7 +130,8 @@ jobs:
     if: success()
     
     steps:
-    - name: Create status badge
+    - name: Report status
       run: |
         echo "Lintro report generated successfully"
-        # This step is a placeholder for potential notification or badge generation 
+        echo "The report is available as a workflow artifact"
+        echo "Download it from the Actions tab in the GitHub repository" 
