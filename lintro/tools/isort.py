@@ -2,7 +2,6 @@
 
 import re
 import subprocess
-from typing import List, Tuple
 
 from lintro.tools import Tool
 
@@ -19,7 +18,7 @@ class IsortTool(Tool):
         self.exclude_patterns = []
         self.include_venv = False
 
-    def check(self, paths: List[str]) -> Tuple[bool, str]:
+    def check(self, paths: list[str]) -> tuple[bool, str]:
         """Check if imports would be sorted by isort."""
         # Base command
         cmd = ["isort", "--check-only"]
@@ -32,7 +31,7 @@ class IsortTool(Tool):
             venv_patterns = [
                 ".venv", "venv", "env", "ENV", 
                 "virtualenv", "virtual_env", "virtualenvs",
-                "site-packages"
+                "site-packages",
             ]
             skip_patterns.extend(venv_patterns)
         
@@ -63,7 +62,7 @@ class IsortTool(Tool):
             
             return False, output
 
-    def fix(self, paths: List[str]) -> Tuple[bool, str]:
+    def fix(self, paths: list[str]) -> tuple[bool, str]:
         """Sort imports with isort."""
         # Base command
         cmd = ["isort"]
@@ -76,7 +75,7 @@ class IsortTool(Tool):
             venv_patterns = [
                 ".venv", "venv", "env", "ENV", 
                 "virtualenv", "virtual_env", "virtualenvs",
-                "site-packages"
+                "site-packages",
             ]
             skip_patterns.extend(venv_patterns)
         

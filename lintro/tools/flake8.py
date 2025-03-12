@@ -3,7 +3,6 @@
 import os
 import re
 import subprocess
-from typing import List, Tuple
 
 from lintro.tools import Tool
 
@@ -20,7 +19,7 @@ class Flake8Tool(Tool):
         self.exclude_patterns = []
         self.include_venv = False
 
-    def check(self, paths: List[str]) -> Tuple[bool, str]:
+    def check(self, paths: list[str]) -> tuple[bool, str]:
         """Check files with Flake8."""
         # Base command
         cmd = ["flake8"]
@@ -33,7 +32,7 @@ class Flake8Tool(Tool):
             venv_patterns = [
                 ".venv", "venv", "env", "ENV", 
                 "virtualenv", "virtual_env", "virtualenvs",
-                "site-packages"
+                "site-packages",
             ]
             exclude_patterns.extend(venv_patterns)
         
@@ -63,6 +62,6 @@ class Flake8Tool(Tool):
             
             return False, output
 
-    def fix(self, paths: List[str]) -> Tuple[bool, str]:
+    def fix(self, paths: list[str]) -> tuple[bool, str]:
         """Flake8 cannot fix issues, only report them."""
         return False, "Flake8 cannot automatically fix issues. Run 'lintro check' to see issues." 

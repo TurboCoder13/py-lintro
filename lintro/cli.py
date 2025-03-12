@@ -5,7 +5,6 @@ import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Optional, TextIO, Tuple
 
 import click
 try:
@@ -45,7 +44,7 @@ def count_issues(output: str, tool_name: str) -> int:
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
 
 
-def print_tool_header(tool_name: str, action: str, file: Optional[TextIO] = None, use_table_format: bool = False):
+def print_tool_header(tool_name: str, action: str, file: TextIO | None = None, use_table_format: bool = False):
     """Print a header for a tool's output."""
     if not use_table_format:
         # Standard format
@@ -66,7 +65,7 @@ def print_tool_header(tool_name: str, action: str, file: Optional[TextIO] = None
             click.secho(header, fg="blue", bold=True, file=file)
 
 
-def print_tool_footer(success: bool, issues_count: int, file: Optional[TextIO] = None, use_table_format: bool = False):
+def print_tool_footer(success: bool, issues_count: int, file: TextIO | None = None, use_table_format: bool = False):
     """Print a footer for a tool's output."""
     if not use_table_format:
         # Standard format
@@ -101,7 +100,7 @@ def print_tool_footer(success: bool, issues_count: int, file: Optional[TextIO] =
             click.secho(f"{'-' * 60}", fg="blue", file=file)
 
 
-def print_summary(results: List[ToolResult], action: str, file: Optional[TextIO] = None, use_table_format: bool = False):
+def print_summary(results: list[ToolResult], action: str, file: TextIO | None = None, use_table_format: bool = False):
     """Print a summary of all tool results."""
     total_issues = sum(result.issues_count for result in results)
     
@@ -193,7 +192,7 @@ def print_summary(results: List[ToolResult], action: str, file: Optional[TextIO]
             click.secho(f"{'=' * 60}", fg="blue", file=file)
 
 
-def parse_tool_list(tools_str: Optional[str]) -> List[str]:
+def parse_tool_list(tools_str: str | None) -> list[str]:
     """Parse a comma-separated list of tool names."""
     if not tools_str:
         return []
@@ -734,7 +733,7 @@ def cli():
     default="auto",
     help="How to group issues in the output (file, code, none, or auto)",
 )
-def check(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str], table_format: bool, group_by: str):
+def check(paths: list[str], tools: str | None, exclude: str | None, include_venv: bool, output: str | None, table_format: bool, group_by: str):
     """Check code for issues without fixing them."""
     if not paths:
         paths = [os.getcwd()]
@@ -851,7 +850,7 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
     default="auto",
     help="How to group issues in the output (file, code, none, or auto)",
 )
-def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str], table_format: bool, group_by: str):
+def fmt(paths: list[str], tools: str | None, exclude: str | None, include_venv: bool, output: str | None, table_format: bool, group_by: str):
     """Format code and fix issues where possible."""
     if not paths:
         paths = [os.getcwd()]
@@ -943,7 +942,7 @@ def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_
     type=click.Path(dir_okay=False, writable=True),
     help="Output file to write results to",
 )
-def list_tools(output: Optional[str]):
+def list_tools(output: str | None):
     """List all available tools."""
     # Open output file if specified
     output_file = None
