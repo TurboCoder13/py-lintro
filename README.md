@@ -154,6 +154,23 @@ You can combine the table format with the output file option:
 lintro check --table-format --output report.txt [PATH]
 ```
 
+### Group issues in the output
+
+When using table formatting, you can choose how to group the issues in the output using the `--group-by` option:
+
+```bash
+# Group by file (default)
+lintro check --table-format --group-by file [PATH]
+
+# Group by error code
+lintro check --table-format --group-by code [PATH]
+
+# No grouping (flat list)
+lintro check --table-format --group-by none [PATH]
+```
+
+Grouping by file is useful when you want to fix issues file by file, while grouping by error code is helpful when you want to fix similar issues across multiple files.
+
 ## Configuration
 
 ### Tool Configuration
