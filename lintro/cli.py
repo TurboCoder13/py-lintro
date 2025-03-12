@@ -8,6 +8,11 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, TextIO, Tuple
 
 import click
+try:
+    from tabulate import tabulate
+    TABULATE_AVAILABLE = True
+except ImportError:
+    TABULATE_AVAILABLE = False
 
 from lintro import __version__
 from lintro.tools import AVAILABLE_TOOLS, CHECK_TOOLS, FIX_TOOLS
@@ -145,7 +150,31 @@ def get_relative_path(file_path: str) -> str:
         return file_path
 
 
-def format_tool_output(output: str, tool_name: str) -> str:
+# Add a function to format output as a table
+def format_as_table(issues):
+    """Format issues as a table using tabulate if available."""
+    if not TABULATE_AVAILABLE:
+        return None
+    
+    # Convert issues to a list of lists for tabulate
+    table_data = []
+    for issue in issues:
+        table_data.append([
+            issue["path"],
+            issue["line"],
+            issue["code"],
+            issue["message"]
+        ])
+    
+    # Format as a table with headers
+    return tabulate(
+        table_data,
+        headers=["File", "Line", "Code", "Message"],
+        tablefmt="pretty"
+    )
+
+
+def format_tool_output(output: str, tool_name: str, use_table_format: bool = False) -> str:
     """Format the output of a tool to be more readable and standardized."""
     if not output:
         return "No output"
@@ -155,29 +184,29 @@ def format_tool_output(output: str, tool_name: str) -> str:
     
     # Standardize output format
     formatted_lines = []
+    issues = []
+    
+    # First pass to collect all file paths for determining optimal column width
+    file_paths = []
+    line_numbers = []
+    error_codes = []
     
     if tool_name == "black":
-        # Extract file paths from Black output
         for line in output.splitlines():
             if "would reformat" in line:
                 file_path = line.replace("would reformat ", "").strip()
                 rel_path = get_relative_path(file_path)
-                # Convert to standardized format with color and alignment
-                formatted_lines.append(
-                    click.style(f"- {rel_path:<50}", fg="yellow") + 
-                    click.style(f" : {'N/A':<8}", fg="blue") +
-                    click.style(f" : {'FORMAT':<8}", fg="red") + 
-                    f" : formatting required"
-                )
-            elif "All done!" in line or "Oh no!" in line or "files would be" in line:
-                # Keep summary lines with color
-                if "All done!" in line:
-                    formatted_lines.append(click.style(line, fg="green"))
-                else:
-                    formatted_lines.append(click.style(line, fg="red"))
-            elif line.strip() and not line.startswith("---"):
-                # Keep other non-empty, non-separator lines
-                formatted_lines.append(line)
+                file_paths.append(rel_path)
+                line_numbers.append("N/A")
+                error_codes.append("FORMAT")
+                
+                # Add to issues list for table formatting
+                issues.append({
+                    "path": rel_path,
+                    "line": "N/A",
+                    "code": "FORMAT",
+                    "message": "formatting required"
+                })
     
     elif tool_name == "isort":
         # Extract file paths from isort output
@@ -187,25 +216,25 @@ def format_tool_output(output: str, tool_name: str) -> str:
                 parts = line.split(":", 1)
                 file_path = parts[0].strip()
                 rel_path = get_relative_path(file_path)
-                # Convert to standardized format with color and alignment
-                formatted_lines.append(
-                    click.style(f"- {rel_path:<50}", fg="yellow") + 
-                    click.style(f" : {'N/A':<8}", fg="blue") +
-                    click.style(f" : {'ISORT':<8}", fg="red") + 
-                    f" : import sorting required"
-                )
+                file_paths.append(rel_path)
+                line_numbers.append("N/A")
+                error_codes.append("ISORT")
+                
+                # Add to issues list for table formatting
+                issues.append({
+                    "path": rel_path,
+                    "line": "N/A",
+                    "code": "ISORT",
+                    "message": "import sorting required"
+                })
             elif "Skipped" in line and "files" in line:
                 # Count skipped files but don't include in issues
                 skipped_match = re.search(r"Skipped (\d+) files", line)
                 if skipped_match:
                     skipped_files = int(skipped_match.group(1))
-                formatted_lines.append(click.style(f"Note: {line}", fg="blue"))
-            elif line.strip() and not line.startswith("---"):
-                # Keep other non-empty, non-separator lines
-                formatted_lines.append(line)
         
         # If we only have skipped files and no actual errors, return success message
-        if not formatted_lines and skipped_files > 0:
+        if not file_paths and skipped_files > 0:
             return click.style("All imports are correctly sorted.", fg="green")
     
     elif tool_name == "flake8":
@@ -220,11 +249,108 @@ def format_tool_output(output: str, tool_name: str) -> str:
                 message = match.group(5)
                 rel_path = get_relative_path(file_path)
                 
-                # Convert to standardized format with color and alignment
+                file_paths.append(rel_path)
+                line_numbers.append(line_num)
+                error_codes.append(error_code)
+                
+                # Add to issues list for table formatting
+                issues.append({
+                    "path": rel_path,
+                    "line": line_num,
+                    "code": error_code,
+                    "message": message
+                })
+    
+    # If tabulate is available, table format is requested, and we have issues, format as a table
+    if TABULATE_AVAILABLE and use_table_format and issues:
+        table = format_as_table(issues)
+        if table:
+            # Add any summary lines
+            if tool_name == "black":
+                for line in output.splitlines():
+                    if "All done!" in line or "Oh no!" in line or "files would be" in line:
+                        if "All done!" in line:
+                            table += "\n" + click.style(line, fg="green")
+                        else:
+                            table += "\n" + click.style(line, fg="red")
+            
+            # Add any skipped files notes for isort
+            if tool_name == "isort" and skipped_files > 0:
+                table += "\n" + click.style(f"Note: Skipped {skipped_files} files", fg="blue")
+            
+            return table
+    
+    # Calculate optimal column widths (min 10, max 60)
+    path_width = max([len(p) for p in file_paths] + [10]) if file_paths else 30
+    path_width = min(path_width + 2, 60)  # Add some padding but cap at 60
+    
+    line_width = max([len(l) for l in line_numbers] + [4]) if line_numbers else 6
+    line_width = min(line_width + 2, 10)  # Add some padding but cap at 10
+    
+    code_width = max([len(c) for c in error_codes] + [6]) if error_codes else 8
+    code_width = min(code_width + 2, 12)  # Add some padding but cap at 12
+    
+    # Second pass to format with calculated widths
+    if tool_name == "black":
+        for line in output.splitlines():
+            if "would reformat" in line:
+                file_path = line.replace("would reformat ", "").strip()
+                rel_path = get_relative_path(file_path)
+                # Convert to standardized format with color and dynamic alignment
                 formatted_lines.append(
-                    click.style(f"- {rel_path:<50}", fg="yellow") + 
-                    click.style(f" : {line_num:<8}", fg="blue") +
-                    click.style(f" : {error_code:<8}", fg="red") + 
+                    click.style(f"- {rel_path:<{path_width}}", fg="yellow") + 
+                    click.style(f" : {'N/A':<{line_width}}", fg="blue") +
+                    click.style(f" : {'FORMAT':<{code_width}}", fg="red") + 
+                    f" : formatting required"
+                )
+            elif "All done!" in line or "Oh no!" in line or "files would be" in line:
+                # Keep summary lines with color
+                if "All done!" in line:
+                    formatted_lines.append(click.style(line, fg="green"))
+                else:
+                    formatted_lines.append(click.style(line, fg="red"))
+            elif line.strip() and not line.startswith("---"):
+                # Keep other non-empty, non-separator lines
+                formatted_lines.append(line)
+    
+    elif tool_name == "isort":
+        # Extract file paths from isort output
+        for line in output.splitlines():
+            if "ERROR:" in line and ":" in line:
+                parts = line.split(":", 1)
+                file_path = parts[0].strip()
+                rel_path = get_relative_path(file_path)
+                # Convert to standardized format with color and dynamic alignment
+                formatted_lines.append(
+                    click.style(f"- {rel_path:<{path_width}}", fg="yellow") + 
+                    click.style(f" : {'N/A':<{line_width}}", fg="blue") +
+                    click.style(f" : {'ISORT':<{code_width}}", fg="red") + 
+                    f" : import sorting required"
+                )
+            elif "Skipped" in line and "files" in line:
+                # Count skipped files but don't include in issues
+                formatted_lines.append(click.style(f"Note: {line}", fg="blue"))
+            elif line.strip() and not line.startswith("---"):
+                # Keep other non-empty, non-separator lines
+                formatted_lines.append(line)
+    
+    elif tool_name == "flake8":
+        # Extract and format flake8 errors
+        for line in output.splitlines():
+            # Match flake8 output format: file:line:col: code message
+            match = re.match(r"(.+):(\d+):(\d+): ([A-Z]\d{3}) (.+)", line)
+            if match:
+                file_path = match.group(1)
+                line_num = match.group(2)
+                error_code = match.group(4)
+                message = match.group(5)
+                rel_path = get_relative_path(file_path)
+                
+                # Convert to standardized format with color and dynamic alignment
+                formatted_lines.append(
+                    click.style(f"- {rel_path:<{path_width}}", fg="yellow") + 
+                    click.style(f" : {line_num:<{line_width}}", fg="blue") +
+                    click.style(f" : {error_code:<{code_width}}", fg="red") + 
                     f" : {message}"
                 )
             elif line.strip() and not line.startswith("---"):
@@ -265,10 +391,21 @@ def cli():
     type=click.Path(dir_okay=False, writable=True),
     help="Output file to write results to",
 )
-def check(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str]):
+@click.option(
+    "--table-format",
+    is_flag=True,
+    help="Use table formatting for output (requires tabulate package)",
+)
+def check(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str], table_format: bool):
     """Check code for issues without fixing them."""
     if not paths:
         paths = [os.getcwd()]
+    
+    # Check if table format is requested but tabulate is not available
+    if table_format and not TABULATE_AVAILABLE:
+        click.echo("Warning: Table formatting requested but tabulate package is not installed.", err=True)
+        click.echo("Install with: pip install tabulate", err=True)
+        table_format = False
     
     tool_list = parse_tool_list(tools)
     tools_to_run = {
@@ -311,7 +448,7 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
             
             # Count issues and format output
             issues_count = count_issues(output_text, name)
-            formatted_output = format_tool_output(output_text, name)
+            formatted_output = format_tool_output(output_text, name, table_format)
             
             # Always display in console, and also in file if specified
             click.echo(formatted_output)
@@ -364,10 +501,21 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
     type=click.Path(dir_okay=False, writable=True),
     help="Output file to write results to",
 )
-def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str]):
+@click.option(
+    "--table-format",
+    is_flag=True,
+    help="Use table formatting for output (requires tabulate package)",
+)
+def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str], table_format: bool):
     """Format code and fix issues where possible."""
     if not paths:
         paths = [os.getcwd()]
+    
+    # Check if table format is requested but tabulate is not available
+    if table_format and not TABULATE_AVAILABLE:
+        click.echo("Warning: Table formatting requested but tabulate package is not installed.", err=True)
+        click.echo("Install with: pip install tabulate", err=True)
+        table_format = False
     
     tool_list = parse_tool_list(tools)
     tools_to_run = {
@@ -410,7 +558,7 @@ def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_
             
             # Count issues and format output
             issues_count = count_issues(output_text, name)
-            formatted_output = format_tool_output(output_text, name)
+            formatted_output = format_tool_output(output_text, name, table_format)
             
             # Always display in console, and also in file if specified
             click.echo(formatted_output)
