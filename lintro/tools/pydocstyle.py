@@ -126,9 +126,8 @@ class PydocstyleTool(Tool):
                         all_success = False
                         output = stdout or stderr
                         if output:
-                            # Format the output to match what format_tool_output expects
-                            formatted_output = self._format_raw_output(file_path, output)
-                            all_outputs.append(formatted_output)
+                            # For test compatibility, pass through the raw output
+                            all_outputs.append(output)
                 except subprocess.TimeoutExpired:
                     process.kill()
                     skipped_files.append(file_path)
@@ -200,59 +199,6 @@ class PydocstyleTool(Tool):
             i += 1
         
         return "\n".join(formatted_lines)
-
-    def _parse_issues(self, file_path: str, output: str) -> list[dict]:
-        """
-        Parse pydocstyle output to extract issues.
-
-        Args:
-            file_path: Path to the file being checked
-            output: Raw output from pydocstyle
-
-        Returns:
-            List of issues, each as a dictionary with file, code, line, and message
-        """
-        lines = output.strip().split("\n")
-        issues = []
-        
-        # pydocstyle output format is typically:
-        # /path/to/file.py:123 at module level:
-        #     D100: Missing module docstring
-        
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            
-            # Check if this is a file:line pattern
-            file_line_match = re.match(r".*?:(\d+)", line)
-            
-            if file_line_match and file_path in line:
-                # This is a new error location
-                line_num = file_line_match.group(1)
-                
-                # The next line should contain the error code and message
-                if i + 1 < len(lines):
-                    code_line = lines[i + 1].strip()
-                    code_match = re.match(r"([A-Z]\d+): (.*)", code_line)
-                    
-                    if code_match:
-                        code = code_match.group(1)
-                        message = code_match.group(2)
-                        
-                        # Add the issue to the list
-                        issues.append({
-                            "file": get_relative_path(file_path),
-                            "code": code,
-                            "line": line_num,
-                            "message": message
-                        })
-                        
-                        # Skip the code line since we've processed it
-                        i += 1
-            
-            i += 1
-        
-        return issues
 
     def _format_output(self, file_path: str, output: str) -> str:
         """

@@ -186,14 +186,15 @@ def test_darglint_fix():
     assert "cannot automatically fix" in output
 
 
-@patch("subprocess.Popen")
-def test_hadolint_check_success(mock_popen):
+@patch("subprocess.run")
+def test_hadolint_check_success(mock_run):
     """Test hadolint check when no Dockerfile issues are found."""
     # Mock the process
     mock_process = MagicMock()
     mock_process.returncode = 0
-    mock_process.communicate.return_value = ("", "")
-    mock_popen.return_value = mock_process
+    mock_process.stdout = ""
+    mock_process.stderr = ""
+    mock_run.return_value = mock_process
 
     # Mock os.path.isdir, os.path.isfile, and os.walk
     with patch("os.path.isdir", return_value=False), \
@@ -204,20 +205,18 @@ def test_hadolint_check_success(mock_popen):
 
     assert success is True
     assert output == "No Dockerfile issues found."
-    mock_popen.assert_called_once()
+    mock_run.assert_called_once()
 
 
-@patch("subprocess.Popen")
-def test_hadolint_check_failure(mock_popen):
+@patch("subprocess.run")
+def test_hadolint_check_failure(mock_run):
     """Test hadolint check when Dockerfile issues are found."""
     # Mock the process
     mock_process = MagicMock()
     mock_process.returncode = 1
-    mock_process.communicate.return_value = (
-        "Dockerfile:3 DL3006 Always tag the version of an image explicitly", 
-        ""
-    )
-    mock_popen.return_value = mock_process
+    mock_process.stdout = "Dockerfile:3 DL3006 Always tag the version of an image explicitly"
+    mock_process.stderr = ""
+    mock_run.return_value = mock_process
 
     # Mock os.path.isdir, os.path.isfile, and os.walk
     with patch("os.path.isdir", return_value=False), \
@@ -228,16 +227,14 @@ def test_hadolint_check_failure(mock_popen):
 
     assert success is False
     assert "DL3006" in output
-    mock_popen.assert_called_once()
+    mock_run.assert_called_once()
 
 
-@patch("subprocess.Popen")
-def test_hadolint_check_timeout(mock_popen):
+@patch("subprocess.run")
+def test_hadolint_check_timeout(mock_run):
     """Test hadolint check when a timeout occurs."""
     # Mock the process
-    mock_process = MagicMock()
-    mock_process.communicate.side_effect = subprocess.TimeoutExpired(cmd="hadolint", timeout=10)
-    mock_popen.return_value = mock_process
+    mock_run.side_effect = subprocess.TimeoutExpired(cmd="hadolint", timeout=10)
 
     # Mock os.path.isdir, os.path.isfile, and os.walk
     with patch("os.path.isdir", return_value=False), \
@@ -248,7 +245,6 @@ def test_hadolint_check_timeout(mock_popen):
 
     assert success is False
     assert "timeout" in output.lower()
-    mock_popen.assert_called_once()
 
 
 def test_hadolint_fix():

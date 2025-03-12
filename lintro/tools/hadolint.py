@@ -3,9 +3,10 @@
 import os
 import subprocess
 import shutil
+from lintro.tools import Tool, ToolConfig
 
 
-class HadolintTool:
+class HadolintTool(Tool):
     """Hadolint Dockerfile linter integration."""
 
     name = "hadolint"
@@ -13,26 +14,26 @@ class HadolintTool:
     can_fix = False  # Hadolint can only check, not fix
 
     # Configure tool with conflict information
-    config = {
-        "priority": 45,  # Similar priority to other linters
-        "conflicts_with": [],  # No direct conflicts
+    config = ToolConfig(
+        priority=45,  # Similar priority to other linters
+        conflicts_with=[],  # No direct conflicts
         # Only applies to Dockerfiles
-        "file_patterns": [
+        file_patterns=[
             "Dockerfile*",
             "*.dockerfile",
             "*.Dockerfile"
         ],
-        "options": {
+        options={
             "timeout": 10,  # Default timeout in seconds per file
         },
-    }
+    )
 
     def __init__(self):
         """Initialize the tool with default options."""
         self.exclude_patterns = []
         self.include_venv = False
         # Get timeout from config or use default
-        self.timeout = self.config["options"].get("timeout", 10)
+        self.timeout = self.config.options.get("timeout", 10)
         self._check_hadolint_available()
 
     def _check_hadolint_available(self):
@@ -53,8 +54,7 @@ class HadolintTool:
             include_venv: Whether to include virtual environment directories
             timeout: Timeout in seconds per file (default: 10)
         """
-        self.exclude_patterns = exclude_patterns or []
-        self.include_venv = include_venv
+        super().set_options(exclude_patterns, include_venv)
         if timeout is not None:
             self.timeout = timeout
 
@@ -122,26 +122,25 @@ class HadolintTool:
                 cmd = ["hadolint", file_path]
 
                 # Run with timeout
-                process = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True
-                )
-
                 try:
-                    stdout, stderr = process.communicate(timeout=self.timeout)
-                    if process.returncode == 0:
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=self.timeout,
+                        check=False,
+                    )
+                    
+                    if result.returncode == 0:
                         # No issues found in this file
                         pass
                     else:
                         # Issues found
                         success = False
-                        output = stdout or stderr
+                        output = result.stdout or result.stderr
                         if output:
                             all_outputs.append(output)
                 except subprocess.TimeoutExpired:
-                    process.kill()
                     skipped_files.append(file_path)
                     success = False  # Mark as failed if any file times out
                     timeout_msg = f"Skipped {file_path} (timeout after {self.timeout}s)"
