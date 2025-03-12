@@ -1,5 +1,7 @@
 """Tests for Lintro tools."""
 
+import os
+import subprocess
 from unittest.mock import MagicMock, patch
 
 from lintro.tools import Tool
@@ -99,41 +101,66 @@ def test_flake8_fix():
     assert "cannot automatically fix" in output
 
 
-@patch("subprocess.run")
-def test_darglint_check_success(mock_run):
+@patch("subprocess.Popen")
+def test_darglint_check_success(mock_popen):
     """Test darglint check when no docstring issues are found."""
+    # Mock the process
     mock_process = MagicMock()
-    mock_process.stdout = ""
-    mock_run.return_value = mock_process
+    mock_process.returncode = 0
+    mock_process.communicate.return_value = ("", "")
+    mock_popen.return_value = mock_process
 
-    tool = DarglintTool()
-    success, output = tool.check(["test.py"])
+    # Mock os.path.isdir and os.path.isfile
+    with patch("os.path.isdir", return_value=False), \
+         patch("os.path.isfile", return_value=True):
+        tool = DarglintTool()
+        success, output = tool.check(["test.py"])
 
     assert success is True
     assert output == "No docstring issues found."
-    mock_run.assert_called_once()
+    mock_popen.assert_called_once()
 
 
-@patch("subprocess.run")
-def test_darglint_check_failure(mock_run):
+@patch("subprocess.Popen")
+def test_darglint_check_failure(mock_popen):
     """Test darglint check when docstring issues are found."""
-    # Use CalledProcessError instead of Exception to match what subprocess.run raises
-    from subprocess import CalledProcessError
-
-    error = CalledProcessError(
-        1,
-        ["darglint"],
-        output="test.py:10:0: DAR101 Missing parameter(s) in Docstring: ['param']",
-        stderr="",
+    # Mock the process
+    mock_process = MagicMock()
+    mock_process.returncode = 1
+    mock_process.communicate.return_value = (
+        "test.py:10:0: DAR101 Missing parameter(s) in Docstring: ['param']", 
+        ""
     )
-    mock_run.side_effect = error
+    mock_popen.return_value = mock_process
 
-    tool = DarglintTool()
-    success, output = tool.check(["test.py"])
+    # Mock os.path.isdir and os.path.isfile
+    with patch("os.path.isdir", return_value=False), \
+         patch("os.path.isfile", return_value=True):
+        tool = DarglintTool()
+        success, output = tool.check(["test.py"])
 
     assert success is False
     assert "DAR101" in output
-    mock_run.assert_called_once()
+    mock_popen.assert_called_once()
+
+
+@patch("subprocess.Popen")
+def test_darglint_check_timeout(mock_popen):
+    """Test darglint check when a timeout occurs."""
+    # Mock the process
+    mock_process = MagicMock()
+    mock_process.communicate.side_effect = subprocess.TimeoutExpired(cmd="darglint", timeout=10)
+    mock_popen.return_value = mock_process
+
+    # Mock os.path.isdir and os.path.isfile
+    with patch("os.path.isdir", return_value=False), \
+         patch("os.path.isfile", return_value=True):
+        tool = DarglintTool()
+        success, output = tool.check(["test.py"])
+
+    assert success is False
+    assert "timeout" in output.lower()
+    mock_popen.assert_called_once()
 
 
 def test_darglint_fix():
@@ -145,41 +172,69 @@ def test_darglint_fix():
     assert "cannot automatically fix" in output
 
 
-@patch("subprocess.run")
-def test_hadolint_check_success(mock_run):
+@patch("subprocess.Popen")
+def test_hadolint_check_success(mock_popen):
     """Test hadolint check when no Dockerfile issues are found."""
+    # Mock the process
     mock_process = MagicMock()
-    mock_process.stdout = ""
-    mock_run.return_value = mock_process
+    mock_process.returncode = 0
+    mock_process.communicate.return_value = ("", "")
+    mock_popen.return_value = mock_process
 
-    tool = HadolintTool()
-    success, output = tool.check(["Dockerfile"])
+    # Mock os.path.isdir, os.path.isfile, and os.walk
+    with patch("os.path.isdir", return_value=False), \
+         patch("os.path.isfile", return_value=True), \
+         patch("os.walk", return_value=[]):
+        tool = HadolintTool()
+        success, output = tool.check(["Dockerfile"])
 
     assert success is True
     assert output == "No Dockerfile issues found."
-    mock_run.assert_called_once()
+    mock_popen.assert_called_once()
 
 
-@patch("subprocess.run")
-def test_hadolint_check_failure(mock_run):
+@patch("subprocess.Popen")
+def test_hadolint_check_failure(mock_popen):
     """Test hadolint check when Dockerfile issues are found."""
-    # Use CalledProcessError instead of Exception to match what subprocess.run raises
-    from subprocess import CalledProcessError
-
-    error = CalledProcessError(
-        1,
-        ["hadolint"],
-        output="Dockerfile:3 DL3006 Always tag the version of an image explicitly",
-        stderr="",
+    # Mock the process
+    mock_process = MagicMock()
+    mock_process.returncode = 1
+    mock_process.communicate.return_value = (
+        "Dockerfile:3 DL3006 Always tag the version of an image explicitly", 
+        ""
     )
-    mock_run.side_effect = error
+    mock_popen.return_value = mock_process
 
-    tool = HadolintTool()
-    success, output = tool.check(["Dockerfile"])
+    # Mock os.path.isdir, os.path.isfile, and os.walk
+    with patch("os.path.isdir", return_value=False), \
+         patch("os.path.isfile", return_value=True), \
+         patch("os.walk", return_value=[]):
+        tool = HadolintTool()
+        success, output = tool.check(["Dockerfile"])
 
     assert success is False
     assert "DL3006" in output
-    mock_run.assert_called_once()
+    mock_popen.assert_called_once()
+
+
+@patch("subprocess.Popen")
+def test_hadolint_check_timeout(mock_popen):
+    """Test hadolint check when a timeout occurs."""
+    # Mock the process
+    mock_process = MagicMock()
+    mock_process.communicate.side_effect = subprocess.TimeoutExpired(cmd="hadolint", timeout=10)
+    mock_popen.return_value = mock_process
+
+    # Mock os.path.isdir, os.path.isfile, and os.walk
+    with patch("os.path.isdir", return_value=False), \
+         patch("os.path.isfile", return_value=True), \
+         patch("os.walk", return_value=[]):
+        tool = HadolintTool()
+        success, output = tool.check(["Dockerfile"])
+
+    assert success is False
+    assert "timeout" in output.lower()
+    mock_popen.assert_called_once()
 
 
 def test_hadolint_fix():
