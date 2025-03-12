@@ -2,7 +2,6 @@
 
 import re
 import subprocess
-from typing import List, Tuple
 
 from lintro.tools import Tool
 
@@ -19,7 +18,7 @@ class BlackTool(Tool):
         self.exclude_patterns = []
         self.include_venv = False
 
-    def check(self, paths: List[str]) -> Tuple[bool, str]:
+    def check(self, paths: list[str]) -> tuple[bool, str]:
         """Check if files would be reformatted by Black."""
         # Base command
         cmd = ["black", "--check"]
@@ -32,7 +31,7 @@ class BlackTool(Tool):
             venv_patterns = [
                 r"\.venv", "venv", "env", "ENV", 
                 "virtualenv", "virtual_env", "virtualenvs",
-                "site-packages"
+                "site-packages",
             ]
             exclude_patterns.extend(venv_patterns)
         
@@ -62,7 +61,7 @@ class BlackTool(Tool):
             
             return False, output
 
-    def fix(self, paths: List[str]) -> Tuple[bool, str]:
+    def fix(self, paths: list[str]) -> tuple[bool, str]:
         """Format files with Black."""
         # Base command
         cmd = ["black"]
@@ -75,7 +74,7 @@ class BlackTool(Tool):
             venv_patterns = [
                 r"\.venv", "venv", "env", "ENV", 
                 "virtualenv", "virtual_env", "virtualenvs",
-                "site-packages"
+                "site-packages",
             ]
             exclude_patterns.extend(venv_patterns)
         

@@ -2,7 +2,6 @@
 
 import os
 import sys
-from typing import Any, Dict, List
 
 
 def badly_formatted_function(x: int, y: int) -> int:
@@ -15,7 +14,7 @@ class BadlyFormattedClass:
     def __init__(self, name: str):
         self.name = name
 
-    def do_something(self, items: List[str]) -> Dict[str, Any]:
+    def do_something(self, items: list[str]) -> dict[str, any]:
         result = {}
         for item in items:
             result[item] = len(item)
