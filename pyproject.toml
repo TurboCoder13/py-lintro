@@ -27,6 +27,9 @@ dependencies = [
 [project.scripts]
 lintro = "lintro.cli:main"
 
+[tool.setuptools]
+packages = ["lintro", "lintro.tools"]
+
 [tool.black]
 line-length = 88
 target-version = ["py38"]
