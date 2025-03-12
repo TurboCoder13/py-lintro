@@ -1,4 +1,4 @@
-"""Darglint docstring linter integration."""
+"""Pydocstyle docstring style checker integration."""
 
 import os
 import re
@@ -9,20 +9,21 @@ from pathlib import Path
 from lintro.tools import Tool, ToolConfig
 
 
-class DarglintTool(Tool):
-    """Darglint docstring linter integration."""
+class PydocstyleTool(Tool):
+    """Pydocstyle docstring style checker integration."""
 
-    name = "darglint"
-    description = "Python docstring linter that checks docstring style and completeness"
-    can_fix = False  # Darglint can only check, not fix
+    name = "pydocstyle"
+    description = "Python docstring style checker that checks compliance with PEP 257"
+    can_fix = False  # Pydocstyle can only check, not fix
 
     # Configure tool with conflict information
     config = ToolConfig(
-        priority=45,  # Lower priority than formatters, slightly lower than flake8
+        priority=45,  # Similar priority to other linters
         conflicts_with=[],  # No direct conflicts
         file_patterns=["*.py"],  # Only applies to Python files
         options={
             "timeout": 10,  # Default timeout in seconds per file
+            "convention": "pep257",  # Default convention
         },
     )
 
@@ -30,13 +31,15 @@ class DarglintTool(Tool):
         """Initialize the tool with default options."""
         self.exclude_patterns = []
         self.include_venv = False
-        self.timeout = self.config.options.get("timeout", 10)  # Get timeout from config or use default
+        self.timeout = self.config.options.get("timeout", 10)
+        self.convention = self.config.options.get("convention", "pep257")
 
     def set_options(
         self,
         exclude_patterns: list[str] | None = None,
         include_venv: bool = False,
         timeout: int | None = None,
+        convention: str | None = None,
     ):
         """
         Set options for the tool.
@@ -45,18 +48,21 @@ class DarglintTool(Tool):
             exclude_patterns: List of patterns to exclude
             include_venv: Whether to include virtual environment directories
             timeout: Timeout in seconds per file (default: 10)
+            convention: Docstring style convention to use (default: pep257)
         """
         self.exclude_patterns = exclude_patterns or []
         self.include_venv = include_venv
         if timeout is not None:
             self.timeout = timeout
+        if convention is not None:
+            self.convention = convention
 
     def check(
         self,
         paths: list[str],
     ) -> tuple[bool, str]:
         """
-        Check files with Darglint.
+        Check files with Pydocstyle.
 
         Args:
             paths: List of file or directory paths to check
@@ -87,12 +93,15 @@ class DarglintTool(Tool):
                 if not self._should_exclude(path):
                     python_files.append(path)
         
+        if not python_files:
+            return True, "No Python files found in the specified paths."
+        
         # Process each file with a timeout
         for file_path in python_files:
             processed_files += 1
             try:
                 # Base command for a single file
-                cmd = ["darglint", file_path]
+                cmd = ["pydocstyle", "--convention", self.convention, file_path]
                 
                 # Run with timeout
                 process = subprocess.Popen(
@@ -125,7 +134,7 @@ class DarglintTool(Tool):
         
         # Prepare the final output
         if not all_outputs:
-            return True, "No docstring issues found."
+            return True, "No docstring style issues found."
         else:
             output = "\n".join(all_outputs)
             if skipped_files:
@@ -164,17 +173,17 @@ class DarglintTool(Tool):
         paths: list[str],
     ) -> tuple[bool, str]:
         """
-        Darglint cannot fix issues, only report them.
+        Pydocstyle cannot fix issues, only report them.
 
         Args:
             paths: List of file or directory paths to fix
 
         Returns:
             Tuple of (success, output)
-            - success: False as Darglint cannot fix issues
-            - output: Message indicating that Darglint cannot fix issues
+            - success: False as Pydocstyle cannot fix issues
+            - output: Message indicating that Pydocstyle cannot fix issues
         """
         return (
             False,
-            "Darglint cannot automatically fix issues. Run 'lintro check' to see issues.",
+            "Pydocstyle cannot automatically fix issues. Run 'lintro check' to see issues.",
         ) 

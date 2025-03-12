@@ -1,0 +1,5 @@
+[pydocstyle]
+convention = pep257
+match = *.py
+match_dir = [^\.].*
+ignore = .venv/*,venv/*,env/*,ENV/*,site-packages/*,node_modules/*

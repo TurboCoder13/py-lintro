@@ -65,6 +65,15 @@ def count_issues(
     elif tool_name == "hadolint":
         # Count lines with hadolint error codes (e.g., DL3000, SC2086)
         return len(re.findall(r"(DL\d{4}|SC\d{4})", output))
+    elif tool_name == "pydocstyle":
+        # Count lines with pydocstyle error codes (e.g., D100, D101)
+        return len(re.findall(r"D\d{3}", output))
+    elif tool_name == "prettier":
+        # Count "[warn]" lines for prettier
+        if "All files are formatted correctly." in output:
+            return 0
+        # Count the number of files that would be formatted
+        return len(re.findall(r"would be formatted", output))
     else:
         # Generic fallback: count lines that look like issues
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
@@ -548,7 +557,10 @@ def format_tool_output(
         return "No output"
 
     # Special case for "No issues found" messages
-    if output.strip() == "No docstring issues found." or output.strip() == "No Dockerfile issues found.":
+    if (output.strip() == "No docstring issues found." or 
+        output.strip() == "No Dockerfile issues found." or
+        output.strip() == "No docstring style issues found." or
+        output.strip() == "All files are formatted correctly."):
         return output
 
     # Remove trailing whitespace and ensure ending with newline
@@ -716,6 +728,73 @@ def format_tool_output(
                 # Handle case where no Dockerfile files are found
                 return "No Dockerfile files found in the specified paths."
 
+    elif tool_name == "pydocstyle":
+        # Extract and format pydocstyle errors
+        for line in output.splitlines():
+            # Match pydocstyle output format: file:line [code] message
+            match = re.match(r"(.+):(\d+).*?([D]\d{3})(.*)", line)
+            if match:
+                file_path = match.group(1)
+                line_num = match.group(2)
+                error_code = match.group(3)
+                message = match.group(4).strip()
+                rel_path = get_relative_path(file_path)
+
+                file_paths.append(rel_path)
+                line_numbers.append(line_num)
+                error_codes.append(error_code)
+
+                # Add to issues list for table formatting
+                issues.append(
+                    {
+                        "path": rel_path,
+                        "line": line_num,
+                        "code": error_code,
+                        "message": message,
+                    }
+                )
+            elif "Skipped" in line and "timeout" in line:
+                # Handle skipped files due to timeout
+                match = re.match(r"Skipped (.+) \(timeout", line)
+                if match:
+                    file_path = match.group(1)
+                    rel_path = get_relative_path(file_path)
+                    file_paths.append(rel_path)
+                    line_numbers.append("N/A")
+                    error_codes.append("TIMEOUT")
+
+                    # Add to issues list for table formatting
+                    issues.append(
+                        {
+                            "path": rel_path,
+                            "line": "N/A",
+                            "code": "TIMEOUT",
+                            "message": "skipped due to timeout",
+                        }
+                    )
+
+    elif tool_name == "prettier":
+        # Extract and format prettier errors
+        for line in output.splitlines():
+            # Match prettier output format: [warn] file would be formatted
+            match = re.match(r"\[warn\] (.+) would be formatted", line)
+            if match:
+                file_path = match.group(1)
+                rel_path = get_relative_path(file_path)
+                file_paths.append(rel_path)
+                line_numbers.append("N/A")
+                error_codes.append("FORMAT")
+
+                # Add to issues list for table formatting
+                issues.append(
+                    {
+                        "path": rel_path,
+                        "line": "N/A",
+                        "code": "FORMAT",
+                        "message": "formatting required",
+                    }
+                )
+
     # If tabulate is available, table format is requested, and we have issues, format as a table
     if TABULATE_AVAILABLE and use_table_format and issues:
         table = format_as_table(issues, tool_name, group_by)
@@ -750,6 +829,15 @@ def format_tool_output(
 
             # Add any skipped files notes for hadolint
             if tool_name == "hadolint" and "Skipped" in output and "files due to timeout" in output:
+                match = re.search(r"Skipped (\d+) files due to timeout", output)
+                if match:
+                    skipped_count = match.group(1)
+                    table += "\n" + click.style(
+                        f"Note: Skipped {skipped_count} files due to timeout", fg="blue"
+                    )
+
+            # Add any skipped files notes for pydocstyle
+            if tool_name == "pydocstyle" and "Skipped" in output and "files due to timeout" in output:
                 match = re.search(r"Skipped (\d+) files due to timeout", output)
                 if match:
                     skipped_count = match.group(1)
@@ -886,6 +974,52 @@ def format_tool_output(
                 # Keep other non-empty, non-separator lines
                 formatted_lines.append(line)
 
+    elif tool_name == "pydocstyle":
+        # Format pydocstyle errors
+        for line in output.splitlines():
+            # Match pydocstyle output format: file:line [code] message
+            match = re.match(r"(.+):(\d+).*?([D]\d{3})(.*)", line)
+            if match:
+                file_path = match.group(1)
+                line_num = match.group(2)
+                error_code = match.group(3)
+                message = match.group(4).strip()
+                rel_path = get_relative_path(file_path)
+
+                # Convert to standardized format with color and dynamic alignment
+                formatted_lines.append(
+                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
+                    + click.style(f" : {line_num:<{line_width}}", fg="blue")
+                    + click.style(f" : {error_code:<{code_width}}", fg="red")
+                    + f" : {message}"
+                )
+            elif "Skipped" in line:
+                # Handle skipped files due to timeout
+                formatted_lines.append(click.style(line, fg="blue"))
+            elif line.strip() and not line.startswith("---"):
+                # Keep other non-empty, non-separator lines
+                formatted_lines.append(line)
+
+    elif tool_name == "prettier":
+        # Format prettier errors
+        for line in output.splitlines():
+            # Match prettier output format: [warn] file would be formatted
+            match = re.match(r"\[warn\] (.+) would be formatted", line)
+            if match:
+                file_path = match.group(1)
+                rel_path = get_relative_path(file_path)
+
+                # Convert to standardized format with color and dynamic alignment
+                formatted_lines.append(
+                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
+                    + click.style(f" : {'N/A':<{line_width}}", fg="blue")
+                    + click.style(f" : {'FORMAT':<{code_width}}", fg="red")
+                    + f" : formatting required"
+                )
+            elif line.strip() and not line.startswith("---"):
+                # Keep other non-empty, non-separator lines
+                formatted_lines.append(line)
+
     else:
         # For other tools, just return the original output
         return output
@@ -948,6 +1082,24 @@ def cli():
     default=None,
     help="Timeout in seconds for hadolint per file (default: 10)",
 )
+@click.option(
+    "--pydocstyle-timeout",
+    type=int,
+    default=None,
+    help="Timeout in seconds for pydocstyle per file (default: 10)",
+)
+@click.option(
+    "--pydocstyle-convention",
+    type=click.Choice(["pep257", "numpy", "google"]),
+    default=None,
+    help="Docstring style convention for pydocstyle (default: pep257)",
+)
+@click.option(
+    "--prettier-timeout",
+    type=int,
+    default=None,
+    help="Timeout in seconds for prettier (default: 30)",
+)
 def check(
     paths: list[str],
     tools: str | None,
@@ -959,6 +1111,9 @@ def check(
     ignore_conflicts: bool,
     darglint_timeout: int | None,
     hadolint_timeout: int | None,
+    pydocstyle_timeout: int | None,
+    pydocstyle_convention: str | None,
+    prettier_timeout: int | None,
 ):
     """Check files for issues without fixing them."""
     if not paths:
@@ -1037,6 +1192,25 @@ def check(
                     exclude_patterns=exclude_patterns,
                     include_venv=include_venv,
                     timeout=hadolint_timeout,
+                )
+            elif name == "pydocstyle":
+                options = {}
+                if pydocstyle_timeout is not None:
+                    options["timeout"] = pydocstyle_timeout
+                if pydocstyle_convention is not None:
+                    options["convention"] = pydocstyle_convention
+                
+                if options:
+                    tool.set_options(
+                        exclude_patterns=exclude_patterns,
+                        include_venv=include_venv,
+                        **options,
+                    )
+            elif name == "prettier" and prettier_timeout is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    timeout=prettier_timeout,
                 )
 
             print_tool_header(name, "check", output_file, table_format)
@@ -1135,6 +1309,24 @@ def check(
     default=None,
     help="Timeout in seconds for hadolint per file (default: 10)",
 )
+@click.option(
+    "--pydocstyle-timeout",
+    type=int,
+    default=None,
+    help="Timeout in seconds for pydocstyle per file (default: 10)",
+)
+@click.option(
+    "--pydocstyle-convention",
+    type=click.Choice(["pep257", "numpy", "google"]),
+    default=None,
+    help="Docstring style convention for pydocstyle (default: pep257)",
+)
+@click.option(
+    "--prettier-timeout",
+    type=int,
+    default=None,
+    help="Timeout in seconds for prettier (default: 30)",
+)
 def fmt(
     paths: list[str],
     tools: str | None,
@@ -1146,6 +1338,9 @@ def fmt(
     ignore_conflicts: bool,
     darglint_timeout: int | None,
     hadolint_timeout: int | None,
+    pydocstyle_timeout: int | None,
+    pydocstyle_convention: str | None,
+    prettier_timeout: int | None,
 ):
     """Format files to fix issues."""
     if not paths:
@@ -1222,6 +1417,25 @@ def fmt(
                     exclude_patterns=exclude_patterns,
                     include_venv=include_venv,
                     timeout=hadolint_timeout,
+                )
+            elif name == "pydocstyle":
+                options = {}
+                if pydocstyle_timeout is not None:
+                    options["timeout"] = pydocstyle_timeout
+                if pydocstyle_convention is not None:
+                    options["convention"] = pydocstyle_convention
+                
+                if options:
+                    tool.set_options(
+                        exclude_patterns=exclude_patterns,
+                        include_venv=include_venv,
+                        **options,
+                    )
+            elif name == "prettier" and prettier_timeout is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    timeout=prettier_timeout,
                 )
 
             print_tool_header(name, "fix", output_file, table_format)
