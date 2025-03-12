@@ -4,15 +4,22 @@ import os
 import re
 import subprocess
 
-from lintro.tools import Tool
+from lintro.tools import Tool, ToolConfig
 
 
 class Flake8Tool(Tool):
     """Flake8 linter integration."""
 
     name = "flake8"
-    description = "Python style guide enforcement"
+    description = "Python linter that checks for style and logical errors"
     can_fix = False  # Flake8 can only check, not fix
+
+    # Configure tool with conflict information
+    config = ToolConfig(
+        priority=50,  # Lower priority than formatters
+        conflicts_with=[],  # No direct conflicts, but should run after formatters
+        file_patterns=["*.py"],  # Only applies to Python files
+    )
 
     def __init__(self):
         """Initialize the tool with default options."""

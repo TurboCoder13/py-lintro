@@ -17,7 +17,13 @@ except ImportError:
     TABULATE_AVAILABLE = False
 
 from lintro import __version__
-from lintro.tools import AVAILABLE_TOOLS, CHECK_TOOLS, FIX_TOOLS
+from lintro.tools import (
+    AVAILABLE_TOOLS,
+    CHECK_TOOLS,
+    FIX_TOOLS,
+    get_tool_execution_order,
+    resolve_tool_conflicts,
+)
 
 
 @dataclass
@@ -756,6 +762,11 @@ def cli():
     default="auto",
     help="How to group issues in the output (file, code, none, or auto)",
 )
+@click.option(
+    "--ignore-conflicts",
+    is_flag=True,
+    help="Ignore tool conflicts and run all specified tools",
+)
 def check(
     paths: list[str],
     tools: str | None,
@@ -764,8 +775,9 @@ def check(
     output: str | None,
     table_format: bool,
     group_by: str,
+    ignore_conflicts: bool,
 ):
-    """Check code for issues without fixing them."""
+    """Check files for issues without fixing them."""
     if not paths:
         paths = [os.getcwd()]
 
@@ -778,14 +790,27 @@ def check(
         click.echo("Install with: pip install tabulate", err=True)
         table_format = False
 
-    tool_list = parse_tool_list(tools)
-    tools_to_run = {
+    # Parse tools list
+    tool_list = parse_tool_list(tools) or list(CHECK_TOOLS.keys())
+    
+    # Resolve conflicts if needed
+    if not ignore_conflicts:
+        original_tool_count = len(tool_list)
+        tool_list = get_tool_execution_order(tool_list)
+        
+        if len(tool_list) < original_tool_count:
+            click.secho(
+                f"Note: Some tools were excluded due to conflicts. Use --ignore-conflicts to run all tools.",
+                fg="yellow",
+            )
+
+    tool_to_run = {
         name: tool
         for name, tool in CHECK_TOOLS.items()
         if not tool_list or name in tool_list
     }
 
-    if not tools_to_run:
+    if not tool_to_run:
         click.echo(
             "No tools selected. Available tools: " + ", ".join(CHECK_TOOLS.keys())
         )
@@ -810,7 +835,7 @@ def check(
         exit_code = 0
         results = []
 
-        for name, tool in tools_to_run.items():
+        for name, tool in tool_to_run.items():
             # Modify tool command based on options
             if hasattr(tool, "set_options"):
                 tool.set_options(
@@ -900,6 +925,11 @@ def check(
     default="auto",
     help="How to group issues in the output (file, code, none, or auto)",
 )
+@click.option(
+    "--ignore-conflicts",
+    is_flag=True,
+    help="Ignore tool conflicts and run all specified tools",
+)
 def fmt(
     paths: list[str],
     tools: str | None,
@@ -908,8 +938,9 @@ def fmt(
     output: str | None,
     table_format: bool,
     group_by: str,
+    ignore_conflicts: bool,
 ):
-    """Format code and fix issues where possible."""
+    """Format files to fix issues."""
     if not paths:
         paths = [os.getcwd()]
 
@@ -922,14 +953,27 @@ def fmt(
         click.echo("Install with: pip install tabulate", err=True)
         table_format = False
 
-    tool_list = parse_tool_list(tools)
-    tools_to_run = {
+    # Parse tools list
+    tool_list = parse_tool_list(tools) or list(FIX_TOOLS.keys())
+    
+    # Resolve conflicts if needed
+    if not ignore_conflicts:
+        original_tool_count = len(tool_list)
+        tool_list = get_tool_execution_order(tool_list)
+        
+        if len(tool_list) < original_tool_count:
+            click.secho(
+                f"Note: Some tools were excluded due to conflicts. Use --ignore-conflicts to run all tools.",
+                fg="yellow",
+            )
+
+    tool_to_run = {
         name: tool
         for name, tool in FIX_TOOLS.items()
         if not tool_list or name in tool_list
     }
 
-    if not tools_to_run:
+    if not tool_to_run:
         click.echo("No tools selected. Available tools: " + ", ".join(FIX_TOOLS.keys()))
         sys.exit(1)
 
@@ -952,7 +996,7 @@ def fmt(
         exit_code = 0
         results = []
 
-        for name, tool in tools_to_run.items():
+        for name, tool in tool_to_run.items():
             # Modify tool command based on options
             if hasattr(tool, "set_options"):
                 tool.set_options(
@@ -1017,7 +1061,12 @@ def fmt(
     type=click.Path(dir_okay=False, writable=True),
     help="Output file to write results to",
 )
-def list_tools(output: str | None):
+@click.option(
+    "--show-conflicts",
+    is_flag=True,
+    help="Show potential conflicts between tools",
+)
+def list_tools(output: str | None, show_conflicts: bool):
     """List all available tools."""
     # Open output file if specified
     output_file = None
@@ -1076,6 +1125,21 @@ def list_tools(output: str | None):
                 )
                 for name, tool in check_only_tools:
                     click.echo(f"  - {name}: {tool.description}", file=output_file)
+
+        # Add conflict information if requested
+        if show_conflicts:
+            click.secho("\nPotential Tool Conflicts:", fg="yellow")
+            
+            # Check each tool for conflicts
+            for name, tool in AVAILABLE_TOOLS.items():
+                if tool.config.conflicts_with:
+                    conflicts = [c for c in tool.config.conflicts_with if c in AVAILABLE_TOOLS]
+                    if conflicts:
+                        click.secho(f"  {name}:", fg="yellow")
+                        for conflict in conflicts:
+                            click.secho(f"    - {conflict} (priority: {AVAILABLE_TOOLS[conflict].config.priority})", fg="yellow")
+                        click.secho(f"  {name} priority: {tool.config.priority}", fg="yellow")
+                        click.secho("")
     finally:
         # Close the output file if it was opened
         if output_file:
