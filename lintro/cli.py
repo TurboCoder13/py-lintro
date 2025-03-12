@@ -139,7 +139,8 @@ def print_summary(results: List[ToolResult], action: str, file: Optional[TextIO]
         summary_table = tabulate(
             summary_data,
             headers=["Status", "Tool", "Result"],
-            tablefmt="pretty"
+            tablefmt="pretty",
+            colalign=("left", "left", "left")  # Left align all columns
         )
         
         click.echo(summary_table)
@@ -208,16 +209,17 @@ def get_relative_path(file_path: str) -> str:
         
         # Check if the file path starts with the cwd
         if file_path.startswith(cwd):
-            return "/project" + file_path[len(cwd):]
+            # Return the path relative to the current directory without '/project' prefix
+            return file_path[len(cwd) + 1:]  # +1 to remove the leading slash
         
         # If not in cwd, try to find a common project indicator
         for indicator in ["src/", "tests/", "app/", "lib/"]:
             if indicator in file_path:
                 parts = file_path.split(indicator, 1)
-                return f"/project/{indicator}{parts[1]}"
+                return f"{indicator}{parts[1]}"
         
         # If no project structure detected, use the basename
-        return f"/project/{os.path.basename(file_path)}"
+        return os.path.basename(file_path)
     except Exception:
         # Fallback to original path if any error occurs
         return file_path
@@ -239,8 +241,8 @@ def format_as_table(issues, tool_name=None):
             issue["message"]
         ])
     
-    # Format as a table with headers
-    headers = ["File", "Line", "Code", "Message"]
+    # Format as a table with headers - use left alignment
+    headers = ["File", "Line", "PEP Code", "Message"]
     
     # Add tool name to the table if provided
     title = ""
@@ -250,7 +252,8 @@ def format_as_table(issues, tool_name=None):
     table = tabulate(
         table_data,
         headers=headers,
-        tablefmt="pretty"
+        tablefmt="pretty",
+        colalign=("left", "left", "left", "left")  # Left align all columns
     )
     
     if title:
