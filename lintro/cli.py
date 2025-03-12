@@ -8,8 +8,10 @@ from dataclasses import dataclass
 from typing import TextIO
 
 import click
+
 try:
     from tabulate import tabulate
+
     TABULATE_AVAILABLE = True
 except ImportError:
     TABULATE_AVAILABLE = False
@@ -21,6 +23,7 @@ from lintro.tools import AVAILABLE_TOOLS, CHECK_TOOLS, FIX_TOOLS
 @dataclass
 class ToolResult:
     """Result of running a tool."""
+
     name: str
     success: bool
     output: str
@@ -60,11 +63,13 @@ def print_tool_header(
         click.secho(f"\n{'=' * 60}", fg="blue")
         click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True)
         click.secho(f"{'=' * 60}", fg="blue")
-        
+
         # Also write to file if specified
         if file:
             click.secho(f"\n{'=' * 60}", fg="blue", file=file)
-            click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True, file=file)
+            click.secho(
+                f" Running {tool_name} ({action})", fg="blue", bold=True, file=file
+            )
             click.secho(f"{'=' * 60}", fg="blue", file=file)
     else:
         # Table format
@@ -92,7 +97,7 @@ def print_tool_footer(
             click.secho(f"\n✗ Found {issues_count} issues", fg="red")
             if file:
                 click.secho(f"\n✗ Found {issues_count} issues", fg="red", file=file)
-        
+
         click.secho(f"{'-' * 60}", fg="blue")
         if file:
             click.secho(f"{'-' * 60}", fg="blue", file=file)
@@ -108,7 +113,7 @@ def print_tool_footer(
             click.secho(footer, fg="red")
             if file:
                 click.secho(footer, fg="red", file=file)
-        
+
         click.secho(f"{'-' * 60}", fg="blue")
         if file:
             click.secho(f"{'-' * 60}", fg="blue", file=file)
@@ -122,13 +127,13 @@ def print_summary(
 ):
     """Print a summary of all tool results."""
     total_issues = sum(result.issues_count for result in results)
-    
+
     if not use_table_format:
         # Standard format
         click.secho(f"\n{'=' * 60}", fg="blue")
         click.secho(f" Summary ({action})", fg="blue", bold=True)
         click.secho(f"{'=' * 60}", fg="blue")
-        
+
         if file:
             click.secho(f"\n{'=' * 60}", fg="blue", file=file)
             click.secho(f" Summary ({action})", fg="blue", bold=True, file=file)
@@ -139,42 +144,48 @@ def print_summary(
         click.secho(header, fg="blue", bold=True)
         if file:
             click.secho(header, fg="blue", bold=True, file=file)
-    
+
     # Create a table for the summary if using table format
     if use_table_format and TABULATE_AVAILABLE:
         summary_data = []
         for result in results:
             status = "✓" if result.issues_count == 0 else "✗"
             status_color = "green" if result.issues_count == 0 else "red"
-            message = "No issues" if result.issues_count == 0 else f"{result.issues_count} issues"
-            
-            summary_data.append([
-                click.style(status, fg=status_color),
-                result.name,
-                click.style(message, fg=status_color)
-            ])
-        
+            message = (
+                "No issues"
+                if result.issues_count == 0
+                else f"{result.issues_count} issues"
+            )
+
+            summary_data.append(
+                [
+                    click.style(status, fg=status_color),
+                    result.name,
+                    click.style(message, fg=status_color),
+                ]
+            )
+
         summary_table = tabulate(
             summary_data,
             headers=["Status", "Tool", "Result"],
             tablefmt="pretty",
-            colalign=("left", "left", "left")  # Left align all columns
+            colalign=("left", "left", "left"),  # Left align all columns
         )
-        
+
         click.echo(summary_table)
         if file:
             click.echo(summary_table, file=file)
-        
+
         # Add total line
         if total_issues == 0:
             total_line = click.style(f"\nTotal: No issues found", fg="green")
         else:
             total_line = click.style(f"\nTotal: {total_issues} issues found", fg="red")
-        
+
         click.echo(total_line)
         if file:
             click.echo(total_line, file=file)
-        
+
         click.secho(f"{'-' * 60}", fg="blue")
         if file:
             click.secho(f"{'-' * 60}", fg="blue", file=file)
@@ -187,25 +198,25 @@ def print_summary(
             else:
                 status = click.style("✗", fg="red")
                 message = click.style(f"{result.issues_count} issues", fg="red")
-            
+
             click.echo(f" {status} {result.name}: {message}")
             if file:
                 click.echo(f" {status} {result.name}: {message}", file=file)
-        
+
         click.secho(f"{'-' * 60}", fg="blue")
         if file:
             click.secho(f"{'-' * 60}", fg="blue", file=file)
-        
+
         if total_issues == 0:
             status = click.style("✓", fg="green")
             message = click.style("No issues found", fg="green")
         else:
             status = click.style("✗", fg="red")
             message = click.style(f"{total_issues} issues found", fg="red")
-        
+
         click.echo(f" Total: {message}")
         click.secho(f"{'=' * 60}", fg="blue")
-        
+
         if file:
             click.echo(f" Total: {message}", file=file)
             click.secho(f"{'=' * 60}", fg="blue", file=file)
@@ -224,18 +235,18 @@ def get_relative_path(file_path: str) -> str:
     try:
         # Get the current working directory as the project root
         cwd = os.getcwd()
-        
+
         # Check if the file path starts with the cwd
         if file_path.startswith(cwd):
             # Return the path relative to the current directory without '/project' prefix
-            return file_path[len(cwd) + 1:]  # +1 to remove the leading slash
-        
+            return file_path[len(cwd) + 1 :]  # +1 to remove the leading slash
+
         # If not in cwd, try to find a common project indicator
         for indicator in ["src/", "tests/", "app/", "lib/"]:
             if indicator in file_path:
                 parts = file_path.split(indicator, 1)
                 return f"{indicator}{parts[1]}"
-        
+
         # If no project structure detected, use the basename
         return os.path.basename(file_path)
     except Exception:
@@ -250,7 +261,7 @@ def format_as_table(
     group_by="file",
 ):
     """Format issues as a table using tabulate if available.
-    
+
     Args:
         issues: List of issue dictionaries
         tool_name: Name of the tool that found the issues
@@ -258,34 +269,34 @@ def format_as_table(
     """
     if not TABULATE_AVAILABLE:
         return None
-    
+
     # Add tool name to the table if provided
     title = ""
     if tool_name:
         title = f"Results for {tool_name}:"
-    
+
     # If there are no issues, return early
     if not issues:
         return title
-    
+
     # Auto-determine the best grouping method if 'auto' is specified
     if group_by == "auto":
         # Count unique files and codes
         unique_files = len(set(issue["path"] for issue in issues))
         unique_codes = len(set(issue["code"] for issue in issues))
-        
+
         # If there are more unique files than codes, group by code
         # This is more efficient when many files have the same few error types
         if unique_files > unique_codes and unique_codes <= 5:
             group_by = "code"
         else:
             group_by = "file"
-    
+
     # Format based on grouping option
     result = []
     if title:
         result.append(title)
-    
+
     # Define tool-specific table formats
     if tool_name == "black":
         # Black only needs file paths for formatting
@@ -299,19 +310,16 @@ def format_as_table(
             table_data = []
             for issue in issues:
                 table_data.append([issue["path"]])
-            
+
             headers = ["File"]
-            
+
             table = tabulate(
-                table_data,
-                headers=headers,
-                tablefmt="pretty",
-                colalign=("left",)
+                table_data, headers=headers, tablefmt="pretty", colalign=("left",)
             )
-            
+
             result.append("\nFiles requiring formatting:")
             result.append(table)
-    
+
     elif tool_name == "isort":
         # isort only needs file paths for import sorting
         if group_by == "file":
@@ -325,19 +333,16 @@ def format_as_table(
             for issue in sorted(issues, key=lambda x: x["path"]):
                 if issue["path"] != "ERROR":  # Skip the ERROR placeholder
                     table_data.append([issue["path"]])
-            
+
             headers = ["File"]
-            
+
             table = tabulate(
-                table_data,
-                headers=headers,
-                tablefmt="pretty",
-                colalign=("left",)
+                table_data, headers=headers, tablefmt="pretty", colalign=("left",)
             )
-            
+
             result.append("\nFiles requiring import sorting:")
             result.append(table)
-    
+
     elif tool_name == "flake8":
         # flake8 has detailed error codes and line numbers
         if group_by == "file":
@@ -348,32 +353,28 @@ def format_as_table(
                 if file_path not in issues_by_file:
                     issues_by_file[file_path] = []
                 issues_by_file[file_path].append(issue)
-            
+
             for file_path, file_issues in sorted(issues_by_file.items()):
                 # Add file header
                 result.append(f"\nFile: {file_path}")
-                
+
                 # Convert issues to a list of lists for tabulate
                 table_data = []
                 for issue in file_issues:
-                    table_data.append([
-                        issue["line"],
-                        issue["code"],
-                        issue["message"]
-                    ])
-                
+                    table_data.append([issue["line"], issue["code"], issue["message"]])
+
                 # Format as a table with headers - use left alignment
                 headers = ["Line", "PEP Code", "Message"]
-                
+
                 table = tabulate(
                     table_data,
                     headers=headers,
                     tablefmt="pretty",
-                    colalign=("left", "left", "left")
+                    colalign=("left", "left", "left"),
                 )
-                
+
                 result.append(table)
-        
+
         elif group_by == "code":
             # Group by error code
             issues_by_code = {}
@@ -382,55 +383,48 @@ def format_as_table(
                 if code not in issues_by_code:
                     issues_by_code[code] = []
                 issues_by_code[code].append(issue)
-            
+
             for code, code_issues in sorted(issues_by_code.items()):
                 # Add code header
                 result.append(f"\nPEP Code: {code}")
-                
+
                 # Convert issues to a list of lists for tabulate
                 table_data = []
                 for issue in code_issues:
-                    table_data.append([
-                        issue["path"],
-                        issue["line"],
-                        issue["message"]
-                    ])
-                
+                    table_data.append([issue["path"], issue["line"], issue["message"]])
+
                 # Format as a table with headers - use left alignment
                 headers = ["File", "Line", "Message"]
-                
+
                 table = tabulate(
                     table_data,
                     headers=headers,
                     tablefmt="pretty",
-                    colalign=("left", "left", "left")
+                    colalign=("left", "left", "left"),
                 )
-                
+
                 result.append(table)
-        
+
         else:  # No grouping
             # Convert issues to a list of lists for tabulate
             table_data = []
             for issue in issues:
-                table_data.append([
-                    issue["path"],
-                    issue["line"],
-                    issue["code"],
-                    issue["message"]
-                ])
-            
+                table_data.append(
+                    [issue["path"], issue["line"], issue["code"], issue["message"]]
+                )
+
             # Format as a table with headers - use left alignment
             headers = ["File", "Line", "PEP Code", "Message"]
-            
+
             table = tabulate(
                 table_data,
                 headers=headers,
                 tablefmt="pretty",
-                colalign=("left", "left", "left", "left")
+                colalign=("left", "left", "left", "left"),
             )
-            
+
             result.append(table)
-    
+
     else:
         # Generic format for other tools
         if group_by == "file":
@@ -441,32 +435,28 @@ def format_as_table(
                 if file_path not in issues_by_file:
                     issues_by_file[file_path] = []
                 issues_by_file[file_path].append(issue)
-            
+
             for file_path, file_issues in sorted(issues_by_file.items()):
                 # Add file header
                 result.append(f"\nFile: {file_path}")
-                
+
                 # Convert issues to a list of lists for tabulate
                 table_data = []
                 for issue in file_issues:
-                    table_data.append([
-                        issue["line"],
-                        issue["code"],
-                        issue["message"]
-                    ])
-                
+                    table_data.append([issue["line"], issue["code"], issue["message"]])
+
                 # Format as a table with headers - use left alignment
                 headers = ["Line", "Code", "Message"]
-                
+
                 table = tabulate(
                     table_data,
                     headers=headers,
                     tablefmt="pretty",
-                    colalign=("left", "left", "left")
+                    colalign=("left", "left", "left"),
                 )
-                
+
                 result.append(table)
-        
+
         elif group_by == "code":
             # Group by error code
             issues_by_code = {}
@@ -475,55 +465,48 @@ def format_as_table(
                 if code not in issues_by_code:
                     issues_by_code[code] = []
                 issues_by_code[code].append(issue)
-            
+
             for code, code_issues in sorted(issues_by_code.items()):
                 # Add code header
                 result.append(f"\nCode: {code}")
-                
+
                 # Convert issues to a list of lists for tabulate
                 table_data = []
                 for issue in code_issues:
-                    table_data.append([
-                        issue["path"],
-                        issue["line"],
-                        issue["message"]
-                    ])
-                
+                    table_data.append([issue["path"], issue["line"], issue["message"]])
+
                 # Format as a table with headers - use left alignment
                 headers = ["File", "Line", "Message"]
-                
+
                 table = tabulate(
                     table_data,
                     headers=headers,
                     tablefmt="pretty",
-                    colalign=("left", "left", "left")
+                    colalign=("left", "left", "left"),
                 )
-                
+
                 result.append(table)
-        
+
         else:  # No grouping
             # Convert issues to a list of lists for tabulate
             table_data = []
             for issue in issues:
-                table_data.append([
-                    issue["path"],
-                    issue["line"],
-                    issue["code"],
-                    issue["message"]
-                ])
-            
+                table_data.append(
+                    [issue["path"], issue["line"], issue["code"], issue["message"]]
+                )
+
             # Format as a table with headers - use left alignment
             headers = ["File", "Line", "Code", "Message"]
-            
+
             table = tabulate(
                 table_data,
                 headers=headers,
                 tablefmt="pretty",
-                colalign=("left", "left", "left", "left")
+                colalign=("left", "left", "left", "left"),
             )
-            
+
             result.append(table)
-    
+
     return "\n".join(result)
 
 
@@ -536,19 +519,19 @@ def format_tool_output(
     """Format the output of a tool to be more readable and standardized."""
     if not output:
         return "No output"
-    
+
     # Remove trailing whitespace and ensure ending with newline
     output = output.rstrip() + "\n"
-    
+
     # Standardize output format
     formatted_lines = []
     issues = []
-    
+
     # First pass to collect all file paths for determining optimal column width
     file_paths = []
     line_numbers = []
     error_codes = []
-    
+
     if tool_name == "black":
         for line in output.splitlines():
             if "would reformat" in line:
@@ -557,15 +540,17 @@ def format_tool_output(
                 file_paths.append(rel_path)
                 line_numbers.append("N/A")
                 error_codes.append("FORMAT")
-                
+
                 # Add to issues list for table formatting
-                issues.append({
-                    "path": rel_path,
-                    "line": "N/A",
-                    "code": "FORMAT",
-                    "message": "formatting required"
-                })
-    
+                issues.append(
+                    {
+                        "path": rel_path,
+                        "line": "N/A",
+                        "code": "FORMAT",
+                        "message": "formatting required",
+                    }
+                )
+
     elif tool_name == "isort":
         # Extract file paths from isort output
         skipped_files = 0
@@ -578,24 +563,26 @@ def format_tool_output(
                 file_paths.append(rel_path)
                 line_numbers.append("N/A")
                 error_codes.append("ISORT")
-                
+
                 # Add to issues list for table formatting
-                issues.append({
-                    "path": rel_path,
-                    "line": "N/A",
-                    "code": "ISORT",
-                    "message": "import sorting required"
-                })
+                issues.append(
+                    {
+                        "path": rel_path,
+                        "line": "N/A",
+                        "code": "ISORT",
+                        "message": "import sorting required",
+                    }
+                )
             elif "Skipped" in line and "files" in line:
                 # Count skipped files but don't include in issues
                 skipped_match = re.search(r"Skipped (\d+) files", line)
                 if skipped_match:
                     skipped_files = int(skipped_match.group(1))
-        
+
         # If we only have skipped files and no actual errors, return success message
         if not file_paths and skipped_files > 0:
             return click.style("All imports are correctly sorted.", fg="green")
-    
+
     elif tool_name == "flake8":
         # Extract and format flake8 errors
         for line in output.splitlines():
@@ -607,19 +594,21 @@ def format_tool_output(
                 error_code = match.group(4)
                 message = match.group(5)
                 rel_path = get_relative_path(file_path)
-                
+
                 file_paths.append(rel_path)
                 line_numbers.append(line_num)
                 error_codes.append(error_code)
-                
+
                 # Add to issues list for table formatting
-                issues.append({
-                    "path": rel_path,
-                    "line": line_num,
-                    "code": error_code,
-                    "message": message
-                })
-    
+                issues.append(
+                    {
+                        "path": rel_path,
+                        "line": line_num,
+                        "code": error_code,
+                        "message": message,
+                    }
+                )
+
     # If tabulate is available, table format is requested, and we have issues, format as a table
     if TABULATE_AVAILABLE and use_table_format and issues:
         table = format_as_table(issues, tool_name, group_by)
@@ -627,28 +616,34 @@ def format_tool_output(
             # Add any summary lines
             if tool_name == "black":
                 for line in output.splitlines():
-                    if "All done!" in line or "Oh no!" in line or "files would be" in line:
+                    if (
+                        "All done!" in line
+                        or "Oh no!" in line
+                        or "files would be" in line
+                    ):
                         if "All done!" in line:
                             table += "\n" + click.style(line, fg="green")
                         else:
                             table += "\n" + click.style(line, fg="red")
-            
+
             # Add any skipped files notes for isort
             if tool_name == "isort" and skipped_files > 0:
-                table += "\n" + click.style(f"Note: Skipped {skipped_files} files", fg="blue")
-            
+                table += "\n" + click.style(
+                    f"Note: Skipped {skipped_files} files", fg="blue"
+                )
+
             return table
-    
+
     # Calculate optimal column widths (min 10, max 60)
     path_width = max([len(p) for p in file_paths] + [10]) if file_paths else 30
     path_width = min(path_width + 2, 60)  # Add some padding but cap at 60
-    
+
     line_width = max([len(l) for l in line_numbers] + [4]) if line_numbers else 6
     line_width = min(line_width + 2, 10)  # Add some padding but cap at 10
-    
+
     code_width = max([len(c) for c in error_codes] + [6]) if error_codes else 8
     code_width = min(code_width + 2, 12)  # Add some padding but cap at 12
-    
+
     # Second pass to format with calculated widths
     if tool_name == "black":
         for line in output.splitlines():
@@ -657,10 +652,10 @@ def format_tool_output(
                 rel_path = get_relative_path(file_path)
                 # Convert to standardized format with color and dynamic alignment
                 formatted_lines.append(
-                    click.style(f"- {rel_path:<{path_width}}", fg="yellow") + 
-                    click.style(f" : {'N/A':<{line_width}}", fg="blue") +
-                    click.style(f" : {'FORMAT':<{code_width}}", fg="red") + 
-                    f" : formatting required"
+                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
+                    + click.style(f" : {'N/A':<{line_width}}", fg="blue")
+                    + click.style(f" : {'FORMAT':<{code_width}}", fg="red")
+                    + f" : formatting required"
                 )
             elif "All done!" in line or "Oh no!" in line or "files would be" in line:
                 # Keep summary lines with color
@@ -671,7 +666,7 @@ def format_tool_output(
             elif line.strip() and not line.startswith("---"):
                 # Keep other non-empty, non-separator lines
                 formatted_lines.append(line)
-    
+
     elif tool_name == "isort":
         # Extract file paths from isort output
         for line in output.splitlines():
@@ -681,10 +676,10 @@ def format_tool_output(
                 rel_path = get_relative_path(file_path)
                 # Convert to standardized format with color and dynamic alignment
                 formatted_lines.append(
-                    click.style(f"- {rel_path:<{path_width}}", fg="yellow") + 
-                    click.style(f" : {'N/A':<{line_width}}", fg="blue") +
-                    click.style(f" : {'ISORT':<{code_width}}", fg="red") + 
-                    f" : import sorting required"
+                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
+                    + click.style(f" : {'N/A':<{line_width}}", fg="blue")
+                    + click.style(f" : {'ISORT':<{code_width}}", fg="red")
+                    + f" : import sorting required"
                 )
             elif "Skipped" in line and "files" in line:
                 # Count skipped files but don't include in issues
@@ -692,7 +687,7 @@ def format_tool_output(
             elif line.strip() and not line.startswith("---"):
                 # Keep other non-empty, non-separator lines
                 formatted_lines.append(line)
-    
+
     elif tool_name == "flake8":
         # Extract and format flake8 errors
         for line in output.splitlines():
@@ -704,22 +699,22 @@ def format_tool_output(
                 error_code = match.group(4)
                 message = match.group(5)
                 rel_path = get_relative_path(file_path)
-                
+
                 # Convert to standardized format with color and dynamic alignment
                 formatted_lines.append(
-                    click.style(f"- {rel_path:<{path_width}}", fg="yellow") + 
-                    click.style(f" : {line_num:<{line_width}}", fg="blue") +
-                    click.style(f" : {error_code:<{code_width}}", fg="red") + 
-                    f" : {message}"
+                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
+                    + click.style(f" : {line_num:<{line_width}}", fg="blue")
+                    + click.style(f" : {error_code:<{code_width}}", fg="red")
+                    + f" : {message}"
                 )
             elif line.strip() and not line.startswith("---"):
                 # Keep other non-empty, non-separator lines
                 formatted_lines.append(line)
-    
+
     else:
         # For other tools, keep the original output
         formatted_lines = output.splitlines()
-    
+
     return "\n".join(formatted_lines) + "\n"
 
 
@@ -773,81 +768,100 @@ def check(
     """Check code for issues without fixing them."""
     if not paths:
         paths = [os.getcwd()]
-    
+
     # Check if table format is requested but tabulate is not available
     if table_format and not TABULATE_AVAILABLE:
-        click.echo("Warning: Table formatting requested but tabulate package is not installed.", err=True)
+        click.echo(
+            "Warning: Table formatting requested but tabulate package is not installed.",
+            err=True,
+        )
         click.echo("Install with: pip install tabulate", err=True)
         table_format = False
-    
+
     tool_list = parse_tool_list(tools)
     tools_to_run = {
         name: tool
         for name, tool in CHECK_TOOLS.items()
         if not tool_list or name in tool_list
     }
-    
+
     if not tools_to_run:
-        click.echo("No tools selected. Available tools: " + ", ".join(CHECK_TOOLS.keys()))
+        click.echo(
+            "No tools selected. Available tools: " + ", ".join(CHECK_TOOLS.keys())
+        )
         sys.exit(1)
-    
+
     # Process exclude patterns
     exclude_patterns = []
     if exclude:
         exclude_patterns = [p.strip() for p in exclude.split(",") if p.strip()]
-    
+
     # Open output file if specified
     output_file = None
     if output:
         try:
-            output_file = open(output, 'w')
+            output_file = open(output, "w")
             click.echo(f"Writing output to {output}")
         except IOError as e:
             click.echo(f"Error opening output file: {e}", err=True)
             sys.exit(1)
-    
+
     try:
         exit_code = 0
         results = []
-        
+
         for name, tool in tools_to_run.items():
             # Modify tool command based on options
             if hasattr(tool, "set_options"):
-                tool.set_options(exclude_patterns=exclude_patterns, include_venv=include_venv)
-            
+                tool.set_options(
+                    exclude_patterns=exclude_patterns, include_venv=include_venv
+                )
+
             print_tool_header(name, "check", output_file, table_format)
-            
+
             success, output_text = tool.check(list(paths))
-            
+
             # Count issues and format output
             issues_count = count_issues(output_text, name)
-            formatted_output = format_tool_output(output_text, name, table_format, group_by)
-            
+            formatted_output = format_tool_output(
+                output_text, name, table_format, group_by
+            )
+
             # Always display in console, and also in file if specified
             click.echo(formatted_output)
             if output_file:
                 # Use the same formatted output for the file to ensure consistency
                 click.echo(formatted_output, file=output_file)
-            
+
             # Use issues_count to determine success
             success = issues_count == 0
             print_tool_footer(success, issues_count, output_file, table_format)
-            
-            results.append(ToolResult(name=name, success=success, output=output_text, issues_count=issues_count))
-            
+
+            results.append(
+                ToolResult(
+                    name=name,
+                    success=success,
+                    output=output_text,
+                    issues_count=issues_count,
+                )
+            )
+
             if not success:
                 exit_code = 1
-        
+
         print_summary(results, "check", output_file, table_format)
-        
+
         # If output file is specified, print a summary to the console as well
         if output_file:
             total_issues = sum(result.issues_count for result in results)
             if total_issues == 0:
                 click.secho("No issues found in your code.", fg="green")
             else:
-                click.secho(f"Found {total_issues} issues in your code. See {output} for details.", fg="red")
-        
+                click.secho(
+                    f"Found {total_issues} issues in your code. See {output} for details.",
+                    fg="red",
+                )
+
         sys.exit(exit_code)
     finally:
         # Close the output file if it was opened
@@ -898,81 +912,98 @@ def fmt(
     """Format code and fix issues where possible."""
     if not paths:
         paths = [os.getcwd()]
-    
+
     # Check if table format is requested but tabulate is not available
     if table_format and not TABULATE_AVAILABLE:
-        click.echo("Warning: Table formatting requested but tabulate package is not installed.", err=True)
+        click.echo(
+            "Warning: Table formatting requested but tabulate package is not installed.",
+            err=True,
+        )
         click.echo("Install with: pip install tabulate", err=True)
         table_format = False
-    
+
     tool_list = parse_tool_list(tools)
     tools_to_run = {
         name: tool
         for name, tool in FIX_TOOLS.items()
         if not tool_list or name in tool_list
     }
-    
+
     if not tools_to_run:
         click.echo("No tools selected. Available tools: " + ", ".join(FIX_TOOLS.keys()))
         sys.exit(1)
-    
+
     # Process exclude patterns
     exclude_patterns = []
     if exclude:
         exclude_patterns = [p.strip() for p in exclude.split(",") if p.strip()]
-    
+
     # Open output file if specified
     output_file = None
     if output:
         try:
-            output_file = open(output, 'w')
+            output_file = open(output, "w")
             click.echo(f"Writing output to {output}")
         except IOError as e:
             click.echo(f"Error opening output file: {e}", err=True)
             sys.exit(1)
-    
+
     try:
         exit_code = 0
         results = []
-        
+
         for name, tool in tools_to_run.items():
             # Modify tool command based on options
             if hasattr(tool, "set_options"):
-                tool.set_options(exclude_patterns=exclude_patterns, include_venv=include_venv)
-            
+                tool.set_options(
+                    exclude_patterns=exclude_patterns, include_venv=include_venv
+                )
+
             print_tool_header(name, "fix", output_file, table_format)
-            
+
             success, output_text = tool.fix(list(paths))
-            
+
             # Count issues and format output
             issues_count = count_issues(output_text, name)
-            formatted_output = format_tool_output(output_text, name, table_format, group_by)
-            
+            formatted_output = format_tool_output(
+                output_text, name, table_format, group_by
+            )
+
             # Always display in console, and also in file if specified
             click.echo(formatted_output)
             if output_file:
                 # Use the same formatted output for the file to ensure consistency
                 click.echo(formatted_output, file=output_file)
-            
+
             # Use issues_count to determine success
             success = issues_count == 0
             print_tool_footer(success, issues_count, output_file, table_format)
-            
-            results.append(ToolResult(name=name, success=success, output=output_text, issues_count=issues_count))
-            
+
+            results.append(
+                ToolResult(
+                    name=name,
+                    success=success,
+                    output=output_text,
+                    issues_count=issues_count,
+                )
+            )
+
             if not success:
                 exit_code = 1
-        
+
         print_summary(results, "format", output_file, table_format)
-        
+
         # If output file is specified, print a summary to the console as well
         if output_file:
             total_issues = sum(result.issues_count for result in results)
             if total_issues == 0:
                 click.secho("All files formatted successfully.", fg="green")
             else:
-                click.secho(f"Found {total_issues} issues while formatting. See {output} for details.", fg="red")
-        
+                click.secho(
+                    f"Found {total_issues} issues while formatting. See {output} for details.",
+                    fg="red",
+                )
+
         sys.exit(exit_code)
     finally:
         # Close the output file if it was opened
@@ -992,51 +1023,57 @@ def list_tools(output: str | None):
     output_file = None
     if output:
         try:
-            output_file = open(output, 'w')
+            output_file = open(output, "w")
             click.echo(f"Writing output to {output}")
         except IOError as e:
             click.echo(f"Error opening output file: {e}", err=True)
             sys.exit(1)
-    
+
     try:
         # Display in console
         click.secho("Available tools:", bold=True)
-        
+
         # Also write to file if specified
         if output_file:
             click.secho("Available tools:", bold=True, file=output_file)
-        
+
         # Group tools by capability
         fix_tools = []
         check_only_tools = []
-        
+
         for name, tool in sorted(AVAILABLE_TOOLS.items()):
             if tool.can_fix:
                 fix_tools.append((name, tool))
             else:
                 check_only_tools.append((name, tool))
-        
+
         if fix_tools:
             # Display in console
             click.secho("\nTools that can fix issues:", fg="green")
             for name, tool in fix_tools:
                 click.echo(f"  - {name}: {tool.description}")
-            
+
             # Also write to file if specified
             if output_file:
-                click.secho("\nTools that can fix issues:", fg="green", file=output_file)
+                click.secho(
+                    "\nTools that can fix issues:", fg="green", file=output_file
+                )
                 for name, tool in fix_tools:
                     click.echo(f"  - {name}: {tool.description}", file=output_file)
-        
+
         if check_only_tools:
             # Display in console
             click.secho("\nTools that can only check for issues:", fg="yellow")
             for name, tool in check_only_tools:
                 click.echo(f"  - {name}: {tool.description}")
-            
+
             # Also write to file if specified
             if output_file:
-                click.secho("\nTools that can only check for issues:", fg="yellow", file=output_file)
+                click.secho(
+                    "\nTools that can only check for issues:",
+                    fg="yellow",
+                    file=output_file,
+                )
                 for name, tool in check_only_tools:
                     click.echo(f"  - {name}: {tool.description}", file=output_file)
     finally:
@@ -1047,4 +1084,4 @@ def list_tools(output: str | None):
 
 def main():
     """Entry point for the CLI."""
-    cli() 
+    cli()
