@@ -138,21 +138,30 @@ def test_get_table_columns_with_different_tools():
 def test_format_as_table_with_tabulate(mock_tabulate):
     """Test formatting issues as a table with tabulate available."""
     # Setup
-    mock_tabulate.return_value = "Formatted Table"
-    
+    mock_tabulate.return_value = "+-----+-----+\n| Col1 | Col2 |\n+-----+-----+\n| A   | B   |\n+-----+-----+"
+
     # Test with flake8 issues grouped by file
     issues = [
         {"file": "file1.py", "line": "10", "col": "5", "code": "E501", "message": "line too long"},
         {"file": "file2.py", "line": "20", "col": "10", "code": "F401", "message": "unused import"},
     ]
-    
+
     # Mock get_table_columns to return the expected values
     with patch("lintro.cli.get_table_columns", return_value=(["File", "Line", "Col", "PEP Code", "Message"], ["file", "line", "col", "code", "message"])):
         result = format_as_table(issues, "flake8", "file")
-        
+
         # Verify
-        assert "Formatted Table" in result
-        mock_tabulate.assert_called_once()
+        # With the new implementation, tabulate is called once for all files
+        assert mock_tabulate.call_count == 1, f"Expected tabulate to be called once, got {mock_tabulate.call_count}"
+        
+        # For file grouping, we now post-process the table to add file headers
+        # So we need to check the final result string instead of the rows passed to tabulate
+        assert "File: file1.py" in result, "Expected file1.py header in the result"
+        assert "File: file2.py" in result, "Expected file2.py header in the result"
+        
+        # Verify that the result contains parts of the mocked table
+        assert "Col1" in result, "Expected column header in the result"
+        assert "Col2" in result, "Expected column header in the result"
 
 
 @patch("lintro.cli.TABULATE_AVAILABLE", False)
@@ -220,21 +229,30 @@ def test_format_as_table_with_group_by_none(mock_tabulate):
 def test_format_as_table_with_group_by_code(mock_tabulate):
     """Test formatting issues as a table with group_by=code."""
     # Setup
-    mock_tabulate.return_value = "Formatted Table"
-    
+    mock_tabulate.return_value = "+-----+-----+\n| Col1 | Col2 |\n+-----+-----+\n| A   | B   |\n+-----+-----+"
+
     # Test with flake8 issues and group_by=code
     issues = [
         {"file": "file1.py", "line": "10", "col": "5", "code": "E501", "message": "line too long"},
         {"file": "file2.py", "line": "20", "col": "10", "code": "F401", "message": "unused import"},
     ]
-    
+
     # Mock get_table_columns to return the expected values
     with patch("lintro.cli.get_table_columns", return_value=(["Code", "File", "Line", "Col", "Message"], ["code", "file", "line", "col", "message"])):
         result = format_as_table(issues, "flake8", "code")
-        
+
         # Verify
-        assert "Formatted Table" in result
-        mock_tabulate.assert_called_once()
+        # With the new implementation, tabulate is called once for all codes
+        assert mock_tabulate.call_count == 1, f"Expected tabulate to be called once, got {mock_tabulate.call_count}"
+        
+        # For code grouping, we now post-process the table to add code headers
+        # So we need to check the final result string instead of the rows passed to tabulate
+        assert "PEP Code: E501" in result, "Expected E501 code header in the result"
+        assert "PEP Code: F401" in result, "Expected F401 code header in the result"
+        
+        # Verify that the result contains parts of the mocked table
+        assert "Col1" in result, "Expected column header in the result"
+        assert "Col2" in result, "Expected column header in the result"
 
 
 def test_format_tool_output_direct():
