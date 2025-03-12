@@ -3,7 +3,6 @@
 import os
 import re
 import sys
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import TextIO
 
@@ -22,7 +21,6 @@ from lintro.tools import (
     CHECK_TOOLS,
     FIX_TOOLS,
     get_tool_execution_order,
-    resolve_tool_conflicts,
 )
 
 
@@ -40,7 +38,16 @@ def count_issues(
     output: str,
     tool_name: str,
 ) -> int:
-    """Count the number of issues in the tool output."""
+    """
+    Count the number of issues in the tool output.
+
+    Args:
+        output: The output from the tool
+        tool_name: The name of the tool
+
+    Returns:
+        Number of issues found in the output
+    """
     if tool_name == "black":
         # Count "would reformat" lines
         return len(re.findall(r"would reformat", output))
@@ -63,23 +70,31 @@ def print_tool_header(
     file: TextIO | None = None,
     use_table_format: bool = False,
 ):
-    """Print a header for a tool's output."""
+    """
+    Print a header for a tool's output.
+
+    Args:
+        tool_name: Name of the tool
+        action: Action being performed (check or fix)
+        file: File to write output to
+        use_table_format: Whether to use table formatting
+    """
     if not use_table_format:
         # Standard format
-        click.secho(f"\n{'=' * 60}", fg="blue")
+        click.secho("\n" + "=" * 60, fg="blue")
         click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True)
-        click.secho(f"{'=' * 60}", fg="blue")
+        click.secho("=" * 60, fg="blue")
 
         # Also write to file if specified
         if file:
-            click.secho(f"\n{'=' * 60}", fg="blue", file=file)
+            click.secho("\n" + "=" * 60, fg="blue", file=file)
             click.secho(
                 f" Running {tool_name} ({action})", fg="blue", bold=True, file=file
             )
-            click.secho(f"{'=' * 60}", fg="blue", file=file)
+            click.secho("=" * 60, fg="blue", file=file)
     else:
         # Table format
-        header = f"\n{'-' * 60}\n Running {tool_name} ({action})\n{'-' * 60}"
+        header = "\n" + "-" * 60 + f"\n Running {tool_name} ({action})\n" + "-" * 60
         click.secho(header, fg="blue", bold=True)
         if file:
             click.secho(header, fg="blue", bold=True, file=file)
@@ -91,7 +106,15 @@ def print_tool_footer(
     file: TextIO | None = None,
     use_table_format: bool = False,
 ):
-    """Print a footer for a tool's output."""
+    """
+    Print a footer for a tool's output.
+
+    Args:
+        success: Whether the tool ran successfully
+        issues_count: Number of issues found
+        file: File to write output to
+        use_table_format: Whether to use table formatting
+    """
     if not use_table_format:
         # Standard format
         # Always use issues_count to determine success/failure
@@ -131,19 +154,62 @@ def print_summary(
     file: TextIO | None = None,
     use_table_format: bool = False,
 ):
-    """Print a summary of all tool results."""
+    """
+    Print a summary of all tool results.
+
+    Args:
+        results: List of tool results
+        action: Action that was performed (check or fix)
+        file: File to write output to
+        use_table_format: Whether to use table formatting
+    """
     total_issues = sum(result.issues_count for result in results)
 
     if not use_table_format:
         # Standard format
-        click.secho(f"\n{'=' * 60}", fg="blue")
-        click.secho(f" Summary ({action})", fg="blue", bold=True)
-        click.secho(f"{'=' * 60}", fg="blue")
+        click.secho("\n" + "=" * 60, fg="blue")
+        click.secho(" Summary (" + action + ")", fg="blue", bold=True)
+        click.secho("=" * 60, fg="blue")
 
+        for result in results:
+            if result.issues_count == 0:
+                click.secho(f" ✓ {result.name}: No issues", fg="green")
+            else:
+                click.secho(f" ✗ {result.name}: {result.issues_count} issues", fg="red")
+
+        click.secho("-" * 60, fg="blue")
+
+        if total_issues == 0:
+            click.secho(" Total: No issues found", fg="green")
+        else:
+            click.secho(f" Total: {total_issues} issues found", fg="red")
+
+        click.secho("=" * 60, fg="blue")
+
+        # Also write to file if specified
         if file:
-            click.secho(f"\n{'=' * 60}", fg="blue", file=file)
-            click.secho(f" Summary ({action})", fg="blue", bold=True, file=file)
-            click.secho(f"{'=' * 60}", fg="blue", file=file)
+            click.secho("\n" + "=" * 60, fg="blue", file=file)
+            click.secho(" Summary (" + action + ")", fg="blue", bold=True, file=file)
+            click.secho("=" * 60, fg="blue", file=file)
+
+            for result in results:
+                if result.issues_count == 0:
+                    click.secho(f" ✓ {result.name}: No issues", fg="green", file=file)
+                else:
+                    click.secho(
+                        f" ✗ {result.name}: {result.issues_count} issues",
+                        fg="red",
+                        file=file,
+                    )
+
+            click.secho("-" * 60, fg="blue", file=file)
+
+            if total_issues == 0:
+                click.secho(" Total: No issues found", fg="green", file=file)
+            else:
+                click.secho(f" Total: {total_issues} issues found", fg="red", file=file)
+
+            click.secho("=" * 60, fg="blue", file=file)
     else:
         # Table format
         header = f"\n{'-' * 60}\n Summary ({action})\n{'-' * 60}"
@@ -229,61 +295,62 @@ def print_summary(
 
 
 def parse_tool_list(tools_str: str | None) -> list[str]:
-    """Parse a comma-separated list of tool names."""
+    """
+    Parse a comma-separated list of tool names.
+
+    Args:
+        tools_str: Comma-separated string of tool names
+
+    Returns:
+        List of individual tool names
+    """
     if not tools_str:
         return []
     return [t.strip() for t in tools_str.split(",") if t.strip()]
 
 
-# Add a function to get project-relative path
 def get_relative_path(file_path: str) -> str:
-    """Convert absolute path to project-relative path."""
-    try:
-        # Get the current working directory as the project root
-        cwd = os.getcwd()
+    """
+    Convert an absolute path to a path relative to the current working directory.
 
-        # Check if the file path starts with the cwd
-        if file_path.startswith(cwd):
-            # Return the path relative to the current directory without '/project' prefix
-            return file_path[len(cwd) + 1 :]  # +1 to remove the leading slash
+    Args:
+        file_path: Absolute file path
 
-        # If not in cwd, try to find a common project indicator
-        for indicator in ["src/", "tests/", "app/", "lib/"]:
-            if indicator in file_path:
-                parts = file_path.split(indicator, 1)
-                return f"{indicator}{parts[1]}"
-
-        # If no project structure detected, use the basename
-        return os.path.basename(file_path)
-    except Exception:
-        # Fallback to original path if any error occurs
-        return file_path
+    Returns:
+        Path relative to the current working directory
+    """
+    cwd = os.getcwd()
+    if file_path.startswith(cwd):
+        return file_path[len(cwd) + 1 :]
+    return file_path
 
 
-# Add a function to format output as a table
 def format_as_table(
-    issues,
-    tool_name=None,
-    group_by="file",
-):
-    """Format issues as a table using tabulate if available.
+    issues: list[dict],
+    tool_name: str | None = None,
+    group_by: str = "file",
+) -> str:
+    """
+    Format issues as a table.
 
     Args:
         issues: List of issue dictionaries
-        tool_name: Name of the tool that found the issues
-        group_by: How to group issues - 'file', 'code', 'none', or 'auto'
+        tool_name: Name of the tool that generated the issues
+        group_by: How to group the issues (file, code, or none)
+
+    Returns:
+        Formatted table as a string
     """
     if not TABULATE_AVAILABLE:
-        return None
+        return "Table formatting requires the tabulate package. Install with 'pip install tabulate'."
+
+    if not issues:
+        return "No issues found."
 
     # Add tool name to the table if provided
     title = ""
     if tool_name:
         title = f"Results for {tool_name}:"
-
-    # If there are no issues, return early
-    if not issues:
-        return title
 
     # Auto-determine the best grouping method if 'auto' is specified
     if group_by == "auto":
@@ -522,7 +589,18 @@ def format_tool_output(
     use_table_format: bool = False,
     group_by: str = "file",
 ) -> str:
-    """Format the output of a tool to be more readable and standardized."""
+    """
+    Format the output from a tool.
+
+    Args:
+        output: Raw output from the tool
+        tool_name: Name of the tool
+        use_table_format: Whether to use table formatting
+        group_by: How to group the issues (file, code, none, or auto)
+
+    Returns:
+        Formatted output as a string
+    """
     if not output:
         return "No output"
 
@@ -792,12 +870,12 @@ def check(
 
     # Parse tools list
     tool_list = parse_tool_list(tools) or list(CHECK_TOOLS.keys())
-    
+
     # Resolve conflicts if needed
     if not ignore_conflicts:
         original_tool_count = len(tool_list)
         tool_list = get_tool_execution_order(tool_list)
-        
+
         if len(tool_list) < original_tool_count:
             click.secho(
                 f"Note: Some tools were excluded due to conflicts. Use --ignore-conflicts to run all tools.",
@@ -955,12 +1033,12 @@ def fmt(
 
     # Parse tools list
     tool_list = parse_tool_list(tools) or list(FIX_TOOLS.keys())
-    
+
     # Resolve conflicts if needed
     if not ignore_conflicts:
         original_tool_count = len(tool_list)
         tool_list = get_tool_execution_order(tool_list)
-        
+
         if len(tool_list) < original_tool_count:
             click.secho(
                 f"Note: Some tools were excluded due to conflicts. Use --ignore-conflicts to run all tools.",
@@ -1129,16 +1207,23 @@ def list_tools(output: str | None, show_conflicts: bool):
         # Add conflict information if requested
         if show_conflicts:
             click.secho("\nPotential Tool Conflicts:", fg="yellow")
-            
+
             # Check each tool for conflicts
             for name, tool in AVAILABLE_TOOLS.items():
                 if tool.config.conflicts_with:
-                    conflicts = [c for c in tool.config.conflicts_with if c in AVAILABLE_TOOLS]
+                    conflicts = [
+                        c for c in tool.config.conflicts_with if c in AVAILABLE_TOOLS
+                    ]
                     if conflicts:
                         click.secho(f"  {name}:", fg="yellow")
                         for conflict in conflicts:
-                            click.secho(f"    - {conflict} (priority: {AVAILABLE_TOOLS[conflict].config.priority})", fg="yellow")
-                        click.secho(f"  {name} priority: {tool.config.priority}", fg="yellow")
+                            click.secho(
+                                f"    - {conflict} (priority: {AVAILABLE_TOOLS[conflict].config.priority})",
+                                fg="yellow",
+                            )
+                        click.secho(
+                            f"  {name} priority: {tool.config.priority}", fg="yellow"
+                        )
                         click.secho("")
     finally:
         # Close the output file if it was opened

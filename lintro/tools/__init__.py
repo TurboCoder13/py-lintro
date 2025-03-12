@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any
 
 
 @dataclass
@@ -11,15 +11,15 @@ class ToolConfig:
 
     # Priority level (higher number = higher priority when resolving conflicts)
     priority: int = 0
-    
+
     # List of tools this tool conflicts with
-    conflicts_with: List[str] = field(default_factory=list)
-    
+    conflicts_with: list[str] = field(default_factory=list)
+
     # List of file patterns this tool should be applied to
-    file_patterns: List[str] = field(default_factory=list)
-    
+    file_patterns: list[str] = field(default_factory=list)
+
     # Tool-specific configuration options
-    options: Dict[str, any] = field(default_factory=dict)
+    options: dict[str, Any] = field(default_factory=dict)
 
 
 class Tool(ABC):
@@ -83,9 +83,10 @@ class Tool(ABC):
 
 
 # Import all tool implementations
-from lintro.tools.black import BlackTool
-from lintro.tools.flake8 import Flake8Tool
-from lintro.tools.isort import IsortTool
+# These need to be imported after the Tool class is defined to avoid circular imports
+from lintro.tools.black import BlackTool  # noqa: E402
+from lintro.tools.flake8 import Flake8Tool  # noqa: E402
+from lintro.tools.isort import IsortTool  # noqa: E402
 
 # Register all available tools
 AVAILABLE_TOOLS = {
@@ -101,19 +102,20 @@ FIX_TOOLS = {name: tool for name, tool in AVAILABLE_TOOLS.items() if tool.can_fi
 CHECK_TOOLS = AVAILABLE_TOOLS
 
 
-def resolve_tool_conflicts(selected_tools: List[str]) -> List[str]:
+def resolve_tool_conflicts(selected_tools: list[str]) -> list[str]:
     """
-    Resolve conflicts between tools and return a list of tools to run in the correct order.
-    
+    Resolve conflicts between tools and return a list of tools to run
+    in the correct order.
+
     Args:
         selected_tools: List of tool names to check for conflicts
-        
+
     Returns:
         List of tool names to run, ordered by priority (highest first)
     """
     # Filter to only include available tools
     valid_tools = [name for name in selected_tools if name in AVAILABLE_TOOLS]
-    
+
     # Check for conflicts
     conflicts = {}
     for tool_name in valid_tools:
@@ -123,7 +125,7 @@ def resolve_tool_conflicts(selected_tools: List[str]) -> List[str]:
                 if tool_name not in conflicts:
                     conflicts[tool_name] = []
                 conflicts[tool_name].append(conflict)
-    
+
     # If there are conflicts, resolve them based on priority
     if conflicts:
         resolved_tools = []
@@ -131,43 +133,44 @@ def resolve_tool_conflicts(selected_tools: List[str]) -> List[str]:
         sorted_tools = sorted(
             valid_tools,
             key=lambda name: AVAILABLE_TOOLS[name].config.priority,
-            reverse=True
+            reverse=True,
         )
-        
-        # Add tools in priority order, skipping those that conflict with higher priority tools
+
+        # Add tools in priority order, skipping those that conflict with
+        # higher priority tools
         excluded_tools = set()
         for tool_name in sorted_tools:
             if tool_name in excluded_tools:
                 continue
-                
+
             resolved_tools.append(tool_name)
-            
+
             # Add any conflicting tools to the excluded set
             if tool_name in conflicts:
                 excluded_tools.update(conflicts[tool_name])
-        
+
         return resolved_tools
-    
+
     # If no conflicts, return the original list
     return valid_tools
 
 
-def get_tool_execution_order(selected_tools: List[str]) -> List[str]:
+def get_tool_execution_order(selected_tools: list[str]) -> list[str]:
     """
     Get the order in which tools should be executed, based on their priorities.
-    
+
     Args:
         selected_tools: List of tool names to order
-        
+
     Returns:
         List of tool names in execution order
     """
     # Resolve any conflicts first
     resolved_tools = resolve_tool_conflicts(selected_tools)
-    
+
     # Sort by priority (highest first)
     return sorted(
         resolved_tools,
         key=lambda name: AVAILABLE_TOOLS[name].config.priority,
-        reverse=True
+        reverse=True,
     )

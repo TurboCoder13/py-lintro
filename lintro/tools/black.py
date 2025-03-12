@@ -12,7 +12,7 @@ class BlackTool(Tool):
     name = "black"
     description = "The uncompromising Python code formatter"
     can_fix = True
-    
+
     # Configure tool with conflict information
     config = ToolConfig(
         priority=100,  # High priority as Black is an opinionated formatter
@@ -67,7 +67,8 @@ class BlackTool(Tool):
             if not self.include_venv and output:
                 filtered_lines = []
                 venv_pattern = re.compile(
-                    r"(\.venv|venv|env|ENV|virtualenv|virtual_env|virtualenvs|site-packages)"
+                    r"(\.venv|venv|env|ENV|virtualenv|virtual_env|"
+                    r"virtualenvs|site-packages)"
                 )
 
                 for line in output.splitlines():

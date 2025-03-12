@@ -12,7 +12,7 @@ class IsortTool(Tool):
     name = "isort"
     description = "Sort Python imports alphabetically within logical sections"
     can_fix = True
-    
+
     # Configure tool with conflict information
     config = ToolConfig(
         priority=90,  # High priority but below Black
@@ -68,7 +68,8 @@ class IsortTool(Tool):
             if not self.include_venv and output:
                 filtered_lines = []
                 venv_pattern = re.compile(
-                    r"(\.venv|venv|env|ENV|virtualenv|virtual_env|virtualenvs|site-packages)"
+                    r"(\.venv|venv|env|ENV|virtualenv|virtual_env|"
+                    r"virtualenvs|site-packages)"
                 )
 
                 for line in output.splitlines():
