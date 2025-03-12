@@ -34,10 +34,11 @@ This project uses [Renovate](https://github.com/renovatebot/renovate) for automa
 - GitHub Actions in workflow files
 - Docker base images in Dockerfile
 
-The Renovate configuration is defined in `renovate.json` in the root of the repository. Updates are scheduled to run daily during non-working hours to minimize disruption.
+The Renovate configuration is defined in `renovate.json` in the root of the repository. Updates are scheduled to run daily at 10:00 PM UTC.
 
 ### Renovate Features
 
+- Automatic merging of patch updates for seamless minor fixes
 - Automatic grouping of minor and patch updates to reduce PR noise
 - Separate PRs for major updates that might include breaking changes
 - Special grouping for related packages (e.g., pytest and its plugins)

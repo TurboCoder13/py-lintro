@@ -6,6 +6,12 @@
   "packageRules": [
     {
       "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
+      "matchPackagePatterns": ["*"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "all non-major dependencies",
       "groupSlug": "all-minor-patch"
@@ -34,7 +40,7 @@
   "github-actions": {
     "enabled": true
   },
-  "schedule": ["after 10pm and before 5am"],
+  "schedule": ["at 22:00"],
   "timezone": "UTC",
   "labels": ["dependencies"],
   "prHourlyLimit": 2,
