@@ -59,6 +59,9 @@ def count_issues(
     elif tool_name == "flake8":
         # Count lines with error codes (e.g., E501, W291)
         return len(re.findall(r":\d+:\d+: [EWFN]\d{3} ", output))
+    elif tool_name == "darglint":
+        # Count lines with darglint error codes (e.g., DAR101, DAR201)
+        return len(re.findall(r":\d+:\d+: [A-Z]+\d{3}", output))
     else:
         # Generic fallback: count lines that look like issues
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))

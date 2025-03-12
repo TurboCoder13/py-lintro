@@ -4,13 +4,14 @@ from unittest.mock import MagicMock, patch
 
 from lintro.tools import Tool
 from lintro.tools.black import BlackTool
+from lintro.tools.darglint import DarglintTool
 from lintro.tools.flake8 import Flake8Tool
 from lintro.tools.isort import IsortTool
 
 
 def test_tool_interface():
     """Test that all tools implement the Tool interface."""
-    tools = [BlackTool(), IsortTool(), Flake8Tool()]
+    tools = [BlackTool(), IsortTool(), Flake8Tool(), DarglintTool()]
 
     for tool in tools:
         assert isinstance(tool, Tool)
@@ -91,6 +92,52 @@ def test_flake8_check_success(mock_run):
 def test_flake8_fix():
     """Test that flake8 cannot fix issues."""
     tool = Flake8Tool()
+    success, output = tool.fix(["test.py"])
+
+    assert success is False
+    assert "cannot automatically fix" in output
+
+
+@patch("subprocess.run")
+def test_darglint_check_success(mock_run):
+    """Test darglint check when no docstring issues are found."""
+    mock_process = MagicMock()
+    mock_process.stdout = ""
+    mock_run.return_value = mock_process
+
+    tool = DarglintTool()
+    success, output = tool.check(["test.py"])
+
+    assert success is True
+    assert output == "No docstring issues found."
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_darglint_check_failure(mock_run):
+    """Test darglint check when docstring issues are found."""
+    # Use CalledProcessError instead of Exception to match what subprocess.run raises
+    from subprocess import CalledProcessError
+
+    error = CalledProcessError(
+        1,
+        ["darglint"],
+        output="test.py:10:0: DAR101 Missing parameter(s) in Docstring: ['param']",
+        stderr="",
+    )
+    mock_run.side_effect = error
+
+    tool = DarglintTool()
+    success, output = tool.check(["test.py"])
+
+    assert success is False
+    assert "DAR101" in output
+    mock_run.assert_called_once()
+
+
+def test_darglint_fix():
+    """Test that darglint cannot fix issues."""
+    tool = DarglintTool()
     success, output = tool.fix(["test.py"])
 
     assert success is False

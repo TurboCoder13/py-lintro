@@ -85,6 +85,7 @@ class Tool(ABC):
 # Import all tool implementations
 # These need to be imported after the Tool class is defined to avoid circular imports
 from lintro.tools.black import BlackTool  # noqa: E402
+from lintro.tools.darglint import DarglintTool  # noqa: E402
 from lintro.tools.flake8 import Flake8Tool  # noqa: E402
 from lintro.tools.isort import IsortTool  # noqa: E402
 
@@ -93,6 +94,7 @@ AVAILABLE_TOOLS = {
     "black": BlackTool(),
     "isort": IsortTool(),
     "flake8": Flake8Tool(),
+    "darglint": DarglintTool(),
 }
 
 # Tools that can fix issues
