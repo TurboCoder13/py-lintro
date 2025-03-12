@@ -232,7 +232,7 @@ def format_as_table(issues, tool_name=None, group_by="file"):
     Args:
         issues: List of issue dictionaries
         tool_name: Name of the tool that found the issues
-        group_by: How to group issues - 'file' or 'code'
+        group_by: How to group issues - 'file', 'code', 'none', or 'auto'
     """
     if not TABULATE_AVAILABLE:
         return None
@@ -245,6 +245,19 @@ def format_as_table(issues, tool_name=None, group_by="file"):
     # If there are no issues, return early
     if not issues:
         return title
+    
+    # Auto-determine the best grouping method if 'auto' is specified
+    if group_by == "auto":
+        # Count unique files and codes
+        unique_files = len(set(issue["path"] for issue in issues))
+        unique_codes = len(set(issue["code"] for issue in issues))
+        
+        # If there are more unique files than codes, group by code
+        # This is more efficient when many files have the same few error types
+        if unique_files > unique_codes and unique_codes <= 5:
+            group_by = "code"
+        else:
+            group_by = "file"
     
     # Format based on grouping option
     result = []
@@ -569,9 +582,9 @@ def cli():
 )
 @click.option(
     "--group-by",
-    type=click.Choice(["file", "code", "none"]),
-    default="file",
-    help="How to group issues in the output (file, code, or none)",
+    type=click.Choice(["file", "code", "none", "auto"]),
+    default="auto",
+    help="How to group issues in the output (file, code, none, or auto)",
 )
 def check(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str], table_format: bool, group_by: str):
     """Check code for issues without fixing them."""
@@ -630,6 +643,7 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
             # Always display in console, and also in file if specified
             click.echo(formatted_output)
             if output_file:
+                # Use the same formatted output for the file to ensure consistency
                 click.echo(formatted_output, file=output_file)
             
             # Use issues_count to determine success
@@ -685,9 +699,9 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
 )
 @click.option(
     "--group-by",
-    type=click.Choice(["file", "code", "none"]),
-    default="file",
-    help="How to group issues in the output (file, code, or none)",
+    type=click.Choice(["file", "code", "none", "auto"]),
+    default="auto",
+    help="How to group issues in the output (file, code, none, or auto)",
 )
 def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str], table_format: bool, group_by: str):
     """Format code and fix issues where possible."""
@@ -746,6 +760,7 @@ def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_
             # Always display in console, and also in file if specified
             click.echo(formatted_output)
             if output_file:
+                # Use the same formatted output for the file to ensure consistency
                 click.echo(formatted_output, file=output_file)
             
             # Use issues_count to determine success

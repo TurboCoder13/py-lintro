@@ -159,7 +159,10 @@ lintro check --table-format --output report.txt [PATH]
 When using table formatting, you can choose how to group the issues in the output using the `--group-by` option:
 
 ```bash
-# Group by file (default)
+# Auto-grouping (default) - intelligently chooses the best grouping method
+lintro check --table-format --group-by auto [PATH]
+
+# Group by file
 lintro check --table-format --group-by file [PATH]
 
 # Group by error code
@@ -168,6 +171,10 @@ lintro check --table-format --group-by code [PATH]
 # No grouping (flat list)
 lintro check --table-format --group-by none [PATH]
 ```
+
+The auto-grouping option intelligently chooses between file and code grouping based on the output:
+- If there are more unique files than error codes (and few error code types), it groups by error code
+- Otherwise, it groups by file
 
 Grouping by file is useful when you want to fix issues file by file, while grouping by error code is helpful when you want to fix similar issues across multiple files.
 
