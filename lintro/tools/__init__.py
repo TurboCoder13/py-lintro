@@ -87,6 +87,7 @@ class Tool(ABC):
 from lintro.tools.black import BlackTool  # noqa: E402
 from lintro.tools.darglint import DarglintTool  # noqa: E402
 from lintro.tools.flake8 import Flake8Tool  # noqa: E402
+from lintro.tools.hadolint import HadolintTool  # noqa: E402
 from lintro.tools.isort import IsortTool  # noqa: E402
 
 # Register all available tools
@@ -95,6 +96,7 @@ AVAILABLE_TOOLS = {
     "isort": IsortTool(),
     "flake8": Flake8Tool(),
     "darglint": DarglintTool(),
+    "hadolint": HadolintTool(),
 }
 
 # Tools that can fix issues

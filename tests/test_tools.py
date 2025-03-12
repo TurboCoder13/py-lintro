@@ -6,12 +6,13 @@ from lintro.tools import Tool
 from lintro.tools.black import BlackTool
 from lintro.tools.darglint import DarglintTool
 from lintro.tools.flake8 import Flake8Tool
+from lintro.tools.hadolint import HadolintTool
 from lintro.tools.isort import IsortTool
 
 
 def test_tool_interface():
     """Test that all tools implement the Tool interface."""
-    tools = [BlackTool(), IsortTool(), Flake8Tool(), DarglintTool()]
+    tools = [BlackTool(), IsortTool(), Flake8Tool(), DarglintTool(), HadolintTool()]
 
     for tool in tools:
         assert isinstance(tool, Tool)
@@ -139,6 +140,52 @@ def test_darglint_fix():
     """Test that darglint cannot fix issues."""
     tool = DarglintTool()
     success, output = tool.fix(["test.py"])
+
+    assert success is False
+    assert "cannot automatically fix" in output
+
+
+@patch("subprocess.run")
+def test_hadolint_check_success(mock_run):
+    """Test hadolint check when no Dockerfile issues are found."""
+    mock_process = MagicMock()
+    mock_process.stdout = ""
+    mock_run.return_value = mock_process
+
+    tool = HadolintTool()
+    success, output = tool.check(["Dockerfile"])
+
+    assert success is True
+    assert output == "No Dockerfile issues found."
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_hadolint_check_failure(mock_run):
+    """Test hadolint check when Dockerfile issues are found."""
+    # Use CalledProcessError instead of Exception to match what subprocess.run raises
+    from subprocess import CalledProcessError
+
+    error = CalledProcessError(
+        1,
+        ["hadolint"],
+        output="Dockerfile:3 DL3006 Always tag the version of an image explicitly",
+        stderr="",
+    )
+    mock_run.side_effect = error
+
+    tool = HadolintTool()
+    success, output = tool.check(["Dockerfile"])
+
+    assert success is False
+    assert "DL3006" in output
+    mock_run.assert_called_once()
+
+
+def test_hadolint_fix():
+    """Test that hadolint cannot fix issues."""
+    tool = HadolintTool()
+    success, output = tool.fix(["Dockerfile"])
 
     assert success is False
     assert "cannot automatically fix" in output
