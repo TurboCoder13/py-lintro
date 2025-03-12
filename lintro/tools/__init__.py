@@ -10,7 +10,11 @@ class Tool(ABC):
     description: str
     can_fix: bool
     
-    def set_options(self, exclude_patterns: list[str] | None = None, include_venv: bool = False):
+    def set_options(
+        self,
+        exclude_patterns: list[str] | None = None,
+        include_venv: bool = False,
+    ):
         """
         Set options for the tool.
         
@@ -22,7 +26,10 @@ class Tool(ABC):
         self.include_venv = include_venv
 
     @abstractmethod
-    def check(self, paths: list[str]) -> tuple[bool, str]:
+    def check(
+        self,
+        paths: list[str],
+    ) -> tuple[bool, str]:
         """
         Check the given paths for issues.
 
@@ -37,7 +44,10 @@ class Tool(ABC):
         pass
 
     @abstractmethod
-    def fix(self, paths: list[str]) -> tuple[bool, str]:
+    def fix(
+        self,
+        paths: list[str],
+    ) -> tuple[bool, str]:
         """
         Fix issues in the given paths.
 

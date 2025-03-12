@@ -13,7 +13,9 @@ def runner():
     return CliRunner()
 
 
-def test_version(runner):
+def test_version(
+    runner
+):
     """Test the --version option."""
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
@@ -21,7 +23,10 @@ def test_version(runner):
 
 
 @patch("lintro.tools.AVAILABLE_TOOLS")
-def test_list_tools(mock_tools, runner):
+def test_list_tools(
+    mock_tools,
+    runner,
+):
     """Test the list-tools command."""
     mock_tools.items.return_value = [
         ("black", MagicMock(name="black", description="Black formatter", can_fix=True)),
@@ -39,7 +44,11 @@ def test_list_tools(mock_tools, runner):
 
 @patch("lintro.cli.CHECK_TOOLS")
 @patch("os.getcwd")
-def test_check_no_path(mock_getcwd, mock_tools, runner):
+def test_check_no_path(
+    mock_getcwd,
+    mock_tools,
+    runner,
+):
     """Test the check command with no path argument."""
     mock_getcwd.return_value = "/test/path"
     mock_tool = MagicMock()
@@ -62,7 +71,10 @@ def test_check_no_path(mock_getcwd, mock_tools, runner):
 
 
 @patch("lintro.cli.FIX_TOOLS")
-def test_fmt_with_path(mock_tools, runner):
+def test_fmt_with_path(
+    mock_tools,
+    runner,
+):
     """Test the fmt command with a path argument."""
     mock_tool = MagicMock()
     mock_tool.fix.return_value = (True, "Fixed issues")
@@ -88,7 +100,10 @@ def test_fmt_with_path(mock_tools, runner):
 
 
 @patch("lintro.cli.FIX_TOOLS")
-def test_fmt_with_specific_tools(mock_tools, runner):
+def test_fmt_with_specific_tools(
+    mock_tools,
+    runner,
+):
     """Test the fmt command with specific tools."""
     mock_black = MagicMock()
     mock_black.fix.return_value = (True, "Black fixed issues")

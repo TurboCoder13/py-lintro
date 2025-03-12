@@ -18,7 +18,10 @@ class BlackTool(Tool):
         self.exclude_patterns = []
         self.include_venv = False
 
-    def check(self, paths: list[str]) -> tuple[bool, str]:
+    def check(
+        self,
+        paths: list[str],
+    ) -> tuple[bool, str]:
         """Check if files would be reformatted by Black."""
         # Base command
         cmd = ["black", "--check"]
@@ -61,7 +64,10 @@ class BlackTool(Tool):
             
             return False, output
 
-    def fix(self, paths: list[str]) -> tuple[bool, str]:
+    def fix(
+        self,
+        paths: list[str],
+    ) -> tuple[bool, str]:
         """Format files with Black."""
         # Base command
         cmd = ["black"]

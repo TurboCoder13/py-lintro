@@ -4,17 +4,26 @@ import os
 import sys
 
 
-def badly_formatted_function(x: int, y: int) -> int:
+def badly_formatted_function(
+    x: int,
+    y: int,
+) -> int:
     """This function has formatting issues."""
     z = x + y
     return z
 
 
 class BadlyFormattedClass:
-    def __init__(self, name: str):
+    def __init__(
+        self,
+        name: str,
+    ):
         self.name = name
 
-    def do_something(self, items: list[str]) -> dict[str, any]:
+    def do_something(
+        self,
+        items: list[str],
+    ) -> dict[str, any]:
         result = {}
         for item in items:
             result[item] = len(item)

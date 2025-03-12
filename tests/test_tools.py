@@ -23,7 +23,9 @@ def test_tool_interface():
 
 
 @patch("subprocess.run")
-def test_black_check_success(mock_run):
+def test_black_check_success(
+    mock_run
+):
     """Test Black check when no formatting is needed."""
     mock_process = MagicMock()
     mock_process.stdout = "All files would be left unchanged."
@@ -38,11 +40,18 @@ def test_black_check_success(mock_run):
 
 
 @patch("subprocess.run")
-def test_black_check_failure(mock_run):
+def test_black_check_failure(
+    mock_run
+):
     """Test Black check when formatting is needed."""
     # Use CalledProcessError instead of Exception to match what subprocess.run raises
     from subprocess import CalledProcessError
-    error = CalledProcessError(1, ["black", "--check"], output="Would reformat test.py", stderr="")
+    error = CalledProcessError(
+        1,
+        ["black", "--check"],
+        output="Would reformat test.py",
+        stderr="",
+    )
     mock_run.side_effect = error
     
     tool = BlackTool()
