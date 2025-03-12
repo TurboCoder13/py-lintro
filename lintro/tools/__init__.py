@@ -91,6 +91,7 @@ from lintro.tools.hadolint import HadolintTool  # noqa: E402
 from lintro.tools.isort import IsortTool  # noqa: E402
 from lintro.tools.prettier import PrettierTool  # noqa: E402
 from lintro.tools.pydocstyle import PydocstyleTool  # noqa: E402
+from lintro.tools.pylint import PylintTool  # noqa: E402
 
 # Register all available tools
 AVAILABLE_TOOLS = {
@@ -101,6 +102,7 @@ AVAILABLE_TOOLS = {
     "hadolint": HadolintTool(),
     "prettier": PrettierTool(),
     "pydocstyle": PydocstyleTool(),
+    "pylint": PylintTool(),
 }
 
 # Tools that can fix issues

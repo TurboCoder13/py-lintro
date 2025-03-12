@@ -12,6 +12,7 @@ from lintro.tools.hadolint import HadolintTool
 from lintro.tools.isort import IsortTool
 from lintro.tools.prettier import PrettierTool
 from lintro.tools.pydocstyle import PydocstyleTool
+from lintro.tools.pylint import PylintTool
 
 
 def test_tool_interface():
@@ -24,6 +25,7 @@ def test_tool_interface():
         HadolintTool(),
         PrettierTool(),
         PydocstyleTool(),
+        PylintTool(),
     ]
 
     for tool in tools:
@@ -402,3 +404,68 @@ def test_prettier_fix_failure(mock_run):
     assert success is False
     assert "Error formatting files" in output
     mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_pylint_check_success(mock_run):
+    """Test pylint check when no issues are found."""
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.stdout = ""
+    mock_run.return_value = mock_process
+
+    tool = PylintTool()
+    success, output = tool.check(["test.py"])
+
+    assert success is True
+    assert "No issues found" in output
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_pylint_check_failure(mock_run):
+    """Test pylint check when issues are found."""
+    mock_process = MagicMock()
+    mock_process.returncode = 1
+    mock_process.stdout = (
+        "test.py:10:0: C0111: Missing module docstring (missing-docstring)\n"
+        "test.py:12:0: C0103: Variable name 'x' doesn't conform to snake_case naming style (invalid-name)"
+    )
+    mock_run.return_value = mock_process
+
+    tool = PylintTool()
+    success, output = tool.check(["test.py"])
+
+    assert success is False
+    assert "C0111" in output
+    assert "C0103" in output
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_pylint_check_with_rcfile(mock_run):
+    """Test pylint check with custom rcfile."""
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.stdout = ""
+    mock_run.return_value = mock_process
+
+    tool = PylintTool()
+    tool.set_options(rcfile="custom_pylintrc")
+    success, output = tool.check(["test.py"])
+
+    assert success is True
+    # Check that the rcfile was passed to pylint
+    mock_run.assert_called_once()
+    cmd = mock_run.call_args[0][0]
+    assert "--rcfile" in cmd
+    assert "custom_pylintrc" in cmd
+
+
+def test_pylint_fix():
+    """Test that pylint fix returns appropriate message."""
+    tool = PylintTool()
+    success, output = tool.fix(["test.py"])
+
+    assert success is False
+    assert "cannot automatically fix" in output

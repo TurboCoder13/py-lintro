@@ -356,4 +356,81 @@ file2.js 20:10 Replace `'` with `"`
             success, output = prettier_tool.fix(["file1.js", "file2.js"])
             
             assert success is True
-            assert "ms" in output or "formatted" in output 
+            assert "ms" in output or "formatted" in output
+
+
+class TestPylintTool:
+    """Tests for the pylint tool module."""
+
+    def test_check_with_success(self):
+        """Test check method with successful result."""
+        with patch("subprocess.run") as mock_run:
+            # Mock a successful subprocess run
+            mock_process = MagicMock()
+            mock_process.returncode = 0
+            mock_process.stdout = ""  # Pylint outputs nothing on success
+            mock_run.return_value = mock_process
+            
+            pylint_tool = AVAILABLE_TOOLS["pylint"]
+            success, output = pylint_tool.check(["file1.py", "file2.py"])
+            
+            assert success is True
+            assert "No issues found" in output
+    
+    def test_check_with_failure(self):
+        """Test check method with failure result."""
+        with patch("subprocess.run") as mock_run:
+            # Mock a failed subprocess run
+            mock_process = MagicMock()
+            mock_process.returncode = 1
+            mock_process.stdout = (
+                "file1.py:10:0: C0111: Missing module docstring (missing-docstring)\n"
+                "file2.py:20:0: C0103: Variable name 'x' doesn't conform to snake_case naming style (invalid-name)"
+            )
+            mock_run.return_value = mock_process
+            
+            pylint_tool = AVAILABLE_TOOLS["pylint"]
+            success, output = pylint_tool.check(["file1.py", "file2.py"])
+            
+            assert success is False
+            assert "C0111" in output
+            assert "C0103" in output
+    
+    def test_check_with_file_not_found(self):
+        """Test check method with FileNotFoundError."""
+        with patch("subprocess.run") as mock_run:
+            # Mock a FileNotFoundError
+            mock_run.side_effect = FileNotFoundError("No such file or directory: 'pylint'")
+            
+            pylint_tool = AVAILABLE_TOOLS["pylint"]
+            success, output = pylint_tool.check(["file1.py", "file2.py"])
+            
+            assert success is False
+            assert "Pylint not found" in output
+    
+    def test_check_with_rcfile(self):
+        """Test check method with custom rcfile."""
+        with patch("subprocess.run") as mock_run:
+            # Mock a successful subprocess run
+            mock_process = MagicMock()
+            mock_process.returncode = 0
+            mock_process.stdout = ""
+            mock_run.return_value = mock_process
+            
+            pylint_tool = AVAILABLE_TOOLS["pylint"]
+            pylint_tool.set_options(rcfile="custom_pylintrc")
+            success, output = pylint_tool.check(["file1.py", "file2.py"])
+            
+            assert success is True
+            # Check that the rcfile was passed to pylint
+            cmd = mock_run.call_args[0][0]
+            assert "--rcfile" in cmd
+            assert "custom_pylintrc" in cmd
+    
+    def test_fix(self):
+        """Test fix method."""
+        pylint_tool = AVAILABLE_TOOLS["pylint"]
+        success, output = pylint_tool.fix(["file1.py", "file2.py"])
+        
+        assert success is False
+        assert "cannot automatically fix" in output 
