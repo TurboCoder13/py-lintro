@@ -1449,6 +1449,19 @@ def format_tool_output(
 
     # If tabulate is available, table format is requested, and we have issues, format as a table
     if use_table_format and TABULATE_AVAILABLE and issues:
+        # Handle auto grouping by choosing between file and code based on the data
+        if group_by == "auto":
+            # Get unique files and codes
+            unique_files = set(issue.get("file", "") for issue in issues)
+            unique_codes = set(issue.get("code", "") for issue in issues)
+            
+            # If there are more unique files than codes, group by code
+            # This is more useful when there are a few error types across many files
+            if len(unique_files) > len(unique_codes) and len(unique_codes) < 5:
+                group_by = "code"
+            else:
+                group_by = "file"
+        
         return format_as_table(issues, tool_name, group_by)
     
     # If we have no issues but we're using table format, return the original output
@@ -1542,9 +1555,9 @@ def cli():
 )
 @click.option(
     "--group-by",
-    type=click.Choice(["file", "code", "none"]),
-    default="file",
-    help="Group issues by file, code, or none",
+    type=click.Choice(["file", "code", "none", "auto"]),
+    default="auto",
+    help="How to group issues in the output (file, code, none, or auto)",
 )
 @click.option(
     "--ignore-conflicts",

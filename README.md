@@ -180,6 +180,7 @@ lintro check --table-format --group-by code [PATH]
 lintro check --table-format --group-by none [PATH]
 
 # Auto-grouping (default for fmt command) - intelligently chooses the best grouping method
+lintro check --table-format --group-by auto [PATH]
 lintro fmt --table-format --group-by auto [PATH]
 ```
 

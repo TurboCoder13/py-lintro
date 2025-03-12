@@ -81,7 +81,7 @@ def test_check_command_with_table_format(
             mock_format.return_value = "Formatted output"
             result = runner.invoke(cli, ["check", "--table-format", "."])
             assert result.exit_code == 0
-            mock_format.assert_called_with("All good", "black", True, "file")
+            mock_format.assert_called_with("All good", "black", True, "auto")
 
     # Test with table format and group-by options
     with patch("lintro.cli.TABULATE_AVAILABLE", True):
