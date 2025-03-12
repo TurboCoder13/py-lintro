@@ -122,8 +122,7 @@ CHECK_TOOLS = AVAILABLE_TOOLS
 
 def resolve_tool_conflicts(selected_tools: list[str]) -> list[str]:
     """
-    Resolve conflicts between tools and return a list of tools to run
-    in the correct order.
+    Resolve conflicts between tools.
 
     Args:
         selected_tools: List of tool names to check for conflicts
@@ -138,7 +137,15 @@ def resolve_tool_conflicts(selected_tools: list[str]) -> list[str]:
     conflicts = {}
     for tool_name in valid_tools:
         tool = AVAILABLE_TOOLS[tool_name]
-        for conflict in tool.config.conflicts_with:
+        # Handle both dictionary-style and attribute-style access
+        if hasattr(tool.config, "conflicts_with"):
+            conflicts_with = tool.config.conflicts_with
+        elif isinstance(tool.config, dict) and "conflicts_with" in tool.config:
+            conflicts_with = tool.config["conflicts_with"]
+        else:
+            conflicts_with = []
+            
+        for conflict in conflicts_with:
             if conflict in valid_tools:
                 if tool_name not in conflicts:
                     conflicts[tool_name] = []
