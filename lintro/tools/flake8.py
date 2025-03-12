@@ -1,6 +1,5 @@
 """Flake8 linter integration."""
 
-import os
 import re
 import subprocess
 
@@ -68,7 +67,8 @@ class Flake8Tool(Tool):
             if not self.include_venv and output:
                 filtered_lines = []
                 venv_pattern = re.compile(
-                    r"(\.venv|venv|env|ENV|virtualenv|virtual_env|virtualenvs|site-packages)"
+                    r"(\.venv|venv|env|ENV|virtualenv|virtual_env|"
+                    r"virtualenvs|site-packages)"
                 )
 
                 for line in output.splitlines():
