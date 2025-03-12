@@ -10,11 +10,21 @@ from lintro.tools.darglint import DarglintTool
 from lintro.tools.flake8 import Flake8Tool
 from lintro.tools.hadolint import HadolintTool
 from lintro.tools.isort import IsortTool
+from lintro.tools.prettier import PrettierTool
+from lintro.tools.pydocstyle import PydocstyleTool
 
 
 def test_tool_interface():
     """Test that all tools implement the Tool interface."""
-    tools = [BlackTool(), IsortTool(), Flake8Tool(), DarglintTool(), HadolintTool()]
+    tools = [
+        BlackTool(), 
+        IsortTool(), 
+        Flake8Tool(), 
+        DarglintTool(), 
+        HadolintTool(),
+        PrettierTool(),
+        PydocstyleTool(),
+    ]
 
     for tool in tools:
         assert isinstance(tool, Tool)
@@ -244,3 +254,151 @@ def test_hadolint_fix():
 
     assert success is False
     assert "cannot automatically fix" in output
+
+
+@patch("subprocess.Popen")
+def test_pydocstyle_check_success(mock_popen):
+    """Test pydocstyle check when no docstring style issues are found."""
+    # Mock the process
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.communicate.return_value = ("", "")
+    mock_popen.return_value = mock_process
+
+    # Mock os.path.isdir, os.path.isfile, and os.walk
+    with patch("os.path.isdir", return_value=False), \
+         patch("os.path.isfile", return_value=True), \
+         patch("os.walk", return_value=[]):
+        tool = PydocstyleTool()
+        success, output = tool.check(["test.py"])
+
+    assert success is True
+    assert output == "No docstring style issues found."
+    mock_popen.assert_called_once()
+
+
+@patch("subprocess.Popen")
+def test_pydocstyle_check_failure(mock_popen):
+    """Test pydocstyle check when docstring style issues are found."""
+    # Mock the process
+    mock_process = MagicMock()
+    mock_process.returncode = 1
+    mock_process.communicate.return_value = (
+        "test.py:10: D100 Missing docstring in public module", 
+        ""
+    )
+    mock_popen.return_value = mock_process
+
+    # Mock os.path.isdir, os.path.isfile, and os.walk
+    with patch("os.path.isdir", return_value=False), \
+         patch("os.path.isfile", return_value=True), \
+         patch("os.walk", return_value=[]):
+        tool = PydocstyleTool()
+        success, output = tool.check(["test.py"])
+
+    assert success is False
+    assert "D100" in output
+    mock_popen.assert_called_once()
+
+
+@patch("subprocess.Popen")
+def test_pydocstyle_check_timeout(mock_popen):
+    """Test pydocstyle check when a timeout occurs."""
+    # Mock the process
+    mock_process = MagicMock()
+    mock_process.communicate.side_effect = subprocess.TimeoutExpired(cmd="pydocstyle", timeout=10)
+    mock_popen.return_value = mock_process
+
+    # Mock os.path.isdir, os.path.isfile, and os.walk
+    with patch("os.path.isdir", return_value=False), \
+         patch("os.path.isfile", return_value=True), \
+         patch("os.walk", return_value=[]):
+        tool = PydocstyleTool()
+        success, output = tool.check(["test.py"])
+
+    assert success is False
+    assert "timeout" in output.lower()
+    mock_popen.assert_called_once()
+
+
+def test_pydocstyle_fix():
+    """Test that pydocstyle cannot fix issues."""
+    tool = PydocstyleTool()
+    success, output = tool.fix(["test.py"])
+
+    assert success is False
+    assert "cannot automatically fix" in output
+
+
+@patch("subprocess.run")
+def test_prettier_check_success(mock_run):
+    """Test prettier check when no formatting issues are found."""
+    mock_process = MagicMock()
+    mock_process.stdout = ""
+    mock_run.return_value = mock_process
+
+    tool = PrettierTool()
+    success, output = tool.check(["test.js"])
+
+    assert success is True
+    assert output == "All files are formatted correctly."
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_prettier_check_failure(mock_run):
+    """Test prettier check when formatting issues are found."""
+    # Use CalledProcessError instead of Exception to match what subprocess.run raises
+    from subprocess import CalledProcessError
+
+    error = CalledProcessError(
+        1,
+        ["npx", "prettier", "--check"],
+        output="[warn] test.js would be formatted",
+        stderr="",
+    )
+    mock_run.side_effect = error
+
+    tool = PrettierTool()
+    success, output = tool.check(["test.js"])
+
+    assert success is False
+    assert "would be formatted" in output
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_prettier_fix_success(mock_run):
+    """Test prettier fix when formatting is successful."""
+    mock_process = MagicMock()
+    mock_process.stdout = ""
+    mock_run.return_value = mock_process
+
+    tool = PrettierTool()
+    success, output = tool.fix(["test.js"])
+
+    assert success is True
+    assert output == "All files formatted successfully."
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_prettier_fix_failure(mock_run):
+    """Test prettier fix when formatting fails."""
+    # Use CalledProcessError instead of Exception to match what subprocess.run raises
+    from subprocess import CalledProcessError
+
+    error = CalledProcessError(
+        1,
+        ["npx", "prettier", "--write"],
+        output="Error: Unable to format file",
+        stderr="",
+    )
+    mock_run.side_effect = error
+
+    tool = PrettierTool()
+    success, output = tool.fix(["test.js"])
+
+    assert success is False
+    assert "Error formatting files" in output
+    mock_run.assert_called_once()
