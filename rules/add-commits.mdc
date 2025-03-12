@@ -1,0 +1,49 @@
+---
+description: Add commit messages to changes
+globs: 
+alwaysApply: false
+---
+When making/proposing changes, I always want commit messages to be added so that I can individually track changes on a commit basis.
+
+The commit message should contain on of the common commit prefixes.
+
+For example (this is not an exhaustive list):
+
+```shell
+feature
+bug-fix
+docs
+style
+refactor
+opt
+tests
+build
+ci
+```
+
+Commit messages should be in the imperative mood. For example:
+
+❌
+```shell
+feat: adds a new file
+```
+
+❌
+```shell
+feat: added a new file
+```
+
+✅
+```shell
+feat: add a new file
+```
+
+The overal commit should be in this format:
+
+```shell
+feat: add a new file
+
+- foo
+- bar
+- baz
+```
