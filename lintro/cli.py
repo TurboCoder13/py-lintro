@@ -45,78 +45,151 @@ def count_issues(output: str, tool_name: str) -> int:
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
 
 
-def print_tool_header(tool_name: str, action: str, file: Optional[TextIO] = None):
+def print_tool_header(tool_name: str, action: str, file: Optional[TextIO] = None, use_table_format: bool = False):
     """Print a header for a tool's output."""
-    click.secho(f"\n{'=' * 60}", fg="blue")
-    click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True)
-    click.secho(f"{'=' * 60}", fg="blue")
-    
-    # Also write to file if specified
-    if file:
-        click.secho(f"\n{'=' * 60}", fg="blue", file=file)
-        click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True, file=file)
-        click.secho(f"{'=' * 60}", fg="blue", file=file)
-
-
-def print_tool_footer(success: bool, issues_count: int, file: Optional[TextIO] = None):
-    """Print a footer for a tool's output."""
-    # Always use issues_count to determine success/failure
-    if issues_count == 0:
-        click.secho(f"\n✓ No issues found", fg="green")
+    if not use_table_format:
+        # Standard format
+        click.secho(f"\n{'=' * 60}", fg="blue")
+        click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True)
+        click.secho(f"{'=' * 60}", fg="blue")
+        
+        # Also write to file if specified
         if file:
-            click.secho(f"\n✓ No issues found", fg="green", file=file)
+            click.secho(f"\n{'=' * 60}", fg="blue", file=file)
+            click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True, file=file)
+            click.secho(f"{'=' * 60}", fg="blue", file=file)
     else:
-        click.secho(f"\n✗ Found {issues_count} issues", fg="red")
+        # Table format
+        header = f"\n{'-' * 60}\n Running {tool_name} ({action})\n{'-' * 60}"
+        click.secho(header, fg="blue", bold=True)
         if file:
-            click.secho(f"\n✗ Found {issues_count} issues", fg="red", file=file)
-    
-    click.secho(f"{'-' * 60}", fg="blue")
-    if file:
-        click.secho(f"{'-' * 60}", fg="blue", file=file)
+            click.secho(header, fg="blue", bold=True, file=file)
 
 
-def print_summary(results: List[ToolResult], action: str, file: Optional[TextIO] = None):
+def print_tool_footer(success: bool, issues_count: int, file: Optional[TextIO] = None, use_table_format: bool = False):
+    """Print a footer for a tool's output."""
+    if not use_table_format:
+        # Standard format
+        # Always use issues_count to determine success/failure
+        if issues_count == 0:
+            click.secho(f"\n✓ No issues found", fg="green")
+            if file:
+                click.secho(f"\n✓ No issues found", fg="green", file=file)
+        else:
+            click.secho(f"\n✗ Found {issues_count} issues", fg="red")
+            if file:
+                click.secho(f"\n✗ Found {issues_count} issues", fg="red", file=file)
+        
+        click.secho(f"{'-' * 60}", fg="blue")
+        if file:
+            click.secho(f"{'-' * 60}", fg="blue", file=file)
+    else:
+        # Table format
+        if issues_count == 0:
+            footer = f"\n✓ No issues found"
+            click.secho(footer, fg="green")
+            if file:
+                click.secho(footer, fg="green", file=file)
+        else:
+            footer = f"\n✗ Found {issues_count} issues"
+            click.secho(footer, fg="red")
+            if file:
+                click.secho(footer, fg="red", file=file)
+        
+        click.secho(f"{'-' * 60}", fg="blue")
+        if file:
+            click.secho(f"{'-' * 60}", fg="blue", file=file)
+
+
+def print_summary(results: List[ToolResult], action: str, file: Optional[TextIO] = None, use_table_format: bool = False):
     """Print a summary of all tool results."""
     total_issues = sum(result.issues_count for result in results)
     
-    click.secho(f"\n{'=' * 60}", fg="blue")
-    click.secho(f" Summary ({action})", fg="blue", bold=True)
-    click.secho(f"{'=' * 60}", fg="blue")
+    if not use_table_format:
+        # Standard format
+        click.secho(f"\n{'=' * 60}", fg="blue")
+        click.secho(f" Summary ({action})", fg="blue", bold=True)
+        click.secho(f"{'=' * 60}", fg="blue")
+        
+        if file:
+            click.secho(f"\n{'=' * 60}", fg="blue", file=file)
+            click.secho(f" Summary ({action})", fg="blue", bold=True, file=file)
+            click.secho(f"{'=' * 60}", fg="blue", file=file)
+    else:
+        # Table format
+        header = f"\n{'-' * 60}\n Summary ({action})\n{'-' * 60}"
+        click.secho(header, fg="blue", bold=True)
+        if file:
+            click.secho(header, fg="blue", bold=True, file=file)
     
-    if file:
-        click.secho(f"\n{'=' * 60}", fg="blue", file=file)
-        click.secho(f" Summary ({action})", fg="blue", bold=True, file=file)
-        click.secho(f"{'=' * 60}", fg="blue", file=file)
-    
-    for result in results:
-        if result.issues_count == 0:
+    # Create a table for the summary if using table format
+    if use_table_format and TABULATE_AVAILABLE:
+        summary_data = []
+        for result in results:
+            status = "✓" if result.issues_count == 0 else "✗"
+            status_color = "green" if result.issues_count == 0 else "red"
+            message = "No issues" if result.issues_count == 0 else f"{result.issues_count} issues"
+            
+            summary_data.append([
+                click.style(status, fg=status_color),
+                result.name,
+                click.style(message, fg=status_color)
+            ])
+        
+        summary_table = tabulate(
+            summary_data,
+            headers=["Status", "Tool", "Result"],
+            tablefmt="pretty"
+        )
+        
+        click.echo(summary_table)
+        if file:
+            click.echo(summary_table, file=file)
+        
+        # Add total line
+        if total_issues == 0:
+            total_line = click.style(f"\nTotal: No issues found", fg="green")
+        else:
+            total_line = click.style(f"\nTotal: {total_issues} issues found", fg="red")
+        
+        click.echo(total_line)
+        if file:
+            click.echo(total_line, file=file)
+        
+        click.secho(f"{'-' * 60}", fg="blue")
+        if file:
+            click.secho(f"{'-' * 60}", fg="blue", file=file)
+    else:
+        # Standard format for summary items
+        for result in results:
+            if result.issues_count == 0:
+                status = click.style("✓", fg="green")
+                message = click.style("No issues", fg="green")
+            else:
+                status = click.style("✗", fg="red")
+                message = click.style(f"{result.issues_count} issues", fg="red")
+            
+            click.echo(f" {status} {result.name}: {message}")
+            if file:
+                click.echo(f" {status} {result.name}: {message}", file=file)
+        
+        click.secho(f"{'-' * 60}", fg="blue")
+        if file:
+            click.secho(f"{'-' * 60}", fg="blue", file=file)
+        
+        if total_issues == 0:
             status = click.style("✓", fg="green")
-            message = click.style("No issues", fg="green")
+            message = click.style("No issues found", fg="green")
         else:
             status = click.style("✗", fg="red")
-            message = click.style(f"{result.issues_count} issues", fg="red")
+            message = click.style(f"{total_issues} issues found", fg="red")
         
-        click.echo(f" {status} {result.name}: {message}")
+        click.echo(f" Total: {message}")
+        click.secho(f"{'=' * 60}", fg="blue")
+        
         if file:
-            click.echo(f" {status} {result.name}: {message}", file=file)
-    
-    click.secho(f"{'-' * 60}", fg="blue")
-    if file:
-        click.secho(f"{'-' * 60}", fg="blue", file=file)
-    
-    if total_issues == 0:
-        status = click.style("✓", fg="green")
-        message = click.style("No issues found", fg="green")
-    else:
-        status = click.style("✗", fg="red")
-        message = click.style(f"{total_issues} issues found", fg="red")
-    
-    click.echo(f" Total: {message}")
-    click.secho(f"{'=' * 60}", fg="blue")
-    
-    if file:
-        click.echo(f" Total: {message}", file=file)
-        click.secho(f"{'=' * 60}", fg="blue", file=file)
+            click.echo(f" Total: {message}", file=file)
+            click.secho(f"{'=' * 60}", fg="blue", file=file)
 
 
 def parse_tool_list(tools_str: Optional[str]) -> List[str]:
@@ -151,7 +224,7 @@ def get_relative_path(file_path: str) -> str:
 
 
 # Add a function to format output as a table
-def format_as_table(issues):
+def format_as_table(issues, tool_name=None):
     """Format issues as a table using tabulate if available."""
     if not TABULATE_AVAILABLE:
         return None
@@ -167,11 +240,22 @@ def format_as_table(issues):
         ])
     
     # Format as a table with headers
-    return tabulate(
+    headers = ["File", "Line", "Code", "Message"]
+    
+    # Add tool name to the table if provided
+    title = ""
+    if tool_name:
+        title = f"Results for {tool_name}:"
+    
+    table = tabulate(
         table_data,
-        headers=["File", "Line", "Code", "Message"],
+        headers=headers,
         tablefmt="pretty"
     )
+    
+    if title:
+        return f"{title}\n{table}"
+    return table
 
 
 def format_tool_output(output: str, tool_name: str, use_table_format: bool = False) -> str:
@@ -263,7 +347,7 @@ def format_tool_output(output: str, tool_name: str, use_table_format: bool = Fal
     
     # If tabulate is available, table format is requested, and we have issues, format as a table
     if TABULATE_AVAILABLE and use_table_format and issues:
-        table = format_as_table(issues)
+        table = format_as_table(issues, tool_name)
         if table:
             # Add any summary lines
             if tool_name == "black":
@@ -438,11 +522,11 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
         results = []
         
         for name, tool in tools_to_run.items():
-            print_tool_header(name, "check", output_file)
-            
             # Modify tool command based on options
             if hasattr(tool, "set_options"):
                 tool.set_options(exclude_patterns=exclude_patterns, include_venv=include_venv)
+            
+            print_tool_header(name, "check", output_file, table_format)
             
             success, output_text = tool.check(list(paths))
             
@@ -457,14 +541,14 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
             
             # Use issues_count to determine success
             success = issues_count == 0
-            print_tool_footer(success, issues_count, output_file)
+            print_tool_footer(success, issues_count, output_file, table_format)
             
             results.append(ToolResult(name=name, success=success, output=output_text, issues_count=issues_count))
             
             if not success:
                 exit_code = 1
         
-        print_summary(results, "check", output_file)
+        print_summary(results, "check", output_file, table_format)
         
         # If output file is specified, print a summary to the console as well
         if output_file:
@@ -548,11 +632,11 @@ def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_
         results = []
         
         for name, tool in tools_to_run.items():
-            print_tool_header(name, "fix", output_file)
-            
             # Modify tool command based on options
             if hasattr(tool, "set_options"):
                 tool.set_options(exclude_patterns=exclude_patterns, include_venv=include_venv)
+            
+            print_tool_header(name, "fix", output_file, table_format)
             
             success, output_text = tool.fix(list(paths))
             
@@ -567,14 +651,14 @@ def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_
             
             # Use issues_count to determine success
             success = issues_count == 0
-            print_tool_footer(success, issues_count, output_file)
+            print_tool_footer(success, issues_count, output_file, table_format)
             
             results.append(ToolResult(name=name, success=success, output=output_text, issues_count=issues_count))
             
             if not success:
                 exit_code = 1
         
-        print_summary(results, "format", output_file)
+        print_summary(results, "format", output_file, table_format)
         
         # If output file is specified, print a summary to the console as well
         if output_file:
