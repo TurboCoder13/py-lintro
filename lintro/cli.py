@@ -1163,6 +1163,7 @@ def check(
                     output=output_text,
                     issues_count=issues_count,
                 )
+            )
 
             if not success:
                 exit_code = 1
@@ -1387,6 +1388,7 @@ def fmt(
                     output=output_text,
                     issues_count=issues_count,
                 )
+            )
 
             if not success:
                 exit_code = 1
