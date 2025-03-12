@@ -84,6 +84,9 @@ def count_issues(
     elif tool_name == "pylint":
         # Count lines with pylint message codes (e.g., C0103, E0611)
         return len(re.findall(r"[CEFIRW]\d{4}", output))
+    elif tool_name == "semgrep":
+        # Count occurrences of the semgrep rule indicator
+        return len(re.findall(r"❯❯❱", output))
     else:
         # Generic fallback: count lines that look like issues
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
@@ -109,6 +112,7 @@ def get_tool_emoji(tool_name: str) -> str:
         "pydocstyle": "📚",
         "prettier": "💅",
         "pylint": "🔍",
+        "semgrep": "🔎",
     }
 
     return tool_emojis.get(tool_name, "✨")
@@ -312,6 +316,8 @@ def get_table_columns(
         code_column = "Dockerfile Code"
     elif tool_name == "pylint":
         code_column = "Pylint Code"
+    elif tool_name == "semgrep":
+        code_column = "Rule ID"
     else:
         code_column = "Code"
 
@@ -334,6 +340,17 @@ def get_table_columns(
             "Position": "col",
             "Message": "message",
             "Name": "name"
+        }
+
+    # Add semgrep-specific columns
+    if tool_name == "semgrep":
+        columns_map = {
+            "File": "file",
+            code_column: "code",
+            "Line": "line",
+            "Position": "col",
+            "Severity": "severity",
+            "Message": "message",
         }
 
     # Determine which columns to include based on grouping
@@ -412,6 +429,8 @@ def format_as_table(
         code_key = "code"
     elif tool_name == "pylint":
         code_key = "code"
+    elif tool_name == "semgrep":
+        code_key = "code"
     else:
         code_key = "code"
 
@@ -422,12 +441,14 @@ def format_as_table(
         "Docstring Code": "code",
         "Dockerfile Code": "code",
         "Pylint Code": "code",
+        "Rule ID": "code",
         "Code": "code",
         "Line": "line",
         "Position": "col",
         "Method": "method",
         "Message": "message",
-        "Name": "name"
+        "Name": "name",
+        "Severity": "severity",
     }
 
     # Group issues by file or code if requested
@@ -966,6 +987,61 @@ def format_tool_output(
                             "type": "error" if error_code.startswith("E") or error_code.startswith("F") else "warning"
                         })
 
+    elif tool_name == "semgrep":
+        # Extract file paths, line numbers, and error codes from semgrep output
+        current_file = None
+        current_rule = None
+        current_message = None
+        current_line = None
+        
+        for line in output.splitlines():
+            # Check if this is a file line (usually starts with spaces and the file path)
+            file_match = re.match(r'\s+([^❯]+)$', line)
+            if file_match:
+                current_file = file_match.group(1).strip()
+                continue
+                
+            # Check if this is a rule line (starts with ❯❯❱)
+            rule_match = re.match(r'\s+❯❯❱\s+([^\s]+)', line)
+            if rule_match:
+                current_rule = rule_match.group(1).strip()
+                continue
+                
+            # Check if this is a message line (usually indented with spaces)
+            message_match = re.match(r'\s+([^❯][^┆]+)$', line)
+            if message_match and current_file and current_rule:
+                current_message = message_match.group(1).strip()
+                continue
+                
+            # Check if this is a line number line (contains ┆)
+            line_match = re.match(r'\s+(\d+)┆\s+(.*)', line)
+            if line_match and current_file and current_rule and current_message:
+                current_line = line_match.group(1)
+                code_snippet = line_match.group(2).strip()
+                
+                # Get relative path
+                rel_path = get_relative_path(current_file)
+                
+                # Add to lists for formatting
+                file_paths.append(rel_path)
+                line_numbers.append(current_line)
+                error_codes.append(current_rule)
+                
+                # Add to issues list for table formatting
+                issues.append({
+                    "file": rel_path,
+                    "code": current_rule,
+                    "line": current_line,
+                    "col": "0",  # Column information not easily available in new format
+                    "severity": "ERROR",  # Severity not easily available in new format
+                    "message": current_message,
+                    "type": "error"
+                })
+                
+                # Reset for next finding
+                current_message = None
+                current_line = None
+
     # If tabulate is available, table format is requested, and we have issues, format as a table
     if use_table_format and TABULATE_AVAILABLE and issues:
         return format_as_table(issues, tool_name, group_by)
@@ -1038,73 +1114,90 @@ def cli():
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 @click.option(
     "--tools",
-    help="Comma-separated list of tools to run (default: all available tools)",
+    help="Comma-separated list of tools to run (default: all tools that can check)",
 )
 @click.option(
     "--exclude",
-    help="Comma-separated list of patterns to exclude (in addition to default exclusions)",
+    help="Comma-separated list of patterns to exclude (e.g., '*.pyc,venv')",
 )
 @click.option(
     "--include-venv",
     is_flag=True,
-    help="Include virtual environment directories (excluded by default)",
+    help="Include virtual environment directories",
 )
 @click.option(
     "--output",
-    type=click.Path(dir_okay=False, writable=True),
-    help="Output file to write results to",
+    "-o",
+    help="Write output to a file",
 )
 @click.option(
     "--table-format",
     is_flag=True,
-    help="Use table formatting for output (requires tabulate package)",
+    help="Format output as a table",
 )
 @click.option(
     "--group-by",
-    type=click.Choice(["file", "code", "none", "auto"]),
-    default="auto",
-    help="How to group issues in the output (file, code, none, or auto)",
+    type=click.Choice(["file", "code", "none"]),
+    default="file",
+    help="Group issues by file, code, or none",
 )
 @click.option(
     "--ignore-conflicts",
     is_flag=True,
-    help="Ignore tool conflicts and run all specified tools",
+    help="Ignore tool conflicts",
 )
 @click.option(
     "--darglint-timeout",
     type=int,
     default=None,
-    help="Timeout in seconds for darglint per file (default: 10)",
+    help="Timeout for darglint in seconds",
 )
 @click.option(
     "--hadolint-timeout",
     type=int,
     default=None,
-    help="Timeout in seconds for hadolint per file (default: 10)",
+    help="Timeout for hadolint in seconds",
 )
 @click.option(
     "--pydocstyle-timeout",
     type=int,
     default=None,
-    help="Timeout in seconds for pydocstyle per file (default: 10)",
+    help="Timeout for pydocstyle in seconds",
 )
 @click.option(
     "--pydocstyle-convention",
-    type=click.Choice(["pep257", "numpy", "google"]),
+    type=str,
     default=None,
-    help="Docstring style convention for pydocstyle (default: pep257)",
+    help="Convention for pydocstyle (e.g., 'numpy', 'google')",
 )
 @click.option(
     "--prettier-timeout",
     type=int,
     default=None,
-    help="Timeout in seconds for prettier (default: 30)",
+    help="Timeout for prettier in seconds",
 )
 @click.option(
     "--pylint-rcfile",
-    type=click.Path(exists=True, dir_okay=False),
+    type=str,
     default=None,
     help="Path to pylint configuration file",
+)
+@click.option(
+    "--semgrep-config",
+    type=str,
+    default=None,
+    help="Semgrep configuration option (default: auto)",
+)
+@click.option(
+    "--verbose",
+    is_flag=True,
+    help="Show verbose output",
+)
+@click.option(
+    "--debug-file",
+    type=str,
+    default=None,
+    help="Write debug output to a file",
 )
 def check(
     paths: list[str],
@@ -1121,10 +1214,25 @@ def check(
     pydocstyle_convention: str | None,
     prettier_timeout: int | None,
     pylint_rcfile: str | None,
+    semgrep_config: str | None,
+    verbose: bool = False,
+    debug_file: str | None = None,
 ):
     """Check files for issues without fixing them."""
     if not paths:
         paths = [os.getcwd()]
+
+    # Open debug file if specified
+    debug_file_handle = None
+    if debug_file:
+        try:
+            debug_file_handle = open(debug_file, "w")
+            debug_file_handle.write(f"Lintro check command\n")
+            debug_file_handle.write(f"Paths: {paths}\n")
+            debug_file_handle.write(f"Tools: {tools}\n")
+        except IOError as e:
+            click.echo(f"Error opening debug file: {e}", err=True)
+            sys.exit(1)
 
     # Check if table format is requested but tabulate is not available
     if table_format and not TABULATE_AVAILABLE:
@@ -1159,6 +1267,8 @@ def check(
         click.echo(
             "No tools selected. Available tools: " + ", ".join(CHECK_TOOLS.keys())
         )
+        if debug_file_handle:
+            debug_file_handle.close()
         sys.exit(1)
 
     # Process exclude patterns
@@ -1174,6 +1284,8 @@ def check(
             click.echo(f"Writing output to {output}")
         except IOError as e:
             click.echo(f"Error opening output file: {e}", err=True)
+            if debug_file_handle:
+                debug_file_handle.close()
             sys.exit(1)
 
     try:
@@ -1181,6 +1293,12 @@ def check(
         results = []
 
         for name, tool in tool_to_run.items():
+            if verbose:
+                click.echo(f"Running tool: {name}")
+            
+            if debug_file_handle:
+                debug_file_handle.write(f"\nRunning tool: {name}\n")
+                
             # Modify tool command based on options
             if hasattr(tool, "set_options"):
                 tool.set_options(
@@ -1225,13 +1343,42 @@ def check(
                     include_venv=include_venv,
                     rcfile=pylint_rcfile,
                 )
+            elif name == "semgrep" and semgrep_config is not None:
+                if verbose:
+                    click.echo(f"Setting semgrep config to: {semgrep_config}")
+                if debug_file_handle:
+                    debug_file_handle.write(f"Setting semgrep config to: {semgrep_config}\n")
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    config_option=semgrep_config,
+                )
 
             print_tool_header(name, "check", output_file, table_format)
 
+            if verbose:
+                click.echo(f"Running {name} on paths: {paths}")
+            if debug_file_handle:
+                debug_file_handle.write(f"Running {name} on paths: {paths}\n")
+                
             success, output_text = tool.check(list(paths))
 
+            if verbose:
+                click.echo(f"Tool {name} returned success: {success}")
+                click.echo(f"Output: {output_text}")
+            if debug_file_handle:
+                debug_file_handle.write(f"Tool {name} returned success: {success}\n")
+                debug_file_handle.write(f"Output length: {len(output_text)}\n")
+                debug_file_handle.write(f"Output: {output_text}\n")
+                
             # Count issues and format output
             issues_count = count_issues(output_text, name)
+            
+            if verbose:
+                click.echo(f"Issues count: {issues_count}")
+            if debug_file_handle:
+                debug_file_handle.write(f"Issues count: {issues_count}\n")
+                
             formatted_output = format_tool_output(
                 output_text, name, table_format, group_by
             )
@@ -1265,10 +1412,15 @@ def check(
 
         if output_file:
             output_file.close()
+        if debug_file_handle:
+            debug_file_handle.close()
 
         sys.exit(exit_code)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
+        if debug_file_handle:
+            debug_file_handle.write(f"Error: {e}\n")
+            debug_file_handle.close()
         if output_file:
             output_file.close()
         sys.exit(1)
@@ -1346,6 +1498,12 @@ def check(
     default=None,
     help="Path to pylint configuration file",
 )
+@click.option(
+    "--semgrep-config",
+    type=str,
+    default=None,
+    help="Semgrep configuration option (default: auto)",
+)
 def fmt(
     paths: list[str],
     tools: str | None,
@@ -1361,6 +1519,7 @@ def fmt(
     pydocstyle_convention: str | None,
     prettier_timeout: int | None,
     pylint_rcfile: str | None,
+    semgrep_config: str | None,
 ):
     """Format files to fix issues."""
     if not paths:
@@ -1462,6 +1621,12 @@ def fmt(
                     exclude_patterns=exclude_patterns,
                     include_venv=include_venv,
                     rcfile=pylint_rcfile,
+                )
+            elif name == "semgrep" and semgrep_config is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    config_option=semgrep_config,
                 )
 
             print_tool_header(name, "format", output_file, table_format)
