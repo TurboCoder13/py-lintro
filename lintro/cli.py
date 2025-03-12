@@ -62,6 +62,9 @@ def count_issues(
     elif tool_name == "darglint":
         # Count lines with darglint error codes (e.g., DAR101, DAR201)
         return len(re.findall(r":\d+:\d+: [A-Z]+\d{3}", output))
+    elif tool_name == "hadolint":
+        # Count lines with hadolint error codes (e.g., DL3000, SC2086)
+        return len(re.findall(r"(DL\d{4}|SC\d{4})", output))
     else:
         # Generic fallback: count lines that look like issues
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))

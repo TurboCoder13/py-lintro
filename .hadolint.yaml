@@ -1,0 +1,15 @@
+# Hadolint configuration file
+# See https://github.com/hadolint/hadolint for more information
+
+# Ignore specific rules
+ignored:
+  # Example: Ignore rule DL3008 (Pin versions in apt get install)
+  # - DL3008
+
+# Trusted registries
+trustedRegistries:
+  - docker.io
+  - gcr.io
+  - ghcr.io
+  - quay.io
+  - registry.hub.docker.com
