@@ -346,6 +346,82 @@ def get_relative_path(file_path: str) -> str:
     return file_path
 
 
+def get_table_columns(
+    issues: list[dict],
+    tool_name: str,
+    group_by: str,
+) -> tuple[list[str], list[str]]:
+    """
+    Determine which columns to include in the table based on the data.
+
+    Args:
+        issues: List of issues to format
+        tool_name: Name of the tool that generated the issues
+        group_by: How the issues are grouped (file, code, none)
+
+    Returns:
+        Tuple of (headers, column_keys) where:
+        - headers: List of column headers to display
+        - column_keys: List of keys to extract from each issue
+    """
+    # Get appropriate code column name based on tool
+    if tool_name == "flake8":
+        code_column = "PEP Code"
+    elif tool_name == "darglint":
+        code_column = "Docstring Code"
+    elif tool_name == "pydocstyle":
+        code_column = "Docstring Code"
+    elif tool_name == "hadolint":
+        code_column = "Dockerfile Code"
+    else:
+        code_column = "Code"
+
+    # Define location column name based on tool
+    location_column = "Method" if tool_name == "darglint" else "Location"
+
+    # Define all possible columns based on grouping
+    if group_by == "file":
+        # When grouped by file, file is in the header
+        all_headers = [code_column, "Line", location_column, "Message"]
+        all_keys = ["code", "line", "location", "message"]
+    elif group_by == "code":
+        # When grouped by code, code is in the header
+        all_headers = ["File", "Line", location_column, "Message"]
+        all_keys = ["path", "line", "location", "message"]
+    else:  # No grouping
+        all_headers = ["File", code_column, "Line", location_column, "Message"]
+        all_keys = ["path", "code", "line", "location", "message"]
+
+    # Check which columns have meaningful values
+    has_meaningful_values = {key: False for key in all_keys}
+    
+    for issue in issues:
+        for key in all_keys:
+            if key == "location":
+                # For darglint, get method from the method field
+                if tool_name == "darglint":
+                    value = issue.get("method", "N/A")
+                else:
+                    value = "N/A"
+            else:
+                value = issue.get(key, "N/A")
+            
+            # If any issue has a non-N/A value for this column, keep it
+            if value != "N/A":
+                has_meaningful_values[key] = True
+
+    # Filter out columns with no meaningful values
+    headers = []
+    column_keys = []
+    
+    for header, key in zip(all_headers, all_keys):
+        if has_meaningful_values[key] or key == "message":  # Always keep message column
+            headers.append(header)
+            column_keys.append(key)
+    
+    return headers, column_keys
+
+
 def format_as_table(
     issues: list[dict],
     tool_name: str | None = None,
@@ -376,246 +452,146 @@ def format_as_table(
             group_by = "file"
 
     # Format based on tool and grouping
-    if tool_name == "flake8":
-        # flake8 has detailed error codes and line numbers
-        if group_by == "file":
-            # Group by file
-            issues_by_file = {}
-            for issue in issues:
-                file_path = issue["path"]
-                if file_path not in issues_by_file:
-                    issues_by_file[file_path] = []
-                issues_by_file[file_path].append(issue)
+    if group_by == "file":
+        # Group by file
+        issues_by_file = {}
+        for issue in issues:
+            path = issue["path"]
+            if path not in issues_by_file:
+                issues_by_file[path] = []
+            issues_by_file[path].append(issue)
 
-            for file_path, file_issues in sorted(issues_by_file.items()):
-                # Add file header
-                result.append(f"\nFile: {file_path}")
+        for file_path, file_issues in sorted(issues_by_file.items()):
+            # Add file header
+            result.append(f"\nFile: {file_path}")
 
-                # Convert issues to a list of lists for tabulate
-                table_data = []
-                for issue in file_issues:
-                    table_data.append([issue["line"], issue["code"], issue["message"]])
+            # Prepare issues with location field
+            prepared_issues = []
+            for issue in file_issues:
+                prepared_issue = issue.copy()
+                
+                # Set location field based on tool
+                if tool_name == "darglint":
+                    prepared_issue["location"] = issue.get("method", "N/A")
+                else:
+                    prepared_issue["location"] = "N/A"
+                
+                prepared_issues.append(prepared_issue)
 
-                # Format as a table with headers - use left alignment
-                headers = ["Line", "PEP Code", "Message"]
+            # Get dynamic columns based on data
+            headers, column_keys = get_table_columns(prepared_issues, tool_name, group_by)
 
-                table = tabulate(
-                    table_data,
-                    headers=headers,
-                    tablefmt="pretty",
-                    colalign=("left", "left", "left"),
-                )
-
-                result.append(table)
-
-        elif group_by == "code":
-            # Group by error code
-            issues_by_code = {}
-            for issue in issues:
-                code = issue["code"]
-                if code not in issues_by_code:
-                    issues_by_code[code] = []
-                issues_by_code[code].append(issue)
-
-            for code, code_issues in sorted(issues_by_code.items()):
-                # Add code header
-                result.append(f"\nPEP Code: {code}")
-
-                # Convert issues to a list of lists for tabulate
-                table_data = []
-                for issue in code_issues:
-                    table_data.append([issue["path"], issue["line"], issue["message"]])
-
-                # Format as a table with headers - use left alignment
-                headers = ["File", "Line", "Message"]
-
-                table = tabulate(
-                    table_data,
-                    headers=headers,
-                    tablefmt="pretty",
-                    colalign=("left", "left", "left"),
-                )
-
-                result.append(table)
-
-        else:  # No grouping
             # Convert issues to a list of lists for tabulate
             table_data = []
-            for issue in issues:
-                table_data.append(
-                    [issue["path"], issue["line"], issue["code"], issue["message"]])
+            for issue in prepared_issues:
+                row = [issue.get(key, "N/A") for key in column_keys]
+                table_data.append(row)
 
             # Format as a table with headers - use left alignment
-            headers = ["File", "Line", "PEP Code", "Message"]
-
+            colalign = tuple("left" for _ in headers)
+            
             table = tabulate(
                 table_data,
                 headers=headers,
                 tablefmt="pretty",
-                colalign=("left", "left", "left", "left"),
+                colalign=colalign,
             )
 
             result.append(table)
-    elif tool_name == "black":
-        # Black doesn't need line numbers
-        if group_by == "file":
-            # Group by file
-            issues_by_file = {}
-            for issue in issues:
-                path = issue["path"]
-                if path not in issues_by_file:
-                    issues_by_file[path] = []
-                issues_by_file[path].append(issue)
 
-            for file_path, file_issues in sorted(issues_by_file.items()):
-                # Add file header
-                result.append(f"\nFile: {file_path}")
+    elif group_by == "code":
+        # Group by error code
+        issues_by_code = {}
+        for issue in issues:
+            code = issue["code"]
+            if code not in issues_by_code:
+                issues_by_code[code] = []
+            issues_by_code[code].append(issue)
 
-                # Convert issues to a list of lists for tabulate
-                table_data = []
-                for issue in file_issues:
-                    table_data.append([issue["code"], issue["message"]])
+        # Get appropriate code column name based on tool
+        if tool_name == "flake8":
+            code_column = "PEP Code"
+        elif tool_name == "darglint":
+            code_column = "Docstring Code"
+        elif tool_name == "pydocstyle":
+            code_column = "Docstring Code"
+        elif tool_name == "hadolint":
+            code_column = "Dockerfile Code"
+        else:
+            code_column = "Code"
 
-                # Format as a table with headers - use left alignment
-                headers = ["Code", "Message"]
+        for code, code_issues in sorted(issues_by_code.items()):
+            # Add code header
+            result.append(f"\n{code_column}: {code}")
 
-                table = tabulate(
-                    table_data,
-                    headers=headers,
-                    tablefmt="pretty",
-                    colalign=("left", "left"),
-                )
+            # Prepare issues with location field
+            prepared_issues = []
+            for issue in code_issues:
+                prepared_issue = issue.copy()
+                
+                # Set location field based on tool
+                if tool_name == "darglint":
+                    prepared_issue["location"] = issue.get("method", "N/A")
+                else:
+                    prepared_issue["location"] = "N/A"
+                
+                prepared_issues.append(prepared_issue)
 
-                result.append(table)
+            # Get dynamic columns based on data
+            headers, column_keys = get_table_columns(prepared_issues, tool_name, group_by)
 
-        elif group_by == "code":
-            # Group by error code
-            issues_by_code = {}
-            for issue in issues:
-                code = issue["code"]
-                if code not in issues_by_code:
-                    issues_by_code[code] = []
-                issues_by_code[code].append(issue)
-
-            for code, code_issues in sorted(issues_by_code.items()):
-                # Add code header
-                result.append(f"\nCode: {code}")
-
-                # Convert issues to a list of lists for tabulate
-                table_data = []
-                for issue in code_issues:
-                    table_data.append([issue["path"], issue["message"]])
-
-                # Format as a table with headers - use left alignment
-                headers = ["File", "Message"]
-
-                table = tabulate(
-                    table_data,
-                    headers=headers,
-                    tablefmt="pretty",
-                    colalign=("left", "left"),
-                )
-
-                result.append(table)
-
-        else:  # No grouping
             # Convert issues to a list of lists for tabulate
             table_data = []
-            for issue in issues:
-                table_data.append(
-                    [issue["path"], issue["code"], issue["message"]])
+            for issue in prepared_issues:
+                row = [issue.get(key, "N/A") for key in column_keys]
+                table_data.append(row)
 
             # Format as a table with headers - use left alignment
-            headers = ["File", "Code", "Message"]
-
+            colalign = tuple("left" for _ in headers)
+            
             table = tabulate(
                 table_data,
                 headers=headers,
                 tablefmt="pretty",
-                colalign=("left", "left", "left"),
+                colalign=colalign,
             )
 
             result.append(table)
-    else:
-        # Generic format for other tools (darglint, hadolint, pydocstyle, prettier, etc.)
-        if group_by == "file":
-            # Group by file
-            issues_by_file = {}
-            for issue in issues:
-                path = issue["path"]
-                if path not in issues_by_file:
-                    issues_by_file[path] = []
-                issues_by_file[path].append(issue)
 
-            for file_path, file_issues in sorted(issues_by_file.items()):
-                # Add file header
-                result.append(f"\nFile: {file_path}")
+    else:  # No grouping
+        # Prepare issues with location field
+        prepared_issues = []
+        for issue in issues:
+            prepared_issue = issue.copy()
+            
+            # Set location field based on tool
+            if tool_name == "darglint":
+                prepared_issue["location"] = issue.get("method", "N/A")
+            else:
+                prepared_issue["location"] = "N/A"
+            
+            prepared_issues.append(prepared_issue)
 
-                # Convert issues to a list of lists for tabulate
-                table_data = []
-                for issue in file_issues:
-                    table_data.append([issue["line"], issue["code"], issue["message"]])
+        # Get dynamic columns based on data
+        headers, column_keys = get_table_columns(prepared_issues, tool_name, group_by)
 
-                # Format as a table with headers - use left alignment
-                headers = ["Line", "Code", "Message"]
+        # Convert issues to a list of lists for tabulate
+        table_data = []
+        for issue in prepared_issues:
+            row = [issue.get(key, "N/A") for key in column_keys]
+            table_data.append(row)
 
-                table = tabulate(
-                    table_data,
-                    headers=headers,
-                    tablefmt="pretty",
-                    colalign=("left", "left", "left"),
-                )
+        # Format as a table with headers - use left alignment
+        colalign = tuple("left" for _ in headers)
+        
+        table = tabulate(
+            table_data,
+            headers=headers,
+            tablefmt="pretty",
+            colalign=colalign,
+        )
 
-                result.append(table)
-
-        elif group_by == "code":
-            # Group by error code
-            issues_by_code = {}
-            for issue in issues:
-                code = issue["code"]
-                if code not in issues_by_code:
-                    issues_by_code[code] = []
-                issues_by_code[code].append(issue)
-
-            for code, code_issues in sorted(issues_by_code.items()):
-                # Add code header
-                result.append(f"\nCode: {code}")
-
-                # Convert issues to a list of lists for tabulate
-                table_data = []
-                for issue in code_issues:
-                    table_data.append([issue["path"], issue["line"], issue["message"]])
-
-                # Format as a table with headers - use left alignment
-                headers = ["File", "Line", "Message"]
-
-                table = tabulate(
-                    table_data,
-                    headers=headers,
-                    tablefmt="pretty",
-                    colalign=("left", "left", "left"),
-                )
-
-                result.append(table)
-
-        else:  # No grouping
-            # Convert issues to a list of lists for tabulate
-            table_data = []
-            for issue in issues:
-                table_data.append(
-                    [issue["path"], issue["line"], issue["code"], issue["message"]])
-
-            # Format as a table with headers - use left alignment
-            headers = ["File", "Line", "Code", "Message"]
-
-            table = tabulate(
-                table_data,
-                headers=headers,
-                tablefmt="pretty",
-                colalign=("left", "left", "left", "left"),
-            )
-
-            result.append(table)
+        result.append(table)
 
     return "\n".join(result)
 
@@ -741,7 +717,6 @@ def format_tool_output(
         # Extract and format darglint errors
         for line in output.splitlines():
             # Match darglint output format: file:method:line: code: message
-            # Example: /path/to/file.py:method_name:10: DAR101: - return
             match = re.match(r"(.+):([^:]+):(\d+): ([A-Z]+\d{3}): (.+)", line)
             if match:
                 file_path = match.group(1)
@@ -767,7 +742,8 @@ def format_tool_output(
                         "path": rel_path,
                         "line": line_num,
                         "code": error_code,
-                        "message": f"{message} (in method {method_name})",
+                        "message": message,
+                        "method": method_name,
                     }
                 )
             elif "Skipped" in line and "timeout" in line:
@@ -787,6 +763,7 @@ def format_tool_output(
                             "line": "N/A",
                             "code": "TIMEOUT",
                             "message": "skipped due to timeout",
+                            "method": "N/A",
                         }
                     )
 
@@ -1071,7 +1048,8 @@ def format_tool_output(
                         "path": rel_path,
                         "line": line_num,
                         "code": error_code,
-                        "message": f"{message} (in method {method_name})",
+                        "message": message,
+                        "method": method_name,
                     }
                 )
             elif "Skipped" in line:
