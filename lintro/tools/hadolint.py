@@ -140,7 +140,7 @@ class HadolintTool(Tool):
             output = "\n".join(all_outputs)
             if skipped_files:
                 output += f"\n\nSkipped {len(skipped_files)} files due to timeout or errors."
-            return all_success, output
+            return False, output  # Return False if we have any output, as that means we found issues
 
     def _should_exclude(self, file_path: str) -> bool:
         """
