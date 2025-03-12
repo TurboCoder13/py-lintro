@@ -81,6 +81,9 @@ def count_issues(
             return 0
         # Count the number of files that would be formatted
         return len(re.findall(r"would be formatted", output))
+    elif tool_name == "pylint":
+        # Count lines with pylint message codes (e.g., C0103, E0611)
+        return len(re.findall(r"[CEFIRW]\d{4}", output))
     else:
         # Generic fallback: count lines that look like issues
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
@@ -98,22 +101,17 @@ def get_tool_emoji(tool_name: str) -> str:
     """
     # Map tools to emojis
     tool_emojis = {
-        "black": "🖤",
-        "flake8": "❄️",
+        "black": "⬛",
         "isort": "🔄",
-        "mypy": "🔍",
-        "pylint": "🐍",
-        "bandit": "🔒",
+        "flake8": "❄️",
         "darglint": "📝",
-        "pydocstyle": "📚",
         "hadolint": "🐳",
+        "pydocstyle": "📚",
         "prettier": "💅",
-        "eslint": "🔧",
-        "stylelint": "💄",
+        "pylint": "🔍",
     }
-    
-    # Return the emoji for the tool, or a default emoji
-    return tool_emojis.get(tool_name, "✨")
+
+    return tool_emojis.get(tool_name, "🔧")
 
 
 def print_tool_header(
@@ -1020,6 +1018,12 @@ def cli():
     default=None,
     help="Timeout in seconds for prettier (default: 30)",
 )
+@click.option(
+    "--pylint-rcfile",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="Path to pylint configuration file",
+)
 def check(
     paths: list[str],
     tools: str | None,
@@ -1034,6 +1038,7 @@ def check(
     pydocstyle_timeout: int | None,
     pydocstyle_convention: str | None,
     prettier_timeout: int | None,
+    pylint_rcfile: str | None,
 ):
     """Check files for issues without fixing them."""
     if not paths:
@@ -1131,6 +1136,12 @@ def check(
                     exclude_patterns=exclude_patterns,
                     include_venv=include_venv,
                     timeout=prettier_timeout,
+                )
+            elif name == "pylint" and pylint_rcfile is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    rcfile=pylint_rcfile,
                 )
 
             print_tool_header(name, "check", output_file, table_format)
@@ -1247,6 +1258,12 @@ def check(
     default=None,
     help="Timeout in seconds for prettier (default: 30)",
 )
+@click.option(
+    "--pylint-rcfile",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="Path to pylint configuration file",
+)
 def fmt(
     paths: list[str],
     tools: str | None,
@@ -1261,6 +1278,7 @@ def fmt(
     pydocstyle_timeout: int | None,
     pydocstyle_convention: str | None,
     prettier_timeout: int | None,
+    pylint_rcfile: str | None,
 ):
     """Format files to fix issues."""
     if not paths:
@@ -1356,6 +1374,12 @@ def fmt(
                     exclude_patterns=exclude_patterns,
                     include_venv=include_venv,
                     timeout=prettier_timeout,
+                )
+            elif name == "pylint" and pylint_rcfile is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    rcfile=pylint_rcfile,
                 )
 
             print_tool_header(name, "format", output_file, table_format)
