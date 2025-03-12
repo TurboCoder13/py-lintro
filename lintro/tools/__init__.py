@@ -93,6 +93,7 @@ from lintro.tools.prettier import PrettierTool  # noqa: E402
 from lintro.tools.pydocstyle import PydocstyleTool  # noqa: E402
 from lintro.tools.pylint import PylintTool  # noqa: E402
 from lintro.tools.semgrep import SemgrepTool  # noqa: E402
+from lintro.tools.terraform import TerraformTool  # noqa: E402
 
 # Register all available tools
 AVAILABLE_TOOLS = {
@@ -105,6 +106,7 @@ AVAILABLE_TOOLS = {
     "pydocstyle": PydocstyleTool(),
     "pylint": PylintTool(),
     "semgrep": SemgrepTool(),
+    "terraform": TerraformTool(),
 }
 
 # Tools that can fix issues

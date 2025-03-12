@@ -87,6 +87,11 @@ def count_issues(
     elif tool_name == "semgrep":
         # Count occurrences of the semgrep rule indicator
         return len(re.findall(r"❯❯❱", output))
+    elif tool_name == "terraform":
+        # Count formatting issues and validation errors
+        fmt_issues = len(re.findall(r"[-+]", output))
+        validation_issues = len(re.findall(r"\[ERROR\]", output))
+        return fmt_issues + validation_issues
     else:
         # Generic fallback: count lines that look like issues
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
@@ -102,20 +107,19 @@ def get_tool_emoji(tool_name: str) -> str:
     Returns:
         Emoji for the tool
     """
-    # Map tools to emojis
-    tool_emojis = {
+    emojis = {
         "black": "🖤",
-        "isort": "🔄",
+        "isort": "📋",
         "flake8": "❄️",
         "darglint": "📝",
         "hadolint": "🐳",
-        "pydocstyle": "📚",
         "prettier": "💅",
+        "pydocstyle": "📄",
         "pylint": "🔍",
-        "semgrep": "🔎",
+        "semgrep": "🔒",
+        "terraform": "🏗️",
     }
-
-    return tool_emojis.get(tool_name, "✨")
+    return emojis.get(tool_name, "🔧")
 
 
 def print_tool_header(
@@ -318,6 +322,8 @@ def get_table_columns(
         code_column = "Pylint Code"
     elif tool_name == "semgrep":
         code_column = "Rule ID"
+    elif tool_name == "terraform":
+        code_column = "Issue Type"
     else:
         code_column = "Code"
 
@@ -349,6 +355,16 @@ def get_table_columns(
             code_column: "code",
             "Line": "line",
             "Position": "col",
+            "Severity": "severity",
+            "Message": "message",
+        }
+
+    # Add terraform-specific columns
+    if tool_name == "terraform":
+        columns_map = {
+            "File": "file",
+            code_column: "code",
+            "Line": "line",
             "Severity": "severity",
             "Message": "message",
         }
@@ -595,7 +611,8 @@ def format_tool_output(
     if (output.strip() == "No docstring issues found." or 
         output.strip() == "No Dockerfile issues found." or
         output.strip() == "No docstring style issues found." or
-        output.strip() == "All files are formatted correctly."):
+        output.strip() == "All files are formatted correctly." or
+        output.strip() == "No Terraform issues found."):
         return output
 
     # Remove trailing whitespace and ensure ending with newline
@@ -1042,6 +1059,56 @@ def format_tool_output(
                 current_message = None
                 current_line = None
 
+    # Add terraform-specific parsing
+    elif tool_name == "terraform":
+        # Parse formatting issues
+        if "Formatting issues found:" in output:
+            # Extract the formatting diff
+            fmt_section = re.search(r"Formatting issues found:\n(.*?)(?:\n\n|$)", output, re.DOTALL)
+            if fmt_section:
+                fmt_output = fmt_section.group(1)
+                # Parse the diff to extract file paths and changes
+                for line in fmt_output.splitlines():
+                    if line.startswith("---") or line.startswith("+++"):
+                        # Extract file path from diff header
+                        file_match = re.search(r"[-+]{3} (?:a/|b/)?(.+)", line)
+                        if file_match:
+                            current_file = file_match.group(1)
+                            rel_path = get_relative_path(current_file)
+                            file_paths.append(rel_path)
+                    elif line.startswith("-") or line.startswith("+"):
+                        # Count as a formatting issue
+                        issues.append({
+                            "file": current_file if "current_file" in locals() else "Unknown",
+                            "code": "FORMAT",
+                            "line": "N/A",
+                            "severity": "warning",
+                            "message": "Formatting issue"
+                        })
+        
+        # Parse validation issues
+        if "Validation issues found:" in output:
+            # Extract the validation section
+            validate_section = re.search(r"Validation issues found:\n(.*?)(?:\n\n|$)", output, re.DOTALL)
+            if validate_section:
+                validate_output = validate_section.group(1)
+                # Parse the validation output to extract errors
+                for line in validate_output.splitlines():
+                    # Look for directory and error information
+                    dir_match = re.search(r"Directory (.+): \[(ERROR|WARNING)\] (.+)", line)
+                    if dir_match:
+                        dir_path = dir_match.group(1)
+                        severity = dir_match.group(2).lower()
+                        message = dir_match.group(3)
+                        
+                        issues.append({
+                            "file": dir_path,
+                            "code": "VALIDATE",
+                            "line": "N/A",
+                            "severity": severity,
+                            "message": message
+                        })
+
     # If tabulate is available, table format is requested, and we have issues, format as a table
     if use_table_format and TABULATE_AVAILABLE and issues:
         return format_as_table(issues, tool_name, group_by)
@@ -1189,6 +1256,12 @@ def cli():
     help="Semgrep configuration option (default: auto)",
 )
 @click.option(
+    "--terraform-recursive",
+    is_flag=True,
+    default=None,
+    help="Recursively check Terraform directories",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     help="Show verbose output",
@@ -1215,6 +1288,7 @@ def check(
     prettier_timeout: int | None,
     pylint_rcfile: str | None,
     semgrep_config: str | None,
+    terraform_recursive: bool | None,
     verbose: bool = False,
     debug_file: str | None = None,
 ):
@@ -1352,6 +1426,12 @@ def check(
                     exclude_patterns=exclude_patterns,
                     include_venv=include_venv,
                     config_option=semgrep_config,
+                )
+            elif name == "terraform" and terraform_recursive is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    recursive=terraform_recursive,
                 )
 
             print_tool_header(name, "check", output_file, table_format)
@@ -1504,6 +1584,12 @@ def check(
     default=None,
     help="Semgrep configuration option (default: auto)",
 )
+@click.option(
+    "--terraform-recursive",
+    is_flag=True,
+    default=None,
+    help="Recursively format Terraform directories",
+)
 def fmt(
     paths: list[str],
     tools: str | None,
@@ -1520,6 +1606,7 @@ def fmt(
     prettier_timeout: int | None,
     pylint_rcfile: str | None,
     semgrep_config: str | None,
+    terraform_recursive: bool | None,
 ):
     """Format files to fix issues."""
     if not paths:
@@ -1627,6 +1714,12 @@ def fmt(
                     exclude_patterns=exclude_patterns,
                     include_venv=include_venv,
                     config_option=semgrep_config,
+                )
+            elif name == "terraform" and terraform_recursive is not None:
+                tool.set_options(
+                    exclude_patterns=exclude_patterns,
+                    include_venv=include_venv,
+                    recursive=terraform_recursive,
                 )
 
             print_tool_header(name, "format", output_file, table_format)
