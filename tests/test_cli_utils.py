@@ -26,15 +26,18 @@ def test_get_tool_emoji():
     """Test getting emoji for different tools."""
     # Test known tools
     assert get_tool_emoji("black") == "🖤"
-    assert get_tool_emoji("isort") == "🔄"
+    assert get_tool_emoji("isort") == "📋"
     assert get_tool_emoji("flake8") == "❄️"
-    assert get_tool_emoji("pydocstyle") == "📚"
+    assert get_tool_emoji("pydocstyle") == "📄"
     assert get_tool_emoji("darglint") == "📝"
     assert get_tool_emoji("hadolint") == "🐳"
     assert get_tool_emoji("prettier") == "💅"
+    assert get_tool_emoji("pylint") == "🔍"
+    assert get_tool_emoji("semgrep") == "🔒"
+    assert get_tool_emoji("terraform") == "🏗️"
     
     # Test unknown tool
-    assert get_tool_emoji("unknown_tool") == "✨"
+    assert get_tool_emoji("unknown") == "🔧"
 
 
 def test_parse_tool_list():

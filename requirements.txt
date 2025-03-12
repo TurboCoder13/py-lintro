@@ -6,4 +6,5 @@ darglint>=1.8.1
 hadolint-py>=2.10.0
 pydocstyle>=6.3.0
 pylint>=3.0.0
-semgrep>=1.100.0 
+semgrep>=1.100.0
+python-terraform>=0.10.1 

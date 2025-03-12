@@ -570,3 +570,292 @@ def test_semgrep_fix():
 
     assert success is False
     assert "cannot automatically fix" in output
+
+
+@patch("subprocess.run")
+def test_terraform_check_success(mock_run):
+    """Test terraform check when no issues are found."""
+    # Mock the format check process
+    mock_fmt_process = MagicMock()
+    mock_fmt_process.returncode = 0
+    mock_fmt_process.stdout = ""
+    
+    # Mock the validate process
+    mock_validate_process = MagicMock()
+    mock_validate_process.returncode = 0
+    mock_validate_process.stdout = """
+{
+  "format_version": "1.0",
+  "valid": true,
+  "error_count": 0,
+  "warning_count": 0,
+  "diagnostics": []
+}
+"""
+    
+    # Set up the mock to return different values for different commands
+    def side_effect(*args, **kwargs):
+        cmd = args[0]
+        if "fmt" in cmd:
+            return mock_fmt_process
+        elif "validate" in cmd:
+            return mock_validate_process
+        return MagicMock()
+    
+    mock_run.side_effect = side_effect
+
+    # Create a TerraformTool instance
+    from lintro.tools.terraform import TerraformTool
+    tool = TerraformTool()
+    
+    # Call the check method
+    success, output = tool.check(["test_dir"])
+
+    # Verify the results
+    assert success is True
+    assert "No Terraform issues found" in output
+    assert mock_run.call_count >= 2  # At least fmt and validate calls
+
+
+@patch("subprocess.run")
+def test_terraform_check_format_failure(mock_run):
+    """Test terraform check when formatting issues are found."""
+    # Mock the format check process
+    mock_fmt_process = MagicMock()
+    mock_fmt_process.returncode = 1
+    mock_fmt_process.stdout = """
+--- old/main.tf
++++ new/main.tf
+@@ -1,3 +1,3 @@
+ resource "aws_instance" "example" {
+-  ami = "ami-12345678"
++  ami           = "ami-12345678"
+ }
+"""
+    
+    # Mock the validate process
+    mock_validate_process = MagicMock()
+    mock_validate_process.returncode = 0
+    mock_validate_process.stdout = """
+{
+  "format_version": "1.0",
+  "valid": true,
+  "error_count": 0,
+  "warning_count": 0,
+  "diagnostics": []
+}
+"""
+    
+    # Set up the mock to return different values for different commands
+    def side_effect(*args, **kwargs):
+        cmd = args[0]
+        if "fmt" in cmd:
+            return mock_fmt_process
+        elif "validate" in cmd:
+            return mock_validate_process
+        return MagicMock()
+    
+    mock_run.side_effect = side_effect
+
+    # Create a TerraformTool instance
+    from lintro.tools.terraform import TerraformTool
+    tool = TerraformTool()
+    
+    # Call the check method
+    success, output = tool.check(["test_dir"])
+
+    # Verify the results
+    assert success is False
+    assert "Formatting issues found" in output
+    assert "main.tf" in output
+    assert mock_run.call_count >= 2  # At least fmt and validate calls
+
+
+@patch("subprocess.run")
+def test_terraform_check_validate_failure(mock_run):
+    """Test terraform check when validation issues are found."""
+    # Mock the format check process
+    mock_fmt_process = MagicMock()
+    mock_fmt_process.returncode = 0
+    mock_fmt_process.stdout = ""
+    
+    # Mock the validate process
+    mock_validate_process = MagicMock()
+    mock_validate_process.returncode = 0
+    mock_validate_process.stdout = """
+{
+  "format_version": "1.0",
+  "valid": false,
+  "error_count": 1,
+  "warning_count": 0,
+  "diagnostics": [
+    {
+      "severity": "error",
+      "summary": "Reference to undeclared resource",
+      "detail": "A managed resource \"aws_security_group\" \"example\" has not been declared in the root module.",
+      "range": {
+        "filename": "main.tf",
+        "start": {
+          "line": 3,
+          "column": 5,
+          "byte": 74
+        },
+        "end": {
+          "line": 3,
+          "column": 34,
+          "byte": 103
+        }
+      }
+    }
+  ]
+}
+"""
+    
+    # Set up the mock to return different values for different commands
+    def side_effect(*args, **kwargs):
+        cmd = args[0]
+        if "fmt" in cmd:
+            return mock_fmt_process
+        elif "validate" in cmd:
+            return mock_validate_process
+        return MagicMock()
+    
+    mock_run.side_effect = side_effect
+
+    # Create a TerraformTool instance
+    from lintro.tools.terraform import TerraformTool
+    tool = TerraformTool()
+    
+    # Call the check method
+    success, output = tool.check(["test_dir"])
+
+    # Verify the results
+    assert success is False
+    assert "Validation issues found" in output
+    assert "Reference to undeclared resource" in output
+    assert mock_run.call_count >= 2  # At least fmt and validate calls
+
+
+@patch("subprocess.run")
+def test_terraform_fix_success(mock_run):
+    """Test terraform fix when formatting is successful."""
+    # Mock the format process
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.stdout = "main.tf\nvariables.tf"
+    mock_run.return_value = mock_process
+
+    # Create a TerraformTool instance
+    from lintro.tools.terraform import TerraformTool
+    tool = TerraformTool()
+    
+    # Call the fix method
+    success, output = tool.fix(["test_dir"])
+
+    # Verify the results
+    assert success is True
+    assert "Formatted 2 Terraform files" in output
+    assert "main.tf" in output
+    assert "variables.tf" in output
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_terraform_fix_no_changes(mock_run):
+    """Test terraform fix when no formatting is needed."""
+    # Mock the format process
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.stdout = ""
+    mock_run.return_value = mock_process
+
+    # Create a TerraformTool instance
+    from lintro.tools.terraform import TerraformTool
+    tool = TerraformTool()
+    
+    # Call the fix method
+    success, output = tool.fix(["test_dir"])
+
+    # Verify the results
+    assert success is True
+    assert "No Terraform files needed formatting" in output
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_terraform_fix_failure(mock_run):
+    """Test terraform fix when formatting fails."""
+    # Mock the format process
+    mock_process = MagicMock()
+    mock_process.returncode = 1
+    mock_process.stderr = "Error formatting Terraform files"
+    mock_run.return_value = mock_process
+
+    # Create a TerraformTool instance
+    from lintro.tools.terraform import TerraformTool
+    tool = TerraformTool()
+    
+    # Call the fix method
+    success, output = tool.fix(["test_dir"])
+
+    # Verify the results
+    assert success is False
+    assert "Error formatting Terraform files" in output
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_terraform_check_with_recursive_option(mock_run):
+    """Test terraform check with recursive option."""
+    # Mock the format check process
+    mock_fmt_process = MagicMock()
+    mock_fmt_process.returncode = 0
+    mock_fmt_process.stdout = ""
+    
+    # Mock the validate process
+    mock_validate_process = MagicMock()
+    mock_validate_process.returncode = 0
+    mock_validate_process.stdout = """
+{
+  "format_version": "1.0",
+  "valid": true,
+  "error_count": 0,
+  "warning_count": 0,
+  "diagnostics": []
+}
+"""
+    
+    # Set up the mock to return different values for different commands
+    def side_effect(*args, **kwargs):
+        cmd = args[0]
+        if "fmt" in cmd:
+            return mock_fmt_process
+        elif "validate" in cmd:
+            return mock_validate_process
+        return MagicMock()
+    
+    mock_run.side_effect = side_effect
+
+    # Create a TerraformTool instance
+    from lintro.tools.terraform import TerraformTool
+    tool = TerraformTool()
+    
+    # Set the recursive option to False
+    tool.set_options(recursive=False)
+    
+    # Call the check method
+    success, output = tool.check(["test_dir"])
+
+    # Verify the results
+    assert success is True
+    assert "No Terraform issues found" in output
+    
+    # Check that the recursive flag was not passed to terraform fmt
+    fmt_cmd = None
+    for call in mock_run.call_args_list:
+        if "fmt" in call[0][0]:
+            fmt_cmd = call[0][0]
+            break
+    
+    assert fmt_cmd is not None
+    assert "-recursive" not in fmt_cmd
