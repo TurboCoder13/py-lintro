@@ -88,7 +88,7 @@ lintro list-tools
 lintro fmt [PATH]
 ```
 
-### Check code (report issues without fixing)
+### Check code for issues without fixing
 
 ```bash
 lintro check [PATH]
@@ -99,6 +99,24 @@ lintro check [PATH]
 ```bash
 lintro fmt --tools black,isort [PATH]
 lintro check --tools flake8 [PATH]
+```
+
+### Exclude specific patterns
+
+By default, Lintro excludes virtual environment directories. You can specify additional patterns to exclude:
+
+```bash
+lintro check --exclude "migrations,node_modules,dist" [PATH]
+lintro fmt --exclude "migrations,node_modules,dist" [PATH]
+```
+
+### Include virtual environment directories
+
+If you want to include virtual environment directories (which are excluded by default):
+
+```bash
+lintro check --include-venv [PATH]
+lintro fmt --include-venv [PATH]
 ```
 
 ## Configuration

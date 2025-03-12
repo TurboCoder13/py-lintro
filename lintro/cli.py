@@ -126,7 +126,16 @@ def cli():
     "--tools",
     help="Comma-separated list of tools to run (default: all available tools)",
 )
-def check(paths: List[str], tools: Optional[str]):
+@click.option(
+    "--exclude",
+    help="Comma-separated list of patterns to exclude (in addition to default exclusions)",
+)
+@click.option(
+    "--include-venv",
+    is_flag=True,
+    help="Include virtual environment directories (excluded by default)",
+)
+def check(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool):
     """Check code for issues without fixing them."""
     if not paths:
         paths = [os.getcwd()]
@@ -142,11 +151,21 @@ def check(paths: List[str], tools: Optional[str]):
         click.echo("No tools selected. Available tools: " + ", ".join(CHECK_TOOLS.keys()))
         sys.exit(1)
     
+    # Process exclude patterns
+    exclude_patterns = []
+    if exclude:
+        exclude_patterns = [p.strip() for p in exclude.split(",") if p.strip()]
+    
     exit_code = 0
     results = []
     
     for name, tool in tools_to_run.items():
         print_tool_header(name, "check")
+        
+        # Modify tool command based on options
+        if hasattr(tool, "set_options"):
+            tool.set_options(exclude_patterns=exclude_patterns, include_venv=include_venv)
+        
         success, output = tool.check(list(paths))
         
         # Count issues and format output
@@ -171,7 +190,16 @@ def check(paths: List[str], tools: Optional[str]):
     "--tools",
     help="Comma-separated list of tools to run (default: all tools that can fix)",
 )
-def fmt(paths: List[str], tools: Optional[str]):
+@click.option(
+    "--exclude",
+    help="Comma-separated list of patterns to exclude (in addition to default exclusions)",
+)
+@click.option(
+    "--include-venv",
+    is_flag=True,
+    help="Include virtual environment directories (excluded by default)",
+)
+def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool):
     """Format code and fix issues where possible."""
     if not paths:
         paths = [os.getcwd()]
@@ -187,11 +215,21 @@ def fmt(paths: List[str], tools: Optional[str]):
         click.echo("No tools selected. Available tools: " + ", ".join(FIX_TOOLS.keys()))
         sys.exit(1)
     
+    # Process exclude patterns
+    exclude_patterns = []
+    if exclude:
+        exclude_patterns = [p.strip() for p in exclude.split(",") if p.strip()]
+    
     exit_code = 0
     results = []
     
     for name, tool in tools_to_run.items():
         print_tool_header(name, "fix")
+        
+        # Modify tool command based on options
+        if hasattr(tool, "set_options"):
+            tool.set_options(exclude_patterns=exclude_patterns, include_venv=include_venv)
+        
         success, output = tool.fix(list(paths))
         
         # Count issues and format output

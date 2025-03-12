@@ -10,6 +10,17 @@ class Tool(ABC):
     name: str
     description: str
     can_fix: bool
+    
+    def set_options(self, exclude_patterns: Optional[List[str]] = None, include_venv: bool = False):
+        """
+        Set options for the tool.
+        
+        Args:
+            exclude_patterns: List of patterns to exclude
+            include_venv: Whether to include virtual environment directories
+        """
+        self.exclude_patterns = exclude_patterns or []
+        self.include_venv = include_venv
 
     @abstractmethod
     def check(self, paths: List[str]) -> Tuple[bool, str]:
