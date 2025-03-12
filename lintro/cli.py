@@ -1450,6 +1450,30 @@ def cli():
     help="Use strict mode for yamllint",
 )
 @click.option(
+    "--mypy-config",
+    type=str,
+    default=None,
+    help="Path to mypy configuration file",
+)
+@click.option(
+    "--mypy-python-version",
+    type=str,
+    default=None,
+    help="Python version to use for mypy type checking",
+)
+@click.option(
+    "--mypy-disallow-untyped-defs",
+    is_flag=True,
+    default=None,
+    help="Disallow untyped function definitions in mypy",
+)
+@click.option(
+    "--mypy-disallow-incomplete-defs",
+    is_flag=True,
+    default=None,
+    help="Disallow incomplete function definitions in mypy",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     help="Show verbose output",
@@ -1479,6 +1503,10 @@ def check(
     terraform_recursive: bool | None,
     yamllint_config: str | None,
     yamllint_strict: bool | None,
+    mypy_config: str | None,
+    mypy_python_version: str | None,
+    mypy_disallow_untyped_defs: bool | None,
+    mypy_disallow_incomplete_defs: bool | None,
     verbose: bool = False,
     debug_file: str | None = None,
 ):
@@ -1629,6 +1657,23 @@ def check(
                     options["config_file"] = yamllint_config
                 if yamllint_strict is not None:
                     options["strict"] = yamllint_strict
+                
+                if options:
+                    tool.set_options(
+                        exclude_patterns=exclude_patterns,
+                        include_venv=include_venv,
+                        **options,
+                    )
+            elif name == "mypy":
+                options = {}
+                if mypy_config is not None:
+                    options["config_file"] = mypy_config
+                if mypy_python_version is not None:
+                    options["python_version"] = mypy_python_version
+                if mypy_disallow_untyped_defs is not None:
+                    options["disallow_untyped_defs"] = mypy_disallow_untyped_defs
+                if mypy_disallow_incomplete_defs is not None:
+                    options["disallow_incomplete_defs"] = mypy_disallow_incomplete_defs
                 
                 if options:
                     tool.set_options(
@@ -1805,6 +1850,30 @@ def check(
     default=None,
     help="Use strict mode for yamllint",
 )
+@click.option(
+    "--mypy-config",
+    type=str,
+    default=None,
+    help="Path to mypy configuration file",
+)
+@click.option(
+    "--mypy-python-version",
+    type=str,
+    default=None,
+    help="Python version to use for mypy type checking",
+)
+@click.option(
+    "--mypy-disallow-untyped-defs",
+    is_flag=True,
+    default=None,
+    help="Disallow untyped function definitions in mypy",
+)
+@click.option(
+    "--mypy-disallow-incomplete-defs",
+    is_flag=True,
+    default=None,
+    help="Disallow incomplete function definitions in mypy",
+)
 def fmt(
     paths: list[str],
     tools: str | None,
@@ -1824,6 +1893,10 @@ def fmt(
     terraform_recursive: bool | None,
     yamllint_config: str | None,
     yamllint_strict: bool | None,
+    mypy_config: str | None,
+    mypy_python_version: str | None,
+    mypy_disallow_untyped_defs: bool | None,
+    mypy_disallow_incomplete_defs: bool | None,
 ):
     """Format files to fix issues."""
     if not paths:
@@ -1944,6 +2017,23 @@ def fmt(
                     options["config_file"] = yamllint_config
                 if yamllint_strict is not None:
                     options["strict"] = yamllint_strict
+                
+                if options:
+                    tool.set_options(
+                        exclude_patterns=exclude_patterns,
+                        include_venv=include_venv,
+                        **options,
+                    )
+            elif name == "mypy":
+                options = {}
+                if mypy_config is not None:
+                    options["config_file"] = mypy_config
+                if mypy_python_version is not None:
+                    options["python_version"] = mypy_python_version
+                if mypy_disallow_untyped_defs is not None:
+                    options["disallow_untyped_defs"] = mypy_disallow_untyped_defs
+                if mypy_disallow_incomplete_defs is not None:
+                    options["disallow_incomplete_defs"] = mypy_disallow_incomplete_defs
                 
                 if options:
                     tool.set_options(

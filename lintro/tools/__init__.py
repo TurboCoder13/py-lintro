@@ -89,6 +89,7 @@ from lintro.tools.darglint import DarglintTool  # noqa: E402
 from lintro.tools.flake8 import Flake8Tool  # noqa: E402
 from lintro.tools.hadolint import HadolintTool  # noqa: E402
 from lintro.tools.isort import IsortTool  # noqa: E402
+from lintro.tools.mypy import MypyTool  # noqa: E402
 from lintro.tools.prettier import PrettierTool  # noqa: E402
 from lintro.tools.pydocstyle import PydocstyleTool  # noqa: E402
 from lintro.tools.pylint import PylintTool  # noqa: E402
@@ -103,6 +104,7 @@ AVAILABLE_TOOLS = {
     "flake8": Flake8Tool(),
     "darglint": DarglintTool(),
     "hadolint": HadolintTool(),
+    "mypy": MypyTool(),
     "prettier": PrettierTool(),
     "pydocstyle": PydocstyleTool(),
     "pylint": PylintTool(),

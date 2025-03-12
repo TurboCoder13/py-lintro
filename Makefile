@@ -1,4 +1,4 @@
-.PHONY: setup install test lint format clean
+.PHONY: setup install test lint format clean mypy
 
 # Include .env file if it exists
 -include .env
@@ -44,9 +44,17 @@ test:
 # Run linting
 lint:
 	@if [ -f "$(UV_VENV_PYTHON_PATH)/bin/activate" ]; then \
-		. $(UV_VENV_PYTHON_PATH)/bin/activate && black --check . && isort --check . && flake8 .; \
+		. $(UV_VENV_PYTHON_PATH)/bin/activate && black --check . && isort --check . && flake8 . && mypy .; \
 	else \
-		. .venv/bin/activate && black --check . && isort --check . && flake8 .; \
+		. .venv/bin/activate && black --check . && isort --check . && flake8 . && mypy .; \
+	fi
+
+# Run mypy type checking
+mypy:
+	@if [ -f "$(UV_VENV_PYTHON_PATH)/bin/activate" ]; then \
+		. $(UV_VENV_PYTHON_PATH)/bin/activate && mypy .; \
+	else \
+		. .venv/bin/activate && mypy .; \
 	fi
 
 # Format code
