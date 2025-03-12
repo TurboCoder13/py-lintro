@@ -101,7 +101,7 @@ def get_tool_emoji(tool_name: str) -> str:
     """
     # Map tools to emojis
     tool_emojis = {
-        "black": "⬛",
+        "black": "🖤",
         "isort": "🔄",
         "flake8": "❄️",
         "darglint": "📝",
@@ -111,7 +111,7 @@ def get_tool_emoji(tool_name: str) -> str:
         "pylint": "🔍",
     }
 
-    return tool_emojis.get(tool_name, "🔧")
+    return tool_emojis.get(tool_name, "✨")
 
 
 def print_tool_header(
