@@ -28,7 +28,9 @@ def count_issues(output: str, tool_name: str) -> int:
         # Count "would reformat" lines
         return len(re.findall(r"would reformat", output))
     elif tool_name == "isort":
-        # Count "ERROR:" lines for isort
+        # Count "ERROR:" lines for isort, but don't count skipped files as issues
+        if "All imports are correctly sorted." in output:
+            return 0
         return len(re.findall(r"ERROR:", output))
     elif tool_name == "flake8":
         # Count lines with error codes (e.g., E501, W291)
@@ -47,7 +49,8 @@ def print_tool_header(tool_name: str, action: str, file: Optional[TextIO] = None
 
 def print_tool_footer(success: bool, issues_count: int, file: Optional[TextIO] = None):
     """Print a footer for a tool's output."""
-    if success:
+    # Always use issues_count to determine success/failure
+    if issues_count == 0:
         click.secho(f"\n✓ No issues found", fg="green", file=file)
     else:
         click.secho(f"\n✗ Found {issues_count} issues", fg="red", file=file)
@@ -86,31 +89,84 @@ def parse_tool_list(tools_str: Optional[str]) -> List[str]:
 
 
 def format_tool_output(output: str, tool_name: str) -> str:
-    """Format the output of a tool to be more readable."""
+    """Format the output of a tool to be more readable and standardized."""
     if not output:
         return "No output"
     
     # Remove trailing whitespace and ensure ending with newline
     output = output.rstrip() + "\n"
     
-    if tool_name == "black":
-        # Colorize Black output
-        output = re.sub(r"(would reformat .*)", click.style(r"\1", fg="yellow"), output)
-        output = re.sub(r"(All done!.*)", click.style(r"\1", fg="green"), output)
-        output = re.sub(r"(Oh no!.*)", click.style(r"\1", fg="red"), output)
-    elif tool_name == "isort":
-        # Colorize isort output
-        output = re.sub(r"(ERROR:.*)", click.style(r"\1", fg="red"), output)
-        output = re.sub(r"(Skipped \d+ files)", click.style(r"\1", fg="yellow"), output)
-    elif tool_name == "flake8":
-        # Colorize flake8 output (line:col: code message)
-        output = re.sub(
-            r"(.*:\d+:\d+: [EWFN]\d{3} .*)",
-            click.style(r"\1", fg="red"),
-            output
-        )
+    # Standardize output format
+    formatted_lines = []
     
-    return output
+    if tool_name == "black":
+        # Extract file paths from Black output
+        for line in output.splitlines():
+            if "would reformat" in line:
+                file_path = line.replace("would reformat ", "").strip()
+                # Convert to standardized format with color
+                formatted_lines.append(click.style(f"- {file_path}", fg="yellow") + 
+                                      click.style(" : formatting required", fg="red"))
+            elif "All done!" in line or "Oh no!" in line or "files would be" in line:
+                # Keep summary lines with color
+                if "All done!" in line:
+                    formatted_lines.append(click.style(line, fg="green"))
+                else:
+                    formatted_lines.append(click.style(line, fg="red"))
+            elif line.strip() and not line.startswith("---"):
+                # Keep other non-empty, non-separator lines
+                formatted_lines.append(line)
+    
+    elif tool_name == "isort":
+        # Extract file paths from isort output
+        skipped_files = 0
+        for line in output.splitlines():
+            if "ERROR:" in line and ":" in line:
+                parts = line.split(":", 1)
+                file_path = parts[0].strip()
+                # Convert to standardized format with color
+                formatted_lines.append(click.style(f"- {file_path}", fg="yellow") + 
+                                      click.style(" : import sorting required", fg="red"))
+            elif "Skipped" in line and "files" in line:
+                # Count skipped files but don't include in issues
+                skipped_match = re.search(r"Skipped (\d+) files", line)
+                if skipped_match:
+                    skipped_files = int(skipped_match.group(1))
+                formatted_lines.append(click.style(f"Note: {line}", fg="blue"))
+            elif line.strip() and not line.startswith("---"):
+                # Keep other non-empty, non-separator lines
+                formatted_lines.append(line)
+        
+        # If we only have skipped files and no actual errors, return success message
+        if not formatted_lines and skipped_files > 0:
+            return click.style("All imports are correctly sorted.", fg="green")
+    
+    elif tool_name == "flake8":
+        # Extract and format flake8 errors
+        for line in output.splitlines():
+            # Match flake8 output format: file:line:col: code message
+            match = re.match(r"(.+):(\d+):(\d+): ([A-Z]\d{3}) (.+)", line)
+            if match:
+                file_path = match.group(1)
+                line_num = match.group(2)
+                error_code = match.group(4)
+                message = match.group(5)
+                # Convert to standardized format with color
+                formatted_lines.append(
+                    click.style(f"- {file_path}", fg="yellow") + 
+                    click.style(f" : {error_code}", fg="red") + 
+                    f" {message}" + 
+                    click.style(f" (line {line_num})", fg="blue")
+                )
+            elif line.strip() and not line.startswith("---"):
+                # Keep other non-empty, non-separator lines
+                formatted_lines.append(line)
+    
+    else:
+        # For other tools, keep the original output
+        formatted_lines = output.splitlines()
+    
+    return "\n".join(formatted_lines) + "\n"
 
 
 @click.group()
@@ -189,9 +245,11 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
             formatted_output = format_tool_output(output_text, name)
             click.echo(formatted_output, file=output_file)
             
+            # Use issues_count to determine success
+            success = issues_count == 0
             print_tool_footer(success, issues_count, output_file)
             
-            results.append(ToolResult(name, success, output_text, issues_count))
+            results.append(ToolResult(name=name, success=success, output=output_text, issues_count=issues_count))
             
             if not success:
                 exit_code = 1
@@ -282,9 +340,11 @@ def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_
             formatted_output = format_tool_output(output_text, name)
             click.echo(formatted_output, file=output_file)
             
+            # Use issues_count to determine success
+            success = issues_count == 0
             print_tool_footer(success, issues_count, output_file)
             
-            results.append(ToolResult(name, success, output_text, issues_count))
+            results.append(ToolResult(name=name, success=success, output=output_text, issues_count=issues_count))
             
             if not success:
                 exit_code = 1
