@@ -2,6 +2,9 @@
 
 A comprehensive CLI tool that unifies various code formatting, linting, and quality assurance tools under a single command-line interface.
 
+[![Test and Coverage](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml/badge.svg)](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml)
+[![Coverage](https://raw.githubusercontent.com/yourusername/lintro/main/coverage-badge.svg)](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml)
+
 ## Features
 
 - Run multiple linting and formatting tools with a single command
@@ -25,6 +28,25 @@ A comprehensive CLI tool that unifies various code formatting, linting, and qual
 - semgrep (semantic code pattern matching)
 - terraform (Terraform formatting)
 - yamllint (YAML linting)
+
+## Dependency Management
+
+This project uses [Renovate](https://github.com/renovatebot/renovate) for automated dependency updates. Renovate will automatically create pull requests when updates are available for:
+
+- Python dependencies in requirements.txt and requirements-dev.txt
+- GitHub Actions in workflow files
+- Docker base images in Dockerfile
+
+The Renovate configuration is defined in `renovate.json` in the root of the repository. Updates are scheduled to run daily at 10:00 PM UTC.
+
+### Renovate Features
+
+- Automatic merging of patch updates for seamless minor fixes
+- Automatic grouping of minor and patch updates to reduce PR noise
+- Separate PRs for major updates that might include breaking changes
+- Special grouping for related packages (e.g., pytest and its plugins)
+- Dependency dashboard for monitoring update status
+- Configurable schedule and rate limiting
 
 ## Installation
 
