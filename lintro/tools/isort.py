@@ -3,15 +3,22 @@
 import re
 import subprocess
 
-from lintro.tools import Tool
+from lintro.tools import Tool, ToolConfig
 
 
 class IsortTool(Tool):
     """isort import sorter integration."""
 
     name = "isort"
-    description = "Sort Python imports"
+    description = "Sort Python imports alphabetically within logical sections"
     can_fix = True
+    
+    # Configure tool with conflict information
+    config = ToolConfig(
+        priority=90,  # High priority but below Black
+        conflicts_with=[],  # No direct conflicts, but should run before Black
+        file_patterns=["*.py"],  # Only applies to Python files
+    )
 
     def __init__(self):
         """Initialize the tool with default options."""

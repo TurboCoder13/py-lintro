@@ -3,7 +3,7 @@
 import re
 import subprocess
 
-from lintro.tools import Tool
+from lintro.tools import Tool, ToolConfig
 
 
 class BlackTool(Tool):
@@ -12,6 +12,13 @@ class BlackTool(Tool):
     name = "black"
     description = "The uncompromising Python code formatter"
     can_fix = True
+    
+    # Configure tool with conflict information
+    config = ToolConfig(
+        priority=100,  # High priority as Black is an opinionated formatter
+        conflicts_with=["autopep8", "yapf"],  # Conflicts with other formatters
+        file_patterns=["*.py"],  # Only applies to Python files
+    )
 
     def __init__(self):
         """Initialize the tool with default options."""

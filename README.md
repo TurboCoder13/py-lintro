@@ -8,6 +8,8 @@ A comprehensive CLI tool that unifies various code formatting, linting, and qual
 - Standardized configuration and output formatting
 - Consistent error handling
 - Extensible architecture for adding new tools
+- Intelligent conflict resolution between tools
+- Configurable tool priorities and execution order
 
 ## Supported Tools
 
@@ -301,6 +303,46 @@ AVAILABLE_TOOLS = {
     "mytool": MyTool(),
 }
 ```
+
+## Tool Conflict Resolution
+
+Lintro includes an intelligent conflict resolution system that prevents tools from contradicting each other. When multiple tools are specified, Lintro:
+
+1. Identifies potential conflicts between tools
+2. Resolves conflicts based on tool priorities
+3. Executes tools in the optimal order
+
+You can view potential conflicts between tools using:
+
+```bash
+lintro list-tools --show-conflicts
+```
+
+To ignore conflict resolution and run all specified tools:
+
+```bash
+lintro check --ignore-conflicts
+lintro fmt --ignore-conflicts
+```
+
+## Style Guide
+
+Lintro follows a comprehensive [Style Guide](STYLE_GUIDE.md) that outlines coding standards and best practices for the project. The style guide covers:
+
+- Python code style
+- Type hints
+- Docstrings
+- Function and method definitions
+- Imports
+- Error handling
+- Variable naming
+- Project structure
+- Commit messages
+- Testing
+- Documentation
+- Tool configuration
+- Code review
+- Continuous integration
 
 ## License
 
