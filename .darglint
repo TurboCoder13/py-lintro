@@ -1,0 +1,5 @@
+[darglint]
+docstring_style=google
+strictness=short
+enable=DAR101,DAR102,DAR103,DAR201,DAR301
+message_template={path}:{line}:{col}: {msg_id} {msg}
