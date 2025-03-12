@@ -5,6 +5,7 @@ import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import TextIO
 
 import click
 try:
@@ -26,7 +27,10 @@ class ToolResult:
     issues_count: int = 0
 
 
-def count_issues(output: str, tool_name: str) -> int:
+def count_issues(
+    output: str,
+    tool_name: str,
+) -> int:
     """Count the number of issues in the tool output."""
     if tool_name == "black":
         # Count "would reformat" lines
@@ -44,7 +48,12 @@ def count_issues(output: str, tool_name: str) -> int:
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
 
 
-def print_tool_header(tool_name: str, action: str, file: TextIO | None = None, use_table_format: bool = False):
+def print_tool_header(
+    tool_name: str,
+    action: str,
+    file: TextIO | None = None,
+    use_table_format: bool = False,
+):
     """Print a header for a tool's output."""
     if not use_table_format:
         # Standard format
@@ -65,7 +74,12 @@ def print_tool_header(tool_name: str, action: str, file: TextIO | None = None, u
             click.secho(header, fg="blue", bold=True, file=file)
 
 
-def print_tool_footer(success: bool, issues_count: int, file: TextIO | None = None, use_table_format: bool = False):
+def print_tool_footer(
+    success: bool,
+    issues_count: int,
+    file: TextIO | None = None,
+    use_table_format: bool = False,
+):
     """Print a footer for a tool's output."""
     if not use_table_format:
         # Standard format
@@ -100,7 +114,12 @@ def print_tool_footer(success: bool, issues_count: int, file: TextIO | None = No
             click.secho(f"{'-' * 60}", fg="blue", file=file)
 
 
-def print_summary(results: list[ToolResult], action: str, file: TextIO | None = None, use_table_format: bool = False):
+def print_summary(
+    results: list[ToolResult],
+    action: str,
+    file: TextIO | None = None,
+    use_table_format: bool = False,
+):
     """Print a summary of all tool results."""
     total_issues = sum(result.issues_count for result in results)
     
@@ -225,7 +244,11 @@ def get_relative_path(file_path: str) -> str:
 
 
 # Add a function to format output as a table
-def format_as_table(issues, tool_name=None, group_by="file"):
+def format_as_table(
+    issues,
+    tool_name=None,
+    group_by="file",
+):
     """Format issues as a table using tabulate if available.
     
     Args:
@@ -504,7 +527,12 @@ def format_as_table(issues, tool_name=None, group_by="file"):
     return "\n".join(result)
 
 
-def format_tool_output(output: str, tool_name: str, use_table_format: bool = False, group_by: str = "file") -> str:
+def format_tool_output(
+    output: str,
+    tool_name: str,
+    use_table_format: bool = False,
+    group_by: str = "file",
+) -> str:
     """Format the output of a tool to be more readable and standardized."""
     if not output:
         return "No output"
@@ -733,7 +761,15 @@ def cli():
     default="auto",
     help="How to group issues in the output (file, code, none, or auto)",
 )
-def check(paths: list[str], tools: str | None, exclude: str | None, include_venv: bool, output: str | None, table_format: bool, group_by: str):
+def check(
+    paths: list[str],
+    tools: str | None,
+    exclude: str | None,
+    include_venv: bool,
+    output: str | None,
+    table_format: bool,
+    group_by: str,
+):
     """Check code for issues without fixing them."""
     if not paths:
         paths = [os.getcwd()]
@@ -850,7 +886,15 @@ def check(paths: list[str], tools: str | None, exclude: str | None, include_venv
     default="auto",
     help="How to group issues in the output (file, code, none, or auto)",
 )
-def fmt(paths: list[str], tools: str | None, exclude: str | None, include_venv: bool, output: str | None, table_format: bool, group_by: str):
+def fmt(
+    paths: list[str],
+    tools: str | None,
+    exclude: str | None,
+    include_venv: bool,
+    output: str | None,
+    table_format: bool,
+    group_by: str,
+):
     """Format code and fix issues where possible."""
     if not paths:
         paths = [os.getcwd()]

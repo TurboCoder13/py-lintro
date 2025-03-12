@@ -18,7 +18,10 @@ class IsortTool(Tool):
         self.exclude_patterns = []
         self.include_venv = False
 
-    def check(self, paths: list[str]) -> tuple[bool, str]:
+    def check(
+        self,
+        paths: list[str],
+    ) -> tuple[bool, str]:
         """Check if imports would be sorted by isort."""
         # Base command
         cmd = ["isort", "--check-only"]
@@ -62,7 +65,10 @@ class IsortTool(Tool):
             
             return False, output
 
-    def fix(self, paths: list[str]) -> tuple[bool, str]:
+    def fix(
+        self,
+        paths: list[str],
+    ) -> tuple[bool, str]:
         """Sort imports with isort."""
         # Base command
         cmd = ["isort"]

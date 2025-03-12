@@ -19,7 +19,10 @@ class Flake8Tool(Tool):
         self.exclude_patterns = []
         self.include_venv = False
 
-    def check(self, paths: list[str]) -> tuple[bool, str]:
+    def check(
+        self,
+        paths: list[str],
+    ) -> tuple[bool, str]:
         """Check files with Flake8."""
         # Base command
         cmd = ["flake8"]
@@ -62,6 +65,9 @@ class Flake8Tool(Tool):
             
             return False, output
 
-    def fix(self, paths: list[str]) -> tuple[bool, str]:
+    def fix(
+        self,
+        paths: list[str],
+    ) -> tuple[bool, str]:
         """Flake8 cannot fix issues, only report them."""
         return False, "Flake8 cannot automatically fix issues. Run 'lintro check' to see issues." 

@@ -24,7 +24,9 @@ def runner():
     return CliRunner()
 
 
-def test_version(runner):
+def test_version(
+    runner
+):
     """Test the --version option."""
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
@@ -32,7 +34,10 @@ def test_version(runner):
 
 
 @patch("lintro.cli.AVAILABLE_TOOLS")
-def test_list_tools_command(mock_tools, runner):
+def test_list_tools_command(
+    mock_tools,
+    runner,
+):
     """Test the list-tools command."""
     # Create mock tools
     mock_black = MagicMock()
@@ -61,8 +66,11 @@ def test_list_tools_command(mock_tools, runner):
 
 
 @patch("lintro.cli.CHECK_TOOLS")
-def test_check_command_with_table_format(mock_tools, runner):
-    """Test the check command with table format option."""
+def test_check_command_with_table_format(
+    mock_tools,
+    runner,
+):
+    """Test the check command with table format."""
     # Mock the tools
     mock_tool = MagicMock()
     mock_tool.check.return_value = (True, "All good")
@@ -102,8 +110,11 @@ def test_check_command_with_table_format(mock_tools, runner):
 
 
 @patch("lintro.cli.FIX_TOOLS")
-def test_fmt_command_with_table_format(mock_tools, runner):
-    """Test the fmt command with table format option."""
+def test_fmt_command_with_table_format(
+    mock_tools,
+    runner,
+):
+    """Test the fmt command with table format."""
     # Mock the tools
     mock_tool = MagicMock()
     mock_tool.fix.return_value = (True, "All fixed")

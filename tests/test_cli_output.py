@@ -56,7 +56,9 @@ There are some problems with your code.
 
 
 @patch("click.secho")
-def test_print_tool_header(mock_secho):
+def test_print_tool_header(
+    mock_secho
+):
     """Test printing a tool header."""
     print_tool_header("test-tool", "check")
     assert mock_secho.call_count == 3
@@ -66,7 +68,9 @@ def test_print_tool_header(mock_secho):
 
 
 @patch("click.secho")
-def test_print_tool_footer_success(mock_secho):
+def test_print_tool_footer_success(
+    mock_secho
+):
     """Test printing a tool footer for success."""
     print_tool_footer(True, 0)
     assert mock_secho.call_count == 2
@@ -77,7 +81,9 @@ def test_print_tool_footer_success(mock_secho):
 
 
 @patch("click.secho")
-def test_print_tool_footer_failure(mock_secho):
+def test_print_tool_footer_failure(
+    mock_secho
+):
     """Test printing a tool footer for failure."""
     print_tool_footer(False, 5)
     assert mock_secho.call_count == 2
@@ -89,7 +95,10 @@ def test_print_tool_footer_failure(mock_secho):
 
 @patch("click.secho")
 @patch("click.echo")
-def test_print_summary(mock_echo, mock_secho):
+def test_print_summary(
+    mock_echo,
+    mock_secho,
+):
     """Test printing a summary of tool results."""
     results = [
         ToolResult(name="tool1", success=True, output="output1", issues_count=0),
