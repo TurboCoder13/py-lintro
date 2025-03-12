@@ -1,0 +1,110 @@
+name: Lintro Report
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.py'
+      - '**.yml'
+      - '**.yaml'
+      - '**.json'
+      - '**.md'
+      - '**.sh'
+      - 'Dockerfile'
+      - 'requirements*.txt'
+      - 'pyproject.toml'
+      - '.github/workflows/lintro-report.yml'
+  schedule:
+    - cron: '0 0 * * 0'  # Run weekly on Sunday at midnight
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  lintro-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+        pip install -e .
+    
+    - name: Install additional tools
+      run: |
+        # Install Node.js and npm for prettier
+        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+        sudo npm install -g prettier@2.8.8
+        
+        # Install Terraform
+        curl -fsSL https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip -o terraform.zip
+        sudo unzip terraform.zip -d /usr/local/bin/
+        rm terraform.zip
+        
+        # Install Hadolint
+        curl -fsSL https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 -o hadolint
+        chmod +x hadolint
+        sudo mv hadolint /usr/local/bin/
+    
+    - name: Run Lintro on codebase
+      run: |
+        mkdir -p lintro-report
+        
+        # Run lintro check on the entire codebase
+        echo "<html><head><title>Lintro Report</title>" > lintro-report/index.html
+        echo "<style>body{font-family:sans-serif;margin:40px;line-height:1.6}pre{background:#f4f4f4;border:1px solid #ddd;border-radius:4px;padding:15px;overflow:auto}</style>" >> lintro-report/index.html
+        echo "</head><body>" >> lintro-report/index.html
+        echo "<h1>Lintro Report</h1>" >> lintro-report/index.html
+        echo "<p>Generated on $(date)</p>" >> lintro-report/index.html
+        
+        echo "<h2>Available Tools</h2>" >> lintro-report/index.html
+        echo "<pre>" >> lintro-report/index.html
+        lintro list-tools >> lintro-report/index.html
+        echo "</pre>" >> lintro-report/index.html
+        
+        echo "<h2>Check Results</h2>" >> lintro-report/index.html
+        echo "<pre>" >> lintro-report/index.html
+        lintro check . --table-format --exclude ".git,__pycache__,htmlcov,.pytest_cache,.mypy_cache" >> lintro-report/index.html || true
+        echo "</pre>" >> lintro-report/index.html
+        
+        echo "</body></html>" >> lintro-report/index.html
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: 'lintro-report'
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v3
+      
+  notify:
+    needs: lintro-report
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+    - name: Create status badge
+      run: |
+        echo "Lintro report generated successfully"
+        # This step is a placeholder for potential notification or badge generation 
