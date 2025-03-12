@@ -416,3 +416,34 @@ def test_print_summary(
 
     # Check total issues
     assert any("Total issues: 5" in call[0][0] for call in mock_echo.call_args_list)
+
+
+def test_summary_table_alphabetical_order():
+    """Test that the summary table is sorted alphabetically by tool name."""
+    from lintro.cli import print_summary, ToolResult
+    from io import StringIO
+    
+    # Create some sample results in non-alphabetical order
+    results = [
+        ToolResult(name="pylint", success=False, output="", issues_count=5),
+        ToolResult(name="black", success=True, output="", issues_count=0),
+        ToolResult(name="flake8", success=False, output="", issues_count=3),
+        ToolResult(name="isort", success=True, output="", issues_count=0),
+    ]
+    
+    # Capture the output
+    output_file = StringIO()
+    print_summary(results, "check", file=output_file, use_table_format=True)
+    output = output_file.getvalue()
+    
+    # Check that the tools appear in alphabetical order in the output
+    tool_positions = {}
+    for tool in ["black", "flake8", "isort", "pylint"]:
+        tool_positions[tool] = output.find(tool)
+        # Make sure the tool name is in the output
+        assert tool_positions[tool] >= 0
+    
+    # Check that the tools are in alphabetical order
+    assert tool_positions["black"] < tool_positions["flake8"]
+    assert tool_positions["flake8"] < tool_positions["isort"]
+    assert tool_positions["isort"] < tool_positions["pylint"]
