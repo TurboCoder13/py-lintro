@@ -973,3 +973,23 @@ def test_yamllint_fix():
     # Verify the results
     assert success is False
     assert "cannot automatically fix" in output
+
+
+def test_get_tool_execution_order():
+    """Test that tools are executed in alphabetical order."""
+    from lintro.tools import get_tool_execution_order
+    
+    # Test with a subset of tools
+    tools = ["flake8", "black", "isort", "pylint"]
+    ordered_tools = get_tool_execution_order(tools)
+    
+    # Should be alphabetically sorted
+    assert ordered_tools == sorted(tools)
+    
+    # Test with all tools
+    from lintro.tools import AVAILABLE_TOOLS
+    all_tools = list(AVAILABLE_TOOLS.keys())
+    ordered_all_tools = get_tool_execution_order(all_tools)
+    
+    # Should be alphabetically sorted
+    assert ordered_all_tools == sorted(all_tools)

@@ -255,6 +255,9 @@ def print_summary(
         file: File to write to (default: stdout)
         use_table_format: Whether to use table formatting
     """
+    # Sort results alphabetically by tool name
+    results = sorted(results, key=lambda result: result.name)
+    
     # Count total issues
     total_issues = sum(result.issues_count for result in results)
     
@@ -1549,6 +1552,7 @@ def check(
                 fg="yellow",
             )
 
+    # Create a dictionary of tools to run
     tool_to_run = {
         name: tool
         for name, tool in CHECK_TOOLS.items()
@@ -1584,7 +1588,11 @@ def check(
         exit_code = 0
         results = []
 
-        for name, tool in tool_to_run.items():
+        # Sort the tool names alphabetically to ensure consistent execution order
+        sorted_tool_names = sorted(tool_to_run.keys())
+        
+        for name in sorted_tool_names:
+            tool = tool_to_run[name]
             if verbose:
                 click.echo(f"Running tool: {name}")
             
@@ -1954,7 +1962,12 @@ def fmt(
         exit_code = 0
         results = []
 
-        for name, tool in tool_to_run.items():
+        # Sort the tool names alphabetically to ensure consistent execution order
+        sorted_tool_names = sorted(tool_to_run.keys())
+        
+        for name in sorted_tool_names:
+            tool = tool_to_run[name]
+            
             # Modify tool command based on options
             if hasattr(tool, "set_options"):
                 tool.set_options(

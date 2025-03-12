@@ -174,3 +174,37 @@ def test_table_format_fallback(runner):
             "Warning: Table formatting requested but tabulate package is not installed.",
             err=True,
         )
+
+
+def test_tools_executed_in_alphabetical_order():
+    """Test that tools are executed in alphabetical order."""
+    from unittest.mock import patch, MagicMock
+    from click.testing import CliRunner
+    from lintro.cli import cli
+    
+    # Create mock tools with different names
+    mock_tools = {
+        "ztool": MagicMock(),
+        "atool": MagicMock(),
+        "mtool": MagicMock(),
+    }
+    
+    # Track the order of execution
+    execution_order = []
+    
+    # Create a side effect function to record the order
+    def record_execution(name, *args, **kwargs):
+        execution_order.append(name)
+        return True, "No issues found."
+    
+    # Set up the check method for each mock tool
+    for name, tool in mock_tools.items():
+        tool.check.side_effect = lambda paths, name=name: record_execution(name, paths)
+    
+    # Patch the CHECK_TOOLS dictionary
+    with patch("lintro.cli.CHECK_TOOLS", mock_tools):
+        runner = CliRunner()
+        result = runner.invoke(cli, ["check", "--tools", "ztool,atool,mtool", "."])
+        
+        # Verify the execution order is alphabetical
+        assert execution_order == ["atool", "mtool", "ztool"]

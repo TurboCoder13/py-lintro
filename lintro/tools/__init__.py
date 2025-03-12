@@ -129,7 +129,7 @@ def resolve_tool_conflicts(selected_tools: list[str]) -> list[str]:
         selected_tools: List of tool names to check for conflicts
 
     Returns:
-        List of tool names to run, ordered by priority (highest first)
+        List of tool names to run, with conflicts resolved
     """
     # Filter to only include available tools
     valid_tools = [name for name in selected_tools if name in AVAILABLE_TOOLS]
@@ -144,18 +144,14 @@ def resolve_tool_conflicts(selected_tools: list[str]) -> list[str]:
                     conflicts[tool_name] = []
                 conflicts[tool_name].append(conflict)
 
-    # If there are conflicts, resolve them based on priority
+    # If there are conflicts, resolve them
     if conflicts:
         resolved_tools = []
-        # Sort tools by priority (highest first)
-        sorted_tools = sorted(
-            valid_tools,
-            key=lambda name: AVAILABLE_TOOLS[name].config.priority,
-            reverse=True,
-        )
+        # Sort tools alphabetically
+        sorted_tools = sorted(valid_tools)
 
-        # Add tools in priority order, skipping those that conflict with
-        # higher priority tools
+        # Add tools in alphabetical order, skipping those that conflict with
+        # previously added tools
         excluded_tools = set()
         for tool_name in sorted_tools:
             if tool_name in excluded_tools:
@@ -175,20 +171,16 @@ def resolve_tool_conflicts(selected_tools: list[str]) -> list[str]:
 
 def get_tool_execution_order(selected_tools: list[str]) -> list[str]:
     """
-    Get the order in which tools should be executed, based on their priorities.
+    Get the order in which tools should be executed.
 
     Args:
         selected_tools: List of tool names to order
 
     Returns:
-        List of tool names in execution order
+        List of tool names in execution order (alphabetically sorted)
     """
     # Resolve any conflicts first
     resolved_tools = resolve_tool_conflicts(selected_tools)
 
-    # Sort by priority (highest first)
-    return sorted(
-        resolved_tools,
-        key=lambda name: AVAILABLE_TOOLS[name].config.priority,
-        reverse=True,
-    )
+    # Sort alphabetically
+    return sorted(resolved_tools)
