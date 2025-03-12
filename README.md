@@ -129,7 +129,30 @@ lintro fmt --output changes.txt [PATH]
 lintro list-tools --output tools.txt
 ```
 
-When using the `--output` option, a summary will still be printed to the console, but the detailed output will be written to the specified file.
+When using the `--output` option, the detailed output will be displayed in both the console and written to the specified file.
+
+### Use table formatting for output
+
+You can use a nicely formatted table for the output using the `--table-format` option:
+
+```bash
+lintro check --table-format [PATH]
+lintro fmt --table-format [PATH]
+```
+
+This option requires the `tabulate` package to be installed. If it's not installed, Lintro will fall back to the standard formatting.
+
+To install tabulate:
+
+```bash
+pip install tabulate
+```
+
+You can combine the table format with the output file option:
+
+```bash
+lintro check --table-format --output report.txt [PATH]
+```
 
 ## Configuration
 
