@@ -226,42 +226,126 @@ def get_relative_path(file_path: str) -> str:
 
 
 # Add a function to format output as a table
-def format_as_table(issues, tool_name=None):
-    """Format issues as a table using tabulate if available."""
+def format_as_table(issues, tool_name=None, group_by="file"):
+    """Format issues as a table using tabulate if available.
+    
+    Args:
+        issues: List of issue dictionaries
+        tool_name: Name of the tool that found the issues
+        group_by: How to group issues - 'file' or 'code'
+    """
     if not TABULATE_AVAILABLE:
         return None
-    
-    # Convert issues to a list of lists for tabulate
-    table_data = []
-    for issue in issues:
-        table_data.append([
-            issue["path"],
-            issue["line"],
-            issue["code"],
-            issue["message"]
-        ])
-    
-    # Format as a table with headers - use left alignment
-    headers = ["File", "Line", "PEP Code", "Message"]
     
     # Add tool name to the table if provided
     title = ""
     if tool_name:
         title = f"Results for {tool_name}:"
     
-    table = tabulate(
-        table_data,
-        headers=headers,
-        tablefmt="pretty",
-        colalign=("left", "left", "left", "left")  # Left align all columns
-    )
+    # If there are no issues, return early
+    if not issues:
+        return title
     
+    # Format based on grouping option
+    result = []
     if title:
-        return f"{title}\n{table}"
-    return table
+        result.append(title)
+    
+    if group_by == "file":
+        # Group issues by file
+        issues_by_file = {}
+        for issue in issues:
+            file_path = issue["path"]
+            if file_path not in issues_by_file:
+                issues_by_file[file_path] = []
+            issues_by_file[file_path].append(issue)
+        
+        for file_path, file_issues in sorted(issues_by_file.items()):
+            # Add file header
+            result.append(f"\nFile: {file_path}")
+            
+            # Convert issues to a list of lists for tabulate
+            table_data = []
+            for issue in file_issues:
+                table_data.append([
+                    issue["line"],
+                    issue["code"],
+                    issue["message"]
+                ])
+            
+            # Format as a table with headers - use left alignment
+            headers = ["Line", "PEP Code", "Message"]
+            
+            table = tabulate(
+                table_data,
+                headers=headers,
+                tablefmt="pretty",
+                colalign=("left", "left", "left")  # Left align all columns
+            )
+            
+            result.append(table)
+    
+    elif group_by == "code":
+        # Group issues by error code
+        issues_by_code = {}
+        for issue in issues:
+            code = issue["code"]
+            if code not in issues_by_code:
+                issues_by_code[code] = []
+            issues_by_code[code].append(issue)
+        
+        for code, code_issues in sorted(issues_by_code.items()):
+            # Add code header
+            result.append(f"\nPEP Code: {code}")
+            
+            # Convert issues to a list of lists for tabulate
+            table_data = []
+            for issue in code_issues:
+                table_data.append([
+                    issue["path"],
+                    issue["line"],
+                    issue["message"]
+                ])
+            
+            # Format as a table with headers - use left alignment
+            headers = ["File", "Line", "Message"]
+            
+            table = tabulate(
+                table_data,
+                headers=headers,
+                tablefmt="pretty",
+                colalign=("left", "left", "left")  # Left align all columns
+            )
+            
+            result.append(table)
+    
+    else:  # No grouping or unknown grouping
+        # Convert issues to a list of lists for tabulate
+        table_data = []
+        for issue in issues:
+            table_data.append([
+                issue["path"],
+                issue["line"],
+                issue["code"],
+                issue["message"]
+            ])
+        
+        # Format as a table with headers - use left alignment
+        headers = ["File", "Line", "PEP Code", "Message"]
+        
+        table = tabulate(
+            table_data,
+            headers=headers,
+            tablefmt="pretty",
+            colalign=("left", "left", "left", "left")  # Left align all columns
+        )
+        
+        result.append(table)
+    
+    return "\n".join(result)
 
 
-def format_tool_output(output: str, tool_name: str, use_table_format: bool = False) -> str:
+def format_tool_output(output: str, tool_name: str, use_table_format: bool = False, group_by: str = "file") -> str:
     """Format the output of a tool to be more readable and standardized."""
     if not output:
         return "No output"
@@ -350,7 +434,7 @@ def format_tool_output(output: str, tool_name: str, use_table_format: bool = Fal
     
     # If tabulate is available, table format is requested, and we have issues, format as a table
     if TABULATE_AVAILABLE and use_table_format and issues:
-        table = format_as_table(issues, tool_name)
+        table = format_as_table(issues, tool_name, group_by)
         if table:
             # Add any summary lines
             if tool_name == "black":
@@ -483,7 +567,13 @@ def cli():
     is_flag=True,
     help="Use table formatting for output (requires tabulate package)",
 )
-def check(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str], table_format: bool):
+@click.option(
+    "--group-by",
+    type=click.Choice(["file", "code", "none"]),
+    default="file",
+    help="How to group issues in the output (file, code, or none)",
+)
+def check(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str], table_format: bool, group_by: str):
     """Check code for issues without fixing them."""
     if not paths:
         paths = [os.getcwd()]
@@ -535,7 +625,7 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
             
             # Count issues and format output
             issues_count = count_issues(output_text, name)
-            formatted_output = format_tool_output(output_text, name, table_format)
+            formatted_output = format_tool_output(output_text, name, table_format, group_by)
             
             # Always display in console, and also in file if specified
             click.echo(formatted_output)
@@ -593,7 +683,13 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
     is_flag=True,
     help="Use table formatting for output (requires tabulate package)",
 )
-def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str], table_format: bool):
+@click.option(
+    "--group-by",
+    type=click.Choice(["file", "code", "none"]),
+    default="file",
+    help="How to group issues in the output (file, code, or none)",
+)
+def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str], table_format: bool, group_by: str):
     """Format code and fix issues where possible."""
     if not paths:
         paths = [os.getcwd()]
@@ -645,7 +741,7 @@ def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_
             
             # Count issues and format output
             issues_count = count_issues(output_text, name)
-            formatted_output = format_tool_output(output_text, name, table_format)
+            formatted_output = format_tool_output(output_text, name, table_format, group_by)
             
             # Always display in console, and also in file if specified
             click.echo(formatted_output)
