@@ -92,6 +92,9 @@ def count_issues(
         fmt_issues = len(re.findall(r"[-+]", output))
         validation_issues = len(re.findall(r"\[ERROR\]", output))
         return fmt_issues + validation_issues
+    elif tool_name == "yamllint":
+        # Count lines with yamllint issues (format: file:line:column: [level] message)
+        return len(re.findall(r":\d+:\d+: \[(error|warning)\]", output))
     else:
         # Generic fallback: count lines that look like issues
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
@@ -118,6 +121,7 @@ def get_tool_emoji(tool_name: str) -> str:
         "pylint": "🔍",
         "semgrep": "🔒",
         "terraform": "🏗️",
+        "yamllint": "📐",
     }
     return emojis.get(tool_name, "🔧")
 
@@ -324,6 +328,8 @@ def get_table_columns(
         code_column = "Rule ID"
     elif tool_name == "terraform":
         code_column = "Issue Type"
+    elif tool_name == "yamllint":
+        code_column = "YAML Rule"
     else:
         code_column = "Code"
 
@@ -365,6 +371,17 @@ def get_table_columns(
             "File": "file",
             code_column: "code",
             "Line": "line",
+            "Severity": "severity",
+            "Message": "message",
+        }
+
+    # Add yamllint-specific columns
+    if tool_name == "yamllint":
+        columns_map = {
+            "File": "file",
+            code_column: "code",
+            "Line": "line",
+            "Column": "col",
             "Severity": "severity",
             "Message": "message",
         }
@@ -612,7 +629,8 @@ def format_tool_output(
         output.strip() == "No Dockerfile issues found." or
         output.strip() == "No docstring style issues found." or
         output.strip() == "All files are formatted correctly." or
-        output.strip() == "No Terraform issues found."):
+        output.strip() == "No Terraform issues found." or
+        output.strip() == "No YAML issues found."):
         return output
 
     # Remove trailing whitespace and ensure ending with newline
@@ -1109,6 +1127,28 @@ def format_tool_output(
                             "message": message
                         })
 
+    # Add yamllint-specific parsing
+    elif tool_name == "yamllint":
+        # Parse yamllint output (format: file:line:column: [level] message)
+        for line in output.splitlines():
+            match = re.match(r"(.+):(\d+):(\d+): \[(error|warning)\] (.+)", line)
+            if match:
+                file_path, line_num, col_num, severity, message = match.groups()
+                rel_path = get_relative_path(file_path)
+                file_paths.append(rel_path)
+                line_numbers.append(line_num)
+                error_codes.append(message.split(" ")[0])  # Use first word of message as code
+                
+                # Add to issues list for table formatting
+                issues.append({
+                    "file": rel_path,
+                    "code": message.split(" ")[0],
+                    "line": line_num,
+                    "col": col_num,
+                    "severity": severity,
+                    "message": message
+                })
+
     # If tabulate is available, table format is requested, and we have issues, format as a table
     if use_table_format and TABULATE_AVAILABLE and issues:
         return format_as_table(issues, tool_name, group_by)
@@ -1262,6 +1302,18 @@ def cli():
     help="Recursively check Terraform directories",
 )
 @click.option(
+    "--yamllint-config",
+    type=str,
+    default=None,
+    help="Path to yamllint configuration file",
+)
+@click.option(
+    "--yamllint-strict",
+    is_flag=True,
+    default=None,
+    help="Use strict mode for yamllint",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     help="Show verbose output",
@@ -1289,6 +1341,8 @@ def check(
     pylint_rcfile: str | None,
     semgrep_config: str | None,
     terraform_recursive: bool | None,
+    yamllint_config: str | None,
+    yamllint_strict: bool | None,
     verbose: bool = False,
     debug_file: str | None = None,
 ):
@@ -1433,6 +1487,19 @@ def check(
                     include_venv=include_venv,
                     recursive=terraform_recursive,
                 )
+            elif name == "yamllint":
+                options = {}
+                if yamllint_config is not None:
+                    options["config_file"] = yamllint_config
+                if yamllint_strict is not None:
+                    options["strict"] = yamllint_strict
+                
+                if options:
+                    tool.set_options(
+                        exclude_patterns=exclude_patterns,
+                        include_venv=include_venv,
+                        **options,
+                    )
 
             print_tool_header(name, "check", output_file, table_format)
 
@@ -1590,6 +1657,18 @@ def check(
     default=None,
     help="Recursively format Terraform directories",
 )
+@click.option(
+    "--yamllint-config",
+    type=str,
+    default=None,
+    help="Path to yamllint configuration file",
+)
+@click.option(
+    "--yamllint-strict",
+    is_flag=True,
+    default=None,
+    help="Use strict mode for yamllint",
+)
 def fmt(
     paths: list[str],
     tools: str | None,
@@ -1607,6 +1686,8 @@ def fmt(
     pylint_rcfile: str | None,
     semgrep_config: str | None,
     terraform_recursive: bool | None,
+    yamllint_config: str | None,
+    yamllint_strict: bool | None,
 ):
     """Format files to fix issues."""
     if not paths:
@@ -1721,6 +1802,19 @@ def fmt(
                     include_venv=include_venv,
                     recursive=terraform_recursive,
                 )
+            elif name == "yamllint":
+                options = {}
+                if yamllint_config is not None:
+                    options["config_file"] = yamllint_config
+                if yamllint_strict is not None:
+                    options["strict"] = yamllint_strict
+                
+                if options:
+                    tool.set_options(
+                        exclude_patterns=exclude_patterns,
+                        include_venv=include_venv,
+                        **options,
+                    )
 
             print_tool_header(name, "format", output_file, table_format)
 

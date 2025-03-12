@@ -859,3 +859,117 @@ def test_terraform_check_with_recursive_option(mock_run):
     
     assert fmt_cmd is not None
     assert "-recursive" not in fmt_cmd
+
+
+@patch("subprocess.run")
+def test_yamllint_check_success(mock_run):
+    """Test yamllint check when no issues are found."""
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.stdout = ""
+    mock_run.return_value = mock_process
+
+    # Create a YAMLLintTool instance
+    from lintro.tools.yamllint import YAMLLintTool
+    tool = YAMLLintTool()
+    
+    # Call the check method
+    success, output = tool.check(["test.yaml"])
+
+    # Verify the results
+    assert success is True
+    assert "No YAML issues found" in output
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_yamllint_check_failure(mock_run):
+    """Test yamllint check when issues are found."""
+    mock_process = MagicMock()
+    mock_process.returncode = 1
+    mock_process.stderr = ""
+    mock_process.stdout = """
+test.yaml:1:1: [error] missing document start "---" (document-start)
+test.yaml:3:1: [warning] too few spaces before comment (comments)
+"""
+    mock_run.return_value = mock_process
+
+    # Create a YAMLLintTool instance
+    from lintro.tools.yamllint import YAMLLintTool
+    tool = YAMLLintTool()
+    
+    # Call the check method
+    success, output = tool.check(["test.yaml"])
+
+    # Verify the results
+    assert success is False
+    assert "missing document start" in output
+    assert "too few spaces before comment" in output
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_yamllint_check_with_config(mock_run):
+    """Test yamllint check with custom configuration."""
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.stdout = ""
+    mock_run.return_value = mock_process
+
+    # Create a YAMLLintTool instance
+    from lintro.tools.yamllint import YAMLLintTool
+    tool = YAMLLintTool()
+    
+    # Set the config file option
+    tool.set_options(config_file=".yamllint.yml")
+    
+    # Call the check method
+    success, output = tool.check(["test.yaml"])
+
+    # Verify the results
+    assert success is True
+    # Check that the config was passed to yamllint
+    mock_run.assert_called_once()
+    cmd = mock_run.call_args[0][0]
+    assert "-c" in cmd
+    assert ".yamllint.yml" in cmd
+
+
+@patch("subprocess.run")
+def test_yamllint_check_with_strict(mock_run):
+    """Test yamllint check with strict mode."""
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.stdout = ""
+    mock_run.return_value = mock_process
+
+    # Create a YAMLLintTool instance
+    from lintro.tools.yamllint import YAMLLintTool
+    tool = YAMLLintTool()
+    
+    # Set the strict option
+    tool.set_options(strict=True)
+    
+    # Call the check method
+    success, output = tool.check(["test.yaml"])
+
+    # Verify the results
+    assert success is True
+    # Check that the strict flag was passed to yamllint
+    mock_run.assert_called_once()
+    cmd = mock_run.call_args[0][0]
+    assert "-s" in cmd
+
+
+def test_yamllint_fix():
+    """Test that yamllint fix returns appropriate message."""
+    # Create a YAMLLintTool instance
+    from lintro.tools.yamllint import YAMLLintTool
+    tool = YAMLLintTool()
+    
+    # Call the fix method
+    success, output = tool.fix(["test.yaml"])
+
+    # Verify the results
+    assert success is False
+    assert "cannot automatically fix" in output
