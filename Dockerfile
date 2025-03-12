@@ -31,34 +31,14 @@ RUN curl -fsSL https://github.com/hadolint/hadolint/releases/download/v2.12.0/ha
 # Set up working directory
 WORKDIR /app
 
-# Create a custom requirements file without hadolint-py
-RUN echo "click>=8.0.0\n\
-black>=23.0.0\n\
-isort>=5.12.0\n\
-flake8>=6.0.0\n\
-darglint>=1.8.1\n\
-pydocstyle>=6.3.0\n\
-pylint>=3.0.0\n\
-semgrep>=1.100.0\n\
-python-terraform>=0.10.1\n\
-yamllint>=1.32.0\n\
-tabulate>=0.9.0\n\
-pytest>=7.0.0\n\
-pytest-cov>=4.0.0\n\
-pytest-mock>=3.10.0\n\
-tox>=4.0.0\n\
-mypy>=1.8.0\n\
-types-setuptools>=69.0.0\n\
-types-tabulate>=0.9.0" > requirements_docker.txt
+# Copy the requirements files
+COPY requirements.txt requirements-dev.txt ./
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements_docker.txt
+RUN pip install --no-cache-dir -r requirements-dev.txt
 
 # Copy the lintro package
 COPY . .
-
-# Modify pyproject.toml to remove hadolint-py dependency
-RUN sed -i '/hadolint-py/d' pyproject.toml
 
 # Install the package
 RUN pip install -e .
