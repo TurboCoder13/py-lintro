@@ -221,40 +221,103 @@ def print_summary(
     
     # Format the summary
     if use_table_format:
-        # Create a table with tool names, status, and issue counts
+        # First, generate a properly formatted table without colors
         table_data = []
-        for result in results:
-            emoji = get_tool_emoji(result.name)
-            status = "✓" if result.success else "✗"
-            table_data.append([f"{emoji} {result.name}", status, result.issues_count])
         
-        # Create the table with left alignment for the Tool column
+        # Prepare data for tabulate
+        for result in results:
+            tool_name = result.name
+            # A tool is successful if it has 0 issues, regardless of the original success flag
+            is_successful = result.issues_count == 0
+            status = "✓" if is_successful else "✗"
+            issues_count = str(result.issues_count)
+            table_data.append([tool_name, status, issues_count])
+        
+        # Generate the table
         table = tabulate(
             table_data,
             headers=["Tool", "Status", "Issues"],
-            tablefmt="pretty",
+            tablefmt="grid",
             colalign=("left", "center", "center"),
         )
         
+        # Now add colors by processing the table line by line
+        colored_lines = []
+        for line in table.split('\n'):
+            # Skip lines that don't contain data
+            if '|' not in line or all(c in '+|-=' for c in line.replace(' ', '')):
+                colored_lines.append(line)
+                continue
+                
+            # Process header line
+            if "Tool" in line and "Status" in line and "Issues" in line:
+                colored_lines.append(click.style(line, bold=True))
+                continue
+                
+            # Process data lines - we need to find and replace the status and issues
+            parts = line.split('|')
+            if len(parts) >= 4:  # Should have at least 4 parts with our table format
+                # Keep the tool name as is
+                tool_part = parts[1]
+                
+                # Color the status
+                status_part = parts[2]
+                if "✓" in status_part:
+                    colored_status = status_part.replace("✓", click.style("✓", fg="green", bold=True))
+                else:
+                    colored_status = status_part.replace("✗", click.style("✗", fg="red", bold=True))
+                
+                # Color the issues
+                issues_part = parts[3]
+                issues_value = issues_part.strip()
+                if issues_value == "0":
+                    colored_issues = issues_part.replace("0", click.style("0", fg="green"))
+                elif issues_value.isdigit() and int(issues_value) <= 10:
+                    colored_issues = issues_part.replace(issues_value, click.style(issues_value, fg="yellow"))
+                else:
+                    colored_issues = issues_part.replace(issues_value, click.style(issues_value, fg="red"))
+                
+                # Reconstruct the line with colored parts
+                colored_line = "|" + tool_part + "|" + colored_status + "|" + colored_issues + "|"
+                colored_lines.append(colored_line)
+            else:
+                colored_lines.append(line)
+        
+        # Join the colored lines
+        colored_table = '\n'.join(colored_lines)
+        
         # Add a fun line based on the total number of issues
         if total_issues == 0:
-            fun_line = "🎉 No issues found! Your code is looking great! 🎉"
+            fun_line = click.style("🎉 No issues found! Your code is looking great! 🎉", fg="green", bold=True)
         elif total_issues < 10:
-            fun_line = "🔨 A few issues to fix, but you're almost there! 💪"
+            fun_line = click.style("🔨 A few issues to fix, but you're almost there! 💪", fg="yellow", bold=True)
         else:
-            fun_line = "🧹 Time for some cleanup! Let's make this code shine! ✨"
+            fun_line = click.style("🧹 Time for some cleanup! Let's make this code shine! ✨", fg="red", bold=True)
         
         # Format the summary
-        summary = f"{header}{table}\n\n{fun_line}\n"
+        summary = f"{header}{colored_table}\n\n{fun_line}\n"
     else:
         # Create a simple summary
         summary_lines = []
         for result in results:
             emoji = get_tool_emoji(result.name)
-            status = "✓" if result.success else "✗"
-            summary_lines.append(f"{emoji} {result.name}: {status} ({result.issues_count} issues)")
+            # A tool is successful if it has 0 issues, regardless of the original success flag
+            is_successful = result.issues_count == 0
+            if is_successful:
+                status = click.style("✓", fg="green", bold=True)
+            else:
+                status = click.style("✗", fg="red", bold=True)
+            
+            if result.issues_count > 0:
+                issues_str = click.style(f"({result.issues_count} issues)", fg="red" if result.issues_count > 10 else "yellow")
+            else:
+                issues_str = click.style("(0 issues)", fg="green")
+                
+            summary_lines.append(f"{emoji} {result.name}: {status} {issues_str}")
         
-        summary_lines.append(f"Total issues: {total_issues}")
+        total_issues_str = click.style(f"Total issues: {total_issues}", bold=True, 
+                                      fg="green" if total_issues == 0 else "red")
+        summary_lines.append(total_issues_str)
         summary_text = "\n".join(summary_lines)
         
         # Format the summary
