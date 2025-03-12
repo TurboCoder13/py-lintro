@@ -5,7 +5,7 @@ import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, TextIO, Tuple
 
 import click
 
@@ -38,44 +38,44 @@ def count_issues(output: str, tool_name: str) -> int:
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
 
 
-def print_tool_header(tool_name: str, action: str):
+def print_tool_header(tool_name: str, action: str, file: Optional[TextIO] = None):
     """Print a header for a tool's output."""
-    click.secho(f"\n{'=' * 60}", fg="blue")
-    click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True)
-    click.secho(f"{'=' * 60}", fg="blue")
+    click.secho(f"\n{'=' * 60}", fg="blue", file=file)
+    click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True, file=file)
+    click.secho(f"{'=' * 60}", fg="blue", file=file)
 
 
-def print_tool_footer(success: bool, issues_count: int):
+def print_tool_footer(success: bool, issues_count: int, file: Optional[TextIO] = None):
     """Print a footer for a tool's output."""
     if success:
-        click.secho(f"\n✓ No issues found", fg="green")
+        click.secho(f"\n✓ No issues found", fg="green", file=file)
     else:
-        click.secho(f"\n✗ Found {issues_count} issues", fg="red")
-    click.secho(f"{'-' * 60}", fg="blue")
+        click.secho(f"\n✗ Found {issues_count} issues", fg="red", file=file)
+    click.secho(f"{'-' * 60}", fg="blue", file=file)
 
 
-def print_summary(results: List[ToolResult], action: str):
+def print_summary(results: List[ToolResult], action: str, file: Optional[TextIO] = None):
     """Print a summary of all tool results."""
     total_issues = sum(result.issues_count for result in results)
     
-    click.secho(f"\n{'=' * 60}", fg="yellow")
-    click.secho(f" Summary ({action})", fg="yellow", bold=True)
-    click.secho(f"{'=' * 60}", fg="yellow")
+    click.secho(f"\n{'=' * 60}", fg="yellow", file=file)
+    click.secho(f" Summary ({action})", fg="yellow", bold=True, file=file)
+    click.secho(f"{'=' * 60}", fg="yellow", file=file)
     
     for result in results:
         status = "✓" if result.success else "✗"
         color = "green" if result.success else "red"
         issues_text = "No issues" if result.issues_count == 0 else f"{result.issues_count} issues"
-        click.secho(f" {status} {result.name}: {issues_text}", fg=color)
+        click.secho(f" {status} {result.name}: {issues_text}", fg=color, file=file)
     
-    click.secho(f"{'-' * 60}", fg="yellow")
+    click.secho(f"{'-' * 60}", fg="yellow", file=file)
     
     if total_issues == 0:
-        click.secho(f" Total: No issues found", fg="green")
+        click.secho(f" Total: No issues found", fg="green", file=file)
     else:
-        click.secho(f" Total: {total_issues} issues found", fg="red")
+        click.secho(f" Total: {total_issues} issues found", fg="red", file=file)
     
-    click.secho(f"{'=' * 60}", fg="yellow")
+    click.secho(f"{'=' * 60}", fg="yellow", file=file)
 
 
 def parse_tool_list(tools_str: Optional[str]) -> List[str]:
@@ -135,7 +135,12 @@ def cli():
     is_flag=True,
     help="Include virtual environment directories (excluded by default)",
 )
-def check(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool):
+@click.option(
+    "--output",
+    type=click.Path(dir_okay=False, writable=True),
+    help="Output file to write results to",
+)
+def check(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str]):
     """Check code for issues without fixing them."""
     if not paths:
         paths = [os.getcwd()]
@@ -156,32 +161,56 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
     if exclude:
         exclude_patterns = [p.strip() for p in exclude.split(",") if p.strip()]
     
-    exit_code = 0
-    results = []
+    # Open output file if specified
+    output_file = None
+    if output:
+        try:
+            output_file = open(output, 'w')
+            click.echo(f"Writing output to {output}")
+        except IOError as e:
+            click.echo(f"Error opening output file: {e}", err=True)
+            sys.exit(1)
     
-    for name, tool in tools_to_run.items():
-        print_tool_header(name, "check")
+    try:
+        exit_code = 0
+        results = []
         
-        # Modify tool command based on options
-        if hasattr(tool, "set_options"):
-            tool.set_options(exclude_patterns=exclude_patterns, include_venv=include_venv)
+        for name, tool in tools_to_run.items():
+            print_tool_header(name, "check", output_file)
+            
+            # Modify tool command based on options
+            if hasattr(tool, "set_options"):
+                tool.set_options(exclude_patterns=exclude_patterns, include_venv=include_venv)
+            
+            success, output_text = tool.check(list(paths))
+            
+            # Count issues and format output
+            issues_count = count_issues(output_text, name)
+            formatted_output = format_tool_output(output_text, name)
+            click.echo(formatted_output, file=output_file)
+            
+            print_tool_footer(success, issues_count, output_file)
+            
+            results.append(ToolResult(name, success, output_text, issues_count))
+            
+            if not success:
+                exit_code = 1
         
-        success, output = tool.check(list(paths))
+        print_summary(results, "check", output_file)
         
-        # Count issues and format output
-        issues_count = count_issues(output, name)
-        formatted_output = format_tool_output(output, name)
-        click.echo(formatted_output)
+        # If output file is specified, print a summary to the console as well
+        if output_file:
+            total_issues = sum(result.issues_count for result in results)
+            if total_issues == 0:
+                click.secho("No issues found", fg="green")
+            else:
+                click.secho(f"Found {total_issues} issues. See {output} for details.", fg="red")
         
-        print_tool_footer(success, issues_count)
-        
-        results.append(ToolResult(name, success, output, issues_count))
-        
-        if not success:
-            exit_code = 1
-    
-    print_summary(results, "check")
-    sys.exit(exit_code)
+        sys.exit(exit_code)
+    finally:
+        # Close the output file if it was opened
+        if output_file:
+            output_file.close()
 
 
 @cli.command()
@@ -199,7 +228,12 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
     is_flag=True,
     help="Include virtual environment directories (excluded by default)",
 )
-def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool):
+@click.option(
+    "--output",
+    type=click.Path(dir_okay=False, writable=True),
+    help="Output file to write results to",
+)
+def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_venv: bool, output: Optional[str]):
     """Format code and fix issues where possible."""
     if not paths:
         paths = [os.getcwd()]
@@ -220,58 +254,102 @@ def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_
     if exclude:
         exclude_patterns = [p.strip() for p in exclude.split(",") if p.strip()]
     
-    exit_code = 0
-    results = []
+    # Open output file if specified
+    output_file = None
+    if output:
+        try:
+            output_file = open(output, 'w')
+            click.echo(f"Writing output to {output}")
+        except IOError as e:
+            click.echo(f"Error opening output file: {e}", err=True)
+            sys.exit(1)
     
-    for name, tool in tools_to_run.items():
-        print_tool_header(name, "fix")
+    try:
+        exit_code = 0
+        results = []
         
-        # Modify tool command based on options
-        if hasattr(tool, "set_options"):
-            tool.set_options(exclude_patterns=exclude_patterns, include_venv=include_venv)
+        for name, tool in tools_to_run.items():
+            print_tool_header(name, "fix", output_file)
+            
+            # Modify tool command based on options
+            if hasattr(tool, "set_options"):
+                tool.set_options(exclude_patterns=exclude_patterns, include_venv=include_venv)
+            
+            success, output_text = tool.fix(list(paths))
+            
+            # Count issues and format output
+            issues_count = count_issues(output_text, name)
+            formatted_output = format_tool_output(output_text, name)
+            click.echo(formatted_output, file=output_file)
+            
+            print_tool_footer(success, issues_count, output_file)
+            
+            results.append(ToolResult(name, success, output_text, issues_count))
+            
+            if not success:
+                exit_code = 1
         
-        success, output = tool.fix(list(paths))
+        print_summary(results, "format", output_file)
         
-        # Count issues and format output
-        issues_count = count_issues(output, name)
-        formatted_output = format_tool_output(output, name)
-        click.echo(formatted_output)
+        # If output file is specified, print a summary to the console as well
+        if output_file:
+            total_issues = sum(result.issues_count for result in results)
+            if total_issues == 0:
+                click.secho("All files formatted successfully", fg="green")
+            else:
+                click.secho(f"Some files could not be formatted. See {output} for details.", fg="red")
         
-        print_tool_footer(success, issues_count)
-        
-        results.append(ToolResult(name, success, output, issues_count))
-        
-        if not success:
-            exit_code = 1
-    
-    print_summary(results, "format")
-    sys.exit(exit_code)
+        sys.exit(exit_code)
+    finally:
+        # Close the output file if it was opened
+        if output_file:
+            output_file.close()
 
 
 @cli.command()
-def list_tools():
+@click.option(
+    "--output",
+    type=click.Path(dir_okay=False, writable=True),
+    help="Output file to write results to",
+)
+def list_tools(output: Optional[str]):
     """List all available tools."""
-    click.secho("Available tools:", bold=True)
+    # Open output file if specified
+    output_file = None
+    if output:
+        try:
+            output_file = open(output, 'w')
+            click.echo(f"Writing output to {output}")
+        except IOError as e:
+            click.echo(f"Error opening output file: {e}", err=True)
+            sys.exit(1)
     
-    # Group tools by capability
-    fix_tools = []
-    check_only_tools = []
-    
-    for name, tool in sorted(AVAILABLE_TOOLS.items()):
-        if tool.can_fix:
-            fix_tools.append((name, tool))
-        else:
-            check_only_tools.append((name, tool))
-    
-    if fix_tools:
-        click.secho("\nTools that can fix issues:", fg="green")
-        for name, tool in fix_tools:
-            click.echo(f"  - {name}: {tool.description}")
-    
-    if check_only_tools:
-        click.secho("\nTools that can only check for issues:", fg="yellow")
-        for name, tool in check_only_tools:
-            click.echo(f"  - {name}: {tool.description}")
+    try:
+        click.secho("Available tools:", bold=True, file=output_file)
+        
+        # Group tools by capability
+        fix_tools = []
+        check_only_tools = []
+        
+        for name, tool in sorted(AVAILABLE_TOOLS.items()):
+            if tool.can_fix:
+                fix_tools.append((name, tool))
+            else:
+                check_only_tools.append((name, tool))
+        
+        if fix_tools:
+            click.secho("\nTools that can fix issues:", fg="green", file=output_file)
+            for name, tool in fix_tools:
+                click.echo(f"  - {name}: {tool.description}", file=output_file)
+        
+        if check_only_tools:
+            click.secho("\nTools that can only check for issues:", fg="yellow", file=output_file)
+            for name, tool in check_only_tools:
+                click.echo(f"  - {name}: {tool.description}", file=output_file)
+    finally:
+        # Close the output file if it was opened
+        if output_file:
+            output_file.close()
 
 
 def main():
