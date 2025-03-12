@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import time
+import shutil
 from pathlib import Path
 
 from lintro.tools import Tool, ToolConfig
@@ -31,6 +32,11 @@ class HadolintTool(Tool):
         self.exclude_patterns = []
         self.include_venv = False
         self.timeout = self.config.options.get("timeout", 10)  # Get timeout from config or use default
+        self._check_hadolint_available()
+
+    def _check_hadolint_available(self):
+        """Check if hadolint is available in the PATH."""
+        self.hadolint_available = shutil.which("hadolint") is not None
 
     def set_options(
         self,
@@ -66,6 +72,13 @@ class HadolintTool(Tool):
             - success: True if no issues were found, False otherwise
             - output: Output from the tool
         """
+        # Check if hadolint is available
+        if not self.hadolint_available:
+            return False, (
+                "Hadolint binary not found in PATH. "
+                "Please install hadolint or use the Docker version of lintro."
+            )
+
         # Process each file individually to prevent hanging on large codebases
         all_outputs = []
         all_success = True

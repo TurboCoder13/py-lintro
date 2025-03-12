@@ -28,62 +28,29 @@ A comprehensive CLI tool that unifies various code formatting, linting, and qual
 
 ## Installation
 
-### From PyPI (not yet available)
+### Standard Installation
 
 ```bash
-# Using pip
 pip install lintro
-
-# Using uv
-uv pip install lintro
 ```
 
-### From Source
+### Docker Installation
+
+You can also use Lintro with Docker, which allows you to run it without installing all the dependencies directly on your system:
 
 ```bash
+# Clone the repository
 git clone https://github.com/yourusername/lintro.git
 cd lintro
+
+# Make the Docker script executable
+chmod +x lintro-docker.sh
+
+# Run lintro with Docker
+./lintro-docker.sh check --table-format
 ```
 
-#### Using the installation script (recommended)
-
-```bash
-# Default installation (uses .venv in the current directory)
-./install.sh
-
-# Custom virtual environment location
-echo "UV_VENV_PYTHON_PATH=~/.local/share/virtualenvs/lintro" > .env
-./install.sh
-```
-
-#### Using Makefile
-
-```bash
-# Default installation (uses .venv in the current directory)
-make setup
-
-# Custom virtual environment location
-make UV_VENV_PYTHON_PATH=~/.local/share/virtualenvs/lintro setup
-```
-
-#### Manual installation with uv
-
-```bash
-# Create and activate a virtual environment (default location)
-uv venv
-source .venv/bin/activate
-
-# Create and activate a virtual environment (custom location)
-mkdir -p ~/.local/share/virtualenvs
-uv venv ~/.local/share/virtualenvs/lintro
-source ~/.local/share/virtualenvs/lintro/bin/activate
-
-# Install in development mode
-uv pip install -e .
-
-# Install development dependencies (optional)
-uv pip install -r requirements-dev.txt
-```
+For more detailed information about using Lintro with Docker, see [DOCKER.md](DOCKER.md).
 
 ## Usage
 
