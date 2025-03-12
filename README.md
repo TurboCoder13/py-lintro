@@ -2,6 +2,9 @@
 
 A comprehensive CLI tool that unifies various code formatting, linting, and quality assurance tools under a single command-line interface.
 
+[![Test and Coverage](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml/badge.svg)](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml)
+[![Coverage](https://raw.githubusercontent.com/yourusername/lintro/main/coverage-badge.svg)](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml)
+
 ## Features
 
 - Run multiple linting and formatting tools with a single command
