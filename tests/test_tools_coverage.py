@@ -282,7 +282,7 @@ class TestHadolintTool:
     
     def test_check_with_failure(self):
         """Test check method with failure result."""
-        with patch("subprocess.Popen") as mock_popen, \
+        with patch("subprocess.run") as mock_run, \
              patch("os.path.isfile") as mock_isfile, \
              patch("os.path.isdir") as mock_isdir:
             # Mock file system checks
@@ -292,11 +292,12 @@ class TestHadolintTool:
             # Mock a failed subprocess run
             mock_process = MagicMock()
             mock_process.returncode = 1
-            mock_process.communicate.return_value = ("""
+            mock_process.stdout = """
 Dockerfile:10 DL3000 Use absolute WORKDIR
 Dockerfile:20 DL3001 For some UNIX commands, COPY is more efficient than RUN
-""", "")
-            mock_popen.return_value = mock_process
+"""
+            mock_process.stderr = ""
+            mock_run.return_value = mock_process
             
             hadolint_tool = AVAILABLE_TOOLS["hadolint"]
             success, output = hadolint_tool.check(["Dockerfile"])
