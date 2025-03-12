@@ -42,43 +42,76 @@ def count_issues(output: str, tool_name: str) -> int:
 
 def print_tool_header(tool_name: str, action: str, file: Optional[TextIO] = None):
     """Print a header for a tool's output."""
-    click.secho(f"\n{'=' * 60}", fg="blue", file=file)
-    click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True, file=file)
-    click.secho(f"{'=' * 60}", fg="blue", file=file)
+    click.secho(f"\n{'=' * 60}", fg="blue")
+    click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True)
+    click.secho(f"{'=' * 60}", fg="blue")
+    
+    # Also write to file if specified
+    if file:
+        click.secho(f"\n{'=' * 60}", fg="blue", file=file)
+        click.secho(f" Running {tool_name} ({action})", fg="blue", bold=True, file=file)
+        click.secho(f"{'=' * 60}", fg="blue", file=file)
 
 
 def print_tool_footer(success: bool, issues_count: int, file: Optional[TextIO] = None):
     """Print a footer for a tool's output."""
     # Always use issues_count to determine success/failure
     if issues_count == 0:
-        click.secho(f"\n✓ No issues found", fg="green", file=file)
+        click.secho(f"\n✓ No issues found", fg="green")
+        if file:
+            click.secho(f"\n✓ No issues found", fg="green", file=file)
     else:
-        click.secho(f"\n✗ Found {issues_count} issues", fg="red", file=file)
-    click.secho(f"{'-' * 60}", fg="blue", file=file)
+        click.secho(f"\n✗ Found {issues_count} issues", fg="red")
+        if file:
+            click.secho(f"\n✗ Found {issues_count} issues", fg="red", file=file)
+    
+    click.secho(f"{'-' * 60}", fg="blue")
+    if file:
+        click.secho(f"{'-' * 60}", fg="blue", file=file)
 
 
 def print_summary(results: List[ToolResult], action: str, file: Optional[TextIO] = None):
     """Print a summary of all tool results."""
     total_issues = sum(result.issues_count for result in results)
     
-    click.secho(f"\n{'=' * 60}", fg="yellow", file=file)
-    click.secho(f" Summary ({action})", fg="yellow", bold=True, file=file)
-    click.secho(f"{'=' * 60}", fg="yellow", file=file)
+    click.secho(f"\n{'=' * 60}", fg="blue")
+    click.secho(f" Summary ({action})", fg="blue", bold=True)
+    click.secho(f"{'=' * 60}", fg="blue")
+    
+    if file:
+        click.secho(f"\n{'=' * 60}", fg="blue", file=file)
+        click.secho(f" Summary ({action})", fg="blue", bold=True, file=file)
+        click.secho(f"{'=' * 60}", fg="blue", file=file)
     
     for result in results:
-        status = "✓" if result.success else "✗"
-        color = "green" if result.success else "red"
-        issues_text = "No issues" if result.issues_count == 0 else f"{result.issues_count} issues"
-        click.secho(f" {status} {result.name}: {issues_text}", fg=color, file=file)
+        if result.issues_count == 0:
+            status = click.style("✓", fg="green")
+            message = click.style("No issues", fg="green")
+        else:
+            status = click.style("✗", fg="red")
+            message = click.style(f"{result.issues_count} issues", fg="red")
+        
+        click.echo(f" {status} {result.name}: {message}")
+        if file:
+            click.echo(f" {status} {result.name}: {message}", file=file)
     
-    click.secho(f"{'-' * 60}", fg="yellow", file=file)
+    click.secho(f"{'-' * 60}", fg="blue")
+    if file:
+        click.secho(f"{'-' * 60}", fg="blue", file=file)
     
     if total_issues == 0:
-        click.secho(f" Total: No issues found", fg="green", file=file)
+        status = click.style("✓", fg="green")
+        message = click.style("No issues found", fg="green")
     else:
-        click.secho(f" Total: {total_issues} issues found", fg="red", file=file)
+        status = click.style("✗", fg="red")
+        message = click.style(f"{total_issues} issues found", fg="red")
     
-    click.secho(f"{'=' * 60}", fg="yellow", file=file)
+    click.echo(f" Total: {message}")
+    click.secho(f"{'=' * 60}", fg="blue")
+    
+    if file:
+        click.echo(f" Total: {message}", file=file)
+        click.secho(f"{'=' * 60}", fg="blue", file=file)
 
 
 def parse_tool_list(tools_str: Optional[str]) -> List[str]:
@@ -86,6 +119,30 @@ def parse_tool_list(tools_str: Optional[str]) -> List[str]:
     if not tools_str:
         return []
     return [t.strip() for t in tools_str.split(",") if t.strip()]
+
+
+# Add a function to get project-relative path
+def get_relative_path(file_path: str) -> str:
+    """Convert absolute path to project-relative path."""
+    try:
+        # Get the current working directory as the project root
+        cwd = os.getcwd()
+        
+        # Check if the file path starts with the cwd
+        if file_path.startswith(cwd):
+            return "/project" + file_path[len(cwd):]
+        
+        # If not in cwd, try to find a common project indicator
+        for indicator in ["src/", "tests/", "app/", "lib/"]:
+            if indicator in file_path:
+                parts = file_path.split(indicator, 1)
+                return f"/project/{indicator}{parts[1]}"
+        
+        # If no project structure detected, use the basename
+        return f"/project/{os.path.basename(file_path)}"
+    except Exception:
+        # Fallback to original path if any error occurs
+        return file_path
 
 
 def format_tool_output(output: str, tool_name: str) -> str:
@@ -104,9 +161,14 @@ def format_tool_output(output: str, tool_name: str) -> str:
         for line in output.splitlines():
             if "would reformat" in line:
                 file_path = line.replace("would reformat ", "").strip()
-                # Convert to standardized format with color
-                formatted_lines.append(click.style(f"- {file_path}", fg="yellow") + 
-                                      click.style(" : formatting required", fg="red"))
+                rel_path = get_relative_path(file_path)
+                # Convert to standardized format with color and alignment
+                formatted_lines.append(
+                    click.style(f"- {rel_path:<50}", fg="yellow") + 
+                    click.style(f" : {'N/A':<8}", fg="blue") +
+                    click.style(f" : {'FORMAT':<8}", fg="red") + 
+                    f" : formatting required"
+                )
             elif "All done!" in line or "Oh no!" in line or "files would be" in line:
                 # Keep summary lines with color
                 if "All done!" in line:
@@ -124,9 +186,14 @@ def format_tool_output(output: str, tool_name: str) -> str:
             if "ERROR:" in line and ":" in line:
                 parts = line.split(":", 1)
                 file_path = parts[0].strip()
-                # Convert to standardized format with color
-                formatted_lines.append(click.style(f"- {file_path}", fg="yellow") + 
-                                      click.style(" : import sorting required", fg="red"))
+                rel_path = get_relative_path(file_path)
+                # Convert to standardized format with color and alignment
+                formatted_lines.append(
+                    click.style(f"- {rel_path:<50}", fg="yellow") + 
+                    click.style(f" : {'N/A':<8}", fg="blue") +
+                    click.style(f" : {'ISORT':<8}", fg="red") + 
+                    f" : import sorting required"
+                )
             elif "Skipped" in line and "files" in line:
                 # Count skipped files but don't include in issues
                 skipped_match = re.search(r"Skipped (\d+) files", line)
@@ -151,12 +218,14 @@ def format_tool_output(output: str, tool_name: str) -> str:
                 line_num = match.group(2)
                 error_code = match.group(4)
                 message = match.group(5)
-                # Convert to standardized format with color
+                rel_path = get_relative_path(file_path)
+                
+                # Convert to standardized format with color and alignment
                 formatted_lines.append(
-                    click.style(f"- {file_path}", fg="yellow") + 
-                    click.style(f" : {error_code}", fg="red") + 
-                    f" {message}" + 
-                    click.style(f" (line {line_num})", fg="blue")
+                    click.style(f"- {rel_path:<50}", fg="yellow") + 
+                    click.style(f" : {line_num:<8}", fg="blue") +
+                    click.style(f" : {error_code:<8}", fg="red") + 
+                    f" : {message}"
                 )
             elif line.strip() and not line.startswith("---"):
                 # Keep other non-empty, non-separator lines
@@ -243,7 +312,11 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
             # Count issues and format output
             issues_count = count_issues(output_text, name)
             formatted_output = format_tool_output(output_text, name)
-            click.echo(formatted_output, file=output_file)
+            
+            # Always display in console, and also in file if specified
+            click.echo(formatted_output)
+            if output_file:
+                click.echo(formatted_output, file=output_file)
             
             # Use issues_count to determine success
             success = issues_count == 0
@@ -260,9 +333,9 @@ def check(paths: List[str], tools: Optional[str], exclude: Optional[str], includ
         if output_file:
             total_issues = sum(result.issues_count for result in results)
             if total_issues == 0:
-                click.secho("No issues found", fg="green")
+                click.secho("No issues found in your code.", fg="green")
             else:
-                click.secho(f"Found {total_issues} issues. See {output} for details.", fg="red")
+                click.secho(f"Found {total_issues} issues in your code. See {output} for details.", fg="red")
         
         sys.exit(exit_code)
     finally:
@@ -338,7 +411,11 @@ def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_
             # Count issues and format output
             issues_count = count_issues(output_text, name)
             formatted_output = format_tool_output(output_text, name)
-            click.echo(formatted_output, file=output_file)
+            
+            # Always display in console, and also in file if specified
+            click.echo(formatted_output)
+            if output_file:
+                click.echo(formatted_output, file=output_file)
             
             # Use issues_count to determine success
             success = issues_count == 0
@@ -355,9 +432,9 @@ def fmt(paths: List[str], tools: Optional[str], exclude: Optional[str], include_
         if output_file:
             total_issues = sum(result.issues_count for result in results)
             if total_issues == 0:
-                click.secho("All files formatted successfully", fg="green")
+                click.secho("All files formatted successfully.", fg="green")
             else:
-                click.secho(f"Some files could not be formatted. See {output} for details.", fg="red")
+                click.secho(f"Found {total_issues} issues while formatting. See {output} for details.", fg="red")
         
         sys.exit(exit_code)
     finally:
@@ -385,7 +462,12 @@ def list_tools(output: Optional[str]):
             sys.exit(1)
     
     try:
-        click.secho("Available tools:", bold=True, file=output_file)
+        # Display in console
+        click.secho("Available tools:", bold=True)
+        
+        # Also write to file if specified
+        if output_file:
+            click.secho("Available tools:", bold=True, file=output_file)
         
         # Group tools by capability
         fix_tools = []
@@ -398,14 +480,28 @@ def list_tools(output: Optional[str]):
                 check_only_tools.append((name, tool))
         
         if fix_tools:
-            click.secho("\nTools that can fix issues:", fg="green", file=output_file)
+            # Display in console
+            click.secho("\nTools that can fix issues:", fg="green")
             for name, tool in fix_tools:
-                click.echo(f"  - {name}: {tool.description}", file=output_file)
+                click.echo(f"  - {name}: {tool.description}")
+            
+            # Also write to file if specified
+            if output_file:
+                click.secho("\nTools that can fix issues:", fg="green", file=output_file)
+                for name, tool in fix_tools:
+                    click.echo(f"  - {name}: {tool.description}", file=output_file)
         
         if check_only_tools:
-            click.secho("\nTools that can only check for issues:", fg="yellow", file=output_file)
+            # Display in console
+            click.secho("\nTools that can only check for issues:", fg="yellow")
             for name, tool in check_only_tools:
-                click.echo(f"  - {name}: {tool.description}", file=output_file)
+                click.echo(f"  - {name}: {tool.description}")
+            
+            # Also write to file if specified
+            if output_file:
+                click.secho("\nTools that can only check for issues:", fg="yellow", file=output_file)
+                for name, tool in check_only_tools:
+                    click.echo(f"  - {name}: {tool.description}", file=output_file)
     finally:
         # Close the output file if it was opened
         if output_file:
