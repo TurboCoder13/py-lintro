@@ -8,6 +8,9 @@ from typing import TextIO
 
 import click
 import subprocess
+import random
+import time
+from pathlib import Path
 
 try:
     from tabulate import tabulate
@@ -193,6 +196,50 @@ def print_tool_footer(
         click.echo(formatted_footer, file=file)
 
 
+def read_ascii_art(filename: str) -> list[str]:
+    """
+    Read ASCII art from a file.
+
+    Args:
+        filename: Name of the file to read
+
+    Returns:
+        List of lines from the file
+    """
+    # Get the path to the ASCII art file
+    ascii_art_dir = Path(__file__).parent / "ascii-art"
+    file_path = ascii_art_dir / filename
+    
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            # Read all lines and remove trailing whitespace
+            lines = [line.rstrip() for line in f.readlines()]
+            
+            # Find non-empty sections (separated by empty lines)
+            sections = []
+            current_section = []
+            
+            for line in lines:
+                if line.strip():
+                    current_section.append(line)
+                elif current_section:
+                    sections.append(current_section)
+                    current_section = []
+            
+            # Add the last section if it's not empty
+            if current_section:
+                sections.append(current_section)
+            
+            # Return a random section if there are multiple, otherwise return all lines
+            if sections:
+                return random.choice(sections)
+            return lines
+    except Exception as e:
+        # If there's an error reading the file, return an empty list
+        click.echo(f"Error reading ASCII art file: {e}", err=True)
+        return []
+
+
 def print_summary(
     results: list[ToolResult],
     action: str,
@@ -294,8 +341,17 @@ def print_summary(
         else:
             fun_line = click.style("🧹 Time for some cleanup! Let's make this code shine! ✨", fg="red", bold=True)
         
-        # Format the summary
-        summary = f"{header}{colored_table}\n\n{fun_line}\n"
+        # Get ASCII art based on the results
+        if total_issues == 0:
+            ascii_art = read_ascii_art("success.txt")
+        else:
+            ascii_art = read_ascii_art("fail.txt")
+        
+        # Format the ASCII art
+        ascii_art_text = "\n".join(ascii_art) if ascii_art else ""
+        
+        # Format the summary with ASCII art
+        summary = f"{header}{colored_table}\n\n{fun_line}\n\n{ascii_art_text}\n"
     else:
         # Create a simple summary
         summary_lines = []
@@ -320,8 +376,17 @@ def print_summary(
         summary_lines.append(total_issues_str)
         summary_text = "\n".join(summary_lines)
         
-        # Format the summary
-        summary = f"{header}{summary_text}\n"
+        # Get ASCII art based on the results
+        if total_issues == 0:
+            ascii_art = read_ascii_art("success.txt")
+        else:
+            ascii_art = read_ascii_art("fail.txt")
+        
+        # Format the ASCII art
+        ascii_art_text = "\n".join(ascii_art) if ascii_art else ""
+        
+        # Format the summary with ASCII art
+        summary = f"{header}{summary_text}\n\n{ascii_art_text}\n"
     
     # Output to console and file if specified
     click.echo(summary, file=None)

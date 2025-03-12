@@ -86,30 +86,43 @@ def test_print_tool_footer_failure(mock_echo, mock_secho):
 
 @patch("click.secho")
 @patch("click.echo")
-def test_print_summary(
+@patch("lintro.cli.read_ascii_art")
+def test_print_summary_with_ascii_art(
+    mock_read_ascii_art,
     mock_echo,
     mock_secho,
 ):
-    """Test printing a summary of tool results."""
-    results = [
+    """Test that print_summary includes ASCII art based on results."""
+    # Mock the read_ascii_art function to return a simple ASCII art
+    mock_read_ascii_art.return_value = ["ASCII art"]
+    
+    # Test with all successful results
+    successful_results = [
+        ToolResult(name="tool1", success=True, output="output1", issues_count=0),
+        ToolResult(name="tool2", success=True, output="output2", issues_count=0),
+    ]
+    
+    print_summary(successful_results, "check")
+    
+    # Verify that read_ascii_art was called with "success.txt"
+    mock_read_ascii_art.assert_called_with("success.txt")
+    
+    # Reset the mock
+    mock_read_ascii_art.reset_mock()
+    
+    # Test with some failed results
+    failed_results = [
         ToolResult(name="tool1", success=True, output="output1", issues_count=0),
         ToolResult(name="tool2", success=False, output="output2", issues_count=3),
-        ToolResult(name="tool3", success=False, output="output3", issues_count=2),
     ]
-
-    print_summary(results, "check")
-
-    # Check that the summary header is printed
-    assert mock_echo.call_count > 0
-    assert any("Summary of check" in call[0][0] for call in mock_echo.call_args_list)
-
-    # Check that each tool is mentioned in the output
-    assert any("tool1" in call[0][0] for call in mock_echo.call_args_list)
-    assert any("tool2" in call[0][0] for call in mock_echo.call_args_list)
-    assert any("tool3" in call[0][0] for call in mock_echo.call_args_list)
-
-    # Check total issues
-    assert any("Total issues: 5" in call[0][0] for call in mock_echo.call_args_list)
+    
+    print_summary(failed_results, "check")
+    
+    # Verify that read_ascii_art was called with "fail.txt"
+    mock_read_ascii_art.assert_called_with("fail.txt")
+    
+    # Verify that the ASCII art is included in the output
+    assert any("ASCII art" in call[0][0] for call in mock_echo.call_args_list)
 
 
 @patch("click.style")
@@ -375,3 +388,31 @@ file2.py:20:5: E302 expected 2 blank lines, found 1
 
             result = format_tool_output(flake8_output, "flake8", True, "auto")
             assert "mocked table output" in result
+
+
+@patch("click.secho")
+@patch("click.echo")
+def test_print_summary(
+    mock_echo,
+    mock_secho,
+):
+    """Test printing a summary of tool results."""
+    results = [
+        ToolResult(name="tool1", success=True, output="output1", issues_count=0),
+        ToolResult(name="tool2", success=False, output="output2", issues_count=3),
+        ToolResult(name="tool3", success=False, output="output3", issues_count=2),
+    ]
+
+    print_summary(results, "check")
+
+    # Check that the summary header is printed
+    assert mock_echo.call_count > 0
+    assert any("Summary of check" in call[0][0] for call in mock_echo.call_args_list)
+
+    # Check that each tool is mentioned in the output
+    assert any("tool1" in call[0][0] for call in mock_echo.call_args_list)
+    assert any("tool2" in call[0][0] for call in mock_echo.call_args_list)
+    assert any("tool3" in call[0][0] for call in mock_echo.call_args_list)
+
+    # Check total issues
+    assert any("Total issues: 5" in call[0][0] for call in mock_echo.call_args_list)

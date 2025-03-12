@@ -19,6 +19,7 @@ from lintro.cli import (
     print_summary,
     print_tool_footer,
     print_tool_header,
+    read_ascii_art,
 )
 
 
@@ -429,4 +430,49 @@ def test_get_table_columns_black_no_code():
     
     # Verify that the expected columns are present
     assert "File" in display_columns
-    assert "Message" in display_columns 
+    assert "Message" in display_columns
+
+
+def test_read_ascii_art():
+    """Test reading ASCII art from files."""
+    from pathlib import Path
+    import io
+    
+    # Mock the open function to return a file-like object with test data
+    test_data = """
+    ASCII art section 1
+    line 2
+    line 3
+    
+    ASCII art section 2
+    line 2
+    line 3
+    """
+    
+    # Create a mock file object
+    mock_file = io.StringIO(test_data)
+    
+    # Mock the Path.open method to return our mock file
+    with patch("builtins.open", return_value=mock_file):
+        # Test reading the file
+        result = read_ascii_art("test.txt")
+        
+        # Verify that the result is a list of strings
+        assert isinstance(result, list)
+        assert all(isinstance(line, str) for line in result)
+        
+        # Verify that the result contains one of the sections
+        assert len(result) > 0
+        
+        # Since we're randomly selecting a section, we can only check that
+        # the result is one of the expected sections
+        expected_section1 = ["    ASCII art section 1", "    line 2", "    line 3"]
+        expected_section2 = ["    ASCII art section 2", "    line 2", "    line 3"]
+        
+        assert result == expected_section1 or result == expected_section2
+    
+    # Test error handling
+    with patch("builtins.open", side_effect=Exception("Test error")):
+        # Should return an empty list on error
+        result = read_ascii_art("nonexistent.txt")
+        assert result == [] 
