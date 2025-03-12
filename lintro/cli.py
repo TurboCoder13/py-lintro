@@ -310,6 +310,8 @@ def get_table_columns(
         code_column = "Docstring Code"
     elif tool_name == "hadolint":
         code_column = "Dockerfile Code"
+    elif tool_name == "pylint":
+        code_column = "Pylint Code"
     else:
         code_column = "Code"
 
@@ -321,6 +323,18 @@ def get_table_columns(
         "Method": "method",
         "Message": "message"
     }
+    
+    # Add pylint-specific columns
+    if tool_name == "pylint":
+        # Insert Position right after Line
+        columns_map = {
+            "File": "file",
+            code_column: "code",
+            "Line": "line",
+            "Position": "col",
+            "Message": "message",
+            "Name": "name"
+        }
 
     # Determine which columns to include based on grouping
     if group_by == "file":
@@ -396,6 +410,8 @@ def format_as_table(
         code_key = "code"
     elif tool_name == "hadolint":
         code_key = "code"
+    elif tool_name == "pylint":
+        code_key = "code"
     else:
         code_key = "code"
 
@@ -405,10 +421,13 @@ def format_as_table(
         "PEP Code": "code",
         "Docstring Code": "code",
         "Dockerfile Code": "code",
+        "Pylint Code": "code",
         "Code": "code",
         "Line": "line",
+        "Position": "col",
         "Method": "method",
-        "Message": "message"
+        "Message": "message",
+        "Name": "name"
     }
 
     # Group issues by file or code if requested
@@ -883,6 +902,69 @@ def format_tool_output(
             elif "Prettier check timed out" in line:
                 # Handle timeout
                 return f"Prettier check timed out after {line.split(' ')[-2]} seconds."
+
+    elif tool_name == "pylint":
+        # Extract file paths, line numbers, and error codes from pylint output
+        for line in output.splitlines():
+            # Match the pylint output format: "sample.py:16:0: C0115: Missing class docstring (missing-class-docstring)"
+            match = re.match(r"(.*?):(\d+):(\d+): ([A-Z]\d{4}): (.*) \((.*)\)", line)
+            if match:
+                file_path = match.group(1).strip()
+                rel_path = get_relative_path(file_path)
+                line_num = match.group(2)
+                col_num = match.group(3)
+                error_code = match.group(4)
+                message = match.group(5).strip()
+                error_name = match.group(6).strip()
+                
+                file_paths.append(rel_path)
+                line_numbers.append(line_num)
+                error_codes.append(error_code)
+
+                # Add to issues list for table formatting
+                issues.append({
+                    "file": rel_path,
+                    "code": error_code,
+                    "line": line_num,
+                    "col": col_num,
+                    "message": message,
+                    "name": error_name,
+                    "type": "error" if error_code.startswith("E") or error_code.startswith("F") else "warning"
+                })
+            # Skip summary lines
+            elif "Your code has been rated at" in line or "---" in line or "Module" in line:
+                continue
+            # Try a simpler pattern for other pylint message formats
+            elif ":" in line:
+                match = re.search(r":(\d+):(\d+): ([A-Z]\d{4}):", line)
+                if match:
+                    parts = line.split(":", 5)
+                    if len(parts) >= 5:
+                        file_path = parts[0].strip()
+                        rel_path = get_relative_path(file_path)
+                        line_num = match.group(1)
+                        col_num = match.group(2)
+                        error_code = match.group(3)
+                        
+                        # Extract message and error name
+                        message_parts = parts[4].strip().split(" (", 1)
+                        message = message_parts[0].strip()
+                        error_name = message_parts[1].rstrip(")") if len(message_parts) > 1 else ""
+                        
+                        file_paths.append(rel_path)
+                        line_numbers.append(line_num)
+                        error_codes.append(error_code)
+                        
+                        # Add to issues list for table formatting
+                        issues.append({
+                            "file": rel_path,
+                            "code": error_code,
+                            "line": line_num,
+                            "col": col_num,
+                            "message": message,
+                            "name": error_name,
+                            "type": "error" if error_code.startswith("E") or error_code.startswith("F") else "warning"
+                        })
 
     # If tabulate is available, table format is requested, and we have issues, format as a table
     if use_table_format and TABULATE_AVAILABLE and issues:
