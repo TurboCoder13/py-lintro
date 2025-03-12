@@ -119,6 +119,18 @@ lintro check --include-venv [PATH]
 lintro fmt --include-venv [PATH]
 ```
 
+### Export output to a file
+
+You can export the output to a file using the `--output` option:
+
+```bash
+lintro check --output report.txt [PATH]
+lintro fmt --output changes.txt [PATH]
+lintro list-tools --output tools.txt
+```
+
+When using the `--output` option, a summary will still be printed to the console, but the detailed output will be written to the specified file.
+
 ## Configuration
 
 ### Tool Configuration
