@@ -16,6 +16,15 @@ A comprehensive CLI tool that unifies various code formatting, linting, and qual
 - Black (code formatting)
 - isort (import sorting)
 - flake8 (linting)
+- darglint (docstring linting)
+- hadolint (Dockerfile linting)
+- mypy (static type checking)
+- prettier (code formatting for multiple languages)
+- pydocstyle (docstring style checking)
+- pylint (Python linting)
+- semgrep (semantic code pattern matching)
+- terraform (Terraform formatting)
+- yamllint (YAML linting)
 
 ## Installation
 
@@ -100,7 +109,7 @@ lintro check [PATH]
 
 ```bash
 lintro fmt --tools black,isort [PATH]
-lintro check --tools flake8 [PATH]
+lintro check --tools flake8,pylint,mypy [PATH]
 ```
 
 ### Exclude specific patterns
@@ -161,10 +170,7 @@ lintro check --table-format --output report.txt [PATH]
 When using table formatting, you can choose how to group the issues in the output using the `--group-by` option:
 
 ```bash
-# Auto-grouping (default) - intelligently chooses the best grouping method
-lintro check --table-format --group-by auto [PATH]
-
-# Group by file
+# Group by file (default for check command)
 lintro check --table-format --group-by file [PATH]
 
 # Group by error code
@@ -172,6 +178,9 @@ lintro check --table-format --group-by code [PATH]
 
 # No grouping (flat list)
 lintro check --table-format --group-by none [PATH]
+
+# Auto-grouping (default for fmt command) - intelligently chooses the best grouping method
+lintro fmt --table-format --group-by auto [PATH]
 ```
 
 The auto-grouping option intelligently chooses between file and code grouping based on the output:
@@ -179,6 +188,69 @@ The auto-grouping option intelligently chooses between file and code grouping ba
 - Otherwise, it groups by file
 
 Grouping by file is useful when you want to fix issues file by file, while grouping by error code is helpful when you want to fix similar issues across multiple files.
+
+## Tool-Specific Options
+
+Lintro supports various tool-specific options that can be passed directly to the underlying tools:
+
+### darglint
+
+```bash
+lintro check --darglint-timeout 20 [PATH]
+```
+
+### hadolint
+
+```bash
+lintro check --hadolint-timeout 20 [PATH]
+```
+
+### mypy
+
+```bash
+lintro check --mypy-config mypy.ini [PATH]
+lintro check --mypy-python-version 3.9 [PATH]
+lintro check --mypy-disallow-untyped-defs [PATH]
+lintro check --mypy-disallow-incomplete-defs [PATH]
+```
+
+### pydocstyle
+
+```bash
+lintro check --pydocstyle-timeout 20 [PATH]
+lintro check --pydocstyle-convention numpy [PATH]  # Options: pep257, numpy, google
+```
+
+### prettier
+
+```bash
+lintro check --prettier-timeout 60 [PATH]
+```
+
+### pylint
+
+```bash
+lintro check --pylint-rcfile .pylintrc [PATH]
+```
+
+### semgrep
+
+```bash
+lintro check --semgrep-config p/python [PATH]
+```
+
+### terraform
+
+```bash
+lintro check --terraform-recursive [PATH]
+```
+
+### yamllint
+
+```bash
+lintro check --yamllint-config .yamllint [PATH]
+lintro check --yamllint-strict [PATH]
+```
 
 ## Configuration
 
@@ -188,6 +260,11 @@ Lintro uses the configuration files of the underlying tools. For example, it wil
 
 - `pyproject.toml` (for Black and isort)
 - `.flake8` (for Flake8)
+- `.pylintrc` or `pylint.toml` (for Pylint)
+- `.mypy.ini` or `mypy.ini` (for MyPy)
+- `.pydocstyle` (for pydocstyle)
+- `.prettierrc` (for Prettier)
+- `.yamllint` (for yamllint)
 
 ### Virtual Environment Configuration
 
@@ -222,8 +299,17 @@ lintro/
 └── tools/              # Tool integrations
     ├── __init__.py     # Tool base class and registry
     ├── black.py        # Black integration
+    ├── darglint.py     # Darglint integration
     ├── flake8.py       # Flake8 integration
-    └── isort.py        # isort integration
+    ├── hadolint.py     # Hadolint integration
+    ├── isort.py        # isort integration
+    ├── mypy.py         # MyPy integration
+    ├── prettier.py     # Prettier integration
+    ├── pydocstyle.py   # Pydocstyle integration
+    ├── pylint.py       # Pylint integration
+    ├── semgrep.py      # Semgrep integration
+    ├── terraform.py    # Terraform integration
+    └── yamllint.py     # YAMLLint integration
 ```
 
 ## Development
@@ -276,12 +362,19 @@ make clean
 2. Implement the `Tool` interface:
 
 ```python
-from lintro.tools import Tool
+from lintro.tools import Tool, ToolConfig
 
 class MyTool(Tool):
     name = "mytool"
     description = "Description of my tool"
     can_fix = True  # or False if it can only check
+    
+    # Configure tool with conflict information
+    config = ToolConfig(
+        priority=50,  # Priority level for conflict resolution
+        conflicts_with=[],  # List of tools this conflicts with
+        file_patterns=["*.ext"],  # File patterns this tool applies to
+    )
 
     def check(self, paths):
         # Implement check logic

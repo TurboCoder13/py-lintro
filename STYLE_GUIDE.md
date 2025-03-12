@@ -10,6 +10,10 @@ This document outlines the coding standards and best practices for the Lintro pr
 - Use [Black](https://black.readthedocs.io/) for code formatting
 - Use [isort](https://pycqa.github.io/isort/) for import sorting
 - Use [Flake8](https://flake8.pycqa.org/) for linting
+- Use [MyPy](https://mypy.readthedocs.io/) for static type checking
+- Use [Pylint](https://pylint.pycqa.org/) for additional linting
+- Use [pydocstyle](https://www.pydocstyle.org/) for docstring style checking
+- Use [darglint](https://github.com/terrencepreilly/darglint) for docstring correctness
 
 ### Type Hints
 
@@ -162,8 +166,17 @@ lintro/
 ├── tools/
 │   ├── __init__.py
 │   ├── black.py
+│   ├── darglint.py
 │   ├── flake8.py
-│   └── isort.py
+│   ├── hadolint.py
+│   ├── isort.py
+│   ├── mypy.py
+│   ├── prettier.py
+│   ├── pydocstyle.py
+│   ├── pylint.py
+│   ├── semgrep.py
+│   ├── terraform.py
+│   └── yamllint.py
 └── utils/
     ├── __init__.py
     └── formatting.py
@@ -174,9 +187,6 @@ tests/
     ├── test_black.py
     ├── test_flake8.py
     └── test_isort.py
-docs/
-├── index.md
-└── usage.md
 ```
 
 ### File Organization
@@ -284,3 +294,4 @@ All code should pass the following checks before being merged:
 4. No Flake8 warnings
 5. Type checking with MyPy passes
 6. Test coverage meets minimum threshold 
+7. No Pylint warnings 
