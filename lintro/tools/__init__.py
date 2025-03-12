@@ -9,7 +9,7 @@ class Tool(ABC):
     name: str
     description: str
     can_fix: bool
-    
+
     def set_options(
         self,
         exclude_patterns: list[str] | None = None,
@@ -17,7 +17,7 @@ class Tool(ABC):
     ):
         """
         Set options for the tool.
-        
+
         Args:
             exclude_patterns: List of patterns to exclude
             include_venv: Whether to include virtual environment directories
@@ -64,8 +64,8 @@ class Tool(ABC):
 
 # Import all tool implementations
 from lintro.tools.black import BlackTool
-from lintro.tools.isort import IsortTool
 from lintro.tools.flake8 import Flake8Tool
+from lintro.tools.isort import IsortTool
 
 # Register all available tools
 AVAILABLE_TOOLS = {
@@ -78,4 +78,4 @@ AVAILABLE_TOOLS = {
 FIX_TOOLS = {name: tool for name, tool in AVAILABLE_TOOLS.items() if tool.can_fix}
 
 # Tools that can only check for issues
-CHECK_TOOLS = AVAILABLE_TOOLS 
+CHECK_TOOLS = AVAILABLE_TOOLS

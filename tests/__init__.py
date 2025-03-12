@@ -1,1 +1,1 @@
-"""Tests for Lintro.""" 
+"""Tests for Lintro."""
