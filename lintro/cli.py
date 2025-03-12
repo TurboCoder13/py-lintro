@@ -98,6 +98,9 @@ def count_issues(
     elif tool_name == "yamllint":
         # Count lines with yamllint issues (format: file:line:column: [level] message)
         return len(re.findall(r":\d+:\d+: \[(error|warning)\]", output))
+    elif tool_name == "mypy":
+        # Count lines with mypy error/note messages
+        return len(re.findall(r":\d+: (error|note):", output))
     else:
         # Generic fallback: count lines that look like issues
         return len(re.findall(r"(error|warning|issue|problem)", output, re.IGNORECASE))
@@ -125,6 +128,7 @@ def get_tool_emoji(tool_name: str) -> str:
         "semgrep": "🔒",
         "terraform": "🏗️",
         "yamllint": "📐",
+        "mypy": "🔎",
     }
     return emojis.get(tool_name, "🔧")
 
@@ -489,8 +493,8 @@ def get_table_columns(
             code_column: "code",
             "Line": "line",
             "Position": "col",
-            "Message": "message",
-            "Name": "name"
+            "Name": "name",
+            "Message": "message"
         }
 
     # Add semgrep-specific columns
@@ -589,9 +593,6 @@ def format_as_table(
     # Get columns to display based on the data
     display_columns, code_columns = get_table_columns(issues, tool_name or "", group_by)
 
-    # Create a list to store all table rows
-    all_rows = []
-
     # Define column mapping based on tool
     if tool_name == "flake8":
         code_key = "code"
@@ -623,18 +624,64 @@ def format_as_table(
         "Severity": "severity",
     }
 
-    # Group issues by file or code if requested
+    # Format the table with tabulate
     if group_by == "file" and "file" in issues[0]:
         # Get unique files and sort them
         files = sorted(set(issue["file"] for issue in issues))
         
-        for file_idx, file in enumerate(files):
-            # Add a file header
+        # Generate the table without file headers first
+        all_rows = []
+        
+        # Add the header row first
+        all_rows.append(display_columns)
+        
+        # Add all issues grouped by file
+        for file in files:
+            file_issues = [issue for issue in issues if issue["file"] == file]
+            for issue in file_issues:
+                row = []
+                for col in display_columns:
+                    key = column_map.get(col)
+                    if key and key in issue:
+                        row.append(str(issue[key]))
+                    else:
+                        row.append("")
+                all_rows.append(row)
+        
+        # Format the table with left alignment for all columns
+        colalign = tuple("left" for _ in display_columns)
+        table = tabulate(
+            all_rows[1:],  # Skip the header row as tabulate will add it
+            headers=display_columns,
+            tablefmt="pretty",
+            colalign=colalign,
+        )
+        
+        # Now we need to post-process the table to add file headers with full-width separator lines
+        lines = table.split('\n')
+        result_lines = []
+        
+        # Get the width of the table (length of the separator line)
+        separator_line = None
+        for line in lines:
+            if '+' in line and '-' in line and not separator_line:
+                separator_line = line
+                break
+        
+        if not separator_line:
+            return table  # Fallback if we can't find a separator line
+        
+        # Add the header and first separator line
+        result_lines.append(lines[0])  # Header line
+        result_lines.append(lines[1])  # First separator line
+        
+        # Process each file group
+        line_idx = 2  # Start after the header and first separator
+        for file in files:
             file_issues = [issue for issue in issues if issue["file"] == file]
             
-            # Add a separator between files (except before the first one)
-            if file_idx > 0:
-                all_rows.append(["~" * 80] + [""] * (len(display_columns) - 1))
+            # Add a separator line before the file header
+            result_lines.append(separator_line)
             
             # Add file header with appropriate emoji based on issue severity
             has_error = any(issue.get("type") == "error" for issue in file_issues)
@@ -646,11 +693,47 @@ def format_as_table(
                 file_emoji = "🟡"  # Yellow circle for warnings
             else:
                 file_emoji = "🔵"  # Blue circle for info/other
-                
-            all_rows.append([f"{file_emoji} File: {file}"] + [""] * (len(display_columns) - 1))
+            
+            # Add the file header
+            file_header = f"{file_emoji} File: {file}"
+            result_lines.append(file_header)
+            
+            # Add a separator line after the file header
+            result_lines.append(separator_line)
             
             # Add the issues for this file
-            for issue in file_issues:
+            issue_count = len(file_issues)
+            issue_lines_added = 0
+            
+            # Skip any separator lines that might appear between the header and the first issue
+            while line_idx < len(lines) and '+' in lines[line_idx] and '-' in lines[line_idx]:
+                line_idx += 1
+            
+            # Add all the issue lines for this file
+            while issue_lines_added < issue_count and line_idx < len(lines):
+                # Skip any empty separator lines
+                if not ('+' in lines[line_idx] and '-' in lines[line_idx] and 
+                        line_idx + 1 < len(lines) and lines[line_idx+1].strip() == ''):
+                    result_lines.append(lines[line_idx])
+                    issue_lines_added += 1
+                line_idx += 1
+        
+        return '\n'.join(result_lines)
+                
+    elif group_by == "code" and code_key in issues[0]:
+        # Get unique codes and sort them
+        codes = sorted(set(issue[code_key] for issue in issues if code_key in issue))
+        
+        # Generate the table without code headers first
+        all_rows = []
+        
+        # Add the header row first
+        all_rows.append(display_columns)
+        
+        # Add all issues grouped by code
+        for code in codes:
+            code_issues = [issue for issue in issues if code_key in issue and issue[code_key] == code]
+            for issue in code_issues:
                 row = []
                 for col in display_columns:
                     key = column_map.get(col)
@@ -659,17 +742,40 @@ def format_as_table(
                     else:
                         row.append("")
                 all_rows.append(row)
-                
-    elif group_by == "code" and code_key in issues[0]:
-        # Get unique codes and sort them
-        codes = sorted(set(issue[code_key] for issue in issues if code_key in issue))
         
-        for code_idx, code in enumerate(codes):
-            # Add a separator between codes (except before the first one)
-            if code_idx > 0:
-                all_rows.append(["~" * 80] + [""] * (len(display_columns) - 1))
+        # Format the table with left alignment for all columns
+        colalign = tuple("left" for _ in display_columns)
+        table = tabulate(
+            all_rows[1:],  # Skip the header row as tabulate will add it
+            headers=display_columns,
+            tablefmt="pretty",
+            colalign=colalign,
+        )
+        
+        # Now we need to post-process the table to add code headers with full-width separator lines
+        lines = table.split('\n')
+        result_lines = []
+        
+        # Get the width of the table (length of the separator line)
+        separator_line = None
+        for line in lines:
+            if '+' in line and '-' in line and not separator_line:
+                separator_line = line
+                break
+        
+        if not separator_line:
+            return table  # Fallback if we can't find a separator line
+        
+        # Add the header and first separator line
+        result_lines.append(lines[0])  # Header line
+        result_lines.append(lines[1])  # First separator line
+        
+        # Process each code group
+        line_idx = 2  # Start after the header and first separator
+        for code in codes:
+            code_issues = [issue for issue in issues if code_key in issue and issue[code_key] == code]
             
-            # Add code header with appropriate emoji based on code
+            # Get the appropriate emoji based on code
             if tool_name == "flake8":
                 # For flake8, use different emojis based on the error code prefix
                 if code.startswith("E"):
@@ -682,6 +788,17 @@ def format_as_table(
                     code_emoji = "🔵"  # Blue circle for other
             elif tool_name == "pydocstyle":
                 code_emoji = "📚"  # Books for documentation
+            elif tool_name == "pylint":
+                if code.startswith("E"):
+                    code_emoji = "🔴"  # Red circle for errors
+                elif code.startswith("W"):
+                    code_emoji = "🟡"  # Yellow circle for warnings
+                elif code.startswith("R"):
+                    code_emoji = "🟠"  # Orange circle for refactoring
+                elif code.startswith("C"):
+                    code_emoji = "🔵"  # Blue circle for convention
+                else:
+                    code_emoji = "🔍"  # Magnifying glass for other
             else:
                 code_emoji = "🔍"  # Magnifying glass for generic codes
             
@@ -692,24 +809,44 @@ def format_as_table(
                 code_column = "Docstring Code"
             elif tool_name == "hadolint":
                 code_column = "Dockerfile Code"
+            elif tool_name == "pylint":
+                code_column = "Pylint Code"
             else:
                 code_column = "Code"
-                
-            all_rows.append([f"{code_emoji} {code_column}: {code}"] + [""] * (len(display_columns) - 1))
+            
+            # Add a separator line before the code header
+            result_lines.append(separator_line)
+            
+            # Add the code header
+            code_header = f"{code_emoji} {code_column}: {code}"
+            result_lines.append(code_header)
+            
+            # Add a separator line after the code header
+            result_lines.append(separator_line)
             
             # Add the issues for this code
-            code_issues = [issue for issue in issues if code_key in issue and issue[code_key] == code]
-            for issue in code_issues:
-                row = []
-                for col in display_columns:
-                    key = column_map.get(col)
-                    if key and key in issue:
-                        row.append(str(issue[key]))
-                    else:
-                        row.append("")
-                all_rows.append(row)
+            issue_count = len(code_issues)
+            issue_lines_added = 0
+            
+            # Skip any separator lines that might appear between the header and the first issue
+            while line_idx < len(lines) and '+' in lines[line_idx] and '-' in lines[line_idx]:
+                line_idx += 1
+            
+            # Add all the issue lines for this code
+            while issue_lines_added < issue_count and line_idx < len(lines):
+                # Skip any empty separator lines
+                if not ('+' in lines[line_idx] and '-' in lines[line_idx] and 
+                        line_idx + 1 < len(lines) and lines[line_idx+1].strip() == ''):
+                    result_lines.append(lines[line_idx])
+                    issue_lines_added += 1
+                line_idx += 1
+        
+        return '\n'.join(result_lines)
     else:
         # No grouping, just add all issues
+        all_rows = []
+        
+        # Add all issues
         for issue in issues:
             row = []
             for col in display_columns:
@@ -720,26 +857,14 @@ def format_as_table(
                     row.append("")
             all_rows.append(row)
 
-    # Format the table with left alignment for all columns
-    colalign = tuple("left" for _ in display_columns)
-    table = tabulate(
-        all_rows,
-        headers=display_columns,
-        tablefmt="pretty",
-        colalign=colalign,
-    )
-
-    # Add spacing before and after the table
-    table = "\n" + table + "\n"
-
-    # Add any summary lines for black
-    if tool_name == "black" and "Oh no!" in "".join(str(issue.get("message", "")) for issue in issues):
-        for issue in issues:
-            if "message" in issue and "Formatting required" in issue["message"]:
-                count = len([i for i in issues if "message" in i and "Formatting required" in i["message"]])
-                table += f"\nOh no! 💥 💔 💥\n{count} files would be reformatted."
-
-    return table
+        # Format the table with left alignment for all columns
+        colalign = tuple("left" for _ in display_columns)
+        return tabulate(
+            all_rows,
+            headers=display_columns,
+            tablefmt="pretty",
+            colalign=colalign,
+        )
 
 
 def format_tool_output(
@@ -769,7 +894,8 @@ def format_tool_output(
         output.strip() == "No docstring style issues found." or
         output.strip() == "All files are formatted correctly." or
         output.strip() == "No Terraform issues found." or
-        output.strip() == "No YAML issues found."):
+        output.strip() == "No YAML issues found." or
+        output.strip() == "No type issues found."):
         return output
 
     # Remove trailing whitespace and ensure ending with newline
@@ -1286,6 +1412,39 @@ def format_tool_output(
                     "col": col_num,
                     "severity": severity,
                     "message": message
+                })
+                
+    # Add mypy-specific parsing
+    elif tool_name == "mypy":
+        # Parse mypy output (format: file:line: error: message [code])
+        current_file = None
+        current_line = None
+        current_message = None
+        current_code = None
+        
+        for line in output.splitlines():
+            # Match the mypy output format: "file.py:123: error: message [code]"
+            error_match = re.match(r"(.+?):(\d+): (error|note): (.+?)(?:\s+\[([^\]]+)\])?$", line)
+            if error_match:
+                file_path = error_match.group(1).strip()
+                line_num = error_match.group(2)
+                severity = error_match.group(3)
+                message = error_match.group(4).strip()
+                error_code = error_match.group(5) if error_match.group(5) else severity.upper()
+                
+                rel_path = get_relative_path(file_path)
+                file_paths.append(rel_path)
+                line_numbers.append(line_num)
+                error_codes.append(error_code)
+                
+                # Add to issues list for table formatting
+                issues.append({
+                    "file": rel_path,
+                    "code": error_code,
+                    "line": line_num,
+                    "severity": "error" if severity == "error" else "info",
+                    "message": message,
+                    "type": "error" if severity == "error" else "info"
                 })
 
     # If tabulate is available, table format is requested, and we have issues, format as a table

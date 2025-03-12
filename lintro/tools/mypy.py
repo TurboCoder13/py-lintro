@@ -196,4 +196,4 @@ class MypyTool(Tool):
         self.warn_unused_ignores = warn_unused_ignores
         self.warn_redundant_casts = warn_redundant_casts
         self.no_implicit_optional = no_implicit_optional
-        self.strict_optional = strict_optional 
+        self.strict_optional = strict_optional
