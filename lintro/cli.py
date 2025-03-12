@@ -264,96 +264,243 @@ def format_as_table(issues, tool_name=None, group_by="file"):
     if title:
         result.append(title)
     
-    if group_by == "file":
-        # Group issues by file
-        issues_by_file = {}
-        for issue in issues:
-            file_path = issue["path"]
-            if file_path not in issues_by_file:
-                issues_by_file[file_path] = []
-            issues_by_file[file_path].append(issue)
-        
-        for file_path, file_issues in sorted(issues_by_file.items()):
-            # Add file header
-            result.append(f"\nFile: {file_path}")
+    # Define tool-specific table formats
+    if tool_name == "black":
+        # Black only needs file paths for formatting
+        if group_by == "file":
+            # Not applicable for Black - just list files
+            for file_path in sorted(set(issue["path"] for issue in issues)):
+                result.append(f"\nFile: {file_path}")
+                result.append("  Formatting required")
+        else:
+            # For Black, we don't need to group by code since there's only one type of issue
+            table_data = []
+            for issue in issues:
+                table_data.append([issue["path"]])
             
+            headers = ["File"]
+            
+            table = tabulate(
+                table_data,
+                headers=headers,
+                tablefmt="pretty",
+                colalign=("left",)
+            )
+            
+            result.append("\nFiles requiring formatting:")
+            result.append(table)
+    
+    elif tool_name == "isort":
+        # isort only needs file paths for import sorting
+        if group_by == "file":
+            # Not applicable for isort - just list files
+            for file_path in sorted(set(issue["path"] for issue in issues)):
+                result.append(f"\nFile: {file_path}")
+                result.append("  Import sorting required")
+        else:
+            # For isort, we don't need to group by code since there's only one type of issue
+            table_data = []
+            for issue in sorted(issues, key=lambda x: x["path"]):
+                if issue["path"] != "ERROR":  # Skip the ERROR placeholder
+                    table_data.append([issue["path"]])
+            
+            headers = ["File"]
+            
+            table = tabulate(
+                table_data,
+                headers=headers,
+                tablefmt="pretty",
+                colalign=("left",)
+            )
+            
+            result.append("\nFiles requiring import sorting:")
+            result.append(table)
+    
+    elif tool_name == "flake8":
+        # flake8 has detailed error codes and line numbers
+        if group_by == "file":
+            # Group by file
+            issues_by_file = {}
+            for issue in issues:
+                file_path = issue["path"]
+                if file_path not in issues_by_file:
+                    issues_by_file[file_path] = []
+                issues_by_file[file_path].append(issue)
+            
+            for file_path, file_issues in sorted(issues_by_file.items()):
+                # Add file header
+                result.append(f"\nFile: {file_path}")
+                
+                # Convert issues to a list of lists for tabulate
+                table_data = []
+                for issue in file_issues:
+                    table_data.append([
+                        issue["line"],
+                        issue["code"],
+                        issue["message"]
+                    ])
+                
+                # Format as a table with headers - use left alignment
+                headers = ["Line", "PEP Code", "Message"]
+                
+                table = tabulate(
+                    table_data,
+                    headers=headers,
+                    tablefmt="pretty",
+                    colalign=("left", "left", "left")
+                )
+                
+                result.append(table)
+        
+        elif group_by == "code":
+            # Group by error code
+            issues_by_code = {}
+            for issue in issues:
+                code = issue["code"]
+                if code not in issues_by_code:
+                    issues_by_code[code] = []
+                issues_by_code[code].append(issue)
+            
+            for code, code_issues in sorted(issues_by_code.items()):
+                # Add code header
+                result.append(f"\nPEP Code: {code}")
+                
+                # Convert issues to a list of lists for tabulate
+                table_data = []
+                for issue in code_issues:
+                    table_data.append([
+                        issue["path"],
+                        issue["line"],
+                        issue["message"]
+                    ])
+                
+                # Format as a table with headers - use left alignment
+                headers = ["File", "Line", "Message"]
+                
+                table = tabulate(
+                    table_data,
+                    headers=headers,
+                    tablefmt="pretty",
+                    colalign=("left", "left", "left")
+                )
+                
+                result.append(table)
+        
+        else:  # No grouping
             # Convert issues to a list of lists for tabulate
             table_data = []
-            for issue in file_issues:
+            for issue in issues:
                 table_data.append([
+                    issue["path"],
                     issue["line"],
                     issue["code"],
                     issue["message"]
                 ])
             
             # Format as a table with headers - use left alignment
-            headers = ["Line", "PEP Code", "Message"]
+            headers = ["File", "Line", "PEP Code", "Message"]
             
             table = tabulate(
                 table_data,
                 headers=headers,
                 tablefmt="pretty",
-                colalign=("left", "left", "left")  # Left align all columns
+                colalign=("left", "left", "left", "left")
             )
             
             result.append(table)
     
-    elif group_by == "code":
-        # Group issues by error code
-        issues_by_code = {}
-        for issue in issues:
-            code = issue["code"]
-            if code not in issues_by_code:
-                issues_by_code[code] = []
-            issues_by_code[code].append(issue)
-        
-        for code, code_issues in sorted(issues_by_code.items()):
-            # Add code header
-            result.append(f"\nPEP Code: {code}")
+    else:
+        # Generic format for other tools
+        if group_by == "file":
+            # Group by file
+            issues_by_file = {}
+            for issue in issues:
+                file_path = issue["path"]
+                if file_path not in issues_by_file:
+                    issues_by_file[file_path] = []
+                issues_by_file[file_path].append(issue)
             
+            for file_path, file_issues in sorted(issues_by_file.items()):
+                # Add file header
+                result.append(f"\nFile: {file_path}")
+                
+                # Convert issues to a list of lists for tabulate
+                table_data = []
+                for issue in file_issues:
+                    table_data.append([
+                        issue["line"],
+                        issue["code"],
+                        issue["message"]
+                    ])
+                
+                # Format as a table with headers - use left alignment
+                headers = ["Line", "Code", "Message"]
+                
+                table = tabulate(
+                    table_data,
+                    headers=headers,
+                    tablefmt="pretty",
+                    colalign=("left", "left", "left")
+                )
+                
+                result.append(table)
+        
+        elif group_by == "code":
+            # Group by error code
+            issues_by_code = {}
+            for issue in issues:
+                code = issue["code"]
+                if code not in issues_by_code:
+                    issues_by_code[code] = []
+                issues_by_code[code].append(issue)
+            
+            for code, code_issues in sorted(issues_by_code.items()):
+                # Add code header
+                result.append(f"\nCode: {code}")
+                
+                # Convert issues to a list of lists for tabulate
+                table_data = []
+                for issue in code_issues:
+                    table_data.append([
+                        issue["path"],
+                        issue["line"],
+                        issue["message"]
+                    ])
+                
+                # Format as a table with headers - use left alignment
+                headers = ["File", "Line", "Message"]
+                
+                table = tabulate(
+                    table_data,
+                    headers=headers,
+                    tablefmt="pretty",
+                    colalign=("left", "left", "left")
+                )
+                
+                result.append(table)
+        
+        else:  # No grouping
             # Convert issues to a list of lists for tabulate
             table_data = []
-            for issue in code_issues:
+            for issue in issues:
                 table_data.append([
                     issue["path"],
                     issue["line"],
+                    issue["code"],
                     issue["message"]
                 ])
             
             # Format as a table with headers - use left alignment
-            headers = ["File", "Line", "Message"]
+            headers = ["File", "Line", "Code", "Message"]
             
             table = tabulate(
                 table_data,
                 headers=headers,
                 tablefmt="pretty",
-                colalign=("left", "left", "left")  # Left align all columns
+                colalign=("left", "left", "left", "left")
             )
             
             result.append(table)
-    
-    else:  # No grouping or unknown grouping
-        # Convert issues to a list of lists for tabulate
-        table_data = []
-        for issue in issues:
-            table_data.append([
-                issue["path"],
-                issue["line"],
-                issue["code"],
-                issue["message"]
-            ])
-        
-        # Format as a table with headers - use left alignment
-        headers = ["File", "Line", "PEP Code", "Message"]
-        
-        table = tabulate(
-            table_data,
-            headers=headers,
-            tablefmt="pretty",
-            colalign=("left", "left", "left", "left")  # Left align all columns
-        )
-        
-        result.append(table)
     
     return "\n".join(result)
 
@@ -396,9 +543,10 @@ def format_tool_output(output: str, tool_name: str, use_table_format: bool = Fal
         # Extract file paths from isort output
         skipped_files = 0
         for line in output.splitlines():
-            if "ERROR:" in line and ":" in line:
-                parts = line.split(":", 1)
-                file_path = parts[0].strip()
+            # Match the actual isort output format: "ERROR: /path/to/file.py Imports are incorrectly sorted..."
+            match = re.match(r"ERROR: (.*?) Imports are incorrectly sorted", line)
+            if match:
+                file_path = match.group(1).strip()
                 rel_path = get_relative_path(file_path)
                 file_paths.append(rel_path)
                 line_numbers.append("N/A")
