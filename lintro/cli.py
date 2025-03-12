@@ -61,7 +61,13 @@ def count_issues(
         return len(re.findall(r":\d+:\d+: [EWFN]\d{3} ", output))
     elif tool_name == "darglint":
         # Count lines with darglint error codes (e.g., DAR101, DAR201)
-        return len(re.findall(r":\d+:\d+: [A-Z]+\d{3}", output))
+        # Also count skipped files as issues
+        dar_issues = len(re.findall(r"DAR\d{3}", output))
+        skipped_files = 0
+        match = re.search(r"Skipped (\d+) files due to timeout", output)
+        if match:
+            skipped_files = int(match.group(1))
+        return dar_issues + skipped_files
     elif tool_name == "hadolint":
         # Count lines with hadolint error codes (e.g., DL3000, SC2086)
         return len(re.findall(r"(DL\d{4}|SC\d{4})", output))
@@ -450,9 +456,88 @@ def format_as_table(
             )
 
             result.append(table)
+    elif tool_name == "black":
+        # Black doesn't need line numbers
+        if group_by == "file":
+            # Group by file
+            issues_by_file = {}
+            for issue in issues:
+                path = issue["path"]
+                if path not in issues_by_file:
+                    issues_by_file[path] = []
+                issues_by_file[path].append(issue)
 
+            for file_path, file_issues in sorted(issues_by_file.items()):
+                # Add file header
+                result.append(f"\nFile: {file_path}")
+
+                # Convert issues to a list of lists for tabulate
+                table_data = []
+                for issue in file_issues:
+                    table_data.append([issue["code"], issue["message"]])
+
+                # Format as a table with headers - use left alignment
+                headers = ["Code", "Message"]
+
+                table = tabulate(
+                    table_data,
+                    headers=headers,
+                    tablefmt="pretty",
+                    colalign=("left", "left"),
+                )
+
+                result.append(table)
+
+        elif group_by == "code":
+            # Group by error code
+            issues_by_code = {}
+            for issue in issues:
+                code = issue["code"]
+                if code not in issues_by_code:
+                    issues_by_code[code] = []
+                issues_by_code[code].append(issue)
+
+            for code, code_issues in sorted(issues_by_code.items()):
+                # Add code header
+                result.append(f"\nCode: {code}")
+
+                # Convert issues to a list of lists for tabulate
+                table_data = []
+                for issue in code_issues:
+                    table_data.append([issue["path"], issue["message"]])
+
+                # Format as a table with headers - use left alignment
+                headers = ["File", "Message"]
+
+                table = tabulate(
+                    table_data,
+                    headers=headers,
+                    tablefmt="pretty",
+                    colalign=("left", "left"),
+                )
+
+                result.append(table)
+
+        else:  # No grouping
+            # Convert issues to a list of lists for tabulate
+            table_data = []
+            for issue in issues:
+                table_data.append(
+                    [issue["path"], issue["code"], issue["message"]])
+
+            # Format as a table with headers - use left alignment
+            headers = ["File", "Code", "Message"]
+
+            table = tabulate(
+                table_data,
+                headers=headers,
+                tablefmt="pretty",
+                colalign=("left", "left", "left"),
+            )
+
+            result.append(table)
     else:
-        # Generic format for other tools (darglint, hadolint, etc.)
+        # Generic format for other tools (darglint, hadolint, pydocstyle, prettier, etc.)
         if group_by == "file":
             # Group by file
             issues_by_file = {}
@@ -655,15 +740,21 @@ def format_tool_output(
     elif tool_name == "darglint":
         # Extract and format darglint errors
         for line in output.splitlines():
-            # Match darglint output format: file:method:line: code message
-            # Example: /path/to/file.py:method_name:10: DAR101 Missing parameter(s) in Docstring: ['param']
-            match = re.match(r"(.+):([^:]+):(\d+): ([A-Z]+\d{3}) (.+)", line)
+            # Match darglint output format: file:method:line: code: message
+            # Example: /path/to/file.py:method_name:10: DAR101: - return
+            match = re.match(r"(.+):([^:]+):(\d+): ([A-Z]+\d{3}): (.+)", line)
             if match:
                 file_path = match.group(1)
                 method_name = match.group(2)
                 line_num = match.group(3)
                 error_code = match.group(4)
                 message = match.group(5)
+                
+                # Clean up the message by removing the leading dash and whitespace
+                message = message.strip()
+                if message.startswith('-'):
+                    message = message[1:].strip()
+                
                 rel_path = get_relative_path(file_path)
 
                 file_paths.append(rel_path)
@@ -727,29 +818,56 @@ def format_tool_output(
             elif "No Dockerfile files found" in line:
                 # Handle case where no Dockerfile files are found
                 return "No Dockerfile files found in the specified paths."
+            elif "Skipped" in line and "timeout" in line:
+                # Handle skipped files due to timeout
+                match = re.match(r"Skipped (.+) \(timeout", line)
+                if match:
+                    file_path = match.group(1)
+                    rel_path = get_relative_path(file_path)
+                    file_paths.append(rel_path)
+                    line_numbers.append("N/A")
+                    error_codes.append("TIMEOUT")
+
+                    # Add to issues list for table formatting
+                    issues.append(
+                        {
+                            "path": rel_path,
+                            "line": "N/A",
+                            "code": "TIMEOUT",
+                            "message": "skipped due to timeout",
+                        }
+                    )
 
     elif tool_name == "pydocstyle":
         # Extract and format pydocstyle errors
+        current_file = None
+        current_line = None
+        current_code = None
+        
         for line in output.splitlines():
-            # Match pydocstyle output format: file:line [code] message
-            match = re.match(r"(.+):(\d+).*?([D]\d{3})(.*)", line)
-            if match:
-                file_path = match.group(1)
-                line_num = match.group(2)
-                error_code = match.group(3)
-                message = match.group(4).strip()
-                rel_path = get_relative_path(file_path)
-
+            # Match pydocstyle file line
+            file_match = re.match(r"(.+):(\d+)", line)
+            # Match pydocstyle error code line
+            code_match = re.search(r"([D]\d{3}):(.*)", line)
+            
+            if file_match:
+                current_file = file_match.group(1)
+                current_line = file_match.group(2)
+            elif code_match and current_file:
+                current_code = code_match.group(1)
+                message = code_match.group(2).strip()
+                rel_path = get_relative_path(current_file)
+                
                 file_paths.append(rel_path)
-                line_numbers.append(line_num)
-                error_codes.append(error_code)
-
+                line_numbers.append(current_line)
+                error_codes.append(current_code)
+                
                 # Add to issues list for table formatting
                 issues.append(
                     {
                         "path": rel_path,
-                        "line": line_num,
-                        "code": error_code,
+                        "line": current_line,
+                        "code": current_code,
                         "message": message,
                     }
                 )
@@ -935,14 +1053,26 @@ def format_tool_output(
                 line_num = match.group(3)
                 error_code = match.group(4)
                 message = match.group(5)
+                
+                # Clean up the message by removing the leading dash and whitespace
+                message = message.strip()
+                if message.startswith('-'):
+                    message = message[1:].strip()
+                
                 rel_path = get_relative_path(file_path)
 
-                # Convert to standardized format with color and dynamic alignment
-                formatted_lines.append(
-                    click.style(f"- {rel_path:<{path_width}}", fg="yellow")
-                    + click.style(f" : {line_num:<{line_width}}", fg="blue")
-                    + click.style(f" : {error_code:<{code_width}}", fg="red")
-                    + f" : {message} (in method {method_name})"
+                file_paths.append(rel_path)
+                line_numbers.append(line_num)
+                error_codes.append(error_code)
+
+                # Add to issues list for table formatting
+                issues.append(
+                    {
+                        "path": rel_path,
+                        "line": line_num,
+                        "code": error_code,
+                        "message": f"{message} (in method {method_name})",
+                    }
                 )
             elif "Skipped" in line:
                 # Handle skipped files due to timeout
