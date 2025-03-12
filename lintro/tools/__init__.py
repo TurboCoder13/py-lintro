@@ -92,6 +92,7 @@ from lintro.tools.isort import IsortTool  # noqa: E402
 from lintro.tools.prettier import PrettierTool  # noqa: E402
 from lintro.tools.pydocstyle import PydocstyleTool  # noqa: E402
 from lintro.tools.pylint import PylintTool  # noqa: E402
+from lintro.tools.semgrep import SemgrepTool  # noqa: E402
 
 # Register all available tools
 AVAILABLE_TOOLS = {
@@ -103,6 +104,7 @@ AVAILABLE_TOOLS = {
     "prettier": PrettierTool(),
     "pydocstyle": PydocstyleTool(),
     "pylint": PylintTool(),
+    "semgrep": SemgrepTool(),
 }
 
 # Tools that can fix issues

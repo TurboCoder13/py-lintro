@@ -13,6 +13,7 @@ from lintro.tools.isort import IsortTool
 from lintro.tools.prettier import PrettierTool
 from lintro.tools.pydocstyle import PydocstyleTool
 from lintro.tools.pylint import PylintTool
+from lintro.tools.semgrep import SemgrepTool
 
 
 def test_tool_interface():
@@ -26,6 +27,7 @@ def test_tool_interface():
         PrettierTool(),
         PydocstyleTool(),
         PylintTool(),
+        SemgrepTool(),
     ]
 
     for tool in tools:
@@ -465,6 +467,105 @@ def test_pylint_check_with_rcfile(mock_run):
 def test_pylint_fix():
     """Test that pylint fix returns appropriate message."""
     tool = PylintTool()
+    success, output = tool.fix(["test.py"])
+
+    assert success is False
+    assert "cannot automatically fix" in output
+
+
+@patch("subprocess.run")
+def test_semgrep_check_success(mock_run):
+    """Test semgrep check when no issues are found."""
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.stdout = """
+┌─────────────────┐
+│ 0 Code Findings │
+└─────────────────┘
+
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+
+Ran 290 rules on 1 file: 0 findings.
+"""
+    mock_run.return_value = mock_process
+
+    tool = SemgrepTool()
+    success, output = tool.check(["test.py"])
+
+    assert success is True
+    assert output == "No issues found."
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_semgrep_check_failure(mock_run):
+    """Test semgrep check when issues are found."""
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.stdout = """
+┌─────────────────┐
+│ 2 Code Findings │
+└─────────────────┘
+
+    test.py
+   ❯❯❱ python.lang.security.audit.eval-detected
+          Detected eval(). This is dangerous.
+
+           21┆ result = eval(user_input)
+
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+
+Ran 290 rules on 1 file: 2 findings.
+"""
+    mock_run.return_value = mock_process
+
+    tool = SemgrepTool()
+    success, output = tool.check(["test.py"])
+
+    assert success is False
+    assert "test.py" in output
+    assert "python.lang.security.audit.eval-detected" in output
+    assert "result = eval(user_input)" in output
+    mock_run.assert_called_once()
+
+
+@patch("subprocess.run")
+def test_semgrep_check_with_config(mock_run):
+    """Test semgrep check with custom configuration."""
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    mock_process.stdout = """
+┌─────────────────┐
+│ 0 Code Findings │
+└─────────────────┘
+
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+
+Ran 290 rules on 1 file: 0 findings.
+"""
+    mock_run.return_value = mock_process
+
+    tool = SemgrepTool()
+    tool.set_options(config_option="p/python")
+    success, output = tool.check(["test.py"])
+
+    assert success is True
+    # Check that the config was passed to semgrep
+    mock_run.assert_called_once()
+    cmd = mock_run.call_args[0][0]
+    assert "--config" in cmd
+    assert "p/python" in cmd
+
+
+def test_semgrep_fix():
+    """Test that semgrep fix returns appropriate message."""
+    tool = SemgrepTool()
     success, output = tool.fix(["test.py"])
 
     assert success is False
