@@ -58,3 +58,94 @@ def test_list_tools_command(mock_tools, runner):
     assert result.exit_code == 0
     assert "black" in result.output
     assert "flake8" in result.output 
+
+
+@patch("lintro.cli.CHECK_TOOLS")
+def test_check_command_with_table_format(mock_tools, runner):
+    """Test the check command with table format option."""
+    # Mock the tools
+    mock_tool = MagicMock()
+    mock_tool.check.return_value = (True, "All good")
+    mock_tools.items.return_value = [("black", mock_tool)]
+    
+    # Test with table format option
+    with patch("lintro.cli.TABULATE_AVAILABLE", True):
+        with patch("lintro.cli.format_tool_output") as mock_format:
+            mock_format.return_value = "Formatted output"
+            result = runner.invoke(cli, ["check", "--table-format", "."])
+            assert result.exit_code == 0
+            mock_format.assert_called_with("All good", "black", True, "auto")
+    
+    # Test with table format and group-by options
+    with patch("lintro.cli.TABULATE_AVAILABLE", True):
+        with patch("lintro.cli.format_tool_output") as mock_format:
+            mock_format.return_value = "Formatted output"
+            result = runner.invoke(cli, ["check", "--table-format", "--group-by", "file", "."])
+            assert result.exit_code == 0
+            mock_format.assert_called_with("All good", "black", True, "file")
+    
+    # Test with table format and group-by code
+    with patch("lintro.cli.TABULATE_AVAILABLE", True):
+        with patch("lintro.cli.format_tool_output") as mock_format:
+            mock_format.return_value = "Formatted output"
+            result = runner.invoke(cli, ["check", "--table-format", "--group-by", "code", "."])
+            assert result.exit_code == 0
+            mock_format.assert_called_with("All good", "black", True, "code")
+    
+    # Test with table format and group-by none
+    with patch("lintro.cli.TABULATE_AVAILABLE", True):
+        with patch("lintro.cli.format_tool_output") as mock_format:
+            mock_format.return_value = "Formatted output"
+            result = runner.invoke(cli, ["check", "--table-format", "--group-by", "none", "."])
+            assert result.exit_code == 0
+            mock_format.assert_called_with("All good", "black", True, "none")
+
+
+@patch("lintro.cli.FIX_TOOLS")
+def test_fmt_command_with_table_format(mock_tools, runner):
+    """Test the fmt command with table format option."""
+    # Mock the tools
+    mock_tool = MagicMock()
+    mock_tool.fix.return_value = (True, "All fixed")
+    mock_tools.items.return_value = [("black", mock_tool)]
+    
+    # Test with table format option
+    with patch("lintro.cli.TABULATE_AVAILABLE", True):
+        with patch("lintro.cli.format_tool_output") as mock_format:
+            mock_format.return_value = "Formatted output"
+            result = runner.invoke(cli, ["fmt", "--table-format", "."])
+            assert result.exit_code == 0
+            mock_format.assert_called_with("All fixed", "black", True, "auto")
+    
+    # Test with table format and group-by options
+    with patch("lintro.cli.TABULATE_AVAILABLE", True):
+        with patch("lintro.cli.format_tool_output") as mock_format:
+            mock_format.return_value = "Formatted output"
+            result = runner.invoke(cli, ["fmt", "--table-format", "--group-by", "file", "."])
+            assert result.exit_code == 0
+            mock_format.assert_called_with("All fixed", "black", True, "file")
+    
+    # Test with table format and group-by code
+    with patch("lintro.cli.TABULATE_AVAILABLE", True):
+        with patch("lintro.cli.format_tool_output") as mock_format:
+            mock_format.return_value = "Formatted output"
+            result = runner.invoke(cli, ["fmt", "--table-format", "--group-by", "code", "."])
+            assert result.exit_code == 0
+            mock_format.assert_called_with("All fixed", "black", True, "code")
+    
+    # Test with table format and group-by none
+    with patch("lintro.cli.TABULATE_AVAILABLE", True):
+        with patch("lintro.cli.format_tool_output") as mock_format:
+            mock_format.return_value = "Formatted output"
+            result = runner.invoke(cli, ["fmt", "--table-format", "--group-by", "none", "."])
+            assert result.exit_code == 0
+            mock_format.assert_called_with("All fixed", "black", True, "none")
+
+
+@patch("lintro.cli.TABULATE_AVAILABLE", False)
+def test_table_format_fallback(runner):
+    """Test fallback when tabulate is not available."""
+    with patch("click.echo") as mock_echo:
+        result = runner.invoke(cli, ["check", "--table-format", "."])
+        # Should show a warning
+        mock_echo.assert_any_call("Warning: Table formatting requested but tabulate package is not installed.", err=True) 

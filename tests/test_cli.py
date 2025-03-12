@@ -37,7 +37,7 @@ def test_list_tools(mock_tools, runner):
     assert "Tools that can only check for issues" in result.output
 
 
-@patch("lintro.tools.CHECK_TOOLS")
+@patch("lintro.cli.CHECK_TOOLS")
 @patch("os.getcwd")
 def test_check_no_path(mock_getcwd, mock_tools, runner):
     """Test the check command with no path argument."""
@@ -48,14 +48,20 @@ def test_check_no_path(mock_getcwd, mock_tools, runner):
     
     # Mock print_summary to avoid errors
     with patch("lintro.cli.print_summary"):
-        result = runner.invoke(cli, ["check"])
+        # Mock set_options method
+        mock_tool.set_options = MagicMock()
         
-        assert result.exit_code == 0
-        mock_tool.check.assert_called_once_with(["/test/path"])
-        assert "No issues found" in result.output
+        # Mock count_issues and format_tool_output
+        with patch("lintro.cli.count_issues", return_value=0):
+            with patch("lintro.cli.format_tool_output", return_value="Formatted output"):
+                result = runner.invoke(cli, ["check"])
+                
+                assert result.exit_code == 0
+                mock_tool.check.assert_called_once_with(["/test/path"])
+                assert "Formatted output" in result.output
 
 
-@patch("lintro.tools.FIX_TOOLS")
+@patch("lintro.cli.FIX_TOOLS")
 def test_fmt_with_path(mock_tools, runner):
     """Test the fmt command with a path argument."""
     mock_tool = MagicMock()
@@ -68,14 +74,20 @@ def test_fmt_with_path(mock_tools, runner):
             with open("test_file.py", "w") as f:
                 f.write("# Test file")
             
-            result = runner.invoke(cli, ["fmt", "test_file.py"])
+            # Mock set_options method
+            mock_tool.set_options = MagicMock()
             
-            assert result.exit_code == 0
-            mock_tool.fix.assert_called_once_with(["test_file.py"])
-            assert "Fixed issues" in result.output
+            # Mock count_issues and format_tool_output
+            with patch("lintro.cli.count_issues", return_value=0):
+                with patch("lintro.cli.format_tool_output", return_value="Formatted output"):
+                    result = runner.invoke(cli, ["fmt", "test_file.py"])
+                    
+                    assert result.exit_code == 0
+                    mock_tool.fix.assert_called_once_with(["test_file.py"])
+                    assert "Formatted output" in result.output
 
 
-@patch("lintro.tools.FIX_TOOLS")
+@patch("lintro.cli.FIX_TOOLS")
 def test_fmt_with_specific_tools(mock_tools, runner):
     """Test the fmt command with specific tools."""
     mock_black = MagicMock()
@@ -94,8 +106,15 @@ def test_fmt_with_specific_tools(mock_tools, runner):
             with open("test_file.py", "w") as f:
                 f.write("# Test file")
             
-            result = runner.invoke(cli, ["fmt", "--tools", "black", "test_file.py"])
+            # Mock set_options method
+            mock_black.set_options = MagicMock()
+            mock_isort.set_options = MagicMock()
             
-            assert result.exit_code == 0
-            mock_black.fix.assert_called_once_with(["test_file.py"])
-            mock_isort.fix.assert_not_called() 
+            # Mock count_issues and format_tool_output
+            with patch("lintro.cli.count_issues", return_value=0):
+                with patch("lintro.cli.format_tool_output", return_value="Formatted output"):
+                    result = runner.invoke(cli, ["fmt", "--tools", "black", "test_file.py"])
+                    
+                    assert result.exit_code == 0
+                    mock_black.fix.assert_called_once_with(["test_file.py"])
+                    mock_isort.fix.assert_not_called() 
