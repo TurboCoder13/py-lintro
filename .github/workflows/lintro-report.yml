@@ -96,14 +96,14 @@ jobs:
         echo '```' >> lintro-report/report.md
     
     - name: Upload HTML report artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: lintro-html-report
         path: lintro-report/index.html
         retention-days: 90
     
     - name: Upload Markdown report artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: lintro-markdown-report
         path: lintro-report/report.md
