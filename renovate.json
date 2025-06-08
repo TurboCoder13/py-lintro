@@ -40,7 +40,7 @@
   "github-actions": {
     "enabled": true
   },
-  "schedule": ["at 22:00"],
+  "schedule": ["after 22:00", "before 23:00"],
   "timezone": "UTC",
   "labels": ["dependencies"],
   "prHourlyLimit": 2,

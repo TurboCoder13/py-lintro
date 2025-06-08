@@ -1,10 +1,11 @@
-FROM python:3.10-slim
+FROM python:3.13-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PYTHONPATH=/app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
