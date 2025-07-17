@@ -60,6 +60,7 @@ def print_tool_footer(
     file: TextIO | None = None,
     output_format: str = "grid",
     tool_name: str = "",
+    tool_output: str = "",
 ) -> None:
     """Print a footer for a core in the old style.
 
@@ -69,10 +70,14 @@ def print_tool_footer(
         file: File to write to (default: stdout).
         output_format: Output format being used.
         tool_name: Name of the core (for styling).
+        tool_output: Raw output from the tool to check for duplicate messages.
     """
     # Skip footers for JSON format to keep output clean
     if output_format == "json":
         return
+
+    # Always show the styled footer message when there are no issues
+    # The tool's plain output will be handled by the CLI commands
 
     if success:
         message = "No issues found."
