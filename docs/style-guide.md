@@ -7,13 +7,8 @@ This document outlines the coding standards and best practices for the Lintro pr
 ### General Guidelines
 
 - Follow [PEP 8](https://peps.python.org/pep-0008/) for code style
-- Use [Black](https://black.readthedocs.io/) for code formatting
-- Use [isort](https://pycqa.github.io/isort/) for import sorting
-- Use [Flake8](https://flake8.pycqa.org/) for linting
-- Use [MyPy](https://mypy.readthedocs.io/) for static type checking
-- Use [Pylint](https://pylint.pycqa.org/) for additional linting
-- Use [pydocstyle](https://www.pydocstyle.org/) for docstring style checking
-- Use [darglint](https://github.com/terrencepreilly/darglint) for docstring correctness
+- Use [Darglint](https://github.com/terrencepreilly/darglint) for docstring argument checking
+- Use [Prettier](https://prettier.io/) for frontend code formatting
 
 ### Type Hints
 
@@ -45,13 +40,13 @@ def process_data(data: list[dict[str, str]] | None = None) -> dict[str, str] | N
 def calculate_total(items: list[dict[str, float]]) -> float:
     """
     Calculate the total value of all items.
-    
+
     Args:
         items: List of items with their prices
-        
+
     Returns:
         Total value of all items
-        
+
     Raises:
         ValueError: If any item has a negative price
     """
@@ -60,7 +55,8 @@ def calculate_total(items: list[dict[str, float]]) -> float:
 
 ### Function and Method Definitions
 
-- For function/method declarations with more than 1 parameter, use trailing commas and format with Black
+- For function/method declarations with more than 1 parameter, use trailing commas and format with
+  Ruff
 - Same applies to function/method calls with multiple arguments
 
 ```python
@@ -82,12 +78,14 @@ result = complex_function(
 
 ### Imports
 
+- Use `ruff` to automatically sort imports
 - Group imports in the following order:
   1. Standard library imports
-  2. Related third-party imports
-  3. Local application/library specific imports
-- Use absolute imports rather than relative imports
-- Use `isort` to automatically sort imports
+  2. Third-party imports
+  3. Local application imports
+- Use absolute imports
+- Use explicit imports
+- Use `from __future__ import annotations` in Python files
 
 ```python
 # Standard library imports
@@ -165,18 +163,11 @@ lintro/
 ├── cli.py
 ├── tools/
 │   ├── __init__.py
-│   ├── black.py
 │   ├── darglint.py
 │   ├── flake8.py
 │   ├── hadolint.py
-│   ├── isort.py
-│   ├── mypy.py
-│   ├── prettier.py
 │   ├── pydocstyle.py
-│   ├── pylint.py
-│   ├── semgrep.py
-│   ├── terraform.py
-│   └── yamllint.py
+│   └── ruff.py
 └── utils/
     ├── __init__.py
     └── formatting.py
@@ -184,7 +175,6 @@ tests/
 ├── __init__.py
 ├── test_cli.py
 └── tools/
-    ├── test_black.py
     ├── test_flake8.py
     └── test_isort.py
 ```
@@ -203,6 +193,7 @@ tests/
 - Optionally include a more detailed description in subsequent lines
 
 Prefixes:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -230,11 +221,11 @@ feat: add support for mypy integration
 - Use meaningful test names that describe what is being tested
 
 ```python
-def test_black_tool_formats_code_correctly():
+def test_darglint_tool_checks_docstrings_correctly():
     # Test implementation
     pass
 
-def test_black_tool_handles_syntax_errors_gracefully():
+def test_prettier_tool_formats_code_correctly():
     # Test implementation
     pass
 ```
@@ -259,18 +250,18 @@ When adding new tools to Lintro, ensure they follow these guidelines:
 Example tool configuration:
 
 ```python
-class MyPyTool(Tool):
-    """MyPy static type checker integration."""
+class ExampleTool(Tool):
+  """Example tool integration."""
 
-    name = "mypy"
-    description = "Static type checker for Python"
-    can_fix = False
-    
-    config = ToolConfig(
-        priority=60,
-        conflicts_with=[],
-        file_patterns=["*.py"],
-    )
+  name = "example"
+  description = "Example tool for demonstration"
+  can_fix = False
+
+  config = ToolConfig(
+      priority=60,
+      conflicts_with=[],
+      file_patterns=["*.py"],
+  )
 ```
 
 ## Code Review
@@ -289,9 +280,173 @@ When reviewing code, check for:
 All code should pass the following checks before being merged:
 
 1. All tests pass
-2. Code is formatted with Black
-3. Imports are sorted with isort
-4. No Flake8 warnings
-5. Type checking with MyPy passes
-6. Test coverage meets minimum threshold 
-7. No Pylint warnings 
+2. Code is checked with Lintro
+3. Test coverage meets minimum threshold
+
+## Code Formatting
+
+We use the Lintro tool for code formatting and linting:
+
+### Python Code Formatting
+
+1. Use Lintro for checking:
+
+   ```bash
+   lintro check [PATH]
+   ```
+
+2. Use Lintro for formatting:
+
+   ```bash
+   lintro fmt [PATH]
+   ```
+
+3. Format specific files:
+
+   ```bash
+   lintro fmt file1.py file2.py
+   ```
+
+4. Format with custom options:
+   ```bash
+   lintro fmt --tools ruff --core-options "ruff:--line-length=100" [PATH]
+   ```
+
+### Project Structure
+
+```
+lintro/
+├── lintro/
+│   ├── __init__.py
+│   ├── cli.py
+│   ├── tools/
+│   │   ├── __init__.py
+│   │   ├── ruff.py
+│   │   ├── flake8.py
+│   │   ├── pydocstyle.py
+│   │   └── darglint.py
+│   └── utils/
+│       ├── __init__.py
+│       └── output.py
+└── tests/
+    ├── __init__.py
+    ├── test_cli.py
+    ├── test_cli_commands.py
+    ├── test_cli_commands_extended.py
+    ├── test_cli_commands_advanced.py
+    ├── test_cli_utils.py
+    └── test_cli_output.py
+```
+
+# Formatter and Output Style Architecture
+
+## Overview
+
+Lintro supports flexible, extensible output formatting for all tools. This is achieved by
+separating:
+
+- **Table structure** (columns, extraction) per tool
+- **Output style** (plain, markdown, etc.)
+
+This allows:
+
+- Each tool to define its own columns and row extraction logic
+- Easy addition of new output styles (Markdown, HTML, JSON, etc.)
+- Consistent, DRY, and testable formatting logic
+
+---
+
+## Key Components
+
+### 1. TableDescriptor (per tool)
+
+- Describes the columns and how to extract them from an issue object.
+- Each tool provides its own TableDescriptor if needed.
+
+```python
+from lintro.formatters.base_formatter import TableDescriptor
+from typing import List
+
+
+class DarglintTableDescriptor(TableDescriptor):
+  def get_columns(self) -> List[str]:
+    return ["File", "Line", "Code", "Message"]
+
+  def get_row(self, issue) -> List[str]:
+    return [issue.file, str(issue.line), issue.code, issue.message]
+```
+
+### 2. OutputStyle (per output format)
+
+- Defines how to render a table (columns + rows) as a string.
+- Implemented in `lintro/formatters/styles/`.
+
+```python
+
+from lintro.formatters.core.output_style import OutputStyle
+from typing import List, Any
+
+
+class MarkdownStyle(OutputStyle):
+  def format(self, columns: List[str], rows: List[List[Any]]) -> str:
+# ...
+```
+
+### 3. Tool Formatter
+
+- Wires up the descriptor, issues, and style.
+- Example for darglint:
+
+```python
+from lintro.formatters.tools.darglint_formatter import DarglintTableDescriptor, STYLE_MAP
+
+
+def format_darglint_issues(issues, style="plain"):
+  descriptor = DarglintTableDescriptor()
+  columns = descriptor.get_columns()
+  rows = [descriptor.get_row(issue) for issue in issues]
+  formatter = STYLE_MAP.get(style, PlainStyle())
+  return formatter.format(columns, rows)
+```
+
+---
+
+## How to Add a New Output Style
+
+1. Create a new class in `lintro/formatters/styles/` inheriting from `OutputStyle`.
+2. Implement the `format(columns, rows)` method.
+3. Register the new style in the tool's `STYLE_MAP`.
+
+---
+
+## How to Add/Change a Tool's Table Structure
+
+1. Create a new `TableDescriptor` for the tool if needed.
+2. Implement `get_columns()` and `get_row(issue)`.
+3. Use this descriptor in the tool's formatter.
+
+---
+
+## CLI Integration
+
+- The CLI can expose a `--output-style` flag to let users select the output style (e.g., `plain`,
+  `markdown`).
+- The selected style is passed to the tool formatter, which uses the appropriate OutputStyle.
+
+---
+
+## Example Usage
+
+```python
+issues = parse_darglint_output(raw_output)
+print(format_darglint_issues(issues, style="markdown"))
+```
+
+---
+
+## Benefits
+
+- Extensible: Add new styles or tool structures easily
+- Consistent: All tools use the same formatting pipeline
+- Testable: Each style and descriptor can be unit tested
+- Flexible: Tools with different columns or special needs are supported
