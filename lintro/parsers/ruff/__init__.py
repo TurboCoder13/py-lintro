@@ -1,0 +1,1 @@
+"""Ruff parser module."""
