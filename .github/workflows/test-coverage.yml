@@ -1,99 +1,133 @@
-name: Test and Coverage
+---
+name: Test Suite & Coverage
 
-on:
+'on':
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - '**.py'
-      - 'requirements*.txt'
-      - '.github/workflows/test-coverage.yml'
       - 'pyproject.toml'
+      - '.github/workflows/test-coverage.yml'
+      - 'scripts/local-test.sh'
+      - 'scripts/docker-test.sh'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - '**.py'
-      - 'requirements*.txt'
-      - '.github/workflows/test-coverage.yml'
       - 'pyproject.toml'
+      - '.github/workflows/test-coverage.yml'
+      - 'scripts/local-test.sh'
+      - 'scripts/docker-test.sh'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
   workflow_dispatch:
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.8', '3.9', '3.10']
+permissions:
+  contents: read
+  pull-requests: write
 
+jobs:
+  run-test-suite:
+    runs-on: ubuntu-latest
+    outputs:
+      coverage-percentage: ${{ steps.coverage-summary.outputs.percentage }}
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
-        pip install -e .
-    
-    - name: Run tests with coverage
-      run: |
-        pytest --cov=lintro --cov-report=xml --cov-report=term
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
-        verbose: true
-    
-    - name: Generate HTML coverage report
-      run: |
-        pytest --cov=lintro --cov-report=html
-    
-    - name: Upload coverage report as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report-${{ matrix.python-version }}
-        path: htmlcov/
-        retention-days: 14
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker test image
+        run: |
+          echo "Building Docker image with all testing tools pre-installed"
+          docker compose build test-integration
+      - name: Run comprehensive test suite in Docker
+        run: ./scripts/test-coverage-run.sh
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+          flags: python-3.13
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-python-3.13
+          path: htmlcov/
+          retention-days: 30
+      - name: Upload coverage XML as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 30
+      - name: Extract coverage percentage
+        id: coverage-summary
+        run: |
+          # Extract the percentage from the script output
+          PERCENTAGE=$(python3 scripts/extract-coverage.py 2>&1 | \
+            grep "percentage=" | tail -1 | \
+            cut -d'=' -f2)
+          echo "Extracted coverage percentage: $PERCENTAGE"
+          echo "percentage=$PERCENTAGE" >> $GITHUB_OUTPUT
 
   coverage-badge:
-    needs: test
+    needs: run-test-suite
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13.5'
-        cache: 'pip'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
-        pip install -e .
-        pip install coverage-badge
-    
-    - name: Run tests with coverage
-      run: |
-        pytest --cov=lintro --cov-report=xml --cov-report=term
-    
-    - name: Generate coverage badge
-      run: |
-        coverage-badge -o coverage-badge.svg -f
-    
-    - name: Commit and push badge if changed
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add coverage-badge.svg
-        git diff --quiet && git diff --staged --quiet || git commit -m "docs: update coverage badge"
-        git push 
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report-python-3.13
+          path: coverage-html/
+      - name: Download coverage XML
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-xml
+          path: ./
+      - name: Generate coverage badge
+
+        # yamllint disable
+        run: |
+          export COVERAGE_PERCENTAGE="${{ needs.run-test-suite.outputs.coverage-percentage }}"
+          ./scripts/coverage-badge-update.sh
+        # yamllint enable
+
+  comment-pr-coverage:
+    needs: run-test-suite
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate coverage PR comment
+
+        # yamllint disable
+        run: |
+          export COVERAGE_PERCENTAGE="${{ needs.run-test-suite.outputs.coverage-percentage }}"
+          ./scripts/coverage-pr-comment.sh
+        # yamllint enable
+
+      - name: Comment PR with coverage info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const comment = fs.readFileSync('coverage-pr-comment.txt', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
