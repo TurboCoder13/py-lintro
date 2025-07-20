@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=80.9.0", "wheel"]
+requires = ["setuptools==80.9.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -16,13 +16,13 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-requires-python = ">=3.12"
+requires-python = "==3.13.5"
 dependencies = [
-    "click>=8.1.0,<9.0.0",
-    "darglint~=1.8.1",
-    "loguru>=0.7.0",
-    "tabulate~=0.9.0",
-    "yamllint>=1.35.0",
+    "click==8.2.1",
+    "darglint==1.8.1",
+    "loguru==0.7.3",
+    "tabulate==0.9.0",
+    "yamllint==1.37.1",
 ]
 
 [project.optional-dependencies]
@@ -30,11 +30,11 @@ dev = [
     "pytest==8.4.1",
     "pytest-cov==6.2.1",
     "pytest-mock==3.14.1",
-    "tox>=4.26.0",
-    "allure-pytest>=2.14.0",
+    "tox>=4.27.0",
+    "allure-pytest>=2.14.3",
     "ruff",
     "mypy",
-    "coverage-badge>=1.1.2",
+    "coverage-badge==1.1.2",
 ]
 test = [
     "pytest==8.4.1",
@@ -42,8 +42,8 @@ test = [
     "pytest-mock==3.14.1",
 ]
 typing = [
-    "types-setuptools>=80.9.0",
-    "types-tabulate>=0.9.0",
+    "types-setuptools==80.9.0.20250529",
+    "types-tabulate==0.9.0.20241207",
 ]
 
 [project.scripts]
