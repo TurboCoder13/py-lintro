@@ -1,0 +1,26 @@
+{
+  "name": "py-lintro",
+  "version": "1.0.0",
+  "description": "A comprehensive CLI tool that unifies various code formatting, linting, and quality assurance tools under a single command-line interface.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TurboCoder13/py-lintro.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TurboCoder13/py-lintro/issues"
+  },
+  "homepage": "https://github.com/TurboCoder13/py-lintro#readme",
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}

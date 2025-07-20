@@ -1,72 +1,72 @@
-.PHONY: setup install test lint format clean mypy
+.PHONY: setup install test test-integration lint format clean help
 
 # Include .env file if it exists
 -include .env
-
-# Set default virtual environment path if not defined
-UV_VENV_PYTHON_PATH ?= .venv
 
 # Default target
 all: setup test
 
 # Setup development environment
 setup:
-	@if [ ! -d "$$(dirname "$(UV_VENV_PYTHON_PATH)")" ]; then \
-		mkdir -p "$$(dirname "$(UV_VENV_PYTHON_PATH)")"; \
-	fi
-	UV_VENV_PYTHON_PATH=$(UV_VENV_PYTHON_PATH) uv venv "$(UV_VENV_PYTHON_PATH)"
-	@if [ -f "$(UV_VENV_PYTHON_PATH)/bin/activate" ]; then \
-		. $(UV_VENV_PYTHON_PATH)/bin/activate && uv pip install -e . && uv pip install -r requirements-dev.txt; \
-	else \
-		. .venv/bin/activate && uv pip install -e . && uv pip install -r requirements-dev.txt; \
-	fi
+	@echo "Setting up development environment with uv..."
+	uv sync --dev
+	uv pip install -e .
+	@echo "Setup complete! Try 'make test' or 'make lintro-check'"
 
 # Install the package
 install:
-	@if [ ! -d "$$(dirname "$(UV_VENV_PYTHON_PATH)")" ]; then \
-		mkdir -p "$$(dirname "$(UV_VENV_PYTHON_PATH)")"; \
-	fi
-	UV_VENV_PYTHON_PATH=$(UV_VENV_PYTHON_PATH) uv venv "$(UV_VENV_PYTHON_PATH)"
-	@if [ -f "$(UV_VENV_PYTHON_PATH)/bin/activate" ]; then \
-		. $(UV_VENV_PYTHON_PATH)/bin/activate && uv pip install -e .; \
-	else \
-		. .venv/bin/activate && uv pip install -e .; \
-	fi
+	@echo "Installing package with uv..."
+	uv sync --dev
+	uv pip install -e .
 
-# Run tests
+# Run all tests
 test:
-	@if [ -f "$(UV_VENV_PYTHON_PATH)/bin/activate" ]; then \
-		. $(UV_VENV_PYTHON_PATH)/bin/activate && pytest; \
-	else \
-		. .venv/bin/activate && pytest; \
-	fi
+	@echo "Running tests with coverage..."
+	uv run pytest --cov=lintro --cov-report=term-missing --cov-report=html --cov-report=xml
+	@echo "Coverage reports generated:"
+	@echo "  - Terminal: displayed above"
+	@echo "  - HTML: htmlcov/index.html"
+	@echo "  - XML: coverage.xml"
 
-# Run linting
+# Run integration tests using our local-test.sh script
+test-integration:
+	@echo "Running integration tests..."
+	./scripts/local-test.sh
+
+# Run linting using lintro itself
 lint:
-	@if [ -f "$(UV_VENV_PYTHON_PATH)/bin/activate" ]; then \
-		. $(UV_VENV_PYTHON_PATH)/bin/activate && black --check . && isort --check . && flake8 . && mypy .; \
-	else \
-		. .venv/bin/activate && black --check . && isort --check . && flake8 . && mypy .; \
-	fi
+	@echo "Running lintro check..."
+	uv run lintro check .
 
-# Run mypy type checking
-mypy:
-	@if [ -f "$(UV_VENV_PYTHON_PATH)/bin/activate" ]; then \
-		. $(UV_VENV_PYTHON_PATH)/bin/activate && mypy .; \
-	else \
-		. .venv/bin/activate && mypy .; \
-	fi
-
-# Format code
+# Format code using lintro itself
 format:
-	@if [ -f "$(UV_VENV_PYTHON_PATH)/bin/activate" ]; then \
-		. $(UV_VENV_PYTHON_PATH)/bin/activate && black . && isort .; \
-	else \
-		. .venv/bin/activate && black . && isort .; \
-	fi
+	@echo "Running lintro format..."
+	uv run lintro fmt .
+
+# Run lintro check (alias for lint)
+lintro-check: lint
+
+# Run lintro format (alias for format)
+lintro-fmt: format
+
+# Build Docker image
+docker-build:
+	@echo "Building Docker image..."
+	docker build -t py-lintro:latest .
+
+# Run tests in Docker
+docker-test:
+	@echo "Running tests in Docker..."
+	./scripts/docker-test.sh
+
+# Run type checking
+mypy:
+	@echo "Running mypy type checking..."
+	uv run mypy lintro/
 
 # Clean up build artifacts
 clean:
+	@echo "Cleaning up build artifacts..."
 	rm -rf build/
 	rm -rf dist/
 	rm -rf *.egg-info/
@@ -79,4 +79,19 @@ clean:
 	find . -type d -name "*.egg" -exec rm -rf {} +
 	find . -type d -name ".pytest_cache" -exec rm -rf {} +
 	find . -type d -name "htmlcov" -exec rm -rf {} +
-	find . -type d -name ".tox" -exec rm -rf {} + 
+	find . -type d -name ".tox" -exec rm -rf {} +
+
+# Show help
+help:
+	@echo "Available targets:"
+	@echo "  setup           - Set up development environment"
+	@echo "  install         - Install package only"
+	@echo "  test            - Run unit tests with coverage"
+	@echo "  test-integration- Run integration tests"
+	@echo "  lint            - Run lintro check"
+	@echo "  format          - Run lintro format"
+	@echo "  mypy            - Run type checking"
+	@echo "  docker-build    - Build Docker image"
+	@echo "  docker-test     - Run tests in Docker"
+	@echo "  clean           - Clean up build artifacts"
+	@echo "  help            - Show this help message" 

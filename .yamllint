@@ -1,0 +1,6 @@
+---
+extends: default
+
+rules:
+  comments:
+    min-spaces-from-content: 1 # Allow 1 space to be compatible with prettier

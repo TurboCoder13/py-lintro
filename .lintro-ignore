@@ -1,0 +1,3 @@
+# Ignore test_samples directory from all linting/formatting
+
+test_samples/* 

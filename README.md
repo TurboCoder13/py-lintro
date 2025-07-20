@@ -2,232 +2,147 @@
 
 A comprehensive CLI tool that unifies various code formatting, linting, and quality assurance tools under a single command-line interface.
 
-[![Test and Coverage](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml/badge.svg)](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml)
-[![Coverage](https://raw.githubusercontent.com/yourusername/lintro/main/coverage-badge.svg)](https://github.com/yourusername/lintro/actions/workflows/test-coverage.yml)
-[![Lintro Report](https://github.com/yourusername/lintro/actions/workflows/lintro-report.yml/badge.svg)](https://github.com/yourusername/lintro/actions/workflows/lintro-report.yml)
+[![Test and Coverage](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-coverage.yml/badge.svg)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-coverage.yml)
+[![Coverage](https://raw.githubusercontent.com/TurboCoder13/py-lintro/main/coverage-badge.svg)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-coverage.yml)
+[![Lintro Report](https://github.com/TurboCoder13/py-lintro/actions/workflows/lintro-report.yml/badge.svg)](https://github.com/TurboCoder13/py-lintro/actions/workflows/lintro-report.yml)
 
 ## Features
 
-- Run multiple linting and formatting tools with a single command
-- Standardized configuration and output formatting
-- Consistent error handling
-- Extensible architecture for adding new tools
-- Intelligent conflict resolution between tools
-- Configurable tool priorities and execution order
-
-## CI/CD Integration
-
-Lintro is integrated into the CI/CD pipeline with the following features:
-
-- **PR Checks**: Automatically runs Lintro on changed files in pull requests and posts results as comments
-- **Lintro Report**: Generates a comprehensive report of the entire codebase's linting status, available as a workflow artifact in GitHub Actions (will be published to GitHub Pages when the repository is public)
-- **Test Coverage**: Tracks test coverage and displays it as a badge in the README
+- **Unified CLI** for multiple code quality tools
+- **Multi-language support** - Python, JavaScript, YAML, Docker, and more
+- **Auto-fixing** capabilities where possible
+- **Beautiful output formatting** with table views
+- **Docker support** for containerized environments
+- **CI/CD integration** with GitHub Actions
 
 ## Supported Tools
 
-- Black (code formatting)
-- isort (import sorting)
-- flake8 (linting)
-- darglint (docstring linting)
-- hadolint (Dockerfile linting)
-- mypy (static type checking)
-- prettier (code formatting for multiple languages)
-- pydocstyle (docstring style checking)
-- pylint (Python linting)
-- semgrep (semantic code pattern matching)
-- terraform (Terraform formatting)
-- yamllint (YAML linting)
+| Tool         | Language/Format | Purpose              | Auto-fix |
+| ------------ | --------------- | -------------------- | -------- |
+| **Ruff**     | Python          | Linting & Formatting | ✅       |
+| **Darglint** | Python          | Docstring Validation | ❌       |
+| **Prettier** | JS/TS/JSON      | Code Formatting      | ✅       |
+| **Yamllint** | YAML            | Syntax & Style       | ❌       |
+| **Hadolint** | Dockerfile      | Best Practices       | ❌       |
 
-## Dependency Management
+## Quick Start
 
-This project uses [Renovate](https://github.com/renovatebot/renovate) for automated dependency updates. Renovate will automatically create pull requests when updates are available for:
-
-- Python dependencies in requirements.txt and requirements-dev.txt
-- GitHub Actions in workflow files
-- Docker base images in Dockerfile
-
-The Renovate configuration is defined in `renovate.json` in the root of the repository. Updates are scheduled to run daily at 10:00 PM UTC.
-
-### Renovate Features
-
-- Automatic merging of patch updates for seamless minor fixes
-- Automatic grouping of minor and patch updates to reduce PR noise
-- Separate PRs for major updates that might include breaking changes
-- Special grouping for related packages (e.g., pytest and its plugins)
-- Dependency dashboard for monitoring update status
-- Configurable schedule and rate limiting
-
-## Installation
-
-### Standard Installation
+### Installation
 
 ```bash
 pip install lintro
 ```
 
-### Docker Installation
-
-You can also use Lintro with Docker, which allows you to run it without installing all the dependencies directly on your system:
+### Basic Usage
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/lintro.git
-cd lintro
+# Check all files for issues
+lintro check
 
-# Make the Docker script executable
-chmod +x lintro-docker.sh
+# Auto-fix issues where possible
+lintro fmt
 
-# Run lintro with Docker
-./lintro-docker.sh check --table-format
-```
+# Use table formatting for better readability
+lintro check --table-format
 
-For detailed instructions on using Lintro with Docker, including all available options and common use cases, see the [Docker documentation](DOCKER.md).
+# Run specific tools only
+lintro check --tools ruff,prettier
 
-## Usage
-
-### List available tools
-
-```bash
+# List all available tools
 lintro list-tools
 ```
 
-### Format code (auto-fix where possible)
+## Docker Usage
 
 ```bash
-lintro fmt [PATH]
+# Clone and setup
+git clone https://github.com/TurboCoder13/py-lintro.git
+cd py-lintro
+chmod +x scripts/*.sh
+
+# Run with Docker
+./scripts/docker-lintro.sh check --table-format
 ```
 
-### Check code for issues without fixing
+See [Docker Documentation](docs/docker.md) for detailed usage.
+
+## Advanced Usage
+
+### Output Formatting
 
 ```bash
-lintro check [PATH]
+# Table format (recommended)
+lintro check --table-format --group-by code
+
+# Export to file
+lintro check --output report.txt
+
+# Different grouping options
+lintro check --table-format --group-by file  # Group by file
+lintro check --table-format --group-by code  # Group by error type
 ```
 
-### Run specific tools
+### Tool-Specific Options
 
 ```bash
-lintro fmt --tools black,isort [PATH]
-lintro check --tools flake8,pylint,mypy [PATH]
+# Darglint timeout
+lintro check --darglint-timeout 20
+
+# Prettier timeout
+lintro check --prettier-timeout 60
+
+# Exclude patterns
+lintro check --exclude "migrations,node_modules,dist"
 ```
 
-### Exclude specific patterns
+### CI/CD Integration
 
-By default, Lintro excludes virtual environment directories. You can specify additional patterns to exclude:
+Lintro includes pre-built GitHub Actions workflows:
+
+- **Automated code quality checks** on pull requests
+- **Coverage reporting** with badges
+- **Multi-tool analysis** across your entire codebase
+
+See [GitHub Integration Guide](docs/github-integration.md) for setup instructions.
+
+## Documentation
+
+- **[Getting Started](docs/getting-started.md)** - Installation and basic usage
+- **[Docker Usage](docs/docker.md)** - Containerized development
+- **[GitHub Integration](docs/github-integration.md)** - CI/CD setup
+- **[Configuration](docs/configuration.md)** - Tool configuration options
+- **[Contributing](docs/contributing.md)** - Developer guide
+- **[Tool Analysis](docs/tool-analysis/)** - Detailed tool comparisons
+
+## Development
 
 ```bash
-lintro check --exclude "migrations,node_modules,dist" [PATH]
-lintro fmt --exclude "migrations,node_modules,dist" [PATH]
+# Run tests
+./scripts/local-test.sh
+
+# Run Lintro on itself
+./scripts/local-lintro.sh check --table-format
+
+# Docker development
+./scripts/docker-test.sh
+./scripts/docker-lintro.sh check --table-format
 ```
 
-### Include virtual environment directories
+## Dependencies
 
-If you want to include virtual environment directories (which are excluded by default):
+- **Renovate** for automated dependency updates
+- **Python 3.13+** with UV package manager
+- **Optional**: Docker for containerized usage
 
-```bash
-lintro check --include-venv [PATH]
-lintro fmt --include-venv [PATH]
-```
+## License
 
-### Export output to a file
+MIT License - see [LICENSE](LICENSE) for details.
 
-You can export the output to a file using the `--output` option:
+## Contributing
 
-```bash
-lintro check --output report.txt [PATH]
-lintro fmt --output changes.txt [PATH]
-lintro list-tools --output tools.txt
-```
+We welcome contributions! See our [Contributing Guide](docs/contributing.md) for details on:
 
-When using the `--output` option, the detailed output will be displayed in both the console and written to the specified file.
-
-### Use table formatting for output
-
-You can use a nicely formatted table for the output using the `--table-format` option:
-
-```bash
-lintro check --table-format [PATH]
-lintro fmt --table-format [PATH]
-```
-
-This option requires the `tabulate` package to be installed. If it's not installed, Lintro will fall back to the standard formatting.
-
-To install tabulate:
-
-```bash
-pip install tabulate
-```
-
-You can combine the table format with the output file option:
-
-```bash
-lintro check --table-format --output report.txt [PATH]
-```
-
-### Group issues in the output
-
-When using table formatting, you can choose how to group the issues in the output using the `--group-by` option:
-
-```bash
-# Group by file (default for check command)
-lintro check --table-format --group-by file [PATH]
-
-# Group by error code
-lintro check --table-format --group-by code [PATH]
-
-# No grouping (flat list)
-lintro check --table-format --group-by none [PATH]
-
-# Auto-grouping (default for fmt command) - intelligently chooses the best grouping method
-lintro check --table-format --group-by auto [PATH]
-lintro fmt --table-format --group-by auto [PATH]
-```
-
-The auto-grouping option intelligently chooses between file and code grouping based on the output:
-- If there are more unique files than error codes (and few error code types), it groups by error code
-- Otherwise, it groups by file
-
-Grouping by file is useful when you want to fix issues file by file, while grouping by error code is helpful when you want to fix similar issues across multiple files.
-
-## Tool-Specific Options
-
-Lintro supports various tool-specific options that can be passed directly to the underlying tools:
-
-### darglint
-
-```bash
-lintro check --darglint-timeout 20 [PATH]
-```
-
-### hadolint
-
-```bash
-lintro check --hadolint-timeout 20 [PATH]
-```
-
-### mypy
-
-```bash
-lintro check --mypy-config mypy.ini [PATH]
-lintro check --mypy-python-version 3.9 [PATH]
-lintro check --mypy-disallow-untyped-defs [PATH]
-lintro check --mypy-disallow-incomplete-defs [PATH]
-```
-
-### pydocstyle
-
-```bash
-lintro check --pydocstyle-timeout 20 [PATH]
-lintro check --pydocstyle-convention numpy [PATH]  # Options: pep257, numpy, google
-```
-
-### prettier
-
-```bash
-lintro check --prettier-timeout 60 [PATH]
-```
-
-### pylint
-
-```bash
-lintro check --pylint-rcfile .pylintrc [PATH]
-```
+- Adding new tools
+- Reporting bugs
+- Submitting features
+- Code style guidelines

@@ -1,0 +1,1 @@
+"""Hadolint parser module."""

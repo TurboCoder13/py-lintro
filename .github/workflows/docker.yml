@@ -1,74 +1,42 @@
-name: Docker Build and Test
-
-on:
+---
+name: Docker Build
+'on':
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'Dockerfile'
       - 'docker-compose.yml'
-      - 'lintro-docker.sh'
+      - 'scripts/docker-lintro.sh'
+      - 'scripts/docker-test.sh'
       - '.github/workflows/docker.yml'
-      - 'requirements.txt'
-      - 'requirements-dev.txt'
+      - 'pyproject.toml'
       - 'lintro/**'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'Dockerfile'
       - 'docker-compose.yml'
-      - 'lintro-docker.sh'
+      - 'scripts/docker-lintro.sh'
+      - 'scripts/docker-test.sh'
       - '.github/workflows/docker.yml'
-      - 'requirements.txt'
-      - 'requirements-dev.txt'
+      - 'pyproject.toml'
       - 'lintro/**'
   workflow_dispatch:
-
 jobs:
-  build-and-test:
+  build-docker-image:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    
-    - name: Build Docker image
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        push: false
-        load: true
-        tags: lintro:test
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-    
-    - name: Test Docker image - List tools
-      run: |
-        docker run --rm lintro:test list-tools
-        
-    - name: Create test file
-      run: |
-        echo 'def test_function():
-            """This is a test function."""
-            print("Hello, world!")
-        ' > test_sample.py
-        
-    - name: Test with specific tools
-      run: |
-        # Test with the most common tools
-        docker run --rm -v $(pwd):/code lintro:test check test_sample.py --tools black,flake8,pylint --table-format
-    
-    - name: Test with all available tools
-      run: |
-        # Get list of all available tools
-        TOOLS=$(docker run --rm lintro:test list-tools | grep -v "Available tools" | tr -d '[:space:]' | tr '\n' ',')
-        echo "Testing with tools: $TOOLS"
-        
-        # Run lintro with all tools
-        # Some tools might not apply to our test file, so we'll allow failures
-        docker run --rm -v $(pwd):/code lintro:test check test_sample.py --tools $TOOLS --table-format || echo "Some tools reported issues, which is expected"
-    
-    - name: Clean up
-      run: |
-        rm test_sample.py 
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: py-lintro:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Test Docker Image
+        run: ./scripts/docker-build-test.sh
