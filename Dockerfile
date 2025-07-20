@@ -3,59 +3,70 @@ FROM python:3.13-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on \
     PYTHONPATH=/app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git=1:2.* \
-    curl=7.* \
-    nodejs=18.* \
-    npm=9.* \
-    unzip=6.* \
-    && rm -rf /var/lib/apt/lists/*
+# Set shell options for pipefail before using pipes
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install prettier
-RUN npm install -g prettier@2.8.8
-
-# Install Terraform
-RUN curl -fsSL https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip -o terraform.zip \
-    && unzip terraform.zip \
-    && mv terraform /usr/local/bin/ \
-    && rm terraform.zip
-
-# Install Hadolint
-RUN curl -fsSL https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint \
-    && chmod +x /usr/local/bin/hadolint
+# Create a non-root user early
+RUN useradd -m lintro
 
 # Set up working directory
 WORKDIR /app
 
-# Copy the requirements files
-COPY requirements.txt requirements-dev.txt ./
+# Install system dependencies and uv first
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    && curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && cp /root/.local/bin/uv /usr/local/bin/uv \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements-dev.txt
+# Copy scripts directory and install tools
+COPY scripts/ /app/scripts/
+RUN chmod +x /app/scripts/*.sh && \
+    /app/scripts/install-tools.sh --docker
 
-# Copy the lintro package
+# Copy the entire project and install dependencies
 COPY . .
+RUN uv sync --dev --no-progress && \
+    uv cache clean
 
-# Install the package
-RUN pip install -e .
+# Set ownership and permissions
+RUN chown -R lintro:lintro /app && \
+    mkdir -p /code && \
+    chown -R lintro:lintro /code
 
-# Create a volume for the code to be linted
-VOLUME ["/code"]
+# Create a script to fix permissions on mounted volumes
+RUN cat > /usr/local/bin/fix-permissions.sh << 'EOF'
+#!/bin/bash
+# Fix permissions for mounted volumes
+if [ -d "/code" ]; then
+    # Ensure current user can write to /code
+    chown -R $(whoami):$(whoami) /code 2>/dev/null || true
+    chmod -R 755 /code 2>/dev/null || true
+fi
+exec "$@"
+EOF
+RUN chmod +x /usr/local/bin/fix-permissions.sh
 
-# Set the default working directory to the mounted code
-WORKDIR /code
+# Create a script to handle both root and non-root execution
+RUN cat > /usr/local/bin/entrypoint.sh << 'EOF'
+#!/bin/bash
+# Handle both root and non-root execution
+if [ "$(whoami)" = "root" ]; then
+    # Running as root - use uv run directly
+    exec uv run "$@"
+else
+    # Running as lintro user - use uv run
+    exec uv run "$@"
+fi
+EOF
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Create a non-root user to run the container
-RUN useradd -m lintro
-RUN chown -R lintro:lintro /app /code
-
-# Switch to non-root user
+# Default to lintro user for security, but allow override
 USER lintro
 
-ENTRYPOINT ["lintro"]
-CMD ["--help"] 
+# Use the flexible entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["lintro", "--help"] 
