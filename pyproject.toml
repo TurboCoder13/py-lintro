@@ -27,9 +27,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.4.0",
-    "pytest-cov>=6.1.0",
-    "pytest-mock>=3.14.0",
+    "pytest==8.4.1",
+    "pytest-cov==6.2.1",
+    "pytest-mock==3.14.1",
     "tox>=4.26.0",
     "allure-pytest>=2.14.0",
     "ruff",
@@ -37,9 +37,9 @@ dev = [
     "coverage-badge>=1.1.2",
 ]
 test = [
-    "pytest>=8.4.0",
-    "pytest-cov>=6.1.0",
-    "pytest-mock>=3.14.0",
+    "pytest==8.4.1",
+    "pytest-cov==6.2.1",
+    "pytest-mock==3.14.1",
 ]
 typing = [
     "types-setuptools>=80.9.0",
@@ -60,9 +60,9 @@ python_functions = "test_*"
 
 [dependency-groups]
 dev = [
-    "pytest>=8.4.1",
-    "pytest-cov>=6.2.1",
-    "pytest-mock>=3.14.1",
+    "pytest==8.4.1",
+    "pytest-cov==6.2.1",
+    "pytest-mock==3.14.1",
 ]
 
 
