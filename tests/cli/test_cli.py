@@ -30,7 +30,10 @@ def test_cli_help(cli_runner):
     """
     result = cli_runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
-    assert "Lintro: Unified CLI for code formatting, linting, and quality assurance." in result.output
+    assert (
+        "Lintro: Unified CLI for code formatting, linting, and quality assurance."
+        in result.output
+    )
     assert "check / chk" in result.output
     assert "format / fmt" in result.output
     assert "list-tools / ls" in result.output
