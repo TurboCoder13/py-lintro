@@ -28,7 +28,7 @@ Thank you for your interest in contributing to Lintro! This document provides gu
 3. **Run tests:**
 
    ```bash
-   ./scripts/local-test.sh
+   ./scripts/run-tests.sh
    ```
 
 4. **Run Lintro on the codebase:**
@@ -64,7 +64,7 @@ Follow the coding standards and make your changes.
 
 ```bash
 # Run the full test suite
-./scripts/local-test.sh
+./scripts/run-tests.sh
 
 # Run specific tests
 uv run pytest tests/test_ruff_integration.py
@@ -143,13 +143,13 @@ def example_function(
 
 ```bash
 # Full test suite
-./scripts/local-test.sh
+./scripts/run-tests.sh
 
 # Specific test file
 uv run pytest tests/test_ruff_integration.py
 
 # With verbose output
-./scripts/local-test.sh --verbose
+./scripts/run-tests.sh --verbose
 
 # Docker tests
 ./scripts/docker-test.sh
@@ -241,7 +241,7 @@ lintro/
 ### Before Submitting
 
 - [ ] Code follows style guidelines
-- [ ] All tests pass locally (`./scripts/local-test.sh`)
+- [ ] All tests pass locally (`./scripts/run-tests.sh`)
 - [ ] All tests pass in Docker (`./scripts/docker-test.sh`)
 - [ ] Documentation is updated
 - [ ] Type hints are added

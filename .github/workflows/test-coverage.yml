@@ -8,7 +8,7 @@ name: Test Suite & Coverage
       - '**.py'
       - 'pyproject.toml'
       - '.github/workflows/test-coverage.yml'
-      - 'scripts/local-test.sh'
+      - 'scripts/run-tests.sh'
       - 'scripts/docker-test.sh'
       - 'Dockerfile'
       - 'docker-compose.yml'
@@ -18,7 +18,7 @@ name: Test Suite & Coverage
       - '**.py'
       - 'pyproject.toml'
       - '.github/workflows/test-coverage.yml'
-      - 'scripts/local-test.sh'
+      - 'scripts/run-tests.sh'
       - 'scripts/docker-test.sh'
       - 'Dockerfile'
       - 'docker-compose.yml'
@@ -42,7 +42,7 @@ jobs:
           echo "Building Docker image with all testing tools pre-installed"
           docker compose build test-integration
       - name: Run comprehensive test suite in Docker
-        run: ./scripts/test-coverage-run.sh
+        run: ./scripts/docker-test.sh
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
