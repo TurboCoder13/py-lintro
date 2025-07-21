@@ -61,9 +61,10 @@ python_functions = "test_*"
 
 [dependency-groups]
 dev = [
-    "pytest==8.4.1",
-    "pytest-cov==6.2.1",
-    "pytest-mock==3.14.1",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "pytest-mock>=3.14.1",
+    "coverage-badge>=1.1.2",
 ]
 
 

@@ -192,6 +192,7 @@ typing = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "coverage-badge" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
@@ -223,9 +224,10 @@ provides-extras = ["dev", "test", "typing"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pytest", specifier = "==8.4.1" },
-    { name = "pytest-cov", specifier = "==6.2.1" },
-    { name = "pytest-mock", specifier = "==3.14.1" },
+    { name = "coverage-badge", specifier = ">=1.1.2" },
+    { name = "pytest", specifier = ">=8.4.1" },
+    { name = "pytest-cov", specifier = ">=6.2.1" },
+    { name = "pytest-mock", specifier = ">=3.14.1" },
 ]
 
 [[package]]
