@@ -196,7 +196,7 @@ When using the `--output` option, files are created in your current directory:
 ./docker-test.sh
 
 # Run local tests only
-./local-test.sh
+./run-tests.sh
 ```
 
 ### Development Workflow

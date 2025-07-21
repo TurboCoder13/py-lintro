@@ -3,7 +3,7 @@
 # Exit on any error
 set -e
 
-# local-test.sh - Enhanced local test runner
+# run-tests.sh - Universal test runner (works locally and in Docker)
 # 
 # This script handles the complete setup and execution of tests locally.
 # It automatically checks tool availability and runs appropriate tests.

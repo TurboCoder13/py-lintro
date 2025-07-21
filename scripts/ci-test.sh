@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# CI Docker Tests Script
-# Handles running tests in Docker for CI pipeline
+# CI Test Script
+# Handles running tests in Docker for CI pipeline with GitHub Actions integration
 
 set -e
 
@@ -21,7 +21,7 @@ echo "" >> $GITHUB_STEP_SUMMARY
 
 # Run tests in Docker container
 set +e  # Don't exit on error
-docker run --rm -v "$PWD:/code" py-lintro:latest /app/scripts/local-test.sh > test-output.txt 2>&1
+docker run --rm -v "$PWD:/code" py-lintro:latest /app/scripts/run-tests.sh > test-output.txt 2>&1
 TEST_EXIT_CODE=$?
 set -e  # Exit on error again
 
