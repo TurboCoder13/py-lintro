@@ -61,6 +61,7 @@ def print_tool_footer(
     output_format: str = "grid",
     tool_name: str = "",
     tool_output: str = "",
+    action: str = "check",
 ) -> None:
     """Print a footer for a core in the old style.
 
@@ -71,22 +72,42 @@ def print_tool_footer(
         output_format: Output format being used.
         tool_name: Name of the core (for styling).
         tool_output: Raw output from the tool to check for duplicate messages.
+        action: The action being performed (check, fmt, etc.).
     """
     # Skip footers for JSON format to keep output clean
     if output_format == "json":
         return
 
-    # Always show the styled footer message when there are no issues
-    # The tool's plain output will be handled by the CLI commands
-
-    if success:
+    # Handle different scenarios based on action and results
+    if success and issues_count == 0:
         message = "No issues found."
         styled_message = click.style(f"✓ {message}", fg="green", bold=True)
+    elif not success and issues_count > 0:
+        if action == "fmt":
+            # For format operations, issues remaining means they couldn't be auto-fixed
+            styled_message = click.style(
+                f"✗ Found {issues_count} issues that cannot be auto-fixed",
+                fg="red",
+                bold=True,
+            )
+        else:
+            # For check operations, standard message
+            styled_message = click.style(
+                f"✗ Found {issues_count} issues", fg="red", bold=True
+            )
+    elif success and issues_count > 0:
+        # Partial success - some issues were fixed but others remain
+        if action == "fmt":
+            styled_message = click.style(
+                f"⚠ {issues_count} issues remain unfixed", fg="yellow", bold=True
+            )
+        else:
+            styled_message = click.style(
+                f"✗ Found {issues_count} issues", fg="red", bold=True
+            )
     else:
-        # Old style: simple failure message with issue count
-        styled_message = click.style(
-            f"✗ Found {issues_count} issues", fg="red", bold=True
-        )
+        # Fallback
+        styled_message = click.style("✗ Tool execution failed", fg="red", bold=True)
 
     click.echo(styled_message, file=file)
     click.echo()  # Add blank line after each tool

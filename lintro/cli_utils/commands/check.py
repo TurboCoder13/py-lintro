@@ -364,6 +364,7 @@ def check(
                 output_format=console_format,
                 tool_name=tool_name,
                 tool_output=tool_output,
+                action="check",
             )
 
             if logger:

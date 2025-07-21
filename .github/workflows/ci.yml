@@ -61,7 +61,7 @@ jobs:
         run: |
           echo "❌ Linting checks failed with exit code $CHK_EXIT_CODE"
           echo "Please fix the issues identified by lintro and try again."
-          exit $CHK_EXIT_CODE-''
+          exit $CHK_EXIT_CODE
 
   docker-tests:
     name: 🧪 Docker Tests
@@ -129,4 +129,4 @@ jobs:
         run: |
           echo "❌ Tests failed with exit code $TEST_EXIT_CODE"
           echo "Please fix the failing tests and try again."
-          exit $TEST_EXIT_CODE-''
+          exit $TEST_EXIT_CODE
