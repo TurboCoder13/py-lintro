@@ -62,6 +62,12 @@ jobs:
           name: coverage-xml
           path: coverage.xml
           retention-days: 30
+      - name: Upload .coverage as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-dotfile
+          path: .coverage
+          retention-days: 30
       - name: Extract coverage percentage
         id: coverage-summary
         run: |
@@ -95,6 +101,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage-xml
+          path: ./
+      - name: Download .coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-dotfile
           path: ./
       - name: Generate coverage badge
 
