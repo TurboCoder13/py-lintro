@@ -83,23 +83,23 @@ discover_tests() {
     
     # Check for all tools using consistent method
     if check_system_tool "darglint" "darglint --version"; then
-        TEST_FILES+=("tests/test_darglint_integration.py")
+        TEST_FILES+=("tests/integration/test_darglint_integration.py")
     fi
     
     if check_system_tool "hadolint" "hadolint --version"; then
-        TEST_FILES+=("tests/test_hadolint_integration.py")
+        TEST_FILES+=("tests/integration/test_hadolint_integration.py")
     fi
     
     if check_system_tool "prettier" "prettier --version"; then
-        TEST_FILES+=("tests/test_prettier_integration.py")
+        TEST_FILES+=("tests/integration/test_prettier_integration.py")
     fi
     
     if check_system_tool "ruff" "ruff --version"; then
-        TEST_FILES+=("tests/test_ruff_integration.py")
+        TEST_FILES+=("tests/integration/test_ruff_integration.py")
     fi
     
     if check_system_tool "yamllint" "yamllint --version"; then
-        TEST_FILES+=("tests/test_yamllint_integration.py")
+        TEST_FILES+=("tests/integration/test_yamllint_integration.py")
     fi
     
     # Validate that we have tests to run
@@ -243,6 +243,14 @@ main() {
                     cp -v coverage.xml /code/ 2>&1 && echo -e "${GREEN}✓ coverage.xml copied successfully${NC}" || echo -e "${RED}✗ Could not copy coverage.xml${NC}"
                 else
                     echo -e "${RED}✗ coverage.xml file not found${NC}"
+                fi
+                
+                # Copy .coverage file
+                echo -e "${YELLOW}Copying .coverage to /code...${NC}"
+                if [ -f ".coverage" ]; then
+                    cp -v .coverage /code/ 2>&1 && echo -e "${GREEN}✓ .coverage copied successfully${NC}" || echo -e "${RED}✗ Could not copy .coverage${NC}"
+                else
+                    echo -e "${RED}✗ .coverage file not found${NC}"
                 fi
                 
                 # Verify files were copied
