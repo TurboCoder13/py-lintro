@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install uv (Python package manager)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    mv /root/.cargo/bin/uv /usr/local/bin/uv
+    mv /root/.local/bin/uv /usr/local/bin/uv
 
 # Copy scripts directory and install tools
 COPY scripts/ /app/scripts/
