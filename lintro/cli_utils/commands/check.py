@@ -1,7 +1,7 @@
 """Check command implementation using simplified Loguru-based approach."""
 
 import click
-from lintro.utils.simple_runner import run_lint_tools_simple
+from lintro.utils.tool_executor import run_lint_tools_simple
 
 
 @click.command()

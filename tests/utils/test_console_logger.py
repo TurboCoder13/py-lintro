@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from tempfile import TemporaryDirectory
 
-from lintro.utils.simple_loguru import SimpleLintroLogger, get_tool_emoji, create_logger
+from lintro.utils.console_logger import SimpleLintroLogger, get_tool_emoji, create_logger
 
 
 @pytest.mark.utils
@@ -240,7 +240,7 @@ def test_print_ascii_art_success():
         run_dir = Path(temp_dir)
         logger = SimpleLintroLogger(run_dir=run_dir)
 
-        with patch("lintro.utils.simple_loguru.read_ascii_art") as mock_read:
+        with patch("lintro.utils.console_logger.read_ascii_art") as mock_read:
             mock_read.return_value = ["ASCII", "ART", "SUCCESS"]
             with patch.object(logger, "console_output") as mock_console:
                 logger._print_ascii_art(0)  # 0 issues = success
@@ -256,7 +256,7 @@ def test_print_ascii_art_failure():
         run_dir = Path(temp_dir)
         logger = SimpleLintroLogger(run_dir=run_dir)
 
-        with patch("lintro.utils.simple_loguru.read_ascii_art") as mock_read:
+        with patch("lintro.utils.console_logger.read_ascii_art") as mock_read:
             mock_read.return_value = ["ASCII", "ART", "FAIL"]
             with patch.object(logger, "console_output") as mock_console:
                 logger._print_ascii_art(5)  # 5 issues = failure

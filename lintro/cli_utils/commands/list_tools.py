@@ -4,7 +4,7 @@ This module provides the core logic for the 'list_tools' command.
 """
 
 from lintro.tools import tool_manager
-from lintro.utils.simple_loguru import get_tool_emoji
+from lintro.utils.console_logger import get_tool_emoji
 import click
 
 

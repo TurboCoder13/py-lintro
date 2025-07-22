@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
-from lintro.utils.simple_runner import (
+from lintro.utils.tool_executor import (
     _get_tools_to_run,
     _parse_tool_options,
     run_lint_tools_simple,
@@ -19,7 +19,7 @@ def test_get_tools_to_run_all():
     mock_check_tools = {ToolEnum.RUFF: MagicMock(), ToolEnum.YAMLLINT: MagicMock()}
     mock_fix_tools = {ToolEnum.RUFF: MagicMock(), ToolEnum.PRETTIER: MagicMock()}
 
-    with patch("lintro.utils.simple_runner.tool_manager") as mock_manager:
+    with patch("lintro.utils.tool_executor.tool_manager") as mock_manager:
         mock_manager.get_check_tools.return_value = mock_check_tools
         mock_manager.get_fix_tools.return_value = mock_fix_tools
 
@@ -37,7 +37,7 @@ def test_get_tools_to_run_none():
     """Test getting all tools when tools is None."""
     mock_check_tools = {ToolEnum.RUFF: MagicMock()}
 
-    with patch("lintro.utils.simple_runner.tool_manager") as mock_manager:
+    with patch("lintro.utils.tool_executor.tool_manager") as mock_manager:
         mock_manager.get_check_tools.return_value = mock_check_tools
 
         result = _get_tools_to_run(None, "check")
@@ -63,7 +63,7 @@ def test_get_tools_to_run_invalid():
 @pytest.mark.utils
 def test_get_tools_to_run_format_unsupported():
     """Test getting tools that don't support formatting."""
-    with patch("lintro.utils.simple_runner.tool_manager") as mock_manager:
+    with patch("lintro.utils.tool_executor.tool_manager") as mock_manager:
         mock_tool = MagicMock()
         mock_tool.can_fix = False
         mock_manager.get_tool.return_value = mock_tool
@@ -101,12 +101,12 @@ def test_parse_tool_options_invalid_format():
 def test_run_lint_tools_simple_success():
     """Test successful run of lint tools."""
     with TemporaryDirectory() as temp_dir:
-        with patch("lintro.utils.simple_runner.OutputManager") as mock_output_manager:
+        with patch("lintro.utils.tool_executor.OutputManager") as mock_output_manager:
             with patch(
-                "lintro.utils.simple_runner.create_logger"
+                "lintro.utils.tool_executor.create_logger"
             ) as mock_create_logger:
                 with patch(
-                    "lintro.utils.simple_runner.tool_manager"
+                    "lintro.utils.tool_executor.tool_manager"
                 ) as mock_tool_manager:
                     # Setup mocks
                     mock_output_manager.return_value.run_dir = Path(temp_dir)
@@ -144,12 +144,12 @@ def test_run_lint_tools_simple_success():
 def test_run_lint_tools_simple_with_issues():
     """Test run with issues found."""
     with TemporaryDirectory() as temp_dir:
-        with patch("lintro.utils.simple_runner.OutputManager") as mock_output_manager:
+        with patch("lintro.utils.tool_executor.OutputManager") as mock_output_manager:
             with patch(
-                "lintro.utils.simple_runner.create_logger"
+                "lintro.utils.tool_executor.create_logger"
             ) as mock_create_logger:
                 with patch(
-                    "lintro.utils.simple_runner.tool_manager"
+                    "lintro.utils.tool_executor.tool_manager"
                 ) as mock_tool_manager:
                     # Setup mocks
                     mock_output_manager.return_value.run_dir = Path(temp_dir)
@@ -184,12 +184,12 @@ def test_run_lint_tools_simple_with_issues():
 def test_run_lint_tools_simple_format_action():
     """Test format action always returns 0."""
     with TemporaryDirectory() as temp_dir:
-        with patch("lintro.utils.simple_runner.OutputManager") as mock_output_manager:
+        with patch("lintro.utils.tool_executor.OutputManager") as mock_output_manager:
             with patch(
-                "lintro.utils.simple_runner.create_logger"
+                "lintro.utils.tool_executor.create_logger"
             ) as mock_create_logger:
                 with patch(
-                    "lintro.utils.simple_runner.tool_manager"
+                    "lintro.utils.tool_executor.tool_manager"
                 ) as mock_tool_manager:
                     # Setup mocks
                     mock_output_manager.return_value.run_dir = Path(temp_dir)
@@ -225,9 +225,9 @@ def test_run_lint_tools_simple_format_action():
 def test_run_lint_tools_simple_invalid_tools():
     """Test handling of invalid tools."""
     with TemporaryDirectory() as temp_dir:
-        with patch("lintro.utils.simple_runner.OutputManager") as mock_output_manager:
+        with patch("lintro.utils.tool_executor.OutputManager") as mock_output_manager:
             with patch(
-                "lintro.utils.simple_runner.create_logger"
+                "lintro.utils.tool_executor.create_logger"
             ) as mock_create_logger:
                 # Setup mocks
                 mock_output_manager.return_value.run_dir = Path(temp_dir)
@@ -255,12 +255,12 @@ def test_run_lint_tools_simple_invalid_tools():
 def test_run_lint_tools_simple_no_tools():
     """Test handling when no tools are found."""
     with TemporaryDirectory() as temp_dir:
-        with patch("lintro.utils.simple_runner.OutputManager") as mock_output_manager:
+        with patch("lintro.utils.tool_executor.OutputManager") as mock_output_manager:
             with patch(
-                "lintro.utils.simple_runner.create_logger"
+                "lintro.utils.tool_executor.create_logger"
             ) as mock_create_logger:
                 with patch(
-                    "lintro.utils.simple_runner._get_tools_to_run"
+                    "lintro.utils.tool_executor._get_tools_to_run"
                 ) as mock_get_tools:
                     # Setup mocks
                     mock_output_manager.return_value.run_dir = Path(temp_dir)
@@ -289,12 +289,12 @@ def test_run_lint_tools_simple_no_tools():
 def test_run_lint_tools_simple_tool_error():
     """Test handling of tool execution errors."""
     with TemporaryDirectory() as temp_dir:
-        with patch("lintro.utils.simple_runner.OutputManager") as mock_output_manager:
+        with patch("lintro.utils.tool_executor.OutputManager") as mock_output_manager:
             with patch(
-                "lintro.utils.simple_runner.create_logger"
+                "lintro.utils.tool_executor.create_logger"
             ) as mock_create_logger:
                 with patch(
-                    "lintro.utils.simple_runner.tool_manager"
+                    "lintro.utils.tool_executor.tool_manager"
                 ) as mock_tool_manager:
                     # Setup mocks
                     mock_output_manager.return_value.run_dir = Path(temp_dir)
@@ -326,12 +326,12 @@ def test_run_lint_tools_simple_tool_error():
 def test_run_lint_tools_simple_with_options():
     """Test run with tool options and exclude patterns."""
     with TemporaryDirectory() as temp_dir:
-        with patch("lintro.utils.simple_runner.OutputManager") as mock_output_manager:
+        with patch("lintro.utils.tool_executor.OutputManager") as mock_output_manager:
             with patch(
-                "lintro.utils.simple_runner.create_logger"
+                "lintro.utils.tool_executor.create_logger"
             ) as mock_create_logger:
                 with patch(
-                    "lintro.utils.simple_runner.tool_manager"
+                    "lintro.utils.tool_executor.tool_manager"
                 ) as mock_tool_manager:
                     # Setup mocks
                     mock_output_manager.return_value.run_dir = Path(temp_dir)
