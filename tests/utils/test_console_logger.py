@@ -5,7 +5,11 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 from tempfile import TemporaryDirectory
 
-from lintro.utils.console_logger import SimpleLintroLogger, get_tool_emoji, create_logger
+from lintro.utils.console_logger import (
+    SimpleLintroLogger,
+    get_tool_emoji,
+    create_logger,
+)
 
 
 @pytest.mark.utils
