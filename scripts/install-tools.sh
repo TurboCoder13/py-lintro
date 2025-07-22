@@ -115,7 +115,7 @@ main() {
     
     # Install prettier via npm (JavaScript/JSON formatting)
     echo -e "${BLUE}Installing prettier...${NC}"
-    if npm install -g prettier@3.3.3; then
+    if npm install -g prettier@3.6.0; then
         echo -e "${GREEN}✓ prettier installed successfully${NC}"
     else
         echo -e "${RED}✗ Failed to install prettier${NC}"

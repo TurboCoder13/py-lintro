@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# CI Docker Lintro Analysis Script
-# Handles running lintro analysis in Docker for CI pipeline
+# CI Lintro Analysis Script  
+# Handles running lintro analysis in Docker for CI pipeline with GitHub Actions integration
 
 set -e
 

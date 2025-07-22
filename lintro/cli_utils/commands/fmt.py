@@ -362,16 +362,26 @@ def fmt(
                         for issue in result.issues:
                             tool_output += str(issue) + "\n"
 
-                # Skip displaying tool output if it's just "No issues found"
-                if tool_output.strip() and "No issues found" not in tool_output.strip():
-                    # Use tool-specific formatters to create beautiful tables
-                    formatted_output = format_tool_output(
-                        tool_name=tool_name,
-                        output=tool_output,
-                        group_by=group_by,
-                        output_format=console_format,  # Use console format (grid)
-                    )
-                    click.echo(formatted_output)
+                # Display tool output if there's meaningful content
+                if tool_output.strip() and tool_output.strip() != "No issues found.":
+                    # For fmt command, display raw output if it's human-readable
+                    # (not JSON that needs parsing)
+                    if tool_output.strip().startswith("[") and tool_name in [
+                        "ruff",
+                        "darglint",
+                        "prettier",
+                    ]:
+                        # JSON output - use tool-specific formatters
+                        formatted_output = format_tool_output(
+                            tool_name=tool_name,
+                            output=tool_output,
+                            group_by=group_by,
+                            output_format=console_format,  # Use console format (grid)
+                        )
+                        click.echo(formatted_output)
+                    else:
+                        # Human-readable output - display directly
+                        click.echo(tool_output.strip())
 
             # Print tool footer (only for console)
             # For fmt command, use the actual success from the tool result
@@ -400,6 +410,7 @@ def fmt(
                 output_format=console_format,
                 tool_name=tool_name,
                 tool_output=tool_output,
+                action="fmt",
             )
 
             # Add results to overall results - generate both console and structured output

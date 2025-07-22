@@ -3,7 +3,7 @@
 # Exit on any error
 set -e
 
-# local-test.sh - Enhanced local test runner
+# run-tests.sh - Universal test runner (works locally and in Docker)
 # 
 # This script handles the complete setup and execution of tests locally.
 # It automatically checks tool availability and runs appropriate tests.
@@ -76,42 +76,49 @@ check_system_tool() {
 
 # Function to discover available tools and build test list
 discover_tests() {
-    echo -e "${BLUE}Discovering available tools for testing...${NC}"
+    echo -e "${BLUE}Discovering tests to run...${NC}"
     
-    # Check which tools are available and build test file list
-    TEST_FILES=()
+    # Always include core tests (CLI, formatters, utils)
+    TEST_FILES=(
+        "tests/cli/"
+        "tests/formatters/" 
+        "tests/utils/"
+    )
     
-    # Check for all tools using consistent method
+    # Check which tools are available and add their integration tests
+    local available_tools=()
+    
     if check_system_tool "darglint" "darglint --version"; then
-        TEST_FILES+=("tests/test_darglint_integration.py")
+        TEST_FILES+=("tests/integration/test_darglint_integration.py")
+        available_tools+=("darglint")
     fi
     
     if check_system_tool "hadolint" "hadolint --version"; then
-        TEST_FILES+=("tests/test_hadolint_integration.py")
+        TEST_FILES+=("tests/integration/test_hadolint_integration.py")
+        available_tools+=("hadolint")
     fi
     
     if check_system_tool "prettier" "prettier --version"; then
-        TEST_FILES+=("tests/test_prettier_integration.py")
+        TEST_FILES+=("tests/integration/test_prettier_integration.py")
+        available_tools+=("prettier")
     fi
     
     if check_system_tool "ruff" "ruff --version"; then
-        TEST_FILES+=("tests/test_ruff_integration.py")
+        TEST_FILES+=("tests/integration/test_ruff_integration.py")
+        available_tools+=("ruff")
     fi
     
     if check_system_tool "yamllint" "yamllint --version"; then
-        TEST_FILES+=("tests/test_yamllint_integration.py")
+        TEST_FILES+=("tests/integration/test_yamllint_integration.py")
+        available_tools+=("yamllint")
     fi
     
-    # Validate that we have tests to run
-    if [ ${#TEST_FILES[@]} -eq 0 ]; then
-        echo -e "${RED}No tools available for testing.${NC}"
-        echo -e "${YELLOW}Please install at least one of: darglint, hadolint, prettier, ruff, yamllint${NC}"
-        echo -e "${YELLOW}You can use './scripts/local-lintro.sh --install' to install missing tools${NC}"
-        exit 1
+    echo -e "${GREEN}Running all core tests plus integration tests for available tools${NC}"
+    echo -e "${BLUE}Available external tools: ${available_tools[*]:-none}${NC}"
+    if [ ${#available_tools[@]} -eq 0 ]; then
+        echo -e "${YELLOW}Note: No external tools found. Only core tests will run.${NC}"
+        echo -e "${YELLOW}Install tools with: ./scripts/local-lintro.sh --install${NC}"
     fi
-    
-    echo -e "${GREEN}Found ${#TEST_FILES[@]} test suite(s) to run${NC}"
-    echo -e "${BLUE}Test files: ${TEST_FILES[*]}${NC}"
 }
 
 # Function to run tests with coverage
@@ -154,7 +161,6 @@ run_tests() {
             echo -e "  open htmlcov/index.html"
         fi
         
-        echo -e "${YELLOW}Debug: Tests completed, about to return${NC}"
         return 0
     else
         echo -e "${RED}✗ Tests failed${NC}"
@@ -175,7 +181,6 @@ show_tips() {
 
 # Main execution flow
 main() {
-    echo -e "${YELLOW}Debug: Main function called${NC}"
     local exit_code=0
     
     echo -e "${BLUE}=== Lintro Local Test Runner ===${NC}"
@@ -206,10 +211,6 @@ main() {
             exit_code=0
             
             # Copy coverage files to /code if we're in Docker and /code exists
-            echo -e "${YELLOW}Debug: RUNNING_IN_DOCKER=$RUNNING_IN_DOCKER${NC}"
-            echo -e "${YELLOW}Debug: /code directory exists: $([ -d "/code" ] && echo "yes" || echo "no")${NC}"
-            echo -e "${YELLOW}Debug: Current directory: $(pwd)${NC}"
-            echo -e "${YELLOW}Debug: Current user: $(whoami)${NC}"
             
             # Small delay to ensure files are fully written
             if [ -d "/code" ] && [ "$(pwd)" = "/app" ]; then
@@ -218,9 +219,6 @@ main() {
             fi
             if [ -d "/code" ] && [ "$(pwd)" = "/app" ]; then
                 echo -e "${BLUE}Copying coverage files to host directory...${NC}"
-                echo -e "${YELLOW}Current directory: $(pwd)${NC}"
-                echo -e "${YELLOW}Files in current directory:${NC}"
-                ls -la coverage.xml htmlcov/ 2>/dev/null || echo "Coverage files not found in current directory"
                 
                 # Fix permissions on /code directory if running as root
                 if [ "$(whoami)" = "root" ]; then
@@ -243,6 +241,14 @@ main() {
                     cp -v coverage.xml /code/ 2>&1 && echo -e "${GREEN}✓ coverage.xml copied successfully${NC}" || echo -e "${RED}✗ Could not copy coverage.xml${NC}"
                 else
                     echo -e "${RED}✗ coverage.xml file not found${NC}"
+                fi
+                
+                # Copy .coverage file
+                echo -e "${YELLOW}Copying .coverage to /code...${NC}"
+                if [ -f ".coverage" ]; then
+                    cp -v .coverage /code/ 2>&1 && echo -e "${GREEN}✓ .coverage copied successfully${NC}" || echo -e "${RED}✗ Could not copy .coverage${NC}"
+                else
+                    echo -e "${RED}✗ .coverage file not found${NC}"
                 fi
                 
                 # Verify files were copied
@@ -279,13 +285,13 @@ show_usage() {
     echo "This script automatically:"
     echo "  1. Sets up the Python environment"
     echo "  2. Discovers available linting tools"
-    echo "  3. Runs integration tests for available tools"
+    echo "  3. Runs all core tests plus integration tests for available tools"
     echo "  4. Generates coverage reports"
     echo ""
     echo "Options:"
     echo "  --verbose, -v    Run tests with verbose output"
     echo ""
-    echo "The script will automatically skip tests for tools that aren't installed."
+    echo "The script will run all core tests and skip integration tests for tools that aren't installed."
     echo "Use './scripts/local-lintro.sh --install' to install missing tools."
 }
 
