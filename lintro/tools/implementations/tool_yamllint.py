@@ -159,57 +159,6 @@ class YamllintTool(BaseTool):
 
         return cmd
 
-    def _run_yamllint(
-        self,
-        file_path: str,
-        timeout: int,
-    ) -> tuple[bool, str, int]:
-        """Run yamllint on a single file.
-
-        Args:
-            file_path: Path to the YAML file to check
-            timeout: Timeout in seconds
-
-        Returns:
-            Tuple of (success, output, issues_count)
-            - success: True if no issues were found, False otherwise
-            - output: Output from yamllint
-            - issues_count: Number of issues found
-        """
-        try:
-            file_path_obj = Path(file_path)
-            cmd = self._build_command() + [str(file_path_obj)]
-            logger.debug(f"Running yamllint command: {' '.join(cmd)}")
-
-            process = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                check=False,
-            )
-
-            # Yamllint outputs findings to stdout
-            output = process.stdout
-            logger.debug(f"Yamllint return code: {process.returncode}")
-            logger.debug(f"Yamllint output:\n{output}")
-
-            # Use the parser to count issues
-            issues = parse_yamllint_output(output)
-            issues_count = len(issues)
-
-            # Yamllint returns 0 if no issues, non-zero if issues found
-            # Success means no issues found
-            success = issues_count == 0 and process.returncode == 0
-
-            return success, output, issues_count
-        except subprocess.TimeoutExpired as e:
-            return False, f"Timeout after {timeout} seconds: {str(e)}", 1
-        except FileNotFoundError as e:
-            return False, f"Yamllint not found: {str(e)}. Please install yamllint.", 1
-        except Exception as e:
-            return False, f"Error running yamllint: {str(e)}", 1
-
     def check(
         self,
         paths: list[str],
@@ -241,23 +190,23 @@ class YamllintTool(BaseTool):
 
         logger.info(f"Files to check: {yaml_files}")
 
-        # Process each file with a timeout
         timeout = self.options.get("timeout", 15)
         all_outputs = []
         all_success = True
         skipped_files = []
-        processed_files = 0
         total_issues = 0
 
         for file_path in yaml_files:
+            cmd = self._build_command() + [str(file_path)]
             try:
-                success, output, issues_count = self._run_yamllint(file_path, timeout)
-                if not success:
+                success, output = self._run_subprocess(cmd, timeout=timeout)
+                issues = parse_yamllint_output(output)
+                issues_count = len(issues)
+                if not (success and issues_count == 0):
                     all_success = False
                 total_issues += issues_count
-                if output.strip():  # Only add non-empty outputs
+                if output.strip():
                     all_outputs.append(output)
-                processed_files += 1
             except subprocess.TimeoutExpired:
                 skipped_files.append(file_path)
                 all_success = False
@@ -265,7 +214,6 @@ class YamllintTool(BaseTool):
                 all_outputs.append(f"Error processing {file_path}: {str(e)}")
                 all_success = False
 
-        # Combine outputs
         output = "\n".join(all_outputs) if all_outputs else ""
         if skipped_files:
             if output:

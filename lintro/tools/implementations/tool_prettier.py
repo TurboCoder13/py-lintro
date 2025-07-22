@@ -77,117 +77,6 @@ class PrettierTool(BaseTool):
         config_path = os.path.join(root, ".prettierrc.json")
         return config_path if os.path.exists(config_path) else None
 
-    def _run_prettier(
-        self,
-        paths: list[str],
-        check_only: bool = False,
-    ) -> tuple[bool, str, int]:
-        """Run Prettier on the given paths.
-
-        Args:
-            paths: List of file or directory paths to check/format
-            check_only: If True, only check formatting without making changes
-
-        Returns:
-            Tuple of (success, output, issues_count)
-        """
-        cmd = ["npx", "prettier"]
-        if check_only:
-            cmd.append("--check")
-        else:
-            cmd.append("--write")
-        config_path = self._find_config()
-        if config_path:
-            cmd.extend(["--config", config_path])
-        cmd.extend(paths)
-
-        cwd = self.get_cwd(paths)
-        success, output = (
-            self._run_subprocess(cmd, timeout=None)
-            if cwd is None
-            else self._run_subprocess_with_cwd(cmd, cwd)
-        )
-
-        # Filter out virtual environment files if needed
-        if not self.include_venv and output:
-            filtered_lines = []
-            venv_pattern = re.compile(
-                r"(\.venv|venv|env|ENV|virtualenv|virtual_env|"
-                r"virtualenvs|site-packages|node_modules)",
-            )
-            for line in output.splitlines():
-                if not venv_pattern.search(line):
-                    filtered_lines.append(line)
-            output = "\n".join(filtered_lines)
-
-        # Count issues using the prettier parser
-        if check_only:
-            # For check mode, parse output to count files that need formatting
-            issues = parse_prettier_output(output)
-            issues_count = len(issues)
-        else:
-            # For write mode, count files that were formatted
-            issues_count = len(
-                [
-                    line
-                    for line in output.splitlines()
-                    if line.strip() and "wrote" in line.lower()
-                ]
-            )
-
-        # In check mode, having issues means failure
-        if check_only and issues_count > 0:
-            success = False
-
-        return success, output, issues_count
-
-    def _run_subprocess_with_cwd(
-        self,
-        cmd: list[str],
-        cwd: str,
-    ) -> tuple[bool, str]:
-        """Run a subprocess command with a specific working directory.
-
-        Args:
-            cmd: Command to run as a list of arguments.
-            cwd: Working directory to run the command in.
-
-        Returns:
-            tuple[bool, str]: Success status and command output.
-
-        Raises:
-            CalledProcessError: If command fails with check=True.
-            TimeoutExpired: If command exceeds timeout.
-            FileNotFoundError: If command executable is not found.
-        """
-        try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                cwd=cwd,
-                timeout=self.options.get("timeout", self._default_timeout),
-                check=False,
-            )
-            return result.returncode == 0, result.stdout + result.stderr
-        except subprocess.TimeoutExpired as e:
-            raise subprocess.TimeoutExpired(
-                cmd=cmd,
-                timeout=self.options.get("timeout", self._default_timeout),
-                output=str(e),
-            ) from e
-        except subprocess.CalledProcessError as e:
-            raise subprocess.CalledProcessError(
-                returncode=e.returncode,
-                cmd=cmd,
-                output=e.output,
-                stderr=e.stderr,
-            ) from e
-        except FileNotFoundError as e:
-            raise FileNotFoundError(
-                f"Command not found: {cmd[0]}. Please ensure it is installed and in your PATH."
-            ) from e
-
     def check(
         self,
         paths: list[str],
@@ -207,9 +96,34 @@ class PrettierTool(BaseTool):
             exclude_patterns=self.exclude_patterns,
             include_venv=self.include_venv,
         )
-        success, output, issues_count = self._run_prettier(
-            prettier_files, check_only=True
-        )
+        if not prettier_files:
+            return Tool.to_result(self.name, True, "No files to check.", 0)
+        cmd = ["npx", "prettier", "--check"]
+        config_path = self._find_config()
+        if config_path:
+            cmd.extend(["--config", config_path])
+        cmd.extend(prettier_files)
+        cwd = self.get_cwd(prettier_files)
+        if cwd:
+            success, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout))
+        else:
+            success, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout))
+        # Filter out virtual environment files if needed
+        if not self.include_venv and output:
+            filtered_lines = []
+            import re
+            venv_pattern = re.compile(
+                r"(\.venv|venv|env|ENV|virtualenv|virtual_env|"
+                r"virtualenvs|site-packages|node_modules)",
+            )
+            for line in output.splitlines():
+                if not venv_pattern.search(line):
+                    filtered_lines.append(line)
+            output = "\n".join(filtered_lines)
+        issues = parse_prettier_output(output)
+        issues_count = len(issues)
+        if issues_count > 0:
+            success = False
         return Tool.to_result(self.name, success, output, issues_count)
 
     def fix(
@@ -231,7 +145,36 @@ class PrettierTool(BaseTool):
             exclude_patterns=self.exclude_patterns,
             include_venv=self.include_venv,
         )
-        success, output, issues_count = self._run_prettier(
-            prettier_files, check_only=False
+        if not prettier_files:
+            return Tool.to_result(self.name, True, "No files to format.", 0)
+        cmd = ["npx", "prettier", "--write"]
+        config_path = self._find_config()
+        if config_path:
+            cmd.extend(["--config", config_path])
+        cmd.extend(prettier_files)
+        cwd = self.get_cwd(prettier_files)
+        if cwd:
+            success, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout))
+        else:
+            success, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout))
+        # Filter out virtual environment files if needed
+        if not self.include_venv and output:
+            filtered_lines = []
+            import re
+            venv_pattern = re.compile(
+                r"(\.venv|venv|env|ENV|virtualenv|virtual_env|"
+                r"virtualenvs|site-packages|node_modules)",
+            )
+            for line in output.splitlines():
+                if not venv_pattern.search(line):
+                    filtered_lines.append(line)
+            output = "\n".join(filtered_lines)
+        # For write mode, count files that were formatted
+        issues_count = len(
+            [
+                line
+                for line in output.splitlines()
+                if line.strip() and "wrote" in line.lower()
+            ]
         )
         return Tool.to_result(self.name, success, output, issues_count)

@@ -134,57 +134,6 @@ class DarglintTool(BaseTool):
 
         return cmd
 
-    def _run_darglint(
-        self,
-        file_path: str,
-        timeout: int,
-    ) -> tuple[bool, str, int]:
-        """Run darglint on a single file.
-
-        Args:
-            file_path: Path to the file to check
-            timeout: Timeout in seconds
-
-        Returns:
-            Tuple of (success, output, issues_count)
-            - success: True if no issues were found, False otherwise
-            - output: Output from darglint
-            - issues_count: Number of issues found
-        """
-        try:
-            file_path_obj = Path(file_path)
-            cmd = self._build_command() + [str(file_path_obj)]
-            logger.debug(f"Running darglint command: {' '.join(cmd)}")
-            process = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                check=False,
-            )
-
-            # Darglint outputs findings to stdout
-            output = process.stdout
-            logger.debug(f"Darglint return code: {process.returncode}")
-            logger.debug(f"Darglint output:\n{output}")
-            logger.debug(f"Darglint stderr:\n{process.stderr}")
-
-            # Use the parser to count issues
-            issues = parse_darglint_output(output)
-            issues_count = len(issues)
-            logger.debug(f"Parsed {issues_count} issues from output")
-
-            # Darglint returns 0 if no issues, 1 if issues found
-            # We consider it a success if no issues were found (exit code 0)
-            # We consider it a failure if issues were found (exit code 1)
-            success = process.returncode == 0
-
-            return success, output, issues_count
-        except subprocess.TimeoutExpired as e:
-            return False, f"Timeout after {timeout} seconds: {str(e)}", 1
-        except Exception as e:
-            return False, f"Error running darglint: {str(e)}", 1
-
     def check(
         self,
         paths: list[str],
@@ -215,23 +164,22 @@ class DarglintTool(BaseTool):
 
         logger.info(f"Files to check: {python_files}")
 
-        # Process each file with a timeout
         timeout = self.options.get("timeout", 10)
         all_outputs = []
         all_success = True
         skipped_files = []
-        processed_files = 0
         total_issues = 0
 
         for file_path in python_files:
+            cmd = self._build_command() + [str(file_path)]
             try:
-                # Use _run_darglint to ensure correct parsing and success logic
-                success, output, issues_count = self._run_darglint(file_path, timeout)
-                if not success:
+                success, output = self._run_subprocess(cmd, timeout=timeout)
+                issues = parse_darglint_output(output)
+                issues_count = len(issues)
+                if not (success and issues_count == 0):
                     all_success = False
                 total_issues += issues_count
                 all_outputs.append(output)
-                processed_files += 1
             except subprocess.TimeoutExpired:
                 skipped_files.append(file_path)
                 all_success = False
@@ -239,7 +187,6 @@ class DarglintTool(BaseTool):
                 all_outputs.append(f"Error processing {file_path}: {str(e)}")
                 all_success = False
 
-        # Combine outputs
         output = "\n".join(all_outputs)
         if skipped_files:
             output += f"\n\nSkipped {len(skipped_files)} files due to timeout:"
@@ -271,34 +218,3 @@ class DarglintTool(BaseTool):
         raise NotImplementedError(
             "Darglint cannot automatically fix issues. Run 'lintro check' to see issues."
         )
-
-    def _run_subprocess(
-        self,
-        cmd: list[str],
-        timeout: int,
-    ) -> tuple[bool, str]:
-        """
-        Run a subprocess and handle its output and timeout.
-
-        Args:
-            cmd: Command to run
-            timeout: Timeout in seconds
-
-        Returns:
-            Tuple of (success, output)
-            - success: True if the command succeeded, False otherwise
-            - output: Output from the command
-        """
-        process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-
-        try:
-            stdout, stderr = process.communicate(timeout=timeout)
-            if process.returncode == 0:
-                return True, stdout or stderr
-            else:
-                return False, stdout or stderr
-        except subprocess.TimeoutExpired:
-            process.kill()
-            return False, f"Skipped (timeout after {timeout}s)"
