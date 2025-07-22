@@ -100,12 +100,14 @@ class BaseTool(ABC):
         self,
         cmd: list[str],
         timeout: int | None = None,
+        cwd: str | None = None,
     ) -> tuple[bool, str]:
         """Run a subprocess command.
 
         Args:
             cmd: Command to run
             timeout: Command timeout in seconds (defaults to core's timeout)
+            cwd: Working directory to run the command in (optional)
 
         Returns:
             Tuple of (success, output)
@@ -128,6 +130,7 @@ class BaseTool(ABC):
                     self._default_timeout,
                 ),
                 check=False,
+                cwd=cwd,
             )
             return result.returncode == 0, result.stdout + result.stderr
         except subprocess.TimeoutExpired as e:

@@ -77,90 +77,39 @@ check_system_tool() {
 # Function to discover available tools and build test list
 discover_tests() {
     echo -e "${BLUE}Discovering tests to run...${NC}"
-    
-    # Always include core tests (CLI, formatters, utils)
-    TEST_FILES=(
-        "tests/cli/"
-        "tests/formatters/" 
-        "tests/utils/"
-    )
-    
-    # Check which tools are available and add their integration tests
-    local available_tools=()
-    
-    if check_system_tool "darglint" "darglint --version"; then
-        TEST_FILES+=("tests/integration/test_darglint_integration.py")
-        available_tools+=("darglint")
-    fi
-    
-    if check_system_tool "hadolint" "hadolint --version"; then
-        TEST_FILES+=("tests/integration/test_hadolint_integration.py")
-        available_tools+=("hadolint")
-    fi
-    
-    if check_system_tool "prettier" "prettier --version"; then
-        TEST_FILES+=("tests/integration/test_prettier_integration.py")
-        available_tools+=("prettier")
-    fi
-    
-    if check_system_tool "ruff" "ruff --version"; then
-        TEST_FILES+=("tests/integration/test_ruff_integration.py")
-        available_tools+=("ruff")
-    fi
-    
-    if check_system_tool "yamllint" "yamllint --version"; then
-        TEST_FILES+=("tests/integration/test_yamllint_integration.py")
-        available_tools+=("yamllint")
-    fi
-    
-    echo -e "${GREEN}Running all core tests plus integration tests for available tools${NC}"
-    echo -e "${BLUE}Available external tools: ${available_tools[*]:-none}${NC}"
-    if [ ${#available_tools[@]} -eq 0 ]; then
-        echo -e "${YELLOW}Note: No external tools found. Only core tests will run.${NC}"
-        echo -e "${YELLOW}Install tools with: ./scripts/local-lintro.sh --install${NC}"
-    fi
+    # Always run all tests in the tests directory
+    TEST_FILES=("tests")
+    echo -e "${GREEN}All tests in the tests directory will be run.${NC}"
 }
 
 # Function to run tests with coverage
 run_tests() {
-    echo -e "${BLUE}Running integration tests for available tools...${NC}"
-    
-    # Use uv run pytest consistently everywhere
+    echo -e "${BLUE}Running all tests in the tests directory...${NC}"
     echo -e "${YELLOW}Using uv run pytest for consistent behavior${NC}"
-    
-    # Prepare coverage arguments
     local coverage_args=(
         "--cov=lintro"
         "--cov-report=term-missing"
         "--cov-report=html"
         "--cov-report=xml"
     )
-    
-    # Add verbose output if requested
     if [ "$VERBOSE" = "1" ] || [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
         coverage_args+=("-v")
         echo -e "${YELLOW}Running tests in verbose mode${NC}"
-        shift # Remove verbose flag if it was passed
+        shift
     fi
-    
-    # Run tests
-    echo -e "${BLUE}Executing: uv run pytest ${TEST_FILES[*]} ${coverage_args[*]}${NC}"
-    
-    if uv run pytest "${TEST_FILES[@]}" "${coverage_args[@]}"; then
+    echo -e "${BLUE}Executing: uv run pytest tests ${coverage_args[*]}${NC}"
+    if uv run pytest tests "${coverage_args[@]}"; then
         echo -e "${GREEN}✓ Tests completed successfully${NC}"
         echo ""
         echo -e "${GREEN}Coverage reports generated:${NC}"
         echo -e "  ${BLUE}- Terminal: displayed above${NC}"
         echo -e "  ${BLUE}- HTML: htmlcov/index.html${NC}"
         echo -e "  ${BLUE}- XML: coverage.xml${NC}"
-        
-        # Show coverage summary if available
         if [ -f "htmlcov/index.html" ]; then
             echo ""
             echo -e "${YELLOW}To view detailed coverage report:${NC}"
             echo -e "  open htmlcov/index.html"
         fi
-        
         return 0
     else
         echo -e "${RED}✗ Tests failed${NC}"
