@@ -1,379 +1,93 @@
-"""Fmt command implementation for lintro CLI.
+"""Format command implementation using simplified Loguru-based approach."""
 
-This module provides the core logic for the 'fmt' command.
-"""
-
-from lintro.models.core.tool_result import ToolResult
-from lintro.tools import tool_manager
-from lintro.utils.formatting import print_summary, print_tool_footer, print_tool_header
-from lintro.utils.tool_utils import format_tool_output
-from lintro.utils.logging_utils import get_logger
-import sys
 import click
-from lintro.utils.output_manager import OutputManager
+from lintro.utils.simple_runner import run_lint_tools_simple
 
 
-@click.command("fmt")
+@click.command()
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 @click.option(
     "--tools",
-    type=str,
-    help='Comma-separated list of tools to run. Use "all" to run all available tools.',
-)
-@click.option(
-    "--all",
-    "use_all_tools",
-    is_flag=True,
-    help="Run all available formatting tools.",
+    default=None,
+    help="Comma-separated list of tools to run (e.g., ruff,prettier) or 'all'",
 )
 @click.option(
     "--tool-options",
-    type=str,
-    help="Tool-specific options in the format tool:option=value,tool:option=value",
+    default=None,
+    help="Tool-specific options in format tool:option=value,tool2:option=value",
 )
 @click.option(
     "--exclude",
-    type=str,
-    help="Comma-separated list of patterns to exclude from processing",
+    default=None,
+    help="Comma-separated patterns to exclude from formatting",
 )
 @click.option(
     "--include-venv",
     is_flag=True,
-    help="Include virtual environment directories in processing",
+    default=False,
+    help="Include virtual environment directories in formatting",
 )
 @click.option(
     "--group-by",
-    type=click.Choice(["file", "code", "none", "auto"]),
     default="auto",
-    help="How to group issues in the output",
+    type=click.Choice(["file", "code", "none", "auto"]),
+    help="How to group issues in output",
 )
 @click.option(
-    "--ignore-conflicts",
-    is_flag=True,
-    help="Ignore potential conflicts between tools",
+    "--output-format",
+    default="grid",
+    type=click.Choice(["plain", "grid", "markdown", "html", "json", "csv"]),
+    help="Output format for displaying results",
 )
 @click.option(
     "--verbose",
+    "-v",
     is_flag=True,
-    help="Show verbose output",
+    default=False,
+    help="Enable verbose output with debug information",
 )
-@click.option(
-    "--debug-file",
-    type=click.Path(),
-    help="Path to debug file",
-)
-def fmt_command(
-    paths,
-    tools,
-    use_all_tools,
-    tool_options,
-    exclude,
-    include_venv,
-    group_by,
-    ignore_conflicts,
-    verbose,
-    debug_file,
-):
-    """Fix (format) files using the specified tools."""
-    if not paths:
-        paths = ["."]
-    if use_all_tools:
-        tools = "all"
-    fmt(
-        paths=paths,
-        tools=tools,
-        tool_options=tool_options,
-        exclude=exclude,
-        include_venv=include_venv,
-        group_by=group_by,
-        ignore_conflicts=ignore_conflicts,
-        verbose=verbose,
-        debug_file=debug_file,
-    )
-
-
-def fmt(
-    paths: list[str],
+def format_code(
+    paths: tuple[str, ...],
     tools: str | None,
     tool_options: str | None,
     exclude: str | None,
     include_venv: bool,
     group_by: str,
-    ignore_conflicts: bool,
-    verbose: bool = False,
-    debug_file: str | None = None,
+    output_format: str,
+    verbose: bool,
 ) -> None:
-    """Format files using the specified tools."""
-    logger = get_logger()
+    """Format code using configured formatting tools.
 
-    # Parse and validate exclude patterns
-    exclude_patterns = []
-    if exclude:
-        exclude_patterns = [pattern.strip() for pattern in exclude.split(",")]
-        logger.debug(f"Exclude patterns parsed: {exclude_patterns}")
+    Runs code formatting tools on the specified paths to automatically fix style issues.
+    Uses simplified Loguru-based logging for clean output and proper file logging.
 
-    # Build a list of tool-specific options
-    tool_option_dict = {}
-    if tool_options:
-        for opt in tool_options.split(","):
-            if ":" in opt:
-                tool_name, tool_opt = opt.split(":", 1)
-                if "=" in tool_opt:
-                    opt_name, opt_value = tool_opt.split("=", 1)
-                    if tool_name not in tool_option_dict:
-                        tool_option_dict[tool_name] = {}
-                    tool_option_dict[tool_name][opt_name] = opt_value
+    Args:
+        paths: Paths to format (defaults to current directory if none provided)
+        tools: Specific tools to run, or 'all' for all available tools
+        tool_options: Tool-specific configuration options
+        exclude: Patterns to exclude from formatting
+        include_venv: Whether to include virtual environment directories
+        group_by: How to group issues in the output display
+        output_format: Format for displaying results
+        verbose: Enable detailed debug output
+    """
+    # Default to current directory if no paths provided
+    if not paths:
+        paths = ["."]
 
-    # Parse tools to run
-    if tools == "all":
-        available_tools = tool_manager.get_fix_tools()
-        tools_to_run = list(available_tools.keys())
-    elif tools:
-        from lintro.tools.tool_enum import ToolEnum
+    # Run with simplified approach
+    exit_code = run_lint_tools_simple(
+        action="fmt",
+        paths=list(paths),
+        tools=tools,
+        tool_options=tool_options,
+        exclude=exclude,
+        include_venv=include_venv,
+        group_by=group_by,
+        output_format=output_format,
+        verbose=verbose,
+    )
 
-        tool_names = [name.strip().upper() for name in tools.split(",")]
-        tools_to_run = []
-        for name in tool_names:
-            try:
-                tool_enum = ToolEnum[name]
-                tools_to_run.append(tool_enum)
-            except KeyError:
-                error_msg = f"Warning: Unknown tool '{name}'. Available tools: {[e.name.lower() for e in ToolEnum]}"
-                click.echo(error_msg, err=True)
-                if logger:
-                    logger.warning(error_msg)
-    else:
-        tools_to_run = list(tool_manager.get_fix_tools().keys())
-
-    if not tools_to_run:
-        error_msg = "No tools to run. Use --tools to specify tools or --help for more information."
-        click.echo(error_msg, err=True)
-        return
-
-    # Get execution order (handles conflicts)
-    tools_to_run = tool_manager.get_tool_execution_order(tools_to_run, ignore_conflicts)
-
-    # Output manager integration
-    output_manager = OutputManager()
-    output_manager.cleanup_old_runs()
-    run_dir = output_manager.get_run_dir()
-    click.echo(f"[LINTRO] All output formats will be auto-generated in {run_dir}")
-    # Capture console output for logging
-    console_log = []
-    all_results = []
-
-    # Determine if we're using a structured format that should go to file
-    # For now, all output is handled by the output manager
-    is_structured_format = False # No longer used for output branching
-    console_format = "grid"  # Always use grid for console display
-
-    if verbose:
-        # Create consistent header for run information
-        info_border = "=" * 70
-        info_title = "🔧  Format Configuration"
-        info_emojis = "🔧 🔧 🔧 🔧 🔧"
-        info_header = f"{info_border}\n{info_title}    {info_emojis}\n{info_border}\n"
-        click.echo(info_header)
-
-        tools_list = ", ".join([tool.name.lower() for tool in tools_to_run])
-        paths_list = ", ".join(list(paths))
-
-        click.echo(f"🔧 Running tools: {tools_list}")
-        click.echo(f"📁 Formatting paths: {paths_list}")
-        click.echo("🔍 Auto-discovering files for each tool (respects .lintro-ignore)")
-        if is_structured_format:
-            click.echo(
-                f"📊 Output format: {console_format} → {'file' if False else 'stdout'}"
-            )
-            click.echo(f"📺 Console format: {console_format}")
-        else:
-            click.echo(f"📊 Output format: {console_format}")
-        click.echo()
-
-        if logger:
-            logger.info(
-                f"Running tools: {[tool.name.lower() for tool in tools_to_run]}"
-            )
-            logger.info(f"Formatting paths: {list(paths)}")
-            logger.info(f"Output format: {console_format}")
-
-    for tool_enum in tools_to_run:
-        tool = tool_manager.get_tool(tool_enum)
-        tool_name = tool_enum.name.lower()
-        console_log.append(f"Running {tool_name}...")
-
-        # Set tool-specific options if provided
-        if tool_name in tool_option_dict:
-            tool.set_options(**tool_option_dict[tool_name])
-
-        # Set common options
-        tool.set_options(
-            exclude_patterns=exclude_patterns,
-            include_venv=include_venv,
-        )
-
-        # Print tool header (only for console formats)
-        print_tool_header(
-            tool_name=tool_name,
-            action="fmt",
-            file=None,
-            output_format=console_format,
-        )
-
-        tool_results = []
-        issues_count = 0
-
-        try:
-            # Check if tool has fix method for formatting
-            if hasattr(tool, "fix"):
-                if verbose:
-                    tool_msg = f"  Running {tool_name} on auto-discovered files"
-                    click.echo(tool_msg)
-                    if logger:
-                        logger.debug(tool_msg)
-
-                # Run the tool's fix method - it will auto-discover files using walk_files_with_excludes
-                result = tool.fix(paths)
-                if result:
-                    tool_results.append(result)
-                    if hasattr(result, "issues_count"):
-                        issues_count += result.issues_count
-                    elif hasattr(result, "issues") and result.issues:
-                        issues_count += len(result.issues)
-            else:
-                warning_msg = f"Warning: {tool_name} does not support formatting"
-                click.echo(warning_msg, err=True)
-                if logger:
-                    logger.warning(warning_msg)
-
-        except Exception as e:
-            error_msg = f"Error running {tool_name}: {e}"
-            console_log.append(error_msg)
-            if logger:
-                logger.error(error_msg)
-            if verbose:
-                import traceback
-
-                traceback.print_exc()
-
-        # For console display (non-structured formats), show formatted table output
-        if tool_results and not is_structured_format:
-            # Get the raw output from results
-            tool_output = ""
-            for result in tool_results:
-                if hasattr(result, "output") and result.output:
-                    tool_output += result.output + "\n"
-                elif hasattr(result, "issues"):
-                    # Fallback: create simple output from issues
-                    for issue in result.issues:
-                        tool_output += str(issue) + "\n"
-
-            # Display tool output if there's meaningful content
-            if tool_output.strip() and tool_output.strip() != "No issues found.":
-                # For fmt command, display raw output if it's human-readable
-                # (not JSON that needs parsing)
-                if tool_output.strip().startswith("[") and tool_name in [
-                    "ruff",
-                    "darglint",
-                    "prettier",
-                ]:
-                    # JSON output - use tool-specific formatters
-                    formatted_output = format_tool_output(
-                        tool_name=tool_name,
-                        output=tool_output,
-                        group_by=group_by,
-                        output_format=console_format,  # Use console format (grid)
-                    )
-                    click.echo(formatted_output)
-                else:
-                    # Human-readable output - display directly
-                    click.echo(tool_output.strip())
-
-        # Print tool footer (only for console)
-        # For fmt command, use the actual success from the tool result
-        tool_success = True
-        if tool_results:
-            tool_success = (
-                tool_results[0].success
-                if hasattr(tool_results[0], "success")
-                else True
-            )
-
-        # Get the raw output from results for footer logic
-        tool_output = ""
-        for result in tool_results:
-            if hasattr(result, "output") and result.output:
-                tool_output += result.output + "\n"
-            elif hasattr(result, "issues"):
-                # Fallback: create simple output from issues
-                for issue in result.issues:
-                    tool_output += str(issue) + "\n"
-
-        print_tool_footer(
-            success=tool_success,
-            issues_count=issues_count,
-            file=None,
-            output_format=console_format,
-            tool_name=tool_name,
-            tool_output=tool_output,
-            action="fmt",
-        )
-
-        # Add results to overall results - generate both console and structured output
-        if tool_results:
-            # Get raw output for processing
-            tool_output = ""
-            for result in tool_results:
-                if hasattr(result, "output") and result.output:
-                    tool_output += result.output + "\n"
-                elif hasattr(result, "issues"):
-                    # Fallback: create simple output from issues
-                    for issue in result.issues:
-                        tool_output += str(issue) + "\n"
-
-            # Generate structured output for file
-            structured_output = ""
-            if tool_output.strip():
-                structured_output = format_tool_output(
-                    tool_name=tool_name,
-                    output=tool_output,
-                    group_by=group_by,
-                    output_format=console_format, # This will be overridden by output manager
-                )
-
-            # Aggregate results per tool
-            tool_result = ToolResult(
-                name=tool_name,
-                success=tool_results[0].success if tool_results else True,
-                output=getattr(tool_results[0], "output", "")
-                if tool_results
-                else "",
-                issues_count=issues_count,
-                formatted_output=structured_output,
-            )
-            all_results.append(tool_result)
-        else:
-            # Create a result even if no tool results (tool ran but found nothing)
-            no_issues_output = format_tool_output(
-                tool_name=tool_name,
-                output="",
-                group_by=group_by,
-                output_format=console_format, # This will be overridden by output manager
-            )
-
-            tool_result = ToolResult(
-                name=tool_name,
-                success=True,
-                output="No issues found.",
-                issues_count=0,
-                formatted_output=no_issues_output,
-            )
-            all_results.append(tool_result)
-
-    # Write console log
-    output_manager.write_console_log("\n".join(console_log))
-    # Write results.json (keep as before)
-    output_manager.write_json([r.__dict__ for r in all_results], filename="results.json")
-    # Write all reports (markdown, html, csv)
-    output_manager.write_reports_from_results(all_results)
-    click.echo(f"[LINTRO] Results written to {run_dir}")
+    # Exit with appropriate code
+    if exit_code != 0:
+        raise click.ClickException("Format found issues")
