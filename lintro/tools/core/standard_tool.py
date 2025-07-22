@@ -44,6 +44,9 @@ class StandardTool:
 
         Returns:
             subprocess.CompletedProcess: The completed process object.
+
+        Raises:
+            RuntimeError: If the subprocess times out.
         """
         if isinstance(command, str):
             command = shlex.split(command)
@@ -71,7 +74,11 @@ class StandardTool:
         return process.returncode == 0
 
     def validate_options(self) -> None:
-        """Validate tool options. Override for custom validation."""
+        """Validate tool options. Override for custom validation.
+
+        Raises:
+            ValueError: If an option has an invalid type.
+        """
         # Example: Ensure all options are of expected type (str/int/bool)
         for key, value in self.options.items():
             if not isinstance(value, (str, int, bool)):

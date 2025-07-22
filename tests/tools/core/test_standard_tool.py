@@ -4,7 +4,6 @@ test_standard_tool.py
 Tests for StandardTool base class.
 """
 import pytest
-import subprocess
 from lintro.tools.core.standard_tool import StandardTool
 
 def test_run_success(tmp_path):
