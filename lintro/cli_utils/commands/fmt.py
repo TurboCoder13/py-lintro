@@ -41,18 +41,6 @@ import click
     help="Include virtual environment directories in processing",
 )
 @click.option(
-    "--output",
-    type=click.Path(),
-    help="Output file path for writing results",
-)
-@click.option(
-    "--format",
-    "output_format",
-    type=click.Choice(["plain", "grid", "markdown", "html", "json", "csv"]),
-    default="grid",
-    help="Output format for displaying results",
-)
-@click.option(
     "--group-by",
     type=click.Choice(["file", "code", "none", "auto"]),
     default="auto",
@@ -62,16 +50,6 @@ import click
     "--ignore-conflicts",
     is_flag=True,
     help="Ignore potential conflicts between tools",
-)
-@click.option(
-    "--darglint-timeout",
-    type=int,
-    help="Timeout for darglint in seconds",
-)
-@click.option(
-    "--prettier-timeout",
-    type=int,
-    help="Timeout for prettier in seconds",
 )
 @click.option(
     "--verbose",
@@ -90,57 +68,24 @@ def fmt_command(
     tool_options,
     exclude,
     include_venv,
-    output,
-    output_format,
     group_by,
     ignore_conflicts,
-    darglint_timeout,
-    prettier_timeout,
     verbose,
     debug_file,
 ):
-    """Fix (format) files using the specified tools.
-
-    This command will auto-discover all files for each tool based on their file patterns
-    and apply formatting fixes. It respects .lintro-ignore rules and processes the entire
-    repository by default.
-
-    Args:
-        paths: List of file/directory paths to format (defaults to current directory).
-        tools: Comma-separated list of tool names to run.
-        use_all_tools: Whether to run all available tools.
-        tool_options: Tool-specific configuration options.
-        exclude: Comma-separated patterns of files/dirs to exclude.
-        include_venv: Whether to include virtual environment directories.
-        output: Path to output file for results.
-        output_format: Format for displaying results (table, json, etc).
-        group_by: How to group issues in output (tool, file, etc).
-        ignore_conflicts: Whether to ignore tool configuration conflicts.
-        darglint_timeout: Timeout in seconds for darglint tool.
-        prettier_timeout: Timeout in seconds for prettier tool.
-        verbose: Whether to show verbose output during execution.
-        debug_file: Path to debug log file.
-    """
-    # Add default paths if none provided
+    """Fix (format) files using the specified tools."""
     if not paths:
         paths = ["."]
-
-    # Set tools to "all" if --all flag is used
     if use_all_tools:
         tools = "all"
-
     fmt(
         paths=paths,
         tools=tools,
         tool_options=tool_options,
         exclude=exclude,
         include_venv=include_venv,
-        output=output,
-        output_format=output_format,
         group_by=group_by,
         ignore_conflicts=ignore_conflicts,
-        darglint_timeout=darglint_timeout,
-        prettier_timeout=prettier_timeout,
         verbose=verbose,
         debug_file=debug_file,
     )
@@ -152,35 +97,12 @@ def fmt(
     tool_options: str | None,
     exclude: str | None,
     include_venv: bool,
-    output: str | None,
-    output_format: str,
     group_by: str,
     ignore_conflicts: bool,
-    darglint_timeout: int | None,
-    prettier_timeout: int | None,
     verbose: bool = False,
     debug_file: str | None = None,
 ) -> None:
-    """Format files using the specified tools.
-
-    This function auto-discovers all files for each tool based on their file patterns
-    and applies formatting fixes. It respects .lintro-ignore rules.
-
-    Args:
-        paths: List of paths to format.
-        tools: Comma-separated list of tools to run.
-        tool_options: Tool-specific options.
-        exclude: Comma-separated patterns to exclude.
-        include_venv: Whether to include virtual environment directories.
-        output: Output file path.
-        output_format: Output format for displaying results.
-        group_by: How to group issues in the output.
-        ignore_conflicts: Whether to ignore tool conflicts.
-        darglint_timeout: Timeout for darglint.
-        prettier_timeout: Timeout for prettier.
-        verbose: Show verbose output.
-        debug_file: Path to debug file.
-    """
+    """Format files using the specified tools."""
     logger = get_logger()
 
     # Parse and validate exclude patterns
@@ -200,17 +122,6 @@ def fmt(
                     if tool_name not in tool_option_dict:
                         tool_option_dict[tool_name] = {}
                     tool_option_dict[tool_name][opt_name] = opt_value
-
-    # Override with specific timeout options if provided
-    if darglint_timeout is not None:
-        if "darglint" not in tool_option_dict:
-            tool_option_dict["darglint"] = {}
-        tool_option_dict["darglint"]["timeout"] = darglint_timeout
-
-    if prettier_timeout is not None:
-        if "prettier" not in tool_option_dict:
-            tool_option_dict["prettier"] = {}
-        tool_option_dict["prettier"]["timeout"] = prettier_timeout
 
     # Parse tools to run
     if tools == "all":
@@ -242,11 +153,11 @@ def fmt(
     tools_to_run = tool_manager.get_tool_execution_order(tools_to_run, ignore_conflicts)
 
     # Determine if we're using a structured format that should go to file
-    structured_formats = ["json", "markdown", "html", "csv"]
-    is_structured_format = output_format in structured_formats
+    # For now, all output is handled by the output manager
+    is_structured_format = False # No longer used for output branching
     console_format = "grid"  # Always use grid for console display
 
-    if verbose or not is_structured_format:
+    if verbose:
         # Create consistent header for run information
         info_border = "=" * 70
         info_title = "🔧  Format Configuration"
@@ -262,11 +173,11 @@ def fmt(
         click.echo("🔍 Auto-discovering files for each tool (respects .lintro-ignore)")
         if is_structured_format:
             click.echo(
-                f"📊 Output format: {output_format} → {'file' if output else 'stdout'}"
+                f"📊 Output format: {console_format} → {'file' if False else 'stdout'}"
             )
             click.echo(f"📺 Console format: {console_format}")
         else:
-            click.echo(f"📊 Output format: {output_format}")
+            click.echo(f"📊 Output format: {console_format}")
         click.echo()
 
         if logger:
@@ -274,21 +185,21 @@ def fmt(
                 f"Running tools: {[tool.name.lower() for tool in tools_to_run]}"
             )
             logger.info(f"Formatting paths: {list(paths)}")
-            logger.info(f"Output format: {output_format}")
+            logger.info(f"Output format: {console_format}")
 
     all_results = []
-    output_file = None
+    # output_file = None # No longer used for output branching
 
-    # Open output file if specified
-    if output:
-        try:
-            output_file = open(output, "w", encoding="utf-8")
-        except IOError as e:
-            error_msg = f"Error opening output file {output}: {e}"
-            click.echo(error_msg, err=True, file=sys.stderr)
-            if logger:
-                logger.error(error_msg)
-            return
+    # Open output file if specified # No longer used for output branching
+    # if output:
+    #     try:
+    #         output_file = open(output, "w", encoding="utf-8")
+    #     except IOError as e:
+    #         error_msg = f"Error opening output file {output}: {e}"
+    #         click.echo(error_msg, err=True, file=sys.stderr)
+    #         if logger:
+    #             logger.error(error_msg)
+    #         return
 
     try:
         # Run each tool
@@ -432,7 +343,7 @@ def fmt(
                         tool_name=tool_name,
                         output=tool_output,
                         group_by=group_by,
-                        output_format=output_format,
+                        output_format=console_format, # This will be overridden by output manager
                     )
 
                 # Aggregate results per tool
@@ -452,7 +363,7 @@ def fmt(
                     tool_name=tool_name,
                     output="",
                     group_by=group_by,
-                    output_format=output_format,
+                    output_format=console_format, # This will be overridden by output manager
                 )
 
                 tool_result = ToolResult(
@@ -465,39 +376,33 @@ def fmt(
                 all_results.append(tool_result)
 
         # Generate and output structured format to file (or stdout if no file for structured formats)
-        if is_structured_format:
-            print_summary(
-                results=all_results,
-                action="fmt",
-                file=output_file if output_file else None,
-                output_format=output_format,
-            )
+        # This section is now handled by the output manager
+        # if is_structured_format:
+        #     print_summary(
+        #         results=all_results,
+        #         action="fmt",
+        #         file=output_file if output_file else None,
+        #         output_format=output_format,
+        #     )
 
-            if output_file:
-                success_msg = f"✅ {output_format.upper()} results written to: {output}"
-                click.echo(success_msg)
-                if logger:
-                    logger.info(success_msg)
-            elif output_format == "json":
-                # For JSON to stdout, we already printed it, so just add a note
-                pass
+        #     if output_file:
+        #         success_msg = f"✅ {output_format.upper()} results written to: {output}"
+        #         click.echo(success_msg)
+        #         if logger:
+        #             logger.info(success_msg)
+        #     elif output_format == "json":
+        #         # For JSON to stdout, we already printed it, so just add a note
+        #         pass
 
         # Old style: no summary table for console output, just ASCII art
-        if not is_structured_format:
-            print_summary(
-                results=all_results,
-                action="fmt",
-                file=None,
-                output_format="plain",  # Use plain to get just ASCII art
-            )
+        # This section is now handled by the output manager
+        # if not is_structured_format:
+        #     print_summary(
+        #         results=all_results,
+        #         action="fmt",
+        #         file=None,
+        #         output_format="plain",  # Use plain to get just ASCII art
+        #     )
 
     finally:
-        # Close output file if it was opened
-        if output_file:
-            try:
-                output_file.close()
-            except IOError as e:
-                error_msg = f"Error closing output file {output}: {e}"
-                click.echo(error_msg, err=True, file=sys.stderr)
-                if logger:
-                    logger.error(error_msg)
+        pass

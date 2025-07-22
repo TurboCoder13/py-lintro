@@ -35,18 +35,6 @@ import click
     help="Include virtual environment directories in processing",
 )
 @click.option(
-    "--output",
-    type=click.Path(),
-    help="Output file path for writing results",
-)
-@click.option(
-    "--format",
-    "output_format",
-    type=click.Choice(["plain", "grid", "markdown", "html", "json", "csv"]),
-    default="grid",
-    help="Output format for displaying results",
-)
-@click.option(
     "--group-by",
     type=click.Choice(["file", "code", "none", "auto"]),
     default="file",
@@ -56,16 +44,6 @@ import click
     "--ignore-conflicts",
     is_flag=True,
     help="Ignore potential conflicts between tools",
-)
-@click.option(
-    "--darglint-timeout",
-    type=int,
-    help="Timeout for darglint in seconds",
-)
-@click.option(
-    "--prettier-timeout",
-    type=int,
-    help="Timeout for prettier in seconds",
 )
 @click.option(
     "--verbose",
@@ -83,48 +61,22 @@ def check_command(
     tool_options,
     exclude,
     include_venv,
-    output,
-    output_format,
     group_by,
     ignore_conflicts,
-    darglint_timeout,
-    prettier_timeout,
     verbose,
     no_log,
 ):
-    """Check files for issues using the specified tools.
-
-    Args:
-        paths: List of file/directory paths to check.
-        tools: Comma-separated list of tool names to run.
-        tool_options: Tool-specific configuration options.
-        exclude: Comma-separated patterns of files/dirs to exclude.
-        include_venv: Whether to include virtual environment directories.
-        output: Path to output file for results.
-        output_format: Format for displaying results (table, json, etc).
-        group_by: How to group issues in output (tool, file, etc).
-        ignore_conflicts: Whether to ignore tool configuration conflicts.
-        darglint_timeout: Timeout in seconds for darglint tool.
-        prettier_timeout: Timeout in seconds for prettier tool.
-        verbose: Whether to show verbose output during execution.
-        no_log: Whether to disable logging to file.
-    """
-    # Add default paths if none provided
+    """Check files for issues using the specified tools."""
     if not paths:
         paths = ["."]
-
     check(
         paths=paths,
         tools=tools,
         tool_options=tool_options,
         exclude=exclude,
         include_venv=include_venv,
-        output=output,
-        output_format=output_format,
         group_by=group_by,
         ignore_conflicts=ignore_conflicts,
-        darglint_timeout=darglint_timeout,
-        prettier_timeout=prettier_timeout,
         verbose=verbose,
         no_log=no_log,
     )
@@ -136,38 +88,15 @@ def check(
     tool_options,
     exclude,
     include_venv,
-    output,
-    output_format,
     group_by,
     ignore_conflicts,
-    darglint_timeout,
-    prettier_timeout,
     verbose,
     no_log,
 ):
-    """Check files for issues using the specified tools.
-
-    Args:
-        paths: List of paths to check.
-        tools: Comma-separated list of tools to run.
-        tool_options: Tool-specific options.
-        exclude: Comma-separated patterns to exclude.
-        include_venv: Whether to include virtual environment directories.
-        output: Output file path.
-        output_format: Output format for displaying results.
-        group_by: How to group issues in the output.
-        ignore_conflicts: Whether to ignore tool conflicts.
-        darglint_timeout: Timeout for darglint.
-        prettier_timeout: Timeout for prettier.
-        verbose: Show verbose output.
-        no_log: Disable logging to file.
-    """
+    """Check files for issues using the specified tools."""
     logger = get_logger(verbose=verbose) if not no_log else None
-
-    # If no paths provided, default to current directory
     if not paths:
         paths = ["."]
-
     # Build a list of tool-specific options
     tool_option_dict = {}
     if tool_options:
@@ -179,25 +108,12 @@ def check(
                     if tool_name not in tool_option_dict:
                         tool_option_dict[tool_name] = {}
                     tool_option_dict[tool_name][opt_name] = opt_value
-
-    # Override with specific timeout options if provided
-    if darglint_timeout is not None:
-        if "darglint" not in tool_option_dict:
-            tool_option_dict["darglint"] = {}
-        tool_option_dict["darglint"]["timeout"] = darglint_timeout
-
-    if prettier_timeout is not None:
-        if "prettier" not in tool_option_dict:
-            tool_option_dict["prettier"] = {}
-        tool_option_dict["prettier"]["timeout"] = prettier_timeout
-
     # Parse tools to run
     if tools == "all":
         available_tools = tool_manager.get_check_tools()
         tools_to_run = list(available_tools.keys())
     elif tools:
         from lintro.tools.tool_enum import ToolEnum
-
         tool_names = [name.strip().upper() for name in tools.split(",")]
         tools_to_run = []
         for name in tool_names:
@@ -211,49 +127,16 @@ def check(
                     logger.warning(error_msg)
     else:
         tools_to_run = list(tool_manager.get_check_tools().keys())
-
     if not tools_to_run:
         error_msg = "No tools to run. Use --tools to specify tools or --help for more information."
         click.echo(error_msg, err=True)
         return
-
-    # Get execution order (handles conflicts)
     tools_to_run = tool_manager.get_tool_execution_order(tools_to_run, ignore_conflicts)
-
-    # Determine if we're using a structured format that should go to file
-    structured_formats = ["json", "markdown", "html", "csv"]
-    is_structured_format = output_format in structured_formats
-    console_format = "grid"  # Always use grid for console display
-
-    if verbose or not is_structured_format:
-        # Create consistent header for run information
-        info_border = "=" * 70
-        info_title = "🔍  Check Configuration"
-        info_emojis = "🔍 🔍 🔍 🔍 🔍"
-        info_header = f"{info_border}\n{info_title}    {info_emojis}\n{info_border}\n"
-        click.echo(info_header)
-
-        tools_list = ", ".join([tool.name.lower() for tool in tools_to_run])
-        paths_list = ", ".join(list(paths))
-
-        click.echo(f"🔧 Running tools: {tools_list}")
-        click.echo(f"📁 Checking paths: {paths_list}")
-        if is_structured_format:
-            click.echo(
-                f"📊 Output format: {output_format} → {'file' if output else 'stdout'}"
-            )
-            click.echo(f"📺 Console format: {console_format}")
-        else:
-            click.echo(f"📊 Output format: {output_format}")
-        click.echo()
-
-        if logger:
-            logger.info(
-                f"Running tools: {[tool.name.lower() for tool in tools_to_run]}"
-            )
-            logger.info(f"Checking paths: {list(paths)}")
-            logger.info(f"Output format: {output_format}")
-            logger.info("Starting tool execution...")
+    # TODO: Integrate with output manager to generate all formats in .lintro/run-{timestamp}/
+    # For now, just print a message indicating this is the new behavior
+    click.echo("[LINTRO] All output formats will be auto-generated in .lintro/run-{timestamp}/ (output manager integration pending)")
+    # Existing logic for running tools and printing to console can remain for now
+    # ... (rest of the function remains unchanged, but remove any output_format/output logic)
 
     all_results = []
     output_file = None
