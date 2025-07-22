@@ -1,6 +1,5 @@
 """Ruff Python linter and formatter integration."""
 
-import subprocess
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -318,14 +317,14 @@ class RuffTool(BaseTool):
                 f"Found {issues_count} issue(s) that cannot be auto-fixed"
             )
             for issue in issues[:5]:
-                file_path = issue.get("filename", "")
+                file_path = getattr(issue, 'file', '')
                 import os
                 try:
                     file_rel = os.path.relpath(file_path)
                 except (ValueError, TypeError):
                     file_rel = file_path
                 all_outputs.append(
-                    f"  {file_rel}:{issue.get('location', {}).get('row', '?')} - {issue.get('message', 'Unknown issue')}"
+                    f"  {file_rel}:{getattr(issue, 'line', '?')} - {getattr(issue, 'message', 'Unknown issue')}"
                 )
             if len(issues) > 5:
                 all_outputs.append(f"  ... and {len(issues) - 5} more")
@@ -338,7 +337,9 @@ class RuffTool(BaseTool):
         # Run ruff format if enabled
         if self.options.get("format", True):
             format_cmd = self._build_format_command(python_files, check_only=False)
-            format_success, format_output = self._run_subprocess(format_cmd, timeout=timeout)
+            format_success, format_output = self._run_subprocess(
+                format_cmd, timeout=timeout
+            )
             if format_output and format_output.strip():
                 all_outputs.append(f"Formatting:\n{format_output}")
             else:

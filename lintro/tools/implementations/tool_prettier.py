@@ -1,8 +1,6 @@
 """Prettier code formatter integration."""
 
 import os
-import re
-import subprocess
 from dataclasses import dataclass, field
 
 from lintro.enums.tool_type import ToolType
@@ -91,6 +89,7 @@ class PrettierTool(BaseTool):
         """
         import os
         from loguru import logger
+
         self._validate_paths(paths)
         prettier_files = walk_files_with_excludes(
             paths=paths,
@@ -109,11 +108,14 @@ class PrettierTool(BaseTool):
             cmd.extend(["--config", config_path])
         cmd.extend(rel_files)
         logger.debug(f"[PrettierTool] Running: {' '.join(cmd)} (cwd={cwd})")
-        _, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout), cwd=cwd)
+        _, output = self._run_subprocess(
+            cmd, timeout=self.options.get("timeout", self._default_timeout), cwd=cwd
+        )
         # Filter out virtual environment files if needed
         if not self.include_venv and output:
             filtered_lines = []
             import re
+
             venv_pattern = re.compile(
                 r"(\.venv|venv|env|ENV|virtualenv|virtual_env|"
                 r"virtualenvs|site-packages|node_modules)",
@@ -141,6 +143,7 @@ class PrettierTool(BaseTool):
         """
         import os
         from loguru import logger
+
         self._validate_paths(paths)
         prettier_files = walk_files_with_excludes(
             paths=paths,
@@ -158,11 +161,14 @@ class PrettierTool(BaseTool):
             cmd.extend(["--config", config_path])
         cmd.extend(rel_files)
         logger.debug(f"[PrettierTool] Running: {' '.join(cmd)} (cwd={cwd})")
-        _, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout), cwd=cwd)
+        _, output = self._run_subprocess(
+            cmd, timeout=self.options.get("timeout", self._default_timeout), cwd=cwd
+        )
         # Filter out virtual environment files if needed
         if not self.include_venv and output:
             filtered_lines = []
             import re
+
             venv_pattern = re.compile(
                 r"(\.venv|venv|env|ENV|virtualenv|virtual_env|"
                 r"virtualenvs|site-packages|node_modules)",
