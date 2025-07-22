@@ -89,6 +89,8 @@ class PrettierTool(BaseTool):
         Returns:
             ToolResult instance
         """
+        import os
+        from loguru import logger
         self._validate_paths(paths)
         prettier_files = walk_files_with_excludes(
             paths=paths,
@@ -98,16 +100,16 @@ class PrettierTool(BaseTool):
         )
         if not prettier_files:
             return Tool.to_result(self.name, True, "No files to check.", 0)
+        # Use relative paths and set cwd to the common parent
+        cwd = self.get_cwd(prettier_files)
+        rel_files = [os.path.relpath(f, cwd) if cwd else f for f in prettier_files]
         cmd = ["npx", "prettier", "--check"]
         config_path = self._find_config()
         if config_path:
             cmd.extend(["--config", config_path])
-        cmd.extend(prettier_files)
-        cwd = self.get_cwd(prettier_files)
-        if cwd:
-            success, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout))
-        else:
-            success, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout))
+        cmd.extend(rel_files)
+        logger.debug(f"[PrettierTool] Running: {' '.join(cmd)} (cwd={cwd})")
+        _, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout), cwd=cwd)
         # Filter out virtual environment files if needed
         if not self.include_venv and output:
             filtered_lines = []
@@ -122,8 +124,7 @@ class PrettierTool(BaseTool):
             output = "\n".join(filtered_lines)
         issues = parse_prettier_output(output)
         issues_count = len(issues)
-        if issues_count > 0:
-            success = False
+        success = issues_count == 0
         return Tool.to_result(self.name, success, output, issues_count)
 
     def fix(
@@ -138,6 +139,8 @@ class PrettierTool(BaseTool):
         Returns:
             ToolResult instance
         """
+        import os
+        from loguru import logger
         self._validate_paths(paths)
         prettier_files = walk_files_with_excludes(
             paths=paths,
@@ -147,16 +150,15 @@ class PrettierTool(BaseTool):
         )
         if not prettier_files:
             return Tool.to_result(self.name, True, "No files to format.", 0)
+        cwd = self.get_cwd(prettier_files)
+        rel_files = [os.path.relpath(f, cwd) if cwd else f for f in prettier_files]
         cmd = ["npx", "prettier", "--write"]
         config_path = self._find_config()
         if config_path:
             cmd.extend(["--config", config_path])
-        cmd.extend(prettier_files)
-        cwd = self.get_cwd(prettier_files)
-        if cwd:
-            success, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout))
-        else:
-            success, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout))
+        cmd.extend(rel_files)
+        logger.debug(f"[PrettierTool] Running: {' '.join(cmd)} (cwd={cwd})")
+        _, output = self._run_subprocess(cmd, timeout=self.options.get("timeout", self._default_timeout), cwd=cwd)
         # Filter out virtual environment files if needed
         if not self.include_venv and output:
             filtered_lines = []
@@ -177,4 +179,4 @@ class PrettierTool(BaseTool):
                 if line.strip() and "wrote" in line.lower()
             ]
         )
-        return Tool.to_result(self.name, success, output, issues_count)
+        return Tool.to_result(self.name, issues_count == 0, output, issues_count)
