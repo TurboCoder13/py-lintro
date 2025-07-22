@@ -1,14 +1,11 @@
 """Tests for CLI commands."""
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from lintro.cli_utils.commands.check import check
 from lintro.cli_utils.commands.format import format_code
 from lintro.cli_utils.commands.list_tools import list_tools_command
-
-import os
-import glob
 
 
 @pytest.fixture
@@ -63,9 +60,7 @@ def test_check_command_with_tools_option(mock_check, cli_runner, tmp_path):
     mock_check.return_value = 0  # Success
     test_file = tmp_path / "test_file.py"
     test_file.write_text("print('hello')\n")
-    result = cli_runner.invoke(
-        check, ["--tools", "ruff,yamllint", str(test_file)]
-    )
+    result = cli_runner.invoke(check, ["--tools", "ruff,yamllint", str(test_file)])
     assert result.exit_code == 0
 
 
@@ -163,7 +158,7 @@ def test_list_tools_command_invokes_list_tools_function(mock_list_tools, cli_run
 # Add a new integration test for the output manager via the CLI.
 
 
-# Skip this integration test for now - it depends on actual file creation 
+# Skip this integration test for now - it depends on actual file creation
 # which may not happen consistently in test environment
 @pytest.mark.skip(reason="Integration test - depends on actual file creation")
 def test_cli_creates_output_manager_files():

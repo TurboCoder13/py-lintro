@@ -364,6 +364,20 @@ save_to_file = true
 file_prefix = "lintro-report"
 ```
 
+### Output System: Auto-Generated Reports
+
+Lintro now generates all output formats for every run in a timestamped directory under `.lintro/` (e.g., `.lintro/run-20240722-153000/`).
+
+You do not need to specify output format or file options. Each run produces:
+
+- `console.log`: The full console output
+- `results.json`: Machine-readable results
+- `report.md`: Human-readable Markdown report
+- `report.html`: Web-viewable HTML report
+- `summary.csv`: Spreadsheet-friendly summary
+
+This ensures you always have every format available for your workflow, CI, or reporting needs.
+
 ## Advanced Configuration
 
 ### Tool Conflicts and Priorities

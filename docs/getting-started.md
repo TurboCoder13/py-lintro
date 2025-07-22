@@ -91,6 +91,22 @@ Lintro provides clear, structured output:
 └─────────────────────┴──────┴───────┴─────────────────────────────────────┘
 ```
 
+## Output System: Auto-Generated Reports
+
+Every time you run a Lintro command (check or fmt), Lintro automatically generates all output formats for you in a timestamped directory under `.lintro/` (e.g., `.lintro/run-20240722-153000/`).
+
+**You do not need to specify output format or file options.**
+
+Each run produces:
+
+- `console.log`: The full console output you saw during the run
+- `results.json`: Machine-readable results for scripting or CI
+- `report.md`: Human-readable Markdown report (great for sharing or documentation)
+- `report.html`: Web-viewable HTML report (open in your browser)
+- `summary.csv`: Spreadsheet-friendly summary of all issues
+
+This means you always have every format available for your workflow, CI, or reporting needs.
+
 ## Supported Languages and Tools
 
 ### Python Projects

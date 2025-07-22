@@ -127,6 +127,8 @@ class PrettierTool(BaseTool):
         issues = parse_prettier_output(output)
         issues_count = len(issues)
         success = issues_count == 0
+        if issues_count == 0 and (not output or not output.strip()):
+            output = None
         return Tool.to_result(self.name, success, output, issues_count)
 
     def fix(
