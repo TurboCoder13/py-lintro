@@ -81,12 +81,12 @@ def test_cli_command_aliases(cli_runner):
     # Test that 'format' alias works
     result = cli_runner.invoke(cli, ["format", "--help"])
     assert result.exit_code == 0
-    assert "Fix (format) files using the specified tools" in result.output
+    assert "Format code using configured formatting tools" in result.output
 
     # Test that 'chk' alias works
     result = cli_runner.invoke(cli, ["chk", "--help"])
     assert result.exit_code == 0
-    assert "Check files for issues using the specified" in result.output
+    assert "Check code quality using configured linting tools" in result.output
 
     # Test that 'ls' alias works
     result = cli_runner.invoke(cli, ["ls", "--help"])

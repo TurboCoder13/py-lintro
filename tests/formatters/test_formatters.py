@@ -71,7 +71,7 @@ def test_table_descriptor_creation():
 
     issues = [FakeIssue()]
     rows = descriptor.get_rows(issues)
-    assert rows == [["foo.py", "1", "D100", "Missing docstring"]]
+    assert rows == [["./foo.py", "1", "D100", "Missing docstring"]]
 
 
 def test_table_descriptor_empty():

@@ -158,12 +158,53 @@ def test_list_tools_command_invokes_list_tools_function(mock_list_tools, cli_run
 # Add a new integration test for the output manager via the CLI.
 
 
-# Skip this integration test for now - it depends on actual file creation
-# which may not happen consistently in test environment
-@pytest.mark.skip(reason="Integration test - depends on actual file creation")
-def test_cli_creates_output_manager_files():
+def test_cli_creates_output_manager_files(tmp_path):
     """Test that CLI creates output manager files.
 
     This is an integration test that checks the full CLI process.
     """
-    pass
+    import os
+    from pathlib import Path
+    from lintro.utils.tool_executor import run_lint_tools_simple
+    
+    # Create a test Python file
+    test_file = tmp_path / "test.py"
+    test_file.write_text("print('hello world')")
+    
+    # Change to the temp directory so output files are created there
+    old_cwd = os.getcwd()
+    try:
+        os.chdir(tmp_path)
+        
+        # Run the tool executor which should create output files
+        run_lint_tools_simple(
+            action="check",
+            tools="ruff",
+            tool_options=None,
+            paths=[str(test_file)],
+            exclude=None,
+            include_venv=False,
+            group_by="auto",
+            output_format="grid",
+            verbose=False
+        )
+        
+        # Check that output directory and files were created
+        lintro_dir = tmp_path / ".lintro"
+        assert lintro_dir.exists(), "Output directory should be created"
+        
+        # Find the run directory (has timestamp format)
+        run_dirs = [d for d in lintro_dir.iterdir() if d.is_dir() and d.name.startswith("run-")]
+        assert len(run_dirs) >= 1, "At least one run directory should be created"
+        
+        run_dir = run_dirs[0]
+        
+        # Check that expected output files were created
+        expected_files = ["console.log", "debug.log", "report.md", "report.html", "summary.csv"]
+        for expected_file in expected_files:
+            file_path = run_dir / expected_file
+            assert file_path.exists(), f"{expected_file} should be created"
+            assert file_path.stat().st_size > 0, f"{expected_file} should not be empty"
+            
+    finally:
+        os.chdir(old_cwd)
