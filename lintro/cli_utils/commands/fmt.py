@@ -372,16 +372,8 @@ def fmt(
 
     # Write console log
     output_manager.write_console_log("\n".join(console_log))
-    # Write placeholder results.json (replace with real serialization as needed)
+    # Write results.json (keep as before)
     output_manager.write_json([r.__dict__ for r in all_results], filename="results.json")
-    # Write placeholder report.md
-    output_manager.write_markdown("# Lintro Report\n\n(Report content to be implemented)")
-    # Write placeholder report.html
-    output_manager.write_html("<html><body><h1>Lintro Report</h1><p>(Report content to be implemented)</p></body></html>")
-    # Write placeholder summary.csv
-    output_manager.write_csv(
-        rows=[[r.name, r.issues_count] for r in all_results],
-        header=["tool", "issues_count"],
-        filename="summary.csv",
-    )
+    # Write all reports (markdown, html, csv)
+    output_manager.write_reports_from_results(all_results)
     click.echo(f"[LINTRO] Results written to {run_dir}")
