@@ -8,6 +8,7 @@ from lintro.tools import tool_manager
 from lintro.utils.formatting import print_summary, print_tool_footer, print_tool_header
 from lintro.utils.tool_utils import format_tool_output
 from lintro.utils.logging_utils import get_logger
+from lintro.utils.output_manager import OutputManager
 import sys
 import click
 
@@ -132,221 +133,78 @@ def check(
         click.echo(error_msg, err=True)
         return
     tools_to_run = tool_manager.get_tool_execution_order(tools_to_run, ignore_conflicts)
-    # TODO: Integrate with output manager to generate all formats in .lintro/run-{timestamp}/
-    # For now, just print a message indicating this is the new behavior
-    click.echo("[LINTRO] All output formats will be auto-generated in .lintro/run-{timestamp}/ (output manager integration pending)")
-    # Existing logic for running tools and printing to console can remain for now
-    # ... (rest of the function remains unchanged, but remove any output_format/output logic)
-
+    # Output manager integration
+    output_manager = OutputManager()
+    output_manager.cleanup_old_runs()
+    run_dir = output_manager.get_run_dir()
+    click.echo(f"[LINTRO] All output formats will be auto-generated in {run_dir}")
+    # Capture console output for logging
+    console_log = []
     all_results = []
-    output_file = None
-
-    # Open output file if specified
-    if output:
+    for tool_enum in tools_to_run:
+        tool = tool_manager.get_tool(tool_enum)
+        tool_name = tool_enum.name.lower()
+        console_log.append(f"Running {tool_name}...")
+        tool_results = []
+        issues_count = 0
         try:
-            output_file = open(output, "w", encoding="utf-8")
-        except IOError as e:
-            error_msg = f"Error opening output file {output}: {e}"
-            click.echo(error_msg, err=True, file=sys.stderr)
+            if hasattr(tool, "check"):
+                for path in paths:
+                    result = tool.check([path])
+                    if result:
+                        tool_results.append(result)
+                        if hasattr(result, "issues_count"):
+                            issues_count += result.issues_count
+                        elif hasattr(result, "issues") and result.issues:
+                            issues_count += len(result.issues)
+        except Exception as e:
+            error_msg = f"Error running {tool_name}: {e}"
+            console_log.append(error_msg)
             if logger:
                 logger.error(error_msg)
-            return
+        # Print tool output to console and log
+        tool_output = ""
+        for result in tool_results:
+            if hasattr(result, "output") and result.output:
+                tool_output += result.output + "\n"
+            elif hasattr(result, "issues"):
+                for issue in result.issues:
+                    tool_output += str(issue) + "\n"
+        if tool_output.strip():
+            console_log.append(tool_output.strip())
+        all_results.extend(tool_results)
+    # Write console log
+    output_manager.write_console_log("\n".join(console_log))
+    # Write placeholder results.json (replace with real serialization as needed)
+    output_manager.write_json([r.__dict__ for r in all_results], filename="results.json")
+    # Write placeholder report.md
+    output_manager.write_markdown("# Lintro Report\n\n(Report content to be implemented)")
+    # Write placeholder report.html
+    output_manager.write_html("<html><body><h1>Lintro Report</h1><p>(Report content to be implemented)</p></body></html>")
+    # Write placeholder summary.csv
+    output_manager.write_csv(
+        rows=[[r.name, r.issues_count] for r in all_results],
+        header=["tool", "issues_count"],
+        filename="summary.csv",
+    )
+    click.echo(f"[LINTRO] Results written to {run_dir}")
 
-    try:
-        # Run each tool
-        for tool_enum in tools_to_run:
-            tool = tool_manager.get_tool(tool_enum)
-            tool_name = tool_enum.name.lower()
+    # Generate and output structured format to file (or stdout if no file for structured formats)
+    # This block is now handled by the OutputManager for all formats.
+    # If you want to keep the old structured output logic, you'd need to re-implement it here
+    # based on the all_results collected by the OutputManager.
+    # For now, we'll just print a message indicating the new behavior.
+    click.echo("[LINTRO] All output formats have been written to the run directory.")
 
-            # Print tool header (only for console formats)
-            print_tool_header(
-                tool_name=tool_name,
-                action="check",
-                file=None,
-                output_format=console_format,
-            )
-
-            if logger:
-                logger.info(f"Running {tool_name}...")
-
-            tool_results = []
-            issues_count = 0
-
-            try:
-                # Check if tool has check method
-                if hasattr(tool, "check"):
-                    # Run the tool on all paths
-                    for path in paths:
-                        if verbose:
-                            path_msg = f"  Checking {path} with {tool_name}"
-                            click.echo(path_msg)
-                            if logger:
-                                logger.debug(path_msg)
-
-                        result = tool.check([path])
-                        if result:
-                            tool_results.append(result)
-                            if hasattr(result, "issues_count"):
-                                issues_count += result.issues_count
-                            elif hasattr(result, "issues") and result.issues:
-                                issues_count += len(result.issues)
-                else:
-                    warning_msg = f"Warning: {tool_name} does not support checking"
-                    click.echo(warning_msg, err=True)
-                    if logger:
-                        logger.warning(warning_msg)
-
-            except Exception as e:
-                error_msg = f"Error running {tool_name}: {e}"
-                click.echo(error_msg, err=True)
-                if logger:
-                    logger.error(error_msg)
-                if verbose:
-                    import traceback
-
-                    traceback.print_exc()
-
-            # For console display (non-structured formats), show formatted table output
-            if tool_results and not is_structured_format:
-                # Get the raw output from results
-                tool_output = ""
-                for result in tool_results:
-                    if hasattr(result, "output") and result.output:
-                        tool_output += result.output + "\n"
-                    elif hasattr(result, "issues"):
-                        # Fallback: create simple output from issues
-                        for issue in result.issues:
-                            tool_output += str(issue) + "\n"
-
-                # Skip displaying tool output if it's just "No issues found"
-                if tool_output.strip() and "No issues found" not in tool_output.strip():
-                    # Use tool-specific formatters to create beautiful tables
-                    formatted_output = format_tool_output(
-                        tool_name=tool_name,
-                        output=tool_output,
-                        group_by=group_by,
-                        output_format=console_format,  # Use console format (grid)
-                    )
-                    click.echo(formatted_output)
-
-            # Print tool footer (only for console)
-            # Get the raw output from results for footer logic
-            tool_output = ""
-            for result in tool_results:
-                if hasattr(result, "output") and result.output:
-                    tool_output += result.output + "\n"
-                elif hasattr(result, "issues"):
-                    # Fallback: create simple output from issues
-                    for issue in result.issues:
-                        tool_output += str(issue) + "\n"
-
-            print_tool_footer(
-                success=issues_count == 0,
-                issues_count=issues_count,
-                file=None,
-                output_format=console_format,
-                tool_name=tool_name,
-                tool_output=tool_output,
-                action="check",
-            )
-
-            if logger:
-                if issues_count == 0:
-                    logger.info(f"{tool_name} completed successfully (no issues found)")
-                else:
-                    logger.info(
-                        f"{tool_name} completed with {issues_count} issues found"
-                    )
-
-            # Add results to overall results - generate both console and structured output
-            if tool_results:
-                # Get raw output for processing
-                tool_output = ""
-                for result in tool_results:
-                    if hasattr(result, "output") and result.output:
-                        tool_output += result.output + "\n"
-                    elif hasattr(result, "issues"):
-                        # Fallback: create simple output from issues
-                        for issue in result.issues:
-                            tool_output += str(issue) + "\n"
-
-                # Generate structured output for file
-                structured_output = ""
-                if tool_output.strip():
-                    structured_output = format_tool_output(
-                        tool_name=tool_name,
-                        output=tool_output,
-                        group_by=group_by,
-                        output_format=output_format,
-                    )
-
-                # Aggregate results per tool
-                tool_result = ToolResult(
-                    name=tool_name,
-                    success=issues_count == 0,
-                    output=getattr(tool_results[0], "output", "")
-                    if tool_results
-                    else "",
-                    issues_count=issues_count,
-                    formatted_output=structured_output,
-                )
-                all_results.append(tool_result)
-            else:
-                # Create a result even if no tool results (tool ran but found nothing)
-                no_issues_output = format_tool_output(
-                    tool_name=tool_name,
-                    output="",
-                    group_by=group_by,
-                    output_format=output_format,
-                )
-
-                tool_result = ToolResult(
-                    name=tool_name,
-                    success=True,
-                    output="No issues found.",
-                    issues_count=0,
-                    formatted_output=no_issues_output,
-                )
-                all_results.append(tool_result)
-
-        # Generate and output structured format to file (or stdout if no file for structured formats)
-        if is_structured_format:
-            print_summary(
-                results=all_results,
-                action="check",
-                file=output_file if output_file else None,
-                output_format=output_format,
-            )
-
-            if output_file:
-                success_msg = f"✅ {output_format.upper()} results written to: {output}"
-                click.echo(success_msg)
-                if logger:
-                    logger.info(success_msg)
-            elif output_format == "json":
-                # For JSON to stdout, we already printed it, so just add a note
-                pass
-
-        # Show summary table for console output (like old style)
-        if not is_structured_format:
-            click.echo()  # Add spacing
-            print_summary(
-                results=all_results,
-                action="check",
-                file=None,
-                output_format="grid",  # Use grid for nice table format
-            )
-
-    finally:
-        # Close output file if it was opened
-        if output_file:
-            try:
-                output_file.close()
-            except IOError as e:
-                error_msg = f"Error closing output file {output}: {e}"
-                click.echo(error_msg, err=True, file=sys.stderr)
-                if logger:
-                    logger.error(error_msg)
+    # Show summary table for console output (like old style)
+    if not is_structured_format:
+        click.echo()  # Add spacing
+        print_summary(
+            results=all_results,
+            action="check",
+            file=None,
+            output_format="grid",  # Use grid for nice table format
+        )
 
     # Exit with appropriate code based on whether issues were found
     total_issues = sum(result.issues_count for result in all_results)

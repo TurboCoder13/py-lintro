@@ -10,6 +10,7 @@ from lintro.utils.tool_utils import format_tool_output
 from lintro.utils.logging_utils import get_logger
 import sys
 import click
+from lintro.utils.output_manager import OutputManager
 
 
 @click.command("fmt")
@@ -152,6 +153,15 @@ def fmt(
     # Get execution order (handles conflicts)
     tools_to_run = tool_manager.get_tool_execution_order(tools_to_run, ignore_conflicts)
 
+    # Output manager integration
+    output_manager = OutputManager()
+    output_manager.cleanup_old_runs()
+    run_dir = output_manager.get_run_dir()
+    click.echo(f"[LINTRO] All output formats will be auto-generated in {run_dir}")
+    # Capture console output for logging
+    console_log = []
+    all_results = []
+
     # Determine if we're using a structured format that should go to file
     # For now, all output is handled by the output manager
     is_structured_format = False # No longer used for output branching
@@ -187,124 +197,68 @@ def fmt(
             logger.info(f"Formatting paths: {list(paths)}")
             logger.info(f"Output format: {console_format}")
 
-    all_results = []
-    # output_file = None # No longer used for output branching
+    for tool_enum in tools_to_run:
+        tool = tool_manager.get_tool(tool_enum)
+        tool_name = tool_enum.name.lower()
+        console_log.append(f"Running {tool_name}...")
 
-    # Open output file if specified # No longer used for output branching
-    # if output:
-    #     try:
-    #         output_file = open(output, "w", encoding="utf-8")
-    #     except IOError as e:
-    #         error_msg = f"Error opening output file {output}: {e}"
-    #         click.echo(error_msg, err=True, file=sys.stderr)
-    #         if logger:
-    #             logger.error(error_msg)
-    #         return
+        # Set tool-specific options if provided
+        if tool_name in tool_option_dict:
+            tool.set_options(**tool_option_dict[tool_name])
 
-    try:
-        # Run each tool
-        for tool_enum in tools_to_run:
-            tool = tool_manager.get_tool(tool_enum)
-            tool_name = tool_enum.name.lower()
+        # Set common options
+        tool.set_options(
+            exclude_patterns=exclude_patterns,
+            include_venv=include_venv,
+        )
 
-            # Set tool-specific options if provided
-            if tool_name in tool_option_dict:
-                tool.set_options(**tool_option_dict[tool_name])
+        # Print tool header (only for console formats)
+        print_tool_header(
+            tool_name=tool_name,
+            action="fmt",
+            file=None,
+            output_format=console_format,
+        )
 
-            # Set common options
-            tool.set_options(
-                exclude_patterns=exclude_patterns,
-                include_venv=include_venv,
-            )
+        tool_results = []
+        issues_count = 0
 
-            # Print tool header (only for console formats)
-            print_tool_header(
-                tool_name=tool_name,
-                action="fmt",
-                file=None,
-                output_format=console_format,
-            )
-
-            tool_results = []
-            issues_count = 0
-
-            try:
-                # Check if tool has fix method for formatting
-                if hasattr(tool, "fix"):
-                    if verbose:
-                        tool_msg = f"  Running {tool_name} on auto-discovered files"
-                        click.echo(tool_msg)
-                        if logger:
-                            logger.debug(tool_msg)
-
-                    # Run the tool's fix method - it will auto-discover files using walk_files_with_excludes
-                    result = tool.fix(paths)
-                    if result:
-                        tool_results.append(result)
-                        if hasattr(result, "issues_count"):
-                            issues_count += result.issues_count
-                        elif hasattr(result, "issues") and result.issues:
-                            issues_count += len(result.issues)
-                else:
-                    warning_msg = f"Warning: {tool_name} does not support formatting"
-                    click.echo(warning_msg, err=True)
-                    if logger:
-                        logger.warning(warning_msg)
-
-            except Exception as e:
-                error_msg = f"Error running {tool_name}: {e}"
-                click.echo(error_msg, err=True)
-                if logger:
-                    logger.error(error_msg)
+        try:
+            # Check if tool has fix method for formatting
+            if hasattr(tool, "fix"):
                 if verbose:
-                    import traceback
+                    tool_msg = f"  Running {tool_name} on auto-discovered files"
+                    click.echo(tool_msg)
+                    if logger:
+                        logger.debug(tool_msg)
 
-                    traceback.print_exc()
+                # Run the tool's fix method - it will auto-discover files using walk_files_with_excludes
+                result = tool.fix(paths)
+                if result:
+                    tool_results.append(result)
+                    if hasattr(result, "issues_count"):
+                        issues_count += result.issues_count
+                    elif hasattr(result, "issues") and result.issues:
+                        issues_count += len(result.issues)
+            else:
+                warning_msg = f"Warning: {tool_name} does not support formatting"
+                click.echo(warning_msg, err=True)
+                if logger:
+                    logger.warning(warning_msg)
 
-            # For console display (non-structured formats), show formatted table output
-            if tool_results and not is_structured_format:
-                # Get the raw output from results
-                tool_output = ""
-                for result in tool_results:
-                    if hasattr(result, "output") and result.output:
-                        tool_output += result.output + "\n"
-                    elif hasattr(result, "issues"):
-                        # Fallback: create simple output from issues
-                        for issue in result.issues:
-                            tool_output += str(issue) + "\n"
+        except Exception as e:
+            error_msg = f"Error running {tool_name}: {e}"
+            console_log.append(error_msg)
+            if logger:
+                logger.error(error_msg)
+            if verbose:
+                import traceback
 
-                # Display tool output if there's meaningful content
-                if tool_output.strip() and tool_output.strip() != "No issues found.":
-                    # For fmt command, display raw output if it's human-readable
-                    # (not JSON that needs parsing)
-                    if tool_output.strip().startswith("[") and tool_name in [
-                        "ruff",
-                        "darglint",
-                        "prettier",
-                    ]:
-                        # JSON output - use tool-specific formatters
-                        formatted_output = format_tool_output(
-                            tool_name=tool_name,
-                            output=tool_output,
-                            group_by=group_by,
-                            output_format=console_format,  # Use console format (grid)
-                        )
-                        click.echo(formatted_output)
-                    else:
-                        # Human-readable output - display directly
-                        click.echo(tool_output.strip())
+                traceback.print_exc()
 
-            # Print tool footer (only for console)
-            # For fmt command, use the actual success from the tool result
-            tool_success = True
-            if tool_results:
-                tool_success = (
-                    tool_results[0].success
-                    if hasattr(tool_results[0], "success")
-                    else True
-                )
-
-            # Get the raw output from results for footer logic
+        # For console display (non-structured formats), show formatted table output
+        if tool_results and not is_structured_format:
+            # Get the raw output from results
             tool_output = ""
             for result in tool_results:
                 if hasattr(result, "output") and result.output:
@@ -314,95 +268,120 @@ def fmt(
                     for issue in result.issues:
                         tool_output += str(issue) + "\n"
 
-            print_tool_footer(
-                success=tool_success,
-                issues_count=issues_count,
-                file=None,
-                output_format=console_format,
-                tool_name=tool_name,
-                tool_output=tool_output,
-                action="fmt",
-            )
-
-            # Add results to overall results - generate both console and structured output
-            if tool_results:
-                # Get raw output for processing
-                tool_output = ""
-                for result in tool_results:
-                    if hasattr(result, "output") and result.output:
-                        tool_output += result.output + "\n"
-                    elif hasattr(result, "issues"):
-                        # Fallback: create simple output from issues
-                        for issue in result.issues:
-                            tool_output += str(issue) + "\n"
-
-                # Generate structured output for file
-                structured_output = ""
-                if tool_output.strip():
-                    structured_output = format_tool_output(
+            # Display tool output if there's meaningful content
+            if tool_output.strip() and tool_output.strip() != "No issues found.":
+                # For fmt command, display raw output if it's human-readable
+                # (not JSON that needs parsing)
+                if tool_output.strip().startswith("[") and tool_name in [
+                    "ruff",
+                    "darglint",
+                    "prettier",
+                ]:
+                    # JSON output - use tool-specific formatters
+                    formatted_output = format_tool_output(
                         tool_name=tool_name,
                         output=tool_output,
                         group_by=group_by,
-                        output_format=console_format, # This will be overridden by output manager
+                        output_format=console_format,  # Use console format (grid)
                     )
+                    click.echo(formatted_output)
+                else:
+                    # Human-readable output - display directly
+                    click.echo(tool_output.strip())
 
-                # Aggregate results per tool
-                tool_result = ToolResult(
-                    name=tool_name,
-                    success=tool_results[0].success if tool_results else True,
-                    output=getattr(tool_results[0], "output", "")
-                    if tool_results
-                    else "",
-                    issues_count=issues_count,
-                    formatted_output=structured_output,
-                )
-                all_results.append(tool_result)
-            else:
-                # Create a result even if no tool results (tool ran but found nothing)
-                no_issues_output = format_tool_output(
+        # Print tool footer (only for console)
+        # For fmt command, use the actual success from the tool result
+        tool_success = True
+        if tool_results:
+            tool_success = (
+                tool_results[0].success
+                if hasattr(tool_results[0], "success")
+                else True
+            )
+
+        # Get the raw output from results for footer logic
+        tool_output = ""
+        for result in tool_results:
+            if hasattr(result, "output") and result.output:
+                tool_output += result.output + "\n"
+            elif hasattr(result, "issues"):
+                # Fallback: create simple output from issues
+                for issue in result.issues:
+                    tool_output += str(issue) + "\n"
+
+        print_tool_footer(
+            success=tool_success,
+            issues_count=issues_count,
+            file=None,
+            output_format=console_format,
+            tool_name=tool_name,
+            tool_output=tool_output,
+            action="fmt",
+        )
+
+        # Add results to overall results - generate both console and structured output
+        if tool_results:
+            # Get raw output for processing
+            tool_output = ""
+            for result in tool_results:
+                if hasattr(result, "output") and result.output:
+                    tool_output += result.output + "\n"
+                elif hasattr(result, "issues"):
+                    # Fallback: create simple output from issues
+                    for issue in result.issues:
+                        tool_output += str(issue) + "\n"
+
+            # Generate structured output for file
+            structured_output = ""
+            if tool_output.strip():
+                structured_output = format_tool_output(
                     tool_name=tool_name,
-                    output="",
+                    output=tool_output,
                     group_by=group_by,
                     output_format=console_format, # This will be overridden by output manager
                 )
 
-                tool_result = ToolResult(
-                    name=tool_name,
-                    success=True,
-                    output="No issues found.",
-                    issues_count=0,
-                    formatted_output=no_issues_output,
-                )
-                all_results.append(tool_result)
+            # Aggregate results per tool
+            tool_result = ToolResult(
+                name=tool_name,
+                success=tool_results[0].success if tool_results else True,
+                output=getattr(tool_results[0], "output", "")
+                if tool_results
+                else "",
+                issues_count=issues_count,
+                formatted_output=structured_output,
+            )
+            all_results.append(tool_result)
+        else:
+            # Create a result even if no tool results (tool ran but found nothing)
+            no_issues_output = format_tool_output(
+                tool_name=tool_name,
+                output="",
+                group_by=group_by,
+                output_format=console_format, # This will be overridden by output manager
+            )
 
-        # Generate and output structured format to file (or stdout if no file for structured formats)
-        # This section is now handled by the output manager
-        # if is_structured_format:
-        #     print_summary(
-        #         results=all_results,
-        #         action="fmt",
-        #         file=output_file if output_file else None,
-        #         output_format=output_format,
-        #     )
+            tool_result = ToolResult(
+                name=tool_name,
+                success=True,
+                output="No issues found.",
+                issues_count=0,
+                formatted_output=no_issues_output,
+            )
+            all_results.append(tool_result)
 
-        #     if output_file:
-        #         success_msg = f"✅ {output_format.upper()} results written to: {output}"
-        #         click.echo(success_msg)
-        #         if logger:
-        #             logger.info(success_msg)
-        #     elif output_format == "json":
-        #         # For JSON to stdout, we already printed it, so just add a note
-        #         pass
-
-        # Old style: no summary table for console output, just ASCII art
-        # This section is now handled by the output manager
-        # if not is_structured_format:
-        #     print_summary(
-        #         results=all_results,
-        #         action="fmt",
-        #         file=None,
-        #         output_format="plain",  # Use plain to get just ASCII art
-        #     )
-
-    finally:
-        pass
+    # Write console log
+    output_manager.write_console_log("\n".join(console_log))
+    # Write placeholder results.json (replace with real serialization as needed)
+    output_manager.write_json([r.__dict__ for r in all_results], filename="results.json")
+    # Write placeholder report.md
+    output_manager.write_markdown("# Lintro Report\n\n(Report content to be implemented)")
+    # Write placeholder report.html
+    output_manager.write_html("<html><body><h1>Lintro Report</h1><p>(Report content to be implemented)</p></body></html>")
+    # Write placeholder summary.csv
+    output_manager.write_csv(
+        rows=[[r.name, r.issues_count] for r in all_results],
+        header=["tool", "issues_count"],
+        filename="summary.csv",
+    )
+    click.echo(f"[LINTRO] Results written to {run_dir}")
