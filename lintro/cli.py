@@ -11,27 +11,48 @@ from lintro.utils.logging_utils import get_logger
 get_logger()
 
 
-@click.group()
+class LintroGroup(click.Group):
+    def format_commands(self, ctx, formatter):
+        # Group commands by canonical name and aliases
+        commands = self.list_commands(ctx)
+        # Map canonical name to (command, [aliases])
+        canonical_map = {}
+        for name in commands:
+            cmd = self.get_command(ctx, name)
+            if not hasattr(cmd, "_canonical_name"):
+                cmd._canonical_name = name
+            canonical = cmd._canonical_name
+            if canonical not in canonical_map:
+                canonical_map[canonical] = (cmd, [])
+            if name != canonical:
+                canonical_map[canonical][1].append(name)
+        rows = []
+        for canonical, (cmd, aliases) in canonical_map.items():
+            names = [canonical] + aliases
+            name_str = " / ".join(names)
+            rows.append((name_str, cmd.get_short_help_str()))
+        if rows:
+            with formatter.section("Commands"):
+                formatter.write_dl(rows)
+
+
+@click.group(cls=LintroGroup, invoke_without_command=True)
 @click.version_option(version=__version__)
 def cli():
-    """Lintro - A unified CLI tool for code formatting, linting, and quality assurance.
-
-    Commands:
-      check/format - Check code quality without making changes
-      fmt/chk      - Auto-fix formatting issues across all supported files (respects .lintro-ignore)
-      list-tools/ls - Show available tools and their capabilities
-    """
+    """Lintro: Unified CLI for code formatting, linting, and quality assurance."""
     pass
 
 
-# Add main commands
-cli.add_command(check_command)
-cli.add_command(fmt_command)
-cli.add_command(list_tools_command)
-
-# Add command aliases for consistency
-cli.add_command(check_command, name="format")
+# Register canonical commands and set _canonical_name for help
+check_command._canonical_name = "check"
+fmt_command._canonical_name = "format"
+list_tools_command._canonical_name = "list-tools"
+cli.add_command(check_command, name="check")
+cli.add_command(fmt_command, name="format")
+cli.add_command(list_tools_command, name="list-tools")
+# Register aliases
 cli.add_command(check_command, name="chk")
+cli.add_command(fmt_command, name="fmt")
 cli.add_command(list_tools_command, name="ls")
 
 

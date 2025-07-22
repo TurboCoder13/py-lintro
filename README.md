@@ -118,7 +118,7 @@ See [GitHub Integration Guide](docs/github-integration.md) for setup instruction
 
 ```bash
 # Run tests
-./scripts/local-test.sh
+./scripts/run-tests.sh
 
 # Run Lintro on itself
 ./scripts/local-lintro.sh check --table-format

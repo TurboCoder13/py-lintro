@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
-"""Extract coverage percentage from coverage.xml file."""
+"""Extract coverage percentage from coverage.xml file.
 
-import xml.etree.ElementTree as ET
-import sys
+This module provides functionality to parse coverage.xml files and extract
+the coverage percentage for CI/CD pipelines.
+"""
+
 import os
+import sys
+import xml.etree.ElementTree as ET
 
 
-def extract_coverage_percentage():
-    """Extract coverage percentage from coverage.xml file."""
+def extract_coverage_percentage() -> None:
+    """Extract coverage percentage from coverage.xml file.
+
+    Parses the coverage.xml file in the current directory and outputs
+    the coverage percentage in the format 'percentage=X.X' for use
+    in CI/CD environments.
+
+    The function looks for coverage data at the root level first, then
+    falls back to checking packages if no root data is found.
+    """
     coverage_file = "coverage.xml"
 
     # Debug: Check what files are available

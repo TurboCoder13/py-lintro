@@ -370,13 +370,33 @@ class RuffTool(BaseTool):
                     import json
 
                     issues = json.loads(stdout)
+                    issues_count = len(issues)
+                    total_issues += issues_count
+
                     if issues:
+                        # These are issues that could NOT be auto-fixed
                         all_outputs.append(
-                            f"Linting fixes applied: {len(issues)} issue(s) fixed"
+                            f"Found {len(issues)} issue(s) that cannot be auto-fixed"
                         )
-                        total_issues += len(issues)
+                        # Include details about the unfixable issues
+                        for issue in issues[:5]:  # Show first 5 issues
+                            file_path = issue.get("filename", "")
+                            # Try to make path relative to current working directory
+                            import os
+
+                            try:
+                                file_rel = os.path.relpath(file_path)
+                            except (ValueError, TypeError):
+                                file_rel = file_path
+                            all_outputs.append(
+                                f"  {file_rel}:{issue.get('location', {}).get('row', '?')} - {issue.get('message', 'Unknown issue')}"
+                            )
+                        if len(issues) > 5:
+                            all_outputs.append(f"  ... and {len(issues) - 5} more")
                     else:
-                        all_outputs.append("No linting fixes needed")
+                        all_outputs.append(
+                            "All linting issues were successfully auto-fixed"
+                        )
                 except json.JSONDecodeError:
                     all_outputs.append(f"Linting fixes:\n{stdout}")
             else:
@@ -388,11 +408,14 @@ class RuffTool(BaseTool):
             if stderr and stderr.strip():
                 all_outputs.append(f"Linting fixes:\n{stderr.strip()}")
             else:
-                all_outputs.append("All linting issues fixed successfully")
+                all_outputs.append("All linting issues were successfully auto-fixed")
 
-        # For fix command, success is determined by the return code, not issues count
-        if not success:
-            overall_success = False
+        # For fix command, if issues remain unfixed, it's a partial success
+        if not success and issues_count > 0:
+            # Command failed because issues remain, but this is expected for unfixable issues
+            overall_success = (
+                False  # We'll keep this as false to indicate issues remain
+            )
 
         # Run ruff format if enabled
         if self.options.get("format", True):

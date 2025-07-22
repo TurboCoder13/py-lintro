@@ -4,7 +4,7 @@ set -e
 # docker-test.sh - Run tests in a Docker container
 # 
 # This script runs the full test suite in a containerized environment
-# where all tools are pre-installed. It delegates to local-test.sh inside the container.
+# where all tools are pre-installed. It delegates to run-tests.sh inside the container.
 
 # Color output for better readability
 RED='\033[0;31m'
@@ -36,11 +36,11 @@ else
     echo -e "${GREEN}✓ Using existing Docker image${NC}"
 fi
 
-# Run the integration tests in Docker using local-test.sh
+# Run the integration tests in Docker using run-tests.sh
 echo -e "${BLUE}Running integration tests in Docker...${NC}"
 echo -e "${YELLOW}All tools are pre-installed in the Docker environment${NC}"
 
-if $DOCKER_COMPOSE_CMD run --rm test-integration ./scripts/local-test.sh; then
+if $DOCKER_COMPOSE_CMD run --rm test-integration ./scripts/run-tests.sh; then
     echo -e "${GREEN}=== All tests passed! ===${NC}"
     exit 0
 else

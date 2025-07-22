@@ -33,7 +33,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Lintro Analysis in Docker
-        run: ./scripts/ci-docker-lintro-analysis.sh
+        run: ./scripts/ci-lintro.sh
         continue-on-error: true
 
       - name: Generate PR Comment
@@ -61,7 +61,7 @@ jobs:
         run: |
           echo "❌ Linting checks failed with exit code $CHK_EXIT_CODE"
           echo "Please fix the issues identified by lintro and try again."
-          exit $CHK_EXIT_CODE-''
+          exit $CHK_EXIT_CODE
 
   docker-tests:
     name: 🧪 Docker Tests
@@ -89,7 +89,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Tests in Docker
-        run: ./scripts/ci-docker-tests.sh
+        run: ./scripts/ci-test.sh
         continue-on-error: true
 
       - name: Extract Coverage Percentage
@@ -129,4 +129,4 @@ jobs:
         run: |
           echo "❌ Tests failed with exit code $TEST_EXIT_CODE"
           echo "Please fix the failing tests and try again."
-          exit $TEST_EXIT_CODE-''
+          exit $TEST_EXIT_CODE

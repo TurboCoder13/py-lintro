@@ -21,10 +21,10 @@ def format_timestamp() -> str:
 
 def _can_write_to_directory(path: pathlib.Path) -> bool:
     """Check if we can write to the given directory.
-    
+
     Args:
         path: Directory path to check
-        
+
     Returns:
         True if writable, False otherwise
     """
@@ -46,7 +46,7 @@ def get_logger(verbose: bool = False) -> logger.__class__:
 
     Returns:
         logger.__class__: Configured loguru logger instance.
-        
+
     Raises:
         PermissionError: If unable to create or write to log directory
     """
@@ -54,23 +54,23 @@ def get_logger(verbose: bool = False) -> logger.__class__:
     with _LOGGER_LOCK:
         if not _LOGGER_CONFIGURED:
             now = datetime.datetime.now()
-            
+
             # Try to create log directory, fall back to console-only if it fails
             log_dir = pathlib.Path(
                 f"logs/{now.year}/{now.strftime('%m-%b')}/{now.strftime('%d.%m.%Y')}/{now.strftime('%H:%M:%S')}/files"
             )
-            
+
             # Remove default handler
             logger.remove()
-            
+
             # Try to set up file logging
             try:
                 log_dir.mkdir(parents=True, exist_ok=True)
-                
+
                 # Check if we can actually write to the directory
                 if _can_write_to_directory(log_dir):
                     log_file = log_dir / "lintro.log"
-                    
+
                     # Add file handler with detailed format
                     logger.add(
                         str(log_file),
@@ -81,11 +81,13 @@ def get_logger(verbose: bool = False) -> logger.__class__:
                 else:
                     # Directory exists but we can't write to it
                     raise PermissionError("Cannot write to log directory")
-                    
+
             except (OSError, PermissionError) as e:
                 # Fall back to console-only logging
-                logger.warning(f"File logging disabled: {e}. Using console-only logging.")
-            
+                logger.warning(
+                    f"File logging disabled: {e}. Using console-only logging."
+                )
+
             # Add console handler with timestamp format
             console_level = "DEBUG" if verbose else "WARNING"
             logger.add(
