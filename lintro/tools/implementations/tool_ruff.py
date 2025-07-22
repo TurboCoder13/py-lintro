@@ -242,7 +242,7 @@ class RuffTool(BaseTool):
                 issues_count=0,
             )
 
-        logger.info(f"Files to check: {python_files}")
+        logger.debug(f"Files to check: {python_files}")
 
         timeout = self.options.get("timeout", 30)
         cmd = self._build_check_command(python_files, fix=False)
@@ -252,7 +252,7 @@ class RuffTool(BaseTool):
 
         # Format output for display
         if not output or output.strip() == "[]":
-            output = "No issues found."
+            output = None
 
         # Success: returncode == 0 and no issues
         return ToolResult(
@@ -299,7 +299,7 @@ class RuffTool(BaseTool):
                 issues_count=0,
             )
 
-        logger.info(f"Files to fix: {python_files}")
+        logger.debug(f"Files to fix: {python_files}")
         timeout = self.options.get("timeout", 30)
         all_outputs = []
         total_issues = 0
@@ -317,8 +317,9 @@ class RuffTool(BaseTool):
                 f"Found {issues_count} issue(s) that cannot be auto-fixed"
             )
             for issue in issues[:5]:
-                file_path = getattr(issue, 'file', '')
+                file_path = getattr(issue, "file", "")
                 import os
+
                 try:
                     file_rel = os.path.relpath(file_path)
                 except (ValueError, TypeError):

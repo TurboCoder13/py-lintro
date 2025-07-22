@@ -187,7 +187,7 @@ class YamllintTool(BaseTool):
             include_venv=self.include_venv,
         )
 
-        logger.info(f"Files to check: {yaml_files}")
+        logger.debug(f"Files to check: {yaml_files}")
 
         timeout = self.options.get("timeout", 15)
         all_outputs = []
@@ -222,7 +222,7 @@ class YamllintTool(BaseTool):
                 output += f"\n  - {file}"
 
         if not output.strip():
-            output = "No issues found."
+            output = None
 
         return ToolResult(
             name=self.name,

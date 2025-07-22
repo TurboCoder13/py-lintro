@@ -161,7 +161,7 @@ class DarglintTool(BaseTool):
             include_venv=self.include_venv,
         )
 
-        logger.info(f"Files to check: {python_files}")
+        logger.debug(f"Files to check: {python_files}")
 
         timeout = self.options.get("timeout", 10)
         all_outputs = []
@@ -193,7 +193,7 @@ class DarglintTool(BaseTool):
                 output += f"\n  - {file}"
 
         if not output:
-            output = "No issues found."
+            output = None
 
         return ToolResult(
             name=self.name,

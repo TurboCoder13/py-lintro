@@ -217,7 +217,7 @@ class HadolintTool(BaseTool):
             include_venv=self.include_venv,
         )
 
-        logger.info(f"Files to check: {dockerfile_files}")
+        logger.debug(f"Files to check: {dockerfile_files}")
 
         timeout = self.options.get("timeout", 30)
         all_outputs = []
@@ -252,7 +252,7 @@ class HadolintTool(BaseTool):
                 output += f"\n  - {file}"
 
         if not output.strip():
-            output = "No issues found."
+            output = None
 
         return ToolResult(
             name=self.name,
