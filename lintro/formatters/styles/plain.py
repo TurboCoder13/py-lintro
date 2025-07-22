@@ -10,7 +10,7 @@ class PlainStyle(OutputStyle):
         rows: List[List[Any]],
     ) -> str:
         if not rows:
-            return "No issues found."
+            return ""  # Let the caller handle "No issues found" display
         # Calculate column widths
         col_widths = [
             max(len(str(col)), max((len(str(row[i])) for row in rows), default=0))

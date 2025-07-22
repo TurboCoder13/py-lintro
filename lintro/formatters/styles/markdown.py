@@ -10,7 +10,7 @@ class MarkdownStyle(OutputStyle):
         rows: List[List[Any]],
     ) -> str:
         if not rows:
-            return "No issues found."
+            return ""  # Let the caller handle "No issues found" display
         header = "| " + " | ".join(columns) + " |"
         sep = "|" + "|".join(["---"] * len(columns)) + "|"
         lines = [header, sep]
