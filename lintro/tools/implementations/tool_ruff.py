@@ -3,13 +3,13 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from loguru import logger
+
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import ToolConfig
-from lintro.models.core.tool import ToolResult
+from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.parsers.ruff.ruff_parser import parse_ruff_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
-from loguru import logger
 
 
 @dataclass
@@ -48,7 +48,7 @@ class RuffTool(BaseTool):
                 "line_length": None,  # Line length limit
                 "target_version": None,  # Python version target
                 "fix_only": False,  # Only apply fixes, don't report remaining issues
-                "unsafe_fixes": True,  # Include unsafe fixes by default for fmt command
+                "unsafe_fixes": False,  # Do NOT enable unsafe fixes by default
                 "show_fixes": False,  # Show enumeration of fixes applied
                 "format": True,  # Whether to run formatter as well
             },
@@ -302,21 +302,58 @@ class RuffTool(BaseTool):
         logger.debug(f"Files to fix: {python_files}")
         timeout = self.options.get("timeout", 30)
         all_outputs = []
-        total_issues = 0
         overall_success = True
 
-        # Run ruff check --fix
+        # Show unsafe fixes status
+        unsafe_fixes_enabled = self.options.get("unsafe_fixes", False)
+        if unsafe_fixes_enabled:
+            logger.info(
+                "[ruff] Unsafe fixes are ENABLED (may apply aggressive changes)"
+            )
+        else:
+            logger.info(
+                "[ruff] Unsafe fixes are DISABLED (some issues may not be auto-fixable)"
+            )
+
+        # First, count issues before fixing
+        cmd_check = self._build_check_command(python_files, fix=False)
+        success_check, output_check = self._run_subprocess(cmd_check, timeout=timeout)
+        initial_issues = parse_ruff_output(output_check)
+        initial_count = len(initial_issues)
+
+        # Run ruff check --fix to apply fixes
         cmd = self._build_check_command(python_files, fix=True)
         success, output = self._run_subprocess(cmd, timeout=timeout)
-        issues = parse_ruff_output(output)
-        issues_count = len(issues)
-        total_issues += issues_count
+        remaining_issues = parse_ruff_output(output)
+        remaining_count = len(remaining_issues)
 
-        if issues_count > 0:
+        # Calculate how many issues were actually fixed
+        fixed_count = initial_count - remaining_count
+
+        if fixed_count > 0:
+            all_outputs.append(f"Fixed {fixed_count} issue(s)")
+
+        # If there are remaining issues, check if any are fixable with unsafe fixes
+        if remaining_count > 0:
+            # If unsafe fixes are disabled, check if any remaining issues are fixable with unsafe fixes
+            if not unsafe_fixes_enabled:
+                # Try running ruff with unsafe fixes in dry-run mode to see if it would fix more
+                cmd_unsafe = self._build_check_command(python_files, fix=True)
+                if "--unsafe-fixes" not in cmd_unsafe:
+                    cmd_unsafe.append("--unsafe-fixes")
+                # Only run if not already run with unsafe fixes
+                success_unsafe, output_unsafe = self._run_subprocess(
+                    cmd_unsafe, timeout=timeout
+                )
+                remaining_unsafe = parse_ruff_output(output_unsafe)
+                if len(remaining_unsafe) < remaining_count:
+                    all_outputs.append(
+                        "Some remaining issues could be fixed by enabling unsafe fixes (use --tool-options ruff:unsafe_fixes=True)"
+                    )
             all_outputs.append(
-                f"Found {issues_count} issue(s) that cannot be auto-fixed"
+                f"Found {remaining_count} issue(s) that cannot be auto-fixed"
             )
-            for issue in issues[:5]:
+            for issue in remaining_issues[:5]:
                 file_path = getattr(issue, "file", "")
                 import os
 
@@ -327,12 +364,15 @@ class RuffTool(BaseTool):
                 all_outputs.append(
                     f"  {file_rel}:{getattr(issue, 'line', '?')} - {getattr(issue, 'message', 'Unknown issue')}"
                 )
-            if len(issues) > 5:
-                all_outputs.append(f"  ... and {len(issues) - 5} more")
-        else:
+            if len(remaining_issues) > 5:
+                all_outputs.append(f"  ... and {len(remaining_issues) - 5} more")
+
+        if initial_count == 0:
+            all_outputs.append("No linting issues found")
+        elif remaining_count == 0 and fixed_count > 0:
             all_outputs.append("All linting issues were successfully auto-fixed")
 
-        if not (success and issues_count == 0):
+        if not (success and remaining_count == 0):
             overall_success = False
 
         # Run ruff format if enabled
@@ -354,5 +394,5 @@ class RuffTool(BaseTool):
             name=self.name,
             success=overall_success,
             output=final_output,
-            issues_count=total_issues,
+            issues_count=fixed_count,
         )

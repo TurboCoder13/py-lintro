@@ -1,7 +1,8 @@
 """Tests for CLI commands."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from lintro.cli_utils.commands.check import check
 from lintro.cli_utils.commands.format import format_code
@@ -164,18 +165,18 @@ def test_cli_creates_output_manager_files(tmp_path):
     This is an integration test that checks the full CLI process.
     """
     import os
-    from pathlib import Path
+
     from lintro.utils.tool_executor import run_lint_tools_simple
-    
+
     # Create a test Python file
     test_file = tmp_path / "test.py"
     test_file.write_text("print('hello world')")
-    
+
     # Change to the temp directory so output files are created there
     old_cwd = os.getcwd()
     try:
         os.chdir(tmp_path)
-        
+
         # Run the tool executor which should create output files
         run_lint_tools_simple(
             action="check",
@@ -186,25 +187,91 @@ def test_cli_creates_output_manager_files(tmp_path):
             include_venv=False,
             group_by="auto",
             output_format="grid",
-            verbose=False
+            verbose=False,
         )
-        
+
         # Check that output directory and files were created
         lintro_dir = tmp_path / ".lintro"
         assert lintro_dir.exists(), "Output directory should be created"
-        
+
         # Find the run directory (has timestamp format)
-        run_dirs = [d for d in lintro_dir.iterdir() if d.is_dir() and d.name.startswith("run-")]
+        run_dirs = [
+            d for d in lintro_dir.iterdir() if d.is_dir() and d.name.startswith("run-")
+        ]
         assert len(run_dirs) >= 1, "At least one run directory should be created"
-        
+
         run_dir = run_dirs[0]
-        
+
         # Check that expected output files were created
-        expected_files = ["console.log", "debug.log", "report.md", "report.html", "summary.csv"]
+        expected_files = [
+            "console.log",
+            "debug.log",
+            "report.md",
+            "report.html",
+            "summary.csv",
+        ]
         for expected_file in expected_files:
             file_path = run_dir / expected_file
             assert file_path.exists(), f"{expected_file} should be created"
             assert file_path.stat().st_size > 0, f"{expected_file} should not be empty"
-            
+
     finally:
         os.chdir(old_cwd)
+
+
+def test_ruff_fmt_unsafe_fixes_message(capsys, tmp_path):
+    """Test that ruff fmt outputs unsafe fixes status and suggestion if needed.
+
+    This test copies a file with a known F841 issue to a temp directory, runs
+    lintro fmt with ruff (with and without unsafe fixes), and checks that the
+    console output indicates the status of unsafe fixes and suggests enabling
+    them if needed. It also verifies that enabling unsafe fixes actually fixes
+    the F841 issue.
+
+    Args:
+        capsys: Pytest fixture to capture stdout/stderr.
+        tmp_path: Pytest fixture for a temporary directory.
+    """
+    import shutil
+    import subprocess
+    from pathlib import Path
+
+    # Copy a test file with an F841 issue to a temp dir
+    src = Path("tests/utils/test_console_logger.py")
+    dst = tmp_path / "test_console_logger.py"
+    shutil.copy(src, dst)
+
+    # Run lintro fmt with ruff (unsafe fixes disabled)
+    result = subprocess.run(
+        ["lintro", "fmt", "--tools", "ruff", str(dst)], capture_output=True, text=True
+    )
+
+    out = result.stdout + result.stderr
+    assert "Unsafe fixes are DISABLED" in out
+    assert (
+        "Some remaining issues could be fixed by enabling unsafe fixes" in out
+        or "Found" in out
+    )
+
+    # Now run with unsafe fixes enabled
+    result2 = subprocess.run(
+        [
+            "lintro",
+            "fmt",
+            "--tools",
+            "ruff",
+            "--tool-options",
+            "ruff:unsafe_fixes=True",
+            str(dst),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    out2 = result2.stdout + result2.stderr
+    assert "Unsafe fixes are ENABLED" in out2
+    # After fix, F841 should be gone
+    result3 = subprocess.run(
+        ["lintro", "chk", "--tools", "ruff", str(dst)], capture_output=True, text=True
+    )
+    out3 = result3.stdout + result3.stderr
+    assert "F841" not in out3
