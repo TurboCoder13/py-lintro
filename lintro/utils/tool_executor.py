@@ -8,9 +8,9 @@ Clean, straightforward approach using Loguru with rich formatting:
 
 from lintro.tools import tool_manager
 from lintro.tools.tool_enum import ToolEnum
-from lintro.utils.tool_utils import format_tool_output
 from lintro.utils.console_logger import create_logger
 from lintro.utils.output_manager import OutputManager
+from lintro.utils.tool_utils import format_tool_output
 
 
 def _get_tools_to_run(tools: str | None, action: str) -> list[ToolEnum]:

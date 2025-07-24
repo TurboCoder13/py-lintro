@@ -1,16 +1,17 @@
 """Tests for the simplified runner module."""
 
-import pytest
-from unittest.mock import patch, MagicMock
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from lintro.tools.tool_enum import ToolEnum
 from lintro.utils.tool_executor import (
     _get_tools_to_run,
     _parse_tool_options,
     run_lint_tools_simple,
 )
-from lintro.tools.tool_enum import ToolEnum
 
 
 @pytest.mark.utils

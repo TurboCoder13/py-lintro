@@ -1,86 +1,142 @@
-"""Check command implementation using simplified Loguru-based approach."""
+"""Check command implementation for lintro CLI.
+
+This module provides the core logic for the 'check' command.
+
+Functions:
+    check_command: CLI command for checking files with various tools.
+    check: Legacy function for backward compatibility.
+"""
 
 import click
+
 from lintro.utils.tool_executor import run_lint_tools_simple
 
 
-@click.command()
+@click.command("check")
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 @click.option(
     "--tools",
-    default=None,
-    help="Comma-separated list of tools to run (e.g., ruff,prettier) or 'all'",
+    type=str,
+    help='Comma-separated list of tools to run. Use "all" to run all available tools.',
 )
 @click.option(
     "--tool-options",
-    default=None,
-    help="Tool-specific options in format tool:option=value,tool2:option=value",
+    type=str,
+    help="Tool-specific options in the format tool:option=value,tool:option=value",
 )
 @click.option(
     "--exclude",
-    default=None,
-    help="Comma-separated patterns to exclude from checking",
+    type=str,
+    help="Comma-separated list of patterns to exclude from processing",
 )
 @click.option(
     "--include-venv",
     is_flag=True,
-    default=False,
-    help="Include virtual environment directories in checking",
+    help="Include virtual environment directories in processing",
 )
 @click.option(
-    "--group-by",
-    default="auto",
-    type=click.Choice(["file", "code", "none", "auto"]),
-    help="How to group issues in output",
+    "--output",
+    type=click.Path(),
+    help="Output file path for writing results",
 )
 @click.option(
     "--output-format",
-    default="grid",
     type=click.Choice(["plain", "grid", "markdown", "html", "json", "csv"]),
+    default="grid",
     help="Output format for displaying results",
 )
 @click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    default=False,
-    help="Enable verbose output with debug information",
+    "--group-by",
+    type=click.Choice(["file", "code", "none", "auto"]),
+    default="file",
+    help="How to group issues in the output",
 )
-def check(
-    paths: tuple[str, ...],
-    tools: str | None,
-    tool_options: str | None,
-    exclude: str | None,
-    include_venv: bool,
-    group_by: str,
-    output_format: str,
-    verbose: bool,
-) -> None:
-    """Check code quality using configured linting tools.
-
-    Runs static analysis tools on the specified paths and reports any issues found.
-    Uses simplified Loguru-based logging for clean output and proper file logging.
+@click.option(
+    "--ignore-conflicts",
+    is_flag=True,
+    help="Ignore potential conflicts between tools",
+)
+@click.option(
+    "--darglint-timeout",
+    type=int,
+    help="Timeout for darglint in seconds",
+)
+@click.option(
+    "--prettier-timeout",
+    type=int,
+    help="Timeout for prettier in seconds",
+)
+@click.option(
+    "--verbose",
+    is_flag=True,
+    help="Show verbose output",
+)
+@click.option(
+    "--no-log",
+    is_flag=True,
+    help="Disable logging to file",
+)
+def check_command(
+    paths,
+    tools,
+    tool_options,
+    exclude,
+    include_venv,
+    output,
+    output_format,
+    group_by,
+    ignore_conflicts,
+    darglint_timeout,
+    prettier_timeout,
+    verbose,
+    no_log,
+):
+    """Check files for issues using the specified tools.
 
     Args:
-        paths: Paths to check (defaults to current directory if none provided)
-        tools: Specific tools to run, or 'all' for all available tools
-        tool_options: Tool-specific configuration options
-        exclude: Patterns to exclude from analysis
-        include_venv: Whether to include virtual environment directories
-        group_by: How to group issues in the output display
-        output_format: Format for displaying results
-        verbose: Enable detailed debug output
+        paths: List of file/directory paths to check.
+        tools: Comma-separated list of tool names to run.
+        tool_options: Tool-specific configuration options.
+        exclude: Comma-separated patterns of files/dirs to exclude.
+        include_venv: Whether to include virtual environment directories.
+        output: Path to output file for results.
+        output_format: Format for displaying results (table, json, etc).
+        group_by: How to group issues in output (tool, file, etc).
+        ignore_conflicts: Whether to ignore tool configuration conflicts.
+        darglint_timeout: Timeout in seconds for darglint tool.
+        prettier_timeout: Timeout in seconds for prettier tool.
+        verbose: Whether to show verbose output during execution.
+        no_log: Whether to disable logging to file.
+
+    Returns:
+        None: This function does not return a value.
+
+    Raises:
+        ClickException: If issues are found during checking.
     """
-    # Default to current directory if no paths provided
+    # Add default paths if none provided
     if not paths:
         paths = ["."]
+
+    # Build tool-specific options string
+    tool_option_parts = []
+    if tool_options:
+        tool_option_parts.append(tool_options)
+
+    if darglint_timeout is not None:
+        tool_option_parts.append(f"darglint:timeout={darglint_timeout}")
+
+    if prettier_timeout is not None:
+        tool_option_parts.append(f"prettier:timeout={prettier_timeout}")
+
+    combined_tool_options = ",".join(tool_option_parts) if tool_option_parts else None
 
     # Run with simplified approach
     exit_code = run_lint_tools_simple(
         action="check",
         paths=list(paths),
         tools=tools,
-        tool_options=tool_options,
+        tool_options=combined_tool_options,
         exclude=exclude,
         include_venv=include_venv,
         group_by=group_by,
@@ -91,3 +147,80 @@ def check(
     # Exit with appropriate code
     if exit_code != 0:
         raise click.ClickException("Check found issues")
+    return None
+
+
+def check(
+    paths,
+    tools,
+    tool_options,
+    exclude,
+    include_venv,
+    output,
+    output_format,
+    group_by,
+    ignore_conflicts,
+    darglint_timeout,
+    prettier_timeout,
+    verbose,
+    no_log,
+):
+    """Legacy check function for backward compatibility.
+
+    Args:
+        paths: List of file/directory paths to check.
+        tools: Comma-separated list of tool names to run.
+        tool_options: Tool-specific configuration options.
+        exclude: Comma-separated patterns of files/dirs to exclude.
+        include_venv: Whether to include virtual environment directories.
+        output: Path to output file for results.
+        output_format: Format for displaying results (table, json, etc).
+        group_by: How to group issues in output (tool, file, etc).
+        ignore_conflicts: Whether to ignore tool configuration conflicts.
+        darglint_timeout: Timeout in seconds for darglint tool.
+        prettier_timeout: Timeout in seconds for prettier tool.
+        verbose: Whether to show verbose output during execution.
+        no_log: Whether to disable logging to file.
+
+    Returns:
+        None: This function does not return a value.
+    """
+    import sys
+
+    from click.testing import CliRunner
+
+    # Build arguments for the click command
+    args = []
+    if paths:
+        args.extend(paths)
+    if tools:
+        args.extend(["--tools", tools])
+    if tool_options:
+        args.extend(["--tool-options", tool_options])
+    if exclude:
+        args.extend(["--exclude", exclude])
+    if include_venv:
+        args.append("--include-venv")
+    if output:
+        args.extend(["--output", output])
+    if output_format:
+        args.extend(["--output-format", output_format])
+    if group_by:
+        args.extend(["--group-by", group_by])
+    if ignore_conflicts:
+        args.append("--ignore-conflicts")
+    if darglint_timeout is not None:
+        args.extend(["--darglint-timeout", str(darglint_timeout)])
+    if prettier_timeout is not None:
+        args.extend(["--prettier-timeout", str(prettier_timeout)])
+    if verbose:
+        args.append("--verbose")
+    if no_log:
+        args.append("--no-log")
+
+    runner = CliRunner()
+    result = runner.invoke(check_command, args)
+
+    if result.exit_code != 0:
+        sys.exit(result.exit_code)
+    return None

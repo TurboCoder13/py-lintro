@@ -6,12 +6,12 @@ This module contains tests for the tool utility functions in Lintro.
 import pytest
 
 from lintro.utils.tool_utils import (
+    format_as_table,
+    format_tool_output,
+    get_table_columns,
     parse_tool_list,
     parse_tool_options,
     should_exclude_path,
-    get_table_columns,
-    format_as_table,
-    format_tool_output,
     walk_files_with_excludes,
 )
 

@@ -1,11 +1,13 @@
+import csv
+import json
 import shutil
 import tempfile
-import json
-import csv
-import pytest
-from lintro.utils.output_manager import OutputManager
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
+from lintro.utils.output_manager import OutputManager
 
 
 @pytest.fixture
@@ -34,14 +36,22 @@ def make_issue(file, line, code, message):
 
 
 def test_run_dir_creation(temp_output_dir):
-    """Test that OutputManager creates a timestamped run directory."""
+    """Test that OutputManager creates a timestamped run directory.
+
+    Args:
+        temp_output_dir: Temporary directory fixture for test output.
+    """
     om = OutputManager(base_dir=temp_output_dir, keep_last=2)
     assert om.get_run_dir().exists()
     assert om.get_run_dir().parent == Path(temp_output_dir)
 
 
 def test_write_console_log(temp_output_dir):
-    """Test writing console.log file."""
+    """Test writing console.log file.
+
+    Args:
+        temp_output_dir: Temporary directory fixture for test output.
+    """
     om = OutputManager(base_dir=temp_output_dir)
     om.write_console_log("hello world")
     log_path = om.get_run_dir() / "console.log"
@@ -50,7 +60,11 @@ def test_write_console_log(temp_output_dir):
 
 
 def test_write_json(temp_output_dir):
-    """Test writing results.json file."""
+    """Test writing results.json file.
+
+    Args:
+        temp_output_dir: Temporary directory fixture for test output.
+    """
     om = OutputManager(base_dir=temp_output_dir)
     data = {"foo": 1, "bar": [2, 3]}
     om.write_json(data)
@@ -62,7 +76,11 @@ def test_write_json(temp_output_dir):
 
 
 def test_write_markdown(temp_output_dir):
-    """Test writing report.md file."""
+    """Test writing report.md file.
+
+    Args:
+        temp_output_dir: Temporary directory fixture for test output.
+    """
     om = OutputManager(base_dir=temp_output_dir)
     om.write_markdown("# Title\nBody")
     md_path = om.get_run_dir() / "report.md"
@@ -71,7 +89,11 @@ def test_write_markdown(temp_output_dir):
 
 
 def test_write_html(temp_output_dir):
-    """Test writing report.html file."""
+    """Test writing report.html file.
+
+    Args:
+        temp_output_dir: Temporary directory fixture for test output.
+    """
     om = OutputManager(base_dir=temp_output_dir)
     om.write_html("<h1>Title</h1>")
     html_path = om.get_run_dir() / "report.html"
@@ -80,7 +102,11 @@ def test_write_html(temp_output_dir):
 
 
 def test_write_csv(temp_output_dir):
-    """Test writing summary.csv file."""
+    """Test writing summary.csv file.
+
+    Args:
+        temp_output_dir: Temporary directory fixture for test output.
+    """
     om = OutputManager(base_dir=temp_output_dir)
     rows = [["a", "1"], ["b", "2"]]
     header = ["col1", "col2"]
@@ -95,7 +121,11 @@ def test_write_csv(temp_output_dir):
 
 
 def test_write_reports_from_results(temp_output_dir):
-    """Test write_reports_from_results generates all report files with correct content."""
+    """Test write_reports_from_results generates all report files with correct content.
+
+    Args:
+        temp_output_dir: Temporary directory fixture for test output.
+    """
     om = OutputManager(base_dir=temp_output_dir)
     issues = [make_issue("foo.py", 1, "E001", "Test error")]
     results = [

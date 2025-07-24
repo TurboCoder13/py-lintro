@@ -4,12 +4,13 @@ import subprocess
 from dataclasses import dataclass, field
 from typing import Any
 
+from loguru import logger
+
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
-from loguru import logger
 
 
 @dataclass

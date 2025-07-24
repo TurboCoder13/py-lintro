@@ -1,4 +1,9 @@
-"""Parser for ruff output."""
+"""Parser for ruff output (lint and format).
+
+This module provides functions to parse both:
+- ruff check --output-format json (linting issues)
+- ruff format --check (plain text: files needing formatting)
+"""
 
 import json
 from typing import List
@@ -44,3 +49,25 @@ def parse_ruff_output(output: str) -> List[RuffIssue]:
         pass
 
     return issues
+
+
+def parse_ruff_format_check_output(output: str) -> list[str]:
+    """Parse the output of `ruff format --check` to get files needing formatting.
+
+    Args:
+        output: The raw output from `ruff format --check`
+
+    Returns:
+        List of file paths that would be reformatted
+    """
+    if not output:
+        return []
+    files = []
+    for line in output.splitlines():
+        line = line.strip()
+        # Ruff format --check output: 'Would reformat: path/to/file.py' or 'Would reformat path/to/file.py'
+        if line.startswith("Would reformat: "):
+            files.append(line[len("Would reformat: ") :])
+        elif line.startswith("Would reformat "):
+            files.append(line[len("Would reformat ") :])
+    return files

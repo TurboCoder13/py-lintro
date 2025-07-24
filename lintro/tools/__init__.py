@@ -4,7 +4,6 @@ from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import Tool
 from lintro.models.core.tool_config import ToolConfig
 from lintro.tools.core.tool_manager import ToolManager
-from lintro.tools.tool_enum import ToolEnum
 
 # Import core implementations after Tool class definition to avoid circular imports
 from lintro.tools.implementations.tool_darglint import DarglintTool
@@ -12,6 +11,7 @@ from lintro.tools.implementations.tool_hadolint import HadolintTool
 from lintro.tools.implementations.tool_prettier import PrettierTool
 from lintro.tools.implementations.tool_ruff import RuffTool
 from lintro.tools.implementations.tool_yamllint import YamllintTool
+from lintro.tools.tool_enum import ToolEnum
 
 # Create global core manager instance
 tool_manager = ToolManager()

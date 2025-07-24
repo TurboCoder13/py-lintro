@@ -3,8 +3,9 @@
 This module contains tests for the formatting utility functions in Lintro.
 """
 
+from unittest.mock import mock_open, patch
+
 import pytest
-from unittest.mock import patch, mock_open
 
 from lintro.utils.formatting import read_ascii_art
 

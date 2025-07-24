@@ -10,7 +10,7 @@ This guide covers all configuration options for Lintro and the underlying tools 
 
 ```bash
 # Output options
-lintro check --table-format                  # Use table formatting
+lintro check                  # Use table formatting
 lintro check --output results.txt            # Save output to file
 lintro check --group-by [file|code|none|auto] # Group issues
 
@@ -402,24 +402,24 @@ lintro check --tools ruff,black --ignore-conflicts
 
 ```bash
 # Use specific tools for faster checks
-lintro check --tools ruff --table-format
+lintro check --tools ruff
 
 # Process directories separately
-lintro check src/ --tools ruff,darglint --table-format
-lintro check tests/ --tools ruff --table-format
+lintro check src/ --tools ruff,darglint
+lintro check tests/ --tools ruff
 
 # Exclude heavy directories
-lintro check --exclude "venv,node_modules,migrations" --table-format
+lintro check --exclude "venv,node_modules,migrations"
 ```
 
 #### CI/CD Optimization
 
 ```bash
 # Fast checks for PR validation
-lintro check --tools ruff --table-format
+lintro check --tools ruff
 
 # Full analysis for main branch
-lintro check --all --table-format --output full-report.txt
+lintro check --all --output full-report.txt
 ```
 
 ### Custom Output Formats
@@ -427,7 +427,7 @@ lintro check --all --table-format --output full-report.txt
 #### JSON Output (planned)
 
 ```bash
-lintro check --format json --output results.json
+lintro check --output-format json --output results.json
 ```
 
 ```json
@@ -454,7 +454,7 @@ lintro check --format json --output results.json
 #### Markdown Output (planned)
 
 ```bash
-lintro check --format markdown --output QUALITY_REPORT.md
+lintro check --output-format markdown --output QUALITY_REPORT.md
 ```
 
 ## Integration Patterns
@@ -489,17 +489,17 @@ repos:
 
 # Quality checks
 lint:
-	lintro check --table-format
+	lintro check
 
 fix:
-	lintro fmt --table-format
+	lintro fmt
 
 check: lint
 	@echo "Quality check completed"
 
 # Comprehensive quality report
 quality:
-	lintro check --all --table-format --output quality-report.txt
+	lintro check --all --output quality-report.txt
 	@echo "Full quality report saved to quality-report.txt"
 
 # Tool installation

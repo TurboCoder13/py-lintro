@@ -1,7 +1,8 @@
 """Tool utilities for handling core operations."""
 
-import os
 import fnmatch
+import os
+
 from loguru import logger
 
 try:
@@ -23,12 +24,10 @@ from lintro.formatters.tools.ruff_formatter import (
     RuffTableDescriptor,
     format_ruff_issues,
 )
-from lintro.utils.path_utils import normalize_file_path_for_display
-
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.parsers.ruff.ruff_parser import parse_ruff_output
-
+from lintro.utils.path_utils import normalize_file_path_for_display
 
 TOOL_TABLE_FORMATTERS = {
     "darglint": (DarglintTableDescriptor(), format_darglint_issues),
@@ -281,12 +280,12 @@ def format_tool_output(
 
                 if issues:
                     # Use the grid formatter for generic issues
-                    from lintro.formatters.styles.plain import PlainStyle
+                    from lintro.formatters.styles.csv import CsvStyle
                     from lintro.formatters.styles.grid import GridStyle
-                    from lintro.formatters.styles.markdown import MarkdownStyle
                     from lintro.formatters.styles.html import HtmlStyle
                     from lintro.formatters.styles.json import JsonStyle
-                    from lintro.formatters.styles.csv import CsvStyle
+                    from lintro.formatters.styles.markdown import MarkdownStyle
+                    from lintro.formatters.styles.plain import PlainStyle
 
                     format_map = {
                         "plain": PlainStyle(),

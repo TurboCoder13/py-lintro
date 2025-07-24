@@ -31,6 +31,8 @@ permissions:
 jobs:
   run-test-suite:
     runs-on: ubuntu-latest
+    env:
+      LINTRO_OUTPUT_DIR: /tmp/lintro
     outputs:
       coverage-percentage: ${{ steps.coverage-summary.outputs.percentage }}
     steps:

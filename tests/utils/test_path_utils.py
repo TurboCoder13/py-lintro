@@ -1,7 +1,8 @@
 """Tests for the path utilities module."""
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from lintro.utils.path_utils import normalize_file_path_for_display
 

@@ -1,6 +1,6 @@
 import csv
 import io
-from typing import List, Any
+from typing import Any, List
 
 from lintro.formatters.core.output_style import OutputStyle
 

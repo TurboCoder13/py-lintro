@@ -4,12 +4,13 @@ import subprocess
 from dataclasses import dataclass, field
 from typing import Any
 
+from loguru import logger
+
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
-from loguru import logger
 
 
 @dataclass
@@ -160,17 +161,23 @@ class HadolintTool(BaseTool):
         cmd.extend(["--failure-threshold", failure_threshold])
 
         # Add ignore rules
-        ignore_rules = self.options.get("ignore", [])
+        ignore_rules = self.options.get("ignore")
+        if ignore_rules is None:
+            ignore_rules = []
         for rule in ignore_rules:
             cmd.extend(["--ignore", rule])
 
         # Add trusted registries
-        trusted_registries = self.options.get("trusted_registries", [])
+        trusted_registries = self.options.get("trusted_registries")
+        if trusted_registries is None:
+            trusted_registries = []
         for registry in trusted_registries:
             cmd.extend(["--trusted-registry", registry])
 
         # Add required labels
-        require_labels = self.options.get("require_labels", [])
+        require_labels = self.options.get("require_labels")
+        if require_labels is None:
+            require_labels = []
         for label in require_labels:
             cmd.extend(["--require-label", label])
 

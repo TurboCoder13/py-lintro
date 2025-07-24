@@ -1,8 +1,10 @@
 """Integration tests for hadolint tool."""
 
-import subprocess
-from pathlib import Path
+import os
 import shutil
+import subprocess
+import tempfile
+from pathlib import Path
 
 import pytest
 from loguru import logger
@@ -24,20 +26,43 @@ def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
     Returns:
         tuple[bool, str, int]: Success status, output text, and issue count.
     """
+    import shutil
+    import subprocess
+
+    hadolint_path = shutil.which("hadolint")
+    print(f"[DEBUG] hadolint binary path: {hadolint_path}")
+    version_result = subprocess.run(
+        ["hadolint", "--version"], capture_output=True, text=True
+    )
+    print(f"[DEBUG] hadolint version: {version_result.stdout}")
     cmd = [
         "hadolint",
         "--no-color",
-        "--format",
+        "-f",
         "tty",
-        file_path.name,
+        str(file_path),  # Use absolute path
     ]
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        check=False,
-        cwd=file_path.parent,
-    )
+    print(f"[DEBUG] Running hadolint command: {' '.join(cmd)}")
+    with open(file_path, "r") as f:
+        print(f"[DEBUG] File contents for {file_path}:")
+        print(f.read())
+    # Set HOME to a temp dir to avoid user config
+    with tempfile.TemporaryDirectory() as temp_home:
+        env = os.environ.copy()
+        env["HOME"] = temp_home
+        print(
+            f"[DEBUG] Subprocess environment: HOME={env.get('HOME')}, PATH={env.get('PATH')}"
+        )
+        print(f"[DEBUG] Subprocess CWD: {file_path.parent}")
+        print(f"[DEBUG] Subprocess full env: {env}")
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=file_path.parent,
+            env=env,
+        )
     # Count issues by parsing output lines that contain error/warning/info patterns
     issues = []
     for line in result.stdout.splitlines():
@@ -73,8 +98,18 @@ def test_hadolint_reports_violations_direct(tmp_path):
     """
     test_hadolint_available()
 
+    import os
+    import shutil
+    from pathlib import Path
+
     sample_file = tmp_path / "Dockerfile"
-    shutil.copy(SAMPLE_FILE, sample_file)
+    shutil.copy(Path("test_samples/hadolint_violations"), sample_file)
+    # Diagnostics
+    print(f"[DEBUG] CWD: {os.getcwd()}")
+    print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
+    print(
+        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, PATH={os.environ.get('PATH')}"
+    )
     logger.info("[TEST] Running hadolint directly on sample file...")
     success, output, issues = run_hadolint_directly(sample_file)
     logger.info(f"[LOG] Hadolint found {issues} issues. Output:\n{output}")
@@ -126,6 +161,14 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
 
     sample_file = tmp_path / "Dockerfile"
     shutil.copy(SAMPLE_FILE, sample_file)
+    # Diagnostics
+    import os
+
+    print(f"[DEBUG] CWD: {os.getcwd()}")
+    print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
+    print(
+        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, PATH={os.environ.get('PATH')}"
+    )
     logger.info("[TEST] Comparing hadolint CLI and Lintro HadolintTool outputs...")
     tool = HadolintTool()
     tool.set_options(no_color=True, format="tty")
@@ -133,6 +176,9 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
     result = tool.check([str(sample_file)])
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}"
+    )
+    assert direct_issues == result.issues_count, (
+        f"Mismatch: CLI={direct_issues}, Lintro={result.issues_count}\nCLI Output:\n{direct_output}\nLintro Output:\n{result.output}"
     )
     assert direct_success == result.success, (
         "Success/failure mismatch between CLI and Lintro."

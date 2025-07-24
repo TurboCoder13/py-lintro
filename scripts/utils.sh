@@ -98,9 +98,9 @@ run_lintro() {
     local exclude="${3:-$EXCLUDE_DIRS}"
     
     if [ -n "$exclude" ]; then
-        uv run lintro "$command" . --format "$format" --exclude "$exclude"
+        uv run lintro "$command" . --exclude "$exclude"
     else
-        uv run lintro "$command" . --format "$format"
+        uv run lintro "$command" .
     fi
 }
 

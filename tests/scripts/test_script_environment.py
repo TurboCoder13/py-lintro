@@ -5,9 +5,10 @@ missing tools, and error conditions.
 """
 
 import subprocess
-import pytest
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
+import pytest
 
 
 class TestEnvironmentHandling:

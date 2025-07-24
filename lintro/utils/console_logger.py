@@ -7,8 +7,10 @@ No tee, no stream redirection, clean and simple with rich formatting.
 import sys
 from pathlib import Path
 from typing import Any
+
 import click
 from loguru import logger
+
 from lintro.utils.formatting import read_ascii_art
 
 
@@ -72,21 +74,41 @@ class SimpleLintroLogger:
         )
 
     def info(self, message: str, **kwargs: Any) -> None:
-        """Log info message and track for console.log."""
+        """Log an info message to the console.
+
+        Args:
+            message: The message to log.
+            **kwargs: Additional keyword arguments for formatting.
+        """
         self.console_messages.append(message)
         logger.info(message, **kwargs)
 
     def debug(self, message: str, **kwargs: Any) -> None:
-        """Log debug message."""
+        """Log debug message.
+
+        Args:
+            message: The debug message to log.
+            **kwargs: Additional keyword arguments for formatting.
+        """
         logger.debug(message, **kwargs)
 
     def warning(self, message: str, **kwargs: Any) -> None:
-        """Log warning message and track for console.log."""
+        """Log a warning message to the console.
+
+        Args:
+            message: The message to log.
+            **kwargs: Additional keyword arguments for formatting.
+        """
         self.console_messages.append(f"WARNING: {message}")
         logger.warning(message, **kwargs)
 
     def error(self, message: str, **kwargs: Any) -> None:
-        """Log error message and track for console.log."""
+        """Log an error message to the console.
+
+        Args:
+            message: The message to log.
+            **kwargs: Additional keyword arguments for formatting.
+        """
         self.console_messages.append(f"ERROR: {message}")
         logger.error(message, **kwargs)
 
@@ -105,15 +127,26 @@ class SimpleLintroLogger:
         # Track for console.log (without color codes)
         self.console_messages.append(text)
 
-    def success(self, message: str) -> None:
-        """Print a success message to console and log it."""
+    def success(self, message: str, **kwargs: Any) -> None:
+        """Log a success message to the console.
+
+        Args:
+            message: The message to log.
+            **kwargs: Additional keyword arguments for formatting.
+        """
         self.console_output(message, color="green")
         logger.debug(f"SUCCESS: {message}")
 
     def print_lintro_header(
         self, action: str, tools_count: int, tools_list: str
     ) -> None:
-        """Print the main Lintro header with run information."""
+        """Print the main LINTRO header.
+
+        Args:
+            action: The action being performed.
+            tools_count: The number of tools being run.
+            tools_list: The list of tools being run.
+        """
         header_msg = (
             f"[LINTRO] All output formats will be auto-generated in {self.run_dir}"
         )
@@ -121,7 +154,12 @@ class SimpleLintroLogger:
         logger.debug(f"Starting {action} with {tools_count} tools: {tools_list}")
 
     def print_tool_header(self, tool_name: str, action: str) -> None:
-        """Print rich tool execution header with borders and emojis."""
+        """Print the header for a tool's output.
+
+        Args:
+            tool_name: The name of the tool.
+            action: The action being performed (e.g., 'check', 'fmt').
+        """
         emoji = get_tool_emoji(tool_name)
         emojis = (emoji + " ") * 5
 
@@ -137,7 +175,13 @@ class SimpleLintroLogger:
         logger.debug(f"Starting tool: {tool_name}")
 
     def print_tool_result(self, tool_name: str, output: str, issues_count: int) -> None:
-        """Print tool results - either the output or success message."""
+        """Print the result for a tool.
+
+        Args:
+            tool_name: The name of the tool.
+            output: The output from the tool.
+            issues_count: The number of issues found.
+        """
         if output and output.strip():
             self.console_output(output)
             logger.debug(f"Tool {tool_name} output: {len(output)} characters")
@@ -154,7 +198,12 @@ class SimpleLintroLogger:
         self.console_output("")  # Blank line after each tool
 
     def print_execution_summary(self, action: str, tool_results: list[Any]) -> None:
-        """Print the execution summary with table and final status."""
+        """Print the execution summary for all tools.
+
+        Args:
+            action: The action being performed.
+            tool_results: The list of tool results.
+        """
         # Execution summary section
         summary_header = click.style("📋 EXECUTION SUMMARY", fg="cyan", bold=True)
         border_line = click.style("=" * 50, fg="cyan")
@@ -175,7 +224,12 @@ class SimpleLintroLogger:
         logger.debug(f"{action} completed with {total_issues} total issues")
 
     def _print_summary_table(self, action: str, tool_results: list[Any]) -> None:
-        """Print the execution summary table."""
+        """Print the summary table for the run.
+
+        Args:
+            action: The action being performed.
+            tool_results: The list of tool results.
+        """
         try:
             from tabulate import tabulate
 
@@ -229,7 +283,12 @@ class SimpleLintroLogger:
             logger.warning("tabulate not available for summary table")
 
     def _print_final_status(self, action: str, total_issues: int) -> None:
-        """Print the final status message."""
+        """Print the final status for the run.
+
+        Args:
+            action: The action being performed.
+            total_issues: The total number of issues found.
+        """
         if action == "fmt":
             # Format operations: show success regardless of fixes made
             if total_issues == 0:
@@ -249,7 +308,11 @@ class SimpleLintroLogger:
         self.console_output("")
 
     def _print_ascii_art(self, total_issues: int) -> None:
-        """Print ASCII art based on success/failure."""
+        """Print ASCII art based on the number of issues.
+
+        Args:
+            total_issues: The total number of issues found.
+        """
         try:
             if total_issues == 0:
                 ascii_art = read_ascii_art("success.txt")
@@ -265,7 +328,14 @@ class SimpleLintroLogger:
     def print_verbose_info(
         self, action: str, tools_list: str, paths_list: str, output_format: str
     ) -> None:
-        """Print verbose configuration information."""
+        """Print verbose information about the run.
+
+        Args:
+            action: The action being performed.
+            tools_list: The list of tools being run.
+            paths_list: The list of paths being checked/formatted.
+            output_format: The output format being used.
+        """
         if not self.verbose:
             return
 

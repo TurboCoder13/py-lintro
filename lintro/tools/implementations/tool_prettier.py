@@ -4,8 +4,7 @@ import os
 from dataclasses import dataclass, field
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import Tool, ToolResult
-from lintro.models.core.tool import ToolConfig
+from lintro.models.core.tool import Tool, ToolConfig, ToolResult
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
@@ -88,6 +87,7 @@ class PrettierTool(BaseTool):
             ToolResult instance
         """
         import os
+
         from loguru import logger
 
         self._validate_paths(paths)
@@ -144,6 +144,7 @@ class PrettierTool(BaseTool):
             ToolResult instance
         """
         import os
+
         from loguru import logger
 
         self._validate_paths(paths)

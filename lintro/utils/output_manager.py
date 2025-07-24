@@ -3,12 +3,14 @@
 Handles creation of timestamped output directories and writing all required formats.
 """
 
-import shutil
-import json
 import csv
 import datetime
+import json
+import os
+import shutil
+import tempfile
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from lintro.models.core.tool_result import ToolResult
@@ -38,7 +40,12 @@ class OutputManager:
             base_dir: Base directory for output (default: .lintro)
             keep_last: Number of runs to keep (default: 10)
         """
-        self.base_dir = Path(base_dir)
+        # Allow override via environment variable
+        env_base_dir = os.environ.get("LINTRO_LOG_DIR")
+        if env_base_dir:
+            self.base_dir = Path(env_base_dir)
+        else:
+            self.base_dir = Path(base_dir)
         self.keep_last = keep_last
         self.run_dir = self._create_run_dir()
 
@@ -50,7 +57,13 @@ class OutputManager:
         """
         timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         run_dir = self.base_dir / f"run-{timestamp}"
-        run_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            run_dir.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            # Fallback to temp directory if not writable
+            temp_base = Path(tempfile.gettempdir()) / ".lintro"
+            run_dir = temp_base / f"run-{timestamp}"
+            run_dir.mkdir(parents=True, exist_ok=True)
         return run_dir
 
     def write_console_log(self, content: str) -> None:
@@ -115,7 +128,11 @@ class OutputManager:
         self._write_csv_summary(results)
 
     def _write_markdown_report(self, results: list["ToolResult"]) -> None:
-        """Write a Markdown report summarizing all tool results and issues."""
+        """Write a Markdown report summarizing all tool results and issues.
+
+        Args:
+            results: List of ToolResult objects from the linting run.
+        """
         lines = ["# Lintro Report", ""]
         lines.append("## Summary\n")
         lines.append("| Tool | Issues |\n|------|--------|\n")
@@ -139,7 +156,11 @@ class OutputManager:
         self.write_markdown("\n".join(lines))
 
     def _write_html_report(self, results: list["ToolResult"]) -> None:
-        """Write an HTML report summarizing all tool results and issues."""
+        """Write an HTML report summarizing all tool results and issues.
+
+        Args:
+            results: List of ToolResult objects from the linting run.
+        """
         html = ["<html><head><title>Lintro Report</title></head><body>"]
         html.append("<h1>Lintro Report</h1>")
         html.append("<h2>Summary</h2>")
@@ -170,7 +191,11 @@ class OutputManager:
         self.write_html("\n".join(html))
 
     def _write_csv_summary(self, results: list["ToolResult"]) -> None:
-        """Write a CSV summary of all tool results and issues."""
+        """Write a CSV summary of all tool results and issues.
+
+        Args:
+            results: List of ToolResult objects from the linting run.
+        """
         rows = []
         header = ["tool", "issues_count", "file", "line", "code", "message"]
         for r in results:

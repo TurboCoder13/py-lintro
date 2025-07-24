@@ -1,11 +1,11 @@
 """Output format styles for lintro."""
 
-from .plain import PlainStyle
+from .csv import CsvStyle
 from .grid import GridStyle
-from .markdown import MarkdownStyle
 from .html import HtmlStyle
 from .json import JsonStyle
-from .csv import CsvStyle
+from .markdown import MarkdownStyle
+from .plain import PlainStyle
 
 __all__ = [
     "PlainStyle",

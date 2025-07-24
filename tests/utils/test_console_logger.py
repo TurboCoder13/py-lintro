@@ -1,14 +1,15 @@
 """Tests for the simplified Loguru logger module."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 from tempfile import TemporaryDirectory
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from lintro.utils.console_logger import (
     SimpleLintroLogger,
-    get_tool_emoji,
     create_logger,
+    get_tool_emoji,
 )
 
 
