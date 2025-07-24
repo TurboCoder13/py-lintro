@@ -215,7 +215,7 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'test'", specifier = "==3.14.1" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "tabulate", specifier = "==0.9.0" },
-    { name = "tox", marker = "extra == 'dev'", specifier = "==4.27.0" },
+    { name = "tox", marker = "extra == 'dev'", specifier = "==4.28.1" },
     { name = "types-setuptools", marker = "extra == 'typing'", specifier = "==80.9.0.20250529" },
     { name = "types-tabulate", marker = "extra == 'typing'", specifier = "==0.9.0.20241207" },
     { name = "yamllint", specifier = "==1.37.1" },
@@ -433,7 +433,7 @@ wheels = [
 
 [[package]]
 name = "tox"
-version = "4.27.0"
+version = "4.28.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cachetools" },
@@ -446,9 +446,9 @@ dependencies = [
     { name = "pyproject-api" },
     { name = "virtualenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/b7/19c01717747076f63c54d871ada081cd711a7c9a7572f2225675c3858b94/tox-4.27.0.tar.gz", hash = "sha256:b97d5ecc0c0d5755bcc5348387fef793e1bfa68eb33746412f4c60881d7f5f57", size = 198351, upload-time = "2025-06-17T15:17:50.585Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/a3/6fdc3f17aad7f2971739c6efc537a692d619c54acb224d90e62733346a60/tox-4.28.1.tar.gz", hash = "sha256:227ce1fdfea7763107aed3a8ac87d74b1bd1240ad7dd9c37fc2cb2b318006520", size = 199598, upload-time = "2025-07-23T06:16:39.555Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/3a/30889167f41ecaffb957ec4409e1cbc1d5d558a5bbbdfb734a5b9911930f/tox-4.27.0-py3-none-any.whl", hash = "sha256:2b8a7fb986b82aa2c830c0615082a490d134e0626dbc9189986da46a313c4f20", size = 173441, upload-time = "2025-06-17T15:17:48.689Z" },
+    { url = "https://files.pythonhosted.org/packages/b9/60/0ba9aa30a0a3d0faaebeadd9c847812a929416a4acda50d92c7079a9ec00/tox-4.28.1-py3-none-any.whl", hash = "sha256:d5c84de6efc5d7e8acadb09528943e87ee501a35e064cf852082bc600485c13d", size = 173973, upload-time = "2025-07-23T06:16:37.54Z" },
 ]
 
 [[package]]
