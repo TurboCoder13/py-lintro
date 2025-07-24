@@ -32,7 +32,7 @@ dev = [
     "pytest-cov==6.2.1",
     "pytest-mock==3.14.1",
     "tox==4.27.0",
-    "allure-pytest==2.14.3",
+    "allure-pytest==2.15.0",
     "ruff",
     "mypy",
     "coverage-badge==1.1.2",
