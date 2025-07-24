@@ -80,57 +80,34 @@ jobs:
           echo "Extracted coverage percentage: $PERCENTAGE"
           echo "percentage=$PERCENTAGE" >> $GITHUB_OUTPUT
 
-  coverage-badge:
-    needs: run-test-suite
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13.5'
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-      - name: Install dependencies
-        run: uv sync --dev
-      - name: Download coverage artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report-python-3.13
-          path: coverage-html/
-      - name: Download coverage XML
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-xml
-          path: ./
-      - name: Download .coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-dotfile
-          path: ./
-      - name: Generate coverage badge
-
-        # yamllint disable
-        run: |
-          export COVERAGE_PERCENTAGE="${{ needs.run-test-suite.outputs.coverage-percentage }}"
-          ./scripts/coverage-badge-update.sh
-        # yamllint enable
-
   comment-pr-coverage:
     needs: run-test-suite
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-      - name: Generate coverage PR comment
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install all tools and dependencies
+        run: ./scripts/install-tools.sh --local
+      - name: Install Python dependencies
+        run: uv sync --dev
+      - name: Delete Previous Coverage PR Comments
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
 
+        # yamllint disable
+        run: uv run python scripts/delete-previous-lintro-comments.py "<!-- coverage-report -->"
+        # yamllint enable
+
+      - name: Generate coverage PR comment
         # yamllint disable
         run: |
           export COVERAGE_PERCENTAGE="${{ needs.run-test-suite.outputs.coverage-percentage }}"
           ./scripts/coverage-pr-comment.sh
         # yamllint enable
-
       - name: Comment PR with coverage info
         uses: actions/github-script@v7
         with:

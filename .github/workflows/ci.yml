@@ -9,14 +9,11 @@ name: CI Pipeline
 
 jobs:
   docker-lintro-analysis:
-    name: 🔧 Docker Lintro Code Quality & Analysis
+    name: 🛠️ Docker Lintro Code Quality & Analysis
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
-
-    env:
-      LINTRO_OUTPUT_DIR: /tmp/lintro
 
     steps:
       - name: Checkout code
@@ -24,6 +21,15 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install all tools and dependencies
+        run: ./scripts/install-tools.sh --local
+
+      - name: Install Python dependencies
+        run: uv sync --dev
 
       - name: Build Docker image
         uses: docker/build-push-action@v6
@@ -38,6 +44,17 @@ jobs:
       - name: Run Lintro Analysis in Docker
         run: ./scripts/ci-lintro.sh
         continue-on-error: true
+
+      - name: Delete Previous Lintro PR Comments
+        if: github.event_name == 'pull_request'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
+        # yamllint disable
+        run: uv run python scripts/delete-previous-lintro-comments.py "<!-- lintro-report -->"
+        # yamllint enable
 
       - name: Generate PR Comment
         if: github.event_name == 'pull_request'
@@ -65,74 +82,3 @@ jobs:
           echo "❌ Linting checks failed with exit code $CHK_EXIT_CODE"
           echo "Please fix the issues identified by lintro and try again."
           exit $CHK_EXIT_CODE
-
-  docker-tests:
-    name: 🧪 Docker Tests
-    runs-on: ubuntu-latest
-    needs: docker-lintro-analysis
-    permissions:
-      contents: read
-      pull-requests: write
-
-    env:
-      LINTRO_OUTPUT_DIR: /tmp/lintro
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: false
-          load: true
-          tags: py-lintro:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Run Tests in Docker
-        run: ./scripts/ci-test.sh
-        continue-on-error: true
-
-      - name: Extract Coverage Percentage
-        run: ./scripts/ci-extract-coverage.sh
-
-      - name: Generate Coverage PR Comment
-        if: github.event_name == 'pull_request'
-        run: ./scripts/coverage-pr-comment.sh
-
-      - name: Comment PR with Coverage Results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        continue-on-error: true
-        with:
-          script: |
-            const fs = require('fs');
-            const comment = fs.readFileSync('coverage-pr-comment.txt', 'utf8');
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report-python-3.13
-          path: |
-            htmlcov/
-            coverage.xml
-          retention-days: 30
-
-      - name: Fail on Test Issues
-        if: env.TEST_EXIT_CODE != '0'
-        run: |
-          echo "❌ Tests failed with exit code $TEST_EXIT_CODE"
-          echo "Please fix the failing tests and try again."
-          exit $TEST_EXIT_CODE

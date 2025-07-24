@@ -22,7 +22,16 @@ from typing import Any
 
 import httpx
 
-MARKER = "<!-- lintro-report -->"
+
+def get_marker() -> str:
+    """Get the marker/tag from command-line arguments or use default.
+
+    Returns:
+        str: The marker/tag to use.
+    """
+    if len(sys.argv) > 1:
+        return sys.argv[1]
+    return "<!-- lintro-report -->"
 
 
 def get_env_var(name: str) -> str:
@@ -92,6 +101,7 @@ def main() -> None:
     repo = get_env_var("GITHUB_REPOSITORY")
     pr_number = get_env_var("PR_NUMBER")
     token = get_env_var("GITHUB_TOKEN")
+    marker = get_marker()
 
     try:
         comments = get_pr_comments(repo=repo, pr_number=pr_number, token=token)
@@ -101,12 +111,12 @@ def main() -> None:
 
     deleted_any = False
     for comment in comments:
-        if MARKER in comment.get("body", ""):
+        if marker in comment.get("body", ""):
             delete_comment(repo=repo, comment_id=comment["id"], token=token)
             deleted_any = True
 
     if not deleted_any:
-        print("No previous lintro comments found to delete.")
+        print(f"No previous comments found to delete for marker: {marker}")
 
 
 if __name__ == "__main__":
