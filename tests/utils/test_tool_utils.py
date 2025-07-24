@@ -6,12 +6,12 @@ This module contains tests for the tool utility functions in Lintro.
 import pytest
 
 from lintro.utils.tool_utils import (
+    format_as_table,
+    format_tool_output,
+    get_table_columns,
     parse_tool_list,
     parse_tool_options,
     should_exclude_path,
-    get_table_columns,
-    format_as_table,
-    format_tool_output,
     walk_files_with_excludes,
 )
 
@@ -153,17 +153,19 @@ def test_format_as_table_empty():
     result = format_as_table([], "ruff")
 
     assert isinstance(result, str)
-    assert len(result) > 0
+    # Should return empty string for no issues, letting caller handle "No issues found"
+    assert result == ""
 
 
 @pytest.mark.utils
 def test_format_tool_output_basic():
-    """Test basic tool output formatting."""
+    """Test basic tool output formatting with non-parseable content."""
     output = "test output content"
-    result = format_tool_output("ruff", output)
+    result = format_tool_output("unknown_tool", output)
 
     assert isinstance(result, str)
-    assert len(result) > 0
+    # For unknown tools with unparseable content, should return the raw output
+    assert result == output
 
 
 @pytest.mark.utils

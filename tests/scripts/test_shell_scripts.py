@@ -4,11 +4,12 @@ This module tests the shell scripts to ensure they follow best practices,
 have correct syntax, and provide appropriate help/usage information.
 """
 
-import subprocess
-import pytest
-from pathlib import Path
-import tempfile
 import os
+import subprocess
+import tempfile
+from pathlib import Path
+
+import pytest
 
 
 class TestShellScriptSyntax:

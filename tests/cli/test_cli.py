@@ -3,8 +3,9 @@
 This module contains tests for the main CLI entry points in Lintro.
 """
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from lintro.cli import cli, main
 
@@ -81,17 +82,17 @@ def test_cli_command_aliases(cli_runner):
     # Test that 'format' alias works
     result = cli_runner.invoke(cli, ["format", "--help"])
     assert result.exit_code == 0
-    assert "Fix (format) files using the specified tools" in result.output
+    assert "Format code using configured formatting tools." in result.output
 
     # Test that 'chk' alias works
     result = cli_runner.invoke(cli, ["chk", "--help"])
     assert result.exit_code == 0
-    assert "Check files for issues using the specified" in result.output
+    assert "Check files for issues using the specified tools." in result.output
 
     # Test that 'ls' alias works
     result = cli_runner.invoke(cli, ["ls", "--help"])
     assert result.exit_code == 0
-    assert "List all available tools" in result.output
+    assert "List all available tools and their configurations." in result.output
 
 
 @pytest.mark.cli

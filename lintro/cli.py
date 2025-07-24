@@ -1,14 +1,11 @@
 """Command-line interface for Lintro."""
 
 import click
+
 from lintro import __version__
 from lintro.cli_utils.commands.check import check_command
-from lintro.cli_utils.commands.fmt import fmt_command
+from lintro.cli_utils.commands.format import format_code
 from lintro.cli_utils.commands.list_tools import list_tools_command
-from lintro.utils.logging_utils import get_logger
-
-# Initialize logger at CLI startup
-get_logger()
 
 
 class LintroGroup(click.Group):
@@ -45,14 +42,16 @@ def cli():
 
 # Register canonical commands and set _canonical_name for help
 check_command._canonical_name = "check"
-fmt_command._canonical_name = "format"
+format_code._canonical_name = "format"
 list_tools_command._canonical_name = "list-tools"
+
 cli.add_command(check_command, name="check")
-cli.add_command(fmt_command, name="format")
+cli.add_command(format_code, name="format")
 cli.add_command(list_tools_command, name="list-tools")
+
 # Register aliases
 cli.add_command(check_command, name="chk")
-cli.add_command(fmt_command, name="fmt")
+cli.add_command(format_code, name="fmt")
 cli.add_command(list_tools_command, name="ls")
 
 

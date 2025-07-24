@@ -70,11 +70,11 @@ Start with checking your code:
 # Check current directory
 lintro check
 
-# Check with better formatting
-lintro check --table-format
-
 # Auto-fix issues where possible
-lintro fmt --table-format
+lintro fmt
+
+# Check again to see remaining issues
+lintro check
 ```
 
 ### 3. Understanding the Output
@@ -90,6 +90,22 @@ Lintro provides clear, structured output:
 │ tests/test_main.py  │    8 │ D100  │ Missing docstring in public module │
 └─────────────────────┴──────┴───────┴─────────────────────────────────────┘
 ```
+
+## Output System: Auto-Generated Reports
+
+Every time you run a Lintro command (check or fmt), Lintro automatically generates all output formats for you in a timestamped directory under `.lintro/` (e.g., `.lintro/run-20240722-153000/`).
+
+**You do not need to specify output format or file options.**
+
+Each run produces:
+
+- `console.log`: The full console output you saw during the run
+- `results.json`: Machine-readable results for scripting or CI
+- `report.md`: Human-readable Markdown report (great for sharing or documentation)
+- `report.html`: Web-viewable HTML report (open in your browser)
+- `summary.csv`: Spreadsheet-friendly summary of all issues
+
+This means you always have every format available for your workflow, CI, or reporting needs.
 
 ## Supported Languages and Tools
 
@@ -146,10 +162,10 @@ lintro check Dockerfile* --tools hadolint
 
 ```bash
 # Check everything at once
-lintro check --table-format
+lintro check
 
 # Or be more specific
-lintro check src/ --tools ruff,prettier --table-format
+lintro check src/ --tools ruff,prettier
 ```
 
 ## Common Workflows
@@ -158,26 +174,26 @@ lintro check src/ --tools ruff,prettier --table-format
 
 ```bash
 # Check your changes before committing
-lintro check --table-format
+lintro check
 
 # Auto-fix what can be fixed
-lintro fmt --table-format
+lintro fmt
 
 # Check again to see remaining issues
-lintro check --table-format
+lintro check
 ```
 
 ### Project Setup
 
 ```bash
 # Initial project scan
-lintro check --table-format --output initial-scan.txt
+lintro check --output initial-scan.txt
 
 # Fix auto-fixable issues
-lintro fmt --table-format
+lintro fmt
 
 # Generate final report
-lintro check --table-format --output final-report.txt
+lintro check --output final-report.txt
 ```
 
 ### CI/CD Integration
@@ -248,7 +264,7 @@ lintro check --table-format --group-by code
 Always use `--table-format` for better readability:
 
 ```bash
-lintro check --table-format
+lintro check
 ```
 
 ### 2. Group by Error Type
@@ -256,7 +272,7 @@ lintro check --table-format
 When fixing multiple similar issues:
 
 ```bash
-lintro check --table-format --group-by code
+lintro check --group-by code
 ```
 
 ### 3. Focus on Specific Tools
@@ -265,17 +281,17 @@ For faster checks in large codebases:
 
 ```bash
 # Only check Python formatting
-lintro check --tools ruff --table-format
+lintro check --tools ruff
 
 # Only check documentation
-lintro check --tools darglint --table-format
+lintro check --tools darglint
 ```
 
 ### 4. Save Results for Analysis
 
 ```bash
 # Save detailed report
-lintro check --table-format --output quality-report.txt
+lintro check --output quality-report.txt
 
 # Review offline
 cat quality-report.txt
@@ -287,10 +303,10 @@ Fix issues incrementally by tool type:
 
 ```bash
 # Fix formatting issues first (auto-fixable)
-lintro fmt --tools ruff,prettier --table-format
+lintro fmt --tools ruff,prettier
 
 # Then address linting issues
-lintro check --tools darglint,yamllint --table-format
+lintro check --tools darglint,yamllint
 ```
 
 ## Integration Examples
@@ -378,10 +394,10 @@ lintro check --table-format "**/*.py"
 
 ```bash
 # Focus on specific tools
-lintro check --tools ruff --table-format
+lintro check --tools ruff
 
 # Exclude problematic directories
-lintro check --exclude "legacy,migrations" --table-format
+lintro check --exclude "legacy,migrations"
 ```
 
 **4. Permission errors:**
@@ -391,7 +407,7 @@ lintro check --exclude "legacy,migrations" --table-format
 ls -la
 
 # Use sudo if needed (not recommended)
-sudo lintro check --table-format
+sudo lintro check
 ```
 
 ### Getting Help

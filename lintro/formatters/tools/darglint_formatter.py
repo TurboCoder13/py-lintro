@@ -9,7 +9,8 @@ from lintro.formatters.styles.html import HtmlStyle
 from lintro.formatters.styles.json import JsonStyle
 from lintro.formatters.styles.markdown import MarkdownStyle
 from lintro.formatters.styles.plain import PlainStyle
-from lintro.parsers.darglint.darglint_parser import DarglintIssue
+from lintro.parsers.darglint.darglint_issue import DarglintIssue
+from lintro.utils.path_utils import normalize_file_path_for_display
 
 FORMAT_MAP = {
     "plain": PlainStyle(),
@@ -28,7 +29,7 @@ class DarglintTableDescriptor(TableDescriptor):
     def get_rows(self, issues: List[DarglintIssue]) -> List[List[str]]:
         return [
             [
-                issue.file,
+                normalize_file_path_for_display(issue.file),
                 str(issue.line),
                 issue.code,
                 issue.message,

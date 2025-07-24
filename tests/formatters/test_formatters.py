@@ -3,8 +3,9 @@
 This module contains tests for the formatter utilities in Lintro.
 """
 
-import pytest
 import json
+
+import pytest
 
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle
@@ -12,8 +13,8 @@ from lintro.formatters.styles.html import HtmlStyle
 from lintro.formatters.styles.json import JsonStyle
 from lintro.formatters.styles.markdown import MarkdownStyle
 from lintro.formatters.styles.plain import PlainStyle
-from lintro.models.core.tool_result import ToolResult
 from lintro.models.core.tool import Tool
+from lintro.models.core.tool_result import ToolResult
 
 
 @pytest.fixture
@@ -71,7 +72,7 @@ def test_table_descriptor_creation():
 
     issues = [FakeIssue()]
     rows = descriptor.get_rows(issues)
-    assert rows == [["foo.py", "1", "D100", "Missing docstring"]]
+    assert rows == [["./foo.py", "1", "D100", "Missing docstring"]]
 
 
 def test_table_descriptor_empty():

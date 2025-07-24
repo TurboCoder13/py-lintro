@@ -1,11 +1,29 @@
 """Integration tests for Ruff tool."""
 
-import pytest
-import tempfile
 import os
+import shutil
+import tempfile
 
-from lintro.tools.implementations.tool_ruff import RuffTool
+import pytest
+
 from lintro.models.core.tool_result import ToolResult
+from lintro.tools.implementations.tool_ruff import RuffTool
+
+
+@pytest.fixture(autouse=True)
+def set_lintro_test_mode_env():
+    """Set LINTRO_TEST_MODE=1 for all tests in this module.
+
+    Yields:
+        None: This fixture is used for its side effect only.
+    """
+    old = os.environ.get("LINTRO_TEST_MODE")
+    os.environ["LINTRO_TEST_MODE"] = "1"
+    yield
+    if old is not None:
+        os.environ["LINTRO_TEST_MODE"] = old
+    else:
+        del os.environ["LINTRO_TEST_MODE"]
 
 
 @pytest.fixture
@@ -19,8 +37,35 @@ def ruff_tool():
 
 
 @pytest.fixture
-def temp_python_file():
+def ruff_violation_file():
+    """Copy the ruff_violations.py sample to a temp directory for testing.
+
+    Yields:
+        str: Path to the temporary ruff_violations.py file.
+    """
+    src = os.path.abspath("test_samples/ruff_violations.py")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dst = os.path.join(tmpdir, "ruff_violations.py")
+        shutil.copy(src, dst)
+        yield dst
+
+
+@pytest.fixture
+def ruff_clean_file():
+    """Return the path to the static Ruff-clean file for testing.
+
+    Yields:
+        str: Path to the static ruff_clean.py file.
+    """
+    yield os.path.abspath("test_samples/ruff_clean.py")
+
+
+@pytest.fixture
+def temp_python_file(request):
     """Create a temporary Python file with ruff violations.
+
+    Args:
+        request: Pytest request fixture for finalizer registration.
 
     Yields:
         str: Path to the temporary Python file with violations.
@@ -42,42 +87,22 @@ if __name__=='__main__':
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write(content)
         f.flush()
-        yield f.name
+        file_path = f.name
 
-    # Cleanup
-    os.unlink(f.name)
+    # Debug: print file path and contents
+    print(f"[DEBUG] temp_python_file path: {file_path}")
+    with open(file_path, "r") as debug_f:
+        print("[DEBUG] temp_python_file contents:")
+        print(debug_f.read())
 
+    def cleanup():
+        try:
+            os.unlink(file_path)
+        except FileNotFoundError:
+            pass
 
-@pytest.fixture
-def temp_clean_python_file():
-    """Create a temporary Python file without violations.
-
-    Yields:
-        str: Path to the temporary clean Python file.
-    """
-    content = '''"""Clean Python file."""
-
-
-def hello(name: str = "World") -> None:
-    """Say hello to someone.
-    
-    Args:
-        name: The name to greet
-    """
-    print(f"Hello, {name}!")
-
-
-if __name__ == "__main__":
-    hello()
-'''
-
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-        f.write(content)
-        f.flush()
-        yield f.name
-
-    # Cleanup
-    os.unlink(f.name)
+    request.addfinalizer(cleanup)
+    yield file_path
 
 
 class TestRuffTool:
@@ -102,34 +127,33 @@ class TestRuffTool:
         """
         assert ruff_tool.config.priority == 85
 
-    def test_check_with_violations(self, ruff_tool, temp_python_file):
-        """Test checking a file with violations.
+    def test_lint_check_clean_file(self, ruff_tool, ruff_clean_file):
+        """Test Ruff lint check on a clean file.
 
         Args:
             ruff_tool: RuffTool fixture instance.
-            temp_python_file: Temporary Python file with violations.
+            ruff_clean_file: Path to the static clean Python file.
         """
-        result = ruff_tool.check([temp_python_file])
-
-        assert isinstance(result, ToolResult)
-        assert result.name == "ruff"
-        assert result.success is False  # Should find issues
-        assert result.issues_count > 0
-        assert result.output != "No issues found."
-
-    def test_check_clean_file(self, ruff_tool, temp_clean_python_file):
-        """Test checking a clean file.
-
-        Args:
-            ruff_tool: RuffTool fixture instance.
-            temp_clean_python_file: Temporary clean Python file.
-        """
-        result = ruff_tool.check([temp_clean_python_file])
-
+        ruff_tool.set_options(select=["E", "F"])
+        result = ruff_tool.check([ruff_clean_file])
         assert isinstance(result, ToolResult)
         assert result.name == "ruff"
         assert result.success is True
         assert result.issues_count == 0
+
+    def test_lint_check_violations(self, ruff_tool, ruff_violation_file):
+        """Test Ruff lint check on a file with violations.
+
+        Args:
+            ruff_tool: RuffTool fixture instance.
+            ruff_violation_file: Path to a temp file with known violations.
+        """
+        ruff_tool.set_options(select=["E", "F"])
+        result = ruff_tool.check([ruff_violation_file])
+        assert isinstance(result, ToolResult)
+        assert result.name == "ruff"
+        assert result.success is False
+        assert result.issues_count > 0
 
     def test_check_nonexistent_file(self, ruff_tool):
         """Test checking a nonexistent file.
@@ -281,3 +305,87 @@ class TestRuffTool:
         cmd = ruff_tool._build_format_command(files, check_only=True)
 
         assert "--check" in cmd
+
+    def test_check_reports_formatting_issues(self, ruff_tool, request):
+        """Test that check reports formatting issues (not just lint issues).
+
+        Args:
+            ruff_tool: RuffTool fixture instance.
+            request: Pytest request fixture for cleanup.
+        """
+        # Create a file with a formatting issue (e.g., trailing whitespace)
+        content = "def foo():\n    return 42    \n"  # trailing whitespace
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(content)
+            f.flush()
+            file_path = f.name
+
+        def cleanup():
+            try:
+                os.unlink(file_path)
+            except FileNotFoundError:
+                pass
+
+        request.addfinalizer(cleanup)
+        ruff_tool.set_options(select=["E", "F"])  # Enable common rules
+        # Manually run ruff format --check to see raw output
+        import subprocess
+
+        format_cmd = ["ruff", "format", "--check", file_path]
+        proc = subprocess.run(format_cmd, capture_output=True, text=True)
+        print("[DEBUG] ruff format --check stdout:")
+        print(proc.stdout)
+        print("[DEBUG] ruff format --check stderr:")
+        print(proc.stderr)
+        result = ruff_tool.check([file_path])
+        assert isinstance(result, ToolResult)
+        assert result.name == "ruff"
+        assert result.success is False  # Should find a formatting issue
+        assert result.issues_count > 0
+        assert (
+            "Would reformat" in result.output or "Formatting issues:" in result.output
+        )
+
+    def test_format_check_clean_file(self, ruff_tool, ruff_clean_file):
+        """Test format check on a clean file.
+
+        Args:
+            ruff_tool: RuffTool fixture instance.
+            ruff_clean_file: Path to the static clean Python file.
+        """
+        result = ruff_tool.check([ruff_clean_file])
+        assert isinstance(result, ToolResult)
+        assert result.success is True
+        assert result.issues_count == 0
+        assert "Formatting issues:" not in result.output
+
+    def test_format_check_violations(self, ruff_tool, ruff_violation_file):
+        """Test format check on a file with violations.
+
+        Args:
+            ruff_tool: RuffTool fixture instance.
+            ruff_violation_file: Path to a temp file with known violations.
+        """
+        result = ruff_tool.check([ruff_violation_file])
+        assert isinstance(result, ToolResult)
+        assert result.success is False
+        assert result.issues_count > 0
+        assert (
+            "Formatting issues:" in result.output or "Would reformat" in result.output
+        )
+
+    def test_fmt_fixes_violations(self, ruff_tool, ruff_violation_file):
+        """
+        Test that applying format/fix to a file with violations results in a clean file.
+
+        Args:
+            ruff_tool: RuffTool fixture instance.
+            ruff_violation_file: Path to a temp file with known violations.
+        """
+        fix_result = ruff_tool.fix([ruff_violation_file])
+        assert isinstance(fix_result, ToolResult)
+        # After fixing, check that the file is now clean
+        check_result = ruff_tool.check([ruff_violation_file])
+        assert isinstance(check_result, ToolResult)
+        assert check_result.success is True
+        assert check_result.issues_count == 0

@@ -22,7 +22,7 @@ echo "" >> $GITHUB_STEP_SUMMARY
 echo "### 🔍 Analysis Results" >> $GITHUB_STEP_SUMMARY
 echo '```' >> $GITHUB_STEP_SUMMARY
 # Use shared exclude directories
-./scripts/local-lintro.sh check . --format grid \
+./scripts/local-lintro.sh check . \
     --exclude "$EXCLUDE_DIRS" >> $GITHUB_STEP_SUMMARY || true
 echo '```' >> $GITHUB_STEP_SUMMARY
 
@@ -34,7 +34,7 @@ echo "**Note:** Includes available tools." >> lintro-report/report.md
 echo "Missing tools skipped gracefully." >> lintro-report/report.md
 echo "" >> lintro-report/report.md
 FORMAT="markdown"
-./scripts/local-lintro.sh check . --format $FORMAT \
+./scripts/local-lintro.sh check . --output-format $FORMAT \
     --exclude "$EXCLUDE_DIRS" >> lintro-report/report.md || true
 
 log_success "Lintro report generated successfully"

@@ -4,12 +4,13 @@ import subprocess
 from dataclasses import dataclass, field
 from typing import Any
 
+from loguru import logger
+
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
-from loguru import logger
 
 
 @dataclass
@@ -187,7 +188,7 @@ class YamllintTool(BaseTool):
             include_venv=self.include_venv,
         )
 
-        logger.info(f"Files to check: {yaml_files}")
+        logger.debug(f"Files to check: {yaml_files}")
 
         timeout = self.options.get("timeout", 15)
         all_outputs = []
@@ -222,7 +223,7 @@ class YamllintTool(BaseTool):
                 output += f"\n  - {file}"
 
         if not output.strip():
-            output = "No issues found."
+            output = None
 
         return ToolResult(
             name=self.name,

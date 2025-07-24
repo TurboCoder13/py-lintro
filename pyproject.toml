@@ -67,4 +67,20 @@ dev = [
     "coverage-badge==1.1.2",
 ]
 
+# Ruff configuration for lintro project
+[tool.ruff]
+# Maximum line length for code
+line-length = 88
+# Target Python version
+# (set to 3.13 for this project)
+target-version = "py313"
+# Rules to enable (E: pycodestyle errors, F: pyflakes, W: warnings, I: isort)
+select = ["E", "F", "W", "I"]
+# Rules to ignore (example: E501 is line length, which is handled by black/formatter)
+ignore = []
+# Whether to allow unsafe fixes (F841, etc.)
+unsafe-fixes = false
+# Exclude common virtualenv and build directories
+exclude = [".venv", "venv", "env", "build", "dist", "__pycache__"] 
+
 

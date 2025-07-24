@@ -161,7 +161,7 @@ if [ "$1" = "--help" ] && [ "$2" = "script" ]; then
     echo "  --install, -i    Install missing tools before running lintro"
     echo ""
     echo "Examples:"
-    echo "  $0 check --format grid"
+    echo "  $0 check"
     echo "  $0 --install fmt --tools prettier"
     echo "  $0 list-tools"
     echo ""

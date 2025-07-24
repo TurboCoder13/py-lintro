@@ -3,8 +3,9 @@
 This module provides shared fixtures for testing CLI utilities in Lintro.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 
 @pytest.fixture

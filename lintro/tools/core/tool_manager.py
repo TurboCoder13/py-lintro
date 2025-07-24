@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 from typing import Any, ClassVar, Type
 
-from lintro.tools.tool_enum import ToolEnum
 from lintro.models.core.tool import Tool
+from lintro.tools.tool_enum import ToolEnum
 
 
 @dataclass

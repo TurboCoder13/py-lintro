@@ -48,7 +48,7 @@ Welcome to the Lintro documentation! This guide will help you navigate all avail
 **📋 Code Quality Checking:**
 
 ```bash
-lintro check --table-format
+lintro check
 ```
 
 → [Getting Started → Basic Usage](getting-started.md#basic-usage)
@@ -56,7 +56,7 @@ lintro check --table-format
 **🛠️ Auto-fixing Issues:**
 
 ```bash
-lintro fmt --table-format
+lintro fmt
 ```
 
 → [Getting Started → Common Workflows](getting-started.md#common-workflows)
@@ -64,7 +64,7 @@ lintro fmt --table-format
 **🐳 Containerized Development:**
 
 ```bash
-./docker-lintro.sh check --table-format
+./docker-lintro.sh check
 ```
 
 → [Docker Usage Guide](docker.md)
@@ -117,10 +117,10 @@ lintro fmt --table-format
 
 ```bash
 # Check code for issues
-lintro check [OPTIONS] [PATHS]
+lintro check
 
 # Auto-fix issues where possible
-lintro fmt [OPTIONS] [PATHS]
+lintro fmt
 
 # List available tools
 lintro list-tools [OPTIONS]
@@ -140,10 +140,10 @@ lintro list-tools [OPTIONS]
 
 ```bash
 # Using the shell script (recommended)
-./docker-lintro.sh check --table-format
+./docker-lintro.sh check
 
 # Using docker directly
-docker run --rm -v "$(pwd):/code" lintro:latest check --table-format
+docker run --rm -v "$(pwd):/code" lintro:latest check
 ```
 
 ## 🔍 Finding Information
