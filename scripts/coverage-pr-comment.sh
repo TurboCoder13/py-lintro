@@ -23,8 +23,10 @@ else
     STATUS_TEXT="Below target (<80%)"
 fi
 
-# Create the comment content
-CONTENT="**Coverage:** $COVERAGE_STATUS **$COVERAGE_VALUE%**
+# Create the comment content with marker
+CONTENT="<!-- coverage-report -->
+
+**Coverage:** $COVERAGE_STATUS **$COVERAGE_VALUE%**
 
 **Status:** $STATUS_TEXT
 

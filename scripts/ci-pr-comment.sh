@@ -27,8 +27,10 @@ else
     STATUS="❌ FAILED"
 fi
 
-# Create the comment content
-CONTENT="**Workflow:**
+# Create the comment content with marker
+CONTENT="<!-- lintro-report -->
+
+**Workflow:**
 1. ✅ Applied formatting fixes with \`lintro fmt\`
 2. 🔍 Performed code quality checks with \`lintro chk\`
 
