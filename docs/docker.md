@@ -81,7 +81,7 @@ docker run --rm -v "$(pwd):/code" lintro:latest fmt --tools ruff
 
 ```bash
 # Check code
-docker compose run --rm lintro check --table-format
+docker compose run --rm lintro check
 
 # Format code
 docker compose run --rm lintro fmt --tools ruff

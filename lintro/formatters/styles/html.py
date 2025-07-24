@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import Any, List
 
 from lintro.formatters.core.output_style import OutputStyle
 
@@ -18,10 +18,10 @@ class HtmlStyle(OutputStyle):
             rows: List of row values (each row is a list of cell values).
 
         Returns:
-            Formatted table as HTML string.
+            Formatted table as HTML string, or empty string if no rows.
         """
         if not rows:
-            return "<p>No issues found.</p>"
+            return ""  # Let the caller handle "No issues found" display
 
         html_lines = ["<table>"]
 

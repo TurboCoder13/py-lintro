@@ -8,8 +8,7 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import ToolConfig
-from lintro.models.core.tool import ToolResult
+from lintro.models.core.tool import ToolConfig, ToolResult
 
 
 @dataclass
@@ -91,6 +90,12 @@ class BaseTool(ABC):
         for pattern in self._default_exclude_patterns:
             if pattern not in self.exclude_patterns:
                 self.exclude_patterns.append(pattern)
+
+        # Load default options from config
+        if hasattr(self.config, "options") and self.config.options:
+            for key, value in self.config.options.items():
+                if key not in self.options:
+                    self.options[key] = value
 
         # Set default timeout if not specified
         if "timeout" not in self.options:

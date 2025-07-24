@@ -1,8 +1,8 @@
 """Integration tests for darglint core."""
 
+import shutil
 import subprocess
 from pathlib import Path
-import shutil
 
 import pytest
 from loguru import logger

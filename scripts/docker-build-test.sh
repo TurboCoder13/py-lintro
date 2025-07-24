@@ -18,5 +18,4 @@ log_info "Testing Docker image - Version"
 docker run --rm py-lintro:latest lintro --version
 
 log_info "Testing Docker lintro script"
-./scripts/docker-lintro.sh check . \
-    --format grid
+./scripts/docker-lintro.sh check .

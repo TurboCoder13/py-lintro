@@ -1,7 +1,8 @@
 """Tool utilities for handling core operations."""
 
-import os
 import fnmatch
+import os
+
 from loguru import logger
 
 try:
@@ -23,11 +24,10 @@ from lintro.formatters.tools.ruff_formatter import (
     RuffTableDescriptor,
     format_ruff_issues,
 )
-
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.parsers.ruff.ruff_parser import parse_ruff_output
-
+from lintro.utils.path_utils import normalize_file_path_for_display
 
 TOOL_TABLE_FORMATTERS = {
     "darglint": (DarglintTableDescriptor(), format_darglint_issues),
@@ -177,10 +177,10 @@ def format_as_table(
         group_by: How to group the issues (file, code, or none).
 
     Returns:
-        Formatted table as a string.
+        Formatted table as a string, or empty string if no issues.
     """
     if not issues:
-        return "No issues found."
+        return ""  # Let the caller handle "No issues found" display
 
     # Get the columns for this core
     display_columns, data_columns = get_table_columns(issues, tool_name, group_by)
@@ -233,10 +233,10 @@ def format_tool_output(
         output_format: Output format for displaying results (plain, grid, markdown, html, json, csv)
 
     Returns:
-        Formatted output string.
+        Formatted output string, or empty string if no issues.
     """
     if not output.strip():
-        return "No issues found."
+        return ""  # Let the footer handle "No issues found" display
 
     # Use tool-specific TableDescriptor/formatter if available
     if tool_name in TOOL_TABLE_FORMATTERS:
@@ -271,7 +271,7 @@ def format_tool_output(
                             )
                             issues.append(
                                 {
-                                    "file": file_part,
+                                    "file": normalize_file_path_for_display(file_part),
                                     "line": line_part,
                                     "code": "",
                                     "message": message_part,
@@ -280,12 +280,12 @@ def format_tool_output(
 
                 if issues:
                     # Use the grid formatter for generic issues
-                    from lintro.formatters.styles.plain import PlainStyle
+                    from lintro.formatters.styles.csv import CsvStyle
                     from lintro.formatters.styles.grid import GridStyle
-                    from lintro.formatters.styles.markdown import MarkdownStyle
                     from lintro.formatters.styles.html import HtmlStyle
                     from lintro.formatters.styles.json import JsonStyle
-                    from lintro.formatters.styles.csv import CsvStyle
+                    from lintro.formatters.styles.markdown import MarkdownStyle
+                    from lintro.formatters.styles.plain import PlainStyle
 
                     format_map = {
                         "plain": PlainStyle(),
@@ -307,7 +307,7 @@ def format_tool_output(
                     # If parsing failed, return raw output
                     return output
             else:
-                return "No issues found."
+                return ""  # Let the caller handle "No issues found" display
         except Exception:
             # If any parsing fails, return raw output
             return output
@@ -336,11 +336,11 @@ def walk_files_with_excludes(
     Returns:
         List of file paths matching the criteria.
     """
-    logger.info(
+    logger.debug(
         f"walk_files_with_excludes paths: {paths} types: {[type(p) for p in paths]}"
     )
-    logger.info(f"os.getcwd(): {os.getcwd()}")
-    logger.info(f"file_patterns: {file_patterns}")
+    logger.debug(f"os.getcwd(): {os.getcwd()}")
+    logger.debug(f"file_patterns: {file_patterns}")
     result = []
     exclude_dirs = set(
         [
@@ -376,7 +376,7 @@ def walk_files_with_excludes(
                 ignore_patterns.append(line)
     # Merge CLI and file patterns, preserving order
     all_patterns = list(exclude_patterns) + ignore_patterns
-    logger.info(f"all_patterns (exclude + ignore): {all_patterns}")
+    logger.debug(f"all_patterns (exclude + ignore): {all_patterns}")
     project_root = os.getcwd()
 
     def is_excluded(rel_path: str) -> bool:
@@ -408,11 +408,11 @@ def walk_files_with_excludes(
                 )
                 for pat in file_patterns
             ]
-            logger.info(
+            logger.debug(
                 f"Checking file: {path}, rel_path: {rel_path}, basename: {basename}, pattern_match: {pattern_match}"
             )
             excluded = is_excluded(rel_path)
-            logger.info(f"is_excluded({rel_path}) = {excluded}")
+            logger.debug(f"is_excluded({rel_path}) = {excluded}")
             if any(r or b for _, r, b in pattern_match):
                 if not excluded:
                     result.append(path)
@@ -440,11 +440,11 @@ def walk_files_with_excludes(
                     )
                     for pat in file_patterns
                 ]
-                logger.info(
+                logger.debug(
                     f"Checking file: {file_path}, rel_path: {rel_path}, basename: {basename}, pattern_match: {pattern_match}"
                 )
                 excluded = is_excluded(rel_path)
-                logger.info(f"is_excluded({rel_path}) = {excluded}")
+                logger.debug(f"is_excluded({rel_path}) = {excluded}")
                 if any(r or b for _, r, b in pattern_match):
                     if not excluded:
                         result.append(file_path)

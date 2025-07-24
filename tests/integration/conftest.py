@@ -3,9 +3,10 @@
 This module provides shared fixtures for integration testing in Lintro.
 """
 
-import pytest
 import tempfile
 from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture

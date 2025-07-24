@@ -10,6 +10,7 @@ from lintro.formatters.styles.json import JsonStyle
 from lintro.formatters.styles.markdown import MarkdownStyle
 from lintro.formatters.styles.plain import PlainStyle
 from lintro.parsers.ruff.ruff_issue import RuffIssue
+from lintro.utils.path_utils import normalize_file_path_for_display
 
 FORMAT_MAP = {
     "plain": PlainStyle(),
@@ -28,7 +29,7 @@ class RuffTableDescriptor(TableDescriptor):
     def get_rows(self, issues: List[RuffIssue]) -> List[List[str]]:
         return [
             [
-                issue.file,
+                normalize_file_path_for_display(issue.file),
                 str(issue.line),
                 str(issue.column),
                 issue.code,

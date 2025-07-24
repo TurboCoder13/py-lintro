@@ -10,6 +10,7 @@ from lintro.formatters.styles.json import JsonStyle
 from lintro.formatters.styles.markdown import MarkdownStyle
 from lintro.formatters.styles.plain import PlainStyle
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
+from lintro.utils.path_utils import normalize_file_path_for_display
 
 FORMAT_MAP = {
     "plain": PlainStyle(),
@@ -28,7 +29,7 @@ class PrettierTableDescriptor(TableDescriptor):
     def get_rows(self, issues: List[PrettierIssue]) -> List[List[str]]:
         return [
             [
-                issue.file,
+                normalize_file_path_for_display(issue.file),
                 str(issue.line) if issue.line is not None else "-",
                 str(issue.column) if issue.column is not None else "-",
                 issue.code,

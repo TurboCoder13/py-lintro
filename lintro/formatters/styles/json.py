@@ -1,6 +1,6 @@
 import json
-from typing import List, Any, Optional, Dict
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from lintro.formatters.core.output_style import OutputStyle
 

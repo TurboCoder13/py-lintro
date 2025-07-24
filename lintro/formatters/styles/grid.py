@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import Any, List
 
 from lintro.formatters.core.output_style import OutputStyle
 
@@ -25,10 +25,10 @@ class GridStyle(OutputStyle):
             rows: List of row values (each row is a list of cell values).
 
         Returns:
-            Formatted table as a string with grid borders.
+            Formatted table as a string with grid borders, or empty string if no rows.
         """
         if not rows:
-            return "No issues found."
+            return ""  # Let the caller handle "No issues found" display
         if TABULATE_AVAILABLE:
             return tabulate(rows, headers=columns, tablefmt="grid")
         # Fallback: simple text table

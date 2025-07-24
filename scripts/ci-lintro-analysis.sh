@@ -21,7 +21,7 @@ echo "" >> $GITHUB_STEP_SUMMARY
 
 # Run lintro fmt to apply formatting fixes
 set +e  # Don't exit on error
-uv run lintro fmt . --format grid > fmt-output.txt 2>&1
+uv run lintro fmt . > fmt-output.txt 2>&1
 FMT_EXIT_CODE=$?
 set -e  # Exit on error again
 
@@ -45,7 +45,7 @@ echo "" >> $GITHUB_STEP_SUMMARY
 
 # Run lintro chk to perform linting checks
 set +e  # Don't exit on error
-uv run lintro chk . --format grid > chk-output.txt 2>&1
+uv run lintro chk . > chk-output.txt 2>&1
 CHK_EXIT_CODE=$?
 set -e  # Exit on error again
 

@@ -15,6 +15,9 @@ jobs:
       contents: read
       pull-requests: write
 
+    env:
+      LINTRO_OUTPUT_DIR: /tmp/lintro
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,6 +73,9 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+
+    env:
+      LINTRO_OUTPUT_DIR: /tmp/lintro
 
     steps:
       - name: Checkout code

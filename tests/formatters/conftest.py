@@ -3,8 +3,10 @@
 This module provides shared fixtures for testing formatter utilities in Lintro.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from lintro.models.core.tool_result import ToolResult
 
 

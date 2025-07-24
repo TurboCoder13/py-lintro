@@ -3,11 +3,10 @@
 This module provides the core logic for the 'list_tools' command.
 """
 
-from lintro.tools import tool_manager
-from lintro.utils.formatting import get_tool_emoji
-from lintro.utils.logging_utils import get_logger
 import click
-import sys
+
+from lintro.tools import tool_manager
+from lintro.utils.console_logger import get_tool_emoji
 
 
 @click.command("list-tools")
@@ -38,7 +37,6 @@ def list_tools(output: str | None, show_conflicts: bool) -> None:
         output: Output file path.
         show_conflicts: Whether to show potential conflicts between tools.
     """
-    logger = get_logger()
     available_tools = tool_manager.get_available_tools()
     check_tools = tool_manager.get_check_tools()
     fix_tools = tool_manager.get_fix_tools()
@@ -104,8 +102,6 @@ def list_tools(output: str | None, show_conflicts: bool) -> None:
                 f.write(output_text + "\n")
             success_msg = f"Output written to: {output}"
             click.echo(success_msg)
-            logger.info(success_msg)
         except IOError as e:
             error_msg = f"Error writing to file {output}: {e}"
-            click.echo(error_msg, err=True, file=sys.stderr)
-            logger.error(error_msg)
+            click.echo(error_msg, err=True)
