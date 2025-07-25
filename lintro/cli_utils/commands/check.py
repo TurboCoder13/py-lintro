@@ -57,16 +57,6 @@ from lintro.utils.tool_executor import run_lint_tools_simple
     help="Ignore potential conflicts between tools",
 )
 @click.option(
-    "--darglint-timeout",
-    type=int,
-    help="Timeout for darglint in seconds",
-)
-@click.option(
-    "--prettier-timeout",
-    type=int,
-    help="Timeout for prettier in seconds",
-)
-@click.option(
     "--verbose",
     is_flag=True,
     help="Show verbose output",
@@ -86,8 +76,6 @@ def check_command(
     output_format,
     group_by,
     ignore_conflicts,
-    darglint_timeout,
-    prettier_timeout,
     verbose,
     no_log,
 ):
@@ -103,8 +91,6 @@ def check_command(
         output_format: Format for displaying results (table, json, etc).
         group_by: How to group issues in output (tool, file, etc).
         ignore_conflicts: Whether to ignore tool configuration conflicts.
-        darglint_timeout: Timeout in seconds for darglint tool.
-        prettier_timeout: Timeout in seconds for prettier tool.
         verbose: Whether to show verbose output during execution.
         no_log: Whether to disable logging to file.
 
@@ -123,12 +109,7 @@ def check_command(
     if tool_options:
         tool_option_parts.append(tool_options)
 
-    if darglint_timeout is not None:
-        tool_option_parts.append(f"darglint:timeout={darglint_timeout}")
-
-    if prettier_timeout is not None:
-        tool_option_parts.append(f"prettier:timeout={prettier_timeout}")
-
+    # Removed darglint_timeout and prettier_timeout handling
     combined_tool_options = ",".join(tool_option_parts) if tool_option_parts else None
 
     # Run with simplified approach
@@ -160,8 +141,6 @@ def check(
     output_format,
     group_by,
     ignore_conflicts,
-    darglint_timeout,
-    prettier_timeout,
     verbose,
     no_log,
 ):
@@ -177,8 +156,6 @@ def check(
         output_format: Format for displaying results (table, json, etc).
         group_by: How to group issues in output (tool, file, etc).
         ignore_conflicts: Whether to ignore tool configuration conflicts.
-        darglint_timeout: Timeout in seconds for darglint tool.
-        prettier_timeout: Timeout in seconds for prettier tool.
         verbose: Whether to show verbose output during execution.
         no_log: Whether to disable logging to file.
 
@@ -209,10 +186,7 @@ def check(
         args.extend(["--group-by", group_by])
     if ignore_conflicts:
         args.append("--ignore-conflicts")
-    if darglint_timeout is not None:
-        args.extend(["--darglint-timeout", str(darglint_timeout)])
-    if prettier_timeout is not None:
-        args.extend(["--prettier-timeout", str(prettier_timeout)])
+    # Removed darglint_timeout and prettier_timeout handling
     if verbose:
         args.append("--verbose")
     if no_log:
