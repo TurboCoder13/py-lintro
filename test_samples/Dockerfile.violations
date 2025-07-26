@@ -1,0 +1,38 @@
+# This Dockerfile has multiple hadolint violations for testing
+FROM ubuntu:latest
+
+RUN apt-get update
+RUN apt-get install -y curl
+RUN cd /tmp && echo "hello"
+
+USER root
+
+ADD ./app /app
+
+EXPOSE 8080
+CMD echo "Hello World"
+
+# More violations
+RUN apt-get update && apt-get install -y package1 package2 package3  # Multiple packages in one RUN
+
+COPY . /app  # Using COPY instead of ADD for files
+
+RUN chmod 777 /app  # Insecure permissions
+
+USER 1000  # Using numeric user ID
+
+WORKDIR /tmp  # Using /tmp as WORKDIR
+
+RUN echo "password123" > /etc/password  # Hardcoded password
+
+ENV PATH="/usr/local/bin:$PATH"  # Modifying PATH
+
+RUN curl -O http://example.com/file  # Using HTTP instead of HTTPS
+
+VOLUME ["/data"]  # Using array syntax for VOLUME
+
+LABEL maintainer="test@example.com"  # Using maintainer label
+
+RUN apt-get install -y package  # Missing apt-get update
+
+USER nobody  # Using nobody user 
