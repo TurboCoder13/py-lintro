@@ -6,9 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "lintro"
 version = "0.1.0"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Eitel Dagnin", email = "your@email.com"},
 ]
 license = {text = "MIT"}
 classifiers = [
@@ -16,7 +16,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-requires-python = "==3.13.5"
+requires-python = ">=3.13.0,<3.14"
 dependencies = [
     "click==8.2.1",
     "coverage-badge==1.1.2",
@@ -51,6 +51,11 @@ typing = [
 [project.scripts]
 lintro = "lintro.cli:main"
 
+[project.urls]
+Homepage = "https://github.com/TurboCoder13/py-lintro"
+Documentation = "https://github.com/TurboCoder13/py-lintro/docs"
+Source = "https://github.com/TurboCoder13/py-lintro"
+
 [tool.setuptools]
 packages = ["lintro", "lintro.tools"]
 
@@ -59,14 +64,6 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*" 
-
-[dependency-groups]
-dev = [
-    "pytest==8.4.1",
-    "pytest-cov==6.2.1",
-    "pytest-mock==3.14.1",
-    "coverage-badge==1.1.2",
-]
 
 # Ruff configuration for lintro project
 [tool.ruff]
@@ -83,5 +80,11 @@ ignore = []
 unsafe-fixes = false
 # Exclude common virtualenv and build directories
 exclude = [".venv", "venv", "env", "build", "dist", "__pycache__"] 
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+]
 
 

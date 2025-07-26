@@ -1,6 +1,6 @@
 version = 1
 revision = 2
-requires-python = "==3.13.5"
+requires-python = "==3.13.*"
 
 [[package]]
 name = "allure-pytest"
@@ -261,10 +261,8 @@ typing = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "coverage-badge" },
     { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "pytest-mock" },
 ]
 
 [package.metadata]
@@ -294,10 +292,8 @@ provides-extras = ["dev", "test", "typing"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "coverage-badge", specifier = "==1.1.2" },
-    { name = "pytest", specifier = "==8.4.1" },
-    { name = "pytest-cov", specifier = "==6.2.1" },
-    { name = "pytest-mock", specifier = "==3.14.1" },
+    { name = "pytest", specifier = ">=8.4.1" },
+    { name = "pytest-cov", specifier = ">=6.2.1" },
 ]
 
 [[package]]

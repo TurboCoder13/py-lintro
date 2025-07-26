@@ -42,8 +42,6 @@ htmlcov/
 
 # Docker
 .dockerignore
-Dockerfile
-docker-compose.yml
 
 # IDE
 .idea/
