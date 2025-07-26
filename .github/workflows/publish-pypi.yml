@@ -31,6 +31,14 @@ jobs:
         run: |
           uv sync --dev
 
+      - name: Install tools
+        run: |
+          ./scripts/utils/install-tools.sh --local
+
+      - name: Add tools to PATH
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Run tests
         run: |
           uv run pytest --cov=lintro --cov-report=xml
