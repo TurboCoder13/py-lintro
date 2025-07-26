@@ -1,7 +1,7 @@
 """Models for core results."""
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 
 @dataclass
@@ -14,6 +14,7 @@ class ToolResult:
         output: Output from the core (str | None if no output).
         issues_count: Number of issues found by the core.
         formatted_output: Formatted output for display (e.g., JSON, HTML).
+        issues: List of parsed issue objects from the core.
     """
 
     name: str
@@ -21,3 +22,4 @@ class ToolResult:
     output: str | None = None
     issues_count: int = 0
     formatted_output: Optional[str] = None
+    issues: Optional[list[Any]] = None
