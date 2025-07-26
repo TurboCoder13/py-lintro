@@ -47,6 +47,12 @@ from lintro.utils.tool_executor import run_lint_tools_simple
     default=False,
     help="Enable verbose output with debug information",
 )
+@click.option(
+    "--raw-output",
+    is_flag=True,
+    default=False,
+    help="Show raw tool output instead of formatted output",
+)
 def format_code(
     paths: tuple[str, ...],
     tools: str | None,
@@ -56,6 +62,7 @@ def format_code(
     group_by: str,
     output_format: str,
     verbose: bool,
+    raw_output: bool,
 ) -> None:
     """Format code using configured formatting tools.
 
@@ -71,6 +78,7 @@ def format_code(
         group_by: How to group issues in the output display
         output_format: Format for displaying results
         verbose: Enable detailed debug output
+        raw_output: Show raw tool output instead of formatted output
 
     Raises:
         ClickException: If issues are found during formatting.
@@ -90,6 +98,7 @@ def format_code(
         group_by=group_by,
         output_format=output_format,
         verbose=verbose,
+        raw_output=raw_output,
     )
 
     # Exit with appropriate code
