@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Utilities",
 ]
-requires-python = ">=3.13.0,<3.14"
+requires-python = "==3.13.5"
 dependencies = [
     "click==8.2.1",
     "coverage-badge==1.1.2",
@@ -111,10 +111,10 @@ exclude = [".venv", "venv", "env", "build", "dist", "__pycache__"]
 
 [dependency-groups]
 dev = [
-    "build>=1.2.2.post1",
+    "build==1.2.2.post1",
     "pytest==8.4.1",
     "pytest-cov==6.2.1",
-    "twine>=6.1.0",
+    "twine==6.1.0",
 ]
 
 
