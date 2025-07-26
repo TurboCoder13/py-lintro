@@ -2,6 +2,8 @@
 
 from typing import List
 
+import click
+
 from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle
@@ -58,5 +60,12 @@ def format_darglint_issues(issues: List[DarglintIssue], format: str = "grid") ->
     if format == "json":
         return formatter.format(columns, rows, tool_name="darglint")
 
-    # For other formats, use standard formatting
-    return formatter.format(columns, rows)
+    # For other formats, add status messages
+    formatted_table = formatter.format(columns, rows)
+
+    if issues:
+        # Add status message in console logger style
+        error_msg = click.style(f"✗ Found {len(issues)} issues", fg="red")
+        return f"{formatted_table}\n\n{error_msg}"
+
+    return formatted_table

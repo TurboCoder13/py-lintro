@@ -2,7 +2,7 @@
 
 def hello(name: str = "World") -> None:
     """Say hello to someone.
-    
+
     Args:
         name: The name to greet.
     """
@@ -10,4 +10,4 @@ def hello(name: str = "World") -> None:
 
 
 if __name__ == "__main__":
-    hello() 
+    hello()

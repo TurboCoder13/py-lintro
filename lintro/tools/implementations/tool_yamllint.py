@@ -46,10 +46,12 @@ class YamllintTool(BaseTool):
             tool_type=ToolType.LINTER,
             options={
                 "timeout": 15,  # Default timeout in seconds
-                "format": "parsable",  # Output format (parsable, standard, colored, github, auto)
+                "format": "parsable",  # Output format
+                # (parsable, standard, colored, github, auto)
                 "config_file": None,  # Path to yamllint config file
                 "config_data": None,  # Inline config data
-                "strict": False,  # Return non-zero exit code on warnings as well as errors
+                "strict": False,  # Return non-zero exit code on warnings as well as
+                # errors
                 "relaxed": False,  # Use relaxed configuration
                 "no_warnings": False,  # Output only error level problems
             },
@@ -250,6 +252,9 @@ class YamllintTool(BaseTool):
         return ToolResult(
             name=self.name,
             success=False,
-            output="Yamllint is a linter only and cannot fix issues. Use a YAML formatter like Prettier for formatting.",
+            output=(
+                "Yamllint is a linter only and cannot fix issues. Use a YAML "
+                "formatter like Prettier for formatting."
+            ),
             issues_count=0,
         )

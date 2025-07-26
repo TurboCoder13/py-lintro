@@ -26,10 +26,25 @@ def parse_ruff_output(output: str) -> List[RuffIssue]:
         return issues
 
     try:
-        # Ruff outputs JSON array of issue objects
-        ruff_data = json.loads(output)
+        # Ruff outputs JSON array of issue objects, but may have warnings
+        # after. Find the end of the JSON array by looking for the
+        # closing
+        # bracket
+        json_end = output.rfind("]")
+        if json_end == -1:
+            # No closing bracket found, try to parse the whole output
+            ruff_data = json.loads(output)
+        else:
+            # Extract just the JSON part (up to and including the closing bracket)
+            json_part = output[: json_end + 1]
+            ruff_data = json.loads(json_part)
 
         for item in ruff_data:
+            # Extract fix applicability if available
+            fix_applicability = None
+            if item.get("fix"):
+                fix_applicability = item["fix"].get("applicability")
+
             issues.append(
                 RuffIssue(
                     file=item["filename"],
@@ -41,6 +56,7 @@ def parse_ruff_output(output: str) -> List[RuffIssue]:
                     end_line=item["end_location"]["row"],
                     end_column=item["end_location"]["column"],
                     fixable=bool(item.get("fix")),
+                    fix_applicability=fix_applicability,
                 )
             )
     except (json.JSONDecodeError, KeyError, TypeError):
@@ -65,7 +81,8 @@ def parse_ruff_format_check_output(output: str) -> list[str]:
     files = []
     for line in output.splitlines():
         line = line.strip()
-        # Ruff format --check output: 'Would reformat: path/to/file.py' or 'Would reformat path/to/file.py'
+        # Ruff format --check output: 'Would reformat: path/to/file.py' or
+        # 'Would reformat path/to/file.py'
         if line.startswith("Would reformat: "):
             files.append(line[len("Would reformat: ") :])
         elif line.startswith("Would reformat "):

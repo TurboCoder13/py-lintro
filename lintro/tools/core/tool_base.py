@@ -177,7 +177,15 @@ class BaseTool(ABC):
                 raise ValueError("Exclude patterns must be a list")
             if key == "include_venv" and not isinstance(value, bool):
                 raise ValueError("Include venv must be a boolean")
+
+        # Update options dict
         self.options.update(kwargs)
+
+        # Update specific attributes for exclude_patterns and include_venv
+        if "exclude_patterns" in kwargs:
+            self.exclude_patterns = kwargs["exclude_patterns"]
+        if "include_venv" in kwargs:
+            self.include_venv = kwargs["include_venv"]
 
     def _validate_paths(self, paths: list[str]) -> None:
         """Validate that paths exist and are accessible.
@@ -196,7 +204,8 @@ class BaseTool(ABC):
                 raise PermissionError(f"Path is not accessible: {path}")
 
     def get_cwd(self, paths: list[str]) -> str | None:
-        """Return the common parent directory for the given paths, or None if not applicable.
+        """Return the common parent directory for the given paths, or None if not
+        applicable.
 
         Args:
             paths: List of file paths to find common parent directory for.

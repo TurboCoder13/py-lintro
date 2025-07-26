@@ -44,7 +44,8 @@ class HadolintTool(BaseTool):
             options={
                 "timeout": 30,  # Default timeout in seconds
                 "format": "tty",  # Output format (tty, json, checkstyle, etc.)
-                "failure_threshold": "info",  # Threshold for failure (error, warning, info, style)
+                "failure_threshold": "info",  # Threshold for failure (error,
+                # warning, info, style)
                 "ignore": None,  # List of rule codes to ignore
                 "trusted_registries": None,  # List of trusted Docker registries
                 "require_labels": None,  # List of required labels with schemas
@@ -71,10 +72,12 @@ class HadolintTool(BaseTool):
 
         Args:
             format: Output format (tty, json, checkstyle, codeclimate, etc.)
-            failure_threshold: Exit with failure only when rules with severity >= threshold
+            failure_threshold: Exit with failure only when rules with severity >=
+                threshold
             ignore: List of rule codes to ignore (e.g., ['DL3006', 'SC2086'])
             trusted_registries: List of trusted Docker registries
-            require_labels: List of required labels with schemas (e.g., ['version:semver'])
+            require_labels: List of required labels with schemas (e.g.,
+                ['version:semver'])
             strict_labels: Whether to use strict label checking
             no_fail: Whether to suppress exit codes
             no_color: Whether to disable color output
@@ -95,8 +98,9 @@ class HadolintTool(BaseTool):
             "sarif",
         ]:
             raise ValueError(
-                f"Invalid format '{format}'. Must be one of: tty, json, checkstyle, "
-                "codeclimate, gitlab_codeclimate, gnu, codacy, sonarqube, sarif"
+                f"Invalid format '{format}'. Must be one of: tty, json, "
+                "checkstyle, codeclimate, gitlab_codeclimate, gnu, codacy, "
+                "sonarqube, sarif"
             )
 
         if failure_threshold is not None and failure_threshold not in [
@@ -281,5 +285,6 @@ class HadolintTool(BaseTool):
             NotImplementedError: As Hadolint does not support fixing issues
         """
         raise NotImplementedError(
-            "Hadolint cannot automatically fix issues. Run 'lintro check' to see issues."
+            "Hadolint cannot automatically fix issues. Run 'lintro check' to see "
+            "issues."
         )

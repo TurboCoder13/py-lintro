@@ -8,7 +8,7 @@ Lintro is a unified CLI tool that brings together multiple code quality tools un
 
 - **One command** to rule them all
 - **Consistent interface** across all tools
-- **Beautiful output** with table formatting
+- **Beautiful output** with grid formatting
 - **Auto-fixing** capabilities where possible
 - **Multi-language support** for modern development stacks
 
@@ -17,7 +17,10 @@ Lintro is a unified CLI tool that brings together multiple code quality tools un
 ### Standard Installation
 
 ```bash
-pip install lintro
+# Development installation (package not yet published)
+git clone https://github.com/TurboCoder13/py-lintro.git
+cd py-lintro
+pip install -e .
 ```
 
 ### Development Installation
@@ -44,10 +47,10 @@ For containerized environments or if you prefer not to install dependencies loca
 # Clone and setup
 git clone https://github.com/TurboCoder13/py-lintro.git
 cd py-lintro
-chmod +x docker-lintro.sh
+chmod +x scripts/**/*.sh
 
 # Use Lintro via Docker
-./docker-lintro.sh check --table-format
+./scripts/docker/docker-lintro.sh check --output-format grid
 ```
 
 ## First Steps
@@ -71,7 +74,7 @@ Start with checking your code:
 lintro check
 
 # Auto-fix issues where possible
-lintro fmt
+lintro format
 
 # Check again to see remaining issues
 lintro check
@@ -116,7 +119,7 @@ This means you always have every format available for your workflow, CI, or repo
 lintro check src/ tests/ --tools ruff,darglint
 
 # Format Python code
-lintro fmt src/ --tools ruff
+lintro format src/ --tools ruff
 ```
 
 **Tools:**
@@ -129,7 +132,7 @@ lintro fmt src/ --tools ruff
 ```bash
 # Check and format JS/TS files
 lintro check src/ --tools prettier
-lintro fmt src/ --tools prettier
+lintro format src/ --tools prettier
 ```
 
 **Tools:**
@@ -177,7 +180,7 @@ lintro check src/ --tools ruff,prettier
 lintro check
 
 # Auto-fix what can be fixed
-lintro fmt
+lintro format
 
 # Check again to see remaining issues
 lintro check
@@ -190,7 +193,7 @@ lintro check
 lintro check --output initial-scan.txt
 
 # Fix auto-fixable issues
-lintro fmt
+lintro format
 
 # Generate final report
 lintro check --output final-report.txt
@@ -199,7 +202,7 @@ lintro check --output final-report.txt
 ### CI/CD Integration
 
 ```bash
-# CI-friendly check (no table formatting)
+# CI-friendly check (no grid formatting)
 lintro check --output ci-results.txt
 
 # Exit with error if issues found
@@ -245,7 +248,7 @@ rules:
 
 ```bash
 # Tool timeouts
-lintro check --darglint-timeout 30 --prettier-timeout 60
+lintro check --tool-options "ruff:--line-length=88,prettier:--print-width=80"
 
 # Exclude patterns
 lintro check --exclude "migrations,node_modules,dist"
@@ -254,14 +257,14 @@ lintro check --exclude "migrations,node_modules,dist"
 lintro check --include-venv
 
 # Group output by error type
-lintro check --table-format --group-by code
+lintro check --output-format grid --group-by code
 ```
 
 ## Tips and Tricks
 
-### 1. Use Table Formatting
+### 1. Use Grid Formatting
 
-Always use `--table-format` for better readability:
+Always use `--output-format grid` for better readability:
 
 ```bash
 lintro check
@@ -303,7 +306,7 @@ Fix issues incrementally by tool type:
 
 ```bash
 # Fix formatting issues first (auto-fixable)
-lintro fmt --tools ruff,prettier
+lintro format --tools ruff,prettier
 
 # Then address linting issues
 lintro check --tools darglint,yamllint
@@ -321,7 +324,7 @@ repos:
     hooks:
       - id: lintro
         name: Lintro Quality Check
-        entry: lintro check --table-format
+        entry: lintro check --output-format grid
         language: system
         pass_filenames: false
 ```
@@ -332,10 +335,10 @@ repos:
 .PHONY: lint fix check
 
 lint:
-	lintro check --table-format
+	lintro check --output-format grid
 
 fix:
-	lintro fmt --table-format
+	lintro format --output-format grid
 
 check: lint
 	@echo "Quality check completed"
@@ -353,7 +356,7 @@ Add to `.vscode/tasks.json`:
       "label": "Lintro Check",
       "type": "shell",
       "command": "lintro",
-      "args": ["check", "--table-format"],
+      "args": ["check", "--output-format grid"],
       "group": "test",
       "presentation": {
         "echo": true,
@@ -384,10 +387,10 @@ pip install ruff darglint
 
 ```bash
 # Check file patterns
-lintro check --table-format .
+lintro check --output-format grid .
 
 # Include specific file types
-lintro check --table-format "**/*.py"
+lintro check --output-format grid "**/*.py"
 ```
 
 **3. Too many issues:**

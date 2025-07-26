@@ -110,7 +110,7 @@ class TestScriptHelp:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        script = scripts_dir / "local-test.sh"
+        script = scripts_dir / "local" / "local-test.sh"
         result = subprocess.run(
             [str(script), "--help"],
             capture_output=True,
@@ -127,7 +127,7 @@ class TestScriptHelp:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        script = scripts_dir / "local-lintro.sh"
+        script = scripts_dir / "local" / "local-lintro.sh"
         result = subprocess.run(
             [str(script), "--help", "script"],
             capture_output=True,
@@ -144,7 +144,7 @@ class TestScriptHelp:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        script = scripts_dir / "install-tools.sh"
+        script = scripts_dir / "utils" / "install-tools.sh"
         with open(script, "r") as f:
             content = f.read()
 
@@ -183,7 +183,7 @@ class TestScriptFunctionality:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        script = scripts_dir / "extract-coverage.py"
+        script = scripts_dir / "utils" / "extract-coverage.py"
         result = subprocess.run(
             ["python3", "-m", "py_compile", str(script)], capture_output=True, text=True
         )
@@ -197,7 +197,7 @@ class TestScriptFunctionality:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        script = scripts_dir / "utils.sh"
+        script = scripts_dir / "utils" / "utils.sh"
         test_script = f"""
         #!/bin/bash
         set -e
@@ -248,7 +248,7 @@ class TestScriptFunctionality:
             mock_env: Mock environment variables.
         """
         # Test run-tests.sh with missing uv
-        script = scripts_dir / "run-tests.sh"
+        script = scripts_dir / "local" / "run-tests.sh"
 
         # Create environment without uv
         test_env = mock_env.copy()

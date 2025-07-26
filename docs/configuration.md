@@ -10,7 +10,7 @@ This guide covers all configuration options for Lintro and the underlying tools 
 
 ```bash
 # Output options
-lintro check                  # Use table formatting
+lintro check                  # Use grid formatting
 lintro check --output results.txt            # Save output to file
 lintro check --group-by [file|code|none|auto] # Group issues
 
@@ -27,30 +27,25 @@ lintro check path/to/files                   # Check specific paths
 #### Tool-Specific Options
 
 ```bash
-# Darglint options
-lintro check --darglint-timeout 30
+# Tool-specific options
+lintro check --tool-options "ruff:--line-length=88,prettier:--print-width=80"
 
-# Prettier options
-lintro check --prettier-timeout 60
-
-# Future tool options (examples)
-lintro check --ruff-line-length 88
-lintro check --yamllint-strict
+# Exclude patterns
+lintro check --exclude "*.pyc,venv,node_modules"
 ```
 
 ### Environment Variables
 
 ```bash
-# Override default timeouts
+# Override default settings
 export LINTRO_DEFAULT_TIMEOUT=60
-export LINTRO_DARGLINT_TIMEOUT=30
-export LINTRO_PRETTIER_TIMEOUT=45
+export LINTRO_VERBOSE=1
 
 # Default exclude patterns
 export LINTRO_EXCLUDE="*.pyc,venv,node_modules"
 
 # Default output format
-export LINTRO_DEFAULT_FORMAT="table"
+export LINTRO_DEFAULT_FORMAT="grid"
 ```
 
 ## Tool Configuration
@@ -469,14 +464,14 @@ repos:
     hooks:
       - id: lintro-check
         name: Lintro Quality Check
-        entry: lintro check --table-format
+        entry: lintro check --output-format grid
         language: system
         pass_filenames: false
         stages: [commit]
 
       - id: lintro-fix
         name: Lintro Auto-fix
-        entry: lintro fmt --table-format
+        entry: lintro format --output-format grid
         language: system
         pass_filenames: false
         stages: [commit]
@@ -492,7 +487,7 @@ lint:
 	lintro check
 
 fix:
-	lintro fmt
+	lintro format
 
 check: lint
 	@echo "Quality check completed"
@@ -538,7 +533,7 @@ install-tools:
       "label": "Lintro Check",
       "type": "shell",
       "command": "lintro",
-      "args": ["check", "--table-format"],
+      "args": ["check", "--output-format grid"],
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -550,7 +545,7 @@ install-tools:
       "label": "Lintro Fix",
       "type": "shell",
       "command": "lintro",
-      "args": ["fmt", "--table-format"],
+      "args": ["fmt", "--output-format grid"],
       "group": "build"
     }
   ]
@@ -585,17 +580,17 @@ ruff check --config custom-ruff.toml
 
 ```bash
 # Profile tool execution
-time lintro check --tools ruff --table-format
+time lintro check --tools ruff --output-format grid
 
 # Use more specific file patterns
-lintro check "src/**/*.py" --tools ruff --table-format
+lintro check "src/**/*.py" --tools ruff --output-format grid
 ```
 
 ### Debug Configuration
 
 ```bash
 # Enable verbose output
-lintro check --verbose --table-format
+lintro check --verbose --output-format grid
 
 # Check tool availability
 lintro list-tools

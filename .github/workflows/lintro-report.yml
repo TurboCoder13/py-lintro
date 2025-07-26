@@ -14,7 +14,7 @@ name: Lintro Report
       - 'Dockerfile'
       - 'pyproject.toml'
       - '.github/workflows/lintro-report.yml'
-      - 'scripts/local-lintro.sh'
+      - 'scripts/local/local-lintro.sh'
   schedule:
     - cron: '0 0 * * 0' # Run weekly on Sunday at midnight
   workflow_dispatch:
@@ -41,7 +41,7 @@ jobs:
         run: uv sync --dev
 
       - name: Run Lintro on codebase
-        run: ./scripts/lintro-report-generate.sh
+        run: ./scripts/ci/lintro-report-generate.sh
 
       - name: Upload report artifact
         uses: actions/upload-artifact@v4

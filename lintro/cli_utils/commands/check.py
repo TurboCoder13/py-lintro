@@ -66,6 +66,11 @@ from lintro.utils.tool_executor import run_lint_tools_simple
     is_flag=True,
     help="Disable logging to file",
 )
+@click.option(
+    "--raw-output",
+    is_flag=True,
+    help="Show raw tool output instead of formatted output",
+)
 def check_command(
     paths,
     tools,
@@ -78,6 +83,7 @@ def check_command(
     ignore_conflicts,
     verbose,
     no_log,
+    raw_output,
 ):
     """Check files for issues using the specified tools.
 
@@ -93,6 +99,7 @@ def check_command(
         ignore_conflicts: Whether to ignore tool configuration conflicts.
         verbose: Whether to show verbose output during execution.
         no_log: Whether to disable logging to file.
+        raw_output: Whether to show raw tool output instead of formatted output.
 
     Returns:
         None: This function does not return a value.
@@ -123,6 +130,7 @@ def check_command(
         group_by=group_by,
         output_format=output_format,
         verbose=verbose,
+        raw_output=raw_output,
     )
 
     # Exit with appropriate code

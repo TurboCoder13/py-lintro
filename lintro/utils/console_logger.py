@@ -34,17 +34,19 @@ def get_tool_emoji(tool_name: str) -> str:
 
 
 class SimpleLintroLogger:
-    """Simple Loguru-based logger for Lintro commands with rich formatting."""
+    """Simplified logger for lintro using Loguru with rich console output."""
 
-    def __init__(self, run_dir: Path, verbose: bool = False):
-        """Initialize logger for a specific run.
+    def __init__(self, run_dir: Path, verbose: bool = False, raw_output: bool = False):
+        """Initialize the logger.
 
         Args:
-            run_dir: Directory to write log files to
-            verbose: Whether to show debug messages on console
+            run_dir: Directory for log files.
+            verbose: Whether to enable verbose logging.
+            raw_output: Whether to show raw tool output instead of formatted output.
         """
         self.run_dir = run_dir
         self.verbose = verbose
+        self.raw_output = raw_output
         self.console_messages: list[str] = []  # Track console output for console.log
 
         # Configure Loguru
@@ -60,7 +62,10 @@ class SimpleLintroLogger:
         logger.add(
             sys.stderr,
             level=console_level,
-            format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | {message}",
+            format=(
+                "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | "
+                "{message}"
+            ),
             colorize=True,
         )
 
@@ -69,7 +74,10 @@ class SimpleLintroLogger:
         logger.add(
             debug_log_path,
             level="DEBUG",
-            format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} | {message}",
+            format=(
+                "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | "
+                "{name}:{function}:{line} | {message}"
+            ),
             rotation=None,  # Don't rotate, each run gets its own file
         )
 
@@ -183,6 +191,7 @@ class SimpleLintroLogger:
             issues_count: The number of issues found.
         """
         if output and output.strip():
+            # Display the output (either raw or formatted, depending on what was passed)
             self.console_output(output)
             logger.debug(f"Tool {tool_name} output: {len(output)} characters")
         else:
@@ -190,10 +199,56 @@ class SimpleLintroLogger:
 
         # Print result status
         if issues_count == 0:
-            self.success("✓ No issues found.")
+            # Check if the output indicates no files were processed
+            if output and any(
+                msg in output for msg in ["No files to", "No Python files found to"]
+            ):
+                self.console_output("⚠️  No files processed (excluded by patterns)")
+            else:
+                # For format operations, check if there are remaining issues that
+                # couldn't be auto-fixed
+                if output and "cannot be auto-fixed" in output.lower():
+                    # Don't show "No issues found" if there are remaining issues
+                    pass
+                else:
+                    self.success("✓ No issues found.")
         else:
-            error_msg = f"✗ Found {issues_count} issues"
-            self.console_output(error_msg, color="red")
+            # For format operations, parse the output to show better messages
+            if output and ("Fixed" in output or "issue(s)" in output):
+                # This is a format operation - parse for better messaging
+                import re
+
+                # Look for fixed count
+                fixed_match = re.search(r"Fixed (\d+) issue\(s\)", output)
+                fixed_count = int(fixed_match.group(1)) if fixed_match else 0
+
+                # Look for remaining count
+                remaining_match = re.search(
+                    r"Found (\d+) issue\(s\) that cannot be auto-fixed", output
+                )
+                remaining_count = (
+                    int(remaining_match.group(1)) if remaining_match else 0
+                )
+
+                # Look for total initial count
+                initial_match = re.search(r"Found (\d+) errors?", output)
+                int(initial_match.group(1)) if initial_match else 0
+
+                if fixed_count > 0 and remaining_count == 0:
+                    self.success(f"✓ {fixed_count} fixed")
+                elif fixed_count > 0 and remaining_count > 0:
+                    self.console_output(f"✓ {fixed_count} fixed", color="green")
+                    self.console_output(f"✗ {remaining_count} remaining", color="red")
+                elif remaining_count > 0:
+                    self.console_output(f"✗ {remaining_count} remaining", color="red")
+                else:
+                    # Fallback to original behavior
+                    error_msg = f"✗ Found {issues_count} issues"
+                    self.console_output(error_msg, color="red")
+            else:
+                # Regular check operation - always show issue count for check operations
+                error_msg = f"✗ Found {issues_count} issues"
+                self.console_output(error_msg, color="red")
 
         self.console_output("")  # Blank line after each tool
 
@@ -215,13 +270,53 @@ class SimpleLintroLogger:
         self._print_summary_table(action, tool_results)
 
         # Final status and ASCII art
-        total_issues = sum(
-            getattr(result, "issues_count", 0) for result in tool_results
-        )
-        self._print_final_status(action, total_issues)
-        self._print_ascii_art(total_issues)
+        if action == "fmt":
+            # For format commands, track both fixed and remaining issues
+            total_fixed = sum(
+                getattr(result, "issues_count", 0) for result in tool_results
+            )
+            total_remaining = 0
+            for result in tool_results:
+                output = getattr(result, "output", "")
+                if output and (
+                    "remaining" in output.lower()
+                    or "cannot be auto-fixed" in output.lower()
+                ):
+                    # Look for patterns like "X remaining" or "X issue(s) that
+                    # cannot be auto-fixed"
+                    import re
 
-        logger.debug(f"{action} completed with {total_issues} total issues")
+                    # Try multiple patterns to match different output formats
+                    remaining_match = re.search(
+                        r"Found\s+(\d+)\s+issue\(s\)\s+that\s+cannot\s+be\s+auto-fixed",
+                        output,
+                    )
+                    if not remaining_match:
+                        remaining_match = re.search(
+                            r"(\d+)\s+(?:issue\(s\)\s+)?(?:that\s+cannot\s+be\s+auto-fixed|remaining)",
+                            output.lower(),
+                        )
+                    if remaining_match:
+                        total_remaining += int(remaining_match.group(1))
+                    elif not getattr(result, "success", True):
+                        # If success is False and no specific count found,
+                        # assume 1 remaining
+                        total_remaining += 1
+
+            self._print_final_status_format(total_fixed, total_remaining)
+            self._print_ascii_art_format(total_remaining)
+            logger.debug(
+                f"{action} completed with {total_fixed} fixed, "
+                f"{total_remaining} remaining"
+            )
+        else:
+            # For check commands, use total issues
+            total_issues = sum(
+                getattr(result, "issues_count", 0) for result in tool_results
+            )
+            self._print_final_status(action, total_issues)
+            self._print_ascii_art(total_issues)
+            logger.debug(f"{action} completed with {total_issues} total issues")
 
     def _print_summary_table(self, action: str, tool_results: list[Any]) -> None:
         """Print the summary table for the run.
@@ -237,39 +332,111 @@ class SimpleLintroLogger:
             for result in tool_results:
                 tool_name = getattr(result, "name", "unknown")
                 issues_count = getattr(result, "issues_count", 0)
+                success = getattr(result, "success", True)
 
                 emoji = get_tool_emoji(tool_name)
                 tool_display = f"{emoji} {tool_name}"
 
-                # For format operations, success means tool ran (regardless of fixes made)
+                # For format operations, success means tool ran
+                # (regardless of fixes made)
                 # For check operations, success means no issues found
                 if action == "fmt":
-                    # Format operations always succeed when they run
-                    status_display = click.style("✅ PASS", fg="green", bold=True)
-                    issues_display = click.style(
-                        f"{issues_count} fixed" if issues_count > 0 else "0 fixed",
-                        fg="green",
-                        bold=True,
-                    )
+                    # Format operations: show fixed count and remaining status
+                    if success:
+                        status_display = click.style("✅ PASS", fg="green", bold=True)
+                    else:
+                        status_display = click.style("❌ FAIL", fg="red", bold=True)
+
+                    # Check if files were excluded
+                    result_output = getattr(result, "output", "")
+                    if result_output and any(
+                        msg in result_output
+                        for msg in ["No files to", "No Python files found to"]
+                    ):
+                        fixed_display = click.style("SKIPPED", fg="yellow", bold=True)
+                        remaining_display = click.style(
+                            "SKIPPED", fg="yellow", bold=True
+                        )
+                    else:
+                        # Parse output to determine remaining issues
+                        remaining_count = 0
+                        if result_output and (
+                            "remaining" in result_output.lower()
+                            or "cannot be auto-fixed" in result_output.lower()
+                        ):
+                            import re
+
+                            # Try multiple patterns to match different output formats
+                            remaining_match = re.search(
+                                r"Found\s+(\d+)\s+issue\(s\)\s+that\s+cannot\s+be\s+auto-fixed",
+                                result_output,
+                            )
+                            if not remaining_match:
+                                remaining_match = re.search(
+                                    r"(\d+)\s+(?:issue\(s\)\s+)?(?:that\s+cannot\s+be\s+auto-fixed|remaining)",
+                                    result_output.lower(),
+                                )
+                            if remaining_match:
+                                remaining_count = int(remaining_match.group(1))
+                            elif not success:
+                                remaining_count = 1
+
+                        # Fixed issues display
+                        if issues_count > 0:
+                            fixed_display = click.style(
+                                str(issues_count), fg="green", bold=True
+                            )
+                        else:
+                            fixed_display = click.style("0", fg="green", bold=True)
+
+                        # Remaining issues display
+                        if remaining_count > 0:
+                            remaining_display = click.style(
+                                str(remaining_count), fg="red", bold=True
+                            )
+                        else:
+                            remaining_display = click.style("0", fg="green", bold=True)
                 else:  # check
                     status_display = (
                         click.style("✅ PASS", fg="green", bold=True)
                         if issues_count == 0
                         else click.style("❌ FAIL", fg="red", bold=True)
                     )
-                    issues_display = click.style(
-                        str(issues_count),
-                        fg="green" if issues_count == 0 else "red",
-                        bold=True,
+                    # Check if files were excluded
+                    result_output = getattr(result, "output", "")
+                    if result_output and any(
+                        msg in result_output
+                        for msg in ["No files to", "No Python files found to"]
+                    ):
+                        issues_display = click.style("SKIPPED", fg="yellow", bold=True)
+                    else:
+                        issues_display = click.style(
+                            str(issues_count),
+                            fg="green" if issues_count == 0 else "red",
+                            bold=True,
+                        )
+
+                if action == "fmt":
+                    summary_data.append(
+                        [tool_display, status_display, fixed_display, remaining_display]
                     )
+                else:
+                    summary_data.append([tool_display, status_display, issues_display])
 
-                summary_data.append([tool_display, status_display, issues_display])
-
-            headers = [
-                click.style("Tool", fg="cyan", bold=True),
-                click.style("Status", fg="cyan", bold=True),
-                click.style("Issues", fg="cyan", bold=True),
-            ]
+            # Set headers based on action
+            if action == "fmt":
+                headers = [
+                    click.style("Tool", fg="cyan", bold=True),
+                    click.style("Status", fg="cyan", bold=True),
+                    click.style("Fixed", fg="cyan", bold=True),
+                    click.style("Remaining", fg="cyan", bold=True),
+                ]
+            else:
+                headers = [
+                    click.style("Tool", fg="cyan", bold=True),
+                    click.style("Status", fg="cyan", bold=True),
+                    click.style("Issues", fg="cyan", bold=True),
+                ]
 
             table = tabulate(
                 summary_data, headers=headers, tablefmt="grid", stralign="left"
@@ -302,10 +469,52 @@ class SimpleLintroLogger:
                 final_msg = "✓ No issues found."
                 self.console_output(click.style(final_msg, fg="green", bold=True))
             else:
-                final_msg = f"⚠️  TOTAL ISSUES: {total_issues}"
+                final_msg = f"✗ Found {total_issues} issues"
                 self.console_output(click.style(final_msg, fg="red", bold=True))
 
         self.console_output("")
+
+    def _print_final_status_format(
+        self, total_fixed: int, total_remaining: int
+    ) -> None:
+        """Print the final status for format operations.
+
+        Args:
+            total_fixed: The total number of issues fixed.
+            total_remaining: The total number of remaining issues.
+        """
+        if total_remaining == 0:
+            if total_fixed == 0:
+                final_msg = "✓ No issues found."
+            else:
+                final_msg = f"✓ {total_fixed} fixed"
+            self.console_output(click.style(final_msg, fg="green", bold=True))
+        else:
+            if total_fixed > 0:
+                fixed_msg = f"✓ {total_fixed} fixed"
+                self.console_output(click.style(fixed_msg, fg="green", bold=True))
+            remaining_msg = f"✗ {total_remaining} remaining"
+            self.console_output(click.style(remaining_msg, fg="red", bold=True))
+
+        self.console_output("")
+
+    def _print_ascii_art_format(self, total_remaining: int) -> None:
+        """Print ASCII art for format operations based on remaining issues.
+
+        Args:
+            total_remaining: The total number of remaining issues.
+        """
+        try:
+            if total_remaining == 0:
+                ascii_art = read_ascii_art("success.txt")
+            else:
+                ascii_art = read_ascii_art("fail.txt")
+
+            if ascii_art:
+                art_text = "\n".join(ascii_art)
+                self.console_output(art_text)
+        except Exception as e:
+            logger.debug(f"Could not load ASCII art: {e}")
 
     def _print_ascii_art(self, total_issues: int) -> None:
         """Print ASCII art based on the number of issues.
@@ -366,14 +575,17 @@ class SimpleLintroLogger:
         logger.debug(f"Saved console output to {console_log_path}")
 
 
-def create_logger(run_dir: Path, verbose: bool = False) -> SimpleLintroLogger:
+def create_logger(
+    run_dir: Path, verbose: bool = False, raw_output: bool = False
+) -> SimpleLintroLogger:
     """Create a SimpleLintroLogger instance.
 
     Args:
-        run_dir: Directory to write log files to
-        verbose: Whether to enable verbose logging
+        run_dir: Directory for log files.
+        verbose: Whether to enable verbose logging.
+        raw_output: Whether to show raw tool output instead of formatted output.
 
     Returns:
-        Configured SimpleLintroLogger instance
+        Configured SimpleLintroLogger instance.
     """
-    return SimpleLintroLogger(run_dir=run_dir, verbose=verbose)
+    return SimpleLintroLogger(run_dir=run_dir, verbose=verbose, raw_output=raw_output)

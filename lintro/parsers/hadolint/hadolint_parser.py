@@ -13,8 +13,10 @@ def parse_hadolint_output(output: str) -> list[HadolintIssue]:
 
     Example outputs:
     Dockerfile:1 DL3006 error: Always tag the version of an image explicitly
-    Dockerfile:3 DL3009 warning: Delete the apt-get lists after installing something
-    Dockerfile:5 DL3015 info: Avoid additional packages by specifying `--no-install-recommends`
+    Dockerfile:3 DL3009 warning: Delete the apt-get lists after installing
+        something
+    Dockerfile:5 DL3015 info: Avoid additional packages by specifying
+        `--no-install-recommends`
 
     Args:
         output: The raw output from hadolint

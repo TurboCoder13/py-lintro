@@ -174,7 +174,8 @@ class OutputManager:
             html.append(f"<h3>{_html_escape(r.name)} ({r.issues_count} issues)</h3>")
             if hasattr(r, "issues") and r.issues:
                 html.append(
-                    "<table border='1'><tr><th>File</th><th>Line</th><th>Code</th><th>Message</th></tr>"
+                    "<table border='1'><tr><th>File</th><th>Line</th><th>Code</th>"
+                    "<th>Message</th></tr>"
                 )
                 for issue in r.issues:
                     file = _html_escape(getattr(issue, "file", ""))

@@ -77,7 +77,8 @@ def test_darglint_reports_violations_through_lintro(tmp_path):
     tool.set_options(strictness="full", verbosity=2)
     result = tool.check([str(sample_file)])
     logger.info(
-        f"[LOG] Lintro DarglintTool found {result.issues_count} issues. Output:\n{result.output}"
+        f"[LOG] Lintro DarglintTool found {result.issues_count} issues. "
+        f"Output:\n{result.output}"
     )
     assert not result.success, (
         "Lintro DarglintTool should fail when violations are present."
