@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2024-12-19
 
 ### Fixed
+
 - **PyPI Publication Workflow**: Fixed test failures in PyPI publish workflow by adding missing tool installation step
   - Added tool installation step (`./scripts/utils/install-tools.sh --local`) to PyPI workflow
   - Added PATH setup to ensure tools are available during test execution
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clean build process with no warnings during package creation
 
 ### Technical Details
+
 - **Files Modified**:
   - `.github/workflows/publish-pypi.yml` - Added tool installation and PATH setup
   - `scripts/utils/install-tools.sh` - Improved uv compatibility for Python package installation
