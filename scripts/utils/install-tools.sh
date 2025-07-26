@@ -148,10 +148,10 @@ main() {
     # Install yamllint (platform-specific)
     echo -e "${BLUE}Installing yamllint...${NC}"
     
-    # Check if we're in a GitHub Actions environment (no sudo privileges)
-    if [ -n "$GITHUB_ACTIONS" ]; then
-        # GitHub Actions - use pip
-        if pip install yamllint; then
+    # Check if we're in a GitHub Actions environment or using uv
+    if [ -n "$GITHUB_ACTIONS" ] || command -v uv &> /dev/null; then
+        # GitHub Actions or uv environment - use uv pip
+        if uv pip install yamllint; then
             echo -e "${GREEN}✓ yamllint installed successfully${NC}"
         else
             echo -e "${RED}✗ Failed to install yamllint${NC}"
@@ -183,13 +183,26 @@ main() {
         fi
     fi
     
-    # Install darglint via pip (Python package)
+    # Install darglint (Python package)
     echo -e "${BLUE}Installing darglint...${NC}"
-    if pip install darglint==1.8.1; then
-        echo -e "${GREEN}✓ darglint installed successfully${NC}"
+    
+    # Check if we're in a GitHub Actions environment or using uv
+    if [ -n "$GITHUB_ACTIONS" ] || command -v uv &> /dev/null; then
+        # GitHub Actions or uv environment - use uv pip
+        if uv pip install darglint==1.8.1; then
+            echo -e "${GREEN}✓ darglint installed successfully${NC}"
+        else
+            echo -e "${RED}✗ Failed to install darglint${NC}"
+            exit 1
+        fi
     else
-        echo -e "${RED}✗ Failed to install darglint${NC}"
-        exit 1
+        # Fallback to pip
+        if pip install darglint==1.8.1; then
+            echo -e "${GREEN}✓ darglint installed successfully${NC}"
+        else
+            echo -e "${RED}✗ Failed to install darglint${NC}"
+            exit 1
+        fi
     fi
     
     echo ""
