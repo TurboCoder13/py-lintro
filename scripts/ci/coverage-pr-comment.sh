@@ -4,7 +4,7 @@
 # Generates and posts comments to PRs with coverage information
 
 # Source shared utilities
-source "$(dirname "$0")/utils.sh"
+source "$(dirname "$0")/../utils/utils.sh"
 
 # Check if we're in a PR context
 if ! is_pr_context; then
