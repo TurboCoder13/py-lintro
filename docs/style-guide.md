@@ -298,18 +298,18 @@ We use the Lintro tool for code formatting and linting:
 2. Use Lintro for formatting:
 
    ```bash
-   lintro fmt [PATH]
+   lintro format [PATH]
    ```
 
 3. Format specific files:
 
    ```bash
-   lintro fmt file1.py file2.py
+   lintro format file1.py file2.py
    ```
 
 4. Format with custom options:
    ```bash
-   lintro fmt --tools ruff --core-options "ruff:--line-length=100" [PATH]
+   lintro format --tools ruff --core-options "ruff:--line-length=100" [PATH]
    ```
 
 ### Project Structure

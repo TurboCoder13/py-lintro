@@ -34,11 +34,11 @@ feature: add new configuration option
    ```
 3. Run tests:
    ```bash
-   ./scripts/run-tests.sh
+   ./scripts/local/run-tests.sh
    ```
 4. Run Lintro on the codebase:
    ```bash
-   ./scripts/local-lintro.sh check --table-format
+   ./scripts/local/local-lintro.sh check --output-format grid
    ```
 
 ## More Information

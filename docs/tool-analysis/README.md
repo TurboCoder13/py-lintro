@@ -4,13 +4,13 @@ This directory contains comprehensive analyses comparing Lintro's wrapper implem
 
 ## Available Analyses
 
-### [Prettier Analysis](./prettier-analysis.md)
+### [Ruff Analysis](./ruff-analysis.md)
 
-**Code Formatter for JavaScript, TypeScript, CSS, HTML**
+**Comprehensive Python Static Code Analyzer**
 
-- ✅ **Preserved**: Core formatting, configuration files, auto-fixing
-- ⚠️ **Limited**: Runtime options, parser specification, debug capabilities
-- 🚀 **Enhanced**: Unified API, structured output, pipeline integration
+- ✅ **Preserved**: Linting, formatting, auto-fixing, rule selection, configuration files
+- ⚠️ **Limited**: Runtime rule customization, watch mode, cache control, statistics
+- 🚀 **Enhanced**: Combined linting/formatting, smart fix handling, unified API
 
 ### [Darglint Analysis](./darglint-analysis.md)
 
@@ -20,11 +20,29 @@ This directory contains comprehensive analyses comparing Lintro's wrapper implem
 - ⚠️ **Limited**: Runtime configuration, JSON output, parallel processing
 - 🚀 **Enhanced**: Issue normalization, Python integration, error parsing
 
-**Comprehensive Python Static Code Analyzer**
+### [Prettier Analysis](./prettier-analysis.md)
 
-- ✅ **Preserved**: Error detection, standards enforcement, configuration respect
-- ⚠️ **Limited**: Runtime options, output formats, performance controls
-- 🚀 **Enhanced**: Severity mapping, structured data, error aggregation
+**Code Formatter for JavaScript, TypeScript, CSS, HTML**
+
+- ✅ **Preserved**: Core formatting, configuration files, auto-fixing
+- ⚠️ **Limited**: Runtime options, parser specification, debug capabilities
+- 🚀 **Enhanced**: Unified API, structured output, pipeline integration
+
+### [Yamllint Analysis](./yamllint-analysis.md)
+
+**YAML Linter for Syntax and Style**
+
+- ✅ **Preserved**: Syntax validation, style checking, configuration files, error codes
+- ⚠️ **Limited**: Runtime rule customization, schema validation, auto-fixing
+- 🚀 **Enhanced**: Issue normalization, Python integration, error parsing
+
+### [Hadolint Analysis](./hadolint-analysis.md)
+
+**Dockerfile Linter for Best Practices**
+
+- ✅ **Preserved**: Dockerfile analysis, shell script linting, best practices, security scanning
+- ⚠️ **Limited**: Runtime rule customization, Docker Compose support, auto-fixing
+- 🚀 **Enhanced**: Issue normalization, Python integration, error parsing
 
 ## Analysis Framework
 
@@ -67,13 +85,13 @@ Each analysis follows a consistent structure:
 
 ### Trade-offs Summary
 
-| Aspect          | Core Tools                    | Lintro Wrappers               |
-| --------------- | ----------------------------- | ----------------------------- |
-| **Flexibility** | High (all CLI options)        | Limited (config files only)   |
-| **Performance** | Optimized (parallel, caching) | Basic (sequential processing) |
-| **Integration** | CLI-based                     | Python-native                 |
-| **Consistency** | Tool-specific APIs            | Unified interface             |
-| **Output**      | Various formats               | Standardized objects          |
+| Aspect          | Core Tools                    | Lintro Wrappers                     |
+| --------------- | ----------------------------- | ----------------------------------- |
+| **Flexibility** | High (all CLI options)        | Limited (config files only)         |
+| **Performance** | Optimized (parallel, caching) | Sequential processing (no parallel) |
+| **Integration** | CLI-based                     | Python-native                       |
+| **Consistency** | Tool-specific APIs            | Unified interface                   |
+| **Output**      | Various formats               | Standardized objects                |
 
 ## Use Case Recommendations
 
@@ -95,8 +113,10 @@ Each analysis follows a consistent structure:
 
 ## Future Enhancement Opportunities
 
-1. **Configuration Pass-through**: Runtime option support
-2. **Performance**: Parallel processing capabilities
+1. **Configuration Pass-through**: Runtime option support for all tools
+2. **Performance**: Parallel processing capabilities (currently sequential)
 3. **Output Formats**: JSON and custom formatter support
 4. **Plugin Systems**: Custom checker integration
 5. **Metrics**: Code quality scoring and reporting
+6. **Auto-fixing**: Enhanced auto-fixing for tools that support it
+7. **Schema Validation**: Built-in schema validation for YAML and other formats

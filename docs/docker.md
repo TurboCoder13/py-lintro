@@ -4,7 +4,25 @@ This guide explains how to use Lintro with Docker for containerized development 
 
 ## Quick Start
 
-### Setup
+### Using Published Image (Recommended)
+
+The easiest way to use Lintro is with the pre-built image from GitHub Container Registry:
+
+```bash
+# Basic usage
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check
+
+# With grid formatting
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
+
+# Run specific tools
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check --tools ruff,prettier
+
+# Format code
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest format
+```
+
+### Development Setup
 
 ```bash
 # Clone the repository
@@ -12,29 +30,72 @@ git clone https://github.com/TurboCoder13/py-lintro.git
 cd py-lintro
 
 # Make the Docker script executable
-chmod +x docker-lintro.sh
+chmod +x scripts/**/*.sh
 
 # Run Lintro with Docker
-./docker-lintro.sh check --table-format
+./scripts/docker/docker-lintro.sh check --output-format grid
 ```
 
 ### Basic Commands
 
 ```bash
 # Check code for issues
-./docker-lintro.sh check
+./scripts/docker/docker-lintro.sh check
 
 # Auto-fix issues where possible
-./docker-lintro.sh fmt
+./scripts/docker/docker-lintro.sh format
 
-# Use table formatting (recommended)
-./docker-lintro.sh check --table-format --group-by code
+# Use grid formatting (recommended)
+./scripts/docker/docker-lintro.sh check --output-format grid --group-by code
 
 # List available tools
-./docker-lintro.sh list-tools
+./scripts/docker/docker-lintro.sh list-tools
 ```
 
-## Building the Image
+## Published Docker Image
+
+Lintro provides a pre-built Docker image available on GitHub Container Registry (GHCR):
+
+### Image Details
+
+- **Registry**: `ghcr.io/turbocoder13/py-lintro`
+- **Tags**:
+  - `latest` - Latest development version
+  - `main` - Main branch version
+  - `v1.0.0` - Specific release versions (when available)
+
+### Using the Published Image
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/turbocoder13/py-lintro:latest
+
+# Run with the published image
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check
+
+# Use a specific version
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:main check
+```
+
+### CI/CD Integration
+
+Use the published image in your CI/CD pipelines:
+
+```yaml
+# GitHub Actions example
+- name: Run Lintro
+  run: |
+    docker run --rm -v ${{ github.workspace }}:/code \
+      ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
+
+# GitLab CI example
+lintro:
+  image: ghcr.io/turbocoder13/py-lintro:latest
+  script:
+    - lintro check --output-format grid
+```
+
+## Building the Image Locally
 
 ```bash
 # Build the Docker image
@@ -48,20 +109,20 @@ docker compose build
 
 ### Using the Shell Script (Recommended)
 
-The `docker-lintro.sh` script provides the easiest way to run Lintro in Docker:
+The `scripts/docker/docker-lintro.sh` script provides the easiest way to run Lintro in Docker:
 
 ```bash
 # Basic usage
-./docker-lintro.sh check --table-format
+./scripts/docker/docker-lintro.sh check --output-format grid
 
 # Specific tools
-./docker-lintro.sh check --tools ruff,prettier
+./scripts/docker/docker-lintro.sh check --tools ruff,prettier
 
 # Format code
-./docker-lintro.sh fmt --tools ruff
+./scripts/docker/docker-lintro.sh fmt --tools ruff
 
 # Export results
-./docker-lintro.sh check --table-format --output results.txt
+./scripts/docker/docker-lintro.sh check --output-format grid --output results.txt
 ```
 
 ### Using Docker Directly
@@ -70,8 +131,8 @@ The `docker-lintro.sh` script provides the easiest way to run Lintro in Docker:
 # Basic check
 docker run --rm -v "$(pwd):/code" lintro:latest check
 
-# With table formatting
-docker run --rm -v "$(pwd):/code" lintro:latest check --table-format
+# With grid formatting
+docker run --rm -v "$(pwd):/code" lintro:latest check --output-format grid
 
 # Format code
 docker run --rm -v "$(pwd):/code" lintro:latest fmt --tools ruff
@@ -84,7 +145,7 @@ docker run --rm -v "$(pwd):/code" lintro:latest fmt --tools ruff
 docker compose run --rm lintro check
 
 # Format code
-docker compose run --rm lintro fmt --tools ruff
+docker compose run --rm lintro format --tools ruff
 
 # Specific tools
 docker compose run --rm lintro check --tools ruff,prettier
@@ -95,13 +156,13 @@ docker compose run --rm lintro check --tools ruff,prettier
 ### Check Command
 
 ```bash
-./docker-lintro.sh check [OPTIONS] [PATHS]...
+./scripts/docker/docker-lintro.sh check [OPTIONS] [PATHS]...
 ```
 
 **Options:**
 
 - `--tools TEXT` - Comma-separated list of tools (default: all)
-- `--table-format` - Format output as a table
+- `--output-format grid` - Format output as a grid table
 - `--group-by [file|code|none|auto]` - How to group issues
 - `--output FILE` - Save output to file
 - `--exclude TEXT` - Patterns to exclude
@@ -109,13 +170,12 @@ docker compose run --rm lintro check --tools ruff,prettier
 
 **Tool-specific options:**
 
-- `--darglint-timeout INTEGER` - Darglint timeout in seconds
-- `--prettier-timeout INTEGER` - Prettier timeout in seconds
+- `--tool-options TEXT` - Tool-specific options in format tool:option=value
 
 ### Format Command
 
 ```bash
-./docker-lintro.sh fmt [OPTIONS] [PATHS]...
+./scripts/docker/docker-lintro.sh fmt [OPTIONS] [PATHS]...
 ```
 
 Same options as check command, but only runs tools that can auto-fix issues.
@@ -123,7 +183,7 @@ Same options as check command, but only runs tools that can auto-fix issues.
 ### List Tools Command
 
 ```bash
-./docker-lintro.sh list-tools [OPTIONS]
+./scripts/docker/docker-lintro.sh list-tools [OPTIONS]
 ```
 
 **Options:**
@@ -137,13 +197,13 @@ When using the `--output` option, files are created in your current directory:
 
 ```bash
 # Save check results
-./docker-lintro.sh check --table-format --output results.txt
+./scripts/docker/docker-lintro.sh check --output-format grid --output results.txt
 
 # Save to subdirectory (make sure it exists)
-./docker-lintro.sh check --table-format --output reports/results.txt
+./scripts/docker/docker-lintro.sh check --output-format grid --output reports/results.txt
 
 # Save tool list
-./docker-lintro.sh list-tools --output tools.txt
+./scripts/docker/docker-lintro.sh list-tools --output tools.txt
 ```
 
 ## Common Use Cases
@@ -152,39 +212,39 @@ When using the `--output` option, files are created in your current directory:
 
 ```bash
 # Basic quality check
-./docker-lintro.sh check --table-format
+./scripts/docker/docker-lintro.sh check --output-format grid
 
 # Group by error type for easier fixing
-./docker-lintro.sh check --table-format --group-by code
+./scripts/docker/docker-lintro.sh check --output-format grid --group-by code
 
 # Check specific files or directories
-./docker-lintro.sh check src/ tests/ --table-format
+./scripts/docker/docker-lintro.sh check src/ tests/ --output-format grid
 
 # Use only specific tools
-./docker-lintro.sh check --tools ruff,darglint --table-format
+./scripts/docker/docker-lintro.sh check --tools ruff,darglint --output-format grid
 ```
 
 ### Code Formatting
 
 ```bash
 # Format with all available tools
-./docker-lintro.sh fmt
+./scripts/docker/docker-lintro.sh fmt
 
 # Format with specific tools
-./docker-lintro.sh fmt --tools ruff,prettier
+./scripts/docker/docker-lintro.sh fmt --tools ruff,prettier
 
 # Format specific directories
-./docker-lintro.sh fmt src/ --tools ruff
+./scripts/docker/docker-lintro.sh fmt src/ --tools ruff
 ```
 
 ### CI/CD Integration
 
 ```bash
-# CI-friendly output (no table formatting)
-./docker-lintro.sh check --output ci-results.txt
+# CI-friendly output (no grid formatting)
+./scripts/docker/docker-lintro.sh check --output ci-results.txt
 
 # Exit with error code if issues found
-./docker-lintro.sh check && echo "No issues found" || echo "Issues detected"
+./scripts/docker/docker-lintro.sh check && echo "No issues found" || echo "Issues detected"
 ```
 
 ## Testing
@@ -203,16 +263,16 @@ When using the `--output` option, files are created in your current directory:
 
 ```bash
 # Check your changes
-./docker-lintro.sh check --table-format
+./scripts/docker/docker-lintro.sh check --output-format grid
 
 # Fix auto-fixable issues
-./docker-lintro.sh fmt
+./scripts/docker/docker-lintro.sh fmt
 
 # Run tests
 ./docker-test.sh
 
 # Check again to ensure everything is clean
-./docker-lintro.sh check --table-format
+./scripts/docker/docker-lintro.sh check --output-format grid
 ```
 
 ## Troubleshooting
@@ -240,9 +300,9 @@ pwd
 
 ### Docker Script Issues
 
-If the `docker-lintro.sh` script isn't working:
+If the `scripts/docker/docker-lintro.sh` script isn't working:
 
-1. **Check permissions:** `chmod +x docker-lintro.sh`
+1. **Check permissions:** `chmod +x scripts/docker/docker-lintro.sh`
 2. **Verify Docker is running:** `docker --version`
 3. **Ensure you're in the correct directory:** Should contain `Dockerfile`
 
@@ -278,13 +338,13 @@ For large codebases:
 
 ```bash
 # Use specific tools only
-./docker-lintro.sh check --tools ruff --table-format
+./scripts/docker/docker-lintro.sh check --tools ruff --output-format grid
 
 # Exclude unnecessary patterns
-./docker-lintro.sh check --exclude "*.pyc,venv,node_modules" --table-format
+./scripts/docker/docker-lintro.sh check --exclude "*.pyc,venv,node_modules" --output-format grid
 
 # Process specific directories
-./docker-lintro.sh check src/ --table-format
+./scripts/docker/docker-lintro.sh check src/ --output-format grid
 ```
 
 ## Integration with Other Tools
@@ -293,13 +353,13 @@ For large codebases:
 
 ```makefile
 lint:
-	./docker-lintro.sh check --table-format
+	./scripts/docker/docker-lintro.sh check --output-format grid
 
 fix:
-	./docker-lintro.sh fmt
+	./scripts/docker/docker-lintro.sh fmt
 
 lint-ci:
-	./docker-lintro.sh check --output lint-results.txt
+	./scripts/docker/docker-lintro.sh check --output lint-results.txt
 ```
 
 ### GitHub Actions
@@ -307,13 +367,13 @@ lint-ci:
 ```yaml
 - name: Run Lintro
   run: |
-    chmod +x docker-lintro.sh
-    ./docker-lintro.sh check --table-format --output lintro-results.txt
+    chmod +x scripts/docker/docker-lintro.sh
+    ./scripts/docker/docker-lintro.sh check --output-format grid --output lintro-results.txt
 ```
 
 ## Best Practices
 
-1. **Use table formatting** for better readability: `--table-format`
+1. **Use grid formatting** for better readability: `--output-format grid`
 2. **Group by error type** for systematic fixing: `--group-by code`
 3. **Save results to files** for CI integration: `--output results.txt`
 4. **Use specific tools** for faster checks: `--tools ruff,prettier`
