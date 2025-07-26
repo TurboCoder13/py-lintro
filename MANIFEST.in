@@ -8,12 +8,10 @@ recursive-include lintro/ascii-art *
 
 # Include any additional documentation
 recursive-include docs *.md
-recursive-include docs *.rst
-recursive-include docs *.txt
 
 # Include test files for development
 recursive-include tests *.py
 recursive-include test_samples *.py
 recursive-include test_samples *.yml
 recursive-include test_samples *.js
-recursive-include test_samples *.Dockerfile 
+recursive-include test_samples Dockerfile.* 

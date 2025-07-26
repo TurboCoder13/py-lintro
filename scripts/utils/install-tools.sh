@@ -58,19 +58,80 @@ else
     echo -e "${YELLOW}Make sure $BIN_DIR is in your PATH${NC}"
 fi
 
-# Function to install a tool via curl
+# Function to detect platform and architecture
+detect_platform() {
+    local os=$(uname -s)
+    local arch=$(uname -m)
+    
+    # Normalize OS names for hadolint
+    case "$os" in
+        Darwin) os="Darwin" ;;
+        Linux) os="Linux" ;;
+        MINGW*|MSYS*|CYGWIN*) os="Windows" ;;
+        *) os="$os" ;;
+    esac
+    
+    # Normalize architecture names for hadolint
+    case "$arch" in
+        x86_64) arch="x86_64" ;;
+        amd64) arch="x86_64" ;;
+        aarch64) arch="arm64" ;;
+        arm64) arch="arm64" ;;
+        *) arch="$arch" ;;
+    esac
+    
+    echo "${os}-${arch}"
+}
+
+# Function to install a tool via curl with platform detection
 install_tool_curl() {
     local tool_name="$1"
-    local download_url="$2"
+    local base_url="$2"
     local target_path="$BIN_DIR/$tool_name"
     
     echo -e "${BLUE}Installing $tool_name...${NC}"
+    
+    # Get platform info
+    local platform=$(detect_platform)
+    local download_url="${base_url}-${platform}"
+    
+    echo -e "${YELLOW}Detected platform: $platform${NC}"
+    echo -e "${YELLOW}Download URL: $download_url${NC}"
     
     if curl -fsSL "$download_url" -o "$target_path"; then
         chmod +x "$target_path"
         echo -e "${GREEN}✓ $tool_name installed successfully${NC}"
     else
-        echo -e "${RED}✗ Failed to install $tool_name${NC}"
+        echo -e "${YELLOW}Direct download failed, trying alternative methods...${NC}"
+        
+        # For hadolint, try alternative installation methods
+        if [ "$tool_name" = "hadolint" ]; then
+            # Try installing via package managers
+            if command -v brew &> /dev/null; then
+                echo -e "${YELLOW}Trying Homebrew installation...${NC}"
+                if brew install hadolint; then
+                    # Copy from Homebrew location to target
+                    local brew_path=$(brew --prefix hadolint)/bin/hadolint
+                    if [ -f "$brew_path" ]; then
+                        cp "$brew_path" "$target_path"
+                        chmod +x "$target_path"
+                        echo -e "${GREEN}✓ hadolint installed successfully via Homebrew${NC}"
+                        return 0
+                    fi
+                fi
+            fi
+            
+            # Try installing via pip as last resort
+            if command -v pip &> /dev/null; then
+                echo -e "${YELLOW}Trying pip installation...${NC}"
+                if pip install hadolint; then
+                    echo -e "${GREEN}✓ hadolint installed successfully via pip${NC}"
+                    return 0
+                fi
+            fi
+        fi
+        
+        echo -e "${RED}✗ Failed to install $tool_name from $download_url and all fallback methods${NC}"
         exit 1
     fi
 }
@@ -120,10 +181,12 @@ main() {
     
     # Install hadolint (Docker linting)
     install_tool_curl "hadolint" \
-        "https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64"
+        "https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint"
     
     # Install ruff (Python linting and formatting)
     echo -e "${BLUE}Installing ruff...${NC}"
+    
+    # Try the official installer first
     if curl -LsSf https://astral.sh/ruff/install.sh | sh; then
         # Copy ruff to the target directory if it was installed to ~/.local/bin
         if [ -f "$HOME/.local/bin/ruff" ] && [ "$HOME/.local/bin/ruff" != "$BIN_DIR/ruff" ]; then
@@ -132,12 +195,46 @@ main() {
         fi
         echo -e "${GREEN}✓ ruff installed successfully${NC}"
     else
-        echo -e "${RED}✗ Failed to install ruff${NC}"
-        exit 1
+        echo -e "${YELLOW}Ruff installer failed, trying alternative method...${NC}"
+        # Fallback: try installing via pip if available
+        if command -v pip &> /dev/null; then
+            if pip install ruff; then
+                echo -e "${GREEN}✓ ruff installed successfully via pip${NC}"
+            else
+                echo -e "${RED}✗ Failed to install ruff via pip${NC}"
+                exit 1
+            fi
+        else
+            echo -e "${RED}✗ Failed to install ruff (no pip available)${NC}"
+            exit 1
+        fi
     fi
     
     # Install prettier via npm (JavaScript/JSON formatting)
     echo -e "${BLUE}Installing prettier...${NC}"
+    
+    # Check if npm is available
+    if ! command -v npm &> /dev/null; then
+        echo -e "${YELLOW}npm not found, trying to install Node.js...${NC}"
+        
+        # Try to install Node.js based on platform
+        if command -v apt-get &> /dev/null && [ "$(id -u)" = "0" ]; then
+            # Debian/Ubuntu with root privileges
+            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+            apt-get install -y --no-install-recommends nodejs
+        elif command -v brew &> /dev/null; then
+            # macOS with Homebrew
+            brew install node
+        elif command -v yum &> /dev/null && [ "$(id -u)" = "0" ]; then
+            # RHEL/CentOS with root privileges
+            curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+            yum install -y nodejs
+        else
+            echo -e "${RED}✗ Cannot install Node.js automatically. Please install Node.js manually.${NC}"
+            exit 1
+        fi
+    fi
+    
     if npm install -g prettier@3.6.0; then
         echo -e "${GREEN}✓ prettier installed successfully${NC}"
     else
@@ -145,47 +242,67 @@ main() {
         exit 1
     fi
     
-    # Install yamllint (platform-specific)
+    # Install yamllint (Python package)
     echo -e "${BLUE}Installing yamllint...${NC}"
     
-    # Check if we're in a GitHub Actions environment (no sudo privileges)
-    if [ -n "$GITHUB_ACTIONS" ]; then
-        # GitHub Actions - use pip
-        if pip install yamllint; then
-            echo -e "${GREEN}✓ yamllint installed successfully${NC}"
-        else
-            echo -e "${RED}✗ Failed to install yamllint${NC}"
-            exit 1
+    # Function to install Python package with fallbacks
+    install_python_package() {
+        local package="$1"
+        local version="$2"
+        local full_package="$package"
+        
+        if [ -n "$version" ]; then
+            full_package="$package==$version"
         fi
-    elif command -v apt-get &> /dev/null && [ "$(id -u)" = "0" ]; then
-        # Linux with apt-get and root privileges - use pip for consistency
-        if pip install yamllint; then
-            echo -e "${GREEN}✓ yamllint installed successfully${NC}"
-        else
-            echo -e "${RED}✗ Failed to install yamllint${NC}"
-            exit 1
+        
+        # Try different installation methods in order of preference
+        if [ -n "$GITHUB_ACTIONS" ]; then
+            # GitHub Actions - use pip directly
+            if pip install "$full_package"; then
+                return 0
+            fi
+        elif command -v uv &> /dev/null; then
+            # Local uv environment - try uv pip first
+            if uv pip install "$full_package"; then
+                # Copy the executable to target directory if it exists in uv environment
+                local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
+                if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
+                    cp "$uv_path" "$BIN_DIR/$package"
+                    chmod +x "$BIN_DIR/$package"
+                    echo -e "${YELLOW}Copied $package from uv environment to $BIN_DIR${NC}"
+                fi
+                return 0
+            fi
         fi
-    elif command -v brew &> /dev/null; then
-        # macOS with Homebrew
-        if brew install yamllint; then
-            echo -e "${GREEN}✓ yamllint installed successfully${NC}"
-        else
-            echo -e "${RED}✗ Failed to install yamllint${NC}"
-            exit 1
-        fi
-    else
+        
         # Fallback to pip
-        if pip install yamllint; then
-            echo -e "${GREEN}✓ yamllint installed successfully${NC}"
-        else
-            echo -e "${RED}✗ Failed to install yamllint${NC}"
-            exit 1
+        if command -v pip &> /dev/null; then
+            if pip install "$full_package"; then
+                return 0
+            fi
         fi
+        
+        # Try system package managers as last resort
+        if command -v brew &> /dev/null; then
+            if brew install "$package"; then
+                return 0
+            fi
+        fi
+        
+        return 1
+    }
+    
+    if install_python_package "yamllint"; then
+        echo -e "${GREEN}✓ yamllint installed successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to install yamllint${NC}"
+        exit 1
     fi
     
-    # Install darglint via pip (Python package)
+    # Install darglint (Python package)
     echo -e "${BLUE}Installing darglint...${NC}"
-    if pip install darglint==1.8.1; then
+    
+    if install_python_package "darglint" "1.8.1"; then
         echo -e "${GREEN}✓ darglint installed successfully${NC}"
     else
         echo -e "${RED}✗ Failed to install darglint${NC}"
