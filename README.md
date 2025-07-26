@@ -1,6 +1,6 @@
 # Lintro
 
-<img src="assets/images/lintro.png" alt="Lintro Logo" style="width:100%;max-width:800px;height:auto;display:block;margin:0 auto 24px auto;">
+<img src="https://raw.githubusercontent.com/TurboCoder13/py-lintro/main/assets/images/lintro.png" alt="Lintro Logo" style="width:100%;max-width:800px;height:auto;display:block;margin:0 auto 24px auto;">
 
 A comprehensive CLI tool that unifies various code formatting, linting, and quality assurance tools under a single command-line interface.
 

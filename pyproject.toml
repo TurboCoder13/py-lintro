@@ -114,6 +114,7 @@ dev = [
     "build>=1.2.2.post1",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
+    "twine>=6.1.0",
 ]
 
 

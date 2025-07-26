@@ -9,42 +9,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial project setup with comprehensive CLI tool
-- Support for multiple linting tools: Ruff, Darglint, Prettier, Yamllint, Hadolint
-- Docker containerization support
-- GitHub Actions CI/CD workflows
-- Comprehensive test suite with 84% coverage
-- Multiple output formats (grid, CSV, JSON, HTML, Markdown, plain)
-- Auto-fixing capabilities for supported tools
-- Tool-specific configuration options
-- Exclude pattern support
-- Coverage reporting and badge generation
-
-### Changed
-
-- Organized assets into proper directory structure (`assets/images/`)
+- Initial release preparation
+- PyPI package configuration
+- MANIFEST.in file for asset inclusion
+- CHANGELOG.md for version tracking
 
 ### Fixed
 
-- Docker test execution issues
-- Makefile docker-test script path
-- Docker file copying for test accessibility
+- CI script path references for coverage comments
+- Package metadata and classifiers
+- Logo display in README for PyPI compatibility
 
-## [0.1.0] - 2024-07-25
+## [0.1.0] - 2024-07-26
 
 ### Added
 
 - Initial release of Lintro
-- Core CLI functionality with check, format, and list-tools commands
-- Integration with Ruff for Python linting and formatting
-- Integration with Darglint for Python docstring validation
-- Integration with Prettier for JavaScript/TypeScript/JSON formatting
-- Integration with Yamllint for YAML syntax and style checking
-- Integration with Hadolint for Dockerfile best practices
-- Comprehensive documentation
-- Docker support for containerized environments
-- GitHub Actions workflows for CI/CD
-- Test suite with integration and unit tests
+- Unified CLI interface for multiple code quality tools
+- Support for Ruff, Darglint, Prettier, Yamllint, and Hadolint
+- Multiple output formats (grid, JSON, HTML, CSV, Markdown)
+- Auto-fixing capabilities where supported
+- Docker support and containerized environments
+- Comprehensive test suite with 85% coverage
+- CI/CD integration with GitHub Actions
+- Documentation and usage examples
 
-[Unreleased]: https://github.com/TurboCoder13/py-lintro/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/TurboCoder13/py-lintro/releases/tag/v0.1.0
+### Features
+
+- **Unified CLI**: Single command interface for all tools
+- **Multi-language support**: Python, JavaScript, YAML, Docker
+- **Rich output formatting**: Beautiful table views and multiple formats
+- **Auto-fixing**: Automatic issue resolution where possible
+- **Docker ready**: Containerized execution for consistency
+- **CI/CD integration**: GitHub Actions workflows for automation
+
+### Supported Tools
+
+- **Ruff**: Python linting and formatting
+- **Darglint**: Python docstring validation
+- **Prettier**: JavaScript/TypeScript/JSON formatting
+- **Yamllint**: YAML syntax and style checking
+- **Hadolint**: Dockerfile best practices
+
+### Technical Details
+
+- Python 3.13+ compatibility
+- MIT License
+- Comprehensive type hints
+- Google-style docstrings
+- Ruff and MyPy linting
+- 85% test coverage
+- Docker containerization
