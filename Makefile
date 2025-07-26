@@ -57,7 +57,7 @@ docker-build:
 # Run tests in Docker
 docker-test:
 	@echo "Running tests in Docker..."
-	./scripts/docker-test.sh
+	./scripts/docker/docker-test.sh
 
 # Run type checking
 mypy:

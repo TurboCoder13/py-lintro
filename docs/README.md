@@ -1,6 +1,8 @@
-# Lintro Documentation
+# Lintro Documentation Hub
 
-Welcome to the Lintro documentation! This guide will help you navigate all available resources for using, configuring, and contributing to Lintro.
+Welcome to the Lintro documentation! This hub provides comprehensive guides for using, configuring, and contributing to Lintro.
+
+> **Quick Start**: If you're new to Lintro, start with the [main README](../README.md) for installation and basic usage, then return here for detailed guides.
 
 ## 📚 Documentation Structure
 
@@ -36,8 +38,8 @@ Welcome to the Lintro documentation! This guide will help you navigate all avail
 
 | Task                 | Documentation                                                             |
 | -------------------- | ------------------------------------------------------------------------- |
-| **Install Lintro**   | [Getting Started → Installation](getting-started.md#installation)         |
-| **First time usage** | [Getting Started → First Steps](getting-started.md#first-steps)           |
+| **Install Lintro**   | [Main README → Installation](../README.md#installation)                   |
+| **First time usage** | [Main README → Quick Start](../README.md#quick-start)                     |
 | **Docker setup**     | [Docker Usage → Quick Start](docker.md#quick-start)                       |
 | **GitHub Actions**   | [GitHub Integration → Quick Setup](github-integration.md#quick-setup)     |
 | **Configure tools**  | [Configuration → Tool Configuration](configuration.md#tool-configuration) |
@@ -51,15 +53,15 @@ Welcome to the Lintro documentation! This guide will help you navigate all avail
 lintro check
 ```
 
-→ [Getting Started → Basic Usage](getting-started.md#basic-usage)
+→ [Main README → Basic Usage](../README.md#basic-usage)
 
 **🛠️ Auto-fixing Issues:**
 
 ```bash
-lintro fmt
+lintro format
 ```
 
-→ [Getting Started → Common Workflows](getting-started.md#common-workflows)
+→ [Main README → Advanced Usage](../README.md#advanced-usage)
 
 **🐳 Containerized Development:**
 
@@ -78,7 +80,7 @@ lintro fmt
 
 **Goal: Use Lintro effectively in projects**
 
-1. [Getting Started](getting-started.md) - Learn the basics
+1. [Main README](../README.md) - Quick start and basic usage
 2. [Configuration](configuration.md) - Customize for your project
 3. [Docker Usage](docker.md) - Containerized workflows (optional)
 4. [GitHub Integration](github-integration.md) - CI/CD automation (optional)
@@ -120,7 +122,7 @@ lintro fmt
 lintro check
 
 # Auto-fix issues where possible
-lintro fmt
+lintro format
 
 # List available tools
 lintro list-tools [OPTIONS]
@@ -129,7 +131,7 @@ lintro list-tools [OPTIONS]
 ### Common Options
 
 ```bash
---table-format              # Use table output (recommended)
+--output-format grid        # Use grid output (recommended)
 --tools ruff,prettier        # Run specific tools only
 --output results.txt         # Save output to file
 --group-by [file|code|auto]  # Group issues by type

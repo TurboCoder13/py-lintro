@@ -6,17 +6,23 @@ build-backend = "setuptools.build_meta"
 name = "lintro"
 version = "0.1.0"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Eitel Dagnin", email = "turbocoder13@gmail.com"},
 ]
-license = {text = "MIT"}
+license = "MIT"
+keywords = ["linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker"]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
 ]
-requires-python = "==3.13.5"
+requires-python = ">=3.13.0,<3.14"
 dependencies = [
     "click==8.2.1",
     "coverage-badge==1.1.2",
@@ -51,22 +57,41 @@ typing = [
 [project.scripts]
 lintro = "lintro.cli:main"
 
+[project.urls]
+Homepage = "https://github.com/TurboCoder13/py-lintro"
+Documentation = "https://github.com/TurboCoder13/py-lintro/docs"
+Source = "https://github.com/TurboCoder13/py-lintro"
+
 [tool.setuptools]
-packages = ["lintro", "lintro.tools"]
+packages = [
+    "lintro",
+    "lintro.cli_utils",
+    "lintro.cli_utils.commands",
+    "lintro.enums",
+    "lintro.exceptions",
+    "lintro.formatters",
+    "lintro.formatters.core",
+    "lintro.formatters.styles",
+    "lintro.formatters.tools",
+    "lintro.models",
+    "lintro.models.core",
+    "lintro.parsers",
+    "lintro.parsers.darglint",
+    "lintro.parsers.hadolint",
+    "lintro.parsers.prettier",
+    "lintro.parsers.ruff",
+    "lintro.parsers.yamllint",
+    "lintro.tools",
+    "lintro.tools.core",
+    "lintro.tools.implementations",
+    "lintro.utils",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*" 
-
-[dependency-groups]
-dev = [
-    "pytest==8.4.1",
-    "pytest-cov==6.2.1",
-    "pytest-mock==3.14.1",
-    "coverage-badge==1.1.2",
-]
 
 # Ruff configuration for lintro project
 [tool.ruff]
@@ -83,5 +108,13 @@ ignore = []
 unsafe-fixes = false
 # Exclude common virtualenv and build directories
 exclude = [".venv", "venv", "env", "build", "dist", "__pycache__"] 
+
+[dependency-groups]
+dev = [
+    "build>=1.2.2.post1",
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "twine>=6.1.0",
+]
 
 

@@ -1,0 +1,34 @@
+# Global owners - these people will be the default owners for everything in
+# the repo. Unless a later match takes precedence, they will be requested for
+# review when someone opens a pull request.
+* @TurboCoder13
+
+# Core package files
+/lintro/ @TurboCoder13
+/pyproject.toml @TurboCoder13
+/README.md @TurboCoder13
+/CHANGELOG.md @TurboCoder13
+/MANIFEST.in @TurboCoder13
+
+# CI/CD and workflows
+/.github/workflows/ @TurboCoder13
+/scripts/ @TurboCoder13
+
+# Documentation
+/docs/ @TurboCoder13
+
+# Tests
+/tests/ @TurboCoder13
+/test_samples/ @TurboCoder13
+
+# Configuration files
+/pytest.ini @TurboCoder13
+/tox.ini @TurboCoder13
+/renovate.json @TurboCoder13
+
+# Docker files
+/Dockerfile @TurboCoder13
+/docker-compose.yml @TurboCoder13
+
+# Assets and images
+/assets/ @TurboCoder13 

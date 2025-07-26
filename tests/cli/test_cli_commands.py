@@ -82,6 +82,79 @@ def test_check_command_with_verbose_option(mock_check, cli_runner, tmp_path):
     mock_check.assert_called_once()
 
 
+@patch("lintro.cli_utils.commands.check.run_lint_tools_simple")
+def test_check_command_failure_raises_exception(mock_check, cli_runner, tmp_path):
+    """Test that check command raises ClickException when tools fail.
+
+    Args:
+        mock_check: Mock object for the check function.
+        cli_runner: Pytest fixture for CLI runner.
+        tmp_path: Pytest temporary path fixture.
+    """
+    mock_check.return_value = 1  # Failure
+    test_file = tmp_path / "test_file.py"
+    test_file.write_text("print('hello')\n")
+    result = cli_runner.invoke(cli, ["check", str(test_file)])
+    assert result.exit_code == 1
+    assert "Check found issues" in result.output
+
+
+@patch("lintro.cli_utils.commands.check.run_lint_tools_simple")
+def test_check_command_with_all_options(mock_check, cli_runner, tmp_path):
+    """Test check command with all available options.
+
+    Args:
+        mock_check: Mock object for the check function.
+        cli_runner: Pytest fixture for CLI runner.
+        tmp_path: Pytest temporary path fixture.
+    """
+    mock_check.return_value = 0  # Success
+    test_file = tmp_path / "test_file.py"
+    test_file.write_text("print('hello')\n")
+
+    result = cli_runner.invoke(
+        cli,
+        [
+            "check",
+            "--tools",
+            "ruff",
+            "--tool-options",
+            "ruff:line-length=88",
+            "--exclude",
+            "*.pyc",
+            "--include-venv",
+            "--output",
+            str(tmp_path / "output.txt"),
+            "--output-format",
+            "json",
+            "--group-by",
+            "file",
+            "--ignore-conflicts",
+            "--verbose",
+            "--no-log",
+            str(test_file),
+        ],
+    )
+    assert result.exit_code == 0
+    mock_check.assert_called_once()
+
+
+@patch("lintro.cli_utils.commands.check.run_lint_tools_simple")
+def test_check_command_no_paths_uses_current_dir(mock_check, cli_runner):
+    """Test check command uses current directory when no paths provided.
+
+    Args:
+        mock_check: Mock object for the check function.
+        cli_runner: Pytest fixture for CLI runner.
+    """
+    mock_check.return_value = 0  # Success
+    result = cli_runner.invoke(cli, ["check"])
+    assert result.exit_code == 0
+    # Should pass ["."] as paths
+    call_args = mock_check.call_args
+    assert call_args[1]["paths"] == ["."]
+
+
 def test_fmt_command_help(cli_runner):
     """Test that fmt command shows help.
 
@@ -128,6 +201,75 @@ def test_fmt_command_with_tools_option(mock_fmt, cli_runner, tmp_path):
     assert result.exit_code == 0
 
 
+@patch("lintro.cli_utils.commands.format.run_lint_tools_simple")
+def test_fmt_command_failure_raises_exception(mock_fmt, cli_runner, tmp_path):
+    """Test that format command raises ClickException when tools fail.
+
+    Args:
+        mock_fmt: Mock object for the format function.
+        cli_runner: Pytest fixture for CLI runner.
+        tmp_path: Pytest temporary path fixture.
+    """
+    mock_fmt.return_value = 1  # Failure
+    test_file = tmp_path / "test_file.py"
+    test_file.write_text("print('hello')\n")
+    result = cli_runner.invoke(cli, ["format", str(test_file)])
+    assert result.exit_code == 1
+    assert "Format found issues" in result.output
+
+
+@patch("lintro.cli_utils.commands.format.run_lint_tools_simple")
+def test_fmt_command_with_all_options(mock_fmt, cli_runner, tmp_path):
+    """Test format command with all available options.
+
+    Args:
+        mock_fmt: Mock object for the format function.
+        cli_runner: Pytest fixture for CLI runner.
+        tmp_path: Pytest temporary path fixture.
+    """
+    mock_fmt.return_value = 0  # Success
+    test_file = tmp_path / "test_file.py"
+    test_file.write_text("print('hello')\n")
+
+    result = cli_runner.invoke(
+        cli,
+        [
+            "format",
+            "--tools",
+            "ruff",
+            "--tool-options",
+            "ruff:line-length=88",
+            "--exclude",
+            "*.pyc",
+            "--include-venv",
+            "--group-by",
+            "file",
+            "--output-format",
+            "json",
+            "--verbose",
+            str(test_file),
+        ],
+    )
+    assert result.exit_code == 0
+    mock_fmt.assert_called_once()
+
+
+@patch("lintro.cli_utils.commands.format.run_lint_tools_simple")
+def test_fmt_command_no_paths_uses_current_dir(mock_fmt, cli_runner):
+    """Test format command uses current directory when no paths provided.
+
+    Args:
+        mock_fmt: Mock object for the format function.
+        cli_runner: Pytest fixture for CLI runner.
+    """
+    mock_fmt.return_value = 0  # Success
+    result = cli_runner.invoke(cli, ["format"])
+    assert result.exit_code == 0
+    # Should pass ["."] as paths
+    call_args = mock_fmt.call_args
+    assert call_args[1]["paths"] == ["."]
+
+
 def test_list_tools_command_help(cli_runner):
     """Test that list-tools command help works correctly.
 
@@ -155,7 +297,157 @@ def test_list_tools_command_invokes_list_tools_function(mock_list_tools, cli_run
     mock_list_tools.assert_called_once()
 
 
-# Remove all obsolete function-level tests that call check() or fmt() with output, output_format, darglint_timeout, or prettier_timeout.
+@patch("lintro.cli_utils.commands.list_tools.list_tools")
+def test_list_tools_command_with_output_option(mock_list_tools, cli_runner, tmp_path):
+    """Test list-tools command with output file option.
+
+    Args:
+        mock_list_tools: Mocked list_tools function.
+        cli_runner: Pytest fixture for CLI runner.
+        tmp_path: Pytest temporary path fixture.
+    """
+    mock_list_tools.return_value = 0
+    output_file = tmp_path / "tools.txt"
+
+    result = cli_runner.invoke(cli, ["list-tools", "--output", str(output_file)])
+
+    assert result.exit_code == 0
+    mock_list_tools.assert_called_once_with(
+        output=str(output_file), show_conflicts=False
+    )
+
+
+@patch("lintro.cli_utils.commands.list_tools.list_tools")
+def test_list_tools_command_with_show_conflicts_option(mock_list_tools, cli_runner):
+    """Test list-tools command with show-conflicts option.
+
+    Args:
+        mock_list_tools: Mocked list_tools function.
+        cli_runner: Pytest fixture for CLI runner.
+    """
+    mock_list_tools.return_value = 0
+
+    result = cli_runner.invoke(cli, ["list-tools", "--show-conflicts"])
+
+    assert result.exit_code == 0
+    mock_list_tools.assert_called_once_with(output=None, show_conflicts=True)
+
+
+# Test legacy functions for better coverage
+def test_check_legacy_function():
+    """Test the legacy check function for backward compatibility."""
+    from lintro.cli_utils.commands.check import check
+
+    with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock_run:
+        mock_run.return_value = 0  # Success
+
+        # Test with various arguments - use a file that exists
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write("print('hello')\n")
+            temp_file = f.name
+
+        try:
+            check(
+                paths=[temp_file],
+                tools="ruff",
+                tool_options="ruff:line-length=88",
+                exclude="*.pyc",
+                include_venv=True,
+                output="output.txt",
+                output_format="json",
+                group_by="file",
+                ignore_conflicts=True,
+                verbose=True,
+                no_log=True,
+            )
+
+            # Should have been called
+            assert mock_run.called
+        finally:
+            import os
+
+            os.unlink(temp_file)
+
+
+def test_format_code_legacy_function():
+    """Test the legacy format_code function for backward compatibility."""
+    from lintro.cli_utils.commands.format import format_code_legacy
+
+    with patch("lintro.cli_utils.commands.format.run_lint_tools_simple") as mock_run:
+        mock_run.return_value = 0  # Success
+
+        # Test with various arguments - use a file that exists
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write("print('hello')\n")
+            temp_file = f.name
+
+        try:
+            format_code_legacy(
+                paths=[temp_file],
+                tools="ruff",
+                tool_options="ruff:line-length=88",
+                exclude="*.pyc",
+                include_venv=True,
+                group_by="file",
+                output_format="json",
+                verbose=True,
+            )
+
+            # Should have been called
+            assert mock_run.called
+        finally:
+            import os
+
+            os.unlink(temp_file)
+
+
+def test_format_code_legacy_function_failure():
+    """Test the legacy format_code function handles failures."""
+    from lintro.cli_utils.commands.format import format_code_legacy
+
+    with patch("lintro.cli_utils.commands.format.run_lint_tools_simple") as mock_run:
+        mock_run.return_value = 1  # Failure
+
+        # Should raise exception
+        with pytest.raises(Exception, match="Format failed"):
+            format_code_legacy(
+                paths=["test.py"],
+                tools="ruff",
+            )
+
+
+# Test list_tools function directly for better coverage
+def test_list_tools_function_basic():
+    """Test the list_tools function works correctly."""
+    from lintro.cli_utils.commands.list_tools import list_tools
+
+    # Test basic functionality without complex mocking
+    # This will use the actual tool manager and available tools
+    list_tools(output=None, show_conflicts=False)
+
+
+def test_list_tools_function_with_conflicts():
+    """Test the list_tools function with conflicts enabled."""
+    from lintro.cli_utils.commands.list_tools import list_tools
+
+    # Test with conflicts enabled
+    list_tools(output=None, show_conflicts=True)
+
+
+def test_list_tools_function_file_error():
+    """Test the list_tools function handles file write errors."""
+    from lintro.cli_utils.commands.list_tools import list_tools
+
+    # Test with invalid output path (should handle IOError gracefully)
+    list_tools(output="/invalid/path/tools.txt", show_conflicts=False)
+
+
+# Remove all obsolete function-level tests that call check() or fmt() with output,
+# output_format, darglint_timeout, or prettier_timeout.
 # Add a new integration test for the output manager via the CLI.
 
 

@@ -2,7 +2,8 @@
 
 Clean, straightforward approach using Loguru with rich formatting:
 1. OutputManager - handles structured output files only
-2. SimpleLintroLogger - handles console display AND logging with Loguru + rich formatting
+2. SimpleLintroLogger - handles console display AND logging with Loguru + rich
+   formatting
 3. No tee, no stream redirection, no complex state management
 """
 
@@ -94,11 +95,13 @@ def run_lint_tools_simple(
     group_by: str,
     output_format: str,
     verbose: bool,
+    raw_output: bool = False,
 ) -> int:
     """Simplified runner using Loguru-based logging with rich formatting.
 
     Clean approach with beautiful output:
-    - SimpleLintroLogger handles ALL console output and file logging with rich formatting
+    - SimpleLintroLogger handles ALL console output and file logging with rich
+      formatting
     - OutputManager handles structured output files
     - No tee, no complex state management
 
@@ -112,6 +115,7 @@ def run_lint_tools_simple(
         group_by: How to group results
         output_format: Output format for results
         verbose: Whether to enable verbose output
+        raw_output: Whether to show raw tool output instead of formatted output
 
     Returns:
         Exit code (0 for success, 1 for failures)
@@ -121,7 +125,7 @@ def run_lint_tools_simple(
     run_dir = output_manager.run_dir
 
     # Create simplified logger with rich formatting
-    logger = create_logger(run_dir=run_dir, verbose=verbose)
+    logger = create_logger(run_dir=run_dir, verbose=verbose, raw_output=raw_output)
 
     logger.debug(f"Starting {action} command")
     logger.debug(f"Paths: {paths}")
@@ -155,6 +159,8 @@ def run_lint_tools_simple(
 
         all_results = []
         total_issues = 0
+        total_fixed = 0
+        total_remaining = 0
 
         # Run each tool with rich formatting
         for tool_enum in tools_to_run:
@@ -183,32 +189,73 @@ def run_lint_tools_simple(
 
                 if action == "fmt":
                     result = tool.fix(paths=paths)
+                    # For format commands, track both fixed and remaining issues
+                    fixed_count = getattr(
+                        result, "issues_count", 0
+                    )  # This is the fixed count
+                    success = getattr(result, "success", True)
+
+                    # Parse output to determine remaining issues
+                    output = getattr(result, "output", "")
+                    remaining_count = 0
+                    if output and "remaining" in output.lower():
+                        # Look for patterns like "X remaining" or
+                        # "X issue(s) that cannot be auto-fixed"
+                        import re
+
+                        remaining_match = re.search(
+                            r"(\d+)\s+(?:issue\(s\)\s+)?"
+                            r"(?:that\s+cannot\s+be\s+auto-fixed|remaining)",
+                            output.lower(),
+                        )
+                        if remaining_match:
+                            remaining_count = int(remaining_match.group(1))
+                        elif not success:
+                            # If success is False and no specific count found,
+                            # assume 1 remaining
+                            remaining_count = 1
+
+                    total_fixed += fixed_count
+                    total_remaining += remaining_count
+                    issues_count = fixed_count  # For display purposes
                 else:  # check
                     result = tool.check(paths=paths)
-
-                # Process result
-                issues_count = getattr(result, "issues_count", 0)
-                total_issues += issues_count
+                    issues_count = getattr(result, "issues_count", 0)
+                    total_issues += issues_count
 
                 # Format and display output
                 output = getattr(result, "output", None)
+                issues = getattr(result, "issues", None)
                 formatted_output = ""
 
-                if output and output.strip():
+                # Call format_tool_output if we have output or issues
+                if (output and output.strip()) or issues:
                     formatted_output = format_tool_output(
                         tool_name=tool_name,
-                        output=output,
+                        output=output or "",
                         group_by=group_by,
                         output_format=output_format,
+                        issues=issues,
                     )
 
                 # Print tool results with rich formatting
-                logger.print_tool_result(tool_name, formatted_output, issues_count)
+                # Use raw output if raw_output is true, otherwise use formatted output
+                if raw_output:
+                    display_output = output
+                else:
+                    display_output = formatted_output
+                logger.print_tool_result(tool_name, display_output, issues_count)
 
                 # Store result
                 all_results.append(result)
 
-                logger.debug(f"Completed {tool_name}: {issues_count} issues found")
+                if action == "fmt":
+                    logger.debug(
+                        f"Completed {tool_name}: {fixed_count} fixed, "
+                        f"{remaining_count} remaining"
+                    )
+                else:
+                    logger.debug(f"Completed {tool_name}: {issues_count} issues found")
 
             except Exception as e:
                 logger.error(f"Error running {tool_name}: {e}")
@@ -227,7 +274,8 @@ def run_lint_tools_simple(
 
         # Return appropriate exit code
         if action == "fmt":
-            # Format operations always succeed when they complete
+            # Format operations succeed if they complete successfully
+            # (even if there are remaining unfixable issues)
             return 0
         else:  # check
             # Check operations fail if issues are found

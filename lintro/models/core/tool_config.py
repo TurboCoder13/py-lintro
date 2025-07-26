@@ -9,7 +9,8 @@ class ToolConfig:
     """Configuration for a core.
 
     Attributes:
-        priority: Priority level (higher number = higher priority when resolving conflicts)
+        priority: Priority level (higher number = higher priority when resolving
+            conflicts)
         conflicts_with: List of tools this core conflicts with
         file_patterns: List of file patterns this core should be applied to
         tool_type: Type of core

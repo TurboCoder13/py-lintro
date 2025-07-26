@@ -50,7 +50,8 @@ def run_yamllint_directly(file_path: Path) -> tuple[bool, str, int]:
         env = os.environ.copy()
         env["HOME"] = temp_home
         print(
-            f"[DEBUG] Subprocess environment: HOME={env.get('HOME')}, PATH={env.get('PATH')}"
+            f"[DEBUG] Subprocess environment: HOME={env.get('HOME')}, "
+            f"PATH={env.get('PATH')}"
         )
         print(f"[DEBUG] Subprocess CWD: {file_path.parent}")
         print(f"[DEBUG] Subprocess full env: {env}")
@@ -109,7 +110,8 @@ def test_yamllint_reports_violations_direct(tmp_path):
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
-        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, PATH={os.environ.get('PATH')}"
+        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
+        f"PATH={os.environ.get('PATH')}"
     )
     logger.info("[TEST] Running yamllint directly on sample file...")
     success, output, issues = run_yamllint_directly(sample_file)
@@ -138,7 +140,8 @@ def test_yamllint_reports_violations_through_lintro(tmp_path):
     tool.set_options(format="parsable")
     result = tool.check([str(sample_file)])
     logger.info(
-        f"[LOG] Lintro YamllintTool found {result.issues_count} issues. Output:\n{result.output}"
+        f"[LOG] Lintro YamllintTool found {result.issues_count} issues. "
+        f"Output:\n{result.output}"
     )
     assert not result.success, (
         "Lintro YamllintTool should fail when violations are present."
@@ -172,7 +175,8 @@ def test_yamllint_output_consistency_direct_vs_lintro(tmp_path):
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
-        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, PATH={os.environ.get('PATH')}"
+        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
+        f"PATH={os.environ.get('PATH')}"
     )
     logger.info("[TEST] Comparing yamllint CLI and Lintro YamllintTool outputs...")
     tool = YamllintTool()
@@ -183,7 +187,8 @@ def test_yamllint_output_consistency_direct_vs_lintro(tmp_path):
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}"
     )
     assert direct_issues == result.issues_count, (
-        f"Mismatch: CLI={direct_issues}, Lintro={result.issues_count}\nCLI Output:\n{direct_output}\nLintro Output:\n{result.output}"
+        f"Mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
+        f"CLI Output:\n{direct_output}\nLintro Output:\n{result.output}"
     )
 
 
@@ -300,9 +305,12 @@ def test_yamllint_parser_validation(tmp_path):
     from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 
     # Test with sample output
-    sample_output = """file.yaml:1:1: [error] too many blank lines (1 > 0 allowed) (empty-lines)
-file.yaml:3:5: [warning] wrong indentation: expected 4 but found 2 (indentation)
-file.yaml:7:80: [error] line too long (120 > 79 characters) (line-length)"""
+    sample_output = (
+        "file.yaml:1:1: [error] too many blank lines (1 > 0 allowed) (empty-lines)\n"
+        "file.yaml:3:5: [warning] wrong indentation: expected 4 but found 2 "
+        "(indentation)\n"
+        "file.yaml:7:80: [error] line too long (120 > 79 characters) (line-length)"
+    )
 
     issues = parse_yamllint_output(sample_output)
     logger.info(f"[LOG] Parsed {len(issues)} issues from sample output")

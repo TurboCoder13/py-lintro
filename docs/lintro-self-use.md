@@ -81,7 +81,7 @@ Lintro can automatically fix many issues:
 
 ```bash
 # Auto-fix Python formatting issues
-uv run lintro fmt lintro/ tests/ --tools ruff
+uv run lintro format lintro/ tests/ --tools ruff
 ```
 
 ## 📊 Current Quality Status
@@ -102,7 +102,7 @@ Run the same checks locally during development:
 uv run lintro check lintro/ tests/ --tools ruff,darglint
 
 # Auto-fix issues
-uv run lintro fmt lintro/ tests/ --tools ruff
+uv run lintro format lintro/ tests/ --tools ruff
 
 # Check specific file types
 uv run lintro check .github/ --tools yamllint

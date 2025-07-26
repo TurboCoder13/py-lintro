@@ -7,6 +7,7 @@ from loguru import logger
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.parsers.ruff.ruff_issue import RuffFormatIssue
 from lintro.parsers.ruff.ruff_parser import (
     parse_ruff_format_check_output,
     parse_ruff_output,
@@ -260,47 +261,66 @@ class RuffTool(BaseTool):
         lint_issues = parse_ruff_output(output_lint)
         lint_issues_count = len(lint_issues)
 
-        # Format check
-        format_cmd = self._build_format_command(python_files, check_only=True)
-        success_format, output_format = self._run_subprocess(
-            format_cmd, timeout=timeout
-        )
-        format_files = parse_ruff_format_check_output(output_format)
-        format_issues_count = len(format_files)
+        # Format check (only if format option is enabled)
+        format_issues_count = 0
+        format_files = []
+        format_issues = []
+        if self.options.get("format", True):
+            format_cmd = self._build_format_command(python_files, check_only=True)
+            success_format, output_format = self._run_subprocess(
+                format_cmd, timeout=timeout
+            )
+            format_files = parse_ruff_format_check_output(output_format)
+            format_issues_count = len(format_files)
+            # Create RuffFormatIssue objects for each file that would be reformatted
+            format_issues = [RuffFormatIssue(file=file) for file in format_files]
 
         # Combine results
         issues_count = lint_issues_count + format_issues_count
         success = issues_count == 0
 
-        # Format output for display
+        # Format output for display (matching ruff's native output format)
         output_lines = []
+
+        # Add linting issues (matching ruff's format)
         if lint_issues_count > 0:
-            output_lines.append("Lint issues:")
-            for issue in lint_issues[:5]:
+            for issue in lint_issues:
                 output_lines.append(
-                    f"{issue.file}:{issue.line}:{issue.column} [{issue.code}] {issue.message}"
+                    f"{issue.file}:{issue.line}:{issue.column}: "
+                    f"{issue.code} {issue.message}"
                 )
-            if lint_issues_count > 5:
+
+            # Calculate fixable count from linting issues
+            fixable_count = sum(1 for issue in lint_issues if issue.fixable)
+            output_lines.append(f"Found {lint_issues_count} errors.")
+            if fixable_count > 0:
                 output_lines.append(
-                    f"... and {lint_issues_count - 5} more lint issues."
+                    f"[*] {fixable_count} fixable with the --fix option."
                 )
-        if format_issues_count > 0:
-            output_lines.append("Formatting issues:")
-            for file in format_files[:5]:
-                output_lines.append(f"Would reformat {file}")
-            if format_issues_count > 5:
-                output_lines.append(
-                    f"... and {format_issues_count - 5} more files would be reformatted."
-                )
+
+        # Add formatting issues (matching ruff's format)
+        if format_issues_count > 0 and self.options.get("format", True):
+            for file in format_files:
+                output_lines.append(f"Would reformat: {file}")
+            output_lines.append(
+                f"{format_issues_count} file{'s' if format_issues_count > 1 else ''} "
+                "would be reformatted"
+            )
+
         if not output_lines:
             output_lines.append("No issues found.")
+
         output_summary = "\n".join(output_lines)
+
+        # Combine linting and formatting issues for the formatters
+        all_issues = lint_issues + format_issues
 
         return ToolResult(
             name=self.name,
             success=success,
             output=output_summary,
             issues_count=issues_count,
+            issues=all_issues,
         )
 
     def fix(
@@ -362,6 +382,17 @@ class RuffTool(BaseTool):
         initial_issues = parse_ruff_output(output_check)
         initial_count = len(initial_issues)
 
+        # Also check formatting issues before fixing
+        format_cmd_check = self._build_format_command(python_files, check_only=True)
+        success_format_check, output_format_check = self._run_subprocess(
+            format_cmd_check, timeout=timeout
+        )
+        format_files = parse_ruff_format_check_output(output_format_check)
+        initial_format_count = len(format_files)
+
+        # Total initial issues (linting + formatting)
+        total_initial_count = initial_count + initial_format_count
+
         # Run ruff check --fix to apply fixes
         cmd = self._build_check_command(python_files, fix=True)
         success, output = self._run_subprocess(cmd, timeout=timeout)
@@ -369,16 +400,28 @@ class RuffTool(BaseTool):
         remaining_count = len(remaining_issues)
 
         # Calculate how many issues were actually fixed
-        fixed_count = initial_count - remaining_count
+        fixed_count = total_initial_count - remaining_count
+
+        # Show initial count and fixable count (matching ruff's native output format)
+        if initial_count > 0:
+            # Calculate fixable count from initial issues
+            fixable_count = sum(1 for issue in initial_issues if issue.fixable)
+            all_outputs.append(f"Found {initial_count} errors.")
+            if fixable_count > 0:
+                all_outputs.append(
+                    f"[*] {fixable_count} fixable with the --fix option."
+                )
 
         if fixed_count > 0:
             all_outputs.append(f"Fixed {fixed_count} issue(s)")
 
         # If there are remaining issues, check if any are fixable with unsafe fixes
         if remaining_count > 0:
-            # If unsafe fixes are disabled, check if any remaining issues are fixable with unsafe fixes
+            # If unsafe fixes are disabled, check if any remaining issues are
+            # fixable with unsafe fixes
             if not unsafe_fixes_enabled:
-                # Try running ruff with unsafe fixes in dry-run mode to see if it would fix more
+                # Try running ruff with unsafe fixes in dry-run mode to see if it
+                # would fix more
                 cmd_unsafe = self._build_check_command(python_files, fix=True)
                 if "--unsafe-fixes" not in cmd_unsafe:
                     cmd_unsafe.append("--unsafe-fixes")
@@ -389,7 +432,8 @@ class RuffTool(BaseTool):
                 remaining_unsafe = parse_ruff_output(output_unsafe)
                 if len(remaining_unsafe) < remaining_count:
                     all_outputs.append(
-                        "Some remaining issues could be fixed by enabling unsafe fixes (use --tool-options ruff:unsafe_fixes=True)"
+                        "Some remaining issues could be fixed by enabling unsafe "
+                        "fixes (use --tool-options ruff:unsafe_fixes=True)"
                     )
             all_outputs.append(
                 f"Found {remaining_count} issue(s) that cannot be auto-fixed"
@@ -403,12 +447,13 @@ class RuffTool(BaseTool):
                 except (ValueError, TypeError):
                     file_rel = file_path
                 all_outputs.append(
-                    f"  {file_rel}:{getattr(issue, 'line', '?')} - {getattr(issue, 'message', 'Unknown issue')}"
+                    f"  {file_rel}:{getattr(issue, 'line', '?')} - "
+                    f"{getattr(issue, 'message', 'Unknown issue')}"
                 )
             if len(remaining_issues) > 5:
                 all_outputs.append(f"  ... and {len(remaining_issues) - 5} more")
 
-        if initial_count == 0:
+        if total_initial_count == 0:
             all_outputs.append("No linting issues found")
         elif remaining_count == 0 and fixed_count > 0:
             all_outputs.append("All linting issues were successfully auto-fixed")
@@ -426,14 +471,25 @@ class RuffTool(BaseTool):
                 all_outputs.append(f"Formatting:\n{format_output}")
             else:
                 all_outputs.append("No formatting changes needed")
-            if not format_success:
+            # Only consider formatting failure if there are actual formatting
+            # issues. Don't fail the overall operation just because formatting
+            # failed when there are no issues
+            if not format_success and total_initial_count > 0:
                 overall_success = False
 
         final_output = "\n\n".join(all_outputs) if all_outputs else "No fixes applied."
+
+        # Success should be based on whether there are remaining issues after fixing
+        # If there are no initial issues, success should be True
+        if total_initial_count == 0:
+            overall_success = True
+        else:
+            overall_success = remaining_count == 0
 
         return ToolResult(
             name=self.name,
             success=overall_success,
             output=final_output,
             issues_count=fixed_count,
+            issues=remaining_issues,  # Include remaining issues for grid formatting
         )

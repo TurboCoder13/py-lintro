@@ -171,7 +171,15 @@ def test_format_tool_output_basic():
 @pytest.mark.utils
 def test_format_tool_output_json():
     """Test tool output formatting with JSON format."""
-    output = "test output content"
+    output = (
+        '[{"filename": "test_samples/darglint_violations.py", '
+        '"location": {"row": 1, "column": 1}, '
+        '"end_location": {"row": 1, "column": 10}, '
+        '"code": "F401", '
+        '"message": "\'os\' imported but unused", '
+        '"url": null, '
+        '"fix": null}]'
+    )
     result = format_tool_output("ruff", output, output_format="json")
 
     assert isinstance(result, str)
@@ -181,7 +189,15 @@ def test_format_tool_output_json():
 @pytest.mark.utils
 def test_format_tool_output_csv():
     """Test tool output formatting with CSV format (using real ruff JSON output)."""
-    output = '[{"filename": "test_samples/darglint_violations.py", "location": {"row": 1, "column": 1}, "end_location": {"row": 1, "column": 10}, "code": "F401", "message": "\'os\' imported but unused", "url": null, "fix": null}]'
+    output = (
+        '[{"filename": "test_samples/darglint_violations.py", '
+        '"location": {"row": 1, "column": 1}, '
+        '"end_location": {"row": 1, "column": 10}, '
+        '"code": "F401", '
+        '"message": "\'os\' imported but unused", '
+        '"url": null, '
+        '"fix": null}]'
+    )
     result = format_tool_output("ruff", output, output_format="csv")
     print("DEBUG: CSV result=\n", repr(result))
     assert isinstance(result, str)

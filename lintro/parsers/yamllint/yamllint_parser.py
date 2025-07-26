@@ -12,9 +12,12 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
     filename:line:column: [level] message (rule)
 
     Example outputs:
-    test_samples/yaml_violations.yml:3:1: [warning] missing document start "---" (document-start)
-    test_samples/yaml_violations.yml:6:32: [error] trailing spaces (trailing-spaces)
-    test_samples/yaml_violations.yml:11:81: [error] line too long (149 > 80 characters) (line-length)
+    test_samples/yaml_violations.yml:3:1: [warning] missing document start
+        "---" (document-start)
+    test_samples/yaml_violations.yml:6:32: [error] trailing spaces
+        (trailing-spaces)
+    test_samples/yaml_violations.yml:11:81: [error] line too long (149 > 80
+        characters) (line-length)
 
     Args:
         output: The raw output from yamllint
@@ -35,7 +38,8 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
         if not line:
             continue
 
-        # Pattern for yamllint parsable format: "filename:line:column: [level] message (rule)"
+        # Pattern for yamllint parsable format: "filename:line:column: [level]
+        # message (rule)"
         pattern = re.compile(
             r"^([^:]+):(\d+):(\d+):\s*\[(error|warning)\]\s+(.+?)(?:\s+\(([^)]+)\))?$"
         )

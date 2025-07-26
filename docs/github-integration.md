@@ -14,12 +14,12 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 
 ### 1. Quality Check Workflow
 
-**File:** `.github/workflows/lintro-quality-check.yml`
+**File:** `.github/workflows/lintro-ci.yml`
 
 **Features:**
 
 - 🔍 **Comprehensive analysis** across all file types
-- 🛠️ **Auto-fixing** with `lintro fmt` where possible
+- 🛠️ **Auto-fixing** with `lintro format` where possible
 - 📊 **Detailed reporting** in GitHub Actions summaries
 - 🚀 **Multi-tool analysis:**
   - Python: Ruff + Darglint
@@ -35,7 +35,7 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 
 ### 2. Coverage Badge Workflow
 
-**File:** `.github/workflows/coverage-badge.yml`
+**File:** `.github/workflows/lintro-test-coverage.yml`
 
 **Features:**
 
@@ -89,13 +89,42 @@ permissions:
 
 ### 4. Complete CI Pipeline
 
-**File:** `.github/workflows/ci.yml`
+**File:** `.github/workflows/lintro-ci.yml`
 
 **Features:**
 
 - 🎯 **Quality-first approach** - Lintro runs before tests
 - 📋 **Combined reporting** - Quality + testing results
 - 🚀 **Showcase integration** - Demonstrates Lintro capabilities
+
+### 5. Docker Image Publishing
+
+**File:** `.github/workflows/lintro-docker.yml`
+
+**Features:**
+
+- 🐳 **Automated Docker image building** and publishing to GHCR
+- 🏷️ **Smart tagging** - Latest, main branch, and semantic versions
+- 🔄 **Release integration** - Images published on releases
+- 📦 **GHCR integration** - Images available at `ghcr.io/turbocoder13/py-lintro`
+
+**Usage in CI/CD:**
+
+You can use the published Docker image in your own CI/CD pipelines:
+
+```yaml
+# GitHub Actions example
+- name: Run Lintro with Docker
+  run: |
+    docker run --rm -v ${{ github.workspace }}:/code \
+      ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
+
+# GitLab CI example
+lintro:
+  image: ghcr.io/turbocoder13/py-lintro:latest
+  script:
+    - lintro check --output-format grid
+```
 
 ## Setting Up in Your Repository
 
@@ -113,13 +142,13 @@ cp .github/workflows/*.yml your-project/.github/workflows/
 Edit the workflow files to match your project structure:
 
 ```yaml
-# .github/workflows/lintro-quality-check.yml
+# .github/workflows/lintro-ci.yml
 - name: Run Lintro Quality Check
   run: |
     # Adjust paths for your project
-    uv run lintro check src/ tests/ --tools ruff,darglint --table-format
-    uv run lintro check .github/ --tools yamllint --table-format
-    uv run lintro check *.json --tools prettier --table-format
+    uv run lintro check src/ tests/ --tools ruff,darglint --output-format grid
+    uv run lintro check .github/ --tools yamllint --output-format grid
+    uv run lintro check *.json --tools prettier --output-format grid
 ```
 
 ### 3. Configure Repository Settings
@@ -161,7 +190,7 @@ jobs:
 
       - name: Run Lintro
         run: |
-          uv run lintro check --table-format --output lintro-results.txt
+          uv run lintro check --output-format grid --output lintro-results.txt
           cat lintro-results.txt
 
       - name: Upload results
@@ -200,7 +229,7 @@ jobs:
           uv sync
 
       - name: Run Lintro auto-fix
-        run: uv run lintro fmt --table-format
+        run: uv run lintro format --output-format grid
 
       - name: Check for changes
         id: verify-changed-files
@@ -248,10 +277,10 @@ jobs:
       - name: Run quality checks
         run: |
           # Try to auto-fix first
-          uv run lintro fmt --table-format
+          uv run lintro format --output-format grid
 
           # Then check for remaining issues
-          uv run lintro check --table-format --output quality-report.txt
+          uv run lintro check --output-format grid --output quality-report.txt
 
           # Fail if critical issues remain
           if grep -q "error" quality-report.txt; then
@@ -292,15 +321,15 @@ Add to your README.md:
 ```yaml
 # Python-only quality check
 - name: Python Quality
-  run: uv run lintro check src/ tests/ --tools ruff,darglint --table-format
+  run: uv run lintro check src/ tests/ --tools ruff,darglint --output-format grid
 
 # Frontend-only quality check
 - name: Frontend Quality
-  run: uv run lintro check assets/ --tools prettier --table-format
+  run: uv run lintro check assets/ --tools prettier --output-format grid
 
 # Infrastructure quality check
 - name: Infrastructure Quality
-  run: uv run lintro check Dockerfile* --tools hadolint --table-format
+  run: uv run lintro check Dockerfile* --tools hadolint --output-format grid
 ```
 
 ### Matrix Builds
@@ -322,7 +351,7 @@ strategy:
 
     # Run Lintro only on changed files
     if [ -s changed-files.txt ]; then
-      uv run lintro check $(cat changed-files.txt) --table-format
+      uv run lintro check $(cat changed-files.txt) --output-format grid
     else
       echo "No files changed"
     fi
@@ -380,7 +409,7 @@ strategy:
     find . -name "*.py" | head -10
 
     echo "=== Running Lintro ==="
-    uv run lintro check --table-format || true
+    uv run lintro check --output-format grid || true
 ```
 
 ## Integration Benefits

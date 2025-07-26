@@ -2,6 +2,7 @@
 
 import fnmatch
 import os
+from typing import Any
 
 from loguru import logger
 
@@ -149,7 +150,8 @@ def get_table_columns(
 
     # Adjust based on grouping
     if group_by == "file":
-        # When grouping by file, we might want to hide the file column in individual tables
+        # When grouping by file, we might want to hide the file column in
+        # individual tables
         display_columns = [col.title() for col in ordered_columns]
         data_columns = ordered_columns
     elif group_by == "code":
@@ -220,6 +222,7 @@ def format_tool_output(
     output: str,
     group_by: str = "auto",
     output_format: str = "grid",
+    issues: list[Any] | None = None,
 ) -> str:
     """Format core output based on core type and format preference.
 
@@ -230,7 +233,9 @@ def format_tool_output(
         tool_name: Name of the core that generated the output.
         output: Raw output from the core.
         group_by: How to group issues (file, code, none, auto).
-        output_format: Output format for displaying results (plain, grid, markdown, html, json, csv)
+        output_format: Output format for displaying results (plain, grid, markdown,
+            html, json, csv)
+        issues: List of issues to format.
 
     Returns:
         Formatted output string, or empty string if no issues.
@@ -238,17 +243,51 @@ def format_tool_output(
     if not output.strip():
         return ""  # Let the footer handle "No issues found" display
 
+    # Special handling for ruff fix mode output
+    if tool_name == "ruff" and "Fixed" in output:
+        # Check if there are remaining issues that need to be displayed in grid format
+        if issues is not None and len(issues) > 0:
+            # Use the grid formatter for remaining issues
+            if tool_name in TOOL_TABLE_FORMATTERS:
+                descriptor, formatter = TOOL_TABLE_FORMATTERS[tool_name]
+                return formatter(issues, format=output_format)
+        # If no remaining issues or no issues provided, return raw output
+        return output
+
+    # Special handling for prettier fix mode output
+    if tool_name == "prettier" and ("ms" in output or "formatted" in output.lower()):
+        # This is prettier fix mode output - only return as-is if there are actual
+        # issues
+        if issues is not None and len(issues) > 0:
+            return output
+        # Check if output contains any actual issues (not just timing info)
+        if any(
+            "warn" in line.lower() or "error" in line.lower()
+            for line in output.splitlines()
+        ):
+            return output
+        # If it's just timing info with no issues, return empty string
+        return ""
+
     # Use tool-specific TableDescriptor/formatter if available
     if tool_name in TOOL_TABLE_FORMATTERS:
-        issues = []
-        if tool_name == "darglint":
-            issues = parse_darglint_output(output)
-        elif tool_name == "prettier":
-            issues = parse_prettier_output(output)
-        elif tool_name == "ruff":
-            issues = parse_ruff_output(output)
-        descriptor, formatter = TOOL_TABLE_FORMATTERS[tool_name]
-        return formatter(issues, format=output_format)
+        # Use provided issues if available, otherwise try to parse from output
+        if issues is None:
+            issues = []
+            if tool_name == "darglint":
+                issues = parse_darglint_output(output)
+            elif tool_name == "prettier":
+                issues = parse_prettier_output(output)
+            elif tool_name == "ruff":
+                issues = parse_ruff_output(output)
+
+        # If we have issues (either provided or parsed), format them
+        if issues:
+            descriptor, formatter = TOOL_TABLE_FORMATTERS[tool_name]
+            return formatter(issues, format=output_format)
+        else:
+            # No issues found, return empty string
+            return ""
     else:
         # Fallback to generic formatting logic for tools without specific formatters
         try:
@@ -257,7 +296,8 @@ def format_tool_output(
             lines = output.strip().split("\n")
             if lines and any(line.strip() for line in lines):
                 # If we have meaningful output, try to parse it as generic issues
-                # This is a basic fallback - for better formatting, tools should implement specific parsers
+                # This is a basic fallback - for better formatting, tools should
+                # implement specific parsers
                 issues = []
                 for line in lines:
                     if line.strip() and not line.startswith("*"):  # Skip header lines
@@ -319,10 +359,13 @@ def walk_files_with_excludes(
     exclude_patterns: list[str],
     include_venv: bool = False,
 ) -> list[str]:
-    """Recursively walk given paths, yielding files matching file_patterns and not matching exclude patterns.
+    """Recursively walk given paths, yielding files matching file_patterns and not
+    matching exclude patterns.
 
-    Supports .lintro-ignore at the project root or current working directory, using .gitignore-style semantics:
-    - Patterns are matched against the relative path from the project root (os.getcwd()).
+    Supports .lintro-ignore at the project root or current working directory, using
+    .gitignore-style semantics:
+    - Patterns are matched against the relative path from the project root
+      (os.getcwd()).
     - Negation patterns (starting with '!') are supported (un-ignore).
     - Recursive globs (e.g., 'foo/**') are supported.
     - Patterns are applied in order; the last match wins.
@@ -409,7 +452,8 @@ def walk_files_with_excludes(
                 for pat in file_patterns
             ]
             logger.debug(
-                f"Checking file: {path}, rel_path: {rel_path}, basename: {basename}, pattern_match: {pattern_match}"
+                f"Checking file: {path}, rel_path: {rel_path}, basename: {basename}, "
+                f"pattern_match: {pattern_match}"
             )
             excluded = is_excluded(rel_path)
             logger.debug(f"is_excluded({rel_path}) = {excluded}")
@@ -441,7 +485,8 @@ def walk_files_with_excludes(
                     for pat in file_patterns
                 ]
                 logger.debug(
-                    f"Checking file: {file_path}, rel_path: {rel_path}, basename: {basename}, pattern_match: {pattern_match}"
+                    f"Checking file: {file_path}, rel_path: {rel_path}, "
+                    f"basename: {basename}, pattern_match: {pattern_match}"
                 )
                 excluded = is_excluded(rel_path)
                 logger.debug(f"is_excluded({rel_path}) = {excluded}")

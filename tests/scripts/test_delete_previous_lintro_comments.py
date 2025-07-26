@@ -14,6 +14,7 @@ import pytest
 script_path = (
     Path(__file__).parent.parent.parent
     / "scripts"
+    / "utils"
     / "delete-previous-lintro-comments.py"
 )
 spec = importlib.util.spec_from_file_location("del_script", str(script_path))

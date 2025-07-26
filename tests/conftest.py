@@ -36,7 +36,8 @@ def temp_dir():
 
 @pytest.fixture
 def ruff_violation_file(temp_dir):
-    """Copy the ruff_violations.py sample to a temp directory for testing and return normalized path.
+    """Copy the ruff_violations.py sample to a temp directory for testing and
+    return normalized path.
 
     Args:
         temp_dir (Path): Temporary directory fixture.

@@ -8,6 +8,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Set shell options for pipefail before using pipes
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+# Add Docker labels
+LABEL maintainer="turbocoder13"
+LABEL org.opencontainers.image.source="https://github.com/turbocoder13/py-lintro"
+LABEL org.opencontainers.image.description="Making Linters Play Nice... Mostly."
+LABEL org.opencontainers.image.licenses="MIT"
+
 # Create a non-root user early
 RUN useradd -m lintro
 
@@ -31,13 +37,19 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
 
 # Copy scripts directory and install tools
 COPY scripts/ /app/scripts/
-RUN chmod +x /app/scripts/*.sh && \
-    /app/scripts/install-tools.sh --docker
+RUN chmod +x /app/scripts/**/*.sh && \
+    /app/scripts/utils/install-tools.sh --docker
 
-# Copy the entire project and install dependencies
-COPY . .
+# Copy pyproject.toml and lintro package first for better caching
+COPY pyproject.toml /app/
+COPY lintro/ /app/lintro/
+
+# Install dependencies
 RUN uv sync --dev --no-progress && \
     uv cache clean
+
+# Copy the rest of the project
+COPY . .
 
 # Set ownership and permissions
 RUN chown -R lintro:lintro /app && \

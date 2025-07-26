@@ -47,7 +47,8 @@ class DarglintTool(BaseTool):
                 "ignore_regex": None,  # Regex pattern for error codes to ignore
                 "ignore_syntax": False,  # Whether to ignore syntax errors
                 "message_template": None,  # Custom message template
-                "verbosity": 2,  # Verbosity level (1-3) - use 2 for descriptive messages
+                "verbosity": 2,  # Verbosity level (1-3) - use 2 for descriptive
+                # messages
                 "strictness": "full",  # Strictness level (short, long, full)
             },
         ),
@@ -215,5 +216,6 @@ class DarglintTool(BaseTool):
             NotImplementedError: As Darglint does not support fixing issues
         """
         raise NotImplementedError(
-            "Darglint cannot automatically fix issues. Run 'lintro check' to see issues."
+            "Darglint cannot automatically fix issues. Run 'lintro check' to see "
+            "issues."
         )

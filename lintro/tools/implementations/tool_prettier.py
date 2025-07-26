@@ -14,11 +14,15 @@ from lintro.utils.tool_utils import walk_files_with_excludes
 class PrettierTool(BaseTool):
     """Prettier code formatter integration.
 
-    A code formatter that supports multiple languages (JavaScript, TypeScript, CSS, HTML, etc.).
+    A code formatter that supports multiple languages (JavaScript, TypeScript,
+    CSS, HTML, etc.).
     """
 
     name: str = "prettier"
-    description: str = "Code formatter that supports multiple languages (JavaScript, TypeScript, CSS, HTML, etc.)"
+    description: str = (
+        "Code formatter that supports multiple languages (JavaScript, TypeScript, "
+        "CSS, HTML, etc.)"
+    )
     can_fix: bool = True
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
@@ -64,7 +68,8 @@ class PrettierTool(BaseTool):
             self.timeout = timeout
 
     def _find_config(self) -> str | None:
-        """Try to find the Prettier config file at the project root. Return its path or None.
+        """Try to find the Prettier config file at the project root. Return its
+        path or None.
 
         Returns:
             str | None: Path to config file if found, None otherwise.
@@ -156,36 +161,81 @@ class PrettierTool(BaseTool):
         )
         if not prettier_files:
             return Tool.to_result(self.name, True, "No files to format.", 0)
+
+        # First, check for issues before fixing
         cwd = self.get_cwd(prettier_files)
         rel_files = [os.path.relpath(f, cwd) if cwd else f for f in prettier_files]
-        cmd = ["npx", "prettier", "--write"]
+
+        # Check for issues first
+        check_cmd = ["npx", "prettier", "--check"]
         config_path = self._find_config()
         if config_path:
-            cmd.extend(["--config", config_path])
-        cmd.extend(rel_files)
-        logger.debug(f"[PrettierTool] Running: {' '.join(cmd)} (cwd={cwd})")
-        _, output = self._run_subprocess(
-            cmd, timeout=self.options.get("timeout", self._default_timeout), cwd=cwd
+            check_cmd.extend(["--config", config_path])
+        check_cmd.extend(rel_files)
+        logger.debug(f"[PrettierTool] Checking: {' '.join(check_cmd)} (cwd={cwd})")
+        _, check_output = self._run_subprocess(
+            check_cmd,
+            timeout=self.options.get("timeout", self._default_timeout),
+            cwd=cwd,
         )
-        # Filter out virtual environment files if needed
-        if not self.include_venv and output:
-            filtered_lines = []
-            import re
 
-            venv_pattern = re.compile(
-                r"(\.venv|venv|env|ENV|virtualenv|virtual_env|"
-                r"virtualenvs|site-packages|node_modules)",
-            )
-            for line in output.splitlines():
-                if not venv_pattern.search(line):
-                    filtered_lines.append(line)
-            output = "\n".join(filtered_lines)
-        # For write mode, count files that were formatted
-        issues_count = len(
-            [
-                line
-                for line in output.splitlines()
-                if line.strip() and "wrote" in line.lower()
-            ]
+        # Parse initial issues
+        initial_issues = parse_prettier_output(check_output)
+        initial_count = len(initial_issues)
+
+        # Now fix the issues
+        fix_cmd = ["npx", "prettier", "--write"]
+        if config_path:
+            fix_cmd.extend(["--config", config_path])
+        fix_cmd.extend(rel_files)
+        logger.debug(f"[PrettierTool] Fixing: {' '.join(fix_cmd)} (cwd={cwd})")
+        _, fix_output = self._run_subprocess(
+            fix_cmd, timeout=self.options.get("timeout", self._default_timeout), cwd=cwd
         )
-        return Tool.to_result(self.name, issues_count == 0, output, issues_count)
+
+        # Check for remaining issues after fixing
+        _, final_check_output = self._run_subprocess(
+            check_cmd,
+            timeout=self.options.get("timeout", self._default_timeout),
+            cwd=cwd,
+        )
+        remaining_issues = parse_prettier_output(final_check_output)
+        remaining_count = len(remaining_issues)
+
+        # Calculate fixed issues
+        fixed_count = initial_count - remaining_count
+
+        # Build output message
+        output_lines = []
+        if fixed_count > 0:
+            output_lines.append(f"Fixed {fixed_count} formatting issue(s)")
+
+        if remaining_count > 0:
+            output_lines.append(
+                f"Found {remaining_count} issue(s) that cannot be auto-fixed"
+            )
+            for issue in remaining_issues[:5]:
+                output_lines.append(f"  {issue.file} - {issue.message}")
+            if len(remaining_issues) > 5:
+                output_lines.append(f"  ... and {len(remaining_issues) - 5} more")
+
+        if initial_count == 0:
+            output_lines.append("No formatting issues found")
+        elif remaining_count == 0 and fixed_count > 0:
+            output_lines.append("All formatting issues were successfully auto-fixed")
+
+        # Add formatting output if available
+        if fix_output and fix_output.strip():
+            output_lines.append(f"Formatting output:\n{fix_output}")
+
+        final_output = "\n".join(output_lines) if output_lines else "No fixes applied."
+
+        # Success means no remaining issues
+        success = remaining_count == 0
+
+        return ToolResult(
+            name=self.name,
+            success=success,
+            output=final_output,
+            issues_count=remaining_count,  # Return remaining issues count
+        )
