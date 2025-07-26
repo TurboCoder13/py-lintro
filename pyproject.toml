@@ -8,13 +8,19 @@ version = "0.1.0"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
 readme = {file = "README.md", content-type = "text/markdown"}
 authors = [
-    {name = "Eitel Dagnin", email = "your@email.com"},
+    {name = "Eitel Dagnin", email = "turbocoder13@gmail.com"},
 ]
-license = {text = "MIT"}
+license = "MIT"
+keywords = ["linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker"]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
 ]
 requires-python = ">=3.13.0,<3.14"
 dependencies = [
@@ -57,7 +63,29 @@ Documentation = "https://github.com/TurboCoder13/py-lintro/docs"
 Source = "https://github.com/TurboCoder13/py-lintro"
 
 [tool.setuptools]
-packages = ["lintro", "lintro.tools"]
+packages = [
+    "lintro",
+    "lintro.cli_utils",
+    "lintro.cli_utils.commands",
+    "lintro.enums",
+    "lintro.exceptions",
+    "lintro.formatters",
+    "lintro.formatters.core",
+    "lintro.formatters.styles",
+    "lintro.formatters.tools",
+    "lintro.models",
+    "lintro.models.core",
+    "lintro.parsers",
+    "lintro.parsers.darglint",
+    "lintro.parsers.hadolint",
+    "lintro.parsers.prettier",
+    "lintro.parsers.ruff",
+    "lintro.parsers.yamllint",
+    "lintro.tools",
+    "lintro.tools.core",
+    "lintro.tools.implementations",
+    "lintro.utils",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -83,6 +111,7 @@ exclude = [".venv", "venv", "env", "build", "dist", "__pycache__"]
 
 [dependency-groups]
 dev = [
+    "build>=1.2.2.post1",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
 ]
