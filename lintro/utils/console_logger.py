@@ -246,10 +246,9 @@ class SimpleLintroLogger:
                     error_msg = f"✗ Found {issues_count} issues"
                     self.console_output(error_msg, color="red")
             else:
-                # Regular check operation - only show basic status if no output provided
-                if not output or not output.strip():
-                    error_msg = f"✗ Found {issues_count} issues"
-                    self.console_output(error_msg, color="red")
+                # Regular check operation - always show issue count for check operations
+                error_msg = f"✗ Found {issues_count} issues"
+                self.console_output(error_msg, color="red")
 
         self.console_output("")  # Blank line after each tool
 

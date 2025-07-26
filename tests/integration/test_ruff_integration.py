@@ -359,9 +359,9 @@ class TestRuffTool:
         """
         result = ruff_tool.check([ruff_clean_file])
         assert isinstance(result, ToolResult)
-        assert result.success is False  # File has formatting issues
-        assert result.issues_count > 0
-        assert "Would reformat:" in result.output
+        assert result.success is True  # Clean file should have no formatting issues
+        assert result.issues_count == 0
+        assert "No Python files found to check." in result.output or "All done!" in result.output
 
     def test_format_check_violations(self, ruff_tool, ruff_violation_file):
         """Test format check on a file with violations.

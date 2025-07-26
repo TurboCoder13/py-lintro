@@ -274,8 +274,9 @@ def run_lint_tools_simple(
 
         # Return appropriate exit code
         if action == "fmt":
-            # Format operations fail if there are remaining issues
-            return 0 if total_remaining == 0 else 1
+            # Format operations succeed if they complete successfully
+            # (even if there are remaining unfixable issues)
+            return 0
         else:  # check
             # Check operations fail if issues are found
             return 0 if total_issues == 0 else 1

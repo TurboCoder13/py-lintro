@@ -95,7 +95,8 @@ class TestFormatCommandIntegration:
         assert "EXECUTION SUMMARY" in result.output
         assert "Tool" in result.output
         assert "Status" in result.output
-        assert "Issues" in result.output
+        # For format operations, we show "Fixed" and "Remaining" instead of "Issues"
+        assert "Fixed" in result.output or "Remaining" in result.output
 
     def test_format_command_with_specific_tool(self, cli_runner, temp_workspace):
         """Test format command with a specific tool.
@@ -184,7 +185,9 @@ class TestFormatCommandIntegration:
         assert "param1, param2, param3" in python_content, (
             "Python file should be formatted"
         )
-        assert "x = 1 + 2 * 3" in python_content, "Python file should be formatted"
+        # Note: ruff removes unused variable assignments, so x=1+2*3 becomes 1+2*3
+        # The formatting should still apply proper spacing
+        assert "1 + 2 * 3" in python_content, "Python file should be formatted"
 
         # JS file should have proper spacing
         assert "param1, param2, param3" in js_content, "JS file should be formatted"

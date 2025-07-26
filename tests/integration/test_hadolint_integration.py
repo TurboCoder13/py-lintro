@@ -104,7 +104,7 @@ def test_hadolint_reports_violations_direct(tmp_path):
     from pathlib import Path
 
     sample_file = tmp_path / "Dockerfile"
-    shutil.copy(Path("test_samples/hadolint_violations"), sample_file)
+    shutil.copy(Path("test_samples/Dockerfile.violations"), sample_file)
     # Diagnostics
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")

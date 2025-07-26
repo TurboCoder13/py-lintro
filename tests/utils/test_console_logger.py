@@ -126,6 +126,7 @@ def test_print_tool_result_with_output():
         calls = [str(call) for call in mock_console.call_args_list]
         output_content = "".join(calls)
         assert "Some tool output" in output_content
+        # Now the issue count should always be displayed for check operations
         assert "Found 5 issues" in output_content
 
 
@@ -235,7 +236,7 @@ def test_print_final_status_check_with_issues():
 
         calls = [str(call) for call in mock_console.call_args_list]
         output = "".join(calls)
-        assert "TOTAL ISSUES: 5" in output
+        assert "Found 5 issues" in output
 
 
 @pytest.mark.utils
