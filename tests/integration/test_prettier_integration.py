@@ -87,7 +87,8 @@ def test_prettier_reports_violations_through_lintro(temp_prettier_file):
     tool.set_options()
     result = tool.check([str(temp_prettier_file)])
     logger.info(
-        f"[LOG] Lintro PrettierTool found {result.issues_count} issues. Output:\n{result.output}"
+        f"[LOG] Lintro PrettierTool found {result.issues_count} issues. "
+        f"Output:\n{result.output}"
     )
     assert not result.success, (
         "Lintro PrettierTool should fail when violations are present."
@@ -113,7 +114,8 @@ def test_prettier_fix_method(temp_prettier_file):
     # Check before fixing
     pre_result = tool.check([str(temp_prettier_file)])
     logger.info(
-        f"[LOG] Before fix: {pre_result.issues_count} issues. Output:\n{pre_result.output}"
+        f"[LOG] Before fix: {pre_result.issues_count} issues. "
+        f"Output:\n{pre_result.output}"
     )
     assert not pre_result.success, "Should have issues before fixing"
     assert pre_result.issues_count > 0, "Should have issues before fixing"
@@ -121,7 +123,8 @@ def test_prettier_fix_method(temp_prettier_file):
     # Fix issues
     post_result = tool.fix([str(temp_prettier_file)])
     logger.info(
-        f"[LOG] After fix: {post_result.issues_count} issues. Output:\n{post_result.output}"
+        f"[LOG] After fix: {post_result.issues_count} issues. "
+        f"Output:\n{post_result.output}"
     )
     assert post_result.success, "Should fix all issues"
     assert post_result.issues_count == 0, "Should fix all issues"
@@ -129,7 +132,38 @@ def test_prettier_fix_method(temp_prettier_file):
     # Verify no issues remain
     final_result = tool.check([str(temp_prettier_file)])
     logger.info(
-        f"[LOG] Final check: {final_result.issues_count} issues. Output:\n{final_result.output}"
+        f"[LOG] Final check: {final_result.issues_count} issues. "
+        f"Output:\n{final_result.output}"
     )
     assert final_result.success, "Should have no issues after fixing"
     assert final_result.issues_count == 0, "Should have no issues after fixing"
+
+
+def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file):
+    """Prettier CLI vs Lintro: Should produce consistent results for the same file.
+
+    Args:
+        temp_prettier_file: Pytest fixture providing a temporary file with violations.
+    """
+    logger.info("[TEST] Comparing prettier CLI and Lintro PrettierTool outputs...")
+    tool = PrettierTool()
+    tool.set_options()
+
+    # Run prettier directly
+    direct_success, direct_output, direct_issues = run_prettier_directly(
+        temp_prettier_file, check_only=True
+    )
+
+    # Run through lintro
+    result = tool.check([str(temp_prettier_file)])
+
+    logger.info(
+        f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}"
+    )
+    assert direct_success == result.success, (
+        "Success/failure mismatch between CLI and Lintro."
+    )
+    assert direct_issues == result.issues_count, (
+        f"Issue count mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
+        f"CLI Output:\n{direct_output}\nLintro Output:\n{result.output}"
+    )

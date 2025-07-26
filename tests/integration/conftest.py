@@ -41,7 +41,7 @@ def sample_python_file():
     """
     return """def test_function(param1, param2):
     \"\"\"Test function.
-    
+
     Args:
         param1: First parameter
     \"\"\"

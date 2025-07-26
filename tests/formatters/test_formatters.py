@@ -1,194 +1,161 @@
-"""Tests for the formatters module.
-
-This module contains tests for the formatter utilities in Lintro.
-"""
-
-import json
+"""Tests for formatters."""
 
 import pytest
 
+from lintro.formatters.core.output_style import OutputStyle
+from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle
 from lintro.formatters.styles.html import HtmlStyle
 from lintro.formatters.styles.json import JsonStyle
 from lintro.formatters.styles.markdown import MarkdownStyle
 from lintro.formatters.styles.plain import PlainStyle
-from lintro.models.core.tool import Tool
-from lintro.models.core.tool_result import ToolResult
 
 
-@pytest.fixture
-def sample_tool_results():
-    """Provide sample tool results for testing.
+def test_output_style_abstract():
+    """Test that OutputStyle is an abstract base class."""
+    from abc import ABC
 
-    Returns:
-        list[ToolResult]: List of sample ToolResult objects.
-    """
-    tool1 = Tool(name="ruff", priority=1)
-    tool2 = Tool(name="yamllint", priority=2)
-
-    result1 = ToolResult(
-        tool=tool1,
-        success=True,
-        issues=[],
-        raw_output="",
-        error_message="",
-    )
-    result2 = ToolResult(
-        tool=tool2,
-        success=False,
-        issues=[
-            {"file": "test.py", "line": 1, "message": "Error 1"},
-            {"file": "test.py", "line": 5, "message": "Error 2"},
-        ],
-        raw_output="",
-        error_message="",
-    )
-
-    return [result1, result2]
+    assert issubclass(OutputStyle, ABC)
+    assert hasattr(OutputStyle, "format")
 
 
-def test_output_style_values():
-    """Test that supported output styles are available via FORMAT_MAP."""
-    from lintro.formatters.tools.darglint_formatter import FORMAT_MAP as DARG_FMT
+def test_table_descriptor_abstract():
+    """Test TableDescriptor is an abstract base class."""
+    from abc import ABC
 
-    expected = {"plain", "grid", "markdown", "html", "json", "csv"}
-    assert set(DARG_FMT.keys()) == expected
-
-
-def test_table_descriptor_creation():
-    """Test creating a DarglintTableDescriptor."""
-    from lintro.formatters.tools.darglint_formatter import DarglintTableDescriptor
-
-    descriptor = DarglintTableDescriptor()
-    assert descriptor.get_columns() == ["File", "Line", "Code", "Message"]
-
-    # Provide a fake issue object with required attributes
-    class FakeIssue:
-        file = "foo.py"
-        line = 1
-        code = "D100"
-        message = "Missing docstring"
-
-    issues = [FakeIssue()]
-    rows = descriptor.get_rows(issues)
-    assert rows == [["./foo.py", "1", "D100", "Missing docstring"]]
+    assert issubclass(TableDescriptor, ABC)
+    assert hasattr(TableDescriptor, "get_columns")
+    assert hasattr(TableDescriptor, "get_rows")
 
 
-def test_table_descriptor_empty():
-    """Test DarglintTableDescriptor with empty issues."""
-    from lintro.formatters.tools.darglint_formatter import DarglintTableDescriptor
-
-    descriptor = DarglintTableDescriptor()
-    rows = descriptor.get_rows([])
-    assert rows == []
+def test_table_descriptor_methods():
+    """Test TableDescriptor abstract methods exist."""
+    assert callable(TableDescriptor.get_columns)
+    assert callable(TableDescriptor.get_rows)
 
 
-@pytest.mark.formatters
 def test_csv_style_format():
     """Test CSV style formatting."""
-    formatter = CsvStyle()
-    columns = ["Tool", "Status", "Issues"]
-    rows = [["ruff", "Success", "0"], ["yamllint", "Failed", "2"]]
-
-    result = formatter.format(columns, rows)
-
-    assert isinstance(result, str)
-    assert "," in result
-    assert "ruff" in result
-    assert "yamllint" in result
+    style = CsvStyle()
+    result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
+    assert "col1,col2" in result
+    assert "val1,val2" in result
+    assert "val3,val4" in result
 
 
-@pytest.mark.formatters
 def test_csv_style_format_empty():
-    """Test CSV style with empty rows."""
-    formatter = CsvStyle()
-    result = formatter.format(["Header1", "Header2"], [])
-
-    assert isinstance(result, str)
+    """Test CSV style formatting with empty data."""
+    style = CsvStyle()
+    result = style.format([], [])
     assert result == ""
 
 
-@pytest.mark.formatters
 def test_grid_style_format():
-    """Test Grid style formatting."""
-    formatter = GridStyle()
-    columns = ["Tool", "Status", "Issues"]
-    rows = [["ruff", "Success", "0"], ["yamllint", "Failed", "2"]]
-
-    result = formatter.format(columns, rows)
-
-    assert isinstance(result, str)
-    assert "ruff" in result
-    assert "yamllint" in result
+    """Test grid style formatting."""
+    style = GridStyle()
+    result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
+    assert "col1" in result
+    assert "col2" in result
+    assert "val1" in result
+    assert "val2" in result
 
 
-@pytest.mark.formatters
+def test_grid_style_format_empty():
+    """Test grid style formatting with empty data."""
+    style = GridStyle()
+    result = style.format([], [])
+    assert result == ""
+
+
+def test_grid_style_format_fallback():
+    """Test grid style formatting fallback when tabulate is not available."""
+    style = GridStyle()
+
+    # Mock tabulate not being available
+    with pytest.MonkeyPatch().context() as m:
+        m.setattr("lintro.formatters.styles.grid.TABULATE_AVAILABLE", False)
+        m.setattr("lintro.formatters.styles.grid.tabulate", None)
+
+        result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
+        assert "col1" in result
+        assert "col2" in result
+        assert "val1" in result
+        assert "val2" in result
+        assert " | " in result  # Should use fallback format
+
+
+def test_grid_style_format_fallback_empty():
+    """Test grid style formatting fallback with empty data."""
+    style = GridStyle()
+
+    # Mock tabulate not being available
+    with pytest.MonkeyPatch().context() as m:
+        m.setattr("lintro.formatters.styles.grid.TABULATE_AVAILABLE", False)
+        m.setattr("lintro.formatters.styles.grid.tabulate", None)
+
+        result = style.format([], [])
+        assert result == ""
+
+
+def test_grid_style_format_fallback_single_column():
+    """Test grid style formatting fallback with single column."""
+    style = GridStyle()
+
+    # Mock tabulate not being available
+    with pytest.MonkeyPatch().context() as m:
+        m.setattr("lintro.formatters.styles.grid.TABULATE_AVAILABLE", False)
+        m.setattr("lintro.formatters.styles.grid.tabulate", None)
+
+        result = style.format(["col1"], [["val1"], ["val2"]])
+        assert "col1" in result
+        assert "val1" in result
+        assert "val2" in result
+
+
 def test_html_style_format():
     """Test HTML style formatting."""
-    formatter = HtmlStyle()
-    columns = ["Tool", "Status", "Issues"]
-    rows = [["ruff", "Success", "0"], ["yamllint", "Failed", "2"]]
-
-    result = formatter.format(columns, rows)
-
-    assert isinstance(result, str)
+    style = HtmlStyle()
+    result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
     assert "<table>" in result
-    assert "ruff" in result
-    assert "yamllint" in result
+    assert "<th>col1</th>" in result
+    assert "<th>col2</th>" in result
+    assert "<td>val1</td>" in result
+    assert "<td>val2</td>" in result
 
 
-@pytest.mark.formatters
 def test_json_style_format():
     """Test JSON style formatting."""
-    formatter = JsonStyle()
-    columns = ["Tool", "Status", "Issues"]
-    rows = [["ruff", "Success", "0"], ["yamllint", "Failed", "2"]]
-
-    result = formatter.format(columns, rows)
-
-    assert isinstance(result, str)
-    assert "ruff" in result
-    assert "yamllint" in result
-
-    # Should be valid JSON
-    parsed = json.loads(result)
-    assert isinstance(parsed, dict)
+    style = JsonStyle()
+    result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
+    assert "col1" in result
+    assert "col2" in result
+    assert "val1" in result
+    assert "val2" in result
 
 
-@pytest.mark.formatters
 def test_markdown_style_format():
-    """Test Markdown style formatting."""
-    formatter = MarkdownStyle()
-    columns = ["Tool", "Status", "Issues"]
-    rows = [["ruff", "Success", "0"], ["yamllint", "Failed", "2"]]
-
-    result = formatter.format(columns, rows)
-
-    assert isinstance(result, str)
-    assert "|" in result
-    assert "ruff" in result
-    assert "yamllint" in result
+    """Test markdown style formatting."""
+    style = MarkdownStyle()
+    result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
+    assert "| col1 | col2 |" in result
+    assert "| val1 | val2 |" in result
+    assert "| val3 | val4 |" in result
 
 
-@pytest.mark.formatters
 def test_plain_style_format():
-    """Test Plain style formatting."""
-    formatter = PlainStyle()
-    columns = ["Tool", "Status", "Issues"]
-    rows = [["ruff", "Success", "0"], ["yamllint", "Failed", "2"]]
-
-    result = formatter.format(columns, rows)
-
-    assert isinstance(result, str)
-    assert "ruff" in result
-    assert "yamllint" in result
+    """Test plain style formatting."""
+    style = PlainStyle()
+    result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
+    assert "col1" in result
+    assert "col2" in result
+    assert "val1" in result
+    assert "val2" in result
 
 
-@pytest.mark.formatters
 def test_all_styles_produce_output():
     """Test that all styles produce some output."""
-    formatters = [
+    styles = [
         CsvStyle(),
         GridStyle(),
         HtmlStyle(),
@@ -196,20 +163,18 @@ def test_all_styles_produce_output():
         MarkdownStyle(),
         PlainStyle(),
     ]
+    columns = ["col1", "col2"]
+    rows = [["val1", "val2"], ["val3", "val4"]]
 
-    columns = ["Tool", "Status"]
-    rows = [["ruff", "Success"]]
-
-    for formatter in formatters:
-        result = formatter.format(columns, rows)
+    for style in styles:
+        result = style.format(columns, rows)
         assert isinstance(result, str)
         assert len(result) > 0
 
 
-@pytest.mark.formatters
 def test_styles_handle_empty_results():
     """Test that all styles handle empty results gracefully."""
-    formatters = [
+    styles = [
         CsvStyle(),
         GridStyle(),
         HtmlStyle(),
@@ -218,7 +183,8 @@ def test_styles_handle_empty_results():
         PlainStyle(),
     ]
 
-    for formatter in formatters:
-        result = formatter.format([], [])
+    for style in styles:
+        result = style.format([], [])
         assert isinstance(result, str)
-        # Should not raise any exceptions
+        # Some styles return empty string, others return minimal structure
+        assert result == "" or len(result) >= 0

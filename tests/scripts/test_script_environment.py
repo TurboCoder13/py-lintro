@@ -39,7 +39,7 @@ class TestEnvironmentHandling:
             scripts_dir: Path to the scripts directory.
             clean_env: Clean environment variables for testing.
         """
-        script = scripts_dir / "local-test.sh"
+        script = scripts_dir / "local" / "local-test.sh"
 
         # Try to run with clean environment (no uv)
         result = subprocess.run(
@@ -61,7 +61,7 @@ class TestEnvironmentHandling:
             scripts_dir: Path to the scripts directory.
             clean_env: Clean environment variables for testing.
         """
-        docker_scripts = ["docker-test.sh", "docker-lintro.sh"]
+        docker_scripts = ["docker/docker-test.sh", "docker/docker-lintro.sh"]
 
         for script_name in docker_scripts:
             script = scripts_dir / script_name
@@ -91,7 +91,7 @@ class TestEnvironmentHandling:
             scripts_dir: Path to the scripts directory.
             clean_env: Clean environment variables for testing.
         """
-        script = scripts_dir / "install-tools.sh"
+        script = scripts_dir / "utils" / "install-tools.sh"
 
         # Test that script starts with clean environment (may fail due to missing tools)
         result = subprocess.run(
@@ -126,7 +126,7 @@ class TestScriptErrorHandling:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        script = scripts_dir / "extract-coverage.py"
+        script = scripts_dir / "utils" / "extract-coverage.py"
 
         with tempfile.TemporaryDirectory() as tmpdir:
             result = subprocess.run(
@@ -145,7 +145,7 @@ class TestScriptErrorHandling:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        script = scripts_dir / "extract-coverage.py"
+        script = scripts_dir / "utils" / "extract-coverage.py"
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create empty coverage.xml
@@ -166,10 +166,10 @@ class TestScriptErrorHandling:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        script = scripts_dir / "extract-coverage.py"
+        script = scripts_dir / "utils" / "extract-coverage.py"
 
         valid_coverage_xml = """<?xml version="1.0" ?>
-<coverage version="7.4.1" timestamp="1234567890" line-rate="0.85" 
+<coverage version="7.4.1" timestamp="1234567890" line-rate="0.85"
           branch-rate="0.75" lines-covered="850" lines-valid="1000">
     <sources>
         <source>.</source>
@@ -242,7 +242,8 @@ class TestScriptSecurity:
 
                         # If we get here, might be unsafe
                         pytest.fail(
-                            f"Potentially unsafe pattern '{pattern}' in {script.name}: {line}"
+                            f"Potentially unsafe pattern '{pattern}' in {script.name}: "
+                            f"{line}"
                         )
 
     def test_scripts_validate_inputs(self, scripts_dir):
@@ -359,7 +360,8 @@ class TestScriptCompatibility:
                 bash_features = ["[[", "function ", "$(", "source "]
                 for feature in bash_features:
                     assert feature not in content, (
-                        f"{script.name} uses bash feature '{feature}' but has sh shebang"
+                        f"{script.name} uses bash feature '{feature}' "
+                        "but has sh shebang"
                     )
 
     def test_python_script_compatibility(self, scripts_dir):
@@ -375,6 +377,7 @@ class TestScriptCompatibility:
                 first_line = f.readline().strip()
 
             # Should use python3 for consistency
-            assert first_line in ["#!/usr/bin/env python3", "#!/usr/bin/python3"], (
-                f"{script.name} should use python3 shebang"
-            )
+            assert first_line in [
+                "#!/usr/bin/env python3",
+                "#!/usr/bin/python3",
+            ], f"{script.name} should use python3 shebang"

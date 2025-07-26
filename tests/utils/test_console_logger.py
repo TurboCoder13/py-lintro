@@ -160,7 +160,7 @@ def test_print_execution_summary():
 
         tool_results = [mock_result1, mock_result2]
 
-        with patch.object(logger, "console_output") as mock_console:
+        with patch.object(logger, "console_output"):
             with patch.object(logger, "_print_summary_table") as mock_table:
                 with patch.object(logger, "_print_final_status") as mock_status:
                     with patch.object(logger, "_print_ascii_art") as mock_art:

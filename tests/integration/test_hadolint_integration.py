@@ -14,7 +14,7 @@ from lintro.tools.implementations.tool_hadolint import HadolintTool
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
 
-SAMPLE_FILE = "test_samples/hadolint_violations"
+SAMPLE_FILE = "test_samples/Dockerfile.violations"
 
 
 def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
@@ -51,7 +51,8 @@ def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
         env = os.environ.copy()
         env["HOME"] = temp_home
         print(
-            f"[DEBUG] Subprocess environment: HOME={env.get('HOME')}, PATH={env.get('PATH')}"
+            f"[DEBUG] Subprocess environment: HOME={env.get('HOME')}, "
+            f"PATH={env.get('PATH')}"
         )
         print(f"[DEBUG] Subprocess CWD: {file_path.parent}")
         print(f"[DEBUG] Subprocess full env: {env}")
@@ -108,7 +109,8 @@ def test_hadolint_reports_violations_direct(tmp_path):
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
-        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, PATH={os.environ.get('PATH')}"
+        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
+        f"PATH={os.environ.get('PATH')}"
     )
     logger.info("[TEST] Running hadolint directly on sample file...")
     success, output, issues = run_hadolint_directly(sample_file)
@@ -137,7 +139,8 @@ def test_hadolint_reports_violations_through_lintro(tmp_path):
     tool.set_options(no_color=True, format="tty")
     result = tool.check([str(sample_file)])
     logger.info(
-        f"[LOG] Lintro HadolintTool found {result.issues_count} issues. Output:\n{result.output}"
+        f"[LOG] Lintro HadolintTool found {result.issues_count} issues. "
+        f"Output:\n{result.output}"
     )
     assert not result.success, (
         "Lintro HadolintTool should fail when violations are present."
@@ -167,7 +170,8 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
-        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, PATH={os.environ.get('PATH')}"
+        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
+        f"PATH={os.environ.get('PATH')}"
     )
     logger.info("[TEST] Comparing hadolint CLI and Lintro HadolintTool outputs...")
     tool = HadolintTool()
@@ -178,7 +182,8 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}"
     )
     assert direct_issues == result.issues_count, (
-        f"Mismatch: CLI={direct_issues}, Lintro={result.issues_count}\nCLI Output:\n{direct_output}\nLintro Output:\n{result.output}"
+        f"Mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
+        f"CLI Output:\n{direct_output}\nLintro Output:\n{result.output}"
     )
     assert direct_success == result.success, (
         "Success/failure mismatch between CLI and Lintro."
@@ -276,9 +281,13 @@ def test_hadolint_parser_validation(tmp_path):
     from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 
     # Test with sample output
-    sample_output = """Dockerfile:1 DL3006 error: Always tag the version of an image explicitly
-Dockerfile:4 DL3009 warning: Delete the apt-get lists after installing something
-Dockerfile:6 DL3015 info: Avoid additional packages by specifying `--no-install-recommends`"""
+    sample_output = (
+        "Dockerfile:1 DL3006 error: Always tag the version of an image explicitly\n"
+        "Dockerfile:4 DL3009 warning: Delete the apt-get lists after installing "
+        "something\n"
+        "Dockerfile:6 DL3015 info: Avoid additional packages by specifying "
+        "`--no-install-recommends`"
+    )
 
     issues = parse_hadolint_output(sample_output)
     logger.info(f"[LOG] Parsed {len(issues)} issues from sample output")
