@@ -1,6 +1,6 @@
 version = 1
 revision = 2
-requires-python = "==3.13.*"
+requires-python = "==3.13.5"
 
 [[package]]
 name = "allure-pytest"
@@ -457,10 +457,10 @@ provides-extras = ["dev", "test", "typing"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "build", specifier = ">=1.2.2.post1" },
+    { name = "build", specifier = "==1.2.2.post1" },
     { name = "pytest", specifier = "==8.4.1" },
     { name = "pytest-cov", specifier = "==6.2.1" },
-    { name = "twine", specifier = ">=6.1.0" },
+    { name = "twine", specifier = "==6.1.0" },
 ]
 
 [[package]]
