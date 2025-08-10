@@ -48,7 +48,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.xml
+          files: ./coverage.xml
           fail_ci_if_error: false
           verbose: true
           flags: python-3.13
@@ -64,8 +64,9 @@ jobs:
           name: coverage-xml
           path: coverage.xml
           retention-days: 30
-      - name: Upload .coverage as artifact
+      - name: Upload .coverage as artifact (if present)
         uses: actions/upload-artifact@v4
+        if: ${{ hashFiles('.coverage') != '' }}
         with:
           name: coverage-dotfile
           path: .coverage

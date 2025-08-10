@@ -39,7 +39,8 @@ echo "" >> $GITHUB_STEP_SUMMARY
 # Run lintro check in Docker container against the entire project
 # The .lintro-ignore file will automatically exclude test_samples/
 set +e  # Don't exit on error
-docker run --rm -v "$PWD:/code" py-lintro:latest sh -c "cd /code && lintro check ." > chk-output.txt 2>&1
+# Use the image entrypoint to invoke lintro directly; avoid shell passthrough
+docker run --rm -v "$PWD:/code" py-lintro:latest lintro check /code > chk-output.txt 2>&1
 CHK_EXIT_CODE=$?
 set -e  # Exit on error again
 
