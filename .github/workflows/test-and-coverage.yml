@@ -6,22 +6,22 @@ name: Test Suite & Coverage
     branches: [main]
     paths:
       - '**.py'
-      - 'pyproject.toml'
-      - '.github/workflows/test-coverage.yml'
-      - 'scripts/local/run-tests.sh'
-      - 'scripts/docker/docker-test.sh'
-      - 'Dockerfile'
-      - 'docker-compose.yml'
+      - pyproject.toml
+      - .github/workflows/test-coverage.yml
+      - scripts/local/run-tests.sh
+      - scripts/docker/docker-test.sh
+      - Dockerfile
+      - docker-compose.yml
   pull_request:
     branches: [main]
     paths:
       - '**.py'
-      - 'pyproject.toml'
-      - '.github/workflows/test-coverage.yml'
-      - 'scripts/local/run-tests.sh'
-      - 'scripts/docker/docker-test.sh'
-      - 'Dockerfile'
-      - 'docker-compose.yml'
+      - pyproject.toml
+      - .github/workflows/test-coverage.yml
+      - scripts/local/run-tests.sh
+      - scripts/docker/docker-test.sh
+      - Dockerfile
+      - docker-compose.yml
   workflow_dispatch:
 
 permissions:
@@ -87,7 +87,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
       - name: Install all tools and dependencies
         run: ./scripts/utils/install-tools.sh --local
       - name: Install Python dependencies
