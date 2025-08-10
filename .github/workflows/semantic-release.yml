@@ -41,7 +41,8 @@ jobs:
 
       - name: Verify semantic-release installation
         run: |
-          uv run python -c "import semantic_release; print(f'semantic-release version: {semantic_release.__version__}')"
+          uv run python -c "import semantic_release; \
+          print(f'semantic-release version: {semantic_release.__version__}')"
 
       - name: Run python-semantic-release (version)
         env:
