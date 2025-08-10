@@ -60,7 +60,7 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 The workflow includes optional GitHub Pages deployment steps that are commented out by default. To enable GitHub Pages deployment for your Lintro reports:
 
 1. **Enable GitHub Pages** in your repository settings
-2. **Uncomment the following steps** in `.github/workflows/lintro-report.yml`:
+2. **Uncomment the following steps** in `.github/workflows/lintro-report-scheduled.yml`:
 
 ```yaml
 - name: Setup Pages
