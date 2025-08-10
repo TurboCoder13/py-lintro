@@ -31,19 +31,24 @@ def parse_hadolint_output(output: str) -> list[HadolintIssue]:
         return issues
 
     # Pattern for hadolint output: filename:line code level: message
-    pattern = re.compile(
+    pattern: re.Pattern[str] = re.compile(
         r"^(.+?):(\d+)\s+([A-Z]+\d+)\s+(error|warning|info|style):\s+(.+)$"
     )
 
-    lines = output.splitlines()
+    lines: list[str] = output.splitlines()
 
     for line in lines:
         line = line.strip()
         if not line:
             continue
 
-        match = pattern.match(line)
+        match: re.Match[str] | None = pattern.match(line)
         if match:
+            file: str
+            line_num: str
+            code: str
+            level: str
+            message: str
             file, line_num, code, level, message = match.groups()
 
             issues.append(

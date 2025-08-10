@@ -6,12 +6,11 @@ This module provides functions to parse both:
 """
 
 import json
-from typing import List
 
 from lintro.parsers.ruff.ruff_issue import RuffIssue
 
 
-def parse_ruff_output(output: str) -> List[RuffIssue]:
+def parse_ruff_output(output: str) -> list[RuffIssue]:
     """Parse ruff JSON output into a list of RuffIssue objects.
 
     Args:
@@ -20,7 +19,7 @@ def parse_ruff_output(output: str) -> List[RuffIssue]:
     Returns:
         List of RuffIssue objects
     """
-    issues: List[RuffIssue] = []
+    issues: list[RuffIssue] = []
 
     if not output or output.strip() == "[]":
         return issues
@@ -57,7 +56,7 @@ def parse_ruff_output(output: str) -> List[RuffIssue]:
                     end_column=item["end_location"]["column"],
                     fixable=bool(item.get("fix")),
                     fix_applicability=fix_applicability,
-                )
+                ),
             )
     except (json.JSONDecodeError, KeyError, TypeError):
         # If JSON parsing fails, return empty list
