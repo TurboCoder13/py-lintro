@@ -39,9 +39,13 @@ jobs:
       - name: Sync deps
         run: uv sync --dev --no-progress
 
+      - name: Verify semantic-release installation
+        run: |
+          uv run python -c "import semantic_release; print(f'semantic-release version: {semantic_release.__version__}')"
+
       - name: Run python-semantic-release (version)
         env:
           # Needed to push tags/commits
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          uv run semantic-release version
+          uv run python -m semantic_release version

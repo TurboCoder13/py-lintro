@@ -134,7 +134,7 @@ dev = [
 # Bump and tag on the main branch based on conventional commits
 branch = "main"
 version_variables = [
-  "pyproject.toml:version",
+  "pyproject.toml:project.version",
   "lintro/__init__.py:__version__",
 ]
 upload_to_release = false

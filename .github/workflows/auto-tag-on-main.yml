@@ -44,13 +44,13 @@ jobs:
         run: |
           git show HEAD^:pyproject.toml > /tmp/prev.toml || true
           if [ -s /tmp/prev.toml ]; then
-            python - <<'PY'
+            python3 -c "
             import os, tomllib
             with open('/tmp/prev.toml','rb') as fh:
                 data = tomllib.load(fh)
             with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f:
-                f.write(f"version={data['project']['version']}\n")
-            PY
+                f.write(f'version={data[\"project\"][\"version\"]}\\n')
+            "
           else
             echo "version=" >> "$GITHUB_OUTPUT"
           fi
