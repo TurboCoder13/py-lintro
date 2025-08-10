@@ -1,5 +1,6 @@
 """Clean Python file for Ruff integration tests."""
 
+
 def hello(name: str = "World") -> None:
     """Say hello to someone.
 
