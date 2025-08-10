@@ -52,6 +52,20 @@ export LINTRO_DEFAULT_FORMAT="grid"
 
 Lintro respects each tool's native configuration files, allowing you to leverage existing setups.
 
+### Lintro Project Config
+
+You can set Lintro-level defaults in `pyproject.toml` under `[tool.lintro]`.
+CLI `--tool-options` override file-based config.
+
+Example enabling Ruff formatter by default and controlling fix stages during
+`lintro format`:
+
+```toml
+[tool.lintro.ruff]
+format = true      # run `ruff format` during fmt (default true)
+lint_fix = true    # run `ruff check --fix` during fmt (default true)
+```
+
 ### Python Tools
 
 #### Ruff Configuration
@@ -545,7 +559,7 @@ install-tools:
       "label": "Lintro Fix",
       "type": "shell",
       "command": "lintro",
-      "args": ["fmt", "--output-format grid"],
+      "args": ["format", "--output-format grid"],
       "group": "build"
     }
   ]

@@ -137,6 +137,12 @@ lintro check --exclude "migrations,node_modules,dist"
 
 # Tool-specific options
 lintro check --tool-options "ruff:--line-length=88,prettier:--print-width=80"
+
+# Ruff fix configuration (fmt):
+# By default, fmt applies both lint fixes and formatting for Ruff.
+# Disable either stage as needed:
+lintro format --tool-options ruff:lint_fix=False     # format only
+lintro format --tool-options ruff:format=False       # lint fixes only
 ```
 
 ### CI/CD Integration
