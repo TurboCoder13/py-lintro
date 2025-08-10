@@ -44,9 +44,14 @@ RUN chmod +x /app/scripts/**/*.sh && \
 COPY pyproject.toml /app/
 COPY lintro/ /app/lintro/
 
-# Install dependencies
+# Ensure project files are owned by non-root before creating the venv
+RUN chown -R lintro:lintro /app
+
+# Install dependencies as the non-root user so the venv is accessible
+USER lintro
 RUN uv sync --dev --no-progress && \
     uv cache clean
+USER root
 
 # Copy the rest of the project
 COPY . .
@@ -67,15 +72,19 @@ RUN echo '#!/bin/bash' > /usr/local/bin/fix-permissions.sh && \
     echo "exec \"\$@\"" >> /usr/local/bin/fix-permissions.sh
 RUN chmod +x /usr/local/bin/fix-permissions.sh
 
-# Create a script to handle both root and non-root execution
+# Create a flexible entrypoint that supports either `lintro ...` or
+# `python -m lintro ...` while ensuring the venv interpreter is used.
+# hadolint ignore=SC2016
 RUN echo '#!/bin/bash' > /usr/local/bin/entrypoint.sh && \
-    echo '# Handle both root and non-root execution' >> /usr/local/bin/entrypoint.sh && \
-    echo "if [ \"\$(whoami)\" = \"root\" ]; then" >> /usr/local/bin/entrypoint.sh && \
-    echo '    # Running as root - use uv run directly' >> /usr/local/bin/entrypoint.sh && \
-    echo "    exec uv run \"\$@\"" >> /usr/local/bin/entrypoint.sh && \
+    echo 'set -e' >> /usr/local/bin/entrypoint.sh && \
+    echo 'if [ "$1" = "lintro" ]; then' >> /usr/local/bin/entrypoint.sh && \
+    echo '  shift' >> /usr/local/bin/entrypoint.sh && \
+    echo '  exec /app/.venv/bin/python -m lintro "$@"' >> /usr/local/bin/entrypoint.sh && \
+    echo 'elif [ "$1" = "python" ]; then' >> /usr/local/bin/entrypoint.sh && \
+    echo '  shift' >> /usr/local/bin/entrypoint.sh && \
+    echo '  exec /app/.venv/bin/python "$@"' >> /usr/local/bin/entrypoint.sh && \
     echo 'else' >> /usr/local/bin/entrypoint.sh && \
-    echo '    # Running as lintro user - use uv run' >> /usr/local/bin/entrypoint.sh && \
-    echo "    exec uv run \"\$@\"" >> /usr/local/bin/entrypoint.sh && \
+    echo '  exec /app/.venv/bin/python -m lintro "$@"' >> /usr/local/bin/entrypoint.sh && \
     echo 'fi' >> /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
