@@ -1,63 +1,48 @@
-from typing import Any, List
+from typing import Any
 
 from lintro.formatters.core.output_style import OutputStyle
 
 
 class HtmlStyle(OutputStyle):
-    """Output format that renders tables as HTML."""
+    """Output format that renders data as HTML table."""
 
     def format(
         self,
-        columns: List[str],
-        rows: List[List[Any]],
+        columns: list[str],
+        rows: list[list[Any]],
     ) -> str:
         """Format a table given columns and rows as HTML.
 
         Args:
-            columns: List of column names.
+            columns: List of column header names.
             rows: List of row values (each row is a list of cell values).
 
         Returns:
-            Formatted table as HTML string, or empty string if no rows.
+            Formatted data as HTML table string.
         """
         if not rows:
-            return ""  # Let the caller handle "No issues found" display
+            return "<p>No issues found.</p>"
 
-        html_lines = ["<table>"]
+        # Build the header
+        header_cells = "".join(f"<th>{col}</th>" for col in columns)
+        header = f"<tr>{header_cells}</tr>"
 
-        # Header row
-        html_lines.append("  <thead>")
-        html_lines.append("    <tr>")
-        for col in columns:
-            html_lines.append(f"      <th>{self._escape_html(str(col))}</th>")
-        html_lines.append("    </tr>")
-        html_lines.append("  </thead>")
-
-        # Body rows
-        html_lines.append("  <tbody>")
+        # Build the rows
+        formatted_rows = []
         for row in rows:
-            html_lines.append("    <tr>")
-            for cell in row:
-                html_lines.append(f"      <td>{self._escape_html(str(cell))}</td>")
-            html_lines.append("    </tr>")
-        html_lines.append("  </tbody>")
-        html_lines.append("</table>")
+            # Ensure row has same number of elements as columns
+            padded_row = row + [""] * (len(columns) - len(row))
+            # Escape HTML characters in cell values
+            escaped_cells = [
+                str(cell)
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                for cell in padded_row
+            ]
+            row_cells = "".join(f"<td>{cell}</td>" for cell in escaped_cells)
+            formatted_rows.append(f"<tr>{row_cells}</tr>")
 
-        return "\n".join(html_lines)
-
-    def _escape_html(self, text: str) -> str:
-        """Escape HTML special characters.
-
-        Args:
-            text: Input text to escape HTML characters from.
-
-        Returns:
-            str: Text with HTML special characters escaped.
-        """
-        return (
-            text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&#x27;")
-        )
+        # Combine all parts
+        table_content = header + "".join(formatted_rows)
+        return f"<table>{table_content}</table>"
