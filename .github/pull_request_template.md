@@ -1,6 +1,36 @@
-## Description
+## Summary
 
-A clear and concise description of what this pull request does.
+Briefly describe the change.
+
+## Type
+
+- [ ] feat
+- [ ] fix
+- [ ] docs
+- [ ] refactor
+- [ ] perf
+- [ ] test
+- [ ] chore/ci/style
+
+## Conventional Commit title (required)
+
+Title must follow Conventional Commits for automated versioning.
+
+Examples:
+
+- feat: add X
+- fix(scope): handle Y
+- docs: update Z
+
+## Checklist
+
+- [ ] Lintro passes (format + check)
+- [ ] Tests pass and coverage acceptable
+- [ ] If user-facing, docs updated
+
+## Details
+
+Notes about implementation, breaking changes, and testing.
 
 ## Type of Change
 
@@ -39,13 +69,9 @@ Related to #(issue number)
 - [ ] Tested with Docker
 - [ ] Tested with different Python versions
 
-### Specific Test Cases
+### Specific Test Cases (optional)
 
-Describe any specific test scenarios you've verified:
-
-1. [Test case 1]
-2. [Test case 2]
-3. [Test case 3]
+List key scenarios you've verified.
 
 ## Checklist
 
@@ -76,13 +102,9 @@ Describe any specific test scenarios you've verified:
 - [ ] Migration guide provided if needed
 - [ ] Version bump strategy discussed
 
-## Screenshots (if applicable)
+## Screenshots (optional)
 
-Add screenshots to help explain your changes.
-
-## Additional Notes
-
-Add any other context about the pull request here.
+## Additional Notes (optional)
 
 ## Performance Impact
 

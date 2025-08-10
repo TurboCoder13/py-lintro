@@ -4,23 +4,23 @@ name: Docker Build & Publish
   push:
     branches: [main]
     paths:
-      - 'Dockerfile'
-      - 'docker-compose.yml'
-      - 'scripts/docker/docker-lintro.sh'
-      - 'scripts/docker/docker-test.sh'
-      - '.github/workflows/lintro-docker.yml'
-      - 'pyproject.toml'
-      - 'lintro/**'
+      - Dockerfile
+      - docker-compose.yml
+      - scripts/docker/docker-lintro.sh
+      - scripts/docker/docker-test.sh
+      - .github/workflows/lintro-docker.yml
+      - pyproject.toml
+      - lintro/**
   pull_request:
     branches: [main]
     paths:
-      - 'Dockerfile'
-      - 'docker-compose.yml'
-      - 'scripts/docker/docker-lintro.sh'
-      - 'scripts/docker/docker-test.sh'
-      - '.github/workflows/lintro-docker.yml'
-      - 'pyproject.toml'
-      - 'lintro/**'
+      - Dockerfile
+      - docker-compose.yml
+      - scripts/docker/docker-lintro.sh
+      - scripts/docker/docker-test.sh
+      - .github/workflows/lintro-docker.yml
+      - pyproject.toml
+      - lintro/**
   release:
     types: [published, edited]
   workflow_dispatch:
@@ -32,6 +32,9 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    concurrency:
+      group: docker-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -54,6 +57,9 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push') # yamllint disable-line rule:line-length
+    concurrency:
+      group: docker-publish-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
