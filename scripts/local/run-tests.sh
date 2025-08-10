@@ -88,7 +88,7 @@ run_tests() {
     echo -e "${YELLOW}Using uv run pytest for consistent behavior${NC}"
     
     # Build pytest arguments
-    local pytest_args=("tests")
+    local pytest_args=("-n" "auto" "-k" "not docker" "tests")
     
     # Add verbose flag if requested
     if [ "$VERBOSE" = "1" ] || [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
@@ -132,7 +132,8 @@ show_tips() {
     echo ""
     echo -e "${YELLOW}=== Helpful Tips ===${NC}"
     echo -e "${BLUE}• Install missing tools: ./scripts/local/local-lintro.sh --install${NC}"
-    echo -e "${BLUE}• Run specific tests: uv run pytest tests/test_ruff_integration.py${NC}"
+    echo -e "${BLUE}• Run specific tests: uv run pytest -n auto -k 'not docker' tests/test_ruff_integration.py${NC}"
+    echo -e "${BLUE}• Include Docker tests: LINTRO_RUN_DOCKER_TESTS=1 uv run pytest -n auto${NC}"
     echo -e "${BLUE}• Run with verbose output: $0 --verbose${NC}"
     echo -e "${BLUE}• Check tool installation: ./scripts/utils/install-tools.sh --local${NC}"
     echo ""
