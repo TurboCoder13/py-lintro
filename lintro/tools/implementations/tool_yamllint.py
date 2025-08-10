@@ -1,16 +1,32 @@
 """Yamllint YAML linter integration."""
 
+import os
 import subprocess
 from dataclasses import dataclass, field
-from typing import Any
 
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
+from lintro.enums.yamllint_format import (
+    YamllintFormat,
+    normalize_yamllint_format,
+)
 from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
+
+# Constants
+YAMLLINT_DEFAULT_TIMEOUT: int = 15
+YAMLLINT_DEFAULT_PRIORITY: int = 40
+YAMLLINT_FILE_PATTERNS: list[str] = [
+    "*.yml",
+    "*.yaml",
+    ".yamllint",
+    ".yamllint.yml",
+    ".yamllint.yaml",
+]
+YAMLLINT_FORMATS: tuple[str, ...] = tuple(m.name.lower() for m in YamllintFormat)
 
 
 @dataclass
@@ -31,29 +47,22 @@ class YamllintTool(BaseTool):
 
     name: str = "yamllint"
     description: str = "YAML linter for syntax and style checking"
-    can_fix: bool = False  # Yamllint only checks, doesn't fix
+    can_fix: bool = False
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
-            priority=40,  # Medium-low priority for configuration linting
-            conflicts_with=[],  # No direct conflicts
-            file_patterns=[
-                "*.yml",
-                "*.yaml",
-                ".yamllint",
-                ".yamllint.yml",
-                ".yamllint.yaml",
-            ],
+            priority=YAMLLINT_DEFAULT_PRIORITY,
+            conflicts_with=[],
+            file_patterns=YAMLLINT_FILE_PATTERNS,
             tool_type=ToolType.LINTER,
             options={
-                "timeout": 15,  # Default timeout in seconds
-                "format": "parsable",  # Output format
-                # (parsable, standard, colored, github, auto)
-                "config_file": None,  # Path to yamllint config file
-                "config_data": None,  # Inline config data
-                "strict": False,  # Return non-zero exit code on warnings as well as
-                # errors
-                "relaxed": False,  # Use relaxed configuration
-                "no_warnings": False,  # Output only error level problems
+                "timeout": YAMLLINT_DEFAULT_TIMEOUT,
+                # Use parsable by default; aligns with parser expectations
+                "format": "parsable",
+                "config_file": None,
+                "config_data": None,
+                "strict": False,
+                "relaxed": False,
+                "no_warnings": False,
             },
         ),
     )
@@ -64,13 +73,13 @@ class YamllintTool(BaseTool):
 
     def set_options(
         self,
-        format: str | None = None,
+        format: str | YamllintFormat | None = None,
         config_file: str | None = None,
         config_data: str | None = None,
         strict: bool | None = None,
         relaxed: bool | None = None,
         no_warnings: bool | None = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         """Set Yamllint-specific options.
 
@@ -86,33 +95,20 @@ class YamllintTool(BaseTool):
         Raises:
             ValueError: If an option value is invalid
         """
-        if format is not None and format not in [
-            "parsable",
-            "standard",
-            "colored",
-            "github",
-            "auto",
-        ]:
-            raise ValueError(
-                f"Invalid format '{format}'. Must be one of: "
-                "parsable, standard, colored, github, auto"
-            )
-
+        if format is not None:
+            # Accept both enum and string values for backward compatibility
+            fmt_enum = normalize_yamllint_format(format)  # type: ignore[arg-type]
+            format = fmt_enum.name.lower()
         if config_file is not None and not isinstance(config_file, str):
             raise ValueError("config_file must be a string path")
-
         if config_data is not None and not isinstance(config_data, str):
             raise ValueError("config_data must be a YAML string")
-
         if strict is not None and not isinstance(strict, bool):
             raise ValueError("strict must be a boolean")
-
         if relaxed is not None and not isinstance(relaxed, bool):
             raise ValueError("relaxed must be a boolean")
-
         if no_warnings is not None and not isinstance(no_warnings, bool):
             raise ValueError("no_warnings must be a boolean")
-
         options = {
             "format": format,
             "config_file": config_file,
@@ -121,7 +117,6 @@ class YamllintTool(BaseTool):
             "relaxed": relaxed,
             "no_warnings": no_warnings,
         }
-        # Remove None values
         options = {k: v for k, v in options.items() if v is not None}
         super().set_options(**options, **kwargs)
 
@@ -129,36 +124,23 @@ class YamllintTool(BaseTool):
         """Build the yamllint command.
 
         Returns:
-            List of command arguments
+            list[str]: Command arguments for yamllint.
         """
-        cmd = ["yamllint"]
-
-        # Add format option
-        format_option = self.options.get("format", "parsable")
+        cmd: list[str] = ["yamllint"]
+        format_option: str = self.options.get("format", YAMLLINT_FORMATS[0])
         cmd.extend(["--format", format_option])
-
-        # Add config file
-        config_file = self.options.get("config_file")
+        config_file: str | None = self.options.get("config_file")
         if config_file:
             cmd.extend(["--config-file", config_file])
-
-        # Add config data (inline config)
-        config_data = self.options.get("config_data")
+        config_data: str | None = self.options.get("config_data")
         if config_data:
             cmd.extend(["--config-data", config_data])
-
-        # Add strict mode
         if self.options.get("strict", False):
             cmd.append("--strict")
-
-        # Add relaxed mode
         if self.options.get("relaxed", False):
             cmd.append("--relaxed")
-
-        # Add no-warnings option
         if self.options.get("no_warnings", False):
             cmd.append("--no-warnings")
-
         return cmd
 
     def check(
@@ -168,12 +150,12 @@ class YamllintTool(BaseTool):
         """Check files with Yamllint.
 
         Args:
-            paths: List of file or directory paths to check
+            paths: list[str]: List of file or directory paths to check.
 
         Returns:
-            ToolResult instance
+            ToolResult: Result of the check operation.
         """
-        self._validate_paths(paths)
+        self._validate_paths(paths=paths)
         if not paths:
             return ToolResult(
                 name=self.name,
@@ -181,73 +163,71 @@ class YamllintTool(BaseTool):
                 output="No files to check.",
                 issues_count=0,
             )
-
-        # Use shared utility for file discovery
-        yaml_files = walk_files_with_excludes(
+        yaml_files: list[str] = walk_files_with_excludes(
             paths=paths,
             file_patterns=self.config.file_patterns,
             exclude_patterns=self.exclude_patterns,
             include_venv=self.include_venv,
         )
-
         logger.debug(f"Files to check: {yaml_files}")
-
-        timeout = self.options.get("timeout", 15)
-        all_outputs = []
-        all_success = True
-        skipped_files = []
-        total_issues = 0
-
+        timeout: int = self.options.get("timeout", YAMLLINT_DEFAULT_TIMEOUT)
+        # Aggregate parsed issues across files and rely on table renderers upstream
+        all_success: bool = True
+        all_issues: list = []
+        skipped_files: list[str] = []
+        total_issues: int = 0
         for file_path in yaml_files:
-            cmd = self._build_command() + [str(file_path)]
+            # Use absolute path; run with the file's parent as cwd so that
+            # yamllint discovers any local .yamllint config beside the file.
+            abs_file: str = os.path.abspath(file_path)
+            cmd: list[str] = self._build_command() + [abs_file]
             try:
-                success, output = self._run_subprocess(cmd, timeout=timeout)
-                issues = parse_yamllint_output(output)
-                issues_count = len(issues)
-                if not (success and issues_count == 0):
+                success, output = self._run_subprocess(
+                    cmd=cmd,
+                    timeout=timeout,
+                    cwd=self.get_cwd(paths=[abs_file]),
+                )
+                issues = parse_yamllint_output(output=output)
+                issues_count: int = len(issues)
+                # Yamllint returns 1 on errors/warnings unless --no-warnings/relaxed
+                # Use parsed issues to determine success and counts reliably.
+                if issues_count > 0:
                     all_success = False
                 total_issues += issues_count
-                if output.strip():
-                    all_outputs.append(output)
+                if issues:
+                    all_issues.extend(issues)
             except subprocess.TimeoutExpired:
                 skipped_files.append(file_path)
                 all_success = False
             except Exception as e:
-                all_outputs.append(f"Error processing {file_path}: {str(e)}")
+                # Suppress missing file noise in console output; keep as debug
+                err_msg = str(e)
+                if "No such file or directory" in err_msg:
+                    # treat as skipped/missing silently for user; do not fail run
+                    continue
+                # Do not add raw errors to user-facing output; mark failure only
                 all_success = False
-
-        output = "\n".join(all_outputs) if all_outputs else ""
-        if skipped_files:
-            if output:
-                output += "\n\n"
-            output += f"Skipped {len(skipped_files)} files due to timeout:"
-            for file in skipped_files:
-                output += f"\n  - {file}"
-
-        if not output.strip():
-            output = None
-
+        # Let the unified formatter render a table from issues; no raw output
+        output = None
         return ToolResult(
             name=self.name,
             success=all_success,
             output=output,
             issues_count=total_issues,
+            issues=all_issues,
         )
 
     def fix(
         self,
         paths: list[str],
     ) -> ToolResult:
-        """Fix issues in files with Yamllint.
-
-        Note: Yamllint is a linter only and cannot fix issues.
-        This method is provided for interface compatibility.
+        """Yamllint cannot fix issues, only report them.
 
         Args:
-            paths: List of file or directory paths to fix
+            paths: list[str]: List of file or directory paths to fix.
 
         Returns:
-            ToolResult instance indicating that fixing is not supported
+            ToolResult: Result indicating that fixing is not supported.
         """
         return ToolResult(
             name=self.name,

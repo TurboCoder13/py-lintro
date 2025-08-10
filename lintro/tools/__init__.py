@@ -19,30 +19,22 @@ tool_manager = ToolManager()
 # Register all available tools using ToolEnum
 AVAILABLE_TOOLS = {tool_enum: tool_enum.value for tool_enum in ToolEnum}
 
-# Export tool classes for external use
+
+for tool_enum, tool_class in AVAILABLE_TOOLS.items():
+    tool_manager.register_tool(tool_class)
+
+# Consolidated exports
 __all__ = [
+    "Tool",
+    "ToolConfig",
+    "ToolType",
+    "ToolManager",
+    "ToolEnum",
+    "tool_manager",
+    "AVAILABLE_TOOLS",
     "DarglintTool",
     "HadolintTool",
     "PrettierTool",
     "RuffTool",
     "YamllintTool",
-    "tool_manager",
-    "AVAILABLE_TOOLS",
-    "Tool",
-    "ToolConfig",
-    "ToolManager",
-    "ToolEnum",
-    "ToolType",
-]
-
-for tool_enum, tool_class in AVAILABLE_TOOLS.items():
-    tool_manager.register_tool(tool_class)
-
-__all__ = [
-    "Tool",
-    "ToolConfig",
-    "ToolType",
-    "tool_manager",
-    "AVAILABLE_TOOLS",
-    "ToolEnum",
 ]
