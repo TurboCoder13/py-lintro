@@ -14,6 +14,9 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    concurrency:
+      group: lintro-ci-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout code
@@ -23,7 +26,9 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Install uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
 
       - name: Install all tools and dependencies
         run: ./scripts/utils/install-tools.sh --local
@@ -42,6 +47,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Lintro Analysis in Docker
+        id: lintro
         run: ./scripts/ci/ci-lintro.sh
         continue-on-error: true
 
@@ -77,8 +83,8 @@ jobs:
             });
 
       - name: Fail on Linting Issues
-        if: env.CHK_EXIT_CODE != '0'
+        if: steps.lintro.conclusion != 'success'
         run: |
-          echo "❌ Linting checks failed with exit code $CHK_EXIT_CODE"
+          echo "❌ Linting checks failed"
           echo "Please fix the issues identified by lintro and try again."
-          exit $CHK_EXIT_CODE
+          exit 1

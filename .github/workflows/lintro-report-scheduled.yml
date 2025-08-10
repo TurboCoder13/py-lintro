@@ -11,12 +11,12 @@ name: Lintro Report
       - '**.json'
       - '**.md'
       - '**.sh'
-      - 'Dockerfile'
-      - 'pyproject.toml'
-      - '.github/workflows/lintro-report.yml'
-      - 'scripts/local/local-lintro.sh'
+      - Dockerfile
+      - pyproject.toml
+      - .github/workflows/lintro-report.yml
+      - scripts/local/local-lintro.sh
   schedule:
-    - cron: '0 0 * * 0' # Run weekly on Sunday at midnight
+    - cron: 0 0 * * 0 # Run weekly on Sunday at midnight
   workflow_dispatch:
 
 permissions:
@@ -32,7 +32,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13.5'
+          python-version: 3.13.5
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6

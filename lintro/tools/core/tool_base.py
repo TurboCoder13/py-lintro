@@ -5,10 +5,27 @@ import shutil
 import subprocess
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
+
+# Constants for default values
+DEFAULT_TIMEOUT: int = 30
+DEFAULT_EXCLUDE_PATTERNS: list[str] = [
+    ".git",
+    ".hg",
+    ".svn",
+    "__pycache__",
+    "*.pyc",
+    "*.pyo",
+    "*.pyd",
+    ".pytest_cache",
+    ".coverage",
+    "htmlcov",
+    "dist",
+    "build",
+    "*.egg-info",
+]
 
 
 @dataclass
@@ -20,17 +37,17 @@ class BaseTool(ABC):
     and implement the abstract methods.
 
     Attributes:
-        name: Tool name
-        description: Tool description
-        can_fix: Whether the core can fix issues
-        config: Tool configuration
-        exclude_patterns: List of patterns to exclude
-        include_venv: Whether to include virtual environment files
-        _default_timeout: Default timeout for core execution in seconds
-        _default_exclude_patterns: Default patterns to exclude
+        name: str: Tool name.
+        description: str: Tool description.
+        can_fix: bool: Whether the core can fix issues.
+        config: ToolConfig: Tool configuration.
+        exclude_patterns: list[str]: List of patterns to exclude.
+        include_venv: bool: Whether to include virtual environment files.
+        _default_timeout: int: Default timeout for core execution in seconds.
+        _default_exclude_patterns: list[str]: Default patterns to exclude.
 
     Raises:
-        ValueError: If the configuration is invalid
+        ValueError: If the configuration is invalid.
     """
 
     name: str
@@ -40,26 +57,14 @@ class BaseTool(ABC):
     exclude_patterns: list[str] = field(default_factory=list)
     include_venv: bool = False
 
-    _default_timeout: ClassVar[int] = 30
-    _default_exclude_patterns: ClassVar[list[str]] = [
-        ".git",
-        ".hg",
-        ".svn",
-        "__pycache__",
-        "*.pyc",
-        "*.pyo",
-        "*.pyd",
-        ".pytest_cache",
-        ".coverage",
-        "htmlcov",
-        "dist",
-        "build",
-        "*.egg-info",
-    ]
+    _default_timeout: int = DEFAULT_TIMEOUT
+    _default_exclude_patterns: list[str] = field(
+        default_factory=lambda: DEFAULT_EXCLUDE_PATTERNS
+    )
 
     def __post_init__(self) -> None:
         """Initialize core options and validate configuration."""
-        self.options: dict[str, Any] = {}
+        self.options: dict[str, object] = {}
         self._validate_config()
         self._setup_defaults()
 
@@ -67,7 +72,7 @@ class BaseTool(ABC):
         """Validate core configuration.
 
         Raises:
-            ValueError: If the configuration is invalid
+            ValueError: If the configuration is invalid.
         """
         if not self.name:
             raise ValueError("Tool name cannot be empty")
@@ -91,6 +96,21 @@ class BaseTool(ABC):
             if pattern not in self.exclude_patterns:
                 self.exclude_patterns.append(pattern)
 
+        # Add .lintro-ignore patterns (project-wide) if present
+        try:
+            lintro_ignore_path = os.path.abspath(".lintro-ignore")
+            if os.path.exists(lintro_ignore_path):
+                with open(lintro_ignore_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line_stripped = line.strip()
+                        if not line_stripped or line_stripped.startswith("#"):
+                            continue
+                        if line_stripped not in self.exclude_patterns:
+                            self.exclude_patterns.append(line_stripped)
+        except Exception:
+            # Non-fatal if ignore file can't be read
+            pass
+
         # Load default options from config
         if hasattr(self.config, "options") and self.config.options:
             for key, value in self.config.options.items():
@@ -110,19 +130,20 @@ class BaseTool(ABC):
         """Run a subprocess command.
 
         Args:
-            cmd: Command to run
-            timeout: Command timeout in seconds (defaults to core's timeout)
-            cwd: Working directory to run the command in (optional)
+            cmd: list[str]: Command to run.
+            timeout: int | None: Command timeout in seconds (defaults to core's \
+                timeout).
+            cwd: str | None: Working directory to run the command in (optional).
 
         Returns:
-            Tuple of (success, output)
-            - success: True if the command succeeded, False otherwise
-            - output: Command output (stdout + stderr)
+            tuple[bool, str]: Tuple of (success, output)
+                - success: True if the command succeeded, False otherwise.
+                - output: Command output (stdout + stderr).
 
         Raises:
-            CalledProcessError: If command fails
-            TimeoutExpired: If command times out
-            FileNotFoundError: If command executable is not found
+            CalledProcessError: If command fails.
+            TimeoutExpired: If command times out.
+            FileNotFoundError: If command executable is not found.
         """
         try:
             result = subprocess.run(
@@ -158,17 +179,17 @@ class BaseTool(ABC):
         except FileNotFoundError as e:
             raise FileNotFoundError(
                 f"Command not found: {cmd[0]}. "
-                f"Please ensure it is installed and in your PATH."
+                f"Please ensure it is installed and in your PATH.",
             ) from e
 
-    def set_options(self, **kwargs: Any) -> None:
+    def set_options(self, **kwargs) -> None:
         """Set core options.
 
         Args:
-            **kwargs: Tool-specific options
+            **kwargs: Tool-specific options.
 
         Raises:
-            ValueError: If an option value is invalid
+            ValueError: If an option value is invalid.
         """
         for key, value in kwargs.items():
             if key == "timeout" and not isinstance(value, (int, type(None))):
@@ -187,15 +208,18 @@ class BaseTool(ABC):
         if "include_venv" in kwargs:
             self.include_venv = kwargs["include_venv"]
 
-    def _validate_paths(self, paths: list[str]) -> None:
+    def _validate_paths(
+        self,
+        paths: list[str],
+    ) -> None:
         """Validate that paths exist and are accessible.
 
         Args:
-            paths: List of paths to validate
+            paths: list[str]: List of paths to validate.
 
         Raises:
-            FileNotFoundError: If any path does not exist
-            PermissionError: If any path is not accessible
+            FileNotFoundError: If any path does not exist.
+            PermissionError: If any path is not accessible.
         """
         for path in paths:
             if not os.path.exists(path):
@@ -203,25 +227,31 @@ class BaseTool(ABC):
             if not os.access(path, os.R_OK):
                 raise PermissionError(f"Path is not accessible: {path}")
 
-    def get_cwd(self, paths: list[str]) -> str | None:
+    def get_cwd(
+        self,
+        paths: list[str],
+    ) -> str | None:
         """Return the common parent directory for the given paths, or None if not
         applicable.
 
         Args:
-            paths: List of file paths to find common parent directory for.
+            paths: list[str]: List of file paths to find common parent directory for.
 
         Returns:
             str | None: Common parent directory path, or None if not applicable.
         """
         if paths:
-            parent_dirs = {os.path.dirname(os.path.abspath(p)) for p in paths}
+            parent_dirs: set[str] = {os.path.dirname(os.path.abspath(p)) for p in paths}
             if len(parent_dirs) == 1:
                 return parent_dirs.pop()
             else:
                 return os.path.commonpath(list(parent_dirs))
         return None
 
-    def _get_executable_command(self, tool_name: str) -> list[str]:
+    def _get_executable_command(
+        self,
+        tool_name: str,
+    ) -> list[str]:
         """Get the command prefix to execute a tool.
 
         This method provides common logic for tool executable detection.
@@ -229,10 +259,10 @@ class BaseTool(ABC):
         falls back to running via 'uv run' if uv is available.
 
         Args:
-            tool_name: Name of the tool executable to find
+            tool_name: str: Name of the tool executable to find.
 
         Returns:
-            List[str]: Command prefix to execute the tool
+            list[str]: Command prefix to execute the tool.
 
         Examples:
             >>> self._get_executable_command("ruff")
@@ -260,15 +290,15 @@ class BaseTool(ABC):
         """Check files for issues.
 
         Args:
-            paths: List of file paths to check
+            paths: list[str]: List of file paths to check.
 
         Returns:
-            ToolResult instance
+            ToolResult: ToolResult instance.
 
         Raises:
-            FileNotFoundError: If any path does not exist or is not accessible
-            subprocess.TimeoutExpired: If the core execution times out
-            subprocess.CalledProcessError: If the core execution fails
+            FileNotFoundError: If any path does not exist or is not accessible.
+            subprocess.TimeoutExpired: If the core execution times out.
+            subprocess.CalledProcessError: If the core execution fails.
         """
         ...
 
@@ -280,10 +310,10 @@ class BaseTool(ABC):
         """Fix issues in files.
 
         Args:
-            paths: List of file paths to fix
+            paths: list[str]: List of file paths to fix.
 
         Raises:
-            NotImplementedError: If the core does not support fixing issues
+            NotImplementedError: If the core does not support fixing issues.
         """
         if not self.can_fix:
             raise NotImplementedError(f"{self.name} does not support fixing issues")

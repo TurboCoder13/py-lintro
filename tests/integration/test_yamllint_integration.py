@@ -149,9 +149,11 @@ def test_yamllint_reports_violations_through_lintro(tmp_path):
     assert result.issues_count > 0, (
         "Lintro YamllintTool should report at least one issue."
     )
-    assert any(level in result.output for level in ["[error]", "[warning]"]), (
-        "Lintro YamllintTool output should contain issue levels."
-    )
+    # Wrapper-first: rely on parsed issues rather than raw output text
+    assert result.issues, "Parsed issues list should be present"
+    assert any(
+        getattr(i, "level", None) in {"error", "warning"} for i in result.issues
+    ), "Parsed issues should include error or warning levels."
 
 
 @pytest.mark.yamllint

@@ -1,26 +1,39 @@
-from typing import Any, List
+from typing import Any
 
 from lintro.formatters.core.output_style import OutputStyle
 
 
 class PlainStyle(OutputStyle):
+    """Output format that renders data as plain text."""
+
     def format(
         self,
-        columns: List[str],
-        rows: List[List[Any]],
+        columns: list[str],
+        rows: list[list[Any]],
     ) -> str:
+        """Format a table given columns and rows as plain text.
+
+        Args:
+            columns: List of column header names.
+            rows: List of row values (each row is a list of cell values).
+
+        Returns:
+            Formatted data as plain text string.
+        """
         if not rows:
-            return ""  # Let the caller handle "No issues found" display
-        # Calculate column widths
-        col_widths = [
-            max(len(str(col)), max((len(str(row[i])) for row in rows), default=0))
-            for i, col in enumerate(columns)
-        ]
-        header = " ".join(f"{col:<{col_widths[i]}}" for i, col in enumerate(columns))
-        sep = "-" * (sum(col_widths) + len(col_widths) - 1)
-        lines = [header, sep]
+            return "No issues found."
+
+        # Build the header
+        header = " | ".join(columns)
+        separator = "-" * len(header)
+
+        # Build the rows
+        formatted_rows = []
         for row in rows:
-            lines.append(
-                " ".join(f"{str(cell):<{col_widths[i]}}" for i, cell in enumerate(row))
-            )
-        return "\n".join(lines)
+            # Ensure row has same number of elements as columns
+            padded_row = row + [""] * (len(columns) - len(row))
+            formatted_rows.append(" | ".join(str(cell) for cell in padded_row))
+
+        # Combine all parts
+        result = [header, separator] + formatted_rows
+        return "\n".join(result)

@@ -1,0 +1,62 @@
+---
+name: Semantic PR Title
+
+'on':
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title follows Conventional Commits
+        id: semantic
+        uses: amannn/action-semantic-pull-request@v5
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            chore
+            ci
+            docs
+            feat
+            fix
+            perf
+            refactor
+            revert
+            style
+            test
+
+      - name: Comment on PR if invalid
+        if: steps.semantic.conclusion != 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              '🚫 Conventional Commits required for release automation.',
+              '',
+              'Please format the PR title like:',
+              '- feat: add amazing thing',
+              '- fix(scope): handle edge case',
+              '',
+              'Scopes are optional. Use present tense, imperative mood.',
+              '',
+              'Once updated, this check will pass automatically.'
+            ].join('\n');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+
+      - name: Fail if invalid
+        if: steps.semantic.conclusion != 'success'
+        run: |
+          echo "PR title does not follow Conventional Commits." >&2
+          exit 1

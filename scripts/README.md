@@ -66,11 +66,12 @@ Scripts for GitHub Actions workflows and continuous integration.
 
 Scripts for containerized development and testing.
 
-| Script                 | Purpose                         | Usage                                     |
-| ---------------------- | ------------------------------- | ----------------------------------------- |
-| `docker-build-test.sh` | Build and test Docker image     | `./scripts/docker/docker-build-test.sh`   |
-| `docker-lintro.sh`     | Run Lintro in Docker container  | `./scripts/docker/docker-lintro.sh check` |
-| `docker-test.sh`       | Run integration tests in Docker | `./scripts/docker/docker-test.sh`         |
+| Script                   | Purpose                         | Usage                                     |
+| ------------------------ | ------------------------------- | ----------------------------------------- |
+| `docker-build-test.sh`   | Build and test Docker image     | `./scripts/docker/docker-build-test.sh`   |
+| `docker-lintro.sh`       | Run Lintro in Docker container  | `./scripts/docker/docker-lintro.sh check` |
+| `docker-simple-tests.sh` | Run simplified Docker tests     | `./scripts/docker/docker-test.sh`         |
+| `docker-test.sh`         | Run integration tests in Docker | `./scripts/docker/docker-test.sh`         |
 
 ### 💻 Local Development Scripts (`local/`)
 
@@ -81,6 +82,7 @@ Scripts for local development and testing.
 | `local-lintro.sh`          | Enhanced local Lintro runner            | `./scripts/local/local-lintro.sh check`    |
 | `local-test.sh`            | Local test runner stub                  | `./scripts/local/local-test.sh --help`     |
 | `run-tests.sh`             | Universal test runner (local + Docker)  | `./scripts/local/run-tests.sh`             |
+| `normalize-ascii-art.sh`   | Normalize ASCII art to fixed size       | `./scripts/local/normalize-ascii-art.sh`   |
 | `update-coverage-badge.sh` | Update coverage badge from coverage.xml | `./scripts/local/update-coverage-badge.sh` |
 
 ### 🛠️ Utility Scripts (`utils/`)
@@ -89,10 +91,15 @@ Shared utilities and helper scripts.
 
 | Script                               | Purpose                                           | Usage                                                     |
 | ------------------------------------ | ------------------------------------------------- | --------------------------------------------------------- |
+| `check-pypi-version.py`              | Check if version exists on PyPI                   | `python scripts/utils/check-pypi-version.py <version>`    |
+| `create-release.py`                  | Create GitHub release with assets                 | `python scripts/utils/create-release.py <version>`        |
 | `delete-previous-lintro-comments.py` | Delete old PR comments                            | `python scripts/utils/delete-previous-lintro-comments.py` |
+| `determine-release.py`               | Determine next release version from commits       | `python scripts/utils/determine-release.py`               |
 | `extract-coverage.py`                | Extract coverage from XML files                   | `python scripts/utils/extract-coverage.py`                |
+| `extract-version.py`                 | Extract version from pyproject.toml               | `python scripts/utils/extract-version.py`                 |
 | `install-tools.sh`                   | Install external tools (hadolint, prettier, etc.) | `./scripts/utils/install-tools.sh --local`                |
 | `install.sh`                         | Install Lintro with dependencies                  | `./scripts/utils/install.sh`                              |
+| `update-version.py`                  | Update version in pyproject.toml                  | `python scripts/utils/update-version.py <version>`        |
 | `utils.sh`                           | Shared utilities for other scripts                | Sourced by other scripts                                  |
 
 ## 🔍 Detailed Script Documentation

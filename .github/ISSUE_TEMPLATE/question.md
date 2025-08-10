@@ -1,30 +1,26 @@
 ---
 name: Question
 about: Ask a question about Lintro
-title: '[QUESTION] '
+title: '[question] '
 labels: ['question', 'needs-triage']
 assignees: ''
 ---
 
 ## Question
 
-A clear and concise description of your question about Lintro.
+What would you like to know?
 
 ## Context
 
-Provide some context about what you're trying to accomplish:
-
-- What are you working on?
-- What specific problem are you trying to solve?
-- What have you tried so far?
+What are you trying to accomplish? What have you tried?
 
 ## Environment Information
 
-### System Information
+### System
 
-- **OS**: [e.g., macOS 14.0, Ubuntu 22.04, Windows 11]
-- **Python Version**: [e.g., 3.13.5]
-- **Lintro Version**: [e.g., 0.1.0]
+- OS:
+- Python:
+- Lintro:
 
 ### Installation Method
 
@@ -35,20 +31,17 @@ Provide some context about what you're trying to accomplish:
 
 ## What I've Tried
 
-Describe what you've already tried:
-
-1. [First attempt]
-2. [Second attempt]
-3. [Third attempt]
+1. [Attempt]
+2. [Attempt]
 
 ## Expected vs Actual
 
-- **Expected**: What you thought would happen
-- **Actual**: What actually happened
+- Expected:
+- Actual:
 
 ## Code Examples
 
-If relevant, include code examples:
+If relevant, include examples:
 
 ```bash
 # Command you ran
@@ -71,7 +64,7 @@ If relevant, include your configuration:
 
 ## Research Done
 
-- [ ] I've checked the [documentation](docs/)
+- [ ] I've checked the docs
 - [ ] I've searched existing issues
 - [ ] I've tried the examples in the README
 - [ ] I've checked the [tool analysis](docs/tool-analysis/)

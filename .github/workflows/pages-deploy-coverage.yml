@@ -2,7 +2,7 @@
 name: GitHub Pages
 'on':
   workflow_run:
-    workflows: ['Test and Coverage']
+    workflows: [Test Suite & Coverage, Test and Coverage]
     types:
       - completed
     branches:
@@ -13,7 +13,7 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: 'pages'
+  group: pages
   cancel-in-progress: false
 jobs:
   deploy:
@@ -30,8 +30,8 @@ jobs:
       - name: Download coverage artifact
         uses: dawidd6/action-download-artifact@v11
         with:
-          workflow: test-coverage.yml
-          name: coverage-report-all-3.13
+          workflow: test-and-coverage.yml
+          name: coverage-report-python-3.13
           path: coverage-report
           workflow_conclusion: success
       - name: Setup Pages

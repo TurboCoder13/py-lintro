@@ -2,9 +2,7 @@
 
 import fnmatch
 import os
-from typing import Any
-
-from loguru import logger
+from collections.abc import Callable
 
 try:
     from tabulate import tabulate
@@ -17,6 +15,10 @@ from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
 )
+from lintro.formatters.tools.hadolint_formatter import (
+    HadolintTableDescriptor,
+    format_hadolint_issues,
+)
 from lintro.formatters.tools.prettier_formatter import (
     PrettierTableDescriptor,
     format_prettier_issues,
@@ -25,24 +27,45 @@ from lintro.formatters.tools.ruff_formatter import (
     RuffTableDescriptor,
     format_ruff_issues,
 )
+from lintro.formatters.tools.yamllint_formatter import (
+    YamllintTableDescriptor,
+    format_yamllint_issues,
+)
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
+from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
+from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
+from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 from lintro.parsers.ruff.ruff_parser import parse_ruff_output
-from lintro.utils.path_utils import normalize_file_path_for_display
+from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 
-TOOL_TABLE_FORMATTERS = {
+# Constants
+TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
     "darglint": (DarglintTableDescriptor(), format_darglint_issues),
+    "hadolint": (HadolintTableDescriptor(), format_hadolint_issues),
     "prettier": (PrettierTableDescriptor(), format_prettier_issues),
     "ruff": (RuffTableDescriptor(), format_ruff_issues),
-    # Add more tools here as you implement TableDescriptor/formatter for them
+    "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
 }
+VENV_PATTERNS: list[str] = [
+    "venv",
+    "env",
+    "ENV",
+    ".venv",
+    ".env",
+    "virtualenv",
+    "virtual_env",
+    "virtualenvs",
+    "site-packages",
+    "node_modules",
+]
 
 
-def parse_tool_list(tools_str: str | None) -> list:
+def parse_tool_list(tools_str: str | None) -> list[str]:
     """Parse a comma-separated list of core names into ToolEnum members.
 
     Args:
-        tools_str: Comma-separated string of tool names, or None.
+        tools_str: str | None: Comma-separated string of tool names, or None.
 
     Returns:
         list: List of ToolEnum members parsed from the input string.
@@ -55,7 +78,7 @@ def parse_tool_list(tools_str: str | None) -> list:
     # Import ToolEnum here to avoid circular import at module level
     from lintro.tools.tool_enum import ToolEnum
 
-    result = []
+    result: list = []
     for t in tools_str.split(","):
         t = t.strip()
         if not t:
@@ -71,7 +94,8 @@ def parse_tool_options(tool_options_str: str | None) -> dict:
     """Parse tool-specific options.
 
     Args:
-        tool_options_str: Comma-separated string of tool-specific options, or None.
+        tool_options_str: str | None: Comma-separated string of tool-specific
+            options, or None.
 
     Returns:
         dict: Dictionary of parsed tool options.
@@ -79,7 +103,7 @@ def parse_tool_options(tool_options_str: str | None) -> dict:
     if not tool_options_str:
         return {}
 
-    options = {}
+    options: dict = {}
     for opt in tool_options_str.split(","):
         if ":" in opt:
             tool_name, tool_opt = opt.split(":", 1)
@@ -91,79 +115,95 @@ def parse_tool_options(tool_options_str: str | None) -> dict:
     return options
 
 
-def should_exclude_path(path: str, exclude_patterns: list[str]) -> bool:
+def should_exclude_path(
+    path: str,
+    exclude_patterns: list[str],
+) -> bool:
     """Check if a path should be excluded based on patterns.
 
     Args:
-        path: File path to check for exclusion.
-        exclude_patterns: List of glob patterns to match against.
+        path: str: File path to check for exclusion.
+        exclude_patterns: list[str]: List of glob patterns to match against.
 
     Returns:
-        bool: True if path should be excluded, False otherwise.
+        bool: True if the path should be excluded, False otherwise.
     """
+    if not exclude_patterns:
+        return False
+
+    # Normalize path separators for cross-platform compatibility
+    normalized_path: str = path.replace("\\", "/")
+
     for pattern in exclude_patterns:
-        if fnmatch.fnmatch(path, pattern):
+        if fnmatch.fnmatch(normalized_path, pattern):
             return True
+        # Also check if the pattern matches any part of the path
+        path_parts: list[str] = normalized_path.split("/")
+        for part in path_parts:
+            if fnmatch.fnmatch(part, pattern):
+                return True
     return False
 
 
 def get_table_columns(
-    issues: list[dict[str, str]], tool_name: str, group_by: str | None = None
+    issues: list[dict[str, str]],
+    tool_name: str,
+    group_by: str | None = None,
 ) -> tuple[list[str], list[str]]:
-    """Get appropriate columns for displaying issues in a table.
+    """Get table columns and rows for a list of issues.
 
     Args:
-        issues: List of issues to analyze.
-        tool_name: Name of the tool that found the issues.
-        group_by: How to group the issues (file, code, or none).
+        issues: list[dict[str, str]]: List of issue dictionaries.
+        tool_name: str: Name of the tool that generated the issues.
+        group_by: str | None: How to group the issues (file, code, none, auto).
 
     Returns:
-        Tuple of (display_columns, data_columns).
+        tuple: (columns, rows) where columns is a list of column names and rows
+            is a list of row data.
     """
     if not issues:
         return [], []
 
-    # Determine available columns from the first issue
-    available_columns = list(issues[0].keys())
+    # Canonical key-to-column mapping used when descriptor columns are known
+    key_mapping = {
+        "file": "File",
+        "line": "Line",
+        "column": "Column",
+        "code": "Code",
+        "message": "Message",
+        "fixable": "Fixable",
+    }
 
-    # Standard column order preferences
-    column_preferences = [
-        "file",
-        "line",
-        "column",
-        "code",
-        "message",
-        "severity",
-        "rule",
-    ]
-
-    # Order columns based on preferences
-    ordered_columns = []
-    for pref in column_preferences:
-        if pref in available_columns:
-            ordered_columns.append(pref)
-
-    # Add any remaining columns
-    for col in available_columns:
-        if col not in ordered_columns:
-            ordered_columns.append(col)
-
-    # Adjust based on grouping
-    if group_by == "file":
-        # When grouping by file, we might want to hide the file column in
-        # individual tables
-        display_columns = [col.title() for col in ordered_columns]
-        data_columns = ordered_columns
-    elif group_by == "code":
-        # When grouping by code, we might want to highlight the code column
-        display_columns = [col.title() for col in ordered_columns]
-        data_columns = ordered_columns
+    # Get the appropriate formatter for this tool
+    if tool_name in TOOL_TABLE_FORMATTERS:
+        descriptor, _ = TOOL_TABLE_FORMATTERS[tool_name]
+        expected_columns: list[str] = descriptor.get_columns()
+        # Use expected columns but map available keys
+        columns = expected_columns
     else:
-        # No special grouping adjustments
-        display_columns = [col.title() for col in ordered_columns]
-        data_columns = ordered_columns
+        # Fallback: use all unique keys from the first issue
+        if issues:
+            columns = list(issues[0].keys())
+        else:
+            columns = []
 
-    return display_columns, data_columns
+    # Convert issues to rows
+    rows: list[list[str]] = []
+    for issue in issues:
+        row: list[str] = []
+        for col in columns:
+            # Try to find the corresponding key in the issue dictionary
+            value = ""
+            for key, mapped_col in key_mapping.items():
+                if mapped_col == col and key in issue:
+                    value = str(issue[key])
+                    break
+            if not value:  # If no mapping found, try direct key match
+                value = str(issue.get(col, ""))
+            row.append(value)
+        rows.append(row)
+
+    return columns, rows
 
 
 def format_as_table(
@@ -171,50 +211,54 @@ def format_as_table(
     tool_name: str,
     group_by: str | None = None,
 ) -> str:
-    """Format issues as a table.
+    """Format issues as a table using the appropriate formatter.
 
     Args:
-        issues: List of issues to format.
-        tool_name: Name of the core that found the issues.
-        group_by: How to group the issues (file, code, or none).
+        issues: list[dict[str, str]]: List of issue dictionaries.
+        tool_name: str: Name of the tool that generated the issues.
+        group_by: str | None: How to group the issues (file, code, none, auto).
 
     Returns:
-        Formatted table as a string, or empty string if no issues.
+        str: Formatted table as a string.
     """
     if not issues:
-        return ""  # Let the caller handle "No issues found" display
+        return "No issues found."
 
-    # Get the columns for this core
-    display_columns, data_columns = get_table_columns(issues, tool_name, group_by)
-    rows = [[issue.get(col, "") for col in data_columns] for issue in issues]
+    # Get the appropriate formatter for this tool
+    if tool_name in TOOL_TABLE_FORMATTERS:
+        try:
+            _, formatter_func = TOOL_TABLE_FORMATTERS[tool_name]
+            # Try to use the formatter, but it might expect specific issue objects
+            result = formatter_func(issues=issues, format="grid")
+            if result:  # If formatter worked, return the result
+                return result
+        except (TypeError, AttributeError):
+            # Formatter failed, fall back to tabulate
+            pass
 
+    # Fallback: use tabulate if available
     if TABULATE_AVAILABLE:
-        table = tabulate(rows, headers=display_columns, tablefmt="grid")
+        columns, rows = get_table_columns(
+            issues=issues,
+            tool_name=tool_name,
+            group_by=group_by,
+        )
+        return tabulate(tabular_data=rows, headers=columns, tablefmt="grid")
     else:
-        # Fallback: simple text table
-        header = " | ".join(display_columns)
-        sep = " | ".join(["-" * len(col) for col in display_columns])
-        table_lines = [header, sep]
+        # Simple text format
+        columns, rows = get_table_columns(
+            issues=issues,
+            tool_name=tool_name,
+            group_by=group_by,
+        )
+        if not columns:
+            return "No issues found."
+        header: str = " | ".join(columns)
+        separator: str = "-" * len(header)
+        lines: list[str] = [header, separator]
         for row in rows:
-            table_lines.append(" | ".join(str(cell) for cell in row))
-        table = "\n".join(table_lines)
-
-    if group_by == "file":
-        result = ""
-        files = sorted(set(issue["file"] for issue in issues))
-        for file in files:
-            result += f"File: {file}\n"
-        result += table
-        return result
-    elif group_by == "code":
-        result = ""
-        codes = sorted(set(issue.get("code", "") for issue in issues))
-        for code in codes:
-            result += f"PEP Code: {code}\n"
-        result += table
-        return result
-    else:
-        return table
+            lines.append(" | ".join(str(cell) for cell in row))
+        return "\n".join(lines)
 
 
 def format_tool_output(
@@ -222,135 +266,96 @@ def format_tool_output(
     output: str,
     group_by: str = "auto",
     output_format: str = "grid",
-    issues: list[Any] | None = None,
+    issues: list[object] | None = None,
 ) -> str:
-    """Format core output based on core type and format preference.
-
-    Uses tool-specific TableDescriptor and formatter for the tool if available.
-    Falls back to generic formatting logic if not available.
+    """Format tool output using the specified format.
 
     Args:
-        tool_name: Name of the core that generated the output.
-        output: Raw output from the core.
-        group_by: How to group issues (file, code, none, auto).
-        output_format: Output format for displaying results (plain, grid, markdown,
-            html, json, csv)
-        issues: List of issues to format.
+        tool_name: str: Name of the tool that generated the output.
+        output: str: Raw output from the tool.
+        group_by: str: How to group issues (file, code, none, auto).
+        output_format: str: Output format (plain, grid, markdown, html, json, csv).
+        issues: list[object] | None: List of parsed issue objects (optional).
 
     Returns:
-        Formatted output string, or empty string if no issues.
+        str: Formatted output string.
     """
-    if not output.strip():
-        return ""  # Let the footer handle "No issues found" display
+    # If parsed issues are provided, prefer them regardless of raw output
+    if issues and tool_name in TOOL_TABLE_FORMATTERS:
+        # Fixability predicates per tool
+        def _is_fixable_predicate(tool: str) -> Callable[[object], bool] | None:
+            if tool == "ruff":
+                return lambda i: isinstance(i, RuffFormatIssue) or (
+                    isinstance(i, RuffIssue) and getattr(i, "fixable", False)
+                )
+            if tool == "prettier":
+                return lambda i: isinstance(i, PrettierIssue) or True
+            return None
 
-    # Special handling for ruff fix mode output
-    if tool_name == "ruff" and "Fixed" in output:
-        # Check if there are remaining issues that need to be displayed in grid format
-        if issues is not None and len(issues) > 0:
-            # Use the grid formatter for remaining issues
-            if tool_name in TOOL_TABLE_FORMATTERS:
-                descriptor, formatter = TOOL_TABLE_FORMATTERS[tool_name]
-                return formatter(issues, format=output_format)
-        # If no remaining issues or no issues provided, return raw output
-        return output
+        is_fixable = _is_fixable_predicate(tool_name)
 
-    # Special handling for prettier fix mode output
-    if tool_name == "prettier" and ("ms" in output or "formatted" in output.lower()):
-        # This is prettier fix mode output - only return as-is if there are actual
-        # issues
-        if issues is not None and len(issues) > 0:
-            return output
-        # Check if output contains any actual issues (not just timing info)
-        if any(
-            "warn" in line.lower() or "error" in line.lower()
-            for line in output.splitlines()
-        ):
-            return output
-        # If it's just timing info with no issues, return empty string
-        return ""
+        if output_format != "json" and is_fixable is not None and TABULATE_AVAILABLE:
+            descriptor, _ = TOOL_TABLE_FORMATTERS[tool_name]
 
-    # Use tool-specific TableDescriptor/formatter if available
-    if tool_name in TOOL_TABLE_FORMATTERS:
-        # Use provided issues if available, otherwise try to parse from output
-        if issues is None:
-            issues = []
-            if tool_name == "darglint":
-                issues = parse_darglint_output(output)
-            elif tool_name == "prettier":
-                issues = parse_prettier_output(output)
-            elif tool_name == "ruff":
-                issues = parse_ruff_output(output)
+            fixable_issues = [i for i in issues if is_fixable(i)]
+            non_fixable_issues = [i for i in issues if not is_fixable(i)]
 
-        # If we have issues (either provided or parsed), format them
-        if issues:
-            descriptor, formatter = TOOL_TABLE_FORMATTERS[tool_name]
-            return formatter(issues, format=output_format)
-        else:
-            # No issues found, return empty string
-            return ""
-    else:
-        # Fallback to generic formatting logic for tools without specific formatters
-        try:
-            # For tools that don't have specific parsers,
-            # attempt to parse as generic format or return raw output
-            lines = output.strip().split("\n")
-            if lines and any(line.strip() for line in lines):
-                # If we have meaningful output, try to parse it as generic issues
-                # This is a basic fallback - for better formatting, tools should
-                # implement specific parsers
-                issues = []
-                for line in lines:
-                    if line.strip() and not line.startswith("*"):  # Skip header lines
-                        # Try basic parsing - this is very generic
-                        parts = line.split(":")
-                        if len(parts) >= 3:
-                            file_part = parts[0].strip()
-                            line_part = parts[1].strip() if len(parts) > 1 else ""
-                            message_part = (
-                                ":".join(parts[2:]).strip() if len(parts) > 2 else ""
-                            )
-                            issues.append(
-                                {
-                                    "file": normalize_file_path_for_display(file_part),
-                                    "line": line_part,
-                                    "code": "",
-                                    "message": message_part,
-                                }
-                            )
+            sections: list[str] = []
+            if fixable_issues:
+                cols_f = descriptor.get_columns()
+                rows_f = descriptor.get_rows(fixable_issues)
+                table_f = tabulate(
+                    tabular_data=rows_f,
+                    headers=cols_f,
+                    tablefmt="grid",
+                    stralign="left",
+                    disable_numparse=True,
+                )
+                sections.append("Auto-fixable issues\n" + table_f)
+            if non_fixable_issues:
+                cols_u = descriptor.get_columns()
+                rows_u = descriptor.get_rows(non_fixable_issues)
+                table_u = tabulate(
+                    tabular_data=rows_u,
+                    headers=cols_u,
+                    tablefmt="grid",
+                    stralign="left",
+                    disable_numparse=True,
+                )
+                sections.append("Not auto-fixable issues\n" + table_u)
+            if sections:
+                return "\n\n".join(sections)
 
-                if issues:
-                    # Use the grid formatter for generic issues
-                    from lintro.formatters.styles.csv import CsvStyle
-                    from lintro.formatters.styles.grid import GridStyle
-                    from lintro.formatters.styles.html import HtmlStyle
-                    from lintro.formatters.styles.json import JsonStyle
-                    from lintro.formatters.styles.markdown import MarkdownStyle
-                    from lintro.formatters.styles.plain import PlainStyle
+        # Fallback to tool-specific formatter on provided issues
+        _, formatter_func = TOOL_TABLE_FORMATTERS[tool_name]
+        return formatter_func(issues=issues, format=output_format)
 
-                    format_map = {
-                        "plain": PlainStyle(),
-                        "grid": GridStyle(),
-                        "markdown": MarkdownStyle(),
-                        "html": HtmlStyle(),
-                        "json": JsonStyle(),
-                        "csv": CsvStyle(),
-                    }
+    if not output or not output.strip():
+        return "No issues found."
 
-                    formatter = format_map.get(output_format, GridStyle())
-                    columns = ["File", "Line", "Code", "Message"]
-                    rows = [
-                        [issue["file"], issue["line"], issue["code"], issue["message"]]
-                        for issue in issues
-                    ]
-                    return formatter.format(columns, rows)
-                else:
-                    # If parsing failed, return raw output
-                    return output
-            else:
-                return ""  # Let the caller handle "No issues found" display
-        except Exception:
-            # If any parsing fails, return raw output
-            return output
+    # If we have parsed issues, prefer centralized split-by-fixability when
+    # a predicate is known for this tool (non-JSON formats only). Otherwise
+    # fall back to the tool-specific formatter.
+
+    # Otherwise, try to parse the output and format it
+    parsed_issues: list = []
+    if tool_name == "ruff":
+        parsed_issues = parse_ruff_output(output=output)
+    elif tool_name == "prettier":
+        parsed_issues = parse_prettier_output(output=output)
+    elif tool_name == "darglint":
+        parsed_issues = parse_darglint_output(output=output)
+    elif tool_name == "hadolint":
+        parsed_issues = parse_hadolint_output(output=output)
+    elif tool_name == "yamllint":
+        parsed_issues = parse_yamllint_output(output=output)
+
+    if parsed_issues and tool_name in TOOL_TABLE_FORMATTERS:
+        _, formatter_func = TOOL_TABLE_FORMATTERS[tool_name]
+        return formatter_func(issues=parsed_issues, format=output_format)
+
+    # Fallback: return the raw output
+    return output
 
 
 def walk_files_with_excludes(
@@ -359,138 +364,68 @@ def walk_files_with_excludes(
     exclude_patterns: list[str],
     include_venv: bool = False,
 ) -> list[str]:
-    """Recursively walk given paths, yielding files matching file_patterns and not
-    matching exclude patterns.
-
-    Supports .lintro-ignore at the project root or current working directory, using
-    .gitignore-style semantics:
-    - Patterns are matched against the relative path from the project root
-      (os.getcwd()).
-    - Negation patterns (starting with '!') are supported (un-ignore).
-    - Recursive globs (e.g., 'foo/**') are supported.
-    - Patterns are applied in order; the last match wins.
+    """Walk through directories and find files matching patterns, excluding
+    specified patterns.
 
     Args:
-        paths: List of file or directory paths to walk.
-        file_patterns: List of glob patterns for files to include (e.g., ['*.py']).
-        exclude_patterns: List of glob patterns or directory names to exclude.
-        include_venv: Whether to include virtual environment and dependency directories.
+        paths: list[str]: List of file or directory paths to search.
+        file_patterns: list[str]: List of file patterns to include (e.g.,
+            ["*.py", "*.js"]).
+        exclude_patterns: list[str]: List of patterns to exclude (e.g.,
+            ["__pycache__", "*.pyc"]).
+        include_venv: bool: Whether to include virtual environment directories.
 
     Returns:
-        List of file paths matching the criteria.
+        list[str]: List of file paths that match the patterns and are not excluded.
     """
-    logger.debug(
-        f"walk_files_with_excludes paths: {paths} types: {[type(p) for p in paths]}"
-    )
-    logger.debug(f"os.getcwd(): {os.getcwd()}")
-    logger.debug(f"file_patterns: {file_patterns}")
-    result = []
-    exclude_dirs = set(
-        [
-            ".venv",
-            "venv",
-            "env",
-            "ENV",
-            "site-packages",
-            "node_modules",
-            "__pycache__",
-            ".tox",
-            ".pytest_cache",
-            "dist",
-            "build",
-        ]
-    )
-    # Try to read .lintro-ignore from project root or cwd
-    ignore_file = None
-    for candidate in [
-        os.path.join(os.getcwd(), ".lintro-ignore"),
-        os.path.join(os.path.dirname(os.path.abspath(paths[0])), ".lintro-ignore"),
-    ]:
-        if os.path.isfile(candidate):
-            ignore_file = candidate
-            break
-    ignore_patterns = []
-    if ignore_file:
-        with open(ignore_file, "r") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                ignore_patterns.append(line)
-    # Merge CLI and file patterns, preserving order
-    all_patterns = list(exclude_patterns) + ignore_patterns
-    logger.debug(f"all_patterns (exclude + ignore): {all_patterns}")
-    project_root = os.getcwd()
 
-    def is_excluded(rel_path: str) -> bool:
-        """Apply .gitignore-style pattern logic to rel_path.
-
-        Args:
-            rel_path: Relative path to check against patterns.
-
-        Returns:
-            bool: True if path is excluded, False otherwise.
-        """
-        excluded = False
-        for pat in all_patterns:
-            neg = pat.startswith("!")
-            pat_clean = pat[1:] if neg else pat
-            if fnmatch.fnmatchcase(rel_path, pat_clean):
-                excluded = not neg
-        return excluded
+    all_files: list[str] = []
 
     for path in paths:
         if os.path.isfile(path):
-            rel_path = os.path.relpath(path, project_root)
-            basename = os.path.basename(rel_path)
-            pattern_match = [
-                (
-                    pat,
-                    fnmatch.fnmatchcase(rel_path, pat),
-                    fnmatch.fnmatchcase(basename, pat),
-                )
-                for pat in file_patterns
-            ]
-            logger.debug(
-                f"Checking file: {path}, rel_path: {rel_path}, basename: {basename}, "
-                f"pattern_match: {pattern_match}"
-            )
-            excluded = is_excluded(rel_path)
-            logger.debug(f"is_excluded({rel_path}) = {excluded}")
-            if any(r or b for _, r, b in pattern_match):
-                if not excluded:
-                    result.append(path)
-            continue
-        for root, dirs, files in os.walk(path):
-            rel_dir = os.path.relpath(root, project_root)
-            # Exclude dirs using .gitignore-style logic
-            dirs[:] = [
-                d
-                for d in dirs
-                if (
-                    (include_venv or d not in exclude_dirs)
-                    and not is_excluded(os.path.normpath(os.path.join(rel_dir, d)))
-                )
-            ]
-            for file in files:
-                file_path = os.path.join(root, file)
-                rel_path = os.path.relpath(file_path, project_root)
-                basename = os.path.basename(rel_path)
-                pattern_match = [
-                    (
-                        pat,
-                        fnmatch.fnmatchcase(rel_path, pat),
-                        fnmatch.fnmatchcase(basename, pat),
-                    )
-                    for pat in file_patterns
-                ]
-                logger.debug(
-                    f"Checking file: {file_path}, rel_path: {rel_path}, "
-                    f"basename: {basename}, pattern_match: {pattern_match}"
-                )
-                excluded = is_excluded(rel_path)
-                logger.debug(f"is_excluded({rel_path}) = {excluded}")
-                if any(r or b for _, r, b in pattern_match):
-                    if not excluded:
-                        result.append(file_path)
-    return result
+            # Single file - check if the filename matches any file pattern
+            filename = os.path.basename(path)
+            for pattern in file_patterns:
+                if fnmatch.fnmatch(filename, pattern):
+                    all_files.append(path)
+                    break
+        elif os.path.isdir(path):
+            # Directory - walk through it
+            for root, dirs, files in os.walk(path):
+                # Filter out virtual environment directories unless include_venv is True
+                if not include_venv:
+                    dirs[:] = [d for d in dirs if not _is_venv_directory(d)]
+
+                # Check each file against the patterns
+                for file in files:
+                    file_path: str = os.path.join(root, file)
+                    rel_path: str = os.path.relpath(file_path, path)
+
+                    # Check if file matches any file pattern
+                    matches_pattern: bool = False
+                    for pattern in file_patterns:
+                        if fnmatch.fnmatch(file, pattern):
+                            matches_pattern = True
+                            break
+
+                    if matches_pattern:
+                        # Check if file should be excluded
+                        if not should_exclude_path(
+                            path=rel_path,
+                            exclude_patterns=exclude_patterns,
+                        ):
+                            all_files.append(file_path)
+
+    return sorted(all_files)
+
+
+def _is_venv_directory(dirname: str) -> bool:
+    """Check if a directory name indicates a virtual environment.
+
+    Args:
+        dirname: str: Directory name to check.
+
+    Returns:
+        bool: True if the directory appears to be a virtual environment.
+    """
+    return dirname in VENV_PATTERNS

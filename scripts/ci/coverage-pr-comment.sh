@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Coverage PR Comment Script
 # Generates and posts comments to PRs with coverage information

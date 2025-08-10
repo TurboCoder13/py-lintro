@@ -1,0 +1,75 @@
+---
+name: Create Release
+
+'on':
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version (e.g., 0.1.1)
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+
+      # Use uv for fast, reproducible Python environments
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      # Sync development dependencies (linters, build, tests)
+      - name: Sync deps
+        run: uv sync --dev --no-progress
+
+      # Install external tools required by Lintro
+      # (ruff, prettier, yamllint, etc.)
+      - name: Install external tools for Lintro
+        run: |
+          ./scripts/utils/install-tools.sh --local
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      # Update project version in pyproject.toml and __version__
+      - name: Update version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          uv run python scripts/utils/update-version.py "$VERSION"
+
+      # Lintro quality gates: formatting + linting checks
+      - name: Pre-release quality checks (Lintro)
+        run: |
+          uv run lintro format . --output-format grid
+          uv run lintro check . \
+            --output-format grid
+
+      # Build and validate artifacts inline
+      # (avoid misuse of reusable workflow at step level)
+      - name: Build sdist and wheel
+        run: uv run python -m build
+      - name: Twine check
+        run: uv run python -m twine check dist/*
+
+      # Create the GitHub Release and attach built artifacts
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          # yamllint disable rule:line-length
+          body: |
+            Release v${{ inputs.version }}
+          # yamllint enable
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
