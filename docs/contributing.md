@@ -2,24 +2,26 @@
 
 Thank you for your interest in contributing to Lintro! This document provides guidelines and information for contributors.
 
-## New Section: How to Write High-Quality Commit Messages
+## Conventional Commits (required)
 
-Writing clear and descriptive commit messages helps everyone understand the history and intent of changes. Please follow these guidelines:
+We use Conventional Commits (Angular style) to drive automated versioning and releases.
 
-- **Use the imperative mood** (e.g., "add feature" not "added feature").
-- **Start with a type prefix**: `feature`, `bug-fix`, `docs`, `style`, `refactor`, `opt`, `tests`, `build`, `ci`.
-- **Provide a concise summary** on the first line.
-- **Add bullet points** for details if needed.
+- Format: `type(scope): subject` (scope optional)
+- Types: feat, fix, docs, refactor, perf, test, chore, ci, style, revert
+- Use imperative mood (e.g., "add", not "added").
 
-**Example:**
+Examples:
 
 ```
-feature: add new configuration option
+feat: add new configuration option
 
 - support for custom tool paths
 - update documentation
 - add integration tests
 ```
+
+PR titles must also follow Conventional Commits. A PR check enforces this and
+will comment with guidance if invalid.
 
 ## Quick Start
 
@@ -42,5 +44,10 @@ feature: add new configuration option
    ```
 
 ## More Information
+
+Release automation:
+
+- Merges to `main` run semantic-release to determine the next version from commits and tag the repo.
+- Tag push publishes to PyPI (OIDC) and creates a GitHub Release with artifacts.
 
 For detailed contribution guidelines, see the project documentation or contact a maintainer.
