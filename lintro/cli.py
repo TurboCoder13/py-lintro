@@ -9,7 +9,17 @@ from lintro.cli_utils.commands.list_tools import list_tools_command
 
 
 class LintroGroup(click.Group):
-    def format_commands(self, ctx, formatter):
+    def format_commands(
+        self,
+        ctx: click.Context,
+        formatter: click.HelpFormatter,
+    ) -> None:
+        """Render command list with aliases in the help output.
+
+        Args:
+            ctx: click.Context: The Click context.
+            formatter: click.HelpFormatter: The help formatter to write to.
+        """
         # Group commands by canonical name and aliases
         commands = self.list_commands(ctx)
         # Map canonical name to (command, [aliases])
@@ -35,7 +45,7 @@ class LintroGroup(click.Group):
 
 @click.group(cls=LintroGroup, invoke_without_command=True)
 @click.version_option(version=__version__)
-def cli():
+def cli() -> None:
     """Lintro: Unified CLI for code formatting, linting, and quality assurance."""
     pass
 
@@ -55,6 +65,6 @@ cli.add_command(format_code, name="fmt")
 cli.add_command(list_tools_command, name="ls")
 
 
-def main():
+def main() -> None:
     """Entry point for the CLI."""
     cli()
