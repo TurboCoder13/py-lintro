@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # CI PR Comment Script
 # Generates and posts comments to PRs with lintro analysis results
@@ -31,7 +32,7 @@ fi
 CONTENT="<!-- lintro-report -->
 
 **Workflow:**
-1. ✅ Applied formatting fixes with \`lintro fmt\`
+1. ✅ Applied formatting fixes with \`lintro format\`
 2. 🔍 Performed code quality checks with \`lintro chk\`
 
 ### 📋 Results:

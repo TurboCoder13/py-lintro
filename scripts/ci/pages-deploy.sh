@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # GitHub Pages Deployment Script
 # Handles the deployment of coverage reports to GitHub Pages

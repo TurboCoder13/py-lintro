@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Coverage Badge Update Script
 # Generates and updates the coverage badge
