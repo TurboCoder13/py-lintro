@@ -14,7 +14,7 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 
 ### 1. Quality Check Workflow
 
-**File:** `.github/workflows/lintro-ci.yml`
+**File:** `.github/workflows/ci-lintro-analysis.yml`
 
 **Features:**
 
@@ -35,7 +35,7 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 
 ### 2. Coverage Badge Workflow
 
-**File:** `.github/workflows/lintro-test-coverage.yml`
+**File:** `.github/workflows/test-and-coverage.yml`
 
 **Features:**
 
@@ -45,7 +45,7 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 
 ### 3. Lintro Report Workflow
 
-**File:** `.github/workflows/lintro-report.yml`
+**File:** `.github/workflows/lintro-report-scheduled.yml`
 
 **Features:**
 
@@ -89,7 +89,7 @@ permissions:
 
 ### 4. Complete CI Pipeline
 
-**File:** `.github/workflows/lintro-ci.yml`
+**File:** `.github/workflows/ci-lintro-analysis.yml`
 
 **Features:**
 
@@ -99,7 +99,7 @@ permissions:
 
 ### 5. Docker Image Publishing
 
-**File:** `.github/workflows/lintro-docker.yml`
+**File:** `.github/workflows/docker-build-publish.yml`
 
 **Features:**
 
@@ -142,7 +142,7 @@ cp .github/workflows/*.yml your-project/.github/workflows/
 Edit the workflow files to match your project structure:
 
 ```yaml
-# .github/workflows/lintro-ci.yml
+# .github/workflows/ci-lintro-analysis.yml
 - name: Run Lintro Quality Check
   run: |
     # Adjust paths for your project
