@@ -370,7 +370,9 @@ class TestScriptCompatibility:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        python_scripts = list(scripts_dir.glob("*.py"))
+        python_scripts = [
+            f for f in scripts_dir.glob("*.py") if f.name != "__init__.py"
+        ]
 
         for script in python_scripts:
             with open(script, "r") as f:
