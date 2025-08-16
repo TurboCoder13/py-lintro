@@ -1,6 +1,6 @@
 import csv
 import io
-from typing import Any, List
+from typing import Any
 
 from lintro.formatters.core.output_style import OutputStyle
 
@@ -10,13 +10,13 @@ class CsvStyle(OutputStyle):
 
     def format(
         self,
-        columns: List[str],
-        rows: List[List[Any]],
+        columns: list[str],
+        rows: list[list[Any]],
     ) -> str:
         """Format a table given columns and rows as CSV.
 
         Args:
-            columns: List of column names.
+            columns: List of column header names.
             rows: List of row values (each row is a list of cell values).
 
         Returns:
@@ -25,14 +25,17 @@ class CsvStyle(OutputStyle):
         if not rows:
             return ""
 
+        # Create a string buffer to write CSV data
         output = io.StringIO()
         writer = csv.writer(output)
 
         # Write header
         writer.writerow(columns)
 
-        # Write data rows
+        # Write rows
         for row in rows:
-            writer.writerow([str(cell) for cell in row])
+            # Ensure row has same number of elements as columns
+            padded_row = row + [""] * (len(columns) - len(row))
+            writer.writerow(padded_row)
 
-        return output.getvalue().strip()
+        return output.getvalue()

@@ -1,9 +1,5 @@
 """Formatter for ruff issues."""
 
-from typing import List
-
-import click
-
 from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle
@@ -25,10 +21,13 @@ FORMAT_MAP = {
 
 
 class RuffTableDescriptor(TableDescriptor):
-    def get_columns(self) -> List[str]:
-        return ["File", "Line", "Column", "Code", "Message", "Fixable"]
+    def get_columns(self) -> list[str]:
+        return ["File", "Line", "Column", "Code", "Message"]
 
-    def get_rows(self, issues: List[RuffIssue | RuffFormatIssue]) -> List[List[str]]:
+    def get_rows(
+        self,
+        issues: list[RuffIssue | RuffFormatIssue],
+    ) -> list[list[str]]:
         rows = []
         for issue in issues:
             if isinstance(issue, RuffIssue):
@@ -40,11 +39,11 @@ class RuffTableDescriptor(TableDescriptor):
                         str(issue.column),
                         issue.code,
                         issue.message,
-                        "Yes" if issue.fixable else "No",
-                    ]
+                    ],
                 )
             elif isinstance(issue, RuffFormatIssue):
-                # Formatting issue
+                # From Lintro's perspective, fmt applies both lint fixes and
+                # formatting, so formatting entries are auto-fixable by fmt.
                 rows.append(
                     [
                         normalize_file_path_for_display(issue.file),
@@ -52,64 +51,66 @@ class RuffTableDescriptor(TableDescriptor):
                         "-",
                         "FORMAT",
                         "Would reformat file",
-                        "Yes",
-                    ]
+                    ],
                 )
         return rows
 
 
 def format_ruff_issues(
-    issues: List[RuffIssue | RuffFormatIssue], format: str = "grid"
+    issues: list[RuffIssue | RuffFormatIssue],
+    format: str = "grid",
 ) -> str:
-    """Format a list of Ruff issues using the specified format.
+    """Format Ruff issues, split into auto-fixable and not auto-fixable tables.
+
+    For JSON format, return a single combined table (backwards compatible).
 
     Args:
         issues: List of Ruff issues to format.
         format: Output format (plain, grid, markdown, html, json, csv).
 
     Returns:
-        Formatted string representation of the issues.
+        Formatted string (one or two tables depending on format).
     """
     descriptor = RuffTableDescriptor()
-    columns = descriptor.get_columns()
-    rows = descriptor.get_rows(issues)
-
     formatter = FORMAT_MAP.get(format, GridStyle())
 
-    # For JSON format, pass tool name
+    # Partition issues
+    fixable_issues: list[RuffIssue | RuffFormatIssue] = []
+    non_fixable_issues: list[RuffIssue] = []
+
+    for issue in issues:
+        if isinstance(issue, RuffFormatIssue):
+            fixable_issues.append(issue)
+        elif isinstance(issue, RuffIssue) and issue.fixable:
+            fixable_issues.append(issue)
+        elif isinstance(issue, RuffIssue):
+            non_fixable_issues.append(issue)
+
+    # JSON: keep a single table for compatibility
     if format == "json":
-        formatted_table = formatter.format(columns, rows, tool_name="ruff")
-    else:
-        # For other formats, use standard formatting
-        formatted_table = formatter.format(columns, rows)
+        columns = descriptor.get_columns()
+        rows = descriptor.get_rows(issues)
+        return formatter.format(columns=columns, rows=rows, tool_name="ruff")
 
-    # Add formatted summary information that matches the console logger style
-    if issues:
-        # Separate linting and formatting issues
-        lint_issues = [issue for issue in issues if isinstance(issue, RuffIssue)]
-        format_issues = [
-            issue for issue in issues if isinstance(issue, RuffFormatIssue)
-        ]
+    sections: list[str] = []
 
-        summary_lines = []
+    # Auto-fixable section
+    if fixable_issues:
+        columns_f = descriptor.get_columns()
+        rows_f = descriptor.get_rows(fixable_issues)
+        table_f = formatter.format(columns=columns_f, rows=rows_f)
+        sections.append("Auto-fixable issues\n" + table_f)
 
-        # Calculate total issues and fixable count
-        total_issues = len(lint_issues) + len(format_issues)
-        total_fixable = sum(1 for issue in lint_issues if issue.fixable) + len(
-            format_issues
-        )
+    # Not auto-fixable section
+    if non_fixable_issues:
+        columns_u = descriptor.get_columns()
+        rows_u = descriptor.get_rows(non_fixable_issues)
+        table_u = formatter.format(columns=columns_u, rows=rows_u)
+        sections.append("Not auto-fixable issues\n" + table_u)
 
-        # Use console logger style formatting with colors
-        error_msg = click.style(f"✗ Found {total_issues} issues", fg="red")
-        summary_lines.append(error_msg)
-        if total_fixable > 0:
-            fixable_msg = click.style(
-                f"⚠️  {total_fixable} can be auto fixed with `lintro fmt`", fg="yellow"
-            )
-            summary_lines.append(fixable_msg)
+    # If neither, return empty table structure
+    if not sections:
+        columns = descriptor.get_columns()
+        return formatter.format(columns=columns, rows=[])
 
-        # Combine table and summary
-        if summary_lines:
-            return f"{formatted_table}\n\n{chr(10).join(summary_lines)}"
-
-    return formatted_table
+    return "\n\n".join(sections)

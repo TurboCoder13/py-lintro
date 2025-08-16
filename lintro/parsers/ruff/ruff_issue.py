@@ -1,7 +1,6 @@
 """Models for ruff issues."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -26,11 +25,11 @@ class RuffIssue:
     column: int
     code: str
     message: str
-    url: Optional[str] = None
-    end_line: Optional[int] = None
-    end_column: Optional[int] = None
+    url: str | None = None
+    end_line: int | None = None
+    end_column: int | None = None
     fixable: bool = False
-    fix_applicability: Optional[str] = None
+    fix_applicability: str | None = None
 
 
 @dataclass

@@ -1,9 +1,5 @@
 """Formatter for darglint issues."""
 
-from typing import List
-
-import click
-
 from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle
@@ -25,22 +21,30 @@ FORMAT_MAP = {
 
 
 class DarglintTableDescriptor(TableDescriptor):
-    def get_columns(self) -> List[str]:
+    def get_columns(self) -> list[str]:
         return ["File", "Line", "Code", "Message"]
 
-    def get_rows(self, issues: List[DarglintIssue]) -> List[List[str]]:
-        return [
-            [
-                normalize_file_path_for_display(issue.file),
-                str(issue.line),
-                issue.code,
-                issue.message,
-            ]
-            for issue in issues
-        ]
+    def get_rows(
+        self,
+        issues: list[DarglintIssue],
+    ) -> list[list[str]]:
+        rows = []
+        for issue in issues:
+            rows.append(
+                [
+                    normalize_file_path_for_display(issue.file),
+                    str(issue.line),
+                    issue.code,
+                    issue.message,
+                ],
+            )
+        return rows
 
 
-def format_darglint_issues(issues: List[DarglintIssue], format: str = "grid") -> str:
+def format_darglint_issues(
+    issues: list[DarglintIssue],
+    format: str = "grid",
+) -> str:
     """Format a list of Darglint issues using the specified format.
 
     Args:
@@ -58,14 +62,11 @@ def format_darglint_issues(issues: List[DarglintIssue], format: str = "grid") ->
 
     # For JSON format, pass tool name
     if format == "json":
-        return formatter.format(columns, rows, tool_name="darglint")
-
-    # For other formats, add status messages
-    formatted_table = formatter.format(columns, rows)
-
-    if issues:
-        # Add status message in console logger style
-        error_msg = click.style(f"✗ Found {len(issues)} issues", fg="red")
-        return f"{formatted_table}\n\n{error_msg}"
+        formatted_table = formatter.format(
+            columns=columns, rows=rows, tool_name="darglint"
+        )
+    else:
+        # For other formats, use standard formatting
+        formatted_table = formatter.format(columns=columns, rows=rows)
 
     return formatted_table
