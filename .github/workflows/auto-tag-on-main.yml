@@ -29,7 +29,7 @@ jobs:
       - name: Read version from pyproject.toml
         id: version
         run: |
-          python scripts/utils/extract-version.py | tee version.txt
+          uv run python scripts/utils/extract-version.py | tee version.txt
           cat version.txt >> "$GITHUB_OUTPUT"
 
       - name: Detect previous version
@@ -37,7 +37,8 @@ jobs:
         run: |
           git show HEAD^:pyproject.toml > /tmp/prev.toml || true
           if [ -s /tmp/prev.toml ]; then
-            python scripts/utils/extract-version.py --file /tmp/prev.toml \
+            uv run python scripts/utils/extract-version.py \
+              --file /tmp/prev.toml \
               | tee prev.txt
             cat prev.txt >> "$GITHUB_OUTPUT"
           else
