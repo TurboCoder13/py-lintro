@@ -5,6 +5,10 @@ inputs:
   path:
     description: Directory to upload for Pages
     required: true
+outputs:
+  page_url:
+    description: URL of the deployed GitHub Pages site
+    value: ${{ steps.deployment.outputs.page_url }}
 runs:
   using: composite
   steps:
