@@ -41,7 +41,7 @@ jobs:
       - name: Install external tools for Lintro
         run: |
           ./scripts/utils/install-tools.sh --local
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Lintro - format and check
         run: |

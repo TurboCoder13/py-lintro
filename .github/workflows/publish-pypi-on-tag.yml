@@ -4,14 +4,14 @@ name: Publish to PyPI on Tag
 'on':
   push:
     tags:
-      - "*.*.*"
-      - "v*.*.*"
-      - "*.*.*a*"
-      - "v*.*.*a*"
-      - "*.*.*b*"
-      - "v*.*.*b*"
-      - "*.*.*rc*"
-      - "v*.*.*rc*"
+      - '*.*.*'
+      - v*.*.*
+      - '*.*.*a*'
+      - v*.*.*a*
+      - '*.*.*b*'
+      - v*.*.*b*
+      - '*.*.*rc*'
+      - v*.*.*rc*
   workflow_dispatch:
 
 permissions:
