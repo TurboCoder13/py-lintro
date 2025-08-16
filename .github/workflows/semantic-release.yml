@@ -4,11 +4,6 @@ name: Automated Release PR (no direct push to main)
 'on':
   push:
     branches: [main]
-    paths:
-      - '**/*.py'
-      - pyproject.toml
-      - lintro/**
-      - .github/workflows/semantic-release.yml
   workflow_dispatch:
 
 permissions:
