@@ -70,6 +70,12 @@ jobs:
         id: coverage
         run: ./scripts/ci/ci-extract-coverage.sh
 
+      - name: Update repository coverage badge (assets/images)
+        if: github.ref == 'refs/heads/main' && success()
+        env:
+          COVERAGE_BADGE_COMMIT: 'true'
+        run: ./scripts/ci/coverage-badge-update.sh
+
   comment-pr-coverage:
     needs: run-test-suite
     runs-on: ubuntu-22.04
