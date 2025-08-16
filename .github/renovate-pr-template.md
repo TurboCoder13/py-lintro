@@ -1,10 +1,10 @@
-## Dependency Updates
+## 🔄 Dependency Updates
 
-This PR contains the following updates:
+This PR updates dependencies to keep the project secure, stable, and fast. ✨
 
 {{#if packageFiles.length}}
 
-### Updated Dependencies
+### 📦 Updated
 
 | Package                     | Change      | Type |
 | :-------------------------- | :---------- | :--- |

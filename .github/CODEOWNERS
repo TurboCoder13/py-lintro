@@ -1,3 +1,6 @@
+# Protect workflow files – require review by the repo owner for any changes
+.github/workflows/*  @TurboCoder13
+
 # Global owners - these people will be the default owners for everything in
 # the repo. Unless a later match takes precedence, they will be requested for
 # review when someone opens a pull request.
@@ -12,7 +15,11 @@
 
 # CI/CD and workflows
 /.github/workflows/ @TurboCoder13
-/scripts/ @TurboCoder13
+/.github/actions/ @TurboCoder13
+/scripts/ci/ @TurboCoder13
+/scripts/docker/ @TurboCoder13
+/scripts/local/ @TurboCoder13
+/scripts/utils/ @TurboCoder13
 
 # Documentation
 /docs/ @TurboCoder13

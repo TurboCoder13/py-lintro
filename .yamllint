@@ -4,3 +4,11 @@ extends: default
 rules:
   comments:
     min-spaces-from-content: 1 # Allow 1 space to be compatible with prettier
+  truthy:
+    # Flag unquoted YAML 1.1 truthy/falsey scalars when used as keys.
+    # Example: on/off should be quoted when used as keys.
+    check-keys: true
+  quoted-strings:
+    # Only require quotes when needed; check keys as well.
+    required: only-when-needed
+    check-keys: true

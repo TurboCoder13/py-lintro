@@ -1,35 +1,31 @@
 ---
 name: Bug report
 about: Create a report to help us improve Lintro
-title: '[BUG] '
+title: '[bug] '
 labels: ['bug', 'needs-triage']
 assignees: ''
 ---
 
-## Bug Description
+## Bug
 
-A clear and concise description of what the bug is.
+What is the bug?
 
 ## Steps to Reproduce
 
-1. Run command: `lintro ...`
-2. See error: `...`
+1. Command: `...`
+2. Output/error: `...`
 
-## Expected Behavior
+## Expected
 
-A clear and concise description of what you expected to happen.
-
-## Actual Behavior
-
-A clear and concise description of what actually happened.
+## Actual
 
 ## Environment Information
 
-### System Information
+### System
 
-- **OS**: [e.g., macOS 14.0, Ubuntu 22.04, Windows 11]
-- **Python Version**: [e.g., 3.13.5]
-- **Lintro Version**: [e.g., 0.1.0]
+- OS:
+- Python:
+- Lintro:
 
 ### Installation Method
 
@@ -49,32 +45,28 @@ A clear and concise description of what actually happened.
 
 ## Additional Context
 
-### Error Messages
+### Error
 
-```
-Paste any error messages here
+```text
+...
 ```
 
 ### Configuration Files
 
 If relevant, include your configuration files (`.lintro`, tool configs, etc.)
 
-### Sample Code
-
-If the bug is related to specific code, include a minimal example:
+### Minimal Example (if code-related)
 
 ```python
-# Example Python code that triggers the issue
-def example_function():
-    pass
+# minimal reproducer
 ```
 
 ## Checklist
 
-- [ ] I have searched existing issues to avoid duplicates
-- [ ] I have provided all requested information
-- [ ] I can reproduce this issue consistently
-- [ ] This is not a configuration issue (I've checked the docs)
+- [ ] Searched existing issues
+- [ ] Provided all requested info
+- [ ] Can reproduce consistently
+- [ ] Not a configuration issue
 
 ## Additional Notes
 
