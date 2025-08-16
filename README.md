@@ -19,13 +19,13 @@ Lintro is a unified command-line interface that brings together multiple code qu
 - **🔒 Reliable**: Comprehensive test suite with 84% coverage
 
 [![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/downloads/)
-[![Coverage](https://img.shields.io/badge/coverage-84.5%25-brightgreen)](https://github.com/TurboCoder13/py-lintro/actions/workflows/lintro-test-coverage.yml)
+[![Coverage](assets/images/coverage-badge.svg)](docs/coverage-setup.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/lintro-test-coverage.yml?label=tests)](https://github.com/TurboCoder13/py-lintro/actions/workflows/lintro-test-coverage.yml)
-[![CI](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/lintro-ci.yml?label=ci)](https://github.com/TurboCoder13/py-lintro/actions/workflows/lintro-ci.yml)
-[![Docker](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/lintro-docker.yml?label=docker)](https://github.com/TurboCoder13/py-lintro/actions/workflows/lintro-docker.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/test-and-coverage.yml?label=tests)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-and-coverage.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/ci-lintro-analysis.yml?label=ci)](https://github.com/TurboCoder13/py-lintro/actions/workflows/ci-lintro-analysis.yml)
+[![Docker](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/docker-build-publish.yml?label=docker&logo=docker)](https://github.com/TurboCoder13/py-lintro/actions/workflows/docker-build-publish.yml)
 [![Code Style](https://img.shields.io/badge/code%20style-ruff-black-blue)](https://github.com/astral-sh/ruff)
-[![PyPI](https://img.shields.io/pypi/status/lintro)](https://pypi.org/project/lintro/)
+[![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
 
 ## Features
 
