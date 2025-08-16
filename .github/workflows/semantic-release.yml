@@ -71,7 +71,7 @@ jobs:
         id: current
         # yamllint disable rule:line-length
         run: |
-          python scripts/utils/extract-version.py | sed 's/^version=/current_version=/' | tee cur.txt
+          uv run python scripts/utils/extract-version.py | sed 's/^version=/current_version=/' | tee cur.txt
           cat cur.txt >> "$GITHUB_OUTPUT"
         # yamllint enable
 
