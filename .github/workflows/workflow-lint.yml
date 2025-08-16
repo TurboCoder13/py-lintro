@@ -25,7 +25,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s --
+          BASE_URL="https://raw.githubusercontent.com/rhysd/actionlint/main"
+          SCRIPT_NAME="scripts/download-actionlint.bash"
+          curl -sSfL "${BASE_URL}/${SCRIPT_NAME}" | bash -s --
           sudo mv actionlint /usr/local/bin/actionlint
           actionlint --version
       - name: Run actionlint
