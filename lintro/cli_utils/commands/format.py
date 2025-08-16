@@ -1,8 +1,14 @@
 """Format command implementation using simplified Loguru-based approach."""
 
 import click
+from click.testing import CliRunner
 
 from lintro.utils.tool_executor import run_lint_tools_simple
+
+# Constants
+DEFAULT_PATHS: list[str] = ["."]
+DEFAULT_EXIT_CODE: int = 0
+DEFAULT_ACTION: str = "fmt"
 
 
 @click.command()
@@ -10,48 +16,48 @@ from lintro.utils.tool_executor import run_lint_tools_simple
 @click.option(
     "--tools",
     default=None,
-    help="Comma-separated list of tools to run (e.g., ruff,prettier) or 'all'",
+    help="Comma-separated list of tools to run (e.g., ruff,prettier) or 'all'.",
 )
 @click.option(
     "--tool-options",
     default=None,
-    help="Tool-specific options in format tool:option=value,tool2:option=value",
+    help="Tool-specific options in format tool:option=value,tool2:option=value.",
 )
 @click.option(
     "--exclude",
     default=None,
-    help="Comma-separated patterns to exclude from formatting",
+    help="Comma-separated patterns to exclude from formatting.",
 )
 @click.option(
     "--include-venv",
     is_flag=True,
     default=False,
-    help="Include virtual environment directories in formatting",
+    help="Include virtual environment directories in formatting.",
 )
 @click.option(
     "--group-by",
     default="auto",
     type=click.Choice(["file", "code", "none", "auto"]),
-    help="How to group issues in output",
+    help="How to group issues in output.",
 )
 @click.option(
     "--output-format",
     default="grid",
     type=click.Choice(["plain", "grid", "markdown", "html", "json", "csv"]),
-    help="Output format for displaying results",
+    help="Output format for displaying results.",
 )
 @click.option(
     "--verbose",
     "-v",
     is_flag=True,
     default=False,
-    help="Enable verbose output with debug information",
+    help="Enable verbose output with debug information.",
 )
 @click.option(
     "--raw-output",
     is_flag=True,
     default=False,
-    help="Show raw tool output instead of formatted output",
+    help="Show raw tool output instead of formatted output.",
 )
 def format_code(
     paths: tuple[str, ...],
@@ -70,26 +76,28 @@ def format_code(
     Uses simplified Loguru-based logging for clean output and proper file logging.
 
     Args:
-        paths: Paths to format (defaults to current directory if none provided)
-        tools: Specific tools to run, or 'all' for all available tools
-        tool_options: Tool-specific configuration options
-        exclude: Patterns to exclude from formatting
-        include_venv: Whether to include virtual environment directories
-        group_by: How to group issues in the output display
-        output_format: Format for displaying results
-        verbose: Enable detailed debug output
-        raw_output: Show raw tool output instead of formatted output
+        paths: tuple[str, ...]:
+            Paths to format (defaults to current directory if none provided).
+        tools: str | None: Specific tools to run, or 'all' for all available tools.
+        tool_options: str | None: Tool-specific configuration options.
+        exclude: str | None: Patterns to exclude from formatting.
+        include_venv: bool: Whether to include virtual environment directories.
+        group_by: str: How to group issues in the output display.
+        output_format: str: Format for displaying results.
+        verbose: bool: Enable detailed debug output.
+        raw_output: bool:
+            Show raw tool output instead of formatted output.
 
     Raises:
         ClickException: If issues are found during formatting.
     """
     # Default to current directory if no paths provided
     if not paths:
-        paths = ["."]
+        paths = DEFAULT_PATHS
 
     # Run with simplified approach
-    exit_code = run_lint_tools_simple(
-        action="fmt",
+    exit_code: int = run_lint_tools_simple(
+        action=DEFAULT_ACTION,
         paths=list(paths),
         tools=tools,
         tool_options=tool_options,
@@ -102,7 +110,7 @@ def format_code(
     )
 
     # Exit with appropriate code
-    if exit_code != 0:
+    if exit_code != DEFAULT_EXIT_CODE:
         raise click.ClickException("Format found issues")
 
 
@@ -116,17 +124,17 @@ def format_code_legacy(
     output_format: str = "grid",
     verbose: bool = False,
 ) -> None:
-    """Legacy format function for backward compatibility.
+    """Programmatic format function for backward compatibility.
 
     Args:
-        paths: List of file/directory paths to format.
-        tools: Comma-separated list of tool names to run.
-        tool_options: Tool-specific configuration options.
-        exclude: Comma-separated patterns of files/dirs to exclude.
-        include_venv: Whether to include virtual environment directories.
-        group_by: How to group issues in output (tool, file, etc).
-        output_format: Format for displaying results (table, json, etc).
-        verbose: Whether to show verbose output during execution.
+        paths: list[str] | None: List of file/directory paths to format.
+        tools: str | None: Comma-separated list of tool names to run.
+        tool_options: str | None: Tool-specific configuration options.
+        exclude: str | None: Comma-separated patterns of files/dirs to exclude.
+        include_venv: bool: Whether to include virtual environment directories.
+        group_by: str: How to group issues in output (tool, file, etc).
+        output_format: str: Format for displaying results (table, json, etc).
+        verbose: bool: Whether to show verbose output during execution.
 
     Returns:
         None: This function does not return a value.
@@ -134,9 +142,7 @@ def format_code_legacy(
     Raises:
         Exception: If format fails for any reason.
     """
-    from click.testing import CliRunner
-
-    args = []
+    args: list[str] = []
     if paths:
         args.extend(paths)
     if tools:
@@ -156,6 +162,6 @@ def format_code_legacy(
 
     runner = CliRunner()
     result = runner.invoke(format_code, args)
-    if result.exit_code != 0:
+    if result.exit_code != DEFAULT_EXIT_CODE:
         raise Exception(f"Format failed: {result.output}")
     return None

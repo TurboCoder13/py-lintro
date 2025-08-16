@@ -41,13 +41,13 @@ lint:
 # Format code using lintro itself
 format:
 	@echo "Running lintro format..."
-	uv run lintro fmt .
+	uv run lintro format .
 
 # Run lintro check (alias for lint)
 lintro-check: lint
 
 # Run lintro format (alias for format)
-lintro-fmt: format
+lintro-format: format
 
 # Build Docker image
 docker-build:

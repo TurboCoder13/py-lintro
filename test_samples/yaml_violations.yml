@@ -1,40 +1,42 @@
+---
 # This YAML file has multiple yamllint violations for testing
 
 name: test-yaml
 version: 1.0
 
-key: value with trailing spaces    
+key: value with trailing spaces
 
 nested:
   bad_indentation: value
   another_bad_indent: value
-  wrong_indent: value  # Wrong indentation level
+  wrong_indent: value # Wrong indentation level
 
-long_line: "This is a very long line that exceeds the default yamllint line length limit of 80 characters and should trigger a line-length violation"
+long_line: >-
+  This is a very long line that exceeds the default yamllint line length limit
+  of 80 characters and should trigger a line-length violation
 
-truthy: yes
+truthy: true
 
 list:
   - item1
-  - item2 
+  - item2
 
 # More violations
-bad_indentation: value  # Wrong indentation
-another_bad: value  # Wrong indentation
+bad_indentation: value # Wrong indentation
+another_bad: value # Wrong indentation
 
-trailing_spaces: value    
+trailing_spaces: value
 
 empty_lines_above: value
-
 
 too_many_empty_lines: value
 
 # Bad boolean values
-bad_boolean: TRUE
-another_bad_boolean: FALSE
+bad_boolean: true
+another_bad_boolean: false
 
 # Inconsistent indentation
 inconsistent:
   level1:
     level2:
-  level1_again: value  # Wrong indentation 
+  level1_again: value # Wrong indentation

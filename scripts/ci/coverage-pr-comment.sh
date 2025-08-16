@@ -1,7 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Coverage PR Comment Script
 # Generates and posts comments to PRs with coverage information
+
+# Show help if requested
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    echo "Usage: $0 [--help|-h]"
+    echo ""
+    echo "Coverage PR Comment Script"
+    echo "Generates a PR comment with coverage info within a GitHub Actions run."
+    echo ""
+    echo "This script is intended for CI and will no-op outside pull_request events."
+    exit 0
+fi
 
 # Source shared utilities
 source "$(dirname "$0")/../utils/utils.sh"

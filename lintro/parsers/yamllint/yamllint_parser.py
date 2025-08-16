@@ -31,7 +31,7 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
     if not output.strip():
         return issues
 
-    lines = output.splitlines()
+    lines: list[str] = output.splitlines()
 
     for line in lines:
         line = line.strip()
@@ -40,12 +40,18 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
 
         # Pattern for yamllint parsable format: "filename:line:column: [level]
         # message (rule)"
-        pattern = re.compile(
+        pattern: re.Pattern[str] = re.compile(
             r"^([^:]+):(\d+):(\d+):\s*\[(error|warning)\]\s+(.+?)(?:\s+\(([^)]+)\))?$"
         )
 
-        match = pattern.match(line)
+        match: re.Match[str] | None = pattern.match(line)
         if match:
+            filename: str
+            line_num: str
+            column: str
+            level: str
+            message: str
+            rule: str | None
             filename, line_num, column, level, message, rule = match.groups()
 
             issues.append(

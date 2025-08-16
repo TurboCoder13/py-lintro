@@ -19,7 +19,6 @@ Intended for use in CI workflows to keep PRs clean of duplicate bot comments.
 
 import os
 import sys
-from typing import Any
 
 import httpx
 
@@ -44,14 +43,16 @@ def get_env_var(name: str) -> str:
     Returns:
         str: Value of the environment variable.
     """
-    value = os.environ.get(name)
+    value: str | None = os.environ.get(name)
     if not value:
         print(f"Error: Environment variable {name} is required.", file=sys.stderr)
         sys.exit(1)
     return value
 
 
-def get_pr_comments(repo: str, pr_number: str, token: str) -> list[dict[str, Any]]:
+def get_pr_comments(
+    repo: str, pr_number: str, token: str
+) -> list[dict[str, str | int]]:
     """Fetch all comments for a pull request.
 
     Args:
@@ -60,15 +61,15 @@ def get_pr_comments(repo: str, pr_number: str, token: str) -> list[dict[str, Any
         token (str): GitHub API token.
 
     Returns:
-        list[dict[str, Any]]: List of comment objects.
+        list[dict[str, str | int]]: List of comment objects.
     """
-    headers = {
+    headers: dict[str, str] = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json",
     }
-    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+    url: str = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
     with httpx.Client(timeout=10) as client:
-        response = client.get(url, headers=headers)
+        response: httpx.Response = client.get(url=url, headers=headers)
         response.raise_for_status()
         return response.json()
 
@@ -81,13 +82,13 @@ def delete_comment(repo: str, comment_id: int, token: str) -> None:
         comment_id (int): Comment ID.
         token (str): GitHub API token.
     """
-    headers = {
+    headers: dict[str, str] = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json",
     }
-    url = f"https://api.github.com/repos/{repo}/issues/comments/{comment_id}"
+    url: str = f"https://api.github.com/repos/{repo}/issues/comments/{comment_id}"
     with httpx.Client(timeout=10) as client:
-        response = client.delete(url, headers=headers)
+        response: httpx.Response = client.delete(url=url, headers=headers)
         if response.status_code == 204:
             print(f"Deleted comment {comment_id}")
         else:
@@ -100,18 +101,20 @@ def delete_comment(repo: str, comment_id: int, token: str) -> None:
 
 def main() -> None:
     """Main entry point for the script."""
-    repo = get_env_var("GITHUB_REPOSITORY")
-    pr_number = get_env_var("PR_NUMBER")
-    token = get_env_var("GITHUB_TOKEN")
-    marker = get_marker()
+    repo: str = get_env_var(name="GITHUB_REPOSITORY")
+    pr_number: str = get_env_var(name="PR_NUMBER")
+    token: str = get_env_var(name="GITHUB_TOKEN")
+    marker: str = get_marker()
 
     try:
-        comments = get_pr_comments(repo=repo, pr_number=pr_number, token=token)
+        comments: list[dict[str, str | int]] = get_pr_comments(
+            repo=repo, pr_number=pr_number, token=token
+        )
     except Exception as e:
         print(f"Error fetching comments: {e}", file=sys.stderr)
         sys.exit(1)
 
-    deleted_any = False
+    deleted_any: bool = False
     for comment in comments:
         if marker in comment.get("body", ""):
             delete_comment(repo=repo, comment_id=comment["id"], token=token)

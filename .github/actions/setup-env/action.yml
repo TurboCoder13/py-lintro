@@ -1,0 +1,28 @@
+---
+name: Setup environment (Python, uv, deps)
+description: >-
+  Set up Python and uv with caching, install project and external tool
+  dependencies via scripts, and ensure local bin is on PATH
+inputs:
+  python-version:
+    description: Python version to use
+    required: false
+    default: '3.13'
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      # yamllint disable-line rule:line-length
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install uv (with cache)
+      # yamllint disable-line rule:line-length
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+
+    - name: Bootstrap environment via scripts
+      shell: bash
+      run: ./scripts/utils/bootstrap-env.sh

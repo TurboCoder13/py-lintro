@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any
 
 
 class OutputStyle(ABC):
     @abstractmethod
     def format(
         self,
-        columns: List[str],
-        rows: List[List[Any]],
+        columns: list[str],
+        rows: list[list[Any]],
     ) -> str:
         """Format a table given columns and rows.
 

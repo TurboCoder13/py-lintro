@@ -14,7 +14,7 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 
 ### 1. Quality Check Workflow
 
-**File:** `.github/workflows/lintro-ci.yml`
+**File:** `.github/workflows/ci-lintro-analysis.yml`
 
 **Features:**
 
@@ -33,9 +33,9 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 - Pushes to main branch
 - Manual workflow dispatch
 
-### 2. Coverage Badge Workflow
+### 2. Test Suite & Coverage
 
-**File:** `.github/workflows/lintro-test-coverage.yml`
+**File:** `.github/workflows/test-and-coverage.yml`
 
 **Features:**
 
@@ -43,9 +43,21 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 - 📈 **GitHub Pages deployment** for coverage badges
 - 🔄 **Auto-updating** on each push to main
 
-### 3. Lintro Report Workflow
+### 3. Coverage Pages Deployment
 
-**File:** `.github/workflows/lintro-report.yml`
+**File:** `.github/workflows/pages-deploy-coverage.yml`
+
+**Features:**
+
+- 🌐 Deploys the `htmlcov/` coverage report to GitHub Pages
+- 🔗 Links the artifact produced by the test-and-coverage workflow
+- 🧷 Uses a dedicated workflow_run trigger for reliable handoff
+
+> Tip: Ensure Pages is enabled (Settings → Pages → Source: GitHub Actions)
+
+### 4. Lintro Report Workflow
+
+**File:** `.github/workflows/lintro-report-scheduled.yml`
 
 **Features:**
 
@@ -55,41 +67,11 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 - 📦 **Artifact upload** for report retention
 - 🌐 **Optional GitHub Pages deployment** for report hosting
 
-**GitHub Pages Deployment:**
+If you want to publish the weekly report to Pages, prefer using the dedicated `pages-deploy-coverage.yml` pattern as shown above.
 
-The workflow includes optional GitHub Pages deployment steps that are commented out by default. To enable GitHub Pages deployment for your Lintro reports:
+### 5. Complete CI Pipeline
 
-1. **Enable GitHub Pages** in your repository settings
-2. **Uncomment the following steps** in `.github/workflows/lintro-report.yml`:
-
-```yaml
-- name: Setup Pages
-  uses: actions/configure-pages@v3
-
-- name: Upload artifact for Pages
-  uses: actions/upload-pages-artifact@v2
-  with:
-    path: lintro-report/
-
-- name: Deploy to GitHub Pages
-  id: deployment
-  uses: actions/deploy-pages@v3
-```
-
-3. **Add required permissions** to the workflow:
-
-```yaml
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-```
-
-**Note:** GitHub Pages deployment requires either a public repository or GitHub Pages enabled for private repositories.
-
-### 4. Complete CI Pipeline
-
-**File:** `.github/workflows/lintro-ci.yml`
+**File:** `.github/workflows/ci-lintro-analysis.yml`
 
 **Features:**
 
@@ -97,9 +79,9 @@ permissions:
 - 📋 **Combined reporting** - Quality + testing results
 - 🚀 **Showcase integration** - Demonstrates Lintro capabilities
 
-### 5. Docker Image Publishing
+### 6. Docker Image Publishing
 
-**File:** `.github/workflows/lintro-docker.yml`
+**File:** `.github/workflows/docker-build-publish.yml`
 
 **Features:**
 
@@ -142,7 +124,7 @@ cp .github/workflows/*.yml your-project/.github/workflows/
 Edit the workflow files to match your project structure:
 
 ```yaml
-# .github/workflows/lintro-ci.yml
+# .github/workflows/ci-lintro-analysis.yml
 - name: Run Lintro Quality Check
   run: |
     # Adjust paths for your project
@@ -158,6 +140,32 @@ Edit the workflow files to match your project structure:
 1. Go to repository **Settings** → **Pages**
 2. Select **Source:** "GitHub Actions"
 3. Your coverage badge will be available at: `https://TurboCoder13.github.io/py-lintro/badges/coverage.svg`
+
+## Release Automation
+
+The repository ships with fully automated semantic releases and PyPI publishing.
+
+- **Automated Release PR** (`.github/workflows/semantic-release.yml`)
+  - On push to `main`, computes the next version from Conventional Commits
+  - Updates `pyproject.toml` and `lintro/__init__.py`
+  - Opens a Release PR and enables auto-merge; once checks pass, it merges
+
+- **Auto Tag on Main** (`.github/workflows/auto-tag-on-main.yml`)
+  - After the Release PR is merged, detects the new version in `pyproject.toml`
+  - Creates and pushes a matching git tag if it does not already exist
+
+- **Publish to PyPI on Tag** (`.github/workflows/publish-pypi-on-tag.yml`)
+  - On tag push (e.g., `1.2.3`), verifies tag equals `pyproject.toml` version
+  - Uses Trusted Publishing (OIDC) to upload to PyPI
+  - Also creates a GitHub Release and attaches built artifacts
+
+> End-to-end: Conventional commits → Release PR (auto-merged) → Tag created → PyPI publish.
+
+### Security & Pinning
+
+- Third-party actions are pinned to commit SHAs for reproducibility and supply-chain safety.
+- Official GitHub actions can also be pinned; we’ve pinned most for consistency.
+- `pypa/gh-action-pypi-publish` remains on `release/v1` by policy (Trusted Publishing updates). If desired, pinning to a SHA is possible.
 
 ## Example Workflows
 

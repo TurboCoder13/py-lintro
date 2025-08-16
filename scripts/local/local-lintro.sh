@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # local-lintro.sh - Enhanced local lintro runner
 # 
@@ -45,23 +45,33 @@ check_and_install_tools() {
         missing_tools+=("uv")
     fi
     
-    # If tools are missing, offer to install them
+    # If tools are missing, offer to install them (or auto-install with --yes)
     if [ ${#missing_tools[@]} -gt 0 ]; then
         echo -e "${YELLOW}Missing tools: ${missing_tools[*]}${NC}"
-        echo -e "${YELLOW}Would you like to install them automatically? (y/n)${NC}"
-        read -r response
-        
-        if [[ "$response" =~ ^[Yy]$ ]]; then
-            echo -e "${BLUE}Installing missing tools...${NC}"
+        if [ "${ASSUME_YES:-0}" = "1" ]; then
+            echo -e "${BLUE}Installing missing tools (non-interactive)...${NC}"
             if [ -f "./scripts/utils/install-tools.sh" ]; then
-  ./scripts/utils/install-tools.sh --local
-else
-  echo -e "${RED}Error: scripts/utils/install-tools.sh not found${NC}"
+                ./scripts/utils/install-tools.sh --local
+            else
+                echo -e "${RED}Error: scripts/utils/install-tools.sh not found${NC}"
                 echo -e "${YELLOW}Please run the installation script manually or ensure tools are installed${NC}"
                 exit 1
             fi
         else
-            echo -e "${YELLOW}Continuing without installing tools. Some lintro features may not work.${NC}"
+            echo -e "${YELLOW}Would you like to install them automatically? (y/n)${NC}"
+            read -r response
+            if [[ "$response" =~ ^[Yy]$ ]]; then
+                echo -e "${BLUE}Installing missing tools...${NC}"
+                if [ -f "./scripts/utils/install-tools.sh" ]; then
+                    ./scripts/utils/install-tools.sh --local
+                else
+                    echo -e "${RED}Error: scripts/utils/install-tools.sh not found${NC}"
+                    echo -e "${YELLOW}Please run the installation script manually or ensure tools are installed${NC}"
+                    exit 1
+                fi
+            else
+                echo -e "${YELLOW}Continuing without installing tools. Some lintro features may not work.${NC}"
+            fi
         fi
     else
         echo -e "${GREEN}✓ All tools are available${NC}"
@@ -73,7 +83,7 @@ setup_python_env() {
     echo -e "${BLUE}Setting up Python environment...${NC}"
     
     # Check if we're running in Docker (environment should be ready)
-    if [ -n "$RUNNING_IN_DOCKER" ] || [ -f "/.dockerenv" ]; then
+    if [ -n "${RUNNING_IN_DOCKER:-}" ] || [ -f "/.dockerenv" ]; then
         echo -e "${GREEN}✓ Running in Docker - environment already set up${NC}"
         # In Docker, we don't need to create a virtual environment
         # The dependencies are already installed in the container
@@ -110,7 +120,7 @@ run_lintro() {
     
     # Run lintro with the provided arguments
     # In Docker, use uv run to execute within the container's virtual environment
-    if [ -n "$RUNNING_IN_DOCKER" ] || [ -f "/.dockerenv" ]; then
+    if [ -n "${RUNNING_IN_DOCKER:-}" ] || [ -f "/.dockerenv" ]; then
         uv run lintro "$@"
         local exit_code=$?
         if [ $exit_code -eq 0 ]; then
@@ -141,9 +151,14 @@ run_lintro() {
 # Main execution flow
 main() {
     # Check and install tools if needed (only if --install flag is provided)
-    if [ "$1" = "--install" ] || [ "$1" = "-i" ]; then
+    if [ "${1:-}" = "--install" ] || [ "${1:-}" = "-i" ]; then
         check_and_install_tools
         shift # Remove the --install flag from arguments
+    fi
+    # Non-interactive acceptance
+    if [ "${1:-}" = "--yes" ] || [ "${1:-}" = "-y" ]; then
+        export ASSUME_YES=1
+        shift
     fi
     
     # Setup Python environment
@@ -154,15 +169,16 @@ main() {
 }
 
 # Show usage if --help is requested directly for this script
-if [ "$1" = "--help" ] && [ "$2" = "script" ]; then
-    echo "Usage: $0 [--install|-i] [lintro arguments...]"
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    echo "Usage: $0 [--install|-i] [--yes|-y] [lintro arguments...]"
     echo ""
     echo "Options:"
     echo "  --install, -i    Install missing tools before running lintro"
+    echo "  --yes, -y        Non-interactive auto-install when --install is used"
     echo ""
     echo "Examples:"
     echo "  $0 check"
-    echo "  $0 --install fmt --tools prettier"
+    echo "  $0 --install --yes fmt --tools prettier"
     echo "  $0 list-tools"
     echo ""
     echo "This script automatically sets up the Python environment and runs lintro."

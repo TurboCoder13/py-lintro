@@ -1,0 +1,55 @@
+---
+name: Question
+description: Ask a question about Lintro
+labels: [question, needs-triage]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context / Goal
+      description: What are you trying to accomplish? What have you tried?
+  - type: input
+    id: env-os
+    attributes:
+      label: OS version
+      placeholder: macOS 15 / Ubuntu 22.04
+  - type: input
+    id: env-python
+    attributes:
+      label: Python version
+      placeholder: 3.13
+  - type: input
+    id: env-lintro
+    attributes:
+      label: Lintro version
+      placeholder: 0.x.y
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installation method
+      options:
+        - PyPI (pip install lintro)
+        - Dev install (pip install -e .)
+        - Docker (ghcr.io/turbocoder13/py-lintro:latest)
+        - Other
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples tried (commands or code)
+      render: text
+  - type: checkboxes
+    id: research
+    attributes:
+      label: Research done
+      options:
+        - label: I checked the docs
+        - label: I searched existing issues
+        - label: I tried examples in the README
+        - label: I checked the tool analysis docs
