@@ -1,0 +1,107 @@
+---
+name: Test Suite & Coverage
+
+'on':
+  push:
+    branches: [main]
+    paths:
+      - '**.py'
+      - pyproject.toml
+      - .github/workflows/test-and-coverage.yml
+      - scripts/local/run-tests.sh
+      - scripts/docker/docker-test.sh
+      - Dockerfile
+      - docker-compose.yml
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  run-test-suite:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.draft == false
+    env:
+      LINTRO_OUTPUT_DIR: /tmp/lintro
+    outputs:
+      coverage-percentage: ${{ steps.coverage.outputs.percentage }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Environment setup
+        uses: ./.github/actions/setup-env
+      - name: Run comprehensive test suite
+        run: ./scripts/local/run-tests.sh
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+          flags: python-3.13
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-python-3.13
+          path: htmlcov/
+          retention-days: 30
+      - name: Upload coverage XML as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 30
+      - name: Upload .coverage as artifact (if present)
+        uses: actions/upload-artifact@v4
+        if: ${{ hashFiles('.coverage') != '' }}
+        with:
+          name: coverage-dotfile
+          path: .coverage
+          retention-days: 30
+      - name: Extract coverage percentage
+        id: coverage
+        run: ./scripts/ci/ci-extract-coverage.sh
+
+  comment-pr-coverage:
+    needs: run-test-suite
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Environment setup
+        uses: ./.github/actions/setup-env
+      - name: Delete Previous Coverage PR Comments
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
+        # yamllint disable
+        run: uv run python scripts/utils/delete-previous-lintro-comments.py "<!-- coverage-report -->"
+        # yamllint enable
+
+      - name: Generate coverage PR comment
+        # yamllint disable
+        run: |
+          export COVERAGE_PERCENTAGE="${{ needs.run-test-suite.outputs.coverage-percentage }}"
+          ./scripts/ci/coverage-pr-comment.sh
+        # yamllint enable
+      - name: Comment PR with coverage info
+        uses: ./.github/actions/post-pr-comment
+        with:
+          file: coverage-pr-comment.txt
+          marker: <!-- coverage-report -->

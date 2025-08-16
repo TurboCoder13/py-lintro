@@ -1,0 +1,24 @@
+---
+name: Pages Deploy Wrapper
+description: Configure Pages and deploy an artifact directory
+inputs:
+  path:
+    description: Directory to upload for Pages
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Pages
+      # yamllint disable-line rule:line-length
+      uses: actions/configure-pages@v5
+
+    - name: Upload artifact
+      # yamllint disable-line rule:line-length
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ${{ inputs.path }}
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      # yamllint disable-line rule:line-length
+      uses: actions/deploy-pages@v4
