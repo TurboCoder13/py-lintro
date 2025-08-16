@@ -25,12 +25,12 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: dist
           path: dist/
       - name: Publish to TestPyPI (Trusted Publishing)
-        uses: pypa/gh-action-pypi-publish@v1.12.2 # yamllint disable-line rule:line-length
+        uses: pypa/gh-action-pypi-publish@15c56dba361d8335944d31a2ecd17d700fc7bcbc # v1.12.2 # yamllint disable-line rule:line-length
         with:
           repository-url: https://test.pypi.org/legacy/
           verbose: true
