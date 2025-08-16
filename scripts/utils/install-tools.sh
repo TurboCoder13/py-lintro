@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # install-tools.sh - Simplified tool installer for lintro
 # 
@@ -100,6 +100,33 @@ install_tool_curl() {
     
     if curl -fsSL "$download_url" -o "$target_path"; then
         chmod +x "$target_path"
+        # Attempt checksum verification when available
+        if [[ "$tool_name" == "hadolint" ]]; then
+            local checksum_url="${download_url}.sha256"
+            if curl -fsSL "$checksum_url" -o "$target_path.sha256" 2>/dev/null; then
+                echo -e "${BLUE}Verifying checksum for $tool_name...${NC}"
+                if command -v sha256sum >/dev/null 2>&1; then
+                    if sha256sum -c "$target_path.sha256" >/dev/null 2>&1; then
+                        echo -e "${GREEN}✓ Checksum verified${NC}"
+                    else
+                        echo -e "${YELLOW}⚠ Checksum mismatch for $tool_name (continuing)${NC}"
+                    fi
+                elif command -v shasum >/dev/null 2>&1; then
+                    local expected
+                    expected=$(cut -d' ' -f1 < "$target_path.sha256")
+                    local actual
+                    actual=$(shasum -a 256 "$target_path" | awk '{print $1}')
+                    if [[ "$expected" == "$actual" ]]; then
+                        echo -e "${GREEN}✓ Checksum verified${NC}"
+                    else
+                        echo -e "${YELLOW}⚠ Checksum mismatch for $tool_name (continuing)${NC}"
+                    fi
+                else
+                    echo -e "${YELLOW}⚠ No checksum tool available; skipping verification${NC}"
+                fi
+                rm -f "$target_path.sha256" || true
+            fi
+        fi
         echo -e "${GREEN}✓ $tool_name installed successfully${NC}"
     else
         echo -e "${YELLOW}Direct download failed, trying alternative methods...${NC}"
@@ -121,14 +148,7 @@ install_tool_curl() {
                 fi
             fi
             
-            # Try installing via pip as last resort
-            if command -v pip &> /dev/null; then
-                echo -e "${YELLOW}Trying pip installation...${NC}"
-                if pip install hadolint; then
-                    echo -e "${GREEN}✓ hadolint installed successfully via pip${NC}"
-                    return 0
-                fi
-            fi
+            # Remove invalid pip fallback for hadolint
         fi
         
         echo -e "${RED}✗ Failed to install $tool_name from $download_url and all fallback methods${NC}"
@@ -149,8 +169,7 @@ install_system_deps() {
             curl \
             ca-certificates \
             git \
-            gnupg \
-            software-properties-common
+            gnupg
         
         # Install Node.js 20.x
         curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
@@ -248,7 +267,7 @@ main() {
     # Function to install Python package with fallbacks
     install_python_package() {
         local package="$1"
-        local version="$2"
+        local version="${2:-}"
         local full_package="$package"
         
         if [ -n "$version" ]; then
@@ -256,7 +275,7 @@ main() {
         fi
         
         # Try different installation methods in order of preference
-        if [ -n "$GITHUB_ACTIONS" ]; then
+        if [ -n "${GITHUB_ACTIONS:-}" ]; then
             # GitHub Actions - use pip directly
             if pip install "$full_package"; then
                 return 0

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Lintro Report Generation Script
 # Generates comprehensive lintro reports for the codebase
