@@ -48,7 +48,7 @@ def inconsistent_param_doc(
 
 
 def missing_raises_doc(
-    value: Any,
+    value,
 ) -> None:
     """Missing raises documentation.
 

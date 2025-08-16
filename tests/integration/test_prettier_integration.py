@@ -34,9 +34,7 @@ def run_prettier_directly(
     Returns:
         tuple[bool, str, int]: Tuple of (success, output, issues_count).
     """
-    cmd = [
-        "npx",
-        "prettier",
+    cmd = PrettierTool()._get_executable_command("prettier") + [
         "--check" if check_only else "--write",
         file_path.name,
     ]
