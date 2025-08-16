@@ -23,6 +23,36 @@ feat: add new configuration option
 PR titles must also follow Conventional Commits. A PR check enforces this and
 will comment with guidance if invalid.
 
+### PR titles and version bumps
+
+Semantic versioning is determined from the PR title (we squash-merge so the PR title becomes the merge commit):
+
+- **minor**: `feat(...)`
+- **patch**: `fix(...)`, `perf(...)`
+- **major**: add `!` after type or include a `BREAKING CHANGE:` footer
+- **no bump**: `docs`, `chore`, `refactor`, `style`, `test`, `ci`, `build` (unless marked breaking)
+
+Examples:
+
+```text
+feat(cli): add --group-by option            # minor
+fix(parser): handle empty config            # patch
+perf(ruff): speed up large file handling    # patch
+refactor(core)!: rewrite execution model    # major (breaking)
+chore: update dependencies                  # no bump
+
+# Footer form for breaking change
+refactor(core): unify plugin interfaces
+
+BREAKING CHANGE: plugins must implement run() and report()
+```
+
+Notes:
+
+- Use imperative mood (e.g., "add", not "added").
+- If work is ambiguous (e.g., a large refactor), explicitly signal with `!` or a `BREAKING CHANGE:` footer.
+- The PR title validator (`.github/workflows/semantic-pr-title.yml`) enforces the format before merge.
+
 ## Quick Start
 
 1. Clone the repository:
