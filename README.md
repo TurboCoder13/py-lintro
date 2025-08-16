@@ -21,11 +21,11 @@ Lintro is a unified command-line interface that brings together multiple code qu
 [![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/downloads/)
 [![Coverage](assets/images/coverage-badge.svg)](docs/coverage-setup.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-scripts--based-blue)](scripts/README.md#local-testsh)
-[![CI](https://img.shields.io/badge/ci-scripts--based-blue)](scripts/README.md#ci)
-[![Docker](https://img.shields.io/badge/docker-supported-blue?logo=docker)](docs/docker.md)
+[![Tests](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/test-and-coverage.yml?label=tests)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-and-coverage.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/ci-lintro-analysis.yml?label=ci)](https://github.com/TurboCoder13/py-lintro/actions/workflows/ci-lintro-analysis.yml)
+[![Docker](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/docker-build-publish.yml?label=docker&logo=docker)](https://github.com/TurboCoder13/py-lintro/actions/workflows/docker-build-publish.yml)
 [![Code Style](https://img.shields.io/badge/code%20style-ruff-black-blue)](https://github.com/astral-sh/ruff)
-[![PyPI](https://img.shields.io/badge/pypi-not%20published-lightgrey)](docs/getting-started.md#installation)
+[![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
 
 ## Features
 
