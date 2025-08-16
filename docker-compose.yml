@@ -17,8 +17,10 @@ services:
       - ${PWD:-./}:/code
       # Mount current directory to /code to share coverage files
       # Keep /app as internal working directory to avoid permission issues
-    command: ['/app/scripts/local/run-tests.sh']
-    entrypoint: ['']
+    command:
+      - /app/scripts/local/run-tests.sh
+    entrypoint:
+      - ''
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1

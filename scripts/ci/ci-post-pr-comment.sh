@@ -43,29 +43,33 @@ fi
 
 log_info "Posting PR comment from $COMMENT_FILE"
 
-# Create the GitHub script content
-cat > post-comment.js << 'EOF'
-const fs = require('fs');
-const commentFile = process.argv[2] || 'pr-comment.txt';
-
-try {
-    const comment = fs.readFileSync(commentFile, 'utf8');
-    
-    github.rest.issues.createComment({
-        issue_number: context.issue.number,
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        body: comment
-    });
-    
-    console.log('✅ PR comment posted successfully');
-} catch (error) {
-    console.error('❌ Failed to post PR comment:', error.message);
-    process.exit(1);
-}
-EOF
-
-# Execute the GitHub script
-node post-comment.js "$COMMENT_FILE"
-
-log_success "PR comment posted successfully" 
+# Post PR comment using GitHub CLI if available, otherwise fallback to API via curl
+if command -v gh &> \/dev\/null; then
+    # Prefer high-level gh command when available (handles files and escaping)
+    if gh pr comment "$PR_NUMBER" --body-file "$COMMENT_FILE" >/dev/null 2>&1; then
+        log_success "PR comment posted successfully via gh (pr comment)"
+    else
+        # Fallback to gh api with explicit body content
+        gh api repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments \
+          -f body="$(cat "$COMMENT_FILE")"
+        log_success "PR comment posted successfully via gh api"
+    fi
+else
+    log_info "gh not found, using curl to post PR comment"
+    # Fallback without requiring jq: safely JSON-encode body using Python
+    JSON_BODY=$(python - <<'PY'
+import json, sys
+path = sys.argv[1]
+with open(path, 'r', encoding='utf-8') as f:
+    body = f.read()
+print(json.dumps({"body": body}))
+PY
+"$COMMENT_FILE")
+    curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
+         -H "Accept: application/vnd.github+json" \
+         -H "X-GitHub-Api-Version: 2022-11-28" \
+         -X POST \
+         -d "$JSON_BODY" \
+         "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments"
+    log_success "PR comment posted successfully via curl"
+fi

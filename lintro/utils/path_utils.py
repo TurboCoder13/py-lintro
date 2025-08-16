@@ -18,11 +18,11 @@ def normalize_file_path_for_display(file_path: str) -> str:
     """
     try:
         # Get the current working directory (project root)
-        project_root = os.getcwd()
+        project_root: str = os.getcwd()
 
         # Convert to absolute path first, then make relative to project root
-        abs_path = os.path.abspath(file_path)
-        rel_path = os.path.relpath(abs_path, project_root)
+        abs_path: str = os.path.abspath(file_path)
+        rel_path: str = os.path.relpath(abs_path, project_root)
 
         # Ensure it starts with "./" for consistency (like darglint format)
         if not rel_path.startswith("./") and not rel_path.startswith("../"):

@@ -11,12 +11,12 @@ name: Lintro Report
       - '**.json'
       - '**.md'
       - '**.sh'
-      - 'Dockerfile'
-      - 'pyproject.toml'
-      - '.github/workflows/lintro-report.yml'
-      - 'scripts/local/local-lintro.sh'
+      - Dockerfile
+      - pyproject.toml
+      - .github/workflows/lintro-report-scheduled.yml
+      - scripts/local/local-lintro.sh
   schedule:
-    - cron: '0 0 * * 0' # Run weekly on Sunday at midnight
+    - cron: 0 0 * * 0 # Run weekly on Sunday at midnight
   workflow_dispatch:
 
 permissions:
@@ -24,21 +24,14 @@ permissions:
 
 jobs:
   lintro-report:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13.5'
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-
-      - name: Install dependencies
-        run: uv sync --dev
+      - name: Environment setup
+        uses: ./.github/actions/setup-env
 
       - name: Run Lintro on codebase
         run: ./scripts/ci/lintro-report-generate.sh
@@ -52,7 +45,8 @@ jobs:
 
   notify:
     needs: lintro-report
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
     if: success()
 
     steps:

@@ -39,7 +39,8 @@ echo "" >> $GITHUB_STEP_SUMMARY
 # Run lintro check in Docker container against the entire project
 # The .lintro-ignore file will automatically exclude test_samples/
 set +e  # Don't exit on error
-docker run --rm -v "$PWD:/code" py-lintro:latest sh -c "cd /code && lintro check ." > chk-output.txt 2>&1
+# Use the image entrypoint to invoke lintro directly; avoid shell passthrough
+docker run --rm -v "$PWD:/code" -w /code py-lintro:latest lintro check . > chk-output.txt 2>&1
 CHK_EXIT_CODE=$?
 set -e  # Exit on error again
 
@@ -56,23 +57,9 @@ echo "" >> $GITHUB_STEP_SUMMARY
 echo "**Linting exit code:** $CHK_EXIT_CODE" >> $GITHUB_STEP_SUMMARY
 echo "" >> $GITHUB_STEP_SUMMARY
 
-# Extract only the summary table and ASCII art for PR comment
-if [ -f chk-output.txt ]; then
-    # Look for the summary section
-    sed -n '/^📋 EXECUTION SUMMARY$/,$p' chk-output.txt > chk-summary.txt
-    # If no summary found, try alternative patterns
-    if [ ! -s chk-summary.txt ]; then
-        sed -n '/^📊 SUMMARY$/,$p' chk-output.txt > chk-summary.txt
-    fi
-    if [ ! -s chk-summary.txt ]; then
-        sed -n '/^SUMMARY$/,$p' chk-output.txt > chk-summary.txt
-    fi
-    # If still no summary, use the last 20 lines as fallback
-    if [ ! -s chk-summary.txt ]; then
-        tail -20 chk-output.txt > chk-summary.txt
-    fi
-else
-    echo "No linting output captured" > chk-summary.txt
+# Keep full chk-output.txt; summarization now handled in PR comment script
+if [ ! -f chk-output.txt ]; then
+    echo "No linting output captured" > chk-output.txt
 fi
 
 # Store the exit code for the PR comment step

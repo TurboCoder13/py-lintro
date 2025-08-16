@@ -3,7 +3,7 @@
 # Shared utilities for workflow scripts
 # This file contains common functions and variables used across multiple scripts
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Common exclude directories for lintro
-EXCLUDE_DIRS=".git,__pycache__,htmlcov,.pytest_cache,.mypy_cache"
+EXCLUDE_DIRS=".git,__pycache__,htmlcov,.pytest_cache,.mypy_cache,dist,build,node_modules,.venv,venv,.tox,coverage-report,lintro-report"
 
 # Common environment variables
 GITHUB_SERVER_URL="${GITHUB_SERVER_URL:-https://github.com}"
@@ -23,7 +23,7 @@ GITHUB_SHA="${GITHUB_SHA:-}"
 
 # Function to check if we're in a PR context
 is_pr_context() {
-    [ "$GITHUB_EVENT_NAME" = "pull_request" ]
+    [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]
 }
 
 # Function to log messages with colors

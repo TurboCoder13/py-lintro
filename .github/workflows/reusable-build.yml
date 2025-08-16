@@ -1,0 +1,52 @@
+---
+# Reusable workflow: Build Python artifacts and validate metadata
+# - Sets up Python and uv
+# - Syncs dev dependencies
+# - Builds sdist and wheel
+# - Runs twine check to validate artifacts
+# - Uploads dist/ as an artifact named "dist"
+name: Reusable Build
+
+'on':
+  workflow_call:
+    inputs:
+      python-version:
+        description: Python version to use
+        type: string
+        required: false
+        default: '3.13'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install uv (with cache)
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --dev --no-progress
+
+      - name: Build sdist and wheel
+        run: uv run python -m build
+
+      - name: Twine check
+        run: uv run python -m twine check dist/*
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

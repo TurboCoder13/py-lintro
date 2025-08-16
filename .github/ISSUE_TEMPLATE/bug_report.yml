@@ -1,0 +1,106 @@
+---
+name: Bug report
+description: Create a report to help us improve Lintro
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill out all required fields to help us diagnose the issue.
+  - type: input
+    id: title
+    attributes:
+      label: Bug summary
+      description: Concise summary of the bug
+      placeholder: Example - Lintro crashes on ruff format
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands and outputs
+      placeholder: |
+        1. Run: lintro check --tools ruff
+        2. See error ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installation method
+      options:
+        - PyPI (pip install lintro)
+        - Dev install (pip install -e .)
+        - Docker (ghcr.io/turbocoder13/py-lintro:latest)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: env-os
+    attributes:
+      label: OS version
+      placeholder: macOS 15 / Ubuntu 22.04
+    validations:
+      required: true
+  - type: input
+    id: env-python
+    attributes:
+      label: Python version
+      placeholder: 3.13
+    validations:
+      required: true
+  - type: input
+    id: env-lintro
+    attributes:
+      label: Lintro version
+      placeholder: 0.x.y
+    validations:
+      required: true
+  - type: checkboxes
+    id: tools
+    attributes:
+      label: Tools involved
+      options:
+        - label: Ruff
+        - label: Darglint
+        - label: Prettier
+        - label: Yamllint
+        - label: Hadolint
+        - label: Other
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error / logs
+      render: text
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration files
+      description: .lintro or tool configs
+      render: yaml
+  - type: textarea
+    id: minimal
+    attributes:
+      label: Minimal reproducible example (if applicable)
+      render: text
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues
+        - label: I can reproduce consistently
+        - label: Not a configuration issue

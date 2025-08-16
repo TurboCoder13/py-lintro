@@ -1,7 +1,8 @@
-from typing import Any, List
+from typing import Any
 
 from lintro.formatters.core.output_style import OutputStyle
 
+# Try to import tabulate
 try:
     from tabulate import tabulate
 
@@ -11,38 +12,80 @@ except ImportError:
 
 
 class GridStyle(OutputStyle):
-    """Output format that renders tables using grid-style borders with tabulate."""
+    """Output format that renders data as a formatted grid table.
+
+    This style creates a nicely formatted table with proper column alignment
+    and borders, similar to what you might see in a terminal or console.
+    """
 
     def format(
         self,
-        columns: List[str],
-        rows: List[List[Any]],
+        columns: list[str],
+        rows: list[list[Any]],
     ) -> str:
-        """Format a table given columns and rows using grid-style borders.
+        """Format a table given columns and rows as a grid.
 
         Args:
-            columns: List of column names.
+            columns: List of column header names.
             rows: List of row values (each row is a list of cell values).
 
         Returns:
-            Formatted table as a string with grid borders, or empty string if no rows.
+            Formatted data as grid table string.
         """
         if not rows:
-            return ""  # Let the caller handle "No issues found" display
+            return ""
+
+        # Use tabulate if available
         if TABULATE_AVAILABLE:
-            return tabulate(rows, headers=columns, tablefmt="grid")
-        # Fallback: simple text table
-        col_widths = [
-            max(len(str(col)), max((len(str(row[i])) for row in rows), default=0))
-            for i, col in enumerate(columns)
-        ]
-        header = " | ".join(f"{col:<{col_widths[i]}}" for i, col in enumerate(columns))
-        sep = "-+-".join("-" * col_widths[i] for i in range(len(columns)))
-        lines = [header, sep]
-        for row in rows:
-            lines.append(
-                " | ".join(
-                    f"{str(cell):<{col_widths[i]}}" for i, cell in enumerate(row)
-                )
+            # Provide sane defaults for alignment and column widths to avoid
+            # terminal wrapping that misaligns the grid. We keep most columns
+            # left-aligned, numeric columns right-aligned, and cap wide
+            # columns like File/Message.
+            colalign_map = {
+                "Line": "right",
+                "Column": "right",
+                "Fixable": "center",
+            }
+            colalign = [colalign_map.get(col, "left") for col in columns]
+
+            # Cap very wide columns so tabulate wraps within cells, preserving
+            # alignment instead of letting the terminal wrap mid-grid.
+            width_map: dict[str, int] = {
+                "File": 48,
+                "Message": 64,
+                "Code": 12,
+                "Line": 8,
+                "Column": 8,
+                "Fixable": 8,
+            }
+            maxcolwidths = [width_map.get(col) for col in columns]
+
+            return tabulate(
+                tabular_data=rows,
+                headers=columns,
+                tablefmt="grid",
+                stralign="left",
+                numalign="right",
+                colalign=colalign,
+                maxcolwidths=maxcolwidths,
+                disable_numparse=True,
             )
-        return "\n".join(lines)
+
+        # Fallback to simple format when tabulate is not available
+        if not columns:
+            return ""
+
+        # Build the header
+        header = " | ".join(columns)
+        separator = "-" * len(header)
+
+        # Build the rows
+        formatted_rows = []
+        for row in rows:
+            # Ensure row has same number of elements as columns
+            padded_row = row + [""] * (len(columns) - len(row))
+            formatted_rows.append(" | ".join(str(cell) for cell in padded_row))
+
+        # Combine all parts
+        result = [header, separator] + formatted_rows
+        return "\n".join(result)

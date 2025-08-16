@@ -2,7 +2,7 @@
 name: GitHub Pages
 'on':
   workflow_run:
-    workflows: ['Test and Coverage']
+    workflows: [Test Suite & Coverage, Test and Coverage]
     types:
       - completed
     branches:
@@ -13,14 +13,18 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: 'pages'
+  group: pages
   cancel-in-progress: false
 jobs:
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
     if: >-
       ${{ github.event.workflow_run.conclusion == 'success' ||
           github.event_name == 'workflow_dispatch' }}
@@ -28,18 +32,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Download coverage artifact
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v11 # yamllint disable-line rule:line-length
         with:
-          workflow: test-coverage.yml
-          name: coverage-report-all-3.13
+          workflow: test-and-coverage.yml
+          name: coverage-report-python-3.13
           path: coverage-report
           workflow_conclusion: success
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
       - name: Create coverage report directory
         run: ./scripts/ci/pages-deploy.sh
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-      - name: Deploy to GitHub Pages
+      - name: Deploy coverage to Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: ./.github/actions/pages-deploy
+        with:
+          path: _site

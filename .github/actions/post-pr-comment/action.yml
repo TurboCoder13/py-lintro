@@ -1,0 +1,31 @@
+---
+name: Post PR Comment
+description: Post a prepared comment file to the current pull request
+inputs:
+  file:
+    description: Path to the comment file
+    required: true
+  marker:
+    description: Marker string for previous comment deletion (optional)
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Delete previous comments (optional)
+      if: inputs.marker != ''
+      shell: bash
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      # yamllint disable-line rule:line-length
+      run: uv run python scripts/utils/delete-previous-lintro-comments.py "${{ inputs.marker }}"
+
+    - name: Post comment
+      shell: bash
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: ./scripts/ci/ci-post-pr-comment.sh "${{ inputs.file }}"

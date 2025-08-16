@@ -1,0 +1,31 @@
+---
+name: Composite Actions Smoke Tests
+
+'on':
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup environment via composite
+        uses: ./.github/actions/setup-env
+
+      - name: Setup Docker via composite (no login)
+        uses: ./.github/actions/setup-docker
+
+      - name: Prepare dummy comment file
+        run: echo "Smoke test comment" > pr-comment.txt
+
+      - name: Test post-pr-comment composite (safe outside PR)
+        uses: ./.github/actions/post-pr-comment
+        with:
+          file: pr-comment.txt
+          marker: ''

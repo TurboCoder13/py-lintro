@@ -1,0 +1,37 @@
+---
+name: Publish to TestPyPI
+
+'on':
+  workflow_dispatch:
+
+jobs:
+  quality:
+    uses: ./.github/workflows/reusable-quality.yml
+
+  build:
+    needs: quality
+    uses: ./.github/workflows/reusable-build.yml
+
+  publish:
+    name: Upload to TestPyPI
+    needs: [build, quality]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write
+    environment: testpypi
+    concurrency:
+      group: testpypi-publish-${{ github.sha }}
+      cancel-in-progress: true
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Publish to TestPyPI (Trusted Publishing)
+        uses: pypa/gh-action-pypi-publish@v1.12.2 # yamllint disable-line rule:line-length
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          verbose: true
+          skip-existing: true

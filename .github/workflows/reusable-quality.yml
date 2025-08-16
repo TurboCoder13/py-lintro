@@ -1,0 +1,55 @@
+---
+# Reusable workflow: Quality checks and version export
+# - Sets up Python and uv
+# - Installs external tools used by Lintro
+# - Runs Lintro format/check to gate quality
+# - Reads the project version from pyproject.toml and outputs it
+name: Reusable Quality Checks
+
+'on':
+  workflow_call:
+    outputs:
+      version:
+        description: Project version from pyproject.toml
+        value: ${{ jobs.quality.outputs.version }}
+
+jobs:
+  quality:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+
+      - name: Install uv (with cache)
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --dev --no-progress
+
+      - name: Install external tools for Lintro
+        run: |
+          ./scripts/utils/install-tools.sh --local
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Lintro - format and check
+        run: |
+          uv run lintro format . --output-format grid
+          uv run lintro check . --output-format grid
+
+      - name: Read project version
+        id: version
+        run: |
+          python scripts/utils/extract-version.py | tee ver.txt
+          cat ver.txt >> "$GITHUB_OUTPUT"

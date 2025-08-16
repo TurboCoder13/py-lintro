@@ -5,6 +5,7 @@ This module provides the core logic for the 'list_tools' command.
 
 import click
 
+from lintro.enums.action import Action
 from lintro.tools import tool_manager
 from lintro.utils.console_logger import get_tool_emoji
 
@@ -20,7 +21,10 @@ from lintro.utils.console_logger import get_tool_emoji
     is_flag=True,
     help="Show potential conflicts between tools",
 )
-def list_tools_command(output, show_conflicts):
+def list_tools_command(
+    output,
+    show_conflicts,
+) -> None:
     """List all available tools and their configurations.
 
     Args:
@@ -30,7 +34,10 @@ def list_tools_command(output, show_conflicts):
     list_tools(output=output, show_conflicts=show_conflicts)
 
 
-def list_tools(output: str | None, show_conflicts: bool) -> None:
+def list_tools(
+    output: str | None,
+    show_conflicts: bool,
+) -> None:
     """List all available tools.
 
     Args:
@@ -57,11 +64,11 @@ def list_tools(output: str | None, show_conflicts: bool) -> None:
         tool_description = getattr(tool.config, "description", tool.__class__.__name__)
         emoji = get_tool_emoji(tool_name)
 
-        capabilities = []
+        capabilities: list[str] = []
         if tool_enum in check_tools:
-            capabilities.append("check")
+            capabilities.append(Action.CHECK.value)
         if tool_enum in fix_tools:
-            capabilities.append("fix")
+            capabilities.append(Action.FIX.value)
 
         output_lines.append(f"{emoji} {tool_name}: {tool_description}")
         output_lines.append(f"  Capabilities: {', '.join(capabilities)}")

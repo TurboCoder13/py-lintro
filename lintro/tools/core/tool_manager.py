@@ -1,7 +1,7 @@
 """Tool manager for Lintro."""
 
-from dataclasses import dataclass
-from typing import Any, ClassVar, Type
+from dataclasses import dataclass, field
+from typing import Any
 
 from lintro.models.core.tool import Tool
 from lintro.tools.tool_enum import ToolEnum
@@ -23,13 +23,13 @@ class ToolManager:
         _fix_tools: Dictionary mapping core names to core classes that can fix
     """
 
-    _tools: ClassVar[dict[ToolEnum, Type[Tool]]] = {}
-    _check_tools: ClassVar[dict[ToolEnum, Type[Tool]]] = {}
-    _fix_tools: ClassVar[dict[ToolEnum, Type[Tool]]] = {}
+    _tools: dict[ToolEnum, type[Tool]] = field(default_factory=dict)
+    _check_tools: dict[ToolEnum, type[Tool]] = field(default_factory=dict)
+    _fix_tools: dict[ToolEnum, type[Tool]] = field(default_factory=dict)
 
     def register_tool(
         self,
-        tool_class: Type[Tool],
+        tool_class: type[Tool],
     ) -> None:
         """Register a core class.
 
@@ -51,7 +51,10 @@ class ToolManager:
         if tool.can_fix:
             self._fix_tools[tool_enum] = tool_class
 
-    def get_tool(self, name: ToolEnum) -> Tool:
+    def get_tool(
+        self,
+        name: ToolEnum,
+    ) -> Tool:
         """Get a core instance by name.
 
         Args:

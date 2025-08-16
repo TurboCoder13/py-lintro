@@ -1,7 +1,7 @@
 """Tool-related models for Lintro."""
 
 from abc import abstractmethod
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
@@ -28,7 +28,7 @@ class Tool(Protocol):
 
     def set_options(
         self,
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         """Set core options.
 
@@ -45,10 +45,10 @@ class Tool(Protocol):
         """Check files for issues.
 
         Args:
-            paths: List of file paths to check
+            paths: List of file paths to check.
 
         Returns:
-            ToolResult instance
+            Result of the check operation.
 
         Raises:
             FileNotFoundError: If the core executable is not found
@@ -65,10 +65,10 @@ class Tool(Protocol):
         """Fix issues in files.
 
         Args:
-            paths: List of file paths to fix
+            paths: List of file paths to fix.
 
         Returns:
-            ToolResult instance
+            Result of the fix operation.
 
         Raises:
             FileNotFoundError: If the core executable is not found
@@ -94,7 +94,7 @@ class Tool(Protocol):
             issues_count: Number of issues found or fixed
 
         Returns:
-            ToolResult instance
+            Result object
         """
         return ToolResult(
             name=name,

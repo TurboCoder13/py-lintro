@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Coverage Badge Update Script
 # Generates and updates the coverage badge
@@ -103,19 +104,23 @@ fi
 
 # Update badge locally or in CI
 if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
-    # In CI: commit and push badge if changed
-    git config --local user.email "action@github.com"
-    git config --local user.name "GitHub Action"
-    git add assets/images/coverage-badge.svg
-    if ! git diff --quiet --cached; then
-        git commit -m "docs: update coverage badge - $COVERAGE_PERCENTAGE%"
-        git push
-        log_success "Coverage badge updated and pushed to repository"
+    # Default: do not push from CI to keep runs idempotent
+    if [ "${COVERAGE_BADGE_COMMIT:-false}" = "true" ]; then
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add assets/images/coverage-badge.svg
+        if ! git diff --quiet --cached; then
+            git commit -m "docs: update coverage badge - $COVERAGE_PERCENTAGE%"
+            git push
+            log_success "Coverage badge updated and pushed to repository"
+        else
+            log_info "Coverage badge unchanged, no commit needed"
+        fi
     else
-        log_info "Coverage badge unchanged, no commit needed"
+        log_info "CI detected; skipping commit/push of coverage badge (set COVERAGE_BADGE_COMMIT=true to enable)"
     fi
 else
     # Local: just update the badge file
     log_success "Coverage badge updated locally: assets/images/coverage-badge.svg"
     log_info "Current coverage: $COVERAGE_PERCENTAGE%"
-fi 
+fi

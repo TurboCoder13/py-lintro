@@ -97,7 +97,8 @@ class TestScriptDocumentation:
         for script_file in Path("scripts").rglob("*.sh"):
             script_files.add(script_file.name)
         for script_file in Path("scripts").rglob("*.py"):
-            script_files.add(script_file.name)
+            if script_file.name != "__init__.py":  # Exclude __init__.py files
+                script_files.add(script_file.name)
 
         # Find documented scripts
         documented_scripts = set()

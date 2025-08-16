@@ -1,0 +1,73 @@
+---
+name: Auto Tag on Main
+
+'on':
+  push:
+    branches: [main]
+    paths:
+      - pyproject.toml
+
+permissions:
+  contents: write
+
+jobs:
+  auto-tag:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    # Only run when version actually changed
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+
+      - name: Read version from pyproject.toml
+        id: version
+        run: |
+          python scripts/utils/extract-version.py | tee version.txt
+          cat version.txt >> "$GITHUB_OUTPUT"
+
+      - name: Detect previous version
+        id: prev
+        run: |
+          git show HEAD^:pyproject.toml > /tmp/prev.toml || true
+          if [ -s /tmp/prev.toml ]; then
+            python scripts/utils/extract-version.py --file /tmp/prev.toml \
+              | tee prev.txt
+            cat prev.txt >> "$GITHUB_OUTPUT"
+          else
+            echo "version=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if version unchanged
+        if: steps.prev.outputs.version == steps.version.outputs.version
+        run: echo "Version unchanged; skipping tag creation."
+
+      - name: Check if tag exists
+        id: check
+        if: steps.prev.outputs.version != steps.version.outputs.version
+        run: |
+          TAG="${{ steps.version.outputs.version }}"
+          echo "Checking for tag $TAG"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create and push tag
+        if: >-
+          steps.prev.outputs.version != steps.version.outputs.version &&
+          steps.check.outputs.exists == 'false'
+        env:
+          TAG: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
