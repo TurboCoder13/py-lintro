@@ -85,9 +85,10 @@ jobs:
         run: uv run python -m twine check dist/*
 
       - name: Publish to PyPI (Trusted Publishing)
-        uses: pypa/gh-action-pypi-publish@v1.12.2 # yamllint disable-line rule:line-length
+        uses: pypa/gh-action-pypi-publish@release/v1 # yamllint disable-line rule:line-length
         with:
           skip-existing: true
+          verify-metadata: false
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2 # yamllint disable-line rule:line-length

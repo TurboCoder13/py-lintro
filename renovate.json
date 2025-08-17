@@ -18,6 +18,11 @@
       "matchPackagePatterns": ["^pytest"],
       "groupName": "pytest packages",
       "groupSlug": "pytest"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["amannn/action-semantic-pull-request"],
+      "pinDigests": false
     }
   ],
   "pip_requirements": {
