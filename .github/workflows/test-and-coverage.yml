@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Environment setup
         uses: ./.github/actions/setup-env
-      - name: Run comprehensive test suite
+      - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/local/run-tests.sh
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
