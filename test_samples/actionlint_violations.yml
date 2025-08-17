@@ -1,0 +1,9 @@
+name: CI
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invalid step key to trigger actionlint
+        runz: echo "Hello" # 'runz' is invalid; should be 'run'
+
