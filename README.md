@@ -8,6 +8,23 @@ A comprehensive CLI tool that unifies various code formatting, linting, and qual
 
 Lintro is a unified command-line interface that brings together multiple code quality tools into a single, easy-to-use package. Instead of managing separate tools like Ruff, Prettier, Yamllint, and others individually, Lintro provides a consistent interface for all your code quality needs.
 
+[![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/downloads/)
+[![Coverage](assets/images/coverage-badge.svg)](docs/coverage-setup.md)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Tests](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/test-and-coverage.yml?label=tests&branch=main&logo=githubactions&logoColor=white)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-and-coverage.yml?query=branch%3Amain)
+[![CI](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/ci-lintro-analysis.yml?label=ci&branch=main&logo=githubactions&logoColor=white)](https://github.com/TurboCoder13/py-lintro/actions/workflows/ci-lintro-analysis.yml?query=branch%3Amain)
+[![Docker](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/docker-build-publish.yml?label=docker&logo=docker&branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/docker-build-publish.yml?query=branch%3Amain)
+[![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
+
+<!-- Tool logos (static badges) -->
+
+[![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
+[![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)
+[![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)
+[![Actionlint](https://img.shields.io/badge/Actionlint-GitHub%20Workflows-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)
+[![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)
+[![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint)
+
 ### Why Lintro?
 
 - **🚀 Unified Interface**: One command to run all your linting and formatting tools
@@ -17,23 +34,6 @@ Lintro is a unified command-line interface that brings together multiple code qu
 - **📊 Rich Reporting**: Multiple output formats (grid, JSON, HTML, CSV, Markdown)
 - **⚡ Fast**: Optimized execution with efficient tool management
 - **🔒 Reliable**: Comprehensive test suite with 84% coverage
-
-[![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/downloads/)
-[![Coverage](assets/images/coverage-badge.svg)](docs/coverage-setup.md)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/test-and-coverage.yml?label=tests&branch=main&logo=githubactions&logoColor=white)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-and-coverage.yml?query=branch%3Amain)
-[![CI](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/ci-lintro-analysis.yml?label=ci&branch=main&logo=githubactions&logoColor=white)](https://github.com/TurboCoder13/py-lintro/actions/workflows/ci-lintro-analysis.yml?query=branch%3Amain)
-[![Docker](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/docker-build-publish.yml?label=docker&logo=docker&branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/docker-build-publish.yml?query=branch%3Amain)
-[![Code Style: Ruff](https://img.shields.io/badge/Code%20Style-Ruff-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
-[![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
-
-<!-- Tool logos (static badges) -->
-
-[![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
-[![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)
-[![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)
-[![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)
-[![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint)
 
 ## Features
 
@@ -46,13 +46,14 @@ Lintro is a unified command-line interface that brings together multiple code qu
 
 ## Supported Tools
 
-| Tool         | Language/Format | Purpose              | Auto-fix |
-| ------------ | --------------- | -------------------- | -------- |
-| **Ruff**     | Python          | Linting & Formatting | ✅       |
-| **Darglint** | Python          | Docstring Validation | -        |
-| **Prettier** | JS/TS/JSON      | Code Formatting      | ✅       |
-| **Yamllint** | YAML            | Syntax & Style       | -        |
-| **Hadolint** | Dockerfile      | Best Practices       | -        |
+| Tool           | Language/Format                      | Purpose              | Auto-fix |
+| -------------- | ------------------------------------ | -------------------- | -------- |
+| **Ruff**       | Python                               | Linting & Formatting | ✅       |
+| **Darglint**   | Python                               | Docstring Validation | -        |
+| **Prettier**   | JS/TS/JSON                           | Code Formatting      | ✅       |
+| **Yamllint**   | YAML                                 | Syntax & Style       | -        |
+| **Actionlint** | GitHub Workflows (.github/workflows) | Workflow Validation  | -        |
+| **Hadolint**   | Dockerfile                           | Best Practices       | -        |
 
 ## Quick Start
 
@@ -86,7 +87,7 @@ lintro format
 lintro check --output-format grid
 
 # Run specific tools only
-lintro check --tools ruff,prettier
+lintro check --tools ruff,prettier,actionlint
 
 # List all available tools
 lintro list-tools

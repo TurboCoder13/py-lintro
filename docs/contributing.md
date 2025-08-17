@@ -81,3 +81,64 @@ Release automation:
 - Tag push publishes to PyPI (OIDC) and creates a GitHub Release with artifacts.
 
 For detailed contribution guidelines, see the project documentation or contact a maintainer.
+
+---
+
+## Tool Integration Guidelines
+
+This section describes how to add a new external tool to Lintro while keeping a
+consistent UX and maintainable implementation.
+
+### Principles
+
+- Minimal defaults: invoke the native CLI without forcing special formats.
+- Predictable discovery: put file-discovery rules into the tool implementation
+  (e.g., Actionlint filters to `/.github/workflows/`).
+- Wrapper, not replacement: rely on tool defaults and parse its standard
+  output; only add switches when strictly necessary for parsing.
+
+### Implementation Steps
+
+1. Core code
+
+- Create a tool class in `lintro/tools/implementations/` (subclass `BaseTool`).
+- Implement `check()` (and `fix()` only if the tool supports auto-fixes).
+- Add a parser module in `lintro/parsers/<tool>/` for the tool's default output.
+- Add a formatter in `lintro/formatters/tools/` with a `TableDescriptor`.
+- Register the tool in `lintro/tools/tool_enum.py`.
+- Register the table formatter in `TOOL_TABLE_FORMATTERS` within
+  `lintro/utils/tool_utils.py`.
+
+2. Tests
+
+- Put minimal violation samples in `test_samples/`.
+- Add unit tests for the parser.
+- Add integration tests that:
+  - Run the tool directly (CLI) on the sample
+  - Run the tool via Lintro and compare parity (issue counts, status)
+  - Use realistic paths (e.g., `.github/workflows/` for Actionlint)
+- Allow local skip when a system binary is missing (CI/Docker installs tools).
+
+3. Installer support
+
+- Update `scripts/utils/install-tools.sh` to install the binary.
+- Prefer upstream installers when available (uv/pip, npm, official script,
+  Homebrew). For OS/arch tarballs, encapsulate download/extract in a helper.
+- Verify checksums when possible.
+
+4. Docs checklist
+
+- Update `README.md` Supported Tools table and CLI examples.
+- Update `docs/getting-started.md` with a short usage example.
+- Update `docs/configuration.md` with discovery notes and usage tips.
+
+5. CI and Docker
+
+- The Docker image installs all supported tools; integration tests should run
+  without skipping inside Docker/CI.
+
+### Pass-through Options (optional)
+
+Expose native flags via `--tool-options tool:key=value` only after the core
+behavior is stable. Keep defaults minimal to avoid surprising users and to
+maintain parity with direct CLI behavior.
