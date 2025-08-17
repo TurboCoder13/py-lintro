@@ -22,6 +22,8 @@ permissions:
 
 jobs:
   run-test-suite:
+    permissions:
+      contents: write
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     defaults:

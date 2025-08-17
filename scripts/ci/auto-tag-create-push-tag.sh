@@ -19,9 +19,15 @@ if [ -z "$TAG" ]; then
   exit 2
 fi
 
+# Normalize to v-prefixed tag for consistency
+case "$TAG" in
+  v*) NORMALIZED_TAG="$TAG" ;;
+  *) NORMALIZED_TAG="v$TAG" ;;
+esac
+
 git config user.name "github-actions"
 git config user.email "github-actions@github.com"
-git tag -a "$TAG" -m "Release $TAG"
-git push origin "$TAG"
+git tag -a "$NORMALIZED_TAG" -m "Release $NORMALIZED_TAG"
+git push origin "$NORMALIZED_TAG"
 
 

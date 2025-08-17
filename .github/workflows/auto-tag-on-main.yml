@@ -19,6 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -47,7 +48,7 @@ jobs:
         id: check
         if: steps.prev.outputs.version != steps.version.outputs.version
         run: |
-          TAG="${{ steps.version.outputs.version }}"
+          TAG="v${{ steps.version.outputs.version }}"
           echo "Checking for tag $TAG"
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
@@ -60,5 +61,5 @@ jobs:
           steps.prev.outputs.version != steps.version.outputs.version &&
           steps.check.outputs.exists == 'false'
         env:
-          TAG: ${{ steps.version.outputs.version }}
+          TAG: v${{ steps.version.outputs.version }}
         run: scripts/ci/auto-tag-create-push-tag.sh
