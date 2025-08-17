@@ -50,20 +50,20 @@ scripts/
 
 Scripts for GitHub Actions workflows and continuous integration.
 
-| Script                        | Purpose                                       | Usage                                       |
-| ----------------------------- | --------------------------------------------- | ------------------------------------------- |
-| `ci-extract-coverage.sh`      | Extract coverage percentage from coverage.xml | `./scripts/ci/ci-extract-coverage.sh`       |
-| `ci-lintro.sh`                | Run Lintro analysis in Docker for CI          | `./scripts/ci/ci-lintro.sh`                 |
-| `ci-post-pr-comment.sh`       | Post comments to PRs using GitHub API         | `./scripts/ci/ci-post-pr-comment.sh [file]` |
-| `ci-pr-comment.sh`            | Generate PR comments with Lintro results      | `./scripts/ci/ci-pr-comment.sh`             |
-| `coverage-badge-update.sh`    | Generate and update coverage badge            | `./scripts/ci/coverage-badge-update.sh`     |
-| `coverage-pr-comment.sh`      | Generate PR comments with coverage info       | `./scripts/ci/coverage-pr-comment.sh`       |
-| `lintro-report-generate.sh`   | Generate comprehensive Lintro reports         | `./scripts/ci/lintro-report-generate.sh`    |
-| `pages-deploy.sh`             | Deploy coverage reports to GitHub Pages       | `./scripts/ci/pages-deploy.sh`              |
-| `auto-tag-read-version.sh`    | Read version from pyproject to GITHUB_OUTPUT  | `./scripts/ci/auto-tag-read-version.sh`     |
-| `auto-tag-detect-previous.sh` | Get previous version from HEAD^ pyproject     | `./scripts/ci/auto-tag-detect-previous.sh`  |
-| `auto-tag-create-push-tag.sh` | Create and push annotated git tag             | `./scripts/ci/auto-tag-create-push-tag.sh`  |
-| `ci-auto-fix.sh`              | Auto-format via Docker and push changes       | `./scripts/ci/ci-auto-fix.sh`               |
+| Script                        | Purpose                                       | Usage                                                     |
+| ----------------------------- | --------------------------------------------- | --------------------------------------------------------- |
+| `ci-extract-coverage.sh`      | Extract coverage percentage from coverage.xml | `./scripts/ci/ci-extract-coverage.sh`                     |
+| `ci-lintro.sh`                | Run Lintro analysis in Docker for CI          | `./scripts/ci/ci-lintro.sh`                               |
+| `ci-post-pr-comment.sh`       | Post comments to PRs using GitHub API         | `./scripts/ci/ci-post-pr-comment.sh [file]`               |
+| `ci-pr-comment.sh`            | Generate PR comments with Lintro results      | `./scripts/ci/ci-pr-comment.sh`                           |
+| `coverage-badge-update.sh`    | Generate and update coverage badge            | `./scripts/ci/coverage-badge-update.sh`                   |
+| `coverage-pr-comment.sh`      | Generate PR comments with coverage info       | `./scripts/ci/coverage-pr-comment.sh`                     |
+| `lintro-report-generate.sh`   | Generate comprehensive Lintro reports         | `./scripts/ci/lintro-report-generate.sh`                  |
+| `pages-deploy.sh`             | Deploy coverage reports to GitHub Pages       | `./scripts/ci/pages-deploy.sh`                            |
+| `auto-tag-read-version.sh`    | Read version from pyproject to GITHUB_OUTPUT  | `./scripts/ci/auto-tag-read-version.sh`                   |
+| `auto-tag-detect-previous.sh` | Get previous version from HEAD^ pyproject     | `./scripts/ci/auto-tag-detect-previous.sh`                |
+| `auto-tag-create-push-tag.sh` | Create and push annotated git tag             | `./scripts/ci/auto-tag-create-push-tag.sh`                |
+| `ci-auto-fix.sh`              | Auto-format via Docker and push changes       | `./scripts/ci/ci-auto-fix.sh`                             |
 | `pypi-version-exists.sh`      | Check if version exists on PyPI               | `./scripts/ci/pypi-version-exists.sh <project> <version>` |
 
 ### 🐳 Docker Scripts (`docker/`)
