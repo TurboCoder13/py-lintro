@@ -4,6 +4,16 @@ set -euo pipefail
 # ci-auto-fix.sh
 # Auto-format using lintro inside Docker and push changes back to PR branch
 
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+  echo "Usage: scripts/ci/ci-auto-fix.sh"
+  echo ""
+  echo "Run 'lintro format' inside Docker and push fixes back to PR branch."
+  echo "Environment:"
+  echo "  HEAD_REF            PR head ref (required for pull_request)"
+  echo "  GITHUB_EVENT_NAME   GitHub event name (pull_request or push)"
+  exit 0
+fi
+
 HEAD_REF=${HEAD_REF:-}
 GITHUB_EVENT_NAME=${GITHUB_EVENT_NAME:-}
 
