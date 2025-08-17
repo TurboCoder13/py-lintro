@@ -88,7 +88,14 @@ run_tests() {
     echo -e "${YELLOW}Using uv run pytest for consistent behavior${NC}"
     
     # Build pytest arguments
-    local pytest_args=("-n" "auto" "-k" "not docker" "tests")
+    local pytest_args=("-n" "auto")
+    if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" = "1" ]; then
+        echo -e "${YELLOW}Including Docker tests (LINTRO_RUN_DOCKER_TESTS=1)${NC}"
+        pytest_args+=("tests")
+    else
+        echo -e "${YELLOW}Excluding Docker tests (set LINTRO_RUN_DOCKER_TESTS=1 to include)${NC}"
+        pytest_args+=("-k" "not docker" "tests")
+    fi
     
     # Add verbose flag if requested
     if [ "$VERBOSE" = "1" ] || [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then

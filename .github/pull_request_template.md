@@ -19,6 +19,20 @@
 - Breaking change:
   - [ ] `!` in title or `BREAKING CHANGE:` footer included
 
+### Release Trigger Rules (exact)
+
+- A merged PR will bump the version based on its title (squash merge required):
+  - `feat(...)` or `feat:` → MINOR bump
+  - `fix(...)` / `fix:` or `perf(...)` / `perf:` → PATCH bump
+  - Any title with `!` after the type (e.g. `feat!:` or `feat(scope)!:`) or a body
+    containing `BREAKING CHANGE:` → MAJOR bump
+- Use squash merge so the PR title becomes the merge commit title.
+- Valid examples:
+  - `feat(cli): add --group-by`
+  - `fix(parser): handle empty config`
+  - `perf: optimize grouping performance`
+  - `feat(api)!: remove deprecated flags`
+
 ## What’s Changing
 
 Describe the changes and why.
