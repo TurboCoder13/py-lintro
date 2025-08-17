@@ -202,6 +202,7 @@ class DarglintTool(BaseTool):
                 if not (success and issues_count == 0):
                     all_success = False
                 total_issues += issues_count
+                # Store parsed issues on the aggregate result later via ToolResult
                 all_outputs.append(output)
             except subprocess.TimeoutExpired:
                 skipped_files.append(file_path)
