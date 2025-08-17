@@ -543,7 +543,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "tabulate", specifier = "==0.9.0" },
     { name = "toml", specifier = "==0.10.2" },
-    { name = "tox", marker = "extra == 'dev'", specifier = "==4.28.1" },
+    { name = "tox", marker = "extra == 'dev'", specifier = "==4.28.4" },
     { name = "types-setuptools", marker = "extra == 'typing'", specifier = "==80.9.0.20250529" },
     { name = "types-tabulate", marker = "extra == 'typing'", specifier = "==0.9.0.20241207" },
     { name = "yamllint", specifier = "==1.37.1" },
@@ -1093,7 +1093,7 @@ wheels = [
 
 [[package]]
 name = "tox"
-version = "4.28.1"
+version = "4.28.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cachetools" },
@@ -1106,9 +1106,9 @@ dependencies = [
     { name = "pyproject-api" },
     { name = "virtualenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2c/a3/6fdc3f17aad7f2971739c6efc537a692d619c54acb224d90e62733346a60/tox-4.28.1.tar.gz", hash = "sha256:227ce1fdfea7763107aed3a8ac87d74b1bd1240ad7dd9c37fc2cb2b318006520", size = 199598, upload-time = "2025-07-23T06:16:39.555Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/01/321c98e3cc584fd101d869c85be2a8236a41a84842bc6af5c078b10c2126/tox-4.28.4.tar.gz", hash = "sha256:b5b14c6307bd8994ff1eba5074275826620325ee1a4f61316959d562bfd70b9d", size = 199692, upload-time = "2025-07-31T21:20:26.6Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b9/60/0ba9aa30a0a3d0faaebeadd9c847812a929416a4acda50d92c7079a9ec00/tox-4.28.1-py3-none-any.whl", hash = "sha256:d5c84de6efc5d7e8acadb09528943e87ee501a35e064cf852082bc600485c13d", size = 173973, upload-time = "2025-07-23T06:16:37.54Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/54/564a33093e41a585e2e997220986182c037bc998abf03a0eb4a7a67c4eff/tox-4.28.4-py3-none-any.whl", hash = "sha256:8d4ad9ee916ebbb59272bb045e154a10fa12e3bbdcf94cc5185cbdaf9b241f99", size = 174058, upload-time = "2025-07-31T21:20:24.836Z" },
 ]
 
 [[package]]
