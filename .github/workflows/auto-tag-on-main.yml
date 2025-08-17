@@ -33,23 +33,11 @@ jobs:
 
       - name: Read version from pyproject.toml
         id: version
-        run: |
-          ver=$(uv run python scripts/utils/extract-version.py \
-            | sed 's/^version=//')
-          echo "version=$ver" >> "$GITHUB_OUTPUT"
+        run: scripts/ci/auto-tag-read-version.sh
 
       - name: Detect previous version
         id: prev
-        run: |
-          git show HEAD^:pyproject.toml > /tmp/prev.toml || true
-          if [ -s /tmp/prev.toml ]; then
-            uv run python scripts/utils/extract-version.py \
-              --file /tmp/prev.toml \
-              | tee prev.txt
-            cat prev.txt >> "$GITHUB_OUTPUT"
-          else
-            echo "version=" >> "$GITHUB_OUTPUT"
-          fi
+        run: scripts/ci/auto-tag-detect-previous.sh
 
       - name: Skip if version unchanged
         if: steps.prev.outputs.version == steps.version.outputs.version
@@ -73,8 +61,4 @@ jobs:
           steps.check.outputs.exists == 'false'
         env:
           TAG: ${{ steps.version.outputs.version }}
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag -a "$TAG" -m "Release $TAG"
-          git push origin "$TAG"
+        run: scripts/ci/auto-tag-create-push-tag.sh

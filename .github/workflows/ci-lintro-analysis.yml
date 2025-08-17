@@ -51,35 +51,13 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Auto-fix with Lintro (same-repo PRs only)
-        # yamllint disable rule:line-length
-        if: github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.fork == false
-        # yamllint enable
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.draft == false &&
+          github.event.pull_request.head.repo.fork == false
         env:
           HEAD_REF: ${{ github.head_ref }}
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-          docker run --rm \
-            -v "$PWD:/code" \
-            -w /code \
-            py-lintro:latest \
-            lintro format . \
-            --output-format grid || true
-          if [ -n "$(git status --porcelain)" ]; then
-            git add -A
-            git commit -m "style: auto-format via Lintro"
-            # Pushing from a detached HEAD on PRs requires explicit target
-            if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-              git push origin HEAD:"$HEAD_REF"
-            else
-              git push
-            fi
-            echo "Auto-format changes pushed back to PR branch."
-          else
-            echo "No changes after formatting."
-          fi
+        run: scripts/ci/ci-auto-fix.sh
 
       - name: Run Lintro Analysis in Docker
         id: lintro
