@@ -60,4 +60,3 @@ Flow after merge to `main`:
 
 - PR with compliant title → squash merge → semantic release PR/tag → tag-based
   publish to PyPI → GitHub Release with assets
-
