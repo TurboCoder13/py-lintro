@@ -1,62 +1,31 @@
 [build-system]
-requires = ["setuptools==80.9.0", "wheel"]
+requires = [ "setuptools==80.9.0", "wheel",]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "lintro"
-version = "0.1.0"
+version = "0.1.1"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
-readme = {file = "README.md", content-type = "text/markdown"}
-authors = [
-    {name = "TurboCoder13", email = "turbocoder13@gmail.com"},
-]
 license = "MIT"
-keywords = ["linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.13",
-    "Topic :: Software Development :: Quality Assurance",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Utilities",
-]
+keywords = [ "linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker",]
+classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
 requires-python = ">=3.13,<3.14"
-dependencies = [
-    "click==8.2.1",
-    "coverage-badge==1.1.2",
-    "darglint==1.8.1",
-    "loguru==0.7.3",
-    "tabulate==0.9.0",
-    "yamllint==1.37.1",
-    "httpx==0.28.1",  # For scripts/delete-previous-lintro-comments.py
-    "toml==0.10.2",  # For release automation
-]
+dependencies = [ "click==8.2.1", "coverage-badge==1.1.2", "darglint==1.8.1", "loguru==0.7.3", "tabulate==0.9.0", "yamllint==1.37.1", "httpx==0.28.1", "toml==0.10.2", "python-semantic-release>=9.12.0",]
+[[project.authors]]
+name = "TurboCoder13"
+email = "turbocoder13@gmail.com"
+
+[dependency-groups]
+dev = [ "build==1.2.2.post1", "pytest==8.4.1", "pytest-cov==6.2.1", "pytest-xdist==3.6.1", "twine==6.1.0",]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
 
 [project.optional-dependencies]
-dev = [
-    "pytest==8.4.1",
-    "pytest-cov==6.2.1",
-    "pytest-mock==3.14.1",
-    "pytest-xdist==3.6.1",
-    "tox==4.28.1",
-    "allure-pytest==2.15.0",
-    "ruff",
-    "mypy",
-    "coverage-badge==1.1.2",
-    "python-semantic-release==9.12.0",
-]
-test = [
-    "pytest==8.4.1",
-    "pytest-cov==6.2.1",
-    "pytest-mock==3.14.1",
-    "pytest-xdist==3.6.1",
-]
-typing = [
-    "types-setuptools==80.9.0.20250529",
-    "types-tabulate==0.9.0.20241207",
-]
+dev = [ "pytest==8.4.1", "pytest-cov==6.2.1", "pytest-mock==3.14.1", "pytest-xdist==3.6.1", "tox==4.28.1", "allure-pytest==2.15.0", "ruff", "mypy", "coverage-badge==1.1.2", "python-semantic-release==9.12.0",]
+test = [ "pytest==8.4.1", "pytest-cov==6.2.1", "pytest-mock==3.14.1", "pytest-xdist==3.6.1",]
+typing = [ "types-setuptools==80.9.0.20250529", "types-tabulate==0.9.0.20241207",]
 
 [project.scripts]
 lintro = "lintro.cli:main"
@@ -67,78 +36,28 @@ Documentation = "https://github.com/TurboCoder13/py-lintro/docs"
 Source = "https://github.com/TurboCoder13/py-lintro"
 
 [tool.setuptools]
-packages = [
-    "lintro",
-    "lintro.cli_utils",
-    "lintro.cli_utils.commands",
-    "lintro.enums",
-    "lintro.exceptions",
-    "lintro.formatters",
-    "lintro.formatters.core",
-    "lintro.formatters.styles",
-    "lintro.formatters.tools",
-    "lintro.models",
-    "lintro.models.core",
-    "lintro.parsers",
-    "lintro.parsers.darglint",
-    "lintro.parsers.hadolint",
-    "lintro.parsers.prettier",
-    "lintro.parsers.ruff",
-    "lintro.parsers.yamllint",
-    "lintro.tools",
-    "lintro.tools.core",
-    "lintro.tools.implementations",
-    "lintro.utils",
-]
+packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.formatters.tools", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.darglint", "lintro.parsers.hadolint", "lintro.parsers.prettier", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.tools", "lintro.tools.core", "lintro.tools.implementations", "lintro.utils",]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = "test_*.py"
-python_classes = "Test*"
-python_functions = "test_*" 
-
-# Ruff configuration for lintro project
 [tool.ruff]
-# Maximum line length for code
 line-length = 88
-# Target Python version
 target-version = "py313"
 unsafe-fixes = false
-# Exclude common virtualenv and build directories
-exclude = [
-    ".venv",
-    "venv",
-    "env",
-    "build",
-    "dist",
-    "__pycache__",
-    "test_samples",
-]
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I"]
-ignore = []
-
-[dependency-groups]
-dev = [
-    "build==1.2.2.post1",
-    "pytest==8.4.1",
-    "pytest-cov==6.2.1",
-    "pytest-xdist==3.6.1",
-    "twine==6.1.0",
-]
-
-
+exclude = [ ".venv", "venv", "env", "build", "dist", "__pycache__", "test_samples",]
 
 [tool.semantic_release]
-# Bump and tag on the main branch based on conventional commits
 branch = "main"
-version_variables = [
-  "pyproject.toml:project.version",
-  "lintro/__init__.py:__version__",
-]
+version_variables = [ "pyproject.toml:project.version", "lintro/__init__.py:__version__",]
 upload_to_release = false
 build_command = ""
 changelog_file = "CHANGELOG.md"
 commit_parser = "angular"
 
+[tool.pytest.ini_options]
+testpaths = [ "tests",]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.ruff.lint]
+select = [ "E", "F", "W", "I",]
+ignore = []
