@@ -34,7 +34,8 @@ jobs:
       - name: Read version from pyproject.toml
         id: version
         run: |
-          echo "version=$(uv run python scripts/utils/extract-version.py | sed 's/^version=//')" >> "$GITHUB_OUTPUT"
+          ver=$(uv run python scripts/utils/extract-version.py | sed 's/^version=//')
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
 
       - name: Detect previous version
         id: prev

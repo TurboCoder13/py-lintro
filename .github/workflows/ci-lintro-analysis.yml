@@ -49,7 +49,9 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Auto-fix with Lintro (same-repo PRs only)
+        # yamllint disable rule:line-length
         if: github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.fork == false
+        # yamllint enable
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
