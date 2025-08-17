@@ -1,4 +1,7 @@
-"""Path utilities for Lintro."""
+"""Path utilities for Lintro.
+
+Small helpers to normalize paths for display consistency.
+"""
 
 import os
 
@@ -11,11 +14,14 @@ def normalize_file_path_for_display(file_path: str) -> str:
     - Consistent across all tools regardless of how they output paths
 
     Args:
-        file_path: File path (can be absolute or relative)
+        file_path: File path (can be absolute or relative). If empty, returns as is.
 
     Returns:
         Normalized relative path from project root (e.g., "./src/file.py")
     """
+    # Fast-path: empty or whitespace-only input
+    if not file_path or not str(file_path).strip():
+        return file_path
     try:
         # Get the current working directory (project root)
         project_root: str = os.getcwd()
