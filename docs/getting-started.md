@@ -149,6 +149,12 @@ lintro check .github/ config/ --tools yamllint
 **Tools:**
 
 - **Yamllint** - YAML syntax and style validation
+- **Actionlint** - GitHub Actions workflow validation (files under `.github/workflows/`)
+
+```bash
+# Validate GitHub workflows
+lintro check --tools actionlint
+```
 
 ### Docker Files
 

@@ -1,0 +1,1 @@
+"""Actionlint parser package."""
