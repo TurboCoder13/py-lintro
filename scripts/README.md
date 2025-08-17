@@ -64,6 +64,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `auto-tag-detect-previous.sh` | Get previous version from HEAD^ pyproject     | `./scripts/ci/auto-tag-detect-previous.sh`  |
 | `auto-tag-create-push-tag.sh` | Create and push annotated git tag             | `./scripts/ci/auto-tag-create-push-tag.sh`  |
 | `ci-auto-fix.sh`              | Auto-format via Docker and push changes       | `./scripts/ci/ci-auto-fix.sh`               |
+| `pypi-version-exists.sh`      | Check if version exists on PyPI               | `./scripts/ci/pypi-version-exists.sh <project> <version>` |
 
 ### 🐳 Docker Scripts (`docker/`)
 
