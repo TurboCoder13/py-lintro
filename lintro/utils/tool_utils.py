@@ -11,6 +11,10 @@ try:
 except ImportError:
     TABULATE_AVAILABLE = False
 
+from lintro.formatters.tools.actionlint_formatter import (
+    ActionlintTableDescriptor,
+    format_actionlint_issues,
+)
 from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
@@ -46,6 +50,7 @@ TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
     "prettier": (PrettierTableDescriptor(), format_prettier_issues),
     "ruff": (RuffTableDescriptor(), format_ruff_issues),
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
+    "actionlint": (ActionlintTableDescriptor(), format_actionlint_issues),
 }
 VENV_PATTERNS: list[str] = [
     "venv",

@@ -326,6 +326,25 @@ RUN apt-get update && apt-get install -y \
     python3-pip
 ```
 
+#### Actionlint Configuration
+
+Actionlint validates GitHub Actions workflows. Lintro discovers workflow files
+under `/.github/workflows/` when you run `lintro check .` and invokes the
+`actionlint` binary.
+
+- Discovery: YAML files filtered to those in `/.github/workflows/`
+- Defaults: Lintro does not pass special flags; native actionlint defaults are used
+- Local install: use `scripts/utils/install-tools.sh --local` to place `actionlint` on PATH
+- Docker/CI: the Docker image installs `actionlint` during build, so CI tests run it
+
+```bash
+# Validate workflows only
+lintro check --tools actionlint
+
+# Validate workflows along with other tools
+lintro check --tools ruff,actionlint
+```
+
 ## Project-Specific Configuration
 
 ### Multi-Language Projects

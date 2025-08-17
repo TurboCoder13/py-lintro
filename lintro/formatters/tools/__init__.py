@@ -1,5 +1,9 @@
 """Tool-specific table formatters package exports."""
 
+from lintro.formatters.tools.actionlint_formatter import (
+    ActionlintTableDescriptor,
+    format_actionlint_issues,
+)
 from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
@@ -32,4 +36,6 @@ __all__ = [
     "format_ruff_issues",
     "YamllintTableDescriptor",
     "format_yamllint_issues",
+    "ActionlintTableDescriptor",
+    "format_actionlint_issues",
 ]
