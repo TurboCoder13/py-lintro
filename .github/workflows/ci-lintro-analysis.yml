@@ -19,7 +19,7 @@ jobs:
       run:
         shell: bash
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
       # id-token not required
     concurrency:
@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Environment setup
         uses: ./.github/actions/setup-env
@@ -47,6 +49,15 @@ jobs:
           tags: py-lintro:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Auto-fix with Lintro (same-repo PRs only)
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.draft == false &&
+          github.event.pull_request.head.repo.fork == false
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: scripts/ci/ci-auto-fix.sh
 
       - name: Run Lintro Analysis in Docker
         id: lintro

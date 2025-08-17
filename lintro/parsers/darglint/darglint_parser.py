@@ -18,8 +18,9 @@ def parse_darglint_output(output: str) -> list[DarglintIssue]:
     # Patterns:
     # 1. filename:function:line: CODE message
     # 2. filename:line: CODE message (for module-level errors)
-    pattern: re.Pattern[str] = re.compile(r"^(.*?):(.*?):(\d+): (D[A-Z]*\d+) (.*)$")
-    alt_pattern: re.Pattern[str] = re.compile(r"^(.*?):(\d+): (D[A-Z]*\d+) (.*)$")
+    # Accept both "CODE message" and "CODE: message" variants from darglint
+    pattern: re.Pattern[str] = re.compile(r"^(.*?):(.*?):(\d+): (D[A-Z]*\d+):? (.*)$")
+    alt_pattern: re.Pattern[str] = re.compile(r"^(.*?):(\d+): (D[A-Z]*\d+):? (.*)$")
     lines: list[str] = output.splitlines()
     i: int = 0
     while i < len(lines):

@@ -18,20 +18,21 @@ scripts/
 
 1. **Install dependencies:**
 
-   ```bash
-   ./scripts/utils/install.sh
-   ```
+```bash
+./scripts/utils/install.sh
+```
 
 2. **Run tests:**
 
-   ```bash
-   ./scripts/local/run-tests.sh
-   ```
+```bash
+./scripts/local/run-tests.sh
+```
 
 3. **Use Lintro locally:**
-   ```bash
-   ./scripts/local/local-lintro.sh check --output-format grid
-   ```
+
+```bash
+./scripts/local/local-lintro.sh check --output-format grid
+```
 
 ### For Docker Users
 
@@ -49,16 +50,20 @@ scripts/
 
 Scripts for GitHub Actions workflows and continuous integration.
 
-| Script                      | Purpose                                       | Usage                                       |
-| --------------------------- | --------------------------------------------- | ------------------------------------------- |
-| `ci-extract-coverage.sh`    | Extract coverage percentage from coverage.xml | Used in CI to get coverage metrics          |
-| `ci-lintro.sh`              | Run Lintro analysis in Docker for CI          | `./scripts/ci/ci-lintro.sh`                 |
-| `ci-post-pr-comment.sh`     | Post comments to PRs using GitHub API         | `./scripts/ci/ci-post-pr-comment.sh [file]` |
-| `ci-pr-comment.sh`          | Generate PR comments with Lintro results      | `./scripts/ci/ci-pr-comment.sh`             |
-| `coverage-badge-update.sh`  | Generate and update coverage badge            | `./scripts/ci/coverage-badge-update.sh`     |
-| `coverage-pr-comment.sh`    | Generate PR comments with coverage info       | `./scripts/ci/coverage-pr-comment.sh`       |
-| `lintro-report-generate.sh` | Generate comprehensive Lintro reports         | `./scripts/ci/lintro-report-generate.sh`    |
-| `pages-deploy.sh`           | Deploy coverage reports to GitHub Pages       | `./scripts/ci/pages-deploy.sh`              |
+| Script                        | Purpose                                       | Usage                                       |
+| ----------------------------- | --------------------------------------------- | ------------------------------------------- |
+| `ci-extract-coverage.sh`      | Extract coverage percentage from coverage.xml | `./scripts/ci/ci-extract-coverage.sh`       |
+| `ci-lintro.sh`                | Run Lintro analysis in Docker for CI          | `./scripts/ci/ci-lintro.sh`                 |
+| `ci-post-pr-comment.sh`       | Post comments to PRs using GitHub API         | `./scripts/ci/ci-post-pr-comment.sh [file]` |
+| `ci-pr-comment.sh`            | Generate PR comments with Lintro results      | `./scripts/ci/ci-pr-comment.sh`             |
+| `coverage-badge-update.sh`    | Generate and update coverage badge            | `./scripts/ci/coverage-badge-update.sh`     |
+| `coverage-pr-comment.sh`      | Generate PR comments with coverage info       | `./scripts/ci/coverage-pr-comment.sh`       |
+| `lintro-report-generate.sh`   | Generate comprehensive Lintro reports         | `./scripts/ci/lintro-report-generate.sh`    |
+| `pages-deploy.sh`             | Deploy coverage reports to GitHub Pages       | `./scripts/ci/pages-deploy.sh`              |
+| `auto-tag-read-version.sh`    | Read version from pyproject to GITHUB_OUTPUT  | `./scripts/ci/auto-tag-read-version.sh`     |
+| `auto-tag-detect-previous.sh` | Get previous version from HEAD^ pyproject     | `./scripts/ci/auto-tag-detect-previous.sh`  |
+| `auto-tag-create-push-tag.sh` | Create and push annotated git tag             | `./scripts/ci/auto-tag-create-push-tag.sh`  |
+| `ci-auto-fix.sh`              | Auto-format via Docker and push changes       | `./scripts/ci/ci-auto-fix.sh`               |
 
 ### 🐳 Docker Scripts (`docker/`)
 
@@ -328,28 +333,29 @@ source "$(dirname "$0")/utils.sh"
 
 1. **Permission Denied**
 
-   ```bash
-   chmod +x scripts/**/*.sh
-   ```
+```bash
+chmod +x scripts/**/*.sh
+```
 
 2. **Missing Tools**
 
-   ```bash
-   ./scripts/utils/install-tools.sh --local
-   ```
+```bash
+./scripts/utils/install-tools.sh --local
+```
 
 3. **Docker Not Running**
 
-   ```bash
-   # Start Docker Desktop or Docker daemon
-   docker info
-   ```
+```bash
+# Start Docker Desktop or Docker daemon
+docker info
+```
 
 4. **Python Environment Issues**
-   ```bash
-   # Reinstall with uv
-   uv sync --dev
-   ```
+
+```bash
+# Reinstall with uv
+uv sync --dev
+```
 
 ### Getting Help
 
