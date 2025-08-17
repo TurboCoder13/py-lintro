@@ -16,7 +16,7 @@ name = "Eitel Dagnin"
 email = "turbocoder13@gmail.com"
 
 [dependency-groups]
-dev = [ "build==1.2.2.post1", "pytest==8.4.1", "pytest-cov==6.2.1", "pytest-xdist==3.6.1", "twine==6.1.0",]
+dev = [ "build==1.3.0", "pytest==8.4.1", "pytest-cov==6.2.1", "pytest-xdist==3.6.1", "twine==6.1.0",]
 
 [project.readme]
 file = "README.md"
