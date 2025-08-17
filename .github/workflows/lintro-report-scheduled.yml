@@ -24,11 +24,11 @@ permissions:
 
 jobs:
   lintro-report:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Environment setup
         uses: ./.github/actions/setup-env
@@ -45,7 +45,7 @@ jobs:
 
   notify:
     needs: lintro-report
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: success()
 

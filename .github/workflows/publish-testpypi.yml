@@ -15,7 +15,7 @@ jobs:
   publish:
     name: Upload to TestPyPI
     needs: [build, quality]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write
@@ -25,7 +25,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: dist
           path: dist/

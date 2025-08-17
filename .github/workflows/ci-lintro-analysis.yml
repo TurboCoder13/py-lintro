@@ -10,7 +10,7 @@ name: CI Pipeline
 jobs:
   docker-lintro-analysis:
     name: 🛠️ Docker Lintro Code Quality & Analysis
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     if: >-
       github.event_name != 'pull_request' ||
@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
 
