@@ -97,8 +97,7 @@ jobs:
         id: current
         # yamllint disable rule:line-length
         run: |
-          uv run python scripts/utils/extract-version.py | sed 's/^version=/current_version=/' | tee cur.txt
-          cat cur.txt >> "$GITHUB_OUTPUT"
+          echo "current_version=$(uv run python scripts/utils/extract-version.py | sed 's/^version=//')" >> "$GITHUB_OUTPUT"
         # yamllint enable
 
       - name: Skip if no new version
@@ -114,6 +113,20 @@ jobs:
           VERSION: ${{ steps.semrel.outputs.next_version }}
         run: |
           uv run python scripts/utils/update-version.py "$VERSION"
+
+      - name: Install external tools for Lintro (formatting)
+        if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        run: |
+          ./scripts/utils/install-tools.sh --local
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run Lintro format
+        if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        run: uv run lintro format . --output-format grid
+
+      - name: Run Lintro check
+        if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        run: uv run lintro check . --output-format grid
 
       - name: Create Release PR
         # yamllint disable rule:line-length
