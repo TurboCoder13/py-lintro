@@ -4,9 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lintro"
-version = "0.3.1"
+version = "0.3.2"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
-license = { file = "LICENSE" }
 keywords = [ "linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker",]
 classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
 requires-python = ">=3.13,<3.14"
@@ -17,6 +16,9 @@ email = "turbocoder13@gmail.com"
 
 [dependency-groups]
 dev = [ "build==1.3.0", "pytest==8.4.1", "pytest-cov==6.2.1", "pytest-xdist==3.6.1", "twine==6.1.0",]
+
+[project.license]
+file = "LICENSE"
 
 [project.readme]
 file = "README.md"
