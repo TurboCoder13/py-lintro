@@ -27,6 +27,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  - Prettier (code formatter)"
     echo "  - Yamllint (YAML linter)"
     echo "  - Hadolint (Dockerfile linter)"
+    echo "  - Actionlint (GitHub Actions workflow linter)"
     echo ""
     echo "Use this script to set up a complete development environment."
     exit 0
@@ -201,6 +202,40 @@ main() {
     # Install hadolint (Docker linting)
     install_tool_curl "hadolint" \
         "https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint"
+
+    # Install actionlint (GitHub Actions workflow linter)
+    # Prebuilt binaries: https://github.com/rhysd/actionlint/releases
+    echo -e "${BLUE}Installing actionlint...${NC}"
+    ACTIONLINT_VERSION="v1.7.5"
+    # actionlint release assets are named actionlint_${version}_${os}_${arch}.tar.gz
+    # We'll try to download and extract the binary
+    tmpdir=$(mktemp -d)
+    os=$(uname -s)
+    arch=$(uname -m)
+    case "$os" in
+        Darwin) os_name="darwin" ;;
+        Linux) os_name="linux" ;;
+        *) os_name="linux" ;;
+    esac
+    case "$arch" in
+        x86_64|amd64) arch_name="amd64" ;;
+        aarch64|arm64) arch_name="arm64" ;;
+        *) arch_name="amd64" ;;
+    esac
+    tgz_url="https://github.com/rhysd/actionlint/releases/download/${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION#v}_${os_name}_${arch_name}.tar.gz"
+    if curl -fsSL "$tgz_url" -o "$tmpdir/actionlint.tgz"; then
+        tar -xzf "$tmpdir/actionlint.tgz" -C "$tmpdir" >/dev/null 2>&1 || true
+        if [ -f "$tmpdir/actionlint" ]; then
+            cp "$tmpdir/actionlint" "$BIN_DIR/actionlint"
+            chmod +x "$BIN_DIR/actionlint"
+            echo -e "${GREEN}✓ actionlint installed successfully${NC}"
+        else
+            echo -e "${YELLOW}⚠ Could not find extracted actionlint binary${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠ Failed to download actionlint prebuilt binary${NC}"
+    fi
+    rm -rf "$tmpdir" || true
     
     # Install ruff (Python linting and formatting)
     echo -e "${BLUE}Installing ruff...${NC}"
@@ -342,7 +377,7 @@ main() {
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("hadolint" "prettier" "ruff" "yamllint" "darglint")
+    tools_to_verify=("hadolint" "actionlint" "prettier" "ruff" "yamllint" "darglint")
     for tool in "${tools_to_verify[@]}"; do
         if command -v "$tool" &> /dev/null; then
             version=$("$tool" --version 2>/dev/null || echo "installed")
