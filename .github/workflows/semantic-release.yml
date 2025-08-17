@@ -46,6 +46,8 @@ jobs:
         id: semrel
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NO_COLOR: '1'
+          FORCE_COLOR: '0'
         shell: bash
         # yamllint disable rule:line-length
         run: |
@@ -53,13 +55,42 @@ jobs:
           echo "Running semantic-release in noop mode to compute next version"
           OUTPUT=$(uv run python -m semantic_release version --noop || true)
           echo "$OUTPUT"
-          NEXT_VERSION=$(echo "$OUTPUT" | sed -n 's/.*The next version is: \([^ ]\+\).*/\1/p' | head -1 || true)
-          echo "Detected NEXT_VERSION=$NEXT_VERSION"
+          # Try multiple robust extraction patterns to handle formatting differences
+          NEXT_VERSION=$(printf "%s\n" "$OUTPUT" \
+            | sed -n 's/.*The next version is[: ]*\([^ ]\+\).*/\1/p' \
+            | head -1 || true)
+
           if [ -z "${NEXT_VERSION}" ]; then
-            echo "next_version=" >> "$GITHUB_OUTPUT"
-          else
-            echo "next_version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+            # Fallback: infer from latest commit title using Conventional Commits
+            CURR=$(uv run python scripts/utils/extract-version.py | sed 's/^version=//' )
+            TITLE=$(git log -1 --pretty=%s)
+            echo "Fallback based on commit title: $TITLE (current=$CURR)"
+            bump() {
+              local v="$1"; local kind="$2"
+              local MA MI PA
+              IFS='.' read -r MA MI PA <<< "$v"
+              if [ "$kind" = "major" ]; then
+                MA=$((MA+1)); MI=0; PA=0
+              elif [ "$kind" = "minor" ]; then
+                MI=$((MI+1)); PA=0
+              else
+                PA=$((PA+1))
+              fi
+              printf "%d.%d.%d" "$MA" "$MI" "$PA"
+            }
+            if echo "$TITLE" | grep -Eq '(^feat\(|^feat:|^.*!:)'; then
+              NEXT_VERSION=$(bump "$CURR" minor)
+            elif echo "$TITLE" | grep -Eq '(^fix\(|^fix:|^perf\(|^perf:)'; then
+              NEXT_VERSION=$(bump "$CURR" patch)
+            elif git log -1 --pretty=%B | grep -q 'BREAKING CHANGE'; then
+              NEXT_VERSION=$(bump "$CURR" major)
+            else
+              NEXT_VERSION=""
+            fi
           fi
+
+          echo "Detected NEXT_VERSION=${NEXT_VERSION:-<empty>}"
+          echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
         # yamllint enable
 
       - name: Read current version from pyproject.toml
