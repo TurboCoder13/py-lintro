@@ -21,9 +21,9 @@ Lintro is a unified command-line interface that brings together multiple code qu
 [![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/downloads/)
 [![Coverage](assets/images/coverage-badge.svg)](docs/coverage-setup.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/test-and-coverage.yml?label=tests)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-and-coverage.yml)
-[![CI](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/ci-lintro-analysis.yml?label=ci)](https://github.com/TurboCoder13/py-lintro/actions/workflows/ci-lintro-analysis.yml)
-[![Docker](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/docker-build-publish.yml?label=docker&logo=docker)](https://github.com/TurboCoder13/py-lintro/actions/workflows/docker-build-publish.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/test-and-coverage.yml?label=tests&branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-and-coverage.yml?query=branch%3Amain)
+[![CI](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/ci-lintro-analysis.yml?label=ci&branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/ci-lintro-analysis.yml?query=branch%3Amain)
+[![Docker](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/docker-build-publish.yml?label=docker&logo=docker&branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/docker-build-publish.yml?query=branch%3Amain)
 [![Code Style](https://img.shields.io/badge/code%20style-ruff-black-blue)](https://github.com/astral-sh/ruff)
 [![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
 
