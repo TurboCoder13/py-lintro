@@ -45,6 +45,7 @@ upload_to_release = false
 build_command = ""
 changelog_file = "CHANGELOG.md"
 commit_parser = "angular"
+tag_format = "v{version}"
 
 [tool.ruff]
 line-length = 88
