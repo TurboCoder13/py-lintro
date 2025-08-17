@@ -49,6 +49,9 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
+
+      - name: Sync dependencies (dev)
+        run: uv sync --dev --no-progress
       - name: Ensure tag commit is on main
         run: |
           git fetch --no-tags origin main:refs/remotes/origin/main
@@ -71,11 +74,11 @@ jobs:
           test "$version" = "$tag_stripped"
         # yamllint enable
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
+      - name: Build sdist and wheel
+        run: uv run python -m build
+
+      - name: Twine check
+        run: uv run python -m twine check dist/*
 
       - name: Publish to PyPI (Trusted Publishing)
         uses: pypa/gh-action-pypi-publish@v1.12.2 # yamllint disable-line rule:line-length
