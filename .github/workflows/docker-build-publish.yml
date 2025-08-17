@@ -59,6 +59,9 @@ jobs:
       - name: Test Docker Image
         run: ./scripts/docker/docker-build-test.sh
 
+      - name: Run pytest suite inside Docker (compose)
+        run: ./scripts/docker/docker-test.sh
+
   publish:
     needs: build-and-test
     runs-on: ubuntu-22.04
