@@ -19,6 +19,7 @@ Intended for use in CI workflows to keep PRs clean of duplicate bot comments.
 
 import os
 import sys
+from time import sleep
 
 import httpx
 
@@ -53,7 +54,7 @@ def get_env_var(name: str) -> str:
 def get_pr_comments(
     repo: str, pr_number: str, token: str
 ) -> list[dict[str, str | int]]:
-    """Fetch all comments for a pull request.
+    """Fetch all comments for a pull request with pagination and retries.
 
     Args:
         repo (str): Repository in 'owner/repo' format.
@@ -62,16 +63,46 @@ def get_pr_comments(
 
     Returns:
         list[dict[str, str | int]]: List of comment objects.
+
+    Raises:
+        Exception: If the GitHub API request fails after retries or returns
+            a non-successful response status.
     """
+    base_url: str = os.environ.get("GITHUB_API_URL", "https://api.github.com").rstrip(
+        "/"
+    )
     headers: dict[str, str] = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
     }
-    url: str = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
-    with httpx.Client(timeout=10) as client:
-        response: httpx.Response = client.get(url=url, headers=headers)
-        response.raise_for_status()
-        return response.json()
+    all_comments: list[dict[str, str | int]] = []
+    page: int = 1
+    per_page: int = 100
+    with httpx.Client(timeout=15) as client:
+        while True:
+            url: str = (
+                f"{base_url}/repos/{repo}/issues/{pr_number}/comments"
+                f"?per_page={per_page}&page={page}"
+            )
+            # Simple retry/backoff loop
+            for attempt in range(3):
+                try:
+                    response: httpx.Response = client.get(url=url, headers=headers)
+                    response.raise_for_status()
+                    break
+                except Exception:
+                    if attempt == 2:
+                        raise
+                    sleep(0.5 * (2**attempt))
+            data = response.json()
+            if not isinstance(data, list) or not data:
+                break
+            all_comments.extend(data)
+            if len(data) < per_page:
+                break
+            page += 1
+    return all_comments
 
 
 def delete_comment(repo: str, comment_id: int, token: str) -> None:
@@ -82,12 +113,16 @@ def delete_comment(repo: str, comment_id: int, token: str) -> None:
         comment_id (int): Comment ID.
         token (str): GitHub API token.
     """
+    base_url: str = os.environ.get("GITHUB_API_URL", "https://api.github.com").rstrip(
+        "/"
+    )
     headers: dict[str, str] = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
     }
-    url: str = f"https://api.github.com/repos/{repo}/issues/comments/{comment_id}"
-    with httpx.Client(timeout=10) as client:
+    url: str = f"{base_url}/repos/{repo}/issues/comments/{comment_id}"
+    with httpx.Client(timeout=15) as client:
         response: httpx.Response = client.delete(url=url, headers=headers)
         if response.status_code == 204:
             print(f"Deleted comment {comment_id}")

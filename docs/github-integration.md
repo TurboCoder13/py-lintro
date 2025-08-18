@@ -133,7 +133,7 @@ Edit the workflow files to match your project structure:
     uv run lintro check *.json --tools prettier --output-format grid
 ```
 
-### 3. Configure Repository Settings
+### 3. Configure Repository Settings (optional for Pages)
 
 **Enable GitHub Pages:**
 
@@ -141,18 +141,18 @@ Edit the workflow files to match your project structure:
 2. Select **Source:** "GitHub Actions"
 3. Your coverage badge will be available at: `https://TurboCoder13.github.io/py-lintro/badges/coverage.svg`
 
-## Release Automation
+## Release Automation (Single Release Train)
 
 The repository ships with fully automated semantic releases and PyPI publishing.
 
 - **Automated Release PR** (`.github/workflows/semantic-release.yml`)
   - On push to `main`, computes the next version from Conventional Commits
   - Updates `pyproject.toml` and `lintro/__init__.py`
-  - Opens a Release PR and enables auto-merge; once checks pass, it merges
+  - Opens a Release PR (no direct push to main) and enables auto-merge; once checks pass, it merges
 
 - **Auto Tag on Main** (`.github/workflows/auto-tag-on-main.yml`)
-  - After the Release PR is merged, detects the new version in `pyproject.toml`
-  - Creates and pushes a matching git tag if it does not already exist
+  - After the Release PR is merged, a guard step ensures the last commit matches `chore(release):` pattern
+  - Detects the new version in `pyproject.toml`, and creates/pushes the tag if it does not already exist
 
 - **Publish to PyPI on Tag** (`.github/workflows/publish-pypi-on-tag.yml`)
   - On tag push (e.g., `1.2.3`), verifies tag equals `pyproject.toml` version
@@ -160,6 +160,21 @@ The repository ships with fully automated semantic releases and PyPI publishing.
   - Also creates a GitHub Release and attaches built artifacts
 
 > End-to-end: Conventional commits → Release PR (auto-merged) → Tag created → PyPI publish.
+
+### Permissions Model (least privilege)
+
+- Default each workflow to `permissions: { contents: read }`.
+- Grant elevated permissions only where required:
+  - Tag creation job: `contents: write`.
+  - PyPI publish job: `id-token: write` (for OIDC) and `contents: write` only if creating a GH Release.
+  - PR comment jobs: `pull-requests: write`.
+
+Deprecated/manual flows (e.g., direct Release creation workflows) are removed to avoid parallel release paths.
+
+### Labels & guards
+
+- Release PRs are labeled `release-bump` to make them easy to target in policies.
+- Tagging is guarded in `auto-tag-on-main.yml` by checking the last commit title starts with `chore(release):` to ensure tags are only created after Release PR merges.
 
 ### Security & Pinning
 
