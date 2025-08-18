@@ -19,7 +19,7 @@ jobs:
       run:
         shell: bash
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
       # id-token not required
     concurrency:
@@ -27,8 +27,8 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Harden and Checkout
+        uses: ./.github/actions/harden-and-checkout
         with:
           fetch-depth: 0
 
@@ -41,7 +41,7 @@ jobs:
       # Removed no-op dependency listing step
 
       - name: Build Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
           context: .
           push: false

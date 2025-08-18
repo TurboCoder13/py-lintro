@@ -18,14 +18,16 @@ name: Test Suite & Coverage
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   run-test-suite:
     permissions:
-      contents: write
+      contents: read
     runs-on: ubuntu-22.04
     timeout-minutes: 45
+    concurrency:
+      group: tests-${{ github.ref }}
+      cancel-in-progress: true
     defaults:
       run:
         shell: bash
@@ -37,32 +39,33 @@ jobs:
     outputs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden and Checkout
+        uses: ./.github/actions/harden-and-checkout
       - name: Environment setup
         uses: ./.github/actions/setup-env
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/local/run-tests.sh
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
           verbose: true
           flags: python-3.13
       - name: Upload coverage report as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-report-python-3.13
           path: htmlcov/
           retention-days: 30
       - name: Upload coverage XML as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-xml
           path: coverage.xml
           retention-days: 30
       - name: Upload .coverage as artifact (if present)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: ${{ hashFiles('.coverage') != '' }}
         with:
           name: coverage-dotfile
@@ -72,10 +75,14 @@ jobs:
         id: coverage
         run: ./scripts/ci/ci-extract-coverage.sh
 
-      - name: Update repository coverage badge (assets/images)
+      - name: Enforce coverage threshold (80%)
         if: github.ref == 'refs/heads/main' && success()
         env:
-          COVERAGE_BADGE_COMMIT: 'true'
+          COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
+        run: bash ./scripts/ci/enforce-coverage-threshold.sh
+
+      - name: Generate coverage badge artifact only (no commit)
+        if: github.ref == 'refs/heads/main' && success()
         run: ./scripts/ci/coverage-badge-update.sh
 
   comment-pr-coverage:
@@ -85,11 +92,15 @@ jobs:
     defaults:
       run:
         shell: bash
+    permissions:
+      contents: read
+      pull-requests: write
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.draft == false
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden and Checkout
+        uses: ./.github/actions/harden-and-checkout
       - name: Environment setup
         uses: ./.github/actions/setup-env
       - name: Delete Previous Coverage PR Comments
@@ -98,12 +109,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
 
-        # yamllint disable
         run: uv run python scripts/utils/delete-previous-lintro-comments.py "<!-- coverage-report -->"
-        # yamllint enable
 
       - name: Generate coverage PR comment
-        # yamllint disable
         run: |
           export COVERAGE_PERCENTAGE="${{ needs.run-test-suite.outputs.coverage-percentage }}"
           ./scripts/ci/coverage-pr-comment.sh

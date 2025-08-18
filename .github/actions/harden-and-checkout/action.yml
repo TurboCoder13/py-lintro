@@ -1,0 +1,23 @@
+---
+name: Harden runner and checkout
+description: Apply step-security hardened runner and checkout the repository
+inputs:
+  fetch-depth:
+    description: Depth for checkout fetch
+    default: '0'
+  persist-credentials:
+    description: Whether to persist credentials
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    # yamllint disable rule:line-length
+    - name: Harden Runner
+      uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+      with:
+        egress-policy: audit
+    - name: Checkout
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        persist-credentials: ${{ inputs.persist-credentials }}
