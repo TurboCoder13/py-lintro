@@ -21,8 +21,7 @@
     },
     {
       "matchManagers": ["github-actions"],
-      "matchPackageNames": ["amannn/action-semantic-pull-request"],
-      "pinDigests": false
+      "pinDigests": true
     }
   ],
   "pip_requirements": {
