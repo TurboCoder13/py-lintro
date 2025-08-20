@@ -7,7 +7,7 @@ name: Renovate
   workflow_dispatch: # Allow manual triggering
 jobs:
   renovate:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Harden and Checkout

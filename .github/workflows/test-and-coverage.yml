@@ -24,7 +24,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     concurrency:
       group: tests-${{ github.ref }}
@@ -102,7 +102,7 @@ jobs:
 
   comment-pr-coverage:
     needs: run-test-suite
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     defaults:
       run:
