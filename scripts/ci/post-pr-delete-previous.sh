@@ -29,6 +29,9 @@ if [[ -z "${MARKER}" ]]; then
   exit 2
 fi
 
-uv run python scripts/utils/delete-previous-lintro-comments.py "${MARKER}"
+# Run deletion but do not fail the job if nothing to delete or API transient error
+if ! uv run python scripts/utils/delete-previous-lintro-comments.py "${MARKER}"; then
+  echo "No previous comments to delete or deletion not required; continuing."
+fi
 
 

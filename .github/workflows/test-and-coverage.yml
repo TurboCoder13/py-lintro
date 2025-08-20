@@ -111,23 +111,28 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.draft == false
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
     steps:
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
       - name: Delete Previous Coverage PR Comments
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@5d38d622f2f61f6646c3918cd8ea4e53d0020295
-        with:
-          file: coverage-pr-comment.txt
-          marker: '<!-- coverage-report -->'
+        if: always()
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: scripts/ci/post-pr-delete-previous.sh '<!-- coverage-report -->'
 
-      - name: Generate coverage PR comment
+      - name: Generate coverage PR comment (always)
+        if: always()
+        env:
+          COVERAGE_PERCENTAGE: ${{ needs.run-test-suite.outputs.coverage-percentage }}
+          JOB_RESULT: ${{ needs.run-test-suite.result }}
         run: |
-          export COVERAGE_PERCENTAGE="${{ needs.run-test-suite.outputs.coverage-percentage }}"
+          export COVERAGE_PERCENTAGE
+          export JOB_RESULT
           ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
