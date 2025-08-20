@@ -84,11 +84,8 @@ get_coverage_status() {
     local coverage_value="$1"
     local threshold="${2:-80}"
     
-    if (( $(echo "$coverage_value >= $threshold" | bc -l) )); then
-        echo "✅"
-    else
-        echo "⚠️"
-    fi
+    # Portable numeric comparison without requiring bc
+    awk -v c="$coverage_value" -v t="$threshold" 'BEGIN{ exit (c>=t)?0:1 }' && echo "✅" || echo "⚠️"
 }
 
 # Function to run lintro with common options

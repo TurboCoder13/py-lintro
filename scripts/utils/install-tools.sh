@@ -275,27 +275,19 @@ main() {
     
     # Install ruff (Python linting and formatting)
     echo -e "${BLUE}Installing ruff...${NC}"
-    
-    # Try the official installer first
-    echo -e "${YELLOW}Skipping insecure 'curl | sh' ruff installer (security-hardening).${NC}"
-    # Prefer package manager or pip
-    if command -v pip &> /dev/null; then
-        if pip install ruff; then
-            echo -e "${GREEN}✓ ruff installed successfully via pip${NC}"
-        else
-            echo -e "${RED}✗ Failed to install ruff via pip${NC}"
-            exit 1
-        fi
-    elif command -v brew &> /dev/null; then
-        if brew install ruff; then
+    if install_python_package "ruff"; then
+        echo -e "${GREEN}✓ ruff installed successfully${NC}"
+    else
+        if command -v brew &> /dev/null; then
+            echo -e "${YELLOW}Trying Homebrew for ruff...${NC}"
+            brew install ruff || {
+                echo -e "${RED}✗ Failed to install ruff via Homebrew${NC}"; exit 1;
+            }
             echo -e "${GREEN}✓ ruff installed successfully via Homebrew${NC}"
         else
-            echo -e "${RED}✗ Failed to install ruff via Homebrew${NC}"
+            echo -e "${RED}✗ Cannot install ruff automatically; please install via your package manager.${NC}"
             exit 1
         fi
-    else
-        echo -e "${RED}✗ Cannot install ruff automatically; please install via your package manager.${NC}"
-        exit 1
     fi
     
     # Install prettier via npm (JavaScript/JSON formatting)
@@ -333,7 +325,7 @@ main() {
     # Install yamllint (Python package)
     echo -e "${BLUE}Installing yamllint...${NC}"
     
-    # Function to install Python package with fallbacks
+    # Function to install Python package with fallbacks (uv pip preferred)
     install_python_package() {
         local package="$1"
         local version="${2:-}"
@@ -343,14 +335,8 @@ main() {
             full_package="$package==$version"
         fi
         
-        # Try different installation methods in order of preference
-        if [ -n "${GITHUB_ACTIONS:-}" ]; then
-            # GitHub Actions - use pip directly
-            if pip install "$full_package"; then
-                return 0
-            fi
-        elif command -v uv &> /dev/null; then
-            # Local uv environment - try uv pip first
+        # Prefer uv pip when available
+        if command -v uv &> /dev/null; then
             if uv pip install "$full_package"; then
                 # Copy the executable to target directory if it exists in uv environment
                 local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
