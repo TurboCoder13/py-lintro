@@ -98,7 +98,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-      - name: Build and push Docker image (with provenance)
+      - name: Build and push Docker image (with provenance + SBOM)
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
           context: .
@@ -108,3 +108,4 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: true
+          sbom: true
