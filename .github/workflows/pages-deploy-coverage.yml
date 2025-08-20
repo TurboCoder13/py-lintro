@@ -46,10 +46,7 @@ jobs:
           path: coverage-badge
           workflow_conclusion: success
       - name: Create coverage report directory
-        run: |
-          ./scripts/ci/pages-deploy.sh
-          mkdir -p _site/assets/images
-          cp coverage-badge/coverage-badge.svg _site/assets/images/coverage-badge.svg || true
+        run: ./scripts/ci/pages-deploy.sh --badge-path coverage-badge/coverage-badge.svg
       - name: Deploy coverage to Pages
         id: deployment
         uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@5d38d622f2f61f6646c3918cd8ea4e53d0020295
