@@ -46,29 +46,12 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/local/run-tests.sh
-      - name: Upload coverage to Codecov (pinned, via script)
-        # Why not use codecov/codecov-action?
-        # - Our workflows enforce an allow-list and require all actions (including
-        #   transitive ones) to be pinned to full-length SHAs.
-        # - The Codecov action internally references other actions (e.g. actions/github-script)
-        #   via tags, which violates the policy and causes the job to be blocked at
-        #   "Set up job".
-        # - Instead, we use GitHub CLI to download a pinned Codecov uploader release
-        #   asset and verify its checksum (curl-free), which complies with our
-        #   hardened policy.
-        #
-        # Configuration:
-        # - CODECOV_VERSION pins the uploader release version.
-        # - Prefer providing CODECOV_SHA256 to hard-pin the checksum; otherwise this
-        #   script downloads the official checksum asset (CODECOV_CHECKSUM_ASSET) and
-        #   verifies the binary before upload.
-        env:
-          CODECOV_VERSION: v0.7.7
-          CODECOV_FLAGS: python-3.13
-          CODECOV_FILES: ./coverage.xml
-          CODECOV_ASSET: codecov-linux
-          CODECOV_CHECKSUM_ASSET: codecov-linux.sha256
-        run: ./scripts/ci/codecov-upload.sh
+      # Upload coverage badge as artifact for Pages deployment
+      - name: Upload coverage badge artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-badge
+          path: assets/images/coverage-badge.svg
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

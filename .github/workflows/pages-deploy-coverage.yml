@@ -38,8 +38,18 @@ jobs:
           name: coverage-report-python-3.13
           path: coverage-report
           workflow_conclusion: success
+      - name: Download coverage badge artifact
+        uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
+        with:
+          workflow: test-and-coverage.yml
+          name: coverage-badge
+          path: coverage-badge
+          workflow_conclusion: success
       - name: Create coverage report directory
-        run: ./scripts/ci/pages-deploy.sh
+        run: |
+          ./scripts/ci/pages-deploy.sh
+          mkdir -p _site/assets/images
+          cp coverage-badge/coverage-badge.svg _site/assets/images/coverage-badge.svg || true
       - name: Deploy coverage to Pages
         id: deployment
         uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@5d38d622f2f61f6646c3918cd8ea4e53d0020295
