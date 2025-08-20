@@ -35,15 +35,10 @@ jobs:
         if: steps.guard.outputs.ok != 'true'
         run: echo "Not a release bump commit; skipping tag creation."
 
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - name: Environment setup
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
-          python-version: 3.13
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@d9e0f98d3fc6adb07d1e3d37f3043649ddad06a1 # v6
-        with:
-          enable-cache: true
+          python-version: '3.13'
 
       - name: Read version from pyproject.toml
         id: version
