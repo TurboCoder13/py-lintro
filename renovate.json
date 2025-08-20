@@ -61,7 +61,7 @@
     {
       "fileMatch": ["^\\.github/workflows/.*\\.yml$"],
       "matchStrings": [
-        "TurboCoder13/py-lintro/\\.github/(?:actions|workflows)/(?<depName>[^@\\s]+)@(?<currentDigest>[0-9a-f]{40})"
+        "TurboCoder13/py-lintro/\\.github/(?:actions|workflows)/(?<depPath>[^@\\s]+)@(?<currentValue>[0-9a-f]{40})"
       ],
       "datasourceTemplate": "github-commits",
       "lookupNameTemplate": "TurboCoder13/py-lintro",

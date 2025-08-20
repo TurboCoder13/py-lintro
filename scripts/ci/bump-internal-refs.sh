@@ -33,8 +33,15 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 fi
 
 SHA_TO_PIN="${1:-}"
+
+# Determine and validate SHA to pin
 if [[ -z "${SHA_TO_PIN}" ]]; then
   SHA_TO_PIN="$(git rev-parse HEAD)"
+fi
+
+if ! [[ "${SHA_TO_PIN}" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "Invalid SHA provided: ${SHA_TO_PIN}" >&2
+  exit 1
 fi
 
 echo "Bumping internal action/workflow refs to SHA: ${SHA_TO_PIN}" >&2
@@ -52,7 +59,7 @@ while IFS= read -r -d '' file; do
   echo "Processing ${file}" >&2
   # Replace action refs
   sed_in_place -E \
-    "s|(TurboCoder13/py-lintro/\.github/(actions|workflows)/[^@[:space:]]+@)[0-9a-f]{40}|\\1${SHA_TO_PIN}|g" \
+    "s#(TurboCoder13/py-lintro/\.github/(actions|workflows)/[^@[:space:]]+@)[0-9a-f]{40}#\\1${SHA_TO_PIN}#g" \
     "$file"
 done < <(find .github/workflows -type f -name '*.yml' -print0)
 
