@@ -14,6 +14,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
     name: Compute next version and open Release PR
     runs-on: ubuntu-22.04
     concurrency:
