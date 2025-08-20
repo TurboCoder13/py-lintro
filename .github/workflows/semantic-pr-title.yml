@@ -37,6 +37,6 @@ jobs:
 
       - name: Fail if invalid
         if: steps.semantic.outputs.ok != 'true'
-        run: |
-          echo "PR title does not follow Conventional Commits." >&2
-          exit 1
+        env:
+          OK: ${{ steps.semantic.outputs.ok }}
+        run: scripts/ci/fail-if-semantic-invalid.sh

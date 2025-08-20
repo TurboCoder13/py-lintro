@@ -62,14 +62,7 @@ jobs:
         run: bash scripts/ci/ensure-tag-on-main.sh
 
       - name: Verify tag matches pyproject version
-        run: |
-          ver_line=$(uv run python scripts/utils/extract-version.py)
-          echo "$ver_line"
-          version=${ver_line#version=}
-          tag="$GITHUB_REF_NAME"
-          tag_stripped="${tag#v}"
-          echo "pyproject version: $version / tag: $tag (stripped: $tag_stripped)"
-          test "$version" = "$tag_stripped"
+        run: scripts/ci/verify-tag-matches-pyproject.sh
         # yamllint enable
 
       - name: Build sdist and wheel

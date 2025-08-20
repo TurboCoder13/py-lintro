@@ -60,14 +60,9 @@ jobs:
       - name: Check if tag exists
         id: check
         if: steps.prev.outputs.version != steps.version.outputs.version
-        run: |
-          TAG="v${{ steps.version.outputs.version }}"
-          echo "Checking for tag $TAG"
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
+        env:
+          TAG: v${{ steps.version.outputs.version }}
+        run: scripts/ci/auto-tag-check-exists.sh
 
       - name: Create and push tag
         if: >-

@@ -23,8 +23,8 @@ jobs:
       group: codeql-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Harden and Checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@df559355d593797519d70b90fc8edd5db049e7a2 # v3
