@@ -21,7 +21,7 @@ runs:
   steps:
     - name: Set up Docker Buildx
       # yamllint disable-line rule:line-length
-      uses: docker/setup-buildx-action@2b51285047da1547ffb1b2203dcf6e9919ebe2d0 # v3.7.1
+      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
 
     - name: Log in to registry
       if: inputs.login == 'true'

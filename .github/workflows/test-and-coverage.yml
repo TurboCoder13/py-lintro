@@ -23,6 +23,7 @@ jobs:
   run-test-suite:
     permissions:
       contents: read
+      id-token: write
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     concurrency:
@@ -40,18 +41,34 @@ jobs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
     steps:
       - name: Harden and Checkout
-        uses: ./.github/actions/harden-and-checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
       - name: Environment setup
-        uses: ./.github/actions/setup-env
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/local/run-tests.sh
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
-        with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
-          verbose: true
-          flags: python-3.13
+      - name: Upload coverage to Codecov (pinned, via script)
+        # Why not use codecov/codecov-action?
+        # - Our workflows enforce an allow-list and require all actions (including
+        #   transitive ones) to be pinned to full-length SHAs.
+        # - The Codecov action internally references other actions (e.g. actions/github-script)
+        #   via tags, which violates the policy and causes the job to be blocked at
+        #   "Set up job".
+        # - Instead, we use GitHub CLI to download a pinned Codecov uploader release
+        #   asset and verify its checksum (curl-free), which complies with our
+        #   hardened policy.
+        #
+        # Configuration:
+        # - CODECOV_VERSION pins the uploader release version.
+        # - Prefer providing CODECOV_SHA256 to hard-pin the checksum; otherwise this
+        #   script downloads the official checksum asset (CODECOV_CHECKSUM_ASSET) and
+        #   verifies the binary before upload.
+        env:
+          CODECOV_VERSION: v0.7.7
+          CODECOV_FLAGS: python-3.13
+          CODECOV_FILES: ./coverage.xml
+          CODECOV_ASSET: codecov-linux
+          CODECOV_CHECKSUM_ASSET: codecov-linux.sha256
+        run: ./scripts/ci/codecov-upload.sh
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -95,21 +112,20 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      issues: write
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.draft == false
     steps:
       - name: Harden and Checkout
-        uses: ./.github/actions/harden-and-checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
       - name: Environment setup
-        uses: ./.github/actions/setup-env
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
       - name: Delete Previous Coverage PR Comments
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-
-        run: uv run python scripts/utils/delete-previous-lintro-comments.py "<!-- coverage-report -->"
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@5d38d622f2f61f6646c3918cd8ea4e53d0020295
+        with:
+          file: coverage-pr-comment.txt
+          marker: '<!-- coverage-report -->'
 
       - name: Generate coverage PR comment
         run: |
@@ -117,7 +133,7 @@ jobs:
           ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
-        uses: ./.github/actions/post-pr-comment
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
           file: coverage-pr-comment.txt
-          marker: <!-- coverage-report -->
+          marker: '<!-- coverage-report -->'

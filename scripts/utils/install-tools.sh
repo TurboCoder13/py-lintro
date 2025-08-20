@@ -123,22 +123,24 @@ install_tool_curl() {
             local checksum_url="${download_url}.sha256"
             if download_with_retries "$checksum_url" "$target_path.sha256" 3; then
                 echo -e "${BLUE}Verifying checksum for $tool_name...${NC}"
+                # Portable verification regardless of filename in .sha256
+                local expected
+                expected=$(awk '{print $1}' "$target_path.sha256" | head -n1)
+                local actual
                 if command -v sha256sum >/dev/null 2>&1; then
-                    sha256sum -c "$target_path.sha256" >/dev/null 2>&1 \
-                      && echo -e "${GREEN}✓ Checksum verified${NC}" \
-                      || { echo -e "${RED}✗ Checksum mismatch for $tool_name${NC}"; exit 1; }
+                    actual=$(sha256sum "$target_path" | awk '{print $1}')
                 elif command -v shasum >/dev/null 2>&1; then
-                    local expected
-                    expected=$(cut -d' ' -f1 < "$target_path.sha256")
-                    local actual
                     actual=$(shasum -a 256 "$target_path" | awk '{print $1}')
+                else
+                    echo -e "${YELLOW}⚠ No checksum tool available; skipping verification${NC}"
+                    actual=""
+                fi
+                if [[ -n "$actual" ]]; then
                     if [[ "$expected" != "$actual" ]]; then
                         echo -e "${RED}✗ Checksum mismatch for $tool_name${NC}"
                         exit 1
                     fi
                     echo -e "${GREEN}✓ Checksum verified${NC}"
-                else
-                    echo -e "${YELLOW}⚠ No checksum tool available; skipping verification${NC}"
                 fi
                 rm -f "$target_path.sha256" || true
             fi

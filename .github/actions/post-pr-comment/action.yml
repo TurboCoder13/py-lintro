@@ -13,7 +13,7 @@ runs:
   using: composite
   steps:
     - name: Delete previous comments (optional)
-      if: inputs.marker != ''
+      if: inputs.marker != '' && github.event_name == 'pull_request'
       shell: bash
       env:
         PR_NUMBER: ${{ github.event.pull_request.number }}

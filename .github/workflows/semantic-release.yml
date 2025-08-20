@@ -24,7 +24,7 @@ jobs:
         shell: bash
     steps:
       - name: Harden and Checkout
-        uses: ./.github/actions/harden-and-checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
           fetch-depth: 0
 

@@ -22,17 +22,18 @@ echo "Scanning for non-pinned GitHub Actions..."
 offenders=0
 while IFS= read -r line; do
   file="${line%%:*}"
-  uses="${line#*:}"
+  rest="${line#*:}"
+  uses_line="${rest#*:}"
   # Ignore local/composite actions and docker:// references
-  if echo "$uses" | grep -Eq '^\s*uses:\s*(\./|docker://)'; then
+  if echo "$uses_line" | grep -Eq '^\s*uses:\s*(\./|docker://)'; then
     continue
   fi
-  ref=$(echo "$uses" | sed -n 's/.*@\([^ ]\+\).*/\1/p')
+  ref=$(echo "$uses_line" | sed -n 's/.*@\([^ ]\+\).*/\1/p')
   # Accept commit SHAs (40 hex) or expressions (matrix/inputs)
   if echo "$ref" | grep -Eq '^[0-9a-f]{40}$|^\$\{\{'; then
     continue
   fi
-  echo "Non-pinned action in $file: $uses"
+  echo "Non-pinned action in $file: $uses_line"
   offenders=$((offenders+1))
 done < <(grep -RIn "^\s*uses:\s*[^#]" .github/workflows | sed 's/\t/ /g')
 

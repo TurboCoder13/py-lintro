@@ -14,12 +14,12 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
+      - name: Harden and Checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
+
       - name: Validate PR title follows Conventional Commits
         id: semantic
-        uses: amannn/action-semantic-pull-request@0723387faaf9b38adef4775cd42cfd5155ed6017 # v5.5.3
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: TurboCoder13/py-lintro/.github/actions/semantic-pr-title-check@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
           types: |
             chore
@@ -32,32 +32,11 @@ jobs:
             revert
             style
             test
-
-      - name: Comment on PR if invalid
-        if: steps.semantic.conclusion != 'success'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          script: |
-            const body = [
-              '🚫 Conventional Commits required for release automation.',
-              '',
-              'Please format the PR title like:',
-              '- feat: add amazing thing',
-              '- fix(scope): handle edge case',
-              '',
-              'Scopes are optional. Use present tense, imperative mood.',
-              '',
-              'Once updated, this check will pass automatically.'
-            ].join('\n');
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body,
-            });
+          require-scope: 'false'
+          comment-on-fail: 'true'
 
       - name: Fail if invalid
-        if: steps.semantic.conclusion != 'success'
+        if: steps.semantic.outputs.ok != 'true'
         run: |
           echo "PR title does not follow Conventional Commits." >&2
           exit 1

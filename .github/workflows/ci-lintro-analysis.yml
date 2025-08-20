@@ -28,15 +28,15 @@ jobs:
 
     steps:
       - name: Harden and Checkout
-        uses: ./.github/actions/harden-and-checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
           fetch-depth: 0
 
       - name: Environment setup
-        uses: ./.github/actions/setup-env
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
 
       - name: Setup Docker (Buildx)
-        uses: ./.github/actions/setup-docker
+        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@5d38d622f2f61f6646c3918cd8ea4e53d0020295
 
       # Removed no-op dependency listing step
 
@@ -72,10 +72,10 @@ jobs:
 
       - name: Comment PR with Lintro Results
         if: github.event_name == 'pull_request'
-        uses: ./.github/actions/post-pr-comment
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
           file: pr-comment.txt
-          marker: <!-- lintro-report -->
+          marker: '<!-- lintro-report -->'
 
       - name: Fail on Linting Issues
         if: ${{ env.CHK_EXIT_CODE != '0' }}

@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden and Checkout
-        uses: ./.github/actions/harden-and-checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
       - name: Self-hosted Renovate
         uses: renovatebot/github-action@b11417b9eaac3145fe9a8544cee66503724e32b6 # v43.0.8
         with:
