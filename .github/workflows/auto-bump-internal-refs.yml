@@ -8,6 +8,11 @@ name: Auto-bump internal refs
       - .github/actions/**
       - .github/workflows/reusable-*.yml
   workflow_dispatch:
+    inputs:
+      sha:
+        description: Provide the full 40-char commit SHA to pin internal refs to
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -24,7 +29,12 @@ jobs:
           fetch-depth: 0
 
       - name: Bump internal refs to current SHA
-        run: scripts/ci/bump-internal-refs.sh
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            scripts/ci/bump-internal-refs.sh "${{ inputs.sha }}"
+          else
+            scripts/ci/bump-internal-refs.sh "${{ github.sha }}"
+          fi
 
       - name: Create PR if changes
         id: cpr

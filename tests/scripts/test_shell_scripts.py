@@ -351,3 +351,92 @@ class TestScriptIntegration:
                     keyword in header.lower()
                     for keyword in ["test", "install", "docker", "script", "runner"]
                 ), f"{script_name} should have descriptive comments"
+
+    def test_bump_internal_refs_updates_refs(self, tmp_path):
+        """Test that the bump-internal-refs.sh updates SHAs in workflow files.
+
+        Creates a temporary workflow file that includes internal refs and runs the
+        script with a fixed SHA, then verifies the refs were updated.
+
+        Args:
+            tmp_path: Temporary directory provided by pytest for file operations.
+        """
+        workflow_dir = tmp_path / ".github" / "workflows"
+        workflow_dir.mkdir(parents=True)
+
+        sample = (
+            "---\n"
+            "name: Sample\n"
+            "on: [push]\n"
+            "jobs:\n"
+            "  test:\n"
+            "    runs-on: ubuntu-latest\n"
+            "    steps:\n"
+            "      - uses: TurboCoder13/py-lintro/.github/actions/demo@"
+            "0123456789abcdef0123456789abcdef01234567\n"
+            "      - uses: TurboCoder13/py-lintro/.github/workflows/"
+            "reusable-demo.yml@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+        )
+        wf = workflow_dir / "sample.yml"
+        wf.write_text(sample)
+
+        target_sha = "c81d13a3e0c1bbe9cfb360477fdfcbb41ca00cbb"
+
+        # Run script within repo root but target temporary workflow dir via PATH
+        script_path = Path("scripts/ci/bump-internal-refs.sh").resolve()
+
+        # Execute using bash with repo root cwd, but with find limited by tmp tree
+        # by temporarily copying file into repo .github/workflows? Instead, run
+        # script in tmp dir by reproducing its logic against local .github/workflows
+        # Create a wrapper to run in tmp cwd
+        wrapper = tmp_path / "run.sh"
+        wrapper.write_text(
+            "#!/usr/bin/env bash\n"
+            "set -euo pipefail\n"
+            f"cd '{tmp_path}'\n"
+            f"'{script_path}' '{target_sha}'\n"
+        )
+        os.chmod(wrapper, 0o755)
+
+        result = subprocess.run([str(wrapper)], capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr
+
+        content = wf.read_text()
+        assert target_sha in content
+        assert "0123456789abcdef0123456789abcdef01234567" not in content
+        assert "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" not in content
+
+    def test_bump_internal_refs_invalid_sha_fails(self, tmp_path):
+        """Invalid SHA should cause the bump script to fail early.
+
+        Args:
+            tmp_path: Temporary directory provided by pytest for file operations.
+        """
+        workflow_dir = tmp_path / ".github" / "workflows"
+        workflow_dir.mkdir(parents=True)
+        (workflow_dir / "sample.yml").write_text(
+            "uses: TurboCoder13/py-lintro/.github/actions/demo@"
+            "0123456789abcdef0123456789abcdef01234567\n"
+        )
+
+        script_path = Path("scripts/ci/bump-internal-refs.sh").resolve()
+        bad_sha = "notasha"
+        wrapper = tmp_path / "run.sh"
+        wrapper.write_text(
+            "#!/usr/bin/env bash\n"
+            "set -euo pipefail\n"
+            f"cd '{tmp_path}'\n"
+            f"'{script_path}' '{bad_sha}'\n"
+        )
+        os.chmod(wrapper, 0o755)
+
+        result = subprocess.run([str(wrapper)], capture_output=True, text=True)
+        assert result.returncode != 0
+        assert "Invalid SHA" in result.stderr
+
+    def test_renovate_regex_manager_current_value(self):
+        """Ensure Renovate regex manager uses currentValue to satisfy schema."""
+        config_path = Path("renovate.json")
+        content = config_path.read_text()
+        assert "regexManagers" in content
+        assert "currentValue" in content
