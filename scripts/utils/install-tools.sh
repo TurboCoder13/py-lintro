@@ -101,6 +101,47 @@ detect_platform() {
     echo "${os}-${arch}"
 }
 
+# Function to install Python package with fallbacks (uv pip preferred)
+install_python_package() {
+    local package="$1"
+    local version="${2:-}"
+    local full_package="$package"
+
+    if [ -n "$version" ]; then
+        full_package="$package==$version"
+    fi
+
+    # Prefer uv pip when available
+    if command -v uv &> /dev/null; then
+        if uv pip install "$full_package"; then
+            # Copy the executable to target directory if it exists in uv environment
+            local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
+            if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
+                cp "$uv_path" "$BIN_DIR/$package"
+                chmod +x "$BIN_DIR/$package"
+                echo -e "${YELLOW}Copied $package from uv environment to $BIN_DIR${NC}"
+            fi
+            return 0
+        fi
+    fi
+
+    # Fallback to pip
+    if command -v pip &> /dev/null; then
+        if pip install "$full_package"; then
+            return 0
+        fi
+    fi
+
+    # Try system package managers as last resort
+    if command -v brew &> /dev/null; then
+        if brew install "$package"; then
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
 # Function to install a tool via curl with platform detection
 install_tool_curl() {
     local tool_name="$1"
