@@ -17,11 +17,11 @@ EOF
   exit 0
 fi
 
-NO_COLOR=1 FORCE_COLOR=0 OUTPUT=$(uvx --from python-semantic-release semantic-release version --noop || true)
+NO_COLOR=1 FORCE_COLOR=0 OUTPUT=$(uvx --from python-semantic-release \
+  semantic-release --noop version --print 2>&1 || true)
 echo "$OUTPUT"
-NEXT_VERSION=$(printf "%s\n" "$OUTPUT" \
-  | sed -n 's/.*The next version is[: ]*\([^ ]\+\).*/\1/p' \
-  | head -1 || true)
+# The --print option prints the next tag (e.g., v1.2.3). Strip leading 'v' if present.
+NEXT_VERSION=$(printf "%s\n" "$OUTPUT" | head -n 1 | tr -d '\r' | sed -E 's/^v//')
 echo "Detected NEXT_VERSION=${NEXT_VERSION:-<empty>}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
