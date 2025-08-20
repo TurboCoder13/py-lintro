@@ -16,7 +16,7 @@ jobs:
       pull-requests: write
       issues: write
     name: Compute next version and open Release PR
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     concurrency:
       group: release-pr-${{ github.ref }}
       cancel-in-progress: true
@@ -78,7 +78,7 @@ jobs:
       - name: Create Release PR
         if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
         id: cpr
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'chore(release): cut ${{ steps.semrel.outputs.next_version }}'
