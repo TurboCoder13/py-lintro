@@ -79,7 +79,6 @@ jobs:
 
       - name: Fail on Linting Issues
         if: ${{ env.CHK_EXIT_CODE != '0' }}
-        run: |
-          echo "❌ Linting checks failed"
-          echo "Please fix the issues identified by lintro and try again."
-          exit 1
+        env:
+          CHK_EXIT_CODE: ${{ env.CHK_EXIT_CODE }}
+        run: scripts/ci/fail-on-lint.sh

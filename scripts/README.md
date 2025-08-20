@@ -56,6 +56,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `ci-lintro.sh`                     | Run Lintro analysis in Docker for CI            | `./scripts/ci/ci-lintro.sh`                               |
 | `ci-post-pr-comment.sh`            | Post comments to PRs using GitHub API           | `./scripts/ci/ci-post-pr-comment.sh [file]`               |
 | `ci-pr-comment.sh`                 | Generate PR comments with Lintro results        | `./scripts/ci/ci-pr-comment.sh`                           |
+| `fail-on-lint.sh`                  | Fail CI job when lint checks fail               | `CHK_EXIT_CODE=1 ./scripts/ci/fail-on-lint.sh`            |
 | `coverage-badge-update.sh`         | Generate and update coverage badge              | `./scripts/ci/coverage-badge-update.sh`                   |
 | `coverage-pr-comment.sh`           | Generate PR comments with coverage info         | `./scripts/ci/coverage-pr-comment.sh`                     |
 | `lintro-report-generate.sh`        | Generate comprehensive Lintro reports           | `./scripts/ci/lintro-report-generate.sh`                  |
