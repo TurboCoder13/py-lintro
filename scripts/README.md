@@ -73,6 +73,9 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `validate-action-pinning.sh`       | Scan for unpinned GitHub Actions                | `./scripts/ci/validate-action-pinning.sh --help`          |
 | `bump-internal-refs.sh`            | Pin internal action/workflow refs to latest SHA | `./scripts/ci/bump-internal-refs.sh --help`               |
 | `semantic-pr-title-check.sh`       | Validate PR title against Conventional Commits  | `./scripts/ci/semantic-pr-title-check.sh --help`          |
+| `auto-tag-check-exists.sh`         | Check if a git tag exists and export result     | `./scripts/ci/auto-tag-check-exists.sh [TAG]`              |
+| `verify-tag-matches-pyproject.sh`  | Verify tag matches `pyproject.toml` version     | `./scripts/ci/verify-tag-matches-pyproject.sh --help`      |
+| `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed   | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`         |
 
 ### 🐳 Docker Scripts (`docker/`)
 
@@ -120,6 +123,7 @@ Shared utilities and helper scripts.
 | `update-version.py`                  | Update version in pyproject.toml                  | `python scripts/utils/update-version.py <version>`        |
 | `utils.sh`                           | Shared utilities for other scripts                | Sourced by other scripts                                  |
 | `bootstrap-env.sh`                   | Bootstrap CI env with uv and tools                | `./scripts/utils/bootstrap-env.sh --help`                 |
+| `bump_deps.py`                       | Bump exact pinned versions in pyproject           | `uv run python scripts/utils/bump_deps.py --help`         |
 
 ## 🔍 Detailed Script Documentation
 
