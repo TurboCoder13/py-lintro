@@ -8,6 +8,9 @@ inputs:
   persist-credentials:
     description: Whether to persist credentials
     default: 'true'
+  egress-policy:
+    description: step-security harden-runner egress policy (audit|block)
+    default: 'audit'
 runs:
   using: composite
   steps:
@@ -15,7 +18,7 @@ runs:
     - name: Harden Runner
       uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
       with:
-        egress-policy: audit
+        egress-policy: ${{ inputs.egress-policy }}
     - name: Checkout
       uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       with:
