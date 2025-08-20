@@ -1,0 +1,39 @@
+---
+name: Auto-bump internal refs
+
+'on':
+  push:
+    branches: [main]
+    paths:
+      - .github/actions/**
+      - .github/workflows/reusable-*.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Harden and Checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
+        with:
+          fetch-depth: 0
+
+      - name: Bump internal refs to current SHA
+        run: scripts/ci/bump-internal-refs.sh
+
+      - name: Create PR if changes
+        id: cpr
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6
+        with:
+          commit-message: 'chore: bump internal workflow/action refs to latest SHA'
+          title: 'chore: bump internal refs to latest SHA'
+          body: |
+            Automated update of internal action/workflow references to the
+            latest commit SHA to satisfy org policy for pinned refs.
+          branch: chore/bump-internal-refs
+          labels: maintenance

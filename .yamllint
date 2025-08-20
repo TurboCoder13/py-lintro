@@ -2,13 +2,22 @@
 extends: default
 
 rules:
+  # GitHub Actions comments often don't follow indentation expectations
+  comments-indentation: disable
+
   comments:
     min-spaces-from-content: 1 # Allow 1 space to be compatible with prettier
   truthy:
     # Flag unquoted YAML 1.1 truthy/falsey scalars when used as keys.
     # Example: on/off should be quoted when used as keys.
     check-keys: true
-  quoted-strings:
-    # Only require quotes when needed; check keys as well.
-    required: only-when-needed
-    check-keys: true
+    # Be explicit to avoid environment-dependent defaults
+    quoted-strings: disable
+  
+  # Avoid noise on CI YAML with long pinned SHAs and long with: blocks
+  line-length:
+    max: 88
+    allow-non-breakable-inline-mappings: true
+    ignore: |
+      .github/workflows/
+      .github/actions/

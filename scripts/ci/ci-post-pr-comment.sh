@@ -44,7 +44,7 @@ fi
 log_info "Posting PR comment from $COMMENT_FILE"
 
 # Post PR comment using GitHub CLI if available, otherwise fallback to API via curl
-if command -v gh &> \/dev\/null; then
+if command -v gh &>/dev/null; then
     # Prefer high-level gh command when available (handles files and escaping)
     if gh pr comment "$PR_NUMBER" --body-file "$COMMENT_FILE" >/dev/null 2>&1; then
         log_success "PR comment posted successfully via gh (pr comment)"

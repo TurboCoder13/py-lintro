@@ -40,6 +40,23 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Simple downloader with retries/backoff
+download_with_retries() {
+    local url="$1"; shift
+    local out="$1"; shift
+    local attempts=${1:-3}
+    local delay=0.5
+    local i
+    for ((i=1; i<=attempts; i++)); do
+        if curl -fsSL "$url" -o "$out"; then
+            return 0
+        fi
+        sleep "$delay"
+        delay=$(awk -v d="$delay" 'BEGIN{ printf "%.2f", d*2 }')
+    done
+    return 1
+}
+
 # Default to local installation
 INSTALL_MODE="${1:-local}"
 
@@ -84,6 +101,47 @@ detect_platform() {
     echo "${os}-${arch}"
 }
 
+# Function to install Python package with fallbacks (uv pip preferred)
+install_python_package() {
+    local package="$1"
+    local version="${2:-}"
+    local full_package="$package"
+
+    if [ -n "$version" ]; then
+        full_package="$package==$version"
+    fi
+
+    # Prefer uv pip when available
+    if command -v uv &> /dev/null; then
+        if uv pip install "$full_package"; then
+            # Copy the executable to target directory if it exists in uv environment
+            local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
+            if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
+                cp "$uv_path" "$BIN_DIR/$package"
+                chmod +x "$BIN_DIR/$package"
+                echo -e "${YELLOW}Copied $package from uv environment to $BIN_DIR${NC}"
+            fi
+            return 0
+        fi
+    fi
+
+    # Fallback to pip
+    if command -v pip &> /dev/null; then
+        if pip install "$full_package"; then
+            return 0
+        fi
+    fi
+
+    # Try system package managers as last resort
+    if command -v brew &> /dev/null; then
+        if brew install "$package"; then
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
 # Function to install a tool via curl with platform detection
 install_tool_curl() {
     local tool_name="$1"
@@ -99,31 +157,31 @@ install_tool_curl() {
     echo -e "${YELLOW}Detected platform: $platform${NC}"
     echo -e "${YELLOW}Download URL: $download_url${NC}"
     
-    if curl -fsSL "$download_url" -o "$target_path"; then
+    if download_with_retries "$download_url" "$target_path" 3; then
         chmod +x "$target_path"
         # Attempt checksum verification when available
         if [[ "$tool_name" == "hadolint" ]]; then
             local checksum_url="${download_url}.sha256"
-            if curl -fsSL "$checksum_url" -o "$target_path.sha256" 2>/dev/null; then
+            if download_with_retries "$checksum_url" "$target_path.sha256" 3; then
                 echo -e "${BLUE}Verifying checksum for $tool_name...${NC}"
+                # Portable verification regardless of filename in .sha256
+                local expected
+                expected=$(awk '{print $1}' "$target_path.sha256" | head -n1)
+                local actual
                 if command -v sha256sum >/dev/null 2>&1; then
-                    if sha256sum -c "$target_path.sha256" >/dev/null 2>&1; then
-                        echo -e "${GREEN}✓ Checksum verified${NC}"
-                    else
-                        echo -e "${YELLOW}⚠ Checksum mismatch for $tool_name (continuing)${NC}"
-                    fi
+                    actual=$(sha256sum "$target_path" | awk '{print $1}')
                 elif command -v shasum >/dev/null 2>&1; then
-                    local expected
-                    expected=$(cut -d' ' -f1 < "$target_path.sha256")
-                    local actual
                     actual=$(shasum -a 256 "$target_path" | awk '{print $1}')
-                    if [[ "$expected" == "$actual" ]]; then
-                        echo -e "${GREEN}✓ Checksum verified${NC}"
-                    else
-                        echo -e "${YELLOW}⚠ Checksum mismatch for $tool_name (continuing)${NC}"
-                    fi
                 else
                     echo -e "${YELLOW}⚠ No checksum tool available; skipping verification${NC}"
+                    actual=""
+                fi
+                if [[ -n "$actual" ]]; then
+                    if [[ "$expected" != "$actual" ]]; then
+                        echo -e "${RED}✗ Checksum mismatch for $tool_name${NC}"
+                        exit 1
+                    fi
+                    echo -e "${GREEN}✓ Checksum verified${NC}"
                 fi
                 rm -f "$target_path.sha256" || true
             fi
@@ -172,9 +230,9 @@ install_system_deps() {
             git \
             gnupg
         
-        # Install Node.js 20.x
-        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-        apt-get install -y --no-install-recommends nodejs
+        # Install Node.js/npm from distribution repositories (no curl|bash)
+        apt-get install -y --no-install-recommends nodejs npm || \
+            apt-get install -y --no-install-recommends nodejs
         
         # Install Python packages via apt (more reliable in Docker)
         apt-get install -y --no-install-recommends \
@@ -200,6 +258,7 @@ main() {
     fi
     
     # Install hadolint (Docker linting)
+    # hadolint with checksum verification when available
     install_tool_curl "hadolint" \
         "https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint"
 
@@ -223,7 +282,25 @@ main() {
         *) arch_name="amd64" ;;
     esac
     tgz_url="https://github.com/rhysd/actionlint/releases/download/${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION#v}_${os_name}_${arch_name}.tar.gz"
-    if curl -fsSL "$tgz_url" -o "$tmpdir/actionlint.tgz"; then
+    if download_with_retries "$tgz_url" "$tmpdir/actionlint.tgz" 3; then
+        # Verify SHA256 if checksum is available
+        checksum_url="${tgz_url}.sha256"
+        if download_with_retries "$checksum_url" "$tmpdir/actionlint.tgz.sha256" 3; then
+            echo -e "${BLUE}Verifying checksum for actionlint...${NC}"
+            if command -v sha256sum >/dev/null 2>&1; then
+                if ! (cd "$tmpdir" && sha256sum -c actionlint.tgz.sha256 >/dev/null 2>&1); then
+                    echo -e "${RED}✗ Checksum mismatch for actionlint${NC}"
+                    exit 1
+                fi
+            elif command -v shasum >/dev/null 2>&1; then
+                expected=$(cut -d' ' -f1 < "$tmpdir/actionlint.tgz.sha256")
+                actual=$(shasum -a 256 "$tmpdir/actionlint.tgz" | awk '{print $1}')
+                if [[ "$expected" != "$actual" ]]; then
+                    echo -e "${RED}✗ Checksum mismatch for actionlint${NC}"
+                    exit 1
+                fi
+            fi
+        fi
         tar -xzf "$tmpdir/actionlint.tgz" -C "$tmpdir" >/dev/null 2>&1 || true
         if [ -f "$tmpdir/actionlint" ]; then
             cp "$tmpdir/actionlint" "$BIN_DIR/actionlint"
@@ -239,27 +316,17 @@ main() {
     
     # Install ruff (Python linting and formatting)
     echo -e "${BLUE}Installing ruff...${NC}"
-    
-    # Try the official installer first
-    if curl -LsSf https://astral.sh/ruff/install.sh | sh; then
-        # Copy ruff to the target directory if it was installed to ~/.local/bin
-        if [ -f "$HOME/.local/bin/ruff" ] && [ "$HOME/.local/bin/ruff" != "$BIN_DIR/ruff" ]; then
-            cp "$HOME/.local/bin/ruff" "$BIN_DIR/ruff"
-            chmod +x "$BIN_DIR/ruff"
-        fi
+    if install_python_package "ruff"; then
         echo -e "${GREEN}✓ ruff installed successfully${NC}"
     else
-        echo -e "${YELLOW}Ruff installer failed, trying alternative method...${NC}"
-        # Fallback: try installing via pip if available
-        if command -v pip &> /dev/null; then
-            if pip install ruff; then
-                echo -e "${GREEN}✓ ruff installed successfully via pip${NC}"
-            else
-                echo -e "${RED}✗ Failed to install ruff via pip${NC}"
-                exit 1
-            fi
+        if command -v brew &> /dev/null; then
+            echo -e "${YELLOW}Trying Homebrew for ruff...${NC}"
+            brew install ruff || {
+                echo -e "${RED}✗ Failed to install ruff via Homebrew${NC}"; exit 1;
+            }
+            echo -e "${GREEN}✓ ruff installed successfully via Homebrew${NC}"
         else
-            echo -e "${RED}✗ Failed to install ruff (no pip available)${NC}"
+            echo -e "${RED}✗ Cannot install ruff automatically; please install via your package manager.${NC}"
             exit 1
         fi
     fi
@@ -273,16 +340,16 @@ main() {
         
         # Try to install Node.js based on platform
         if command -v apt-get &> /dev/null && [ "$(id -u)" = "0" ]; then
-            # Debian/Ubuntu with root privileges
-            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+            # Debian/Ubuntu with root privileges (no curl|bash installers)
+            apt-get update
+            apt-get install -y --no-install-recommends nodejs npm || \
             apt-get install -y --no-install-recommends nodejs
         elif command -v brew &> /dev/null; then
             # macOS with Homebrew
             brew install node
         elif command -v yum &> /dev/null && [ "$(id -u)" = "0" ]; then
-            # RHEL/CentOS with root privileges
-            curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
-            yum install -y nodejs
+            # RHEL/CentOS with root privileges (no curl|bash installers)
+            yum install -y nodejs npm || yum install -y nodejs
         else
             echo -e "${RED}✗ Cannot install Node.js automatically. Please install Node.js manually.${NC}"
             exit 1
@@ -299,7 +366,7 @@ main() {
     # Install yamllint (Python package)
     echo -e "${BLUE}Installing yamllint...${NC}"
     
-    # Function to install Python package with fallbacks
+    # Function to install Python package with fallbacks (uv pip preferred)
     install_python_package() {
         local package="$1"
         local version="${2:-}"
@@ -309,14 +376,8 @@ main() {
             full_package="$package==$version"
         fi
         
-        # Try different installation methods in order of preference
-        if [ -n "${GITHUB_ACTIONS:-}" ]; then
-            # GitHub Actions - use pip directly
-            if pip install "$full_package"; then
-                return 0
-            fi
-        elif command -v uv &> /dev/null; then
-            # Local uv environment - try uv pip first
+        # Prefer uv pip when available
+        if command -v uv &> /dev/null; then
             if uv pip install "$full_package"; then
                 # Copy the executable to target directory if it exists in uv environment
                 local uv_path=$(uv run which "$package" 2>/dev/null || echo "")

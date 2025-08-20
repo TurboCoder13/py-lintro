@@ -50,21 +50,34 @@ scripts/
 
 Scripts for GitHub Actions workflows and continuous integration.
 
-| Script                        | Purpose                                       | Usage                                                     |
-| ----------------------------- | --------------------------------------------- | --------------------------------------------------------- |
-| `ci-extract-coverage.sh`      | Extract coverage percentage from coverage.xml | `./scripts/ci/ci-extract-coverage.sh`                     |
-| `ci-lintro.sh`                | Run Lintro analysis in Docker for CI          | `./scripts/ci/ci-lintro.sh`                               |
-| `ci-post-pr-comment.sh`       | Post comments to PRs using GitHub API         | `./scripts/ci/ci-post-pr-comment.sh [file]`               |
-| `ci-pr-comment.sh`            | Generate PR comments with Lintro results      | `./scripts/ci/ci-pr-comment.sh`                           |
-| `coverage-badge-update.sh`    | Generate and update coverage badge            | `./scripts/ci/coverage-badge-update.sh`                   |
-| `coverage-pr-comment.sh`      | Generate PR comments with coverage info       | `./scripts/ci/coverage-pr-comment.sh`                     |
-| `lintro-report-generate.sh`   | Generate comprehensive Lintro reports         | `./scripts/ci/lintro-report-generate.sh`                  |
-| `pages-deploy.sh`             | Deploy coverage reports to GitHub Pages       | `./scripts/ci/pages-deploy.sh`                            |
-| `auto-tag-read-version.sh`    | Read version from pyproject to GITHUB_OUTPUT  | `./scripts/ci/auto-tag-read-version.sh`                   |
-| `auto-tag-detect-previous.sh` | Get previous version from HEAD^ pyproject     | `./scripts/ci/auto-tag-detect-previous.sh`                |
-| `auto-tag-create-push-tag.sh` | Create and push annotated git tag             | `./scripts/ci/auto-tag-create-push-tag.sh`                |
-| `ci-auto-fix.sh`              | Auto-format via Docker and push changes       | `./scripts/ci/ci-auto-fix.sh`                             |
-| `pypi-version-exists.sh`      | Check if version exists on PyPI               | `./scripts/ci/pypi-version-exists.sh <project> <version>` |
+| Script                             | Purpose                                         | Usage                                                     |
+| ---------------------------------- | ----------------------------------------------- | --------------------------------------------------------- |
+| `ci-extract-coverage.sh`           | Extract coverage percentage from coverage.xml   | `./scripts/ci/ci-extract-coverage.sh`                     |
+| `ci-lintro.sh`                     | Run Lintro analysis in Docker for CI            | `./scripts/ci/ci-lintro.sh`                               |
+| `ci-post-pr-comment.sh`            | Post comments to PRs using GitHub API           | `./scripts/ci/ci-post-pr-comment.sh [file]`               |
+| `ci-pr-comment.sh`                 | Generate PR comments with Lintro results        | `./scripts/ci/ci-pr-comment.sh`                           |
+| `fail-on-lint.sh`                  | Fail CI job when lint checks fail               | `CHK_EXIT_CODE=1 ./scripts/ci/fail-on-lint.sh`            |
+| `post-pr-delete-previous.sh`       | Delete previous PR comments by marker           | `./scripts/ci/post-pr-delete-previous.sh --help`          |
+| `coverage-badge-update.sh`         | Generate and update coverage badge              | `./scripts/ci/coverage-badge-update.sh`                   |
+| `coverage-pr-comment.sh`           | Generate PR comments with coverage info         | `./scripts/ci/coverage-pr-comment.sh`                     |
+| `lintro-report-generate.sh`        | Generate comprehensive Lintro reports           | `./scripts/ci/lintro-report-generate.sh`                  |
+| `pages-deploy.sh`                  | Deploy coverage reports to GitHub Pages         | `./scripts/ci/pages-deploy.sh`                            |
+| `auto-tag-read-version.sh`         | Read version from pyproject to GITHUB_OUTPUT    | `./scripts/ci/auto-tag-read-version.sh`                   |
+| `auto-tag-detect-previous.sh`      | Get previous version from HEAD^ pyproject       | `./scripts/ci/auto-tag-detect-previous.sh`                |
+| `auto-tag-create-push-tag.sh`      | Create and push annotated git tag               | `./scripts/ci/auto-tag-create-push-tag.sh`                |
+| `ci-auto-fix.sh`                   | Auto-format via Docker and push changes         | `./scripts/ci/ci-auto-fix.sh`                             |
+| `pypi-version-exists.sh`           | Check if version exists on PyPI                 | `./scripts/ci/pypi-version-exists.sh <project> <version>` |
+| `enforce-coverage-threshold.sh`    | Enforce minimum coverage threshold              | `./scripts/ci/enforce-coverage-threshold.sh --help`       |
+| `ensure-tag-on-main.sh`            | Ensure tag ref points to commit on main         | `./scripts/ci/ensure-tag-on-main.sh --help`               |
+| `guard-release-commit.sh`          | Check last commit is release bump               | `./scripts/ci/guard-release-commit.sh --help`             |
+| `pre-release-quality.sh`           | Run Lintro format and check                     | `./scripts/ci/pre-release-quality.sh --help`              |
+| `semantic-release-compute-next.sh` | Compute next version (noop)                     | `./scripts/ci/semantic-release-compute-next.sh --help`    |
+| `validate-action-pinning.sh`       | Scan for unpinned GitHub Actions                | `./scripts/ci/validate-action-pinning.sh --help`          |
+| `bump-internal-refs.sh`            | Pin internal action/workflow refs to latest SHA | `./scripts/ci/bump-internal-refs.sh --help`               |
+| `semantic-pr-title-check.sh`       | Validate PR title against Conventional Commits  | `./scripts/ci/semantic-pr-title-check.sh --help`          |
+| `auto-tag-check-exists.sh`         | Check if a git tag exists and export result     | `./scripts/ci/auto-tag-check-exists.sh [TAG]`             |
+| `verify-tag-matches-pyproject.sh`  | Verify tag matches `pyproject.toml` version     | `./scripts/ci/verify-tag-matches-pyproject.sh --help`     |
+| `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed   | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`        |
 
 ### 🐳 Docker Scripts (`docker/`)
 
@@ -112,6 +125,7 @@ Shared utilities and helper scripts.
 | `update-version.py`                  | Update version in pyproject.toml                  | `python scripts/utils/update-version.py <version>`        |
 | `utils.sh`                           | Shared utilities for other scripts                | Sourced by other scripts                                  |
 | `bootstrap-env.sh`                   | Bootstrap CI env with uv and tools                | `./scripts/utils/bootstrap-env.sh --help`                 |
+| `bump_deps.py`                       | Bump exact pinned versions in pyproject           | `uv run python scripts/utils/bump_deps.py --help`         |
 
 ## 🔍 Detailed Script Documentation
 
@@ -380,3 +394,7 @@ When adding new scripts:
 - [Getting Started](../docs/getting-started.md) - Installation guide
 - [Docker Usage](../docs/docker.md) - Docker documentation
 - [GitHub Integration](../docs/github-integration.md) - CI/CD setup
+
+## CI Scripts
+
+- `ci/codecov-upload.sh`: Download and run the Codecov uploader via GitHub CLI, with checksum verification. Used to upload coverage while complying with strict action pinning and allow-list policies. Supports `--help`.

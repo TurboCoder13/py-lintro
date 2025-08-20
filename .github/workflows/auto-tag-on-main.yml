@@ -6,31 +6,39 @@ name: Auto Tag on Main
     branches: [main]
     paths:
       - pyproject.toml
+    # Only when last commit message indicates a release bump
+    # This avoids random tagging on pyproject edits
+    # GitHub does not support commit message filters here; enforce in a guard step
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   auto-tag:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     timeout-minutes: 10
     # Only run when version actually changed
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Harden and Checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.13
+      - name: Guard ensure last commit is a release bump
+        id: guard
+        run: bash scripts/ci/guard-release-commit.sh
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      - name: Skip if not a release bump commit
+        if: steps.guard.outputs.ok != 'true'
+        run: echo "Not a release bump commit; skipping tag creation."
+
+      - name: Environment setup
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
-          enable-cache: true
+          python-version: '3.13'
 
       - name: Read version from pyproject.toml
         id: version
@@ -47,14 +55,9 @@ jobs:
       - name: Check if tag exists
         id: check
         if: steps.prev.outputs.version != steps.version.outputs.version
-        run: |
-          TAG="v${{ steps.version.outputs.version }}"
-          echo "Checking for tag $TAG"
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
+        env:
+          TAG: v${{ steps.version.outputs.version }}
+        run: scripts/ci/auto-tag-check-exists.sh
 
       - name: Create and push tag
         if: >-

@@ -19,7 +19,7 @@ jobs:
       run:
         shell: bash
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
       # id-token not required
     concurrency:
@@ -27,21 +27,21 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Harden and Checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
           fetch-depth: 0
 
       - name: Environment setup
-        uses: ./.github/actions/setup-env
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
 
       - name: Setup Docker (Buildx)
-        uses: ./.github/actions/setup-docker
+        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@5d38d622f2f61f6646c3918cd8ea4e53d0020295
 
       # Removed no-op dependency listing step
 
       - name: Build Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
           context: .
           push: false
@@ -72,14 +72,13 @@ jobs:
 
       - name: Comment PR with Lintro Results
         if: github.event_name == 'pull_request'
-        uses: ./.github/actions/post-pr-comment
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
           file: pr-comment.txt
-          marker: <!-- lintro-report -->
+          marker: '<!-- lintro-report -->'
 
       - name: Fail on Linting Issues
         if: ${{ env.CHK_EXIT_CODE != '0' }}
-        run: |
-          echo "❌ Linting checks failed"
-          echo "Please fix the issues identified by lintro and try again."
-          exit 1
+        env:
+          CHK_EXIT_CODE: ${{ env.CHK_EXIT_CODE }}
+        run: scripts/ci/fail-on-lint.sh

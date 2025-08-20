@@ -15,67 +15,46 @@ name: Publish to PyPI on Tag
   workflow_dispatch:
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 
 jobs:
   quality:
-    uses: ./.github/workflows/reusable-quality.yml
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@5d38d622f2f61f6646c3918cd8ea4e53d0020295
+    permissions:
+      contents: read
 
   build:
     needs: quality
-    uses: ./.github/workflows/reusable-build.yml
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@5d38d622f2f61f6646c3918cd8ea4e53d0020295
+    permissions:
+      contents: read
 
   publish:
     name: Upload to PyPI
     needs: [build, quality]
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      id-token: write
     timeout-minutes: 20
     environment: pypi
     concurrency:
       group: pypi-tag-publish-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Harden and Checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
           fetch-depth: 0
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Environment setup
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
-          python-version: 3.13
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-
-      - name: Sync dependencies (dev)
-        run: uv sync --dev --no-progress
+          python-version: '3.13'
       - name: Ensure tag points to a commit on main
-        run: |
-          set -euo pipefail
-          git fetch --no-tags origin main:refs/remotes/origin/main
-          # Dereference annotated or lightweight tag to the underlying commit
-          TAG_COMMIT=$(git rev-parse "$GITHUB_REF^{}")
-          echo "Tag $GITHUB_REF_NAME -> $TAG_COMMIT"
-          if git merge-base --is-ancestor "$TAG_COMMIT" origin/main; then
-            echo "Tag commit is on main"
-          else
-            echo "Tag commit is not on main; aborting publish" >&2
-            exit 1
-          fi
+        run: bash scripts/ci/ensure-tag-on-main.sh
 
       - name: Verify tag matches pyproject version
-        # yamllint disable rule:line-length
-        run: |
-          ver_line=$(uv run python scripts/utils/extract-version.py)
-          echo "$ver_line"
-          version=${ver_line#version=}
-          tag="$GITHUB_REF_NAME"
-          tag_stripped="${tag#v}"
-          echo "pyproject version: $version / tag: $tag (stripped: $tag_stripped)"
-          test "$version" = "$tag_stripped"
+        run: scripts/ci/verify-tag-matches-pyproject.sh
         # yamllint enable
 
       - name: Build sdist and wheel
@@ -85,13 +64,13 @@ jobs:
         run: uv run python -m twine check dist/*
 
       - name: Publish to PyPI (Trusted Publishing)
-        uses: pypa/gh-action-pypi-publish@release/v1 # yamllint disable-line rule:line-length
+        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
         with:
           skip-existing: true
           verify-metadata: false
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2 # yamllint disable-line rule:line-length
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
         with:
           tag_name: ${{ github.ref_name }}
           name: v${{ github.ref_name }}

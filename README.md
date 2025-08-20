@@ -9,12 +9,16 @@ A comprehensive CLI tool that unifies various code formatting, linting, and qual
 Lintro is a unified command-line interface that brings together multiple code quality tools into a single, easy-to-use package. Instead of managing separate tools like Ruff, Prettier, Yamllint, and others individually, Lintro provides a consistent interface for all your code quality needs.
 
 [![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/downloads/)
-[![Coverage](assets/images/coverage-badge.svg)](docs/coverage-setup.md)
+[![Coverage](https://codecov.io/gh/TurboCoder13/py-lintro/branch/main/graph/badge.svg)](https://codecov.io/gh/TurboCoder13/py-lintro)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Tests](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/test-and-coverage.yml?label=tests&branch=main&logo=githubactions&logoColor=white)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-and-coverage.yml?query=branch%3Amain)
 [![CI](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/ci-lintro-analysis.yml?label=ci&branch=main&logo=githubactions&logoColor=white)](https://github.com/TurboCoder13/py-lintro/actions/workflows/ci-lintro-analysis.yml?query=branch%3Amain)
 [![Docker](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/docker-build-publish.yml?label=docker&logo=docker&branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/docker-build-publish.yml?query=branch%3Amain)
 [![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
+
+[![CodeQL](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://securityscorecards.dev/viewer/?uri=github.com/TurboCoder13/py-lintro)
+[![Scorecards](https://github.com/TurboCoder13/py-lintro/actions/workflows/scorecards.yml/badge.svg?branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/scorecards.yml?query=branch%3Amain)
 
 <!-- Tool logos (static badges) -->
 

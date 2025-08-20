@@ -26,14 +26,11 @@ fi
 
 echo "[setup] Bootstrapping environment..."
 
-# Ensure uv is available
+# Ensure uv is available (no curl | sh for security-hardening)
 if ! command -v uv >/dev/null 2>&1; then
-  echo "[setup] Installing uv..."
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  # Add default uv install location to PATH for this session
-  if [ -d "$HOME/.local/bin" ]; then
-    export PATH="$HOME/.local/bin:$PATH"
-  fi
+  echo "[setup] Error: 'uv' is required but not installed." >&2
+  echo "[setup] Please install uv using a trusted method (e.g., GitHub Action astral-sh/setup-uv in CI, or your package manager) and re-run." >&2
+  exit 1
 fi
 
 echo "[setup] Syncing Python dependencies (dev)..."

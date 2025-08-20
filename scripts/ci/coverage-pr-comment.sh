@@ -27,6 +27,12 @@ fi
 # Get coverage value using shared function
 COVERAGE_VALUE=$(get_coverage_value)
 COVERAGE_STATUS=$(get_coverage_status "$COVERAGE_VALUE")
+JOB_RESULT_TEXT="${JOB_RESULT:-success}"
+if [ "$JOB_RESULT_TEXT" != "success" ]; then
+    BUILD_STATUS="❌ Tests failed"
+else
+    BUILD_STATUS="✅ Tests passed"
+fi
 
 # Determine status text
 if [ "$COVERAGE_STATUS" = "✅" ]; then
@@ -37,6 +43,8 @@ fi
 
 # Create the comment content with marker
 CONTENT="<!-- coverage-report -->
+
+**Build:** $BUILD_STATUS
 
 **Coverage:** $COVERAGE_STATUS **$COVERAGE_VALUE%**
 
@@ -55,5 +63,5 @@ Or download manually:
 3. Download the \"coverage-report-python-3.13\" artifact
 4. Extract and open \`index.html\` in your browser"
 
-# Generate PR comment using shared function
-generate_pr_comment "📊 Code Coverage Report" "$STATUS_TEXT" "$CONTENT" "coverage-pr-comment.txt" 
+# Generate PR comment using shared function (always produce the file before posting)
+generate_pr_comment "📊 Code Coverage Report" "$STATUS_TEXT" "$CONTENT" "coverage-pr-comment.txt"
