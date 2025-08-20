@@ -1,0 +1,26 @@
+---
+name: Validate Action Pinning
+
+'on':
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-pinning:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    concurrency:
+      group: validate-pinning-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        with:
+          egress-policy: audit
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+      - name: Scan workflows for non-pinned actions (enforcing)
+        run: ENFORCE=1 bash scripts/ci/validate-action-pinning.sh

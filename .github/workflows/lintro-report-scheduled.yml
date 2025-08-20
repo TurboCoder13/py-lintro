@@ -26,18 +26,22 @@ jobs:
   lintro-report:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
+    concurrency:
+      group: report-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden and Checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
 
       - name: Environment setup
-        uses: ./.github/actions/setup-env
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
 
       - name: Run Lintro on codebase
         run: ./scripts/ci/lintro-report-generate.sh
 
       - name: Upload report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: lintro-report
           path: lintro-report/report.md

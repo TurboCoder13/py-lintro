@@ -13,14 +13,13 @@ runs:
   using: composite
   steps:
     - name: Delete previous comments (optional)
-      if: inputs.marker != ''
+      if: inputs.marker != '' && github.event_name == 'pull_request'
       shell: bash
       env:
         PR_NUMBER: ${{ github.event.pull_request.number }}
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_REPOSITORY: ${{ github.repository }}
-      # yamllint disable-line rule:line-length
-      run: uv run python scripts/utils/delete-previous-lintro-comments.py "${{ inputs.marker }}"
+      run: scripts/ci/post-pr-delete-previous.sh "${{ inputs.marker }}"
 
     - name: Post comment
       shell: bash

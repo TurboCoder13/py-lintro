@@ -1,3 +1,6 @@
+# Require review for changes to workflows and scripts
+.github/workflows/*  @TurboCoder13
+scripts/**           @TurboCoder13
 # Protect workflow files – require review by the repo owner for any changes
 .github/workflows/*  @TurboCoder13
 

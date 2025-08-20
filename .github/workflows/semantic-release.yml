@@ -7,11 +7,13 @@ name: Automated Release PR (no direct push to main)
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   open-release-pr:
+    permissions:
+      contents: write
+      pull-requests: write
     name: Compute next version and open Release PR
     runs-on: ubuntu-22.04
     concurrency:
@@ -21,62 +23,37 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Harden and Checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Environment setup
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
         with:
-          python-version: 3.13
+          python-version: '3.13'
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-
-      - name: Sync deps
-        run: uv sync --dev --no-progress
-
-      - name: Install semantic-release
-        run: uv add python-semantic-release
+      - name: Use python-semantic-release via uvx (tool isolation)
+        run: echo "python-semantic-release will be invoked via uvx; not installed into project env"
 
       - name: Compute next version (semantic-release dry run)
         id: semrel
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NO_COLOR: '1'
-          FORCE_COLOR: '0'
-        shell: bash
-        # yamllint disable rule:line-length
-        run: |
-          set -euo pipefail
-          echo "Running semantic-release in noop mode to compute next version"
-          OUTPUT=$(uv run python -m semantic_release version --noop || true)
-          echo "$OUTPUT"
-          NEXT_VERSION=$(printf "%s\n" "$OUTPUT" \
-            | sed -n 's/.*The next version is[: ]*\([^ ]\+\).*/\1/p' \
-            | head -1 || true)
-          echo "Detected NEXT_VERSION=${NEXT_VERSION:-<empty>}"
-          echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
-        # yamllint enable
+        run: bash scripts/ci/semantic-release-compute-next.sh
 
       - name: Read current version from pyproject.toml
         id: current
-        # yamllint disable rule:line-length
         run: |
           echo "current_version=$(uv run python scripts/utils/extract-version.py | sed 's/^version=//')" >> "$GITHUB_OUTPUT"
         # yamllint enable
 
       - name: Skip if no new version
-        # yamllint disable rule:line-length
         if: ${{ steps.semrel.outputs.next_version == '' || steps.semrel.outputs.next_version == steps.current.outputs.current_version }}
         run: |
           echo "No new version to release (next='${{ steps.semrel.outputs.next_version }}', current='${{ steps.current.outputs.current_version }}'). Skipping."
 
       - name: Update version files
-        # yamllint disable rule:line-length
         if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
         env:
           VERSION: ${{ steps.semrel.outputs.next_version }}
@@ -98,13 +75,11 @@ jobs:
         run: uv run lintro check . --output-format grid
 
       - name: Create Release PR
-        # yamllint disable rule:line-length
         if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
         id: cpr
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # yamllint disable rule:line-length
           commit-message: 'chore(release): cut ${{ steps.semrel.outputs.next_version }}'
           title: 'chore(release): prepare ${{ steps.semrel.outputs.next_version }}'
           body: |
@@ -115,10 +90,11 @@ jobs:
             - Upon merge, tag and publish workflows will run automatically
           branch: release/${{ steps.semrel.outputs.next_version }}
           base: main
+          labels: |
+            release-bump
           # yamllint enable
 
       - name: Enable auto-merge for Release PR
-        # yamllint disable rule:line-length
         if: ${{ steps.cpr.outputs.pull-request-number != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
