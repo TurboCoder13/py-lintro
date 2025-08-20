@@ -20,8 +20,12 @@ fi
 NO_COLOR=1 FORCE_COLOR=0 OUTPUT=$(uvx --from python-semantic-release \
   semantic-release --noop version --print 2>&1 || true)
 echo "$OUTPUT"
-# The --print option prints the next tag (e.g., v1.2.3). Strip leading 'v' if present.
-NEXT_VERSION=$(printf "%s\n" "$OUTPUT" | head -n 1 | tr -d '\r' | sed -E 's/^v//')
+# Extract the last full semver-looking line from output, strip optional leading 'v'.
+NEXT_VERSION=$(printf "%s\n" "$OUTPUT" \
+  | sed -e 's/\r//g' \
+  | grep -E '^[vV]?[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$' \
+  | tail -n 1 \
+  | sed -E 's/^[vV]//' || true)
 echo "Detected NEXT_VERSION=${NEXT_VERSION:-<empty>}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
