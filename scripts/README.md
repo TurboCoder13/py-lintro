@@ -74,9 +74,9 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `validate-action-pinning.sh`       | Scan for unpinned GitHub Actions                | `./scripts/ci/validate-action-pinning.sh --help`          |
 | `bump-internal-refs.sh`            | Pin internal action/workflow refs to latest SHA | `./scripts/ci/bump-internal-refs.sh --help`               |
 | `semantic-pr-title-check.sh`       | Validate PR title against Conventional Commits  | `./scripts/ci/semantic-pr-title-check.sh --help`          |
-| `auto-tag-check-exists.sh`         | Check if a git tag exists and export result     | `./scripts/ci/auto-tag-check-exists.sh [TAG]`              |
-| `verify-tag-matches-pyproject.sh`  | Verify tag matches `pyproject.toml` version     | `./scripts/ci/verify-tag-matches-pyproject.sh --help`      |
-| `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed   | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`         |
+| `auto-tag-check-exists.sh`         | Check if a git tag exists and export result     | `./scripts/ci/auto-tag-check-exists.sh [TAG]`             |
+| `verify-tag-matches-pyproject.sh`  | Verify tag matches `pyproject.toml` version     | `./scripts/ci/verify-tag-matches-pyproject.sh --help`     |
+| `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed   | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`        |
 
 ### 🐳 Docker Scripts (`docker/`)
 

@@ -46,12 +46,7 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@5d38d622f2f61f6646c3918cd8ea4e53d0020295
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/local/run-tests.sh
-      # Upload coverage badge as artifact for Pages deployment
-      - name: Upload coverage badge artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: coverage-badge
-          path: assets/images/coverage-badge.svg
+      # (moved) Upload coverage badge artifact happens after badge generation below
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -89,6 +84,17 @@ jobs:
           CODECOV_FLAGS: python-3.13
           CODECOV_FILES: coverage.xml
         run: ./scripts/ci/codecov-upload.sh
+
+      - name: Generate coverage badge (no commit)
+        if: success()
+        run: ./scripts/ci/coverage-badge-update.sh
+
+      - name: Upload coverage badge artifact
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-badge
+          path: assets/images/coverage-badge.svg
 
       - name: Generate coverage badge artifact only (no commit)
         if: github.ref == 'refs/heads/main' && success()
