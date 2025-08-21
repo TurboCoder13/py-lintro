@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   bump:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
       - name: Harden and Checkout
@@ -36,10 +36,16 @@ jobs:
             scripts/ci/bump-internal-refs.sh "${{ github.sha }}"
           fi
 
+      - name: Detect changes
+        id: diff
+        run: scripts/ci/detect-changes.sh
+
       - name: Create PR if changes
         id: cpr
-        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7
+        if: steps.diff.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'chore: bump internal workflow/action refs to latest SHA'
           title: 'chore: bump internal refs to latest SHA'
           body: |
@@ -47,3 +53,4 @@ jobs:
             latest commit SHA to satisfy org policy for pinned refs.
           branch: chore/bump-internal-refs
           labels: maintenance
+          delete-branch: true

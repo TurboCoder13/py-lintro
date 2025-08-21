@@ -284,7 +284,9 @@ class TestScriptIntegration:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        ci_scripts = list(scripts_dir.glob("ci-*.sh"))
+        ci_scripts = list(scripts_dir.glob("ci-*.sh")) + list(
+            (scripts_dir / "ci").glob("*.sh")
+        )
 
         for script in ci_scripts:
             with open(script, "r") as f:
@@ -294,9 +296,23 @@ class TestScriptIntegration:
             if "run-tests.sh" in content:
                 assert (scripts_dir / "run-tests.sh").exists()
             if "local-lintro.sh" in content:
-                assert (scripts_dir / "local-lintro.sh").exists()
+                assert (
+                    (scripts_dir / "local-lintro.sh").exists()
+                    or (scripts_dir / "local" / "local-lintro.sh").exists()
+                )
             if "extract-coverage.py" in content:
                 assert (scripts_dir / "extract-coverage.py").exists()
+            if "detect-changes.sh" in content:
+                assert (scripts_dir / "ci" / "detect-changes.sh").exists()
+
+    def test_detect_changes_help(self):
+        """detect-changes.sh should provide help and exit 0."""
+        script_path = Path("scripts/ci/detect-changes.sh").resolve()
+        result = subprocess.run(
+            [str(script_path), "--help"], capture_output=True, text=True
+        )
+        assert result.returncode == 0
+        assert "Usage:" in result.stdout
 
     def test_scripts_use_consistent_color_codes(self, scripts_dir):
         """Test that scripts use consistent color coding.
