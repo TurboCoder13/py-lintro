@@ -66,6 +66,12 @@
       "datasourceTemplate": "github-commits",
       "lookupNameTemplate": "TurboCoder13/py-lintro",
       "extractVersionTemplate": null
+    },
+    {
+      "fileMatch": ["^\\.github/workflows/test-and-coverage\\.yml$"],
+      "matchStrings": ["CODECOV_VERSION:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "codecov/uploader"
     }
   ],
   "schedule": ["after 22:00", "before 23:00"],
