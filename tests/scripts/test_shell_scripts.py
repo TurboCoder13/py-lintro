@@ -154,6 +154,23 @@ class TestScriptHelp:
             "Should document command options"
         )
 
+    def test_codecov_upload_help(self, scripts_dir):
+        """codecov-upload.sh should provide help and exit 0.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+        """
+        script = scripts_dir / "ci" / "codecov-upload.sh"
+        result = subprocess.run(
+            [str(script), "--help"],
+            capture_output=True,
+            text=True,
+            cwd=scripts_dir.parent,
+        )
+        assert result.returncode == 0
+        assert "Usage:" in result.stdout
+        assert "Codecov" in result.stdout
+
 
 class TestScriptFunctionality:
     """Test basic functionality of shell scripts."""
@@ -296,15 +313,13 @@ class TestScriptIntegration:
             if "run-tests.sh" in content:
                 assert (scripts_dir / "run-tests.sh").exists()
             if "local-lintro.sh" in content:
-                assert (
-                    (scripts_dir / "local-lintro.sh").exists()
-                    or (scripts_dir / "local" / "local-lintro.sh").exists()
-                )
+                assert (scripts_dir / "local-lintro.sh").exists() or (
+                    scripts_dir / "local" / "local-lintro.sh"
+                ).exists()
             if "extract-coverage.py" in content:
-                assert (
-                    (scripts_dir / "extract-coverage.py").exists()
-                    or (scripts_dir / "utils" / "extract-coverage.py").exists()
-                )
+                assert (scripts_dir / "extract-coverage.py").exists() or (
+                    scripts_dir / "utils" / "extract-coverage.py"
+                ).exists()
             if "detect-changes.sh" in content:
                 assert (scripts_dir / "ci" / "detect-changes.sh").exists()
 
