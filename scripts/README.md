@@ -78,6 +78,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `auto-tag-check-exists.sh`         | Check if a git tag exists and export result     | `./scripts/ci/auto-tag-check-exists.sh [TAG]`             |
 | `verify-tag-matches-pyproject.sh`  | Verify tag matches `pyproject.toml` version     | `./scripts/ci/verify-tag-matches-pyproject.sh --help`     |
 | `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed   | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`        |
+| `detect-changes.sh`                | Detect repo diffs and set has_changes output    | `./scripts/ci/detect-changes.sh --help`                   |
 
 ### 🐳 Docker Scripts (`docker/`)
 
