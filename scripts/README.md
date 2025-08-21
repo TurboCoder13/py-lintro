@@ -398,4 +398,19 @@ When adding new scripts:
 
 ## CI Scripts
 
-- `ci/codecov-upload.sh`: Download and run the Codecov uploader via GitHub CLI, with checksum verification. Used to upload coverage while complying with strict action pinning and allow-list policies. Supports `--help`.
+- `ci/codecov-upload.sh`: Legacy helper to download and run the Codecov uploader via GitHub CLI with checksum verification. Prefer using the official GitHub Action in the workflow:
+
+  ```yaml
+  - name: Upload coverage to Codecov
+    if: success()
+    uses: codecov/codecov-action@v5
+    with:
+      files: coverage.xml
+      flags: python-3.13
+      fail_ci_if_error: true
+      # token: ${{ secrets.CODECOV_TOKEN }} # for private repos only
+  ```
+  - Notes:
+    - Requires `gh` (GitHub CLI) available on the runner.
+    - In GitHub Actions, `gh` expects `GH_TOKEN`. The script will automatically map the built-in `GITHUB_TOKEN` to `GH_TOKEN` if the latter is unset.
+    - Set `CODECOV_VERSION` (and optionally `CODECOV_SHA256`) via organization or repo vars.

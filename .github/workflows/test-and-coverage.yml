@@ -76,14 +76,15 @@ jobs:
           COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
         run: bash ./scripts/ci/enforce-coverage-threshold.sh
 
-      - name: Upload coverage to Codecov (optional)
-        if: success() && vars.CODECOV_VERSION != ''
-        env:
-          CODECOV_VERSION: ${{ vars.CODECOV_VERSION }}
-          CODECOV_SHA256: ${{ vars.CODECOV_SHA256 }}
-          CODECOV_FLAGS: python-3.13
-          CODECOV_FILES: coverage.xml
-        run: ./scripts/ci/codecov-upload.sh
+      - name: Upload coverage to Codecov
+        if: success()
+        # Pin Codecov action to commit SHA containing pinned github-script usage
+        uses: codecov/codecov-action@39a2af19d997be74586469d4062e173ecae614f6
+        with:
+          files: coverage.xml
+          flags: python-3.13
+          fail_ci_if_error: true
+          # token: ${{ secrets.CODECOV_TOKEN }} # for private repos only
 
       - name: Generate coverage badge (no commit)
         if: success()

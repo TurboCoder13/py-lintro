@@ -24,8 +24,8 @@ fi
 # Source shared utilities
 source "$(dirname "$0")/../utils/utils.sh"
 
-# Set coverage percentage if not already set
-if [ -z "$COVERAGE_PERCENTAGE" ]; then
+# Set coverage percentage if not already set (handle nounset)
+if [ -z "${COVERAGE_PERCENTAGE:-}" ]; then
     if [ -f "coverage.xml" ]; then
         COVERAGE_PERCENTAGE=$(uv run python scripts/utils/extract-coverage.py 2>&1 | grep "percentage=" | tail -1 | cut -d'=' -f2)
         log_info "Extracted coverage percentage: $COVERAGE_PERCENTAGE%"
@@ -103,7 +103,7 @@ EOF
 fi
 
 # Update badge locally or in CI
-if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
     # Default: do not push from CI to keep runs idempotent
     if [ "${COVERAGE_BADGE_COMMIT:-false}" = "true" ]; then
         git config --local user.email "action@github.com"
