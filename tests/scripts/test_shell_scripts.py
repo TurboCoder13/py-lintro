@@ -301,7 +301,10 @@ class TestScriptIntegration:
                     or (scripts_dir / "local" / "local-lintro.sh").exists()
                 )
             if "extract-coverage.py" in content:
-                assert (scripts_dir / "extract-coverage.py").exists()
+                assert (
+                    (scripts_dir / "extract-coverage.py").exists()
+                    or (scripts_dir / "utils" / "extract-coverage.py").exists()
+                )
             if "detect-changes.sh" in content:
                 assert (scripts_dir / "ci" / "detect-changes.sh").exists()
 
