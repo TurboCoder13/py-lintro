@@ -3,6 +3,7 @@
 from enum import Enum
 
 from lintro.tools.implementations.tool_actionlint import ActionlintTool
+from lintro.tools.implementations.tool_bandit import BanditTool
 from lintro.tools.implementations.tool_darglint import DarglintTool
 from lintro.tools.implementations.tool_hadolint import HadolintTool
 from lintro.tools.implementations.tool_prettier import PrettierTool
@@ -17,3 +18,4 @@ class ToolEnum(Enum):
     RUFF = RuffTool
     YAMLLINT = YamllintTool
     ACTIONLINT = ActionlintTool
+    BANDIT = BanditTool

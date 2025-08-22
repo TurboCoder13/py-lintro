@@ -15,6 +15,10 @@ from lintro.formatters.tools.actionlint_formatter import (
     ActionlintTableDescriptor,
     format_actionlint_issues,
 )
+from lintro.formatters.tools.bandit_formatter import (
+    BanditTableDescriptor,
+    format_bandit_issues,
+)
 from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
@@ -35,6 +39,7 @@ from lintro.formatters.tools.yamllint_formatter import (
     YamllintTableDescriptor,
     format_yamllint_issues,
 )
+from lintro.parsers.bandit.bandit_parser import parse_bandit_output
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
@@ -51,6 +56,7 @@ TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
     "ruff": (RuffTableDescriptor(), format_ruff_issues),
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
     "actionlint": (ActionlintTableDescriptor(), format_actionlint_issues),
+    "bandit": (BanditTableDescriptor(), format_bandit_issues),
 }
 VENV_PATTERNS: list[str] = [
     "venv",
@@ -354,6 +360,14 @@ def format_tool_output(
         parsed_issues = parse_hadolint_output(output=output)
     elif tool_name == "yamllint":
         parsed_issues = parse_yamllint_output(output=output)
+    elif tool_name == "bandit":
+        # Bandit emits JSON; try parsing when raw output is provided
+        try:
+            parsed_issues = parse_bandit_output(
+                bandit_data=__import__("json").loads(output)
+            )
+        except Exception:
+            parsed_issues = []
 
     if parsed_issues and tool_name in TOOL_TABLE_FORMATTERS:
         _, formatter_func = TOOL_TABLE_FORMATTERS[tool_name]

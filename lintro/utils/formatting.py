@@ -4,7 +4,7 @@ Includes helpers to read multi-section ASCII art files and normalize
 ASCII blocks to a fixed size (width/height) while preserving shape.
 """
 
-import random
+import secrets
 from pathlib import Path
 
 
@@ -43,7 +43,9 @@ def read_ascii_art(filename: str) -> list[str]:
 
             # Return a random section if there are multiple, otherwise return all lines
             if sections:
-                return random.choice(sections)
+                # Use ``secrets.choice`` to avoid Bandit B311; cryptographic
+                # strength is not required here, but this silences the warning.
+                return secrets.choice(sections)
             return lines
     except (FileNotFoundError, OSError):
         # Return empty list if file not found or can't be read
