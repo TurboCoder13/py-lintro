@@ -45,6 +45,18 @@ jobs:
     steps:
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f3453f81f64cffc278f070e6ba152a87a292c1bc
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        with:
+          egress-policy: audit
+          allowed-endpoints: |
+            github.com:443
+            api.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+            pkg-containers.githubusercontent.com:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Setup Docker (Buildx)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@f3453f81f64cffc278f070e6ba152a87a292c1bc
       - name: Build Docker image
@@ -75,10 +87,23 @@ jobs:
       group: docker-publish-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f3453f81f64cffc278f070e6ba152a87a292c1bc
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
         with:
-          egress_policy: block
+          egress-policy: block
+          allowed-endpoints: |
+            github.com:443
+            api.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+            pkg-containers.githubusercontent.com:443
+            ghcr.io:443
+            production.cloudflare.docker.com:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            index.docker.io:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Setup Docker (Buildx + login)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@f3453f81f64cffc278f070e6ba152a87a292c1bc
         with:
