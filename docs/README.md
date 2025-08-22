@@ -105,13 +105,15 @@ lintro format
 
 ## 🛠️ Supported Tools
 
-| Tool         | Language/Format | Purpose              | Documentation                                           |
-| ------------ | --------------- | -------------------- | ------------------------------------------------------- |
-| **Ruff**     | Python          | Linting & Formatting | [Config Guide](configuration.md#ruff-configuration)     |
-| **Darglint** | Python          | Docstring Validation | [Analysis](tool-analysis/darglint-analysis.md)          |
-| **Prettier** | JS/TS/JSON/CSS  | Code Formatting      | [Analysis](tool-analysis/prettier-analysis.md)          |
-| **Yamllint** | YAML            | Syntax & Style       | [Config Guide](configuration.md#yamllint-configuration) |
-| **Hadolint** | Dockerfile      | Best Practices       | [Config Guide](configuration.md#hadolint-configuration) |
+| Tool           | Language/Format  | Purpose              | Documentation                                           |
+| -------------- | ---------------- | -------------------- | ------------------------------------------------------- |
+| **Ruff**       | Python           | Linting & Formatting | [Config Guide](configuration.md#ruff-configuration)     |
+| **Darglint**   | Python           | Docstring Validation | [Analysis](tool-analysis/darglint-analysis.md)          |
+| **Bandit**     | Python           | Security Linting     | [Analysis](tool-analysis/bandit-analysis.md)            |
+| **Prettier**   | JS/TS/JSON/CSS   | Code Formatting      | [Analysis](tool-analysis/prettier-analysis.md)          |
+| **Yamllint**   | YAML             | Syntax & Style       | [Config Guide](configuration.md#yamllint-configuration) |
+| **Actionlint** | GitHub Workflows | Workflow Linting     | [Analysis](tool-analysis/actionlint-analysis.md)        |
+| **Hadolint**   | Dockerfile       | Best Practices       | [Config Guide](configuration.md#hadolint-configuration) |
 
 ## 📋 Command Reference
 

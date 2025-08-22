@@ -22,6 +22,7 @@ Lintro is a unified command-line interface that brings together multiple code qu
 <!-- Tool logos (static badges) -->
 
 [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
+[![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)
 [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)
 [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)
 [![Actionlint](https://img.shields.io/badge/Actionlint-GitHub%20Workflows-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)
@@ -53,6 +54,7 @@ Lintro is a unified command-line interface that brings together multiple code qu
 | -------------- | ------------------------------------ | -------------------- | -------- |
 | **Ruff**       | Python                               | Linting & Formatting | ✅       |
 | **Darglint**   | Python                               | Docstring Validation | -        |
+| **Bandit**     | Python                               | Security Linting     | -        |
 | **Prettier**   | JS/TS/JSON                           | Code Formatting      | ✅       |
 | **Yamllint**   | YAML                                 | Syntax & Style       | -        |
 | **Actionlint** | GitHub Workflows (.github/workflows) | Workflow Validation  | -        |
@@ -147,8 +149,8 @@ lintro check --output-format grid --group-by code  # Group by error type
 # Exclude patterns
 lintro check --exclude "migrations,node_modules,dist"
 
-# Tool-specific options
-lintro check --tool-options "ruff:--line-length=88,prettier:--print-width=80"
+# Tool-specific options use key=value (lists with |)
+lintro check --tool-options "ruff:line_length=88,prettier:print_width=80"
 
 # Ruff fix configuration (fmt):
 # By default, fmt applies both lint fixes and formatting for Ruff.

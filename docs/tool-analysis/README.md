@@ -38,6 +38,22 @@ This directory contains comprehensive analyses comparing Lintro's wrapper implem
 
 ### [Hadolint Analysis](./hadolint-analysis.md)
 
+### [Bandit Analysis](./bandit-analysis.md)
+
+**Python Security Linter**
+
+- ✅ **Preserved**: Recursive scanning, severity/confidence gates, config/baseline
+- ⚠️ **Defaults**: JSON output and quiet logs for stable parsing
+- 🚀 **Notes**: Robust JSON extraction; normalized reporting
+
+### [Actionlint Analysis](./actionlint-analysis.md)
+
+**GitHub Actions Workflow Linter**
+
+- ✅ **Preserved**: Default output, rule detection, workflow path targeting
+- ⚠️ **Defaults**: No flags; filtered to `/.github/workflows/`
+- 🚀 **Notes**: Normalized parsing and formatting
+
 **Dockerfile Linter for Best Practices**
 
 - ✅ **Preserved**: Dockerfile analysis, shell script linting, best practices, security scanning

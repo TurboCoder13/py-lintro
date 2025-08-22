@@ -46,9 +46,9 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 
 **Configuration Control:**
 
-- ❌ **Runtime docstring style**: Cannot specify `--docstring-style` at runtime
-- ❌ **Strictness levels**: No access to `--strictness` parameter
-- ❌ **Ignore patterns**: Cannot use `--ignore-regex` for selective ignoring
+- ⚠️ **Runtime docstring style**: Prefer config; proposed pass-through `darglint:docstring_style=google`.
+- ⚠️ **Strictness levels**: Already exposed (default `full`); can be overridden; document CLI mapping.
+- ⚠️ **Ignore patterns**: `ignore_regex` is exposed; emphasize usage via `--tool-options`.
 - ❌ **Custom error selection**: No runtime control over which errors to check
 
 **Output Customization:**
@@ -92,6 +92,12 @@ result = subprocess.run(cmd, capture_output=True, text=True)
   ```
 
 **Error Parsing:**
+
+### 🔧 Proposed runtime pass-throughs
+
+- `--tool-options darglint:docstring_style=google`
+- `--tool-options darglint:strictness=short`
+- `--tool-options darglint:verbosity=1`
 
 - ✅ **Regex-based parsing**: Robust parsing of Darglint's output format
 - ✅ **Multi-line support**: Handles complex error messages

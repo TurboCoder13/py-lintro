@@ -27,8 +27,11 @@ lintro check path/to/files                   # Check specific paths
 #### Tool-Specific Options
 
 ```bash
-# Tool-specific options
-lintro check --tool-options "ruff:--line-length=88,prettier:--print-width=80"
+# Tool-specific options (key=value; lists use |)
+lintro check --tool-options "ruff:line_length=88,prettier:print_width=80"
+
+# Example with lists and booleans
+lintro check --tool-options "ruff:select=E|F|W,ruff:preview=True"
 
 # Exclude patterns
 lintro check --exclude "*.pyc,venv,node_modules"
@@ -131,6 +134,46 @@ line-length = 88
 select = E,W,F,I,N,D
 exclude = .git,__pycache__,.venv
 ```
+
+#### Bandit Configuration
+
+**File:** `pyproject.toml`
+
+```toml
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".git"]
+tests = ["B101,B102,B103"]  # Specific test IDs to run
+skips = ["B101"]            # Test IDs to skip
+confidence = "MEDIUM"       # Minimum confidence level
+severity = "LOW"           # Minimum severity level
+
+[tool.bandit.assert_used]
+exclude = ["test_*.py"]     # Files to exclude from assert_used test
+```
+
+**File:** `.bandit`
+
+```ini
+[bandit]
+exclude = tests,venv,.git
+tests = B101,B102,B103
+skips = B101
+confidence = MEDIUM
+severity = LOW
+
+[[tool.bandit.assert_used]]
+exclude = test_*.py
+```
+
+**Available Options:**
+
+- `tests`: Comma-separated list of test IDs to run
+- `skips`: Comma-separated list of test IDs to skip
+- `exclude`: Comma-separated list of paths to exclude
+- `exclude_dirs`: List of directories to exclude (pyproject.toml only)
+- `severity`: Minimum severity level (`LOW`, `MEDIUM`, `HIGH`)
+- `confidence`: Minimum confidence level (`LOW`, `MEDIUM`, `HIGH`)
+- `baseline`: Path to baseline report for comparison
 
 #### Darglint Configuration
 
