@@ -87,14 +87,20 @@ run_tests() {
     echo -e "${BLUE}Running all tests in the tests directory...${NC}"
     echo -e "${YELLOW}Using uv run pytest for consistent behavior${NC}"
     
+    # Determine pytest worker count
+    local workers="${LINTRO_PYTEST_WORKERS:-auto}"
+    # In CI, default to serial to avoid xdist contention (docker/image builds,
+    # file system contention) unless explicitly overridden by LINTRO_PYTEST_WORKERS.
+    if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -z "${LINTRO_PYTEST_WORKERS:-}" ]; then
+        workers=0
+    fi
+
     # Build pytest arguments
-    local pytest_args=("-n" "auto")
-    if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" = "1" ]; then
-        echo -e "${YELLOW}Including Docker tests (LINTRO_RUN_DOCKER_TESTS=1)${NC}"
-        pytest_args+=("tests")
+    local pytest_args=("-n" "${workers}" "tests")
+    if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" != "1" ]; then
+        echo -e "${YELLOW}Docker-specific tests will be auto-skipped by pytest config${NC}"
     else
-        echo -e "${YELLOW}Excluding Docker tests (set LINTRO_RUN_DOCKER_TESTS=1 to include)${NC}"
-        pytest_args+=("-k" "not docker" "tests")
+        echo -e "${YELLOW}Including Docker tests (LINTRO_RUN_DOCKER_TESTS=1)${NC}"
     fi
     
     # Add verbose flag if requested
@@ -112,7 +118,7 @@ run_tests() {
         echo -e "  ${BLUE}- HTML: htmlcov/index.html${NC}"
         echo -e "  ${BLUE}- XML: coverage.xml${NC}"
         
-        # Update coverage badge
+        # Update coverage badge when running on host (not container-only overlays)
         if [ -f "coverage.xml" ]; then
             echo -e "${BLUE}Updating coverage badge...${NC}"
             if ./scripts/ci/coverage-badge-update.sh > /dev/null 2>&1; then
@@ -180,56 +186,67 @@ main() {
             # Copy coverage files to /code if we're in Docker and /code exists
             
             # Small delay to ensure files are fully written
-            if [ -d "/code" ] && [ "$(pwd)" = "/app" ]; then
+            if [ -n "${COVERAGE_OUTPUT_DIR:-}" ]; then
+                dest_dir="${COVERAGE_OUTPUT_DIR}"
+            elif [ -d "/app" ] && [ -w "/app" ]; then
+                dest_dir="/app"
+            else
+                dest_dir=""
+            fi
+
+            if [ -n "$dest_dir" ] && [ -d "$dest_dir" ]; then
                 echo -e "${YELLOW}Waiting for files to be fully written...${NC}"
                 sleep 1
-            fi
-            if [ -d "/code" ] && [ "$(pwd)" = "/app" ]; then
-                echo -e "${BLUE}Copying coverage files to host directory...${NC}"
+                # If destination is the current directory, skip redundant copy
+                if [ "$(pwd)" = "$dest_dir" ]; then
+                    echo -e "${YELLOW}Destination equals working directory; skipping copy${NC}"
+                    return 0
+                fi
+                echo -e "${BLUE}Copying coverage files to ${dest_dir}...${NC}"
                 
-                # Fix permissions on /code directory if running as root
+                # Fix permissions on destination if running as root
                 if [ "$(whoami)" = "root" ]; then
-                    echo -e "${YELLOW}Fixing permissions on /code directory...${NC}"
-                    chown -R root:root /code 2>/dev/null || true
-                    chmod -R 755 /code 2>/dev/null || true
+                    echo -e "${YELLOW}Fixing permissions on ${dest_dir}...${NC}"
+                    chown -R root:root "$dest_dir" 2>/dev/null || true
+                    chmod -R 755 "$dest_dir" 2>/dev/null || true
                 fi
                 
                 # Copy htmlcov directory
-                echo -e "${YELLOW}Copying htmlcov to /code...${NC}"
+                echo -e "${YELLOW}Copying htmlcov to ${dest_dir}...${NC}"
                 if [ -d "htmlcov" ]; then
-                    cp -rv htmlcov/ /code/ 2>&1 && echo -e "${GREEN}✓ htmlcov copied successfully${NC}" || echo -e "${RED}✗ Could not copy htmlcov${NC}"
+                    cp -rv htmlcov/ "$dest_dir/" 2>&1 && echo -e "${GREEN}✓ htmlcov copied successfully${NC}" || echo -e "${RED}✗ Could not copy htmlcov${NC}"
                 else
                     echo -e "${RED}✗ htmlcov directory not found${NC}"
                 fi
                 
                 # Copy coverage.xml file
-                echo -e "${YELLOW}Copying coverage.xml to /code...${NC}"
+                echo -e "${YELLOW}Copying coverage.xml to ${dest_dir}...${NC}"
                 if [ -f "coverage.xml" ]; then
-                    cp -v coverage.xml /code/ 2>&1 && echo -e "${GREEN}✓ coverage.xml copied successfully${NC}" || echo -e "${RED}✗ Could not copy coverage.xml${NC}"
+                    cp -v coverage.xml "$dest_dir/" 2>&1 && echo -e "${GREEN}✓ coverage.xml copied successfully${NC}" || echo -e "${RED}✗ Could not copy coverage.xml${NC}"
                 else
                     echo -e "${RED}✗ coverage.xml file not found${NC}"
                 fi
                 
                 # Copy .coverage file
-                echo -e "${YELLOW}Copying .coverage to /code...${NC}"
+                echo -e "${YELLOW}Copying .coverage to ${dest_dir}...${NC}"
                 if [ -f ".coverage" ]; then
-                    cp -v .coverage /code/ 2>&1 && echo -e "${GREEN}✓ .coverage copied successfully${NC}" || echo -e "${RED}✗ Could not copy .coverage${NC}"
+                    cp -v .coverage "$dest_dir/" 2>&1 && echo -e "${GREEN}✓ .coverage copied successfully${NC}" || echo -e "${RED}✗ Could not copy .coverage${NC}"
                 else
                     echo -e "${RED}✗ .coverage file not found${NC}"
                 fi
                 
                 # Verify files were copied
-                echo -e "${YELLOW}Verifying files in /code after copy:${NC}"
-                if [ -f "/code/coverage.xml" ]; then
-                    echo -e "${GREEN}✓ /code/coverage.xml exists (size: $(wc -c < /code/coverage.xml) bytes)${NC}"
+                echo -e "${YELLOW}Verifying files in ${dest_dir} after copy:${NC}"
+                if [ -f "${dest_dir}/coverage.xml" ]; then
+                    echo -e "${GREEN}✓ ${dest_dir}/coverage.xml exists (size: $(wc -c < ${dest_dir}/coverage.xml) bytes)${NC}"
                 else
-                    echo -e "${RED}✗ /code/coverage.xml not found${NC}"
+                    echo -e "${RED}✗ ${dest_dir}/coverage.xml not found${NC}"
                 fi
                 
-                if [ -d "/code/htmlcov" ]; then
-                    echo -e "${GREEN}✓ /code/htmlcov directory exists${NC}"
+                if [ -d "${dest_dir}/htmlcov" ]; then
+                    echo -e "${GREEN}✓ ${dest_dir}/htmlcov directory exists${NC}"
                 else
-                    echo -e "${RED}✗ /code/htmlcov directory not found${NC}"
+                    echo -e "${RED}✗ ${dest_dir}/htmlcov directory not found${NC}"
                 fi
                 
                 echo -e "${GREEN}✓ Coverage files copy process completed${NC}"

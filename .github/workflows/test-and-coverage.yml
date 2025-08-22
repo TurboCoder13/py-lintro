@@ -45,7 +45,7 @@ jobs:
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@f3453f81f64cffc278f070e6ba152a87a292c1bc
       - name: Run comprehensive test suite (with Docker tests)
-        run: ./scripts/local/run-tests.sh
+        run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

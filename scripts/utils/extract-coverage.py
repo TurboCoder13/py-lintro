@@ -2,12 +2,25 @@
 """Extract coverage percentage from coverage.xml file.
 
 This module provides functionality to parse coverage.xml files and extract
-the coverage percentage for CI/CD pipelines.
+the coverage percentage for CI/CD pipelines. XML parsing uses ``defusedxml``
+when available for hardened security; if unavailable, it falls back to the
+standard library with explicit justification.
 """
 
 import os
 import sys
-import xml.etree.ElementTree as ET
+
+try:
+    # Prefer hardened XML parsing
+    from defusedxml import ElementTree as ET  # type: ignore
+
+    _DEFUSED = True
+except Exception:  # pragma: no cover - fallback path
+    # Fallback to stdlib. This script parses a local CI-generated coverage.xml,
+    # not untrusted input. We explicitly justify the fallback usage.
+    import xml.etree.ElementTree as ET  # nosec B405
+
+    _DEFUSED = False
 
 
 def extract_coverage_percentage() -> None:
@@ -48,7 +61,7 @@ def extract_coverage_percentage() -> None:
         dbg(f"Coverage XML file size: {os.path.getsize(coverage_file)} bytes")
 
         # Read and parse the XML file
-        tree = ET.parse(coverage_file)
+        tree = ET.parse(coverage_file)  # nosec B314 - see module docstring
         root = tree.getroot()
 
         dbg(f"XML root tag: {root.tag}")

@@ -28,6 +28,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  - Yamllint (YAML linter)"
     echo "  - Hadolint (Dockerfile linter)"
     echo "  - Actionlint (GitHub Actions workflow linter)"
+    echo "  - Bandit (Python security linter)"
     echo ""
     echo "Use this script to set up a complete development environment."
     exit 0
@@ -331,6 +332,15 @@ main() {
         fi
     fi
     
+    # Install bandit (Python security linter)
+    echo -e "${BLUE}Installing bandit...${NC}"
+    if install_python_package "bandit" "1.8.6"; then
+        echo -e "${GREEN}✓ bandit installed successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to install bandit${NC}"
+        exit 1
+    fi
+
     # Install prettier via npm (JavaScript/JSON formatting)
     echo -e "${BLUE}Installing prettier...${NC}"
     
@@ -438,7 +448,7 @@ main() {
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("hadolint" "actionlint" "prettier" "ruff" "yamllint" "darglint")
+    tools_to_verify=("hadolint" "actionlint" "prettier" "ruff" "bandit" "yamllint" "darglint")
     for tool in "${tools_to_verify[@]}"; do
         if command -v "$tool" &> /dev/null; then
             version=$("$tool" --version 2>/dev/null || echo "installed")

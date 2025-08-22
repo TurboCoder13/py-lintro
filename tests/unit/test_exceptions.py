@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from assertpy import assert_that
+
 from lintro.exceptions.errors import (
     InvalidToolConfigError,
     InvalidToolOptionError,
@@ -9,12 +11,11 @@ from lintro.exceptions.errors import (
 
 def test_custom_exceptions_str_and_inheritance():
     base = LintroError("base")
-    assert isinstance(base, Exception)
-    assert str(base) == "base"
-
+    assert_that(isinstance(base, Exception)).is_true()
+    assert_that(str(base)).is_equal_to("base")
     cfg = InvalidToolConfigError("bad config")
     opt = InvalidToolOptionError("bad option")
-    assert isinstance(cfg, LintroError)
-    assert isinstance(opt, LintroError)
-    assert "bad config" in str(cfg)
-    assert "bad option" in str(opt)
+    assert_that(isinstance(cfg, LintroError)).is_true()
+    assert_that(isinstance(opt, LintroError)).is_true()
+    assert_that(str(cfg)).contains("bad config")
+    assert_that(str(opt)).contains("bad option")

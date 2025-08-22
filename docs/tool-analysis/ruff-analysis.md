@@ -54,10 +54,10 @@ cmd = self._get_executable_command("ruff") + ["format"]
 
 **Advanced Configuration:**
 
-- ❌ **Runtime rule customization**: Limited to predefined rule sets
-- ❌ **Custom rule definitions**: No support for custom rule creation
-- ❌ **Per-file configuration**: No support for `# ruff: noqa` comments
-- ❌ **Output format selection**: Limited to JSON output for parsing
+- ⚠️ **Per-file ignores and excludes at runtime**: Prefer config files; proposed CLI pass-throughs include `per_file_ignores`, `extend_exclude`, `force_exclude`, `respect_gitignore`.
+- ❌ **Custom rule definitions**: Not supported by Lintro wrappers (upstream feature set only).
+- ⚠️ **Config path/isolated**: Proposed `ruff:config=...`, `ruff:isolated=True` for ad-hoc runs.
+- ⚠️ **Output controls**: `quiet`, `statistics`, `preview` useful for UX; propose pass-throughs.
 
 **Formatting Options:**
 
@@ -84,6 +84,14 @@ cmd = self._get_executable_command("ruff") + ["format"]
 - ✅ **Consistent API**: Same interface as other linting tools (`check()`, `fix()`, `set_options()`)
 - ✅ **Structured output**: Issues formatted as standardized `Issue` objects
 - ✅ **Combined operations**: Runs both linting and formatting in single operation
+
+### 🔧 Proposed runtime pass-throughs
+
+- `--tool-options ruff:config=path/to/ruff.toml`
+- `--tool-options ruff:per_file_ignores=A.py:E501|pkg/B.py:I001`
+- `--tool-options ruff:extend_exclude=build|dist,ruff:force_exclude=True`
+- `--tool-options ruff:respect_gitignore=True`
+- `--tool-options ruff:quiet=True,ruff:statistics=True,ruff:preview=True`
 - ✅ **Integration ready**: Seamless integration with other tools in linting pipeline
 
 **Enhanced Error Processing:**

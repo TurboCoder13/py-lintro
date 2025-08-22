@@ -1,6 +1,6 @@
 """Darglint docstring linter integration."""
 
-import subprocess
+import subprocess  # nosec B404 - vetted use via BaseTool._run_subprocess
 from dataclasses import dataclass, field
 
 from loguru import logger
@@ -16,7 +16,7 @@ from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
 
 # Constants for Darglint configuration
-DARGLINT_DEFAULT_TIMEOUT: int = 10
+DARGLINT_DEFAULT_TIMEOUT: int = 30
 DARGLINT_DEFAULT_PRIORITY: int = 45
 DARGLINT_FILE_PATTERNS: list[str] = ["*.py"]
 DARGLINT_STRICTNESS_LEVELS: tuple[str, ...] = tuple(

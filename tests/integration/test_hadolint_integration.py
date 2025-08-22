@@ -7,13 +7,13 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from assertpy import assert_that
 from loguru import logger
 
 from lintro.tools.implementations.tool_hadolint import HadolintTool
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
-
 SAMPLE_FILE = "test_samples/Dockerfile.violations"
 
 
@@ -35,24 +35,17 @@ def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
         ["hadolint", "--version"], capture_output=True, text=True
     )
     print(f"[DEBUG] hadolint version: {version_result.stdout}")
-    cmd = [
-        "hadolint",
-        "--no-color",
-        "-f",
-        "tty",
-        str(file_path),  # Use absolute path
-    ]
+    cmd = ["hadolint", "--no-color", "-f", "tty", str(file_path)]
     print(f"[DEBUG] Running hadolint command: {' '.join(cmd)}")
     with open(file_path, "r") as f:
         print(f"[DEBUG] File contents for {file_path}:")
         print(f.read())
-    # Set HOME to a temp dir to avoid user config
     with tempfile.TemporaryDirectory() as temp_home:
         env = os.environ.copy()
         env["HOME"] = temp_home
         print(
-            f"[DEBUG] Subprocess environment: HOME={env.get('HOME')}, "
-            f"PATH={env.get('PATH')}"
+            "[DEBUG] Subprocess environment: HOME=%s, PATH=%s"
+            % (env.get("HOME"), env.get("PATH"))
         )
         print(f"[DEBUG] Subprocess CWD: {file_path.parent}")
         print(f"[DEBUG] Subprocess full env: {env}")
@@ -64,14 +57,13 @@ def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
             cwd=file_path.parent,
             env=env,
         )
-    # Count issues by parsing output lines that contain error/warning/info patterns
     issues = []
     for line in result.stdout.splitlines():
-        if any(level in line for level in ["error:", "warning:", "info:", "style:"]):
+        if any((level in line for level in ["error:", "warning:", "info:", "style:"])):
             issues.append(line)
     issues_count = len(issues)
     success = issues_count == 0 and result.returncode == 0
-    return success, result.stdout, issues_count
+    return (success, result.stdout, issues_count)
 
 
 @pytest.mark.hadolint
@@ -79,10 +71,7 @@ def test_hadolint_available():
     """Check if hadolint is available in PATH."""
     try:
         result = subprocess.run(
-            ["hadolint", "--version"],
-            capture_output=True,
-            text=True,
-            check=False,
+            ["hadolint", "--version"], capture_output=True, text=True, check=False
         )
         if result.returncode != 0:
             pytest.skip("hadolint not available")
@@ -98,26 +87,24 @@ def test_hadolint_reports_violations_direct(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_hadolint_available()
-
     import os
     import shutil
     from pathlib import Path
 
     sample_file = tmp_path / "Dockerfile"
     shutil.copy(Path(SAMPLE_FILE), sample_file)
-    # Diagnostics
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
-        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
-        f"PATH={os.environ.get('PATH')}"
+        "[DEBUG] Environment: HOME=%s, PATH=%s"
+        % (os.environ.get("HOME"), os.environ.get("PATH"))
     )
     logger.info("[TEST] Running hadolint directly on sample file...")
     success, output, issues = run_hadolint_directly(sample_file)
     logger.info(f"[LOG] Hadolint found {issues} issues. Output:\n{output}")
     assert not success, "Hadolint should fail when violations are present."
     assert issues > 0, "Hadolint should report at least one issue."
-    assert any(code in output for code in ["DL", "SC"]), (
+    assert any((code in output for code in ["DL", "SC"])), (
         "Hadolint output should contain error codes."
     )
 
@@ -130,7 +117,6 @@ def test_hadolint_reports_violations_through_lintro(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_hadolint_available()
-
     sample_file = tmp_path / "Dockerfile"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info(f"SAMPLE_FILE: {sample_file}, exists: {sample_file.exists()}")
@@ -139,8 +125,8 @@ def test_hadolint_reports_violations_through_lintro(tmp_path):
     tool.set_options(no_color=True, format="tty")
     result = tool.check([str(sample_file)])
     logger.info(
-        f"[LOG] Lintro HadolintTool found {result.issues_count} issues. "
-        f"Output:\n{result.output}"
+        "[LOG] Lintro HadolintTool found %s issues. Output:\n%s"
+        % (result.issues_count, result.output)
     )
     assert not result.success, (
         "Lintro HadolintTool should fail when violations are present."
@@ -148,7 +134,7 @@ def test_hadolint_reports_violations_through_lintro(tmp_path):
     assert result.issues_count > 0, (
         "Lintro HadolintTool should report at least one issue."
     )
-    assert any(code in result.output for code in ["DL", "SC"]), (
+    assert any((code in result.output for code in ["DL", "SC"])), (
         "Lintro HadolintTool output should contain error codes."
     )
 
@@ -161,17 +147,15 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_hadolint_available()
-
     sample_file = tmp_path / "Dockerfile"
     shutil.copy(SAMPLE_FILE, sample_file)
-    # Diagnostics
     import os
 
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
-        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
-        f"PATH={os.environ.get('PATH')}"
+        "[DEBUG] Environment: HOME=%s, PATH=%s"
+        % (os.environ.get("HOME"), os.environ.get("PATH"))
     )
     logger.info("[TEST] Comparing hadolint CLI and Lintro HadolintTool outputs...")
     tool = HadolintTool()
@@ -182,8 +166,8 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}"
     )
     assert direct_issues == result.issues_count, (
-        f"Mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
-        f"CLI Output:\n{direct_output}\nLintro Output:\n{result.output}"
+        "Mismatch: CLI=%s, Lintro=%s\nCLI Output:\n%s\nLintro Output:\n%s"
+        % (direct_issues, result.issues_count, direct_output, result.output)
     )
     assert direct_success == result.success, (
         "Success/failure mismatch between CLI and Lintro."
@@ -201,33 +185,18 @@ def test_hadolint_with_ignore_rules(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_hadolint_available()
-
     sample_file = tmp_path / "Dockerfile"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info("[TEST] Testing hadolint with ignore rules...")
-
-    # First run without ignoring rules
     tool = HadolintTool()
     tool.set_options(no_color=True, format="tty")
     result_all = tool.check([str(sample_file)])
-
-    # Then run with some rules ignored
     tool_ignore = HadolintTool()
-    tool_ignore.set_options(
-        no_color=True,
-        format="tty",
-        ignore=[
-            "DL3007",
-            "DL3003",
-        ],  # Ignore "using latest" and "use WORKDIR" violations
-    )
+    tool_ignore.set_options(no_color=True, format="tty", ignore=["DL3007", "DL3003"])
     result_ignore = tool_ignore.check([str(sample_file)])
-
     logger.info(f"[LOG] Without ignore: {result_all.issues_count} issues")
     logger.info(f"[LOG] With ignore: {result_ignore.issues_count} issues")
-
-    # Should have fewer or equal issues when ignoring rules
-    assert result_ignore.issues_count <= result_all.issues_count
+    assert_that(result_ignore.issues_count <= result_all.issues_count).is_true()
 
 
 @pytest.mark.hadolint
@@ -238,7 +207,6 @@ def test_hadolint_fix_method_not_implemented(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_hadolint_available()
-
     sample_file = tmp_path / "Dockerfile"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info(
@@ -258,7 +226,6 @@ def test_hadolint_empty_directory(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_hadolint_available()
-
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
     logger.info("[TEST] Testing hadolint with empty directory...")
@@ -277,21 +244,18 @@ def test_hadolint_parser_validation(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_hadolint_available()
-
     from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 
-    # Test with sample output
     sample_output = (
-        "Dockerfile:1 DL3006 error: Always tag the version of an image explicitly\n"
-        "Dockerfile:4 DL3009 warning: Delete the apt-get lists after installing "
-        "something\n"
-        "Dockerfile:6 DL3015 info: Avoid additional packages by specifying "
-        "`--no-install-recommends`"
+        "Dockerfile:1 DL3006 error: Always tag the version of an image "
+        "explicitly\n"
+        "Dockerfile:4 DL3009 warning: Delete the apt-get lists after "
+        "installing something\n"
+        "Dockerfile:6 DL3015 info: Avoid additional packages by "
+        "specifying `--no-install-recommends`"
     )
-
     issues = parse_hadolint_output(sample_output)
     logger.info(f"[LOG] Parsed {len(issues)} issues from sample output")
-
     assert len(issues) == 3, "Should parse 3 issues"
     assert issues[0].level == "error", "First issue should be error level"
     assert issues[0].code == "DL3006", "First issue should be DL3006"

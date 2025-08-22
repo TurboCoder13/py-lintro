@@ -266,8 +266,8 @@ def run_lint_tools_simple(
                 if cfg:
                     try:
                         tool.set_options(**cfg)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"Ignoring invalid config for {tool_name}: {e}")
                 # 2) CLI --tool-options overrides config file
                 if tool_name in tool_option_dict:
                     tool.set_options(**tool_option_dict[tool_name])
@@ -343,6 +343,7 @@ def run_lint_tools_simple(
                         issues_count=issues_count,
                         raw_output_for_meta=output,
                         action=action,
+                        success=getattr(result, "success", None),
                     )
 
                 # Store result
@@ -422,7 +423,8 @@ def run_lint_tools_simple(
             logger.save_console_log()
             logger.debug("Saved all output files")
         except Exception as e:
-            logger.error(f"Error saving outputs: {e}")
+            # Log at debug to avoid failing the run for non-critical persistence.
+            logger.debug(f"Error saving outputs: {e}")
 
         # Return appropriate exit code
         if action == "fmt":
@@ -430,14 +432,17 @@ def run_lint_tools_simple(
             # (even if there are remaining unfixable issues)
             return DEFAULT_EXIT_CODE_SUCCESS
         else:  # check
-            # Check operations fail if issues are found
+            # Check operations fail if issues are found OR any tool reported failure
+            any_failed: bool = any(
+                not getattr(result, "success", True) for result in all_results
+            )
             return (
                 DEFAULT_EXIT_CODE_SUCCESS
-                if total_issues == 0
+                if (total_issues == 0 and not any_failed)
                 else DEFAULT_EXIT_CODE_FAILURE
             )
 
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        logger.debug(f"Unexpected error: {e}")
         logger.save_console_log()
         return DEFAULT_EXIT_CODE_FAILURE

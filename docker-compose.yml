@@ -4,19 +4,28 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    logging:
+      driver: local
+      options:
+        max-size: '10m'
+        max-file: '3'
     volumes:
-      - ${PWD:-./}:/code
+      - ${PWD:-./}:/app
       # The command will be overridden when running docker compose
       # Example: docker compose run --rm lintro check --format grid
       #          --tools ruff,darglint .
   test-integration:
     build: .
     image: py-lintro-test:latest
+    logging:
+      driver: local
+      options:
+        max-size: '10m'
+        max-file: '3'
     working_dir: /app
     volumes:
-      - ${PWD:-./}:/code
-      # Mount current directory to /code to share coverage files
-      # Keep /app as internal working directory to avoid permission issues
+      - ${PWD:-./}:/app
+      # Mount current directory to /app so tests run against current source
     command:
       - /app/scripts/local/run-tests.sh
     entrypoint:
@@ -25,6 +34,8 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
       - RUNNING_IN_DOCKER=1
-      - COVERAGE_OUTPUT_DIR=/code
+      - LINTRO_RUN_DOCKER_TESTS=1
+      - DOCKER_BUILDKIT=0
+      - COVERAGE_OUTPUT_DIR=/app
     user: root
     # Run as root to avoid permission issues with mounted volumes

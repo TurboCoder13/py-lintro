@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from assertpy import assert_that
+
 from lintro.utils.output_manager import OutputManager
 
 
@@ -28,7 +30,6 @@ def test_output_manager_writes_reports(tmp_path: Path, monkeypatch):
     issues = [DummyIssue(file="a.py", line=1, code="X", message="m")]
     results = [DummyResult(name="ruff", issues_count=1, issues=issues)]
     om.write_reports_from_results(results=results)
-    # Ensure files exist
-    assert (om.run_dir / "report.md").exists()
-    assert (om.run_dir / "report.html").exists()
-    assert (om.run_dir / "summary.csv").exists()
+    assert_that((om.run_dir / "report.md").exists()).is_true()
+    assert_that((om.run_dir / "report.html").exists()).is_true()
+    assert_that((om.run_dir / "summary.csv").exists()).is_true()
