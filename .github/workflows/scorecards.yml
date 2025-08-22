@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f3453f81f64cffc278f070e6ba152a87a292c1bc
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
       - name: Run Scorecards analysis
         uses: ossf/scorecard-action@05b42c624433fc40578a4040d5cf5e36ddca8cde # v2.4.2
         with:
