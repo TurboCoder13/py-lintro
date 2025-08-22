@@ -23,60 +23,13 @@ os.environ.setdefault("DOCKER_BUILDKIT", "0")
 
 @pytest.fixture(scope="session", autouse=True)
 def _ensure_test_docker_images_built() -> None:
-    """Build test docker images once per session to avoid xdist races.
+    """No-op placeholder to document Docker image provisioning.
 
-    Builds the images tagged `test-lintro` and `test-lintro-simple` if Docker
-    is available and the daemon is reachable. Failures here should not break
-    the suite; individual docker tests still check for availability.
+    Images are now built by CI/scripts (e.g., scripts/docker/docker-test.sh)
+    before tests run. Keeping a session autouse fixture maintains compatibility
+    while avoiding any build work inside pytest processes.
     """
-    # Only build images when explicitly requested; otherwise skip to
-    # avoid slowing down the entire suite in CI and local runs.
-    if os.getenv("LINTRO_RUN_DOCKER_TESTS") != "1":
-        return
-    import subprocess
-    from pathlib import Path
-
-    # tests/conftest.py -> repo root is parent of tests
-    project_root = Path(__file__).resolve().parent.parent
-
-    docker_bin_candidates = ["/usr/bin/docker", "/usr/local/bin/docker", "docker"]
-    if not any(Path(p).exists() for p in docker_bin_candidates[:-1]):
-        return
-
-    try:
-        probe = subprocess.run(
-            ["docker", "info"], capture_output=True, text=True, timeout=20
-        )
-        if probe.returncode != 0:
-            return
-    except Exception:
-        return
-
-    # Build primary test image
-    try:
-        subprocess.run(
-            ["docker", "build", "-t", "test-lintro", "."],
-            cwd=str(project_root),
-            capture_output=True,
-            text=True,
-            timeout=600,
-            env=dict(os.environ, DOCKER_BUILDKIT="0"),
-        )
-    except Exception:
-        pass
-
-    # Build simple image
-    try:
-        subprocess.run(
-            ["docker", "build", "-t", "test-lintro-simple", "."],
-            cwd=str(project_root),
-            capture_output=True,
-            text=True,
-            timeout=600,
-            env=dict(os.environ, DOCKER_BUILDKIT="0"),
-        )
-    except Exception:
-        pass
+    return
 
 
 def pytest_collection_modifyitems(config, items):

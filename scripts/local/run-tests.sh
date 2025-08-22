@@ -87,8 +87,16 @@ run_tests() {
     echo -e "${BLUE}Running all tests in the tests directory...${NC}"
     echo -e "${YELLOW}Using uv run pytest for consistent behavior${NC}"
     
+    # Determine pytest worker count
+    local workers="${LINTRO_PYTEST_WORKERS:-auto}"
+    # In CI, default to serial to avoid xdist contention (docker/image builds,
+    # file system contention) unless explicitly overridden by LINTRO_PYTEST_WORKERS.
+    if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -z "${LINTRO_PYTEST_WORKERS:-}" ]; then
+        workers=0
+    fi
+
     # Build pytest arguments
-    local pytest_args=("-n" "auto" "tests")
+    local pytest_args=("-n" "${workers}" "tests")
     if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" != "1" ]; then
         echo -e "${YELLOW}Docker-specific tests will be auto-skipped by pytest config${NC}"
     else
