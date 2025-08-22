@@ -3,6 +3,7 @@ from __future__ import annotations
 from assertpy import assert_that
 
 from lintro.utils.tool_utils import (
+    _is_venv_directory,
     format_as_table,
     should_exclude_path,
     walk_files_with_excludes,
@@ -60,3 +61,10 @@ def test_walk_files_with_excludes(tmp_path):
     assert_that(any((p.endswith("a.py") for p in files))).is_true()
     assert_that(any((p.endswith("b.js") for p in files))).is_true()
     assert_that(any((p.endswith("ignore.txt") for p in files))).is_false()
+
+
+def test_is_venv_directory_predicate():
+    assert_that(_is_venv_directory(".venv")).is_true()
+    assert_that(_is_venv_directory("venv")).is_true()
+    assert_that(_is_venv_directory("site-packages")).is_true()
+    assert_that(_is_venv_directory("src")).is_false()

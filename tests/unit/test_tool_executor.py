@@ -214,6 +214,33 @@ def test_executor_json_output(monkeypatch, capsys):
     assert_that("results" in data and len(data["results"]) >= 2).is_true()
 
 
+def test_executor_handles_tool_failure_with_output(monkeypatch, tmp_path):
+    """Return non-zero when a tool fails but emits output (coverage branch).
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture
+        tmp_path: pytest tmp_path fixture
+    """
+    _stub_logger(monkeypatch)
+    failing = ToolResult(name="bandit", success=False, output="oops", issues_count=0)
+    _setup_tool_manager(
+        monkeypatch, {"bandit": FakeTool("bandit", can_fix=False, result=failing)}
+    )
+    code = run_lint_tools_simple(
+        action="check",
+        paths=[str(tmp_path)],
+        tools="all",
+        tool_options=None,
+        exclude=None,
+        include_venv=False,
+        group_by="auto",
+        output_format="plain",
+        verbose=False,
+        raw_output=False,
+    )
+    assert_that(code).is_equal_to(1)
+
+
 def test_parse_tool_options_typed_values():
     """Ensure --tool-options parsing coerces values into proper types.
 

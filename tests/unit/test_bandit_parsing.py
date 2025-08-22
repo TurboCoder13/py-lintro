@@ -50,6 +50,43 @@ def test_parse_bandit_valid_output() -> None:
     assert_that(issue.issue_text).contains("shell=True")
 
 
+def test_parse_bandit_multiple_issues_and_errors_array() -> None:
+    """Parser should handle multiple results and ignore errors array."""
+    sample_output = {
+        "errors": [{"filename": "z.py", "reason": "bad config"}],
+        "results": [
+            {
+                "filename": "a.py",
+                "line_number": 1,
+                "col_offset": 0,
+                "test_id": "B101",
+                "test_name": "assert_used",
+                "issue_severity": "LOW",
+                "issue_confidence": "HIGH",
+                "issue_text": "Use of assert.",
+                "more_info": "https://example.com",
+                "line_range": [1],
+            },
+            {
+                "filename": "b.py",
+                "line_number": 2,
+                "col_offset": 1,
+                "test_id": "B102",
+                "test_name": "exec_used",
+                "issue_severity": "MEDIUM",
+                "issue_confidence": "LOW",
+                "issue_text": "Use of exec.",
+                "more_info": "https://example.com",
+                "line_range": [2],
+            },
+        ],
+    }
+    issues = parse_bandit_output(sample_output)
+    assert_that(len(issues)).is_equal_to(2)
+    assert_that(issues[0].file).is_equal_to("a.py")
+    assert_that(issues[1].file).is_equal_to("b.py")
+
+
 def test_parse_bandit_empty_results() -> None:
     """Ensure an empty results list returns no issues."""
     issues = parse_bandit_output({"results": []})
@@ -111,6 +148,51 @@ def test_bandit_check_parses_mixed_output_json(monkeypatch, tmp_path):
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.name).is_equal_to("bandit")
     assert_that(result.success is True).is_true()
+    assert_that(result.issues_count).is_equal_to(1)
+
+
+def test_bandit_check_handles_nonzero_rc_with_errors_array(monkeypatch, tmp_path):
+    """Ensure nonzero return with JSON errors[] sets success False but parses.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        tmp_path: Temporary directory path fixture.
+    """
+    p = tmp_path / "c.py"
+    p.write_text("print('x')\n")
+    sample = {
+        "errors": [
+            {"filename": str(p), "reason": "config error"},
+        ],
+        "results": [
+            {
+                "filename": str(p),
+                "line_number": 1,
+                "col_offset": 0,
+                "issue_severity": "LOW",
+                "issue_confidence": "HIGH",
+                "test_id": "B101",
+                "test_name": "assert_used",
+                "issue_text": "Use of assert detected.",
+                "more_info": "https://example.com",
+                "line_range": [1],
+            }
+        ],
+    }
+
+    class NS:
+        def __init__(self, stdout, stderr, returncode):
+            self.stdout = stdout
+            self.stderr = stderr
+            self.returncode = returncode
+
+    def fake_run(cmd, capture_output, text, timeout, cwd):
+        return NS(stdout=json.dumps(sample), stderr="", returncode=1)
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+    tool = BanditTool()
+    result: ToolResult = tool.check([str(p)])
+    assert_that(result.success).is_false()
     assert_that(result.issues_count).is_equal_to(1)
 
 

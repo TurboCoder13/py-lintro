@@ -3,7 +3,7 @@ from __future__ import annotations
 from assertpy import assert_that
 
 from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
-from lintro.utils.tool_utils import format_tool_output
+from lintro.utils.tool_utils import format_tool_output, walk_files_with_excludes
 
 
 def test_format_tool_output_with_parsed_issues_and_fixable_sections(monkeypatch):
@@ -48,3 +48,27 @@ def test_format_tool_output_parsing_fallbacks(monkeypatch):
         issues=None,
     )
     assert_that(out).is_equal_to("some raw output")
+
+
+def test_walk_files_excludes_venv(tmp_path):
+    """walk_files_with_excludes should omit venv directories by default.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+    """
+    root = tmp_path
+    (root / ".venv" / "lib").mkdir(parents=True)
+    (root / "pkg" / "mod").mkdir(parents=True)
+    file_a = root / "pkg" / "mod" / "a.py"
+    file_a.write_text("x=1\n")
+    venv_file = root / ".venv" / "lib" / "b.py"
+    venv_file.write_text("y=2\n")
+
+    files = walk_files_with_excludes(
+        paths=[str(root)],
+        file_patterns=["*.py"],
+        exclude_patterns=[],
+        include_venv=False,
+    )
+    assert_that(str(file_a) in files).is_true()
+    assert_that(str(venv_file) in files).is_false()
