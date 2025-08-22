@@ -19,13 +19,13 @@ permissions:
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@f3453f81f64cffc278f070e6ba152a87a292c1bc
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@dc34078e24d4328ea4879931677c81564abdcebd
     permissions:
       contents: read
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@f3453f81f64cffc278f070e6ba152a87a292c1bc
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@dc34078e24d4328ea4879931677c81564abdcebd
     permissions:
       contents: read
 
@@ -43,11 +43,11 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f3453f81f64cffc278f070e6ba152a87a292c1bc
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
         with:
           fetch-depth: 0
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f3453f81f64cffc278f070e6ba152a87a292c1bc
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@dc34078e24d4328ea4879931677c81564abdcebd
         with:
           python-version: '3.13'
       - name: Ensure tag points to a commit on main
