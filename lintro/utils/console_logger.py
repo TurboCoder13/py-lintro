@@ -225,6 +225,7 @@ class SimpleLintroLogger:
         issues_count: int,
         raw_output_for_meta: str | None = None,
         action: str = "check",
+        success: bool | None = None,
     ) -> None:
         """Print the result for a tool.
 
@@ -235,6 +236,9 @@ class SimpleLintroLogger:
             raw_output_for_meta: str | None: Raw tool output used to extract
                 fixable/remaining hints when available.
             action: str: The action being performed ("check" or "fmt").
+            success: bool | None: Whether the tool run succeeded. When False,
+                the result is treated as a failure even if no issues were
+                counted (e.g., parse or runtime errors).
         """
         if output and output.strip():
             # Display the output (either raw or formatted, depending on what was passed)
@@ -265,8 +269,11 @@ class SimpleLintroLogger:
                         )
                     return
 
+            # If the tool reported a failure (e.g., parse error), do not claim pass
+            if success is False:
+                self.console_output(text="✗ Tool execution failed", color="red")
             # Check if the output indicates no files were processed
-            if output and any(
+            elif output and any(
                 (msg in output for msg in ["No files to", "No Python files found to"]),
             ):
                 self.console_output(
@@ -448,13 +455,22 @@ class SimpleLintroLogger:
                 f"{total_remaining} remaining",
             )
         else:
-            # For check commands, use total issues
+            # For check commands, use total issues; treat any tool failure as failure
             total_issues: int = sum(
                 (getattr(result, "issues_count", 0) for result in tool_results),
             )
+            any_failed: bool = any(
+                not getattr(result, "success", True) for result in tool_results
+            )
+            total_for_art: int = (
+                total_issues if not any_failed else max(1, total_issues)
+            )
             # Show ASCII art as the last item; no status text after art
-            self._print_ascii_art(total_issues=total_issues)
-            logger.debug(f"{action} completed with {total_issues} total issues")
+            self._print_ascii_art(total_issues=total_for_art)
+            logger.debug(
+                f"{action} completed with {total_issues} total issues"
+                + (" and failures" if any_failed else "")
+            )
 
     def _print_summary_table(
         self,
@@ -557,7 +573,7 @@ class SimpleLintroLogger:
                 else:  # check
                     status_display = (
                         click.style("✅ PASS", fg="green", bold=True)
-                        if issues_count == 0
+                        if (success and issues_count == 0)
                         else click.style("❌ FAIL", fg="red", bold=True)
                     )
                     # Check if files were excluded

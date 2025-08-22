@@ -113,20 +113,21 @@ Notes:
 
 Shared utilities and helper scripts.
 
-| Script                               | Purpose                                           | Usage                                                     |
-| ------------------------------------ | ------------------------------------------------- | --------------------------------------------------------- |
-| `check-pypi-version.py`              | Check if version exists on PyPI                   | `python scripts/utils/check-pypi-version.py <version>`    |
-| `create-release.py`                  | Create GitHub release with assets                 | `python scripts/utils/create-release.py <version>`        |
-| `delete-previous-lintro-comments.py` | Delete old PR comments                            | `python scripts/utils/delete-previous-lintro-comments.py` |
-| `determine-release.py`               | Determine next release version from commits       | `python scripts/utils/determine-release.py`               |
-| `extract-coverage.py`                | Extract coverage from XML files                   | `python scripts/utils/extract-coverage.py`                |
-| `extract-version.py`                 | Print `version=X.Y.Z` from TOML                   | `python scripts/utils/extract-version.py`                 |
-| `install-tools.sh`                   | Install external tools (hadolint, prettier, etc.) | `./scripts/utils/install-tools.sh --local`                |
-| `install.sh`                         | Install Lintro with dependencies                  | `./scripts/utils/install.sh`                              |
-| `update-version.py`                  | Update version in pyproject.toml                  | `python scripts/utils/update-version.py <version>`        |
-| `utils.sh`                           | Shared utilities for other scripts                | Sourced by other scripts                                  |
-| `bootstrap-env.sh`                   | Bootstrap CI env with uv and tools                | `./scripts/utils/bootstrap-env.sh --help`                 |
-| `bump_deps.py`                       | Bump exact pinned versions in pyproject           | `uv run python scripts/utils/bump_deps.py --help`         |
+| Script                               | Purpose                                           | Usage                                                        |
+| ------------------------------------ | ------------------------------------------------- | ------------------------------------------------------------ |
+| `check-pypi-version.py`              | Check if version exists on PyPI                   | `python scripts/utils/check-pypi-version.py <version>`       |
+| `create-release.py`                  | Create GitHub release with assets                 | `python scripts/utils/create-release.py <version>`           |
+| `delete-previous-lintro-comments.py` | Delete old PR comments                            | `python scripts/utils/delete-previous-lintro-comments.py`    |
+| `determine-release.py`               | Determine next release version from commits       | `python scripts/utils/determine-release.py`                  |
+| `extract-coverage.py`                | Extract coverage from XML files                   | `python scripts/utils/extract-coverage.py`                   |
+| `extract-version.py`                 | Print `version=X.Y.Z` from TOML                   | `python scripts/utils/extract-version.py`                    |
+| `install-tools.sh`                   | Install external tools (hadolint, prettier, etc.) | `./scripts/utils/install-tools.sh --local`                   |
+| `install.sh`                         | Install Lintro with dependencies                  | `./scripts/utils/install.sh`                                 |
+| `update-version.py`                  | Update version in pyproject.toml                  | `python scripts/utils/update-version.py <version>`           |
+| `utils.sh`                           | Shared utilities for other scripts                | Sourced by other scripts                                     |
+| `bootstrap-env.sh`                   | Bootstrap CI env with uv and tools                | `./scripts/utils/bootstrap-env.sh --help`                    |
+| `bump_deps.py`                       | Bump exact pinned versions in pyproject           | `uv run python scripts/utils/bump_deps.py --help`            |
+| `convert_asserts_to_assertpy.py`     | Migrate bare asserts in tests to assertpy         | `uv run python scripts/utils/convert_asserts_to_assertpy.py` |
 
 ## 🔍 Detailed Script Documentation
 

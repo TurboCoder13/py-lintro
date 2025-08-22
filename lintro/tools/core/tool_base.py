@@ -2,9 +2,11 @@
 
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404 - subprocess used safely with shell=False
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+
+from loguru import logger
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
@@ -107,9 +109,9 @@ class BaseTool(ABC):
                             continue
                         if line_stripped not in self.exclude_patterns:
                             self.exclude_patterns.append(line_stripped)
-        except Exception:
+        except Exception as e:
             # Non-fatal if ignore file can't be read
-            pass
+            logger.debug(f"Could not read .lintro-ignore: {e}")
 
         # Load default options from config
         if hasattr(self.config, "options") and self.config.options:
@@ -146,7 +148,7 @@ class BaseTool(ABC):
             FileNotFoundError: If command executable is not found.
         """
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 - args list, shell=False
                 cmd,
                 capture_output=True,
                 text=True,

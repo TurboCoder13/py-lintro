@@ -1,6 +1,6 @@
 """Hadolint Dockerfile linter integration."""
 
-import subprocess
+import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 
 from loguru import logger

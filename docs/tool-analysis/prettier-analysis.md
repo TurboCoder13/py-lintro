@@ -40,11 +40,11 @@ cmd = ["prettier", "--write"] + self.files
 
 **Granular Configuration:**
 
-- ❌ **Runtime formatting options**: No access to `--tab-width`, `--use-tabs`, `--semi`, etc.
-- ❌ **Parser specification**: Cannot override parser selection
-- ❌ **Output format control**: Limited to check/write modes
-- ❌ **Debug capabilities**: No access to `--debug-check` or `--debug-print-doc`
-- ❌ **Pragma handling**: No `--require-pragma` or `--insert-pragma` support
+- ⚠️ **Runtime formatting options**: Prefer config files; proposed pass-throughs include `tab_width`, `single_quote`, `trailing_comma`, `end_of_line`, etc.
+- ⚠️ **Parser specification**: Proposed `prettier:parser=typescript` when needed.
+- ⚠️ **Discovery controls**: Proposed `prettier:config=...`, `prettier:no_config=True`, `prettier:ignore_path=.prettierignore`.
+- ⚠️ **Debug capabilities**: Optional `prettier:debug_check=True`, `prettier:debug_print_doc=True`.
+- ⚠️ **Pragma handling**: Optional `prettier:require_pragma=True`, `prettier:insert_pragma=True`.
 
 **Advanced Features:**
 
@@ -81,6 +81,13 @@ cmd = ["prettier", "--write"] + self.files
   ```
 
 **Workflow Integration:**
+
+### 🔧 Proposed runtime pass-throughs
+
+- `--tool-options prettier:config=.config/prettier.json,prettier:ignore_path=.prettierignore`
+- `--tool-options prettier:tab_width=88,prettier:single_quote=True,prettier:trailing_comma=all`
+- `--tool-options prettier:parser=typescript`
+- `--tool-options prettier:cache=True,prettier:cache_location=.cache/prettier,prettier:loglevel=warn`
 
 - ✅ **Batch processing**: Can process multiple files in single operation
 - ✅ **Conditional execution**: Only runs when relevant file types are present

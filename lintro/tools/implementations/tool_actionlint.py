@@ -7,7 +7,7 @@ structured issues, and returns a normalized `ToolResult`.
 
 from __future__ import annotations
 
-import subprocess
+import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 
 from loguru import logger

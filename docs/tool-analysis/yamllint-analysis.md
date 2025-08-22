@@ -103,6 +103,12 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 
 **File Management:**
 
+### 🔧 Proposed runtime pass-throughs
+
+- `--tool-options yamllint:format=standard` (switch output style)
+- `--tool-options yamllint:config_file=.yamllint` (explicit config path)
+- `--tool-options yamllint:no_warnings=True` (errors only)
+
 - ✅ **Extension filtering**: Automatic YAML file detection
 - ✅ **Batch processing**: Efficient handling of multiple files
 - ✅ **Error aggregation**: Collects all issues across files

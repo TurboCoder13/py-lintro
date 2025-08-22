@@ -4,6 +4,10 @@ from lintro.formatters.tools.actionlint_formatter import (
     ActionlintTableDescriptor,
     format_actionlint_issues,
 )
+from lintro.formatters.tools.bandit_formatter import (
+    BanditTableDescriptor,
+    format_bandit_issues,
+)
 from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
@@ -26,6 +30,10 @@ from lintro.formatters.tools.yamllint_formatter import (
 )
 
 __all__ = [
+    "ActionlintTableDescriptor",
+    "format_actionlint_issues",
+    "BanditTableDescriptor",
+    "format_bandit_issues",
     "DarglintTableDescriptor",
     "format_darglint_issues",
     "HadolintTableDescriptor",
@@ -36,6 +44,4 @@ __all__ = [
     "format_ruff_issues",
     "YamllintTableDescriptor",
     "format_yamllint_issues",
-    "ActionlintTableDescriptor",
-    "format_actionlint_issues",
 ]

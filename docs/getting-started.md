@@ -253,8 +253,8 @@ rules:
 ### Lintro-Specific Options
 
 ```bash
-# Tool timeouts
-lintro check --tool-options "ruff:--line-length=88,prettier:--print-width=80"
+# Tool options use key=value (lists with |, booleans True/False)
+lintro check --tool-options "ruff:line_length=88,prettier:print_width=80"
 
 # Exclude patterns
 lintro check --exclude "migrations,node_modules,dist"

@@ -68,8 +68,9 @@ echo -e "${BLUE}Running lintro in Docker container...${NC}"
 echo -e "${YELLOW}Arguments: $*${NC}"
 
 docker run --rm \
-    -v "$(pwd):/code" \
-    -w /code \
+    --log-driver=local \
+    -v "$(pwd):/app" \
+    -w /app \
     -e UV_CACHE_DIR=/tmp/uv-cache \
     -e UV_VENV_CACHE_DIR=/tmp/uv-venv-cache \
     -e RUNNING_IN_DOCKER=1 \

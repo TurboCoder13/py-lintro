@@ -53,7 +53,7 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 
 **Advanced Configuration:**
 
-- ❌ **Runtime rule customization**: Cannot modify individual rules at runtime
+- ⚠️ **Runtime rule customization**: Prefer config; propose `hadolint:only=DL3006|SC2086` for targeted checks.
 - ❌ **Per-file configuration**: No support for file-specific rule overrides
 - ❌ **Custom rule definitions**: No support for custom rule creation
 - ❌ **Rule severity control**: Limited control over rule severity levels
@@ -99,6 +99,12 @@ result = subprocess.run(cmd, capture_output=True, text=True)
   ```
 
 **Error Parsing:**
+
+### 🔧 Proposed runtime pass-throughs
+
+- `--tool-options hadolint:config=.hadolint.yaml`
+- `--tool-options hadolint:only=DL3006|SC2086`
+- `--tool-options hadolint:no_color=False,hadolint:format=json`
 
 - ✅ **Regex-based parsing**: Robust parsing of Hadolint's output format
 - ✅ **Multi-line support**: Handles complex error messages

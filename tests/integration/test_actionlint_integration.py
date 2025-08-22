@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from assertpy import assert_that
 from loguru import logger
 
 from lintro.tools.implementations.tool_actionlint import ActionlintTool
@@ -52,24 +53,19 @@ def test_actionlint_reports_violations(tmp_path):
     """
     if not actionlint_available():
         pytest.skip("actionlint not available")
-
     wf_dir = tmp_path / ".github" / "workflows"
     wf_dir.mkdir(parents=True, exist_ok=True)
     wf = wf_dir / "workflow_bad.yml"
     wf.write_text(SAMPLE_BAD.read_text())
-
-    # Run directly
     proc = subprocess.run(["actionlint", str(wf)], capture_output=True, text=True)
     direct_out = proc.stdout + proc.stderr
     logger.info(f"[LOG] actionlint stdout+stderr:\n{direct_out}")
-    assert proc.returncode != 0
-
-    # Run via Lintro
+    assert_that(proc.returncode).is_not_equal_to(0)
     tool = ActionlintTool()
     result = tool.check([str(tmp_path)])
     logger.info(f"[LOG] lintro actionlint issues: {result.issues_count}")
-    assert result.issues_count > 0
-    assert not result.success
+    assert_that(result.issues_count > 0).is_true()
+    assert_that(result.success).is_false()
 
 
 @pytest.mark.actionlint
@@ -85,5 +81,5 @@ def test_actionlint_no_files(tmp_path):
     empty.mkdir()
     tool = ActionlintTool()
     result = tool.check([str(empty)])
-    assert result.success
-    assert result.issues_count == 0
+    assert_that(result.success).is_true()
+    assert_that(result.issues_count).is_equal_to(0)
