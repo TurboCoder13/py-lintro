@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from assertpy import assert_that
+
 from lintro.utils.tool_utils import (
     format_as_table,
     should_exclude_path,
@@ -8,13 +10,12 @@ from lintro.utils.tool_utils import (
 
 
 def test_should_exclude_path_patterns():
-    assert should_exclude_path("a/b/.venv/lib.py", [".venv"]) is True
-    assert should_exclude_path("a/b/c.py", ["*.md"]) is False
-    assert should_exclude_path("dir/file.md", ["*.md"]) is True
+    assert_that(should_exclude_path("a/b/.venv/lib.py", [".venv"]) is True).is_true()
+    assert_that(should_exclude_path("a/b/c.py", ["*.md"]) is False).is_true()
+    assert_that(should_exclude_path("dir/file.md", ["*.md"]) is True).is_true()
 
 
 def test_get_table_columns_and_format_tabulate(monkeypatch):
-    # Pretend tabulate is available by providing stub function
     rows_captured = {}
 
     def fake_tabulate(
@@ -34,15 +35,14 @@ def test_get_table_columns_and_format_tabulate(monkeypatch):
         "TABULATE_AVAILABLE",
         True,
     )
-
     issues = [
         {"file": "a.py", "line": 1, "column": 2, "code": "X", "message": "m"},
         {"file": "b.py", "line": 3, "column": 4, "code": "Y", "message": "n"},
     ]
     table = format_as_table(issues=issues, tool_name="unknown", group_by=None)
-    assert table == "TABLE"
-    assert rows_captured["headers"]
-    assert rows_captured["rows"]
+    assert_that(table).is_equal_to("TABLE")
+    assert_that(rows_captured["headers"]).is_true()
+    assert_that(rows_captured["rows"]).is_true()
 
 
 def test_walk_files_with_excludes(tmp_path):
@@ -57,6 +57,6 @@ def test_walk_files_with_excludes(tmp_path):
         exclude_patterns=["ignore*"],
         include_venv=False,
     )
-    assert any(p.endswith("a.py") for p in files)
-    assert any(p.endswith("b.js") for p in files)
-    assert not any(p.endswith("ignore.txt") for p in files)
+    assert_that(any((p.endswith("a.py") for p in files))).is_true()
+    assert_that(any((p.endswith("b.js") for p in files))).is_true()
+    assert_that(any((p.endswith("ignore.txt") for p in files))).is_false()

@@ -7,13 +7,13 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from assertpy import assert_that
 from loguru import logger
 
 from lintro.tools.implementations.tool_yamllint import YamllintTool
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
-
 SAMPLE_FILE = "test_samples/yaml_violations.yml"
 
 
@@ -35,23 +35,17 @@ def run_yamllint_directly(file_path: Path) -> tuple[bool, str, int]:
         ["yamllint", "--version"], capture_output=True, text=True
     )
     print(f"[DEBUG] yamllint version: {version_result.stdout}")
-    cmd = [
-        "yamllint",
-        "-f",
-        "parsable",
-        file_path.name,
-    ]
+    cmd = ["yamllint", "-f", "parsable", file_path.name]
     print(f"[DEBUG] Running yamllint command: {' '.join(cmd)}")
     with open(file_path, "r") as f:
         print(f"[DEBUG] File contents for {file_path}:")
         print(f.read())
-    # Set HOME to a temp dir to avoid user config
     with tempfile.TemporaryDirectory() as temp_home:
         env = os.environ.copy()
         env["HOME"] = temp_home
         print(
-            f"[DEBUG] Subprocess environment: HOME={env.get('HOME')}, "
-            f"PATH={env.get('PATH')}"
+            "[DEBUG] Subprocess environment: HOME=%s, PATH=%s"
+            % (env.get("HOME"), env.get("PATH"))
         )
         print(f"[DEBUG] Subprocess CWD: {file_path.parent}")
         print(f"[DEBUG] Subprocess full env: {env}")
@@ -63,14 +57,13 @@ def run_yamllint_directly(file_path: Path) -> tuple[bool, str, int]:
             cwd=file_path.parent,
             env=env,
         )
-    # Count issues by parsing output lines that contain error/warning patterns
     issues = []
     for line in result.stdout.splitlines():
-        if any(level in line for level in ["[error]", "[warning]"]):
+        if any((level in line for level in ["[error]", "[warning]"])):
             issues.append(line)
     issues_count = len(issues)
     success = issues_count == 0 and result.returncode == 0
-    return success, result.stdout, issues_count
+    return (success, result.stdout, issues_count)
 
 
 @pytest.mark.yamllint
@@ -78,10 +71,7 @@ def test_yamllint_available():
     """Check if yamllint is available in PATH."""
     try:
         result = subprocess.run(
-            ["yamllint", "--version"],
-            capture_output=True,
-            text=True,
-            check=False,
+            ["yamllint", "--version"], capture_output=True, text=True, check=False
         )
         if result.returncode != 0:
             pytest.skip("yamllint not available")
@@ -97,28 +87,25 @@ def test_yamllint_reports_violations_direct(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_yamllint_available()
-
     import os
     import shutil
 
     sample_file = tmp_path / "test.yml"
     shutil.copy(SAMPLE_FILE, sample_file)
-    # Always write a minimal .yamllint config to temp dir
     config_dst = tmp_path / ".yamllint"
     config_dst.write_text("extends: default\n")
-    # Diagnostics
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
-        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
-        f"PATH={os.environ.get('PATH')}"
+        "[DEBUG] Environment: HOME=%s, PATH=%s"
+        % (os.environ.get("HOME"), os.environ.get("PATH"))
     )
     logger.info("[TEST] Running yamllint directly on sample file...")
     success, output, issues = run_yamllint_directly(sample_file)
     logger.info(f"[LOG] Yamllint found {issues} issues. Output:\n{output}")
     assert not success, "Yamllint should fail when violations are present."
     assert issues > 0, "Yamllint should report at least one issue."
-    assert any(level in output for level in ["[error]", "[warning]"]), (
+    assert any((level in output for level in ["[error]", "[warning]"])), (
         "Yamllint output should contain issue levels."
     )
 
@@ -131,7 +118,6 @@ def test_yamllint_reports_violations_through_lintro(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_yamllint_available()
-
     sample_file = tmp_path / "test.yml"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info(f"SAMPLE_FILE: {sample_file}, exists: {sample_file.exists()}")
@@ -140,8 +126,8 @@ def test_yamllint_reports_violations_through_lintro(tmp_path):
     tool.set_options(format="parsable")
     result = tool.check([str(sample_file)])
     logger.info(
-        f"[LOG] Lintro YamllintTool found {result.issues_count} issues. "
-        f"Output:\n{result.output}"
+        "[LOG] Lintro YamllintTool found %s issues. Output:\n%s"
+        % (result.issues_count, result.output)
     )
     assert not result.success, (
         "Lintro YamllintTool should fail when violations are present."
@@ -149,10 +135,9 @@ def test_yamllint_reports_violations_through_lintro(tmp_path):
     assert result.issues_count > 0, (
         "Lintro YamllintTool should report at least one issue."
     )
-    # Wrapper-first: rely on parsed issues rather than raw output text
     assert result.issues, "Parsed issues list should be present"
     assert any(
-        getattr(i, "level", None) in {"error", "warning"} for i in result.issues
+        (getattr(i, "level", None) in {"error", "warning"} for i in result.issues)
     ), "Parsed issues should include error or warning levels."
 
 
@@ -164,21 +149,22 @@ def test_yamllint_output_consistency_direct_vs_lintro(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_yamllint_available()
-
     import os
     import shutil
 
     sample_file = tmp_path / "test.yml"
     shutil.copy(SAMPLE_FILE, sample_file)
-    # Always write a minimal .yamllint config to temp dir
     config_dst = tmp_path / ".yamllint"
     config_dst.write_text("extends: default\n")
-    # Diagnostics
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
-        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
-        f"PATH={os.environ.get('PATH')}"
+        "[DEBUG] Environment: HOME=%s, PATH=%s"
+        % (os.environ.get("HOME"), os.environ.get("PATH"))
+    )
+    print(
+        "[DEBUG] Environment: HOME=%s, PATH=%s"
+        % (os.environ.get("HOME"), os.environ.get("PATH"))
     )
     logger.info("[TEST] Comparing yamllint CLI and Lintro YamllintTool outputs...")
     tool = YamllintTool()
@@ -186,11 +172,11 @@ def test_yamllint_output_consistency_direct_vs_lintro(tmp_path):
     direct_success, direct_output, direct_issues = run_yamllint_directly(sample_file)
     result = tool.check([str(sample_file)])
     logger.info(
-        f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}"
+        "[LOG] CLI issues: %s, Lintro issues: %s" % (direct_issues, result.issues_count)
     )
     assert direct_issues == result.issues_count, (
-        f"Mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
-        f"CLI Output:\n{direct_output}\nLintro Output:\n{result.output}"
+        "Mismatch: CLI=%s, Lintro=%s\nCLI Output:\n%s\nLintro Output:\n%s"
+        % (direct_issues, result.issues_count, direct_output, result.output)
     )
 
 
@@ -202,26 +188,18 @@ def test_yamllint_with_config_options(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_yamllint_available()
-
     sample_file = tmp_path / "test.yml"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info("[TEST] Testing yamllint with config options...")
-
-    # First run with default config
     tool = YamllintTool()
     tool.set_options(format="parsable")
     result_default = tool.check([str(sample_file)])
-
-    # Then run with relaxed config (should have fewer issues)
     tool_relaxed = YamllintTool()
     tool_relaxed.set_options(format="parsable", relaxed=True)
     result_relaxed = tool_relaxed.check([str(sample_file)])
-
     logger.info(f"[LOG] Default config: {result_default.issues_count} issues")
     logger.info(f"[LOG] Relaxed config: {result_relaxed.issues_count} issues")
-
-    # Relaxed config should have fewer or equal issues
-    assert result_relaxed.issues_count <= result_default.issues_count
+    assert_that(result_relaxed.issues_count <= result_default.issues_count).is_true()
 
 
 @pytest.mark.yamllint
@@ -232,26 +210,18 @@ def test_yamllint_with_no_warnings_option(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_yamllint_available()
-
     sample_file = tmp_path / "test.yml"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info("[TEST] Testing yamllint with no-warnings option...")
-
-    # First run with all issues
     tool = YamllintTool()
     tool.set_options(format="parsable")
     result_all = tool.check([str(sample_file)])
-
-    # Then run with no warnings (only errors)
     tool_no_warnings = YamllintTool()
     tool_no_warnings.set_options(format="parsable", no_warnings=True)
     result_no_warnings = tool_no_warnings.check([str(sample_file)])
-
     logger.info(f"[LOG] All issues: {result_all.issues_count} issues")
     logger.info(f"[LOG] No warnings: {result_no_warnings.issues_count} issues")
-
-    # No warnings should have fewer or equal issues
-    assert result_no_warnings.issues_count <= result_all.issues_count
+    assert_that(result_no_warnings.issues_count <= result_all.issues_count).is_true()
 
 
 @pytest.mark.yamllint
@@ -262,14 +232,12 @@ def test_yamllint_fix_method_implemented(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_yamllint_available()
-
     sample_file = tmp_path / "test.yml"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info("[TEST] Verifying that YamllintTool.fix() is implemented and works...")
     tool = YamllintTool()
     result = tool.fix([str(sample_file)])
     logger.info(f"[LOG] Fix result: {result.success}, {result.issues_count} issues")
-    # The fix method should work without raising NotImplementedError
     assert isinstance(result.success, bool), "Fix should return a boolean success value"
     assert isinstance(result.issues_count, int), (
         "Fix should return an integer issue count"
@@ -284,7 +252,6 @@ def test_yamllint_empty_directory(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_yamllint_available()
-
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
     logger.info("[TEST] Testing yamllint with empty directory...")
@@ -303,20 +270,18 @@ def test_yamllint_parser_validation(tmp_path):
         tmp_path: Pytest temporary directory fixture.
     """
     test_yamllint_available()
-
     from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 
-    # Test with sample output
     sample_output = (
-        "file.yaml:1:1: [error] too many blank lines (1 > 0 allowed) (empty-lines)\n"
+        "file.yaml:1:1: [error] too many blank lines (1 > 0 allowed) "
+        "(empty-lines)\n"
         "file.yaml:3:5: [warning] wrong indentation: expected 4 but found 2 "
         "(indentation)\n"
-        "file.yaml:7:80: [error] line too long (120 > 79 characters) (line-length)"
+        "file.yaml:7:80: [error] line too long (120 > 79 characters) "
+        "(line-length)"
     )
-
     issues = parse_yamllint_output(sample_output)
     logger.info(f"[LOG] Parsed {len(issues)} issues from sample output")
-
     assert len(issues) == 3, "Should parse 3 issues"
     assert issues[0].level == "error", "First issue should be error level"
     assert issues[0].rule == "empty-lines", "First issue should be empty-lines rule"

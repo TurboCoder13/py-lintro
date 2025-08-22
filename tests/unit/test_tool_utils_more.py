@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from assertpy import assert_that
+
 from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 from lintro.utils.tool_utils import format_tool_output
 
 
 def test_format_tool_output_with_parsed_issues_and_fixable_sections(monkeypatch):
-    # Ensure tabulate is available for section formatting
     import lintro.utils.tool_utils as tu
 
     def fake_tabulate(tabular_data, headers, tablefmt, stralign, disable_numparse):
@@ -13,7 +14,6 @@ def test_format_tool_output_with_parsed_issues_and_fixable_sections(monkeypatch)
 
     monkeypatch.setattr(tu, "TABULATE_AVAILABLE", True, raising=True)
     monkeypatch.setattr(tu, "tabulate", fake_tabulate, raising=True)
-
     issues = [
         RuffIssue(
             file="a.py",
@@ -36,11 +36,10 @@ def test_format_tool_output_with_parsed_issues_and_fixable_sections(monkeypatch)
         output_format="grid",
         issues=issues,
     )
-    assert "Auto-fixable" in txt or txt == "TABLE"
+    assert_that("Auto-fixable" in txt or txt == "TABLE").is_true()
 
 
 def test_format_tool_output_parsing_fallbacks(monkeypatch):
-    # If no issues and no parsed mapping, returns raw output
     out = format_tool_output(
         tool_name="unknown",
         output="some raw output",
@@ -48,4 +47,4 @@ def test_format_tool_output_parsing_fallbacks(monkeypatch):
         output_format="grid",
         issues=None,
     )
-    assert out == "some raw output"
+    assert_that(out).is_equal_to("some raw output")

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+from assertpy import assert_that
+
 from lintro.models.core.tool_result import ToolResult
 from lintro.utils import tool_executor as te
 from lintro.utils.tool_executor import run_lint_tools_simple
@@ -75,23 +77,19 @@ class _EnumLike:
 
 
 def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]):
-    # Patch helper functions inside tool_executor to avoid real ToolEnum usage
     import lintro.utils.tool_executor as te
 
-    # Return enum-like objects for the requested action
     def fake_get_tools(*, tools: str | None, action: str):
         return [_EnumLike(name.upper()) for name in tools_dict.keys()]
 
     tools_dict = tools
     monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
 
-    # Map enum-like to FakeTool by lower-cased name
     def fake_get_tool(enum_val):
         return tools_dict[enum_val.name.lower()]
 
     monkeypatch.setattr(te.tool_manager, "get_tool", fake_get_tool, raising=True)
 
-    # Avoid writing files
     def noop_write_reports_from_results(self, results):
         return None
 
@@ -104,7 +102,6 @@ def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]):
 
 
 def _stub_logger(monkeypatch):
-    # Replace create_logger in the module
     import lintro.utils.console_logger as cl
 
     monkeypatch.setattr(cl, "create_logger", lambda **k: FakeLogger(), raising=True)
@@ -116,7 +113,6 @@ def test_executor_check_success(monkeypatch):
     _setup_tool_manager(
         monkeypatch, {"ruff": FakeTool("ruff", can_fix=True, result=result)}
     )
-
     code = run_lint_tools_simple(
         action="check",
         paths=["."],
@@ -129,7 +125,7 @@ def test_executor_check_success(monkeypatch):
         verbose=False,
         raw_output=False,
     )
-    assert code == 0
+    assert_that(code).is_equal_to(0)
 
 
 def test_executor_check_failure(monkeypatch):
@@ -138,7 +134,6 @@ def test_executor_check_failure(monkeypatch):
     _setup_tool_manager(
         monkeypatch, {"ruff": FakeTool("ruff", can_fix=True, result=result)}
     )
-
     code = run_lint_tools_simple(
         action="check",
         paths=["."],
@@ -151,7 +146,7 @@ def test_executor_check_failure(monkeypatch):
         verbose=True,
         raw_output=False,
     )
-    assert code == 1
+    assert_that(code).is_equal_to(1)
 
 
 def test_executor_fmt_success_with_counts(monkeypatch):
@@ -167,7 +162,6 @@ def test_executor_fmt_success_with_counts(monkeypatch):
     _setup_tool_manager(
         monkeypatch, {"prettier": FakeTool("prettier", can_fix=True, result=result)}
     )
-
     code = run_lint_tools_simple(
         action="fmt",
         paths=["."],
@@ -180,7 +174,7 @@ def test_executor_fmt_success_with_counts(monkeypatch):
         verbose=False,
         raw_output=False,
     )
-    assert code == 0
+    assert_that(code).is_equal_to(0)
 
 
 def test_executor_json_output(monkeypatch, capsys):
@@ -201,7 +195,6 @@ def test_executor_json_output(monkeypatch, capsys):
             "prettier": FakeTool("prettier", can_fix=True, result=t2),
         },
     )
-
     code = run_lint_tools_simple(
         action="check",
         paths=["."],
@@ -214,11 +207,11 @@ def test_executor_json_output(monkeypatch, capsys):
         verbose=False,
         raw_output=False,
     )
-    assert code == 1  # 1 issue in ruff
+    assert_that(code).is_equal_to(1)
     out = capsys.readouterr().out
     data = json.loads(out)
-    assert data["action"] == "check"
-    assert "results" in data and len(data["results"]) >= 2
+    assert_that(data["action"]).is_equal_to("check")
+    assert_that("results" in data and len(data["results"]) >= 2).is_true()
 
 
 def test_parse_tool_options_typed_values():
@@ -231,42 +224,36 @@ def test_parse_tool_options_typed_values():
     - lists via pipe separation (E|F|W)
     """
     opt_str = (
-        "ruff:unsafe_fixes=True,"
-        "ruff:line_length=88,"
-        "ruff:target_version=py313,"
-        "ruff:select=E|F,"
-        "prettier:verbose_fix_output=false,"
-        "yamllint:strict=None,"
+        "ruff:unsafe_fixes=True,ruff:line_length=88,ruff:target_version=py313,"
+        "ruff:select=E|F,prettier:verbose_fix_output=false,yamllint:strict=None,"
         "ruff:ratio=0.5"
     )
-
     parsed = te._parse_tool_options(opt_str)
-
-    assert (
+    assert_that(
         isinstance(parsed["ruff"]["unsafe_fixes"], bool)
         and parsed["ruff"]["unsafe_fixes"]
-    )
-    assert (
+    ).is_true()
+    assert_that(
         isinstance(parsed["ruff"]["line_length"], int)
         and parsed["ruff"]["line_length"] == 88
-    )
-    assert parsed["ruff"]["target_version"] == "py313"
-    assert parsed["ruff"]["select"] == ["E", "F"]
-    assert parsed["prettier"]["verbose_fix_output"] is False
-    assert parsed["yamllint"]["strict"] is None
-    assert isinstance(parsed["ruff"]["ratio"], float) and parsed["ruff"]["ratio"] == 0.5
+    ).is_true()
+    assert_that(parsed["ruff"]["target_version"]).is_equal_to("py313")
+    assert_that(parsed["ruff"]["select"]).is_equal_to(["E", "F"])
+    assert_that(parsed["prettier"]["verbose_fix_output"] is False).is_true()
+    assert_that(parsed["yamllint"]["strict"]).is_none()
+    assert_that(
+        isinstance(parsed["ruff"]["ratio"], float) and parsed["ruff"]["ratio"] == 0.5
+    ).is_true()
 
 
 def test_executor_unknown_tool(monkeypatch):
     _stub_logger(monkeypatch)
     import lintro.utils.tool_executor as te
 
-    # Simulate parse error for unknown tool
     def raise_value_error(tools, action):
         raise ValueError("unknown tool")
 
     monkeypatch.setattr(te, "_get_tools_to_run", raise_value_error, raising=True)
-
     code = run_lint_tools_simple(
         action="check",
         paths=["."],
@@ -279,4 +266,4 @@ def test_executor_unknown_tool(monkeypatch):
         verbose=False,
         raw_output=False,
     )
-    assert code == 1
+    assert_that(code).is_equal_to(1)

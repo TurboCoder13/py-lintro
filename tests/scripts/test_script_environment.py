@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from assertpy import assert_that
 
 
 class TestEnvironmentHandling:
@@ -40,8 +41,6 @@ class TestEnvironmentHandling:
             clean_env: Clean environment variables for testing.
         """
         script = scripts_dir / "local" / "local-test.sh"
-
-        # Try to run with clean environment (no uv)
         result = subprocess.run(
             [str(script), "--help"],
             capture_output=True,
@@ -49,10 +48,8 @@ class TestEnvironmentHandling:
             env=clean_env,
             cwd=scripts_dir.parent,
         )
-
-        # Should show help regardless of missing dependencies
-        assert result.returncode == 0
-        assert "Usage:" in result.stdout
+        assert_that(result.returncode).is_equal_to(0)
+        assert_that(result.stdout).contains("Usage:")
 
     def test_scripts_handle_docker_missing(self, scripts_dir, clean_env):
         """Test Docker scripts behavior when Docker is not available.
@@ -62,12 +59,10 @@ class TestEnvironmentHandling:
             clean_env: Clean environment variables for testing.
         """
         docker_scripts = ["docker/docker-test.sh", "docker/docker-lintro.sh"]
-
         for script_name in docker_scripts:
             script = scripts_dir / script_name
             if not script.exists():
                 continue
-
             result = subprocess.run(
                 [str(script)],
                 capture_output=True,
@@ -75,14 +70,16 @@ class TestEnvironmentHandling:
                 env=clean_env,
                 cwd=scripts_dir.parent,
             )
-
-            # Should fail gracefully with informative error
-            assert result.returncode != 0
+            assert_that(result.returncode).is_not_equal_to(0)
             error_output = result.stderr + result.stdout
-            assert any(
-                word in error_output.lower()
-                for word in ["docker", "not found", "not running", "error"]
-            )
+            assert_that(
+                any(
+                    (
+                        word in error_output.lower()
+                        for word in ["docker", "not found", "not running", "error"]
+                    )
+                )
+            ).is_true()
 
     def test_install_tools_handles_missing_dependencies(self, scripts_dir, clean_env):
         """Test install-tools.sh behavior with missing dependencies.
@@ -92,20 +89,15 @@ class TestEnvironmentHandling:
             clean_env: Clean environment variables for testing.
         """
         script = scripts_dir / "utils" / "install-tools.sh"
-
-        # Test that script starts with clean environment (may fail due to missing tools)
         result = subprocess.run(
             [str(script)],
             capture_output=True,
             text=True,
             env=clean_env,
             cwd=scripts_dir.parent,
-            timeout=10,  # Don't let it run too long
+            timeout=10,
         )
-
-        # Should fail gracefully, not hang or crash
-        # Return code doesn't matter as much as not crashing
-        assert result.returncode is not None  # Finished execution
+        assert_that(result.returncode).is_not_none()
 
 
 class TestScriptErrorHandling:
@@ -127,17 +119,13 @@ class TestScriptErrorHandling:
             scripts_dir: Path to the scripts directory.
         """
         script = scripts_dir / "utils" / "extract-coverage.py"
-
         with tempfile.TemporaryDirectory() as tmpdir:
             result = subprocess.run(
                 ["python3", str(script)], capture_output=True, text=True, cwd=tmpdir
             )
-
-            # Should handle missing file gracefully
-            assert result.returncode == 0
-            assert "percentage=" in result.stdout
-            # Should default to 0.0 when no file found
-            assert "percentage=0.0" in result.stdout
+            assert_that(result.returncode).is_equal_to(0)
+            assert_that(result.stdout).contains("percentage=")
+            assert_that(result.stdout).contains("percentage=0.0")
 
     def test_extract_coverage_handles_empty_file(self, scripts_dir):
         """Test extract-coverage.py handles empty coverage.xml.
@@ -146,19 +134,14 @@ class TestScriptErrorHandling:
             scripts_dir: Path to the scripts directory.
         """
         script = scripts_dir / "utils" / "extract-coverage.py"
-
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Create empty coverage.xml
             coverage_file = Path(tmpdir) / "coverage.xml"
             coverage_file.write_text("")
-
             result = subprocess.run(
                 ["python3", str(script)], capture_output=True, text=True, cwd=tmpdir
             )
-
-            # Should handle empty/malformed file gracefully
-            assert result.returncode == 0
-            assert "percentage=" in result.stdout
+            assert_that(result.returncode).is_equal_to(0)
+            assert_that(result.stdout).contains("percentage=")
 
     def test_extract_coverage_handles_valid_file(self, scripts_dir):
         """Test extract-coverage.py handles valid coverage.xml.
@@ -167,31 +150,31 @@ class TestScriptErrorHandling:
             scripts_dir: Path to the scripts directory.
         """
         script = scripts_dir / "utils" / "extract-coverage.py"
-
-        valid_coverage_xml = """<?xml version="1.0" ?>
-<coverage version="7.4.1" timestamp="1234567890" line-rate="0.85"
-          branch-rate="0.75" lines-covered="850" lines-valid="1000">
-    <sources>
-        <source>.</source>
-    </sources>
-    <packages>
-        <package name="lintro" line-rate="0.85" branch-rate="0.75">
-        </package>
-    </packages>
-</coverage>"""
-
+        valid_coverage_xml = (
+            '<?xml version="1.0" ?>\n'
+            '<coverage version="7.4.1" timestamp="1234567890" '
+            'line-rate="0.85"\n'
+            '          branch-rate="0.75" lines-covered="850" '
+            'lines-valid="1000">\n'
+            "    <sources>\n"
+            "        <source>.</source>\n"
+            "    </sources>\n"
+            "    <packages>\n"
+            '        <package name="lintro" line-rate="0.85" '
+            'branch-rate="0.75">\n'
+            "        </package>\n"
+            "    </packages>\n"
+            "</coverage>"
+        )
         with tempfile.TemporaryDirectory() as tmpdir:
             coverage_file = Path(tmpdir) / "coverage.xml"
             coverage_file.write_text(valid_coverage_xml)
-
             result = subprocess.run(
                 ["python3", str(script)], capture_output=True, text=True, cwd=tmpdir
             )
-
-            assert result.returncode == 0
-            assert "percentage=" in result.stdout
-            # Should extract correct percentage (85.0)
-            assert "percentage=85.0" in result.stdout
+            assert_that(result.returncode).is_equal_to(0)
+            assert_that(result.stdout).contains("percentage=")
+            assert_that(result.stdout).contains("percentage=85.0")
 
 
 class TestScriptSecurity:
@@ -213,37 +196,31 @@ class TestScriptSecurity:
             scripts_dir: Path to the scripts directory.
         """
         shell_scripts = list(scripts_dir.glob("*.sh"))
-
         dangerous_patterns = ["eval ", "exec ", "$(curl", "| sh", "| bash"]
-
         for script in shell_scripts:
             with open(script, "r") as f:
                 content = f.read()
-
             for pattern in dangerous_patterns:
                 if pattern in content:
-                    # Allow specific safe cases
                     lines_with_pattern = [
                         line.strip()
                         for line in content.split("\n")
-                        if pattern in line and not line.strip().startswith("#")
+                        if pattern in line and (not line.strip().startswith("#"))
                     ]
-
-                    # Check if it's in a safe context (like error handling)
                     for line in lines_with_pattern:
                         if pattern == "| sh" and "install.sh" in line:
-                            continue  # Safe installation pattern
+                            continue
                         if pattern == "| bash" and (
                             "nodesource.com" in line or "setup_" in line
                         ):
-                            continue  # Safe Node.js official installer pattern
+                            continue
                         if pattern == "eval " and "grep" in line:
-                            continue  # Safe grep/export pattern
-
-                        # If we get here, might be unsafe
+                            continue
                         pytest.fail(
-                            f"Potentially unsafe pattern '{pattern}' in {script.name}: "
-                            f"{line}"
+                            (
+                                f"Potentially unsafe pattern '{pattern}' in "
+                                f"{script.name}: {line}"
+                            )
                         )
 
     def test_scripts_validate_inputs(self, scripts_dir):
@@ -252,33 +229,26 @@ class TestScriptSecurity:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        # Check that scripts with arguments validate them
-        scripts_with_args = [
-            "run-tests.sh",
-            "local-lintro.sh",
-        ]  # Remove install-tools.sh for now
-
+        scripts_with_args = ["run-tests.sh", "local-lintro.sh"]
         for script_name in scripts_with_args:
             script = scripts_dir / script_name
             if not script.exists():
                 continue
-
             with open(script, "r") as f:
                 content = f.read()
-
-            # Should have some form of argument validation
             has_validation = any(
-                pattern in content
-                for pattern in [
-                    'if [ "$1"',
-                    'case "$1"',
-                    "[ $# -",
-                    "getopts",
-                    "--help",
-                    "-h",
-                ]
+                (
+                    pattern in content
+                    for pattern in [
+                        'if [ "$1"',
+                        'case "$1"',
+                        "[ $# -",
+                        "getopts",
+                        "--help",
+                        "-h",
+                    ]
+                )
             )
-
             assert has_validation, (
                 f"{script_name} should validate command line arguments"
             )
@@ -290,25 +260,16 @@ class TestScriptSecurity:
             scripts_dir: Path to the scripts directory.
         """
         shell_scripts = list(scripts_dir.glob("*.sh"))
-
         for script in shell_scripts:
             with open(script, "r") as f:
                 content = f.read()
-
-            # Look for unquoted variable usage in command contexts
             lines = content.split("\n")
             for i, line in enumerate(lines, 1):
                 if line.strip().startswith("#"):
                     continue
-
-                # Check for potentially dangerous unquoted variables
-                # This is a basic check - real shellcheck would be more thorough
-                if " $1" in line and '"$1"' not in line and "'$1'" not in line:
-                    # Allow some safe contexts like array access
-                    if not any(safe in line for safe in ["[$1]", "=$1", "shift"]):
-                        # This might indicate unquoted variable usage
-                        # For now, just ensure we're being careful
-                        pass  # Not failing tests for this, but flagging for awareness
+                if " $1" in line and '"$1"' not in line and ("'$1'" not in line):
+                    if not any((safe in line for safe in ["[$1]", "=$1", "shift"])):
+                        pass
 
 
 class TestScriptCompatibility:
@@ -330,12 +291,9 @@ class TestScriptCompatibility:
             scripts_dir: Path to the scripts directory.
         """
         shell_scripts = list(scripts_dir.glob("*.sh"))
-
         for script in shell_scripts:
             with open(script, "r") as f:
                 first_line = f.readline().strip()
-
-            # Should use #!/bin/bash for portability
             assert first_line == "#!/bin/bash", (
                 f"{script.name} should use '#!/bin/bash' shebang, found: {first_line}"
             )
@@ -347,21 +305,17 @@ class TestScriptCompatibility:
             scripts_dir: Path to the scripts directory.
         """
         shell_scripts = list(scripts_dir.glob("*.sh"))
-
         for script in shell_scripts:
             with open(script, "r") as f:
                 first_line = f.readline().strip()
-
-            # If using /bin/sh, should avoid bash-specific features
             if first_line == "#!/bin/sh":
                 with open(script, "r") as f:
                     content = f.read()
-
                 bash_features = ["[[", "function ", "$(", "source "]
                 for feature in bash_features:
                     assert feature not in content, (
-                        f"{script.name} uses bash feature '{feature}' "
-                        "but has sh shebang"
+                        f"{script.name} uses bash feature '{feature}' but has sh "
+                        "shebang"
                     )
 
     def test_python_script_compatibility(self, scripts_dir):
@@ -373,12 +327,9 @@ class TestScriptCompatibility:
         python_scripts = [
             f for f in scripts_dir.glob("*.py") if f.name != "__init__.py"
         ]
-
         for script in python_scripts:
             with open(script, "r") as f:
                 first_line = f.readline().strip()
-
-            # Should use python3 for consistency
             assert first_line in [
                 "#!/usr/bin/env python3",
                 "#!/usr/bin/python3",

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from assertpy import assert_that
 from click.testing import CliRunner
 
 from lintro.cli_utils.commands.check import check_command
@@ -9,7 +10,6 @@ from lintro.cli_utils.commands.list_tools import list_tools_command
 
 def test_check_invokes_executor(monkeypatch):
     calls = {}
-    # Patch the imported symbol inside the command module
     import lintro.cli_utils.commands.check as check_mod
 
     def fake_run(**kwargs):
@@ -17,11 +17,10 @@ def test_check_invokes_executor(monkeypatch):
         return 0
 
     monkeypatch.setattr(check_mod, "run_lint_tools_simple", lambda **k: fake_run(**k))
-
     runner = CliRunner()
     result = runner.invoke(check_command, ["--tools", "ruff", "."])
-    assert result.exit_code == 0
-    assert calls.get("action") == "check"
+    assert_that(result.exit_code).is_equal_to(0)
+    assert_that(calls.get("action")).is_equal_to("check")
 
 
 def test_format_invokes_executor(monkeypatch):
@@ -33,17 +32,15 @@ def test_format_invokes_executor(monkeypatch):
         return 0
 
     monkeypatch.setattr(format_mod, "run_lint_tools_simple", lambda **k: fake_run(**k))
-
     runner = CliRunner()
     result = runner.invoke(format_code, ["--tools", "prettier", "."])
-    assert result.exit_code == 0
-    assert calls.get("action") == "fmt"
+    assert_that(result.exit_code).is_equal_to(0)
+    assert_that(calls.get("action")).is_equal_to("fmt")
 
 
 def test_list_tools_outputs(monkeypatch):
     runner = CliRunner()
     result = runner.invoke(list_tools_command, [])
-    assert result.exit_code == 0
-    # Ensure header and summary present
-    assert "Available Tools" in result.output
-    assert "Total tools:" in result.output
+    assert_that(result.exit_code).is_equal_to(0)
+    assert_that(result.output).contains("Available Tools")
+    assert_that(result.output).contains("Total tools:")

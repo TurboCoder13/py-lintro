@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from assertpy import assert_that
+
 from lintro.utils.console_logger import create_logger
 
 
@@ -20,5 +22,6 @@ def test_console_logger_parsing_messages(tmp_path: Path, capsys):
         action="check",
     )
     out = capsys.readouterr().out
-    # Presence of tip about auto-fixable is enough to cover branch
-    assert "auto-fixed" in out or "Would reformat" in out or "Found" in out
+    assert_that(
+        "auto-fixed" in out or "Would reformat" in out or "Found" in out
+    ).is_true()

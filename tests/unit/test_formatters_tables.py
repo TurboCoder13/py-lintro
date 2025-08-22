@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from assertpy import assert_that
+
 from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
@@ -27,11 +29,11 @@ def test_darglint_table_and_formatting(tmp_path):
         DarglintIssue(file=str(tmp_path / "f.py"), line=1, code="D100", message="m")
     ]
     desc = DarglintTableDescriptor()
-    assert desc.get_columns() == ["File", "Line", "Code", "Message"]
+    assert_that(desc.get_columns()).is_equal_to(["File", "Line", "Code", "Message"])
     rows = desc.get_rows(issues)
-    assert rows and len(rows[0]) == 4
+    assert_that(rows and len(rows[0]) == 4).is_true()
     out = format_darglint_issues(issues=issues, format="grid")
-    assert "D100" in out
+    assert_that(out).contains("D100")
 
 
 def test_prettier_table_and_formatting(tmp_path):
@@ -42,14 +44,16 @@ def test_prettier_table_and_formatting(tmp_path):
             column=None,
             code="FORMAT",
             message="m",
-        ),
+        )
     ]
     desc = PrettierTableDescriptor()
-    assert desc.get_columns() == ["File", "Line", "Column", "Code", "Message"]
+    assert_that(desc.get_columns()).is_equal_to(
+        ["File", "Line", "Column", "Code", "Message"]
+    )
     rows = desc.get_rows(issues)
-    assert rows and len(rows[0]) == 5
+    assert_that(rows and len(rows[0]) == 5).is_true()
     out = format_prettier_issues(issues=issues, format="plain")
-    assert "Auto-fixable" in out or out
+    assert_that("Auto-fixable" in out or out).is_true()
 
 
 def test_ruff_table_and_formatting(tmp_path):
@@ -65,11 +69,13 @@ def test_ruff_table_and_formatting(tmp_path):
         RuffFormatIssue(file=str(tmp_path / "g.py")),
     ]
     desc = RuffTableDescriptor()
-    assert desc.get_columns() == ["File", "Line", "Column", "Code", "Message"]
+    assert_that(desc.get_columns()).is_equal_to(
+        ["File", "Line", "Column", "Code", "Message"]
+    )
     rows = desc.get_rows(issues)
-    assert rows and len(rows[0]) == 5
+    assert_that(rows and len(rows[0]) == 5).is_true()
     out = format_ruff_issues(issues=issues, format="grid")
-    assert "Auto-fixable" in out or "Not auto-fixable" in out or out
+    assert_that("Auto-fixable" in out or "Not auto-fixable" in out or out).is_true()
 
 
 def test_hadolint_table_and_formatting(tmp_path):
@@ -84,8 +90,10 @@ def test_hadolint_table_and_formatting(tmp_path):
         )
     ]
     desc = HadolintTableDescriptor()
-    assert desc.get_columns() == ["File", "Line", "Column", "Level", "Code", "Message"]
+    assert_that(desc.get_columns()).is_equal_to(
+        ["File", "Line", "Column", "Level", "Code", "Message"]
+    )
     rows = desc.get_rows(issues)
-    assert rows and len(rows[0]) == 6
+    assert_that(rows and len(rows[0]) == 6).is_true()
     out = format_hadolint_issues(issues=issues, format="markdown")
-    assert "DL3001" in out
+    assert_that(out).contains("DL3001")

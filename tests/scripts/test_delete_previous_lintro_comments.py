@@ -9,8 +9,8 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from assertpy import assert_that
 
-# Import the script as a module using importlib, since scripts/ is not a package
 script_path = (
     Path(__file__).parent.parent.parent
     / "scripts"
@@ -57,20 +57,14 @@ def test_deletes_only_marker_comments(monkeypatch):
 
     monkeypatch.setattr(del_script, "get_pr_comments", mock_get_pr_comments)
     monkeypatch.setattr(del_script, "delete_comment", mock_delete_comment)
-
-    # Patch sys.argv to simulate CLI argument for marker
     import sys
 
     monkeypatch.setattr(
         sys, "argv", ["delete-previous-lintro-comments.py", "<!-- lintro-report -->"]
     )
-
-    # Capture stdout
     with mock.patch("sys.stdout", new_callable=lambda: sys.__stdout__):
         del_script.main()
-
-    # Only comments with the marker should be deleted
-    assert set(deleted) == {2, 3}
+    assert_that(set(deleted)).is_equal_to({2, 3})
 
 
 def test_no_marker_comments(monkeypatch):
@@ -93,8 +87,6 @@ def test_no_marker_comments(monkeypatch):
 
     monkeypatch.setattr(del_script, "get_pr_comments", mock_get_pr_comments)
     monkeypatch.setattr(del_script, "delete_comment", mock_delete_comment)
-
     with mock.patch("sys.stdout", new_callable=lambda: sys.__stdout__):
         del_script.main()
-
-    assert deleted == []
+    assert_that(deleted).is_equal_to([])
