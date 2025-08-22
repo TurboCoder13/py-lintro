@@ -24,13 +24,25 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f3453f81f64cffc278f070e6ba152a87a292c1bc
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        with:
+          egress-policy: audit
+          allowed-endpoints: |
+            github.com:443
+            api.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+            pkg-containers.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f3453f81f64cffc278f070e6ba152a87a292c1bc
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@dc34078e24d4328ea4879931677c81564abdcebd
         with:
           python-version: '3.13'
 

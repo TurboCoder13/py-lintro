@@ -5,6 +5,9 @@ inputs:
   fetch-depth:
     description: Depth for checkout fetch
     default: '0'
+  fetch-tags:
+    description: Whether to fetch tags
+    default: 'true'
   persist-credentials:
     description: Whether to persist credentials
     default: 'true'
@@ -19,8 +22,10 @@ runs:
       uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
       with:
         egress-policy: ${{ inputs.egress_policy }}
+        allowed-endpoints: ${{ steps.allowlist.outputs.value }}
     - name: Checkout
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       with:
         fetch-depth: ${{ inputs.fetch-depth }}
+        fetch-tags: ${{ inputs.fetch-tags }}
         persist-credentials: ${{ inputs.persist-credentials }}
