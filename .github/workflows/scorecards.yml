@@ -9,6 +9,7 @@ name: OpenSSF Scorecards
 permissions:
   contents: read
   security-events: write
+  id-token: write
 
 jobs:
   analysis:
@@ -17,6 +18,8 @@ jobs:
     steps:
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Scorecards analysis
         uses: ossf/scorecard-action@05b42c624433fc40578a4040d5cf5e36ddca8cde # v2.4.2
         with:
