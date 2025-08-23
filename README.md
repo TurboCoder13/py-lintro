@@ -19,16 +19,6 @@ Lintro is a unified command-line interface that brings together multiple code qu
 [![CodeQL](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/turbocoder13/py-lintro/badge)](https://securityscorecards.dev/viewer/?uri=github.com/turbocoder13/py-lintro)
 
-<!-- Tool logos (static badges) -->
-
-[![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
-[![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)
-[![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)
-[![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)
-[![Actionlint](https://img.shields.io/badge/Actionlint-GitHub%20Workflows-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)
-[![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)
-[![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint)
-
 ### Why Lintro?
 
 - **🚀 Unified Interface**: One command to run all your linting and formatting tools
@@ -50,15 +40,15 @@ Lintro is a unified command-line interface that brings together multiple code qu
 
 ## Supported Tools
 
-| Tool           | Language/Format                      | Purpose              | Auto-fix |
-| -------------- | ------------------------------------ | -------------------- | -------- |
-| **Ruff**       | Python                               | Linting & Formatting | ✅       |
-| **Darglint**   | Python                               | Docstring Validation | -        |
-| **Bandit**     | Python                               | Security Linting     | -        |
-| **Prettier**   | JS/TS/JSON                           | Code Formatting      | ✅       |
-| **Yamllint**   | YAML                                 | Syntax & Style       | -        |
-| **Actionlint** | GitHub Workflows (.github/workflows) | Workflow Validation  | -        |
-| **Hadolint**   | Dockerfile                           | Best Practices       | -        |
+| Tool | Language | Purpose | Auto-fix | Badge |
+| --- | --- | --- | --- | --- |
+| Ruff | 🐍 Python | Linting & Formatting | ✅ | [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff) |
+| Darglint | 🐍 Python | Docstring Validation | - | [![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint) |
+| Bandit | 🐍 Python | Security Linting | - | [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit) |
+| Prettier | 🟨 JS/TS · 🧾 JSON | Code Formatting | ✅ | [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/) |
+| Yamllint | 🧾 YAML | Syntax & Style | - | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint) |
+| Actionlint | ⚙️ GitHub Workflows | Workflow Validation | - | [![Actionlint](https://img.shields.io/badge/Actionlint-GitHub%20Workflows-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint) |
+| Hadolint | 🐳 Dockerfile | Best Practices | - | [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint) |
 
 ## Quick Start
 
