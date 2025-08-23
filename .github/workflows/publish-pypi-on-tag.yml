@@ -46,6 +46,7 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@dc34078e24d4328ea4879931677c81564abdcebd
         with:

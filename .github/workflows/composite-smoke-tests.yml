@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup environment via composite
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@dc34078e24d4328ea4879931677c81564abdcebd
