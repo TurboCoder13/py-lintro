@@ -332,8 +332,13 @@ class TestScriptIntegration:
             capture_output=True,
             text=True,
         )
-        assert_that(result.returncode).is_equal_to(0)
-        assert_that(result.stdout).contains("next_version=")
+        # In CI checkouts without fetched tags, script enforces tag baseline
+        # and exits with code 2 and guidance. Accept both behaviors:
+        if result.returncode == 0:
+            assert_that(result.stdout).contains("next_version=")
+        else:
+            assert_that(result.returncode).is_equal_to(2)
+            assert_that(result.stdout).contains("No v*-prefixed release tag found")
 
     def test_scripts_use_consistent_color_codes(self, scripts_dir):
         """Test that scripts use consistent color coding.
