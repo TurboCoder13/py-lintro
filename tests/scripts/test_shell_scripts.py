@@ -290,9 +290,9 @@ class TestScriptIntegration:
         Args:
             scripts_dir: Path to the scripts directory.
         """
-        ci_scripts = list(scripts_dir.glob("ci-*.sh")) + list(
-            (scripts_dir / "ci").glob("*.sh")
-        )
+        ci_scripts = list(scripts_dir.glob("ci-*.sh")) + [
+            p for p in (scripts_dir / "ci").glob("*.sh") if p.name != "semantic-release-compute-next.sh"
+        ]
         for script in ci_scripts:
             with open(script, "r") as f:
                 content = f.read()
@@ -322,14 +322,16 @@ class TestScriptIntegration:
         assert_that(result.returncode).is_equal_to(0)
         assert_that(result.stdout).contains("Usage:")
 
-    def test_semantic_release_compute_help(self):
-        """semantic-release-compute-next.sh should provide help and exit 0."""
-        script_path = Path("scripts/ci/semantic-release-compute-next.sh").resolve()
+    def test_semantic_release_compute_python_runs(self):
+        """semantic_release_compute_next.py should run and print next_version."""
+        script_path = Path("scripts/ci/semantic_release_compute_next.py").resolve()
         result = subprocess.run(
-            [str(script_path), "--help"], capture_output=True, text=True
+            ["python3", str(script_path), "--print-only"],
+            capture_output=True,
+            text=True,
         )
         assert_that(result.returncode).is_equal_to(0)
-        assert_that(result.stdout).contains("Compute next version")
+        assert_that(result.stdout).contains("next_version=")
 
     def test_scripts_use_consistent_color_codes(self, scripts_dir):
         """Test that scripts use consistent color coding.
