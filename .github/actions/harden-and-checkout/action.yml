@@ -11,6 +11,9 @@ inputs:
   persist-credentials:
     description: Whether to persist credentials
     default: 'true'
+  token:
+    description: Token to use for checkout (GITHUB_TOKEN or RELEASE_TOKEN)
+    default: ''
   egress_policy:
     description: step-security harden-runner egress policy (audit|block)
     default: 'audit'
@@ -29,3 +32,4 @@ runs:
         fetch-depth: ${{ inputs.fetch-depth }}
         fetch-tags: ${{ inputs.fetch-tags }}
         persist-credentials: ${{ inputs.persist-credentials }}
+        token: ${{ inputs.token }}
