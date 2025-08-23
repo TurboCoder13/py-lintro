@@ -40,15 +40,15 @@ Lintro is a unified command-line interface that brings together multiple code qu
 
 ## Supported Tools
 
-| Tool | Language | Purpose | Auto-fix | Badge |
-| --- | --- | --- | --- | --- |
-| Ruff | 🐍 Python | Linting & Formatting | ✅ | [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff) |
-| Darglint | 🐍 Python | Docstring Validation | - | [![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint) |
-| Bandit | 🐍 Python | Security Linting | - | [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit) |
-| Prettier | 🟨 JS/TS · 🧾 JSON | Code Formatting | ✅ | [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/) |
-| Yamllint | 🧾 YAML | Syntax & Style | - | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint) |
-| Actionlint | ⚙️ GitHub Workflows | Workflow Validation | - | [![Actionlint](https://img.shields.io/badge/Actionlint-GitHub%20Workflows-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint) |
-| Hadolint | 🐳 Dockerfile | Best Practices | - | [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint) |
+| Tool | Language | Auto-fix |
+| --- | --- | --- |
+| [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff) | 🐍 Python | ✅ |
+| [![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint) | 🐍 Python | - |
+| [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit) | 🐍 Python | - |
+| [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/) | 🟨 JS/TS · 🧾 JSON | ✅ |
+| [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint) | 🧾 YAML | - |
+| [![Actionlint](https://img.shields.io/badge/Actionlint-GitHub%20Workflows-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint) | ⚙️ GitHub Workflows | - |
+| [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint) | 🐳 Dockerfile | - |
 
 ## Quick Start
 
