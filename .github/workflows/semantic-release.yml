@@ -57,6 +57,11 @@ jobs:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           MAX_BUMP: minor
         run: uv run python scripts/ci/semantic_release_compute_next.py
+      - name: Fail if no release tag baseline
+        if: ${{ failure() }}
+        run: |
+          echo "No v*-prefixed tag found. Please create a release tag (e.g., v0.4.0) before running." >&2
+          exit 2
 
       - name: Read current version from pyproject.toml
         id: current

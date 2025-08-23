@@ -137,18 +137,16 @@ def clamp_to_minor(base_version: str, next_version: str, max_bump: Optional[str]
 
 
 def compute() -> ComputeResult:
+    # Enterprise policy: tags are the single source of truth.
+    # Require an existing v*-prefixed tag as the baseline; fail if missing.
     last_tag = read_last_tag()
-    if last_tag:
-        base_ref = last_tag
-        base_version = last_tag.lstrip("v")
-    else:
-        prep_sha, prep_ver = read_last_prepare_commit()
-        if prep_sha and prep_ver:
-            base_ref = prep_sha
-            base_version = prep_ver
-        else:
-            base_ref = "HEAD"
-            base_version = read_pyproject_version()
+    if not last_tag:
+        raise RuntimeError(
+            "No v*-prefixed release tag found. Tag the last release (e.g., v0.4.0) "
+            "before computing the next version."
+        )
+    base_ref = last_tag
+    base_version = last_tag.lstrip("v")
 
     breaking, feat, fix = detect_commit_types(base_ref)
     next_version = compute_next_version(base_version, breaking, feat, fix)
@@ -174,7 +172,13 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    result = compute()
+    try:
+        result = compute()
+    except RuntimeError as exc:
+        msg = str(exc)
+        print(msg)
+        raise SystemExit(2)
+
     print(
         f"Base: {result.base_ref or '<none>'} ({result.base_version or 'unknown'})\n"
         f"Detected: breaking={result.has_breaking} feat={result.has_feat} fix/perf={result.has_fix_or_perf}"
