@@ -55,20 +55,70 @@ else
   echo "next_version=${NEXT_VERSION}"
 fi
 
-# Determine eligibility from commits since last v* tag
+# Determine eligibility from commits since last baseline (tag or prepare commit)
 LAST_TAG=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
-LOG_RANGE=""
-if [[ -n "$LAST_TAG" ]]; then
-  LOG_RANGE="$LAST_TAG..HEAD"
-else
-  LOG_RANGE="HEAD"
-fi
-COMMITS=$(git log ${LOG_RANGE} --pretty=%s || true)
-HAS_FEAT=$(printf "%s\n" "$COMMITS" | grep -Eq '^feat(\(|:)|^feat!' && echo yes || echo no)
-HAS_FIX_OR_PERF=$(printf "%s\n" "$COMMITS" | grep -Eq '^(fix|perf)(\(|:)|^(fix|perf)!' && echo yes || echo no)
+BASE_REF=""
+BASE_VERSION=""
 
-# If semantic-release output says no release but commits indicate eligibility, warn
-if [[ -z "${NEXT_VERSION}" ]] && { [[ "$HAS_FEAT" == yes ]] || [[ "$HAS_FIX_OR_PERF" == yes ]]; }; then
-  echo "Warning: eligible conventional commits detected since $LAST_TAG, but semantic-release reported no release. Proceeding without failing the job." >&2
+if [[ -n "$LAST_TAG" ]]; then
+  BASE_REF="$LAST_TAG"
+  BASE_VERSION="${LAST_TAG#v}"
+else
+  # Fallback: find last prepare commit and derive base version from it
+  PREP_SHA=$(git log --grep='^chore(release): prepare ' --pretty=format:'%h' -n 1 --no-merges 2>/dev/null || true)
+  if [[ -n "$PREP_SHA" ]]; then
+    BASE_REF="$PREP_SHA"
+    BASE_VERSION=$(git log -1 --pretty=format:'%s' "$PREP_SHA" | sed -E 's/.*prepare ([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+  else
+    # Last resort: read current version from pyproject.toml
+    if [[ -f pyproject.toml ]]; then
+      BASE_VERSION=$(sed -nE "s/^version\s*=\s*\"([0-9]+\.[0-9]+\.[0-9]+)\"/\1/p" pyproject.toml | head -1)
+    fi
+    BASE_REF="HEAD"
+  fi
+fi
+
+LOG_RANGE="${BASE_REF}..HEAD"
+COMMITS_SUBJECTS=$(git log ${LOG_RANGE} --pretty=%s 2>/dev/null || true)
+COMMITS_BODIES=$(git log ${LOG_RANGE} --pretty=%B 2>/dev/null || true)
+
+HAS_BREAKING=$( { printf "%s\n" "$COMMITS_SUBJECTS" | grep -Eq '^[a-z]+[^:!]*!:'; } || { printf "%s\n" "$COMMITS_BODIES" | grep -Eq '^BREAKING CHANGE:'; } && echo yes || echo no)
+HAS_FEAT=$(printf "%s\n" "$COMMITS_SUBJECTS" | grep -Eq '^feat(\(|:)|^feat!' && echo yes || echo no)
+HAS_FIX_OR_PERF=$(printf "%s\n" "$COMMITS_SUBJECTS" | grep -Eq '^(fix|perf)(\(|:)|^(fix|perf)!' && echo yes || echo no)
+
+# If semantic-release did not produce a next version, compute a fallback
+if [[ -z "${NEXT_VERSION}" ]]; then
+  if [[ -z "$BASE_VERSION" ]]; then
+    echo "No base version found; cannot compute fallback next version." >&2
+  else
+    IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+    if [[ "$HAS_BREAKING" == yes ]]; then
+      MAJOR=$((MAJOR + 1))
+      MINOR=0
+      PATCH=0
+    elif [[ "$HAS_FEAT" == yes ]]; then
+      MINOR=$((MINOR + 1))
+      PATCH=0
+    elif [[ "$HAS_FIX_OR_PERF" == yes ]]; then
+      PATCH=$((PATCH + 1))
+    else
+      # No eligible commits; leave NEXT_VERSION empty
+      :
+    fi
+    if [[ -z "${NEXT_VERSION}" ]] && { [[ "$HAS_BREAKING" == yes ]] || [[ "$HAS_FEAT" == yes ]] || [[ "$HAS_FIX_OR_PERF" == yes ]]; }; then
+      NEXT_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+      echo "Fallback computed NEXT_VERSION=$NEXT_VERSION (base=$BASE_VERSION, tag=$LAST_TAG)"
+      if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+        echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
+      else
+        echo "next_version=${NEXT_VERSION}"
+      fi
+    fi
+  fi
+fi
+
+# If still no version but eligible commits are present, warn
+if [[ -z "${NEXT_VERSION}" ]] && { [[ "$HAS_FEAT" == yes ]] || [[ "$HAS_FIX_OR_PERF" == yes ]] || [[ "$HAS_BREAKING" == yes ]]; }; then
+  echo "Warning: eligible commits detected since ${BASE_REF:-<none>}, but next_version is empty. Inspect commit messages and configuration." >&2
 fi
 
