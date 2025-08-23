@@ -322,6 +322,15 @@ class TestScriptIntegration:
         assert_that(result.returncode).is_equal_to(0)
         assert_that(result.stdout).contains("Usage:")
 
+    def test_semantic_release_compute_help(self):
+        """semantic-release-compute-next.sh should provide help and exit 0."""
+        script_path = Path("scripts/ci/semantic-release-compute-next.sh").resolve()
+        result = subprocess.run(
+            [str(script_path), "--help"], capture_output=True, text=True
+        )
+        assert_that(result.returncode).is_equal_to(0)
+        assert_that(result.stdout).contains("Compute next version")
+
     def test_scripts_use_consistent_color_codes(self, scripts_dir):
         """Test that scripts use consistent color coding.
 

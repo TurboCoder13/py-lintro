@@ -9,14 +9,31 @@ name: OpenSSF Scorecards
 permissions:
   contents: read
   security-events: write
+  id-token: write
 
 jobs:
   analysis:
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - name: Harden Runner (egress allowlist)
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            github.com:443
+            api.github.com:443
+            objects.githubusercontent.com:443
+            api.securityscorecards.dev:443
+            storage.googleapis.com:443
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Scorecards analysis
         uses: ossf/scorecard-action@05b42c624433fc40578a4040d5cf5e36ddca8cde # v2.4.2
         with:

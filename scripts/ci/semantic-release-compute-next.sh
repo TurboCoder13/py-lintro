@@ -25,11 +25,19 @@ echo "$OUTPUT"
 if printf "%s\n" "$OUTPUT" | grep -qiE 'type[^\n]*no_release|no[_ ]release|no release will be made'; then
   NEXT_VERSION=""
 else
-  # Prefer explicit phrasing from semantic-release logs
+  # Prefer explicit phrasing from semantic-release logs (several variants)
   NEXT_VERSION=$(printf "%s\n" "$OUTPUT" \
     | sed -n 's/.*The next version is[: ]*\(v\?[0-9][0-9.]*[0-9][0-9A-Za-z.-]*\).*/\1/p' \
     | head -1 \
     | sed -E 's/^[vV]//' || true)
+
+  # Variant: "Bump from X to Y"
+  if [[ -z "$NEXT_VERSION" ]]; then
+    NEXT_VERSION=$(printf "%s\n" "$OUTPUT" \
+      | sed -n 's/.*[Bb]ump from[[:space:]]*v\?[0-9][0-9.]*[0-9][0-9A-Za-z.-]*[[:space:]]*to[[:space:]]*\(v\?[0-9][0-9.]*[0-9][0-9A-Za-z.-]*\).*/\1/p' \
+      | head -1 \
+      | sed -E 's/^[vV]//' || true)
+  fi
 
   # Fallback: standalone semver line (strip leading v)
   if [[ -z "$NEXT_VERSION" ]]; then
@@ -45,5 +53,23 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
 else
   echo "next_version=${NEXT_VERSION}"
+fi
+
+# Determine eligibility from commits since last v* tag
+LAST_TAG=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
+LOG_RANGE=""
+if [[ -n "$LAST_TAG" ]]; then
+  LOG_RANGE="$LAST_TAG..HEAD"
+else
+  LOG_RANGE="HEAD"
+fi
+COMMITS=$(git log ${LOG_RANGE} --pretty=%s || true)
+HAS_FEAT=$(printf "%s\n" "$COMMITS" | grep -Eq '^feat(\(|:)|^feat!' && echo yes || echo no)
+HAS_FIX_OR_PERF=$(printf "%s\n" "$COMMITS" | grep -Eq '^(fix|perf)(\(|:)|^(fix|perf)!' && echo yes || echo no)
+
+# If semantic-release output says no release but commits indicate eligibility, warn
+if [[ -z "${NEXT_VERSION}" ]] && { [[ "$HAS_FEAT" == yes ]] || [[ "$HAS_FIX_OR_PERF" == yes ]]; }; then
+  echo "Error: eligible conventional commits detected since $LAST_TAG, but semantic-release reported no release. Failing closed to avoid missing a required version bump." >&2
+  exit 2
 fi
 

@@ -1,3 +1,27 @@
+# Narrow CODEOWNERS to critical areas; exclude dependency files so Renovate patch automerge is unblocked.
+
+# Default: no global owner for everything
+
+# App/library code requires review
+lintro/**               @TurboCoder13
+scripts/**              @TurboCoder13
+
+# GitHub workflows (keep human review)
+.github/workflows/**    @TurboCoder13
+
+# Explicitly exclude common dependency files from CODEOWNERS (no match means no owner)
+# pyproject, lockfiles, JS deps, Dockerfiles remain unmanaged by CODEOWNERS on purpose
+# pyproject & Python deps
+pyproject.toml          
+requirements*.txt       
+
+# Node deps
+package.json            
+package-lock.json       
+
+# Docker
+Dockerfile              
+.dockerignore           
 # Require review for changes to workflows and scripts
 .github/workflows/*  @TurboCoder13
 scripts/**           @TurboCoder13
