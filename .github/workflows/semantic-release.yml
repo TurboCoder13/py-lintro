@@ -55,6 +55,7 @@ jobs:
         id: semrel
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          MAX_BUMP: minor
         run: bash scripts/ci/semantic-release-compute-next.sh
 
       - name: Read current version from pyproject.toml

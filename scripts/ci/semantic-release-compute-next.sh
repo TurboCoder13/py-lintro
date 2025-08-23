@@ -117,6 +117,26 @@ if [[ -z "${NEXT_VERSION}" ]]; then
   fi
 fi
 
+# Optionally clamp bump to at most minor when MAX_BUMP=minor
+if [[ -n "$BASE_VERSION" && -n "$NEXT_VERSION" && "${MAX_BUMP:-}" == "minor" ]]; then
+  IFS='.' read -r BASE_MAJ BASE_MIN BASE_PAT <<< "$BASE_VERSION"
+  IFS='.' read -r NEXT_MAJ NEXT_MIN NEXT_PAT <<< "$NEXT_VERSION"
+  if (( NEXT_MAJ > BASE_MAJ )); then
+    # Clamp major bump down to minor
+    CLAMPED_MIN=$((BASE_MIN + 1))
+    CLAMPED_VER="${BASE_MAJ}.${CLAMPED_MIN}.0"
+    echo "Clamping major bump to minor: ${NEXT_VERSION} -> ${CLAMPED_VER}" >&2
+    NEXT_VERSION="$CLAMPED_VER"
+    if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+      # Rewrite output
+      # Shellcheck disable intentionally: append new value (consumers read last occurrence)
+      echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
+    else
+      echo "next_version=${NEXT_VERSION}"
+    fi
+  fi
+fi
+
 # If still no version but eligible commits are present, warn
 if [[ -z "${NEXT_VERSION}" ]] && { [[ "$HAS_FEAT" == yes ]] || [[ "$HAS_FIX_OR_PERF" == yes ]] || [[ "$HAS_BREAKING" == yes ]]; }; then
   echo "Warning: eligible commits detected since ${BASE_REF:-<none>}, but next_version is empty. Inspect commit messages and configuration." >&2
