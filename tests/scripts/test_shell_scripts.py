@@ -291,7 +291,9 @@ class TestScriptIntegration:
             scripts_dir: Path to the scripts directory.
         """
         ci_scripts = list(scripts_dir.glob("ci-*.sh")) + [
-            p for p in (scripts_dir / "ci").glob("*.sh") if p.name != "semantic-release-compute-next.sh"
+            p
+            for p in (scripts_dir / "ci").glob("*.sh")
+            if p.name != "semantic-release-compute-next.sh"
         ]
         for script in ci_scripts:
             with open(script, "r") as f:
