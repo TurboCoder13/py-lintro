@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate PR title follows Conventional Commits
         id: semantic
