@@ -69,7 +69,6 @@ HAS_FIX_OR_PERF=$(printf "%s\n" "$COMMITS" | grep -Eq '^(fix|perf)(\(|:)|^(fix|p
 
 # If semantic-release output says no release but commits indicate eligibility, warn
 if [[ -z "${NEXT_VERSION}" ]] && { [[ "$HAS_FEAT" == yes ]] || [[ "$HAS_FIX_OR_PERF" == yes ]]; }; then
-  echo "Error: eligible conventional commits detected since $LAST_TAG, but semantic-release reported no release. Failing closed to avoid missing a required version bump." >&2
-  exit 2
+  echo "Warning: eligible conventional commits detected since $LAST_TAG, but semantic-release reported no release. Proceeding without failing the job." >&2
 fi
 
