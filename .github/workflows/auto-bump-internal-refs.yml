@@ -40,6 +40,14 @@ jobs:
         id: diff
         run: scripts/ci/detect-changes.sh
 
+      - name: Configure git for PR creation
+        if: steps.diff.outputs.has_changes == 'true'
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global commit.gpgsign false
+
       - name: Create PR if changes
         id: cpr
         if: steps.diff.outputs.has_changes == 'true'
