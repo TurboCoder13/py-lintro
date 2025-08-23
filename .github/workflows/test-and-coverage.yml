@@ -55,7 +55,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@cf101f21687973ed5d9f2000ad5698d3708dd2fd
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
@@ -91,7 +91,7 @@ jobs:
       - name: Upload coverage to Codecov
         if: success()
         # Pin Codecov action to commit SHA containing pinned github-script usage
-        uses: codecov/codecov-action@39a2af19d997be74586469d4062e173ecae614f6
+        uses: codecov/codecov-action@3cb13a12348ef4ffcf9783ac0f74954f92113e33
         with:
           files: coverage.xml
           flags: python-3.13
@@ -127,10 +127,10 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@cf101f21687973ed5d9f2000ad5698d3708dd2fd
         # Default allowlist suffices for PR comment step
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@cf101f21687973ed5d9f2000ad5698d3708dd2fd
       - name: Delete Previous Coverage PR Comments
         if: always()
         env:
@@ -150,7 +150,7 @@ jobs:
           ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@cf101f21687973ed5d9f2000ad5698d3708dd2fd
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'

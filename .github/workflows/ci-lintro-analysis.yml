@@ -28,15 +28,15 @@ jobs:
 
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@cf101f21687973ed5d9f2000ad5698d3708dd2fd
         with:
           fetch-depth: 0
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@cf101f21687973ed5d9f2000ad5698d3708dd2fd
 
       - name: Setup Docker (Buildx)
-        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@cf101f21687973ed5d9f2000ad5698d3708dd2fd
 
       # Removed no-op dependency listing step
 
@@ -72,7 +72,7 @@ jobs:
 
       - name: Comment PR with Lintro Results
         if: github.event_name == 'pull_request'
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@cf101f21687973ed5d9f2000ad5698d3708dd2fd
         with:
           file: pr-comment.txt
           marker: '<!-- lintro-report -->'
