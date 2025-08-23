@@ -45,6 +45,11 @@ jobs:
     steps:
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Harden Runner
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
         with:
@@ -57,6 +62,11 @@ jobs:
             pkg-containers.githubusercontent.com:443
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup Docker (Buildx)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@dc34078e24d4328ea4879931677c81564abdcebd
       - name: Build Docker image
@@ -104,6 +114,11 @@ jobs:
             index.docker.io:443
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup Docker (Buildx + login)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@dc34078e24d4328ea4879931677c81564abdcebd
         with:
