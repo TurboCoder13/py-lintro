@@ -30,6 +30,7 @@ jobs:
         uses: github/codeql-action/init@96f518a34f7a870018057716cc4d7a5c014bd61c # v3
         with:
           languages: python,javascript
+          config-file: .github/codeql/codeql-config.yml
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@96f518a34f7a870018057716cc4d7a5c014bd61c # v3
