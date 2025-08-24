@@ -37,10 +37,18 @@ runs:
       with:
         egress-policy: ${{ inputs.egress_policy }}
         allowed-endpoints: ${{ inputs.allowed-endpoints }}
-    - name: Checkout
+    - name: Checkout (with token)
+      if: ${{ inputs.token != '' }}
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       with:
         fetch-depth: ${{ inputs.fetch-depth }}
         fetch-tags: ${{ inputs.fetch-tags }}
         persist-credentials: ${{ inputs.persist-credentials }}
         token: ${{ inputs.token }}
+    - name: Checkout (default token)
+      if: ${{ inputs.token == '' }}
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        fetch-tags: ${{ inputs.fetch-tags }}
+        persist-credentials: ${{ inputs.persist-credentials }}
