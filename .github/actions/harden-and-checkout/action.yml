@@ -17,6 +17,17 @@ inputs:
   egress_policy:
     description: step-security harden-runner egress policy (audit|block)
     default: 'audit'
+  allowed-endpoints:
+    description: |-
+      Newline-separated allowlist for step-security/harden-runner allowed-endpoints
+      (e.g., "github.com:443\napi.github.com:443\ncodeload.github.com:443").
+      Only used when harden-runner is active; ignored by checkout itself.
+    default: |-
+      github.com:443
+      api.github.com:443
+      codeload.github.com:443
+      downloads.github.com:443
+      objects.githubusercontent.com:443
 runs:
   using: composite
   steps:
@@ -25,11 +36,19 @@ runs:
       uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
       with:
         egress-policy: ${{ inputs.egress_policy }}
-        allowed-endpoints: ${{ steps.allowlist.outputs.value }}
-    - name: Checkout
+        allowed-endpoints: ${{ inputs.allowed-endpoints }}
+    - name: Checkout (with token)
+      if: ${{ inputs.token != '' }}
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       with:
         fetch-depth: ${{ inputs.fetch-depth }}
         fetch-tags: ${{ inputs.fetch-tags }}
         persist-credentials: ${{ inputs.persist-credentials }}
         token: ${{ inputs.token }}
+    - name: Checkout (default token)
+      if: ${{ inputs.token == '' }}
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        fetch-tags: ${{ inputs.fetch-tags }}
+        persist-credentials: ${{ inputs.persist-credentials }}

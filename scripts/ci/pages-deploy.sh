@@ -29,8 +29,28 @@ source "$(dirname "$0")/../utils/utils.sh"
 
 # Create coverage report directory
 mkdir -p _site
-cp -r coverage-report/* _site/
-echo "<meta http-equiv=\"refresh\" content=\"0; url=index.html\">" > _site/index.html
+
+# Detect layout of downloaded artifact and copy accordingly
+if [ -f "coverage-report/index.html" ]; then
+    cp -r coverage-report/* _site/
+    REDIRECT_TARGET="index.html"
+elif [ -f "coverage-report/htmlcov/index.html" ]; then
+    cp -r coverage-report/htmlcov/* _site/
+    REDIRECT_TARGET="index.html"
+else
+    # Fallback: copy all and point to a likely path
+    cp -r coverage-report/* _site/
+    if [ -f "_site/index.html" ]; then
+        REDIRECT_TARGET="index.html"
+    else
+        REDIRECT_TARGET="htmlcov/index.html"
+    fi
+fi
+
+# Only create a redirect if index.html was not provided by the artifact
+if [ ! -f "_site/index.html" ]; then
+    echo "<meta http-equiv=\"refresh\" content=\"0; url=${REDIRECT_TARGET}\">" > _site/index.html
+fi
 
 # Optionally copy coverage badge
 if [ -n "$BADGE_PATH" ] && [ -f "$BADGE_PATH" ]; then

@@ -24,6 +24,11 @@ name: Docker Build & Publish
   release:
     types: [published, edited]
   workflow_dispatch:
+    inputs:
+      force_publish:
+        description: 'Run publish on this branch (manual testing)'
+        required: false
+        default: 'false'
 
 permissions:
   contents: read
@@ -49,24 +54,6 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: true
-      - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
-        with:
-          egress-policy: audit
-          allowed-endpoints: |
-            github.com:443
-            api.github.com:443
-            codeload.github.com:443
-            downloads.github.com:443
-            objects.githubusercontent.com:443
-            pkg-containers.githubusercontent.com:443
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          persist-credentials: true
-          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup Docker (Buildx)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@dc34078e24d4328ea4879931677c81564abdcebd
       - name: Build Docker image
@@ -92,12 +79,31 @@ jobs:
     defaults:
       run:
         shell: bash
-    if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push') # yamllint disable-line rule:line-length
+    if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.force_publish == 'true') # yamllint disable-line rule:line-length
     concurrency:
       group: docker-publish-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - name: Harden Runner
+      - name: Harden Runner (audit for checkout)
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        with:
+          egress-policy: audit
+          allowed-endpoints: |
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Harden Runner (block for publish)
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
         with:
           egress-policy: block
@@ -113,13 +119,7 @@ jobs:
             registry-1.docker.io:443
             auth.docker.io:443
             index.docker.io:443
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          persist-credentials: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Docker (Buildx + login)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@dc34078e24d4328ea4879931677c81564abdcebd
         with:

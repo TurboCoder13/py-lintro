@@ -31,8 +31,6 @@ jobs:
     steps:
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Download coverage artifact
         uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
         with:
@@ -51,6 +49,6 @@ jobs:
         run: ./scripts/ci/pages-deploy.sh --badge-path coverage-badge/coverage-badge.svg
       - name: Deploy coverage to Pages
         id: deployment
-        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@d23279f95381d8c6923b757521056c9d23b35830
         with:
           path: _site
