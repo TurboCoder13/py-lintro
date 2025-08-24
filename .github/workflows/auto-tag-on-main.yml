@@ -22,7 +22,7 @@ jobs:
     # Only run when version actually changed
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@3f5f7fd7dbd4e9e45bdeae6381684074312c93c5
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@38716f3d92da65fbe8f393706b6bd8884bf6c32e
         with:
           persist-credentials: true
           fetch-depth: 0
@@ -37,7 +37,7 @@ jobs:
         run: echo "Not a release bump commit; skipping tag creation."
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@3f5f7fd7dbd4e9e45bdeae6381684074312c93c5
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@38716f3d92da65fbe8f393706b6bd8884bf6c32e
         with:
           python-version: '3.13'
 
