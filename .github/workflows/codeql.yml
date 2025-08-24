@@ -24,20 +24,20 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@3f5f7fd7dbd4e9e45bdeae6381684074312c93c5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@96f518a34f7a870018057716cc4d7a5c014bd61c # v3
+        uses: github/codeql-action/init@3c3833e0f8c1c83d449a7478aa59c036a9165498 # v3
         with:
           languages: python,javascript
           config-file: .github/codeql/codeql-config.yml
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@96f518a34f7a870018057716cc4d7a5c014bd61c # v3
+        uses: github/codeql-action/autobuild@3c3833e0f8c1c83d449a7478aa59c036a9165498 # v3
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@96f518a34f7a870018057716cc4d7a5c014bd61c # v3
+        uses: github/codeql-action/analyze@3c3833e0f8c1c83d449a7478aa59c036a9165498 # v3
         with:
           category: '/language:all'

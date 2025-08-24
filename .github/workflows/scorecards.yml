@@ -31,7 +31,7 @@ jobs:
             api.securityscorecards.dev:443
             storage.googleapis.com:443
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@3f5f7fd7dbd4e9e45bdeae6381684074312c93c5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Scorecards analysis
@@ -41,6 +41,6 @@ jobs:
           results_format: sarif
           publish_results: true
       - name: Upload SARIF to code scanning
-        uses: github/codeql-action/upload-sarif@96f518a34f7a870018057716cc4d7a5c014bd61c # v3
+        uses: github/codeql-action/upload-sarif@3c3833e0f8c1c83d449a7478aa59c036a9165498 # v3
         with:
           sarif_file: results.sarif
