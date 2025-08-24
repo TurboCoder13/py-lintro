@@ -62,6 +62,8 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `coverage-pr-comment.sh`           | Generate PR comments with coverage info         | `./scripts/ci/coverage-pr-comment.sh`                                    |
 | `lintro-report-generate.sh`        | Generate comprehensive Lintro reports           | `./scripts/ci/lintro-report-generate.sh`                                 |
 | `pages-deploy.sh`                  | Deploy coverage reports to GitHub Pages         | `./scripts/ci/pages-deploy.sh`                                           |
+| `ghcr_prune_untagged.py`           | Prune untagged GHCR package versions            | `uv run python scripts/ci/ghcr_prune_untagged.py`                        |
+| `deployments-prune.sh`             | Prune GitHub deployments via gh (keep-n/ref)    | `./scripts/ci/deployments-prune.sh --help`                               |
 | `auto-tag-read-version.sh`         | Read version from pyproject to GITHUB_OUTPUT    | `./scripts/ci/auto-tag-read-version.sh`                                  |
 | `auto-tag-detect-previous.sh`      | Get previous version from HEAD^ pyproject       | `./scripts/ci/auto-tag-detect-previous.sh`                               |
 | `auto-tag-create-push-tag.sh`      | Create and push annotated git tag               | `./scripts/ci/auto-tag-create-push-tag.sh`                               |
