@@ -88,14 +88,15 @@ jobs:
           COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
         run: bash ./scripts/ci/enforce-coverage-threshold.sh
 
-      - name: Upload coverage to Codecov
-        if: success()
+      - name: Upload coverage to Codecov (always)
+        if: always()
+        continue-on-error: true
         # Pin Codecov action to commit SHA containing pinned github-script usage
         uses: codecov/codecov-action@39a2af19d997be74586469d4062e173ecae614f6
         with:
           files: coverage.xml
           flags: python-3.13
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           # token: ${{ secrets.CODECOV_TOKEN }} # for private repos only
 
       - name: Generate coverage badge (no commit)
@@ -124,7 +125,7 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
-    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    if: always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false
     steps:
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@dc34078e24d4328ea4879931677c81564abdcebd
