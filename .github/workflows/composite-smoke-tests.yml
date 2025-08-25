@@ -13,21 +13,21 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@38716f3d92da65fbe8f393706b6bd8884bf6c32e
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@1baeae1294302eec305d2752251f87757b5fdd45
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup environment via composite
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@38716f3d92da65fbe8f393706b6bd8884bf6c32e
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@1baeae1294302eec305d2752251f87757b5fdd45
 
       - name: Setup Docker via composite (no login)
-        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@38716f3d92da65fbe8f393706b6bd8884bf6c32e
+        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@1baeae1294302eec305d2752251f87757b5fdd45
 
       - name: Prepare dummy comment file
         run: echo "Smoke test comment" > pr-comment.txt
 
       - name: Test post-pr-comment composite (safe outside PR)
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@38716f3d92da65fbe8f393706b6bd8884bf6c32e
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@1baeae1294302eec305d2752251f87757b5fdd45
         with:
           file: pr-comment.txt
           marker: ''
