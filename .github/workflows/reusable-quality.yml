@@ -23,7 +23,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@38716f3d92da65fbe8f393706b6bd8884bf6c32e
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@1baeae1294302eec305d2752251f87757b5fdd45
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
