@@ -36,7 +36,13 @@ SHA_TO_PIN="${1:-}"
 
 # Determine and validate SHA to pin
 if [[ -z "${SHA_TO_PIN}" ]]; then
-  SHA_TO_PIN="$(git rev-parse HEAD)"
+  # Prefer the last commit that modified internal action/workflow sources
+  TARGET_SHA="$(git rev-list -1 HEAD -- .github/actions .github/workflows/reusable-*.yml || true)"
+  if [[ -n "${TARGET_SHA}" ]]; then
+    SHA_TO_PIN="${TARGET_SHA}"
+  else
+    SHA_TO_PIN="$(git rev-parse HEAD)"
+  fi
 fi
 
 if ! [[ "${SHA_TO_PIN}" =~ ^[0-9a-f]{40}$ ]]; then
