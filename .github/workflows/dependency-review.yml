@@ -13,11 +13,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@38e69b1d7b86019b450e5a4e142a5579bc164571
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@c46439793b11401c9c7af9afdf2300392b1ad62d
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Dependency review
-        uses: actions/dependency-review-action@bc41886e18ea39df68b1b1245f4184881938e050 # v4.7.2
+        uses: actions/dependency-review-action@595b5aeba73380359d98a5e087f648dbb0edce1b # v4.7.3
         with:
           fail-on-severity: high
           comment-summary-in-pr: true
