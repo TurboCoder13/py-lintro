@@ -31,7 +31,7 @@ jobs:
             api.securityscorecards.dev:443
             storage.googleapis.com:443
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@38716f3d92da65fbe8f393706b6bd8884bf6c32e
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@38e69b1d7b86019b450e5a4e142a5579bc164571
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Scorecards analysis

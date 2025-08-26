@@ -11,14 +11,14 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@38716f3d92da65fbe8f393706b6bd8884bf6c32e
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@38e69b1d7b86019b450e5a4e142a5579bc164571
         with:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Self-hosted Renovate
-        uses: renovatebot/github-action@b11417b9eaac3145fe9a8544cee66503724e32b6 # v43.0.8
+        uses: renovatebot/github-action@a447f09147d00e00ae2a82ad5ef51ca89352da80 # v43.0.9
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           configurationFile: renovate.json
