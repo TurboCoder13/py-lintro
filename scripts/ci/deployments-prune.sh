@@ -4,9 +4,10 @@ set -euo pipefail
 # deployments-prune.sh
 # Prune GitHub deployments using gh CLI.
 #
-# Supports two rule types (repeatable):
+# Supports rule types (repeatable):
 #   --keep-n ENV N          Keep the newest N deployments for ENV, delete the rest
 #   --keep-ref ENV REF      Keep only deployments for ENV with ref==REF, delete others
+#   --keep-id ID            Keep deployment with numeric ID (can be repeated)
 #   --repo OWNER/REPO       Target repository (defaults to $GITHUB_REPOSITORY)
 #
 # Environment:
@@ -19,12 +20,13 @@ set -euo pipefail
 
 usage() {
   cat <<USAGE
-Usage: $0 [--repo OWNER/REPO] [--keep-n ENV N] [--keep-ref ENV REF]...
+Usage: $0 [--repo OWNER/REPO] [--keep-n ENV N] [--keep-ref ENV REF] [--keep-id ID]...
 
 Options:
   --repo OWNER/REPO      Target repository (default: \$GITHUB_REPOSITORY)
   --keep-n ENV N         Keep newest N deployments for ENV
   --keep-ref ENV REF     Keep only deployments for ENV whose ref equals REF
+  --keep-id ID           Keep deployment with numeric ID (repeatable)
   -h, --help             Show this help
 
 Environment:
@@ -35,6 +37,7 @@ USAGE
 REPO="${GITHUB_REPOSITORY:-}"
 declare -a KEEP_N_RULES=()
 declare -a KEEP_REF_RULES=()
+declare -a KEEP_IDS=()
 
 while (( "$#" )); do
   case "${1}" in
@@ -53,6 +56,12 @@ while (( "$#" )); do
       if [[ -z "$env_name" || -z "$ref_keep" ]]; then usage; exit 2; fi
       KEEP_REF_RULES+=("${env_name}:${ref_keep}")
       shift 3
+      ;;
+    --keep-id)
+      id_keep="${2:-}"
+      if [[ -z "$id_keep" ]]; then usage; exit 2; fi
+      KEEP_IDS+=("${id_keep}")
+      shift 2
       ;;
     -h|--help)
       usage; exit 0
@@ -81,6 +90,17 @@ fi
 
 echo "Target repo: ${REPO}"
 
+should_keep_id() {
+  local id="$1"
+  for kid in "${KEEP_IDS[@]:-}"; do
+    [[ -z "$kid" ]] && continue
+    if [[ "$id" == "$kid" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 keep_ref() {
   local env_name="$1" ref_keep="$2"
   if [[ "$DRY_RUN" == "1" ]]; then
@@ -95,6 +115,10 @@ keep_ref() {
     --arg REF "${ref_keep}" 'sort_by(.created_at) | reverse | map(select(.ref != $REF)) | .[].id')
   for id in ${to_del}; do
     id_clean="${id//\"/}"
+    if should_keep_id "$id_clean"; then
+      echo "[keep-id] Preserving deployment id=${id_clean}"
+      continue
+    fi
     gh api -X POST -H "Accept: application/vnd.github.ant-man-preview+json" \
       "repos/${REPO}/deployments/${id_clean}/statuses" -f state=inactive >/dev/null 2>&1 || true
     gh api -X DELETE -H "Accept: application/vnd.github+json" \
@@ -116,6 +140,10 @@ keep_n() {
   for id in ${ids}; do
     i=$((i+1))
     if [[ ${i} -le ${n_keep} ]]; then continue; fi
+    if should_keep_id "$id"; then
+      echo "[keep-id] Preserving deployment id=${id}"
+      continue
+    fi
     gh api -X POST -H "Accept: application/vnd.github.ant-man-preview+json" \
       "repos/${REPO}/deployments/${id}/statuses" -f state=inactive >/dev/null 2>&1 || true
     gh api -X DELETE -H "Accept: application/vnd.github+json" \

@@ -6,6 +6,7 @@ name: Dependency Review
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   review:
@@ -16,7 +17,17 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@d8df28c952a5849083a78557fed999207e783fd6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Dependency review
+      # Avoid PR comment on forks (token is read-only); still run the check
+      - name: Dependency review (forks - no PR comment)
+        if: github.event.pull_request.head.repo.fork == true
+        uses: actions/dependency-review-action@595b5aeba73380359d98a5e087f648dbb0edce1b # v4.7.3
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: false
+          allow-ghsas: true
+
+      - name: Dependency review (with PR comment)
+        if: github.event.pull_request.head.repo.fork == false
         uses: actions/dependency-review-action@595b5aeba73380359d98a5e087f648dbb0edce1b # v4.7.3
         with:
           fail-on-severity: high
