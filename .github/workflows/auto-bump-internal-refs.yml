@@ -25,7 +25,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@c46439793b11401c9c7af9afdf2300392b1ad62d
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@cfe5a27b84163b4333d8ea22e447abf984a52cfd
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
