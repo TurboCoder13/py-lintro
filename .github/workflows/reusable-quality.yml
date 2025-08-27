@@ -27,11 +27,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install uv (with cache) and Python 3.13
-        uses: astral-sh/setup-uv@4959332f0f014c5280e7eac8b70c90cb574c9f9b # v6
+      - name: Environment setup
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@d8df28c952a5849083a78557fed999207e783fd6
         with:
-          enable-cache: true
-          python-version: 3.13
+          python-version: '3.13'
 
       - name: Sync dependencies
         run: uv sync --dev --no-progress

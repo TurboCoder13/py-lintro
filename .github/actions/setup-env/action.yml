@@ -11,13 +11,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install uv (with cache) and Python
-      # yamllint disable-line rule:line-length
-      uses: astral-sh/setup-uv@4959332f0f014c5280e7eac8b70c90cb574c9f9b # v6
-      with:
-        enable-cache: true
-        python-version: ${{ inputs.python-version }}
-
     - name: Bootstrap environment via scripts
       shell: bash
-      run: ./scripts/utils/bootstrap-env.sh
+      run: scripts/utils/bootstrap-env.sh "${{ inputs.python-version }}"
