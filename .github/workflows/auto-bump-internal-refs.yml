@@ -6,7 +6,6 @@ name: Auto-bump internal refs
     branches: [main]
     paths:
       - .github/actions/**
-      - .github/workflows/reusable-*.yml
   workflow_dispatch:
     inputs:
       sha:
@@ -20,7 +19,12 @@ permissions:
 
 jobs:
   bump:
-    if: ${{ !contains(github.event.head_commit.message, 'bump internal refs') }}
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' || (
+          github.ref == 'refs/heads/main' &&
+          !contains(github.event.head_commit.message, 'bump internal refs') &&
+          !startsWith(github.event.head_commit.message, 'chore(release):')
+      ) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
