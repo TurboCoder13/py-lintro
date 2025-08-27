@@ -6,11 +6,11 @@ name: Publish to TestPyPI
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@cfe5a27b84163b4333d8ea22e447abf984a52cfd
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@d8df28c952a5849083a78557fed999207e783fd6
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@cfe5a27b84163b4333d8ea22e447abf984a52cfd
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@d8df28c952a5849083a78557fed999207e783fd6
 
   publish:
     name: Upload to TestPyPI

@@ -55,7 +55,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@cfe5a27b84163b4333d8ea22e447abf984a52cfd
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@d8df28c952a5849083a78557fed999207e783fd6
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
@@ -128,10 +128,10 @@ jobs:
     if: always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@cfe5a27b84163b4333d8ea22e447abf984a52cfd
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@d8df28c952a5849083a78557fed999207e783fd6
         # Default allowlist suffices for PR comment step
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@cfe5a27b84163b4333d8ea22e447abf984a52cfd
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@d8df28c952a5849083a78557fed999207e783fd6
       - name: Delete Previous Coverage PR Comments
         if: always()
         env:
@@ -151,7 +151,7 @@ jobs:
           ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@cfe5a27b84163b4333d8ea22e447abf984a52cfd
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@d8df28c952a5849083a78557fed999207e783fd6
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'
