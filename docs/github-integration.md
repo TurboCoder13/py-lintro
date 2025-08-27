@@ -169,6 +169,20 @@ The repository ships with fully automated semantic releases and PyPI publishing.
   - PyPI publish job: `id-token: write` (for OIDC) and `contents: write` only if creating a GH Release.
   - PR comment jobs: `pull-requests: write`.
 
+### Why we do not allow `astral-sh/setup-uv`
+
+Our Actions policy requires that all actions (including transitive actions used by
+composites) are allowlisted and pinned to a full commit SHA. The
+`astral-sh/setup-uv` action invokes `actions/setup-python@v5` internally, which
+is both not on our allowlist and referenced by tag (not a 40-char SHA). This
+causes policy enforcement to block any job that uses `setup-uv`.
+
+To comply, we replaced it with an internal composite `setup-env` that:
+
+- installs `uv` via `pip` (no nested actions),
+- provisions the requested Python version via `uv python install`, and
+- syncs dependencies, keeping our pipeline policy-compliant.
+
 Deprecated/manual flows (e.g., direct Release creation workflows) are removed to avoid parallel release paths.
 
 ### Labels & guards
