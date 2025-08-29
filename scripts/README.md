@@ -97,9 +97,10 @@ Scripts for containerized development and testing.
 
 Scripts for local development and testing.
 
-| Script            | Purpose                      | Usage                                   |
-| ----------------- | ---------------------------- | --------------------------------------- |
-| `local-lintro.sh` | Enhanced local Lintro runner | `./scripts/local/local-lintro.sh check` |
+| Script             | Purpose                                     | Usage                                     |
+| ------------------ | ------------------------------------------- | ----------------------------------------- |
+| `local-lintro.sh`  | Enhanced local Lintro runner                | `./scripts/local/local-lintro.sh check`   |
+| `sign-all-tags.sh` | Re-sign annotated git tags (GPG/SSH) safely | `./scripts/local/sign-all-tags.sh --help` |
 
 Notes:
 
