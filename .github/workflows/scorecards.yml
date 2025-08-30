@@ -23,23 +23,57 @@ jobs:
       - name: Harden Runner (egress allowlist)
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
         with:
-          egress-policy: block
+          egress-policy: audit
           allowed-endpoints: |
             github.com:443
             api.github.com:443
+            codeload.github.com:443
+            raw.githubusercontent.com:443
             objects.githubusercontent.com:443
+            uploads.github.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            actions.githubusercontent.com:443
+            token.actions.githubusercontent.com:443
+            productionresultssa8.blob.core.windows.net:443
+            agent.api.stepsecurity.io:443
+            app.stepsecurity.io:443
+            oss-fuzz-build-logs.storage.googleapis.com:443
+            api.osv.dev:443
+            packages.stepsecurity.io:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
+            tuf-repo.sigstore.dev:443
+            www.googleapis.com:443
             api.securityscorecards.dev:443
             storage.googleapis.com:443
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@d8df28c952a5849083a78557fed999207e783fd6
+            storage.googleapis.com:443
+            proxy.golang.org:443
+            sum.golang.org:443
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run Scorecards analysis
+      - name: Run Scorecards analysis (publish on default branch)
+        if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        uses: ossf/scorecard-action@05b42c624433fc40578a4040d5cf5e36ddca8cde # v2.4.2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Run Scorecards analysis (no publish on non-default branches)
+        if: ${{ github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
         uses: ossf/scorecard-action@05b42c624433fc40578a4040d5cf5e36ddca8cde # v2.4.2
         with:
           results_file: results.sarif
           results_format: sarif
-          publish_results: true
+          publish_results: false
       - name: Upload SARIF to code scanning
         uses: github/codeql-action/upload-sarif@3c3833e0f8c1c83d449a7478aa59c036a9165498 # v3
         with:
