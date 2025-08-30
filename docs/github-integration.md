@@ -356,7 +356,7 @@ Add to your README.md:
 Add to your README.md:
 
 ```markdown
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/turbocoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/turbocoder13/py-lintro)
+[![OpenSSF Scorecard](https://scorecard.dev/badge/github.com/turbocoder13/py-lintro)](https://scorecard.dev/viewer/?uri=github.com/turbocoder13/py-lintro)
 ```
 
 Reference installation docs: `https://github.com/ossf/scorecard?tab=readme-ov-file#installation`.
