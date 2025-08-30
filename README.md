@@ -17,7 +17,7 @@ Lintro is a unified command-line interface that brings together multiple code qu
 [![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
 
 [![CodeQL](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/turbocoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/turbocoder13/py-lintro)
+[![OpenSSF Scorecard](https://scorecard.dev/badge/github.com/turbocoder13/py-lintro)](https://scorecard.dev/viewer/?uri=github.com/turbocoder13/py-lintro)
 
 ### Why Lintro?
 
