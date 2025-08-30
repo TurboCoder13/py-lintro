@@ -49,13 +49,13 @@ jobs:
       github.event.pull_request.draft == false
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@d8df28c952a5849083a78557fed999207e783fd6
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ab487bd2cbe4c61b3849ff9d838ec168ad842b6f
         with:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: true
       - name: Setup Docker (Buildx)
-        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@d8df28c952a5849083a78557fed999207e783fd6
+        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@ab487bd2cbe4c61b3849ff9d838ec168ad842b6f
       - name: Build Docker image
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
@@ -121,7 +121,7 @@ jobs:
             index.docker.io:443
 
       - name: Setup Docker (Buildx + login)
-        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@d8df28c952a5849083a78557fed999207e783fd6
+        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@ab487bd2cbe4c61b3849ff9d838ec168ad842b6f
         with:
           login: 'true'
           registry: ghcr.io
