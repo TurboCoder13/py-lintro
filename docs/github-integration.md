@@ -90,6 +90,27 @@ If you want to publish the weekly report to Pages, prefer using the dedicated `p
 - 🔄 **Release integration** - Images published on releases
 - 📦 **GHCR integration** - Images available at `ghcr.io/turbocoder13/py-lintro`
 
+### 7. OpenSSF Allstar (Repository Security Enforcement)
+
+Allstar is an OpenSSF GitHub App that enforces repository security policies
+org-wide or per-repo. To enable at the repo level:
+
+- Create `.allstar/` with:
+  - `allstar.yaml` → enable opt-in at repo level
+  - `branch_protection.yaml`, `binary_artifacts.yaml`, `outside.yaml`, `security.yaml`
+    each with `optConfig: { optIn: true }` and `action: issue` as a safe default.
+
+Install and configure via the Allstar app and docs:
+
+- App install: `https://github.com/apps/allstar-app`
+- Policies and schema: `https://github.com/ossf/allstar#policies`
+- Manual install guide: `https://github.com/ossf/allstar/blob/main/manual-install.md`
+
+Notes:
+
+- Org-wide management prefers an org `.allstar` repository with opt-out strategy.
+- Repo-level configs require org `disableRepoOverride` to be false to take effect.
+
 **Usage in CI/CD:**
 
 You can use the published Docker image in your own CI/CD pipelines:
