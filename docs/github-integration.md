@@ -351,6 +351,16 @@ Add to your README.md:
 ![Lintro](https://img.shields.io/badge/code%20quality-lintro-blue)
 ```
 
+### OpenSSF Scorecard Badge
+
+Add to your README.md:
+
+```markdown
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/turbocoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/turbocoder13/py-lintro)
+```
+
+Reference installation docs: `https://github.com/ossf/scorecard?tab=readme-ov-file#installation`.
+
 ## Advanced Configuration
 
 ### Tool-Specific Workflows
