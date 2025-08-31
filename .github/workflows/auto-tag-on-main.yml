@@ -18,15 +18,24 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      id-token: write
     timeout-minutes: 10
     # Only run when version actually changed
     steps:
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@d8df28c952a5849083a78557fed999207e783fd6
         with:
-          persist-credentials: true
+          persist-credentials: false
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@bf559f85448f9380bcfa2899dbdc01eb5b37be3a # v3.0.0-beta.2
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
 
       - name: Guard ensure last commit is a release bump
         id: guard
@@ -59,6 +68,13 @@ jobs:
         env:
           TAG: v${{ steps.version.outputs.version }}
         run: scripts/ci/auto-tag-check-exists.sh
+
+      - name: Configure auth for push
+        if: >-
+          steps.prev.outputs.version != steps.version.outputs.version &&
+          steps.check.outputs.exists == 'false'
+        run: |
+          git remote set-url origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}.git
 
       - name: Create and push tag
         if: >-
