@@ -143,11 +143,12 @@ lintro check --exclude "migrations,node_modules,dist"
 # Tool-specific options use key=value (lists with |)
 lintro check --tool-options "ruff:line_length=88,prettier:print_width=80"
 
-# Ruff fix configuration (fmt):
-# By default, fmt applies both lint fixes and formatting for Ruff.
-# Disable either stage as needed:
-lintro format --tool-options ruff:lint_fix=False     # format only
-lintro format --tool-options ruff:format=False       # lint fixes only
+# Ruff + Black cooperation:
+# Lintro prefers Ruff for linting and Black for formatting.
+# When Black is configured as a post-check, Lintro disables Ruff formatting by
+# default to avoid double-formatting. Override if needed:
+lintro format --tool-options ruff:format=True        # force Ruff to format
+lintro check  --tool-options ruff:format_check=True  # force Ruff format check
 ```
 
 ### CI/CD Integration
