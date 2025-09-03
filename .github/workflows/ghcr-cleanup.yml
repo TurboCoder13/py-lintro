@@ -36,7 +36,7 @@ jobs:
             api.github.com:443
 
       - name: Setup environment
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@4df2edf539be1436fdb89724f69f28aa4bb18164
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@0d0c3cfb3d6fff511d9a04dfdde15ee630084303
         with:
           python-version: '3.13'
 
