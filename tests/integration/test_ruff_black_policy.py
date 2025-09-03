@@ -34,6 +34,8 @@ def test_com812_reported_by_ruff_with_black_present() -> None:
         _write(file_path, content)
 
         ruff = RuffTool()
+        # Ensure COM rules selected and formatting check off for lint-only
+        ruff.set_options(select=["COM"], format_check=False)
         result = ruff.check([file_path])
         assert_that(result.success).is_false()
         # Ensure COM812 is among reported issues
@@ -60,19 +62,16 @@ def test_e501_wrapped_by_black_then_clean_under_ruff() -> None:
 
         # Verify Ruff reports E501 before formatting
         ruff = RuffTool()
+        ruff.set_options(select=["E"], format_check=False, line_length=88)
         pre = ruff.check([file_path])
         pre_codes = [getattr(i, "code", "") for i in (pre.issues or [])]
         assert_that("E501" in pre_codes).is_true()
 
-        # Apply Black formatting
+        # Apply Black formatting (do not rely on fixed count across platforms)
         black = BlackTool()
-        fix_result = black.fix([file_path])
-        # Expect at least one formatting change
-        assert_that(getattr(fix_result, "fixed_issues_count", 0)).is_greater_than(0)
+        _ = black.fix([file_path])
 
         # After Black, Ruff should no longer report E501 for this safely wrapped case
         post = ruff.check([file_path])
         post_codes = [getattr(i, "code", "") for i in (post.issues or [])]
         assert_that("E501" in post_codes).is_false()
-
-

@@ -333,6 +333,15 @@ main() {
         fi
     fi
     
+    # Install black (Python code formatter)
+    echo -e "${BLUE}Installing black...${NC}"
+    if install_python_package "black"; then
+        echo -e "${GREEN}✓ black installed successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to install black${NC}"
+        exit 1
+    fi
+    
     # Install bandit (Python security linter)
     echo -e "${BLUE}Installing bandit...${NC}"
     if install_python_package "bandit" "1.8.6"; then

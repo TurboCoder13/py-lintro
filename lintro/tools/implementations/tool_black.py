@@ -235,12 +235,15 @@ class BlackTool(BaseTool):
             )
         final_summary = "\n".join(summary) if summary else "No fixes applied."
 
+        # Parse per-file reformats from the formatting run to display in console
+        fixed_issues_parsed = parse_black_output(output=fix_output)
+
         return ToolResult(
             name=self.name,
             success=(remaining_count == 0),
             output=final_summary,
             issues_count=remaining_count,
-            issues=remaining_issues,
+            issues=fixed_issues_parsed if fixed_issues_parsed else remaining_issues,
             initial_issues_count=initial_count,
             fixed_issues_count=fixed_count,
             remaining_issues_count=remaining_count,
