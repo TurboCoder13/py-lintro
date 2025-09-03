@@ -84,7 +84,6 @@ def test_ruff_formatting_disabled_when_black_present(monkeypatch):
 
     assert_that(code).is_equal_to(0)
     assert_that(ruff.options.get("format")).is_false()
-    assert_that(ruff.options.get("format_check")).is_false()
 
 
 def test_ruff_formatting_respects_cli_override(monkeypatch):
@@ -107,3 +106,24 @@ def test_ruff_formatting_respects_cli_override(monkeypatch):
     assert_that(code).is_equal_to(0)
     assert_that(ruff.options.get("format")).is_true()
     assert_that(ruff.options.get("format_check")).is_true()
+
+
+def test_ruff_format_check_disabled_in_check_when_black_present(monkeypatch):
+    _stub_logger(monkeypatch)
+    ruff, black = _setup_tools(monkeypatch)
+
+    code = run_lint_tools_simple(
+        action="check",
+        paths=["."],
+        tools="all",
+        tool_options=None,
+        exclude=None,
+        include_venv=False,
+        group_by="auto",
+        output_format="grid",
+        verbose=False,
+        raw_output=False,
+    )
+
+    assert_that(code).is_equal_to(0)
+    assert_that(ruff.options.get("format_check")).is_false()
