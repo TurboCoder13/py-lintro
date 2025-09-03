@@ -24,6 +24,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "This script installs:"
     echo "  - Ruff (Python linter and formatter)"
     echo "  - Darglint (docstring linter)"
+    echo "  - Black (Python formatter; runs as a post-check in Lintro)"
     echo "  - Prettier (code formatter)"
     echo "  - Yamllint (YAML linter)"
     echo "  - Hadolint (Dockerfile linter)"

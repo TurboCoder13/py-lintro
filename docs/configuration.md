@@ -69,6 +69,27 @@ format = true      # run `ruff format` during fmt (default true)
 lint_fix = true    # run `ruff check --fix` during fmt (default true)
 ```
 
+### Post-checks Configuration
+
+Black is integrated as a post-check tool by default. Post-checks run after the
+main tools complete and can be configured to enforce failure if issues are
+found. This avoids double-formatting with Ruff and keeps formatting decisions
+explicit.
+
+```toml
+[tool.lintro.post_checks]
+enabled = true
+tools = ["black"]        # Black runs after core tools
+enforce_failure = true   # Fail the run if Black finds issues in check mode
+```
+
+Notes:
+- With post-checks enabled for Black, Ruff’s `format`/`format_check` stages can
+  be disabled or overridden via CLI when desired.
+- In `lintro check`, Black runs with `--check` and contributes to failure when
+  `enforce_failure` is true. In `lintro format`, Black formats files in the
+  post-check phase.
+
 ### Python Tools
 
 #### Ruff Configuration
