@@ -20,6 +20,7 @@ TOOL_EMOJIS: dict[str, str] = {
     "darglint": "📝",
     "hadolint": "🐳",
     "yamllint": "📄",
+    "black": "🖤",
 }
 DEFAULT_EMOJI: str = "🔧"
 BORDER_LENGTH: int = 70
@@ -218,6 +219,37 @@ class SimpleLintroLogger:
 
         logger.debug(f"Starting tool: {tool_name}")
 
+    def print_post_checks_header(
+        self,
+        action: str,
+    ) -> None:
+        """Print a distinct header separating the post-checks phase.
+
+        Args:
+            action: str: The action being performed (e.g., 'check', 'fmt').
+        """
+        # Use a heavy unicode border and magenta coloring to stand out
+        border_char: str = "━"
+        border: str = border_char * BORDER_LENGTH
+        title_styled: str = click.style(
+            text="🚦  POST-CHECKS",
+            fg="magenta",
+            bold=True,
+        )
+        subtitle_styled: str = click.style(
+            text=(
+                "Running optional follow-up checks after primary tools"
+            ),
+            fg="magenta",
+        )
+
+        self.console_output(text="")
+        self.console_output(text=border, color="magenta")
+        self.console_output(text=title_styled)
+        self.console_output(text=subtitle_styled)
+        self.console_output(text=border, color="magenta")
+        self.console_output(text="")
+
     def print_tool_result(
         self,
         tool_name: str,
@@ -327,19 +359,25 @@ class SimpleLintroLogger:
                 if fixed_count > 0 and remaining_count == 0:
                     self.success(message=f"✓ {fixed_count} fixed")
                 elif fixed_count > 0 and remaining_count > 0:
-                    self.console_output(text=f"✓ {fixed_count} fixed", color="green")
                     self.console_output(
-                        text=f"✗ {remaining_count} remaining", color="red"
+                        text=f"✓ {fixed_count} fixed",
+                        color="green",
+                    )
+                    self.console_output(
+                        text=f"✗ {remaining_count} remaining",
+                        color="red",
                     )
                 elif remaining_count > 0:
                     self.console_output(
-                        text=f"✗ {remaining_count} remaining", color="red"
+                        text=f"✗ {remaining_count} remaining",
+                        color="red",
                     )
                 elif initial_count > 0:
                     # If we found initial issues but no specific fixed/remaining counts,
                     # show the initial count as found
                     self.console_output(
-                        text=f"✗ Found {initial_count} issues", color="red"
+                        text=f"✗ Found {initial_count} issues",
+                        color="red",
                     )
                 else:
                     # Fallback to original behavior
@@ -469,7 +507,7 @@ class SimpleLintroLogger:
             self._print_ascii_art(total_issues=total_for_art)
             logger.debug(
                 f"{action} completed with {total_issues} total issues"
-                + (" and failures" if any_failed else "")
+                + (" and failures" if any_failed else ""),
             )
 
     def _print_summary_table(
@@ -502,7 +540,9 @@ class SimpleLintroLogger:
                     # Format operations: show fixed count and remaining status
                     if success:
                         status_display: str = click.style(
-                            "✅ PASS", fg="green", bold=True
+                            "✅ PASS",
+                            fg="green",
+                            bold=True,
                         )
                     else:
                         status_display = click.style("❌ FAIL", fg="red", bold=True)
@@ -516,7 +556,9 @@ class SimpleLintroLogger:
                         ),
                     ):
                         fixed_display: str = click.style(
-                            "SKIPPED", fg="yellow", bold=True
+                            "SKIPPED",
+                            fg="yellow",
+                            bold=True,
                         )
                         remaining_display: str = click.style(
                             "SKIPPED",
@@ -585,7 +627,9 @@ class SimpleLintroLogger:
                         ),
                     ):
                         issues_display: str = click.style(
-                            "SKIPPED", fg="yellow", bold=True
+                            "SKIPPED",
+                            fg="yellow",
+                            bold=True,
                         )
                     else:
                         issues_display = click.style(

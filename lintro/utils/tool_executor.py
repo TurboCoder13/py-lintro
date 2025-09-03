@@ -11,7 +11,7 @@ from lintro.enums.group_by import GroupBy, normalize_group_by
 from lintro.enums.output_format import OutputFormat, normalize_output_format
 from lintro.tools import tool_manager
 from lintro.tools.tool_enum import ToolEnum
-from lintro.utils.config import load_lintro_tool_config
+from lintro.utils.config import load_lintro_tool_config, load_post_checks_config
 from lintro.utils.console_logger import create_logger
 from lintro.utils.output_manager import OutputManager
 from lintro.utils.tool_utils import format_tool_output
@@ -227,6 +227,20 @@ def run_lint_tools_simple(
         # Parse tool options
         tool_option_dict = _parse_tool_options(tool_options)
 
+        # Load post-checks config early to exclude those tools from main phase
+        post_cfg_early = load_post_checks_config()
+        post_enabled_early = bool(post_cfg_early.get("enabled", False))
+        post_tools_early: set[str] = (
+            set(t.lower() for t in (post_cfg_early.get("tools", []) or []))
+            if post_enabled_early
+            else set()
+        )
+
+        if post_tools_early:
+            tools_to_run = [
+                t for t in tools_to_run if t.name.lower() not in post_tools_early
+            ]
+
         # Print main header (skip for JSON mode)
         tools_list: str = ", ".join(t.name.lower() for t in tools_to_run)
         if not json_output_mode:
@@ -353,11 +367,13 @@ def run_lint_tools_simple(
                     # Pull standardized counts again for debug log
                     fixed_dbg = getattr(result, "fixed_issues_count", fixed_count)
                     remaining_dbg = getattr(
-                        result, "remaining_issues_count", issues_count
+                        result,
+                        "remaining_issues_count",
+                        issues_count,
                     )
                     logger.debug(
                         f"Completed {tool_name}: {fixed_dbg} fixed, "
-                        f"{remaining_dbg} remaining"
+                        f"{remaining_dbg} remaining",
                     )
                 else:
                     logger.debug(f"Completed {tool_name}: {issues_count} issues found")
@@ -365,6 +381,112 @@ def run_lint_tools_simple(
             except Exception as e:
                 logger.error(f"Error running {tool_name}: {e}")
                 return DEFAULT_EXIT_CODE_FAILURE
+
+        # Optionally run post-checks (explicit, after main tools)
+        post_cfg = post_cfg_early or load_post_checks_config()
+        post_enabled = bool(post_cfg.get("enabled", False))
+        post_tools: list[str] = list(post_cfg.get("tools", [])) if post_enabled else []
+        enforce_failure: bool = bool(post_cfg.get("enforce_failure", action == "check"))
+
+        if post_tools and not json_output_mode:
+            # Print a clear post-checks section header
+            logger.print_post_checks_header(action=action)
+
+            for post_tool_name in post_tools:
+                try:
+                    tool_enum = ToolEnum[post_tool_name.upper()]
+                except KeyError:
+                    logger.warning(f"Unknown post-check tool: {post_tool_name}")
+                    continue
+
+                # If the tool isn't available in the current environment (e.g., unit
+                # tests that stub a limited set of tools), skip without enforcing
+                # failure. Post-checks are optional when the tool cannot be resolved
+                # from the tool manager.
+                try:
+                    tool = tool_manager.get_tool(tool_enum)
+                except Exception as e:
+                    logger.warning(
+                        f"Post-check '{post_tool_name}' unavailable: {e}",
+                    )
+                    continue
+                tool_name = tool_enum.name.lower()
+
+                # Post-checks run with explicit headers (reuse standard header)
+                if not json_output_mode:
+                    logger.print_tool_header(tool_name=tool_name, action=action)
+
+                try:
+                    # Load tool-specific config and common options
+                    cfg: dict = load_lintro_tool_config(tool_name)
+                    if cfg:
+                        try:
+                            tool.set_options(**cfg)
+                        except Exception as e:
+                            logger.debug(
+                                f"Ignoring invalid config for {tool_name}: {e}",
+                            )
+                    tool.set_options(include_venv=include_venv)
+                    if exclude:
+                        exclude_patterns: list[str] = [
+                            p.strip() for p in exclude.split(",")
+                        ]
+                        tool.set_options(exclude_patterns=exclude_patterns)
+
+                    # For check: Black should run in check mode; for fmt: run fix
+                    if action == "fmt" and tool.can_fix:
+                        result = tool.fix(paths=paths)
+                        issues_count = getattr(result, "issues_count", 0)
+                        total_fixed += getattr(result, "fixed_issues_count", 0) or 0
+                        total_remaining += (
+                            getattr(result, "remaining_issues_count", issues_count)
+                            or 0
+                        )
+                    else:
+                        result = tool.check(paths=paths)
+                        issues_count = getattr(result, "issues_count", 0)
+                        total_issues += issues_count
+
+                    # Format and display output
+                    output = getattr(result, "output", None)
+                    issues = getattr(result, "issues", None)
+                    formatted_output: str = ""
+                    if (output and output.strip()) or issues:
+                        formatted_output = format_tool_output(
+                            tool_name=tool_name,
+                            output=output or "",
+                            group_by=group_by_enum.value,
+                            output_format=output_fmt_enum.value,
+                            issues=issues,
+                        )
+
+                    if not json_output_mode:
+                        logger.print_tool_result(
+                            tool_name=tool_name,
+                            output=(output if raw_output else formatted_output),
+                            issues_count=issues_count,
+                            raw_output_for_meta=output,
+                            action=action,
+                            success=getattr(result, "success", None),
+                        )
+
+                    all_results.append(result)
+                except Exception as e:
+                    # Do not crash the entire run due to missing optional post-check
+                    # tool
+                    logger.warning(f"Post-check '{post_tool_name}' failed: {e}")
+                    # Only enforce failure when the tool was available and executed
+                    if enforce_failure and action == "check":
+                        from lintro.models.core.tool_result import ToolResult
+
+                        all_results.append(
+                            ToolResult(
+                                name=post_tool_name,
+                                success=False,
+                                output=str(e),
+                                issues_count=1,
+                            ),
+                        )
 
         # Handle output based on format
         if json_output_mode:
@@ -403,11 +525,15 @@ def run_lint_tools_simple(
                     "issues_count": getattr(result, "issues_count", 0),
                     "output": getattr(result, "output", ""),
                     "initial_issues_count": getattr(
-                        result, "initial_issues_count", None
+                        result,
+                        "initial_issues_count",
+                        None,
                     ),
                     "fixed_issues_count": getattr(result, "fixed_issues_count", None),
                     "remaining_issues_count": getattr(
-                        result, "remaining_issues_count", None
+                        result,
+                        "remaining_issues_count",
+                        None,
                     ),
                 }
                 json_data["results"].append(result_data)
