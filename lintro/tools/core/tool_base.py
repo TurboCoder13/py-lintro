@@ -61,7 +61,7 @@ class BaseTool(ABC):
 
     _default_timeout: int = DEFAULT_TIMEOUT
     _default_exclude_patterns: list[str] = field(
-        default_factory=lambda: DEFAULT_EXCLUDE_PATTERNS
+        default_factory=lambda: DEFAULT_EXCLUDE_PATTERNS,
     )
 
     def __post_init__(self) -> None:

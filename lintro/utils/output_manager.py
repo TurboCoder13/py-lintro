@@ -230,7 +230,7 @@ class OutputManager:
             if hasattr(r, "issues") and r.issues:
                 html.append(
                     "<table border='1'><tr><th>File</th><th>Line</th><th>Code</th>"
-                    "<th>Message</th></tr>"
+                    "<th>Message</th></tr>",
                 )
                 for issue in r.issues:
                     file: str = _html_escape(getattr(issue, "file", ""))
@@ -239,7 +239,7 @@ class OutputManager:
                     msg: str = _html_escape(getattr(issue, "message", ""))
                     html.append(
                         f"<tr><td>{file}</td><td>{line}</td><td>{code}</td>"
-                        f"<td>{msg}</td></tr>"
+                        f"<td>{msg}</td></tr>",
                     )
                 html.append("</table>")
             else:

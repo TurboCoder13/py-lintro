@@ -47,7 +47,7 @@ def pytest_collection_modifyitems(config, items):
         return
 
     skip_marker = pytest.mark.skip(
-        reason="Docker tests disabled locally; set LINTRO_RUN_DOCKER_TESTS=1"
+        reason="Docker tests disabled locally; set LINTRO_RUN_DOCKER_TESTS=1",
     )
 
     for item in items:

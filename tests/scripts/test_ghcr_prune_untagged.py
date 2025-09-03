@@ -33,7 +33,7 @@ def test_list_container_versions_parses_minimal_structure(monkeypatch):
                 data=[
                     {"id": 1, "metadata": {"container": {"tags": ["latest"]}}},
                     {"id": 2, "metadata": {"container": {"tags": []}}},
-                ]
+                ],
             )
 
     versions = list_container_versions(client=DummyClient(), owner="owner")
@@ -52,7 +52,11 @@ def test_delete_version_calls_delete(monkeypatch):
             raise AssertionError("should not be called for 204")
 
     class DummyClient:
-        def delete(self, url: str, headers: dict[str, str]) -> DummyResp:  # noqa: ARG002
+        def delete(
+            self,
+            url: str,
+            headers: dict[str, str],
+        ) -> DummyResp:  # noqa: ARG002
             calls.append((url, headers))
             return DummyResp()
 
@@ -68,7 +72,11 @@ def test_delete_version_raises_on_non_204_non_404():
             raise RuntimeError("boom")
 
     class DummyClient:
-        def delete(self, url: str, headers: dict[str, str]) -> DummyResp:  # noqa: ARG002
+        def delete(
+            self,
+            url: str,
+            headers: dict[str, str],
+        ) -> DummyResp:  # noqa: ARG002
             return DummyResp()
 
     try:
@@ -120,7 +128,11 @@ def test_main_deletes_only_untagged(monkeypatch):
             return
 
     class DummyClient:
-        def __init__(self, headers: dict[str, str], timeout: int) -> None:  # noqa: ARG002
+        def __init__(
+            self,
+            headers: dict[str, str],
+            timeout: int,
+        ) -> None:  # noqa: ARG002
             pass
 
         def __enter__(self) -> "DummyClient":  # type: ignore[name-defined]
@@ -129,10 +141,18 @@ def test_main_deletes_only_untagged(monkeypatch):
         def __exit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
             return None
 
-        def get(self, url: str, headers: dict[str, str]) -> DummyRespGet:  # noqa: ARG002
+        def get(
+            self,
+            url: str,
+            headers: dict[str, str],
+        ) -> DummyRespGet:  # noqa: ARG002
             return DummyRespGet()
 
-        def delete(self, url: str, headers: dict[str, str]) -> DummyRespDelete:  # noqa: ARG002
+        def delete(
+            self,
+            url: str,
+            headers: dict[str, str],
+        ) -> DummyRespDelete:  # noqa: ARG002
             # Extract trailing id
             deleted.append(int(url.rstrip("/").split("/")[-1]))
             return DummyRespDelete()
@@ -188,7 +208,11 @@ def test_main_respects_keep_n_and_dry_run(monkeypatch):
             return
 
     class DummyClient:
-        def __init__(self, headers: dict[str, str], timeout: int) -> None:  # noqa: ARG002
+        def __init__(
+            self,
+            headers: dict[str, str],
+            timeout: int,
+        ) -> None:  # noqa: ARG002
             pass
 
         def __enter__(self) -> "DummyClient":  # type: ignore[name-defined]
@@ -197,10 +221,18 @@ def test_main_respects_keep_n_and_dry_run(monkeypatch):
         def __exit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
             return None
 
-        def get(self, url: str, headers: dict[str, str]) -> DummyRespGet:  # noqa: ARG002
+        def get(
+            self,
+            url: str,
+            headers: dict[str, str],
+        ) -> DummyRespGet:  # noqa: ARG002
             return DummyRespGet()
 
-        def delete(self, url: str, headers: dict[str, str]) -> DummyRespDelete:  # noqa: ARG002
+        def delete(
+            self,
+            url: str,
+            headers: dict[str, str],
+        ) -> DummyRespDelete:  # noqa: ARG002
             deleted.append(int(url.rstrip("/").split("/")[-1]))
             return DummyRespDelete()
 

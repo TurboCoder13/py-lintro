@@ -45,7 +45,7 @@ def parse_black_output(output: str) -> list[BlackIssue]:
         m = _WOULD_REFORMAT.match(line)
         if m:
             issues.append(
-                BlackIssue(file=m.group("file"), message="Would reformat file")
+                BlackIssue(file=m.group("file"), message="Would reformat file"),
             )
             continue
         m = _REFORMATTED.match(line)

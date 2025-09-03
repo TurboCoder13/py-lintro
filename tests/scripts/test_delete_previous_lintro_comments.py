@@ -60,7 +60,9 @@ def test_deletes_only_marker_comments(monkeypatch):
     import sys
 
     monkeypatch.setattr(
-        sys, "argv", ["delete-previous-lintro-comments.py", "<!-- lintro-report -->"]
+        sys,
+        "argv",
+        ["delete-previous-lintro-comments.py", "<!-- lintro-report -->"],
     )
     with mock.patch("sys.stdout", new_callable=lambda: sys.__stdout__):
         del_script.main()

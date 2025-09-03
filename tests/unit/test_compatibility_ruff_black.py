@@ -57,7 +57,9 @@ def _setup_tools(monkeypatch):
         return None
 
     monkeypatch.setattr(
-        te.OutputManager, "write_reports_from_results", noop_write_reports_from_results
+        te.OutputManager,
+        "write_reports_from_results",
+        noop_write_reports_from_results,
     )
 
     return ruff, black

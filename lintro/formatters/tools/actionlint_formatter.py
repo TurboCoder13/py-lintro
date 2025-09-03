@@ -54,7 +54,7 @@ class ActionlintTableDescriptor(TableDescriptor):
                     issue.level,
                     issue.code or "",
                     issue.message,
-                ]
+                ],
             )
         return rows
 

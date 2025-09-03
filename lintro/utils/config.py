@@ -38,6 +38,7 @@ def load_lintro_tool_config(tool_name: str) -> dict[str, Any]:
         return section
     return {}
 
+
 def load_post_checks_config() -> dict[str, Any]:
     """Load post-checks configuration from pyproject.
 

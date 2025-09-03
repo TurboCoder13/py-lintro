@@ -35,8 +35,8 @@ def test_parse_bandit_valid_output() -> None:
                 },
                 "code": "subprocess.call(user_input, shell=True)",
                 "line_range": [10],
-            }
-        ]
+            },
+        ],
     }
     issues = parse_bandit_output(sample_output)
     assert_that(len(issues)).is_equal_to(1)
@@ -133,7 +133,7 @@ def test_bandit_check_parses_mixed_output_json(monkeypatch, tmp_path):
                 "issue_text": "Use of assert detected.",
                 "more_info": "https://example.com",
                 "line_range": [1],
-            }
+            },
         ],
     }
     mixed_stdout = "Working... 100%\n" + json.dumps(sample) + "\n"
@@ -176,7 +176,7 @@ def test_bandit_check_handles_nonzero_rc_with_errors_array(monkeypatch, tmp_path
                 "issue_text": "Use of assert detected.",
                 "more_info": "https://example.com",
                 "line_range": [1],
-            }
+            },
         ],
     }
 

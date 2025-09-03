@@ -52,7 +52,9 @@ def get_env_var(name: str) -> str:
 
 
 def get_pr_comments(
-    repo: str, pr_number: str, token: str
+    repo: str,
+    pr_number: str,
+    token: str,
 ) -> list[dict[str, str | int]]:
     """Fetch all comments for a pull request with pagination and retries.
 
@@ -69,7 +71,7 @@ def get_pr_comments(
             a non-successful response status.
     """
     base_url: str = os.environ.get("GITHUB_API_URL", "https://api.github.com").rstrip(
-        "/"
+        "/",
     )
     headers: dict[str, str] = {
         "Authorization": f"Bearer {token}",
@@ -114,7 +116,7 @@ def delete_comment(repo: str, comment_id: int, token: str) -> None:
         token (str): GitHub API token.
     """
     base_url: str = os.environ.get("GITHUB_API_URL", "https://api.github.com").rstrip(
-        "/"
+        "/",
     )
     headers: dict[str, str] = {
         "Authorization": f"Bearer {token}",
@@ -143,7 +145,9 @@ def main() -> None:
 
     try:
         comments: list[dict[str, str | int]] = get_pr_comments(
-            repo=repo, pr_number=pr_number, token=token
+            repo=repo,
+            pr_number=pr_number,
+            token=token,
         )
     except Exception as e:
         print(f"Error fetching comments: {e}", file=sys.stderr)

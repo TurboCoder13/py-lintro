@@ -32,7 +32,9 @@ def run_yamllint_directly(file_path: Path) -> tuple[bool, str, int]:
     yamllint_path = shutil.which("yamllint")
     print(f"[DEBUG] yamllint binary path: {yamllint_path}")
     version_result = subprocess.run(
-        ["yamllint", "--version"], capture_output=True, text=True
+        ["yamllint", "--version"],
+        capture_output=True,
+        text=True,
     )
     print(f"[DEBUG] yamllint version: {version_result.stdout}")
     cmd = ["yamllint", "-f", "parsable", file_path.name]
@@ -45,7 +47,7 @@ def run_yamllint_directly(file_path: Path) -> tuple[bool, str, int]:
         env["HOME"] = temp_home
         print(
             "[DEBUG] Subprocess environment: HOME=%s, PATH=%s"
-            % (env.get("HOME"), env.get("PATH"))
+            % (env.get("HOME"), env.get("PATH")),
         )
         print(f"[DEBUG] Subprocess CWD: {file_path.parent}")
         print(f"[DEBUG] Subprocess full env: {env}")
@@ -71,7 +73,10 @@ def test_yamllint_available():
     """Check if yamllint is available in PATH."""
     try:
         result = subprocess.run(
-            ["yamllint", "--version"], capture_output=True, text=True, check=False
+            ["yamllint", "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if result.returncode != 0:
             pytest.skip("yamllint not available")
@@ -98,16 +103,16 @@ def test_yamllint_reports_violations_direct(tmp_path):
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
         "[DEBUG] Environment: HOME=%s, PATH=%s"
-        % (os.environ.get("HOME"), os.environ.get("PATH"))
+        % (os.environ.get("HOME"), os.environ.get("PATH")),
     )
     logger.info("[TEST] Running yamllint directly on sample file...")
     success, output, issues = run_yamllint_directly(sample_file)
     logger.info(f"[LOG] Yamllint found {issues} issues. Output:\n{output}")
     assert not success, "Yamllint should fail when violations are present."
     assert issues > 0, "Yamllint should report at least one issue."
-    assert any((level in output for level in ["[error]", "[warning]"])), (
-        "Yamllint output should contain issue levels."
-    )
+    assert any(
+        (level in output for level in ["[error]", "[warning]"]),
+    ), "Yamllint output should contain issue levels."
 
 
 @pytest.mark.yamllint
@@ -127,17 +132,17 @@ def test_yamllint_reports_violations_through_lintro(tmp_path):
     result = tool.check([str(sample_file)])
     logger.info(
         "[LOG] Lintro YamllintTool found %s issues. Output:\n%s"
-        % (result.issues_count, result.output)
+        % (result.issues_count, result.output),
     )
-    assert not result.success, (
-        "Lintro YamllintTool should fail when violations are present."
-    )
-    assert result.issues_count > 0, (
-        "Lintro YamllintTool should report at least one issue."
-    )
+    assert (
+        not result.success
+    ), "Lintro YamllintTool should fail when violations are present."
+    assert (
+        result.issues_count > 0
+    ), "Lintro YamllintTool should report at least one issue."
     assert result.issues, "Parsed issues list should be present"
     assert any(
-        (getattr(i, "level", None) in {"error", "warning"} for i in result.issues)
+        (getattr(i, "level", None) in {"error", "warning"} for i in result.issues),
     ), "Parsed issues should include error or warning levels."
 
 
@@ -160,11 +165,11 @@ def test_yamllint_output_consistency_direct_vs_lintro(tmp_path):
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
         "[DEBUG] Environment: HOME=%s, PATH=%s"
-        % (os.environ.get("HOME"), os.environ.get("PATH"))
+        % (os.environ.get("HOME"), os.environ.get("PATH")),
     )
     print(
         "[DEBUG] Environment: HOME=%s, PATH=%s"
-        % (os.environ.get("HOME"), os.environ.get("PATH"))
+        % (os.environ.get("HOME"), os.environ.get("PATH")),
     )
     logger.info("[TEST] Comparing yamllint CLI and Lintro YamllintTool outputs...")
     tool = YamllintTool()
@@ -172,11 +177,16 @@ def test_yamllint_output_consistency_direct_vs_lintro(tmp_path):
     direct_success, direct_output, direct_issues = run_yamllint_directly(sample_file)
     result = tool.check([str(sample_file)])
     logger.info(
-        "[LOG] CLI issues: %s, Lintro issues: %s" % (direct_issues, result.issues_count)
+        "[LOG] CLI issues: %s, Lintro issues: %s"
+        % (direct_issues, result.issues_count),
     )
-    assert direct_issues == result.issues_count, (
-        "Mismatch: CLI=%s, Lintro=%s\nCLI Output:\n%s\nLintro Output:\n%s"
-        % (direct_issues, result.issues_count, direct_output, result.output)
+    assert (
+        direct_issues == result.issues_count
+    ), "Mismatch: CLI=%s, Lintro=%s\nCLI Output:\n%s\nLintro Output:\n%s" % (
+        direct_issues,
+        result.issues_count,
+        direct_output,
+        result.output,
     )
 
 
@@ -239,9 +249,10 @@ def test_yamllint_fix_method_implemented(tmp_path):
     result = tool.fix([str(sample_file)])
     logger.info(f"[LOG] Fix result: {result.success}, {result.issues_count} issues")
     assert isinstance(result.success, bool), "Fix should return a boolean success value"
-    assert isinstance(result.issues_count, int), (
-        "Fix should return an integer issue count"
-    )
+    assert isinstance(
+        result.issues_count,
+        int,
+    ), "Fix should return an integer issue count"
 
 
 @pytest.mark.yamllint

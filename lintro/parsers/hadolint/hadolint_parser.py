@@ -32,7 +32,7 @@ def parse_hadolint_output(output: str) -> list[HadolintIssue]:
 
     # Pattern for hadolint output: filename:line code level: message
     pattern: re.Pattern[str] = re.compile(
-        r"^(.+?):(\d+)\s+([A-Z]+\d+)\s+(error|warning|info|style):\s+(.+)$"
+        r"^(.+?):(\d+)\s+([A-Z]+\d+)\s+(error|warning|info|style):\s+(.+)$",
     )
 
     lines: list[str] = output.splitlines()
@@ -59,7 +59,7 @@ def parse_hadolint_output(output: str) -> list[HadolintIssue]:
                     level=level,
                     code=code,
                     message=message.strip(),
-                )
+                ),
             )
 
     return issues

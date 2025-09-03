@@ -22,11 +22,11 @@ def test_files_dir():
         # Create test files
         (test_dir / "test.py").write_text("def test_function():\n    pass\n")
         (test_dir / "test.js").write_text(
-            "function testFunction() {\n    console.log('test');\n}\n"
+            "function testFunction() {\n    console.log('test');\n}\n",
         )
         (test_dir / "test.yml").write_text("key: value\nlist:\n  - item1\n  - item2\n")
         (test_dir / "Dockerfile").write_text(
-            "FROM python:3.13\nCOPY . .\nRUN pip install -r requirements.txt\n"
+            "FROM python:3.13\nCOPY . .\nRUN pip install -r requirements.txt\n",
         )
 
         yield test_dir

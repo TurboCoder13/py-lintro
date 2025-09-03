@@ -20,7 +20,11 @@ def test_get_table_columns_and_format_tabulate(monkeypatch):
     rows_captured = {}
 
     def fake_tabulate(
-        tabular_data, headers, tablefmt, stralign=None, disable_numparse=None
+        tabular_data,
+        headers,
+        tablefmt,
+        stralign=None,
+        disable_numparse=None,
     ):
         rows_captured["headers"] = headers
         rows_captured["rows"] = tabular_data

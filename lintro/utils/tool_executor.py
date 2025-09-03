@@ -295,6 +295,27 @@ def run_lint_tools_simple(
 
                 tool.set_options(include_venv=include_venv)
 
+                # If Black is configured as a post-check, avoid double formatting by
+                # disabling Ruff's formatting stages unless explicitly overridden via
+                # CLI or config. This keeps Ruff focused on lint fixes while Black
+                # handles formatting.
+                if "black" in post_tools_early and tool_name == "ruff":
+                    # Respect explicit overrides from CLI or config
+                    cli_overrides = tool_option_dict.get("ruff", {})
+                    cfg_overrides = cfg or {}
+                    if action == "fmt":
+                        if (
+                            "format" not in cli_overrides
+                            and "format" not in cfg_overrides
+                        ):
+                            tool.set_options(format=False)
+                    else:  # check
+                        if (
+                            "format_check" not in cli_overrides
+                            and "format_check" not in cfg_overrides
+                        ):
+                            tool.set_options(format_check=False)
+
                 # Run the tool
                 logger.debug(f"Executing {tool_name}")
 
@@ -439,8 +460,7 @@ def run_lint_tools_simple(
                         issues_count = getattr(result, "issues_count", 0)
                         total_fixed += getattr(result, "fixed_issues_count", 0) or 0
                         total_remaining += (
-                            getattr(result, "remaining_issues_count", issues_count)
-                            or 0
+                            getattr(result, "remaining_issues_count", issues_count) or 0
                         )
                     else:
                         result = tool.check(paths=paths)

@@ -57,11 +57,13 @@ class TestShellScriptSyntax:
         """
         for script in shell_scripts:
             result = subprocess.run(
-                ["bash", "-n", str(script)], capture_output=True, text=True
+                ["bash", "-n", str(script)],
+                capture_output=True,
+                text=True,
             )
-            assert result.returncode == 0, (
-                f"Syntax error in {script.name}: {result.stderr}"
-            )
+            assert (
+                result.returncode == 0
+            ), f"Syntax error in {script.name}: {result.stderr}"
 
     def test_scripts_are_executable(self, shell_scripts):
         """Test that all shell scripts are executable.
@@ -148,9 +150,9 @@ class TestScriptHelp:
         with open(script, "r") as f:
             content = f.read()
         assert "Usage:" in content, "install-tools.sh should have usage documentation"
-        assert "--local" in content or "--docker" in content, (
-            "Should document command options"
-        )
+        assert (
+            "--local" in content or "--docker" in content
+        ), "Should document command options"
 
     def test_codecov_upload_help(self, scripts_dir):
         """codecov-upload.sh should provide help and exit 0.
@@ -200,11 +202,13 @@ class TestScriptFunctionality:
         """
         script = scripts_dir / "utils" / "extract-coverage.py"
         result = subprocess.run(
-            ["python3", "-m", "py_compile", str(script)], capture_output=True, text=True
+            ["python3", "-m", "py_compile", str(script)],
+            capture_output=True,
+            text=True,
         )
-        assert result.returncode == 0, (
-            f"Python syntax error in {script.name}: {result.stderr}"
-        )
+        assert (
+            result.returncode == 0
+        ), f"Python syntax error in {script.name}: {result.stderr}"
 
     def test_utils_script_sources_correctly(self, scripts_dir):
         """Test that utils.sh can be sourced without errors.
@@ -222,7 +226,9 @@ class TestScriptFunctionality:
             "        declare -f log_error >/dev/null\n"
         )
         result = subprocess.run(
-            ["bash", "-c", test_script], capture_output=True, text=True
+            ["bash", "-c", test_script],
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0, f"utils.sh sourcing failed: {result.stderr}"
 
@@ -246,11 +252,13 @@ class TestScriptFunctionality:
                             "command -v docker",
                             "docker --version",
                         ]
-                    )
+                    ),
                 ), f"{script_name} should check Docker availability"
 
     def test_scripts_handle_missing_dependencies_gracefully(
-        self, scripts_dir, mock_env
+        self,
+        scripts_dir,
+        mock_env,
     ):
         """Test that scripts handle missing dependencies gracefully.
 
@@ -303,23 +311,25 @@ class TestScriptIntegration:
             if "local-lintro.sh" in content:
                 assert_that(
                     (scripts_dir / "local-lintro.sh").exists()
-                    or (scripts_dir / "local" / "local-lintro.sh").exists()
+                    or (scripts_dir / "local" / "local-lintro.sh").exists(),
                 ).is_true()
             if "extract-coverage.py" in content:
                 assert_that(
                     (scripts_dir / "extract-coverage.py").exists()
-                    or (scripts_dir / "utils" / "extract-coverage.py").exists()
+                    or (scripts_dir / "utils" / "extract-coverage.py").exists(),
                 ).is_true()
             if "detect-changes.sh" in content:
                 assert_that(
-                    (scripts_dir / "ci" / "detect-changes.sh").exists()
+                    (scripts_dir / "ci" / "detect-changes.sh").exists(),
                 ).is_true()
 
     def test_detect_changes_help(self):
         """detect-changes.sh should provide help and exit 0."""
         script_path = Path("scripts/ci/detect-changes.sh").resolve()
         result = subprocess.run(
-            [str(script_path), "--help"], capture_output=True, text=True
+            [str(script_path), "--help"],
+            capture_output=True,
+            text=True,
         )
         assert_that(result.returncode).is_equal_to(0)
         assert_that(result.stdout).contains("Usage:")
@@ -354,15 +364,15 @@ class TestScriptIntegration:
             if "RED=" in content and "GREEN=" in content:
                 for line in content.split("\n"):
                     if line.strip().startswith(
-                        ("RED=", "GREEN=", "YELLOW=", "BLUE=", "NC=")
+                        ("RED=", "GREEN=", "YELLOW=", "BLUE=", "NC="),
                     ):
                         color_patterns.append(line.strip())
         if len(color_patterns) > 5:
             red_definitions = [p for p in color_patterns if p.startswith("RED=")]
             if len(set(red_definitions)) > 1:
-                assert len(red_definitions) > 0, (
-                    "Scripts should define RED color consistently"
-                )
+                assert (
+                    len(red_definitions) > 0
+                ), "Scripts should define RED color consistently"
 
     def test_script_dependencies_documented(self, scripts_dir):
         """Test that script dependencies are documented in comments.
@@ -381,7 +391,7 @@ class TestScriptIntegration:
                     (
                         keyword in header.lower()
                         for keyword in ["test", "install", "docker", "script", "runner"]
-                    )
+                    ),
                 ), f"{script_name} should have descriptive comments"
 
     def test_bump_internal_refs_updates_refs(self, tmp_path):
@@ -411,7 +421,7 @@ class TestScriptIntegration:
         wrapper = tmp_path / "run.sh"
         wrapper.write_text(
             f"#!/usr/bin/env bash\nset -euo pipefail\ncd '{tmp_path}'\n"
-            f"'{script_path}' '{target_sha}'\n"
+            f"'{script_path}' '{target_sha}'\n",
         )
         os.chmod(wrapper, 493)
         result = subprocess.run([str(wrapper)], capture_output=True, text=True)
@@ -419,10 +429,10 @@ class TestScriptIntegration:
         content = wf.read_text()
         assert_that(content).contains(target_sha)
         assert_that(content).does_not_contain(
-            "0123456789abcdef0123456789abcdef01234567"
+            "0123456789abcdef0123456789abcdef01234567",
         )
         assert_that(content).does_not_contain(
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         )
 
     def test_bump_internal_refs_invalid_sha_fails(self, tmp_path):
@@ -435,14 +445,14 @@ class TestScriptIntegration:
         workflow_dir.mkdir(parents=True)
         (workflow_dir / "sample.yml").write_text(
             "uses: TurboCoder13/py-lintro/.github/actions/"
-            "demo@0123456789abcdef0123456789abcdef01234567\n"
+            "demo@0123456789abcdef0123456789abcdef01234567\n",
         )
         script_path = Path("scripts/ci/bump-internal-refs.sh").resolve()
         bad_sha = "notasha"
         wrapper = tmp_path / "run.sh"
         wrapper.write_text(
             f"#!/usr/bin/env bash\nset -euo pipefail\ncd '{tmp_path}'\n"
-            f"'{script_path}' '{bad_sha}'\n"
+            f"'{script_path}' '{bad_sha}'\n",
         )
         os.chmod(wrapper, 493)
         result = subprocess.run([str(wrapper)], capture_output=True, text=True)

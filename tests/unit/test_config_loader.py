@@ -17,7 +17,7 @@ def test_load_lintro_tool_config(tmp_path: Path, monkeypatch):
             "        line_length = 88\n"
             "        [tool.lintro.prettier]\n"
             "        single_quote = true\n"
-        )
+        ),
     )
     monkeypatch.chdir(tmp_path)
     ruff_cfg = load_lintro_tool_config("ruff")

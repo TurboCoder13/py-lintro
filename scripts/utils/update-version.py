@@ -76,7 +76,7 @@ def main() -> int:
     print(
         f"Updated version -> {version}\n"
         f"  pyproject.toml: {old_pyproject or '(none)'} -> {version}\n"
-        f"  lintro/__init__.py: {old_dunder or '(none)'} -> {version}"
+        f"  lintro/__init__.py: {old_dunder or '(none)'} -> {version}",
     )
     return 0
 

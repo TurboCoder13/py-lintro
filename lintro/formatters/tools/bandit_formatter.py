@@ -38,7 +38,7 @@ class BanditTableDescriptor(TableDescriptor):
                     f"{severity_icon} {issue.issue_severity}",
                     issue.issue_confidence,
                     issue.issue_text,
-                ]
+                ],
             )
         return rows
 

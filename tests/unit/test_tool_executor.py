@@ -111,7 +111,8 @@ def test_executor_check_success(monkeypatch):
     _stub_logger(monkeypatch)
     result = ToolResult(name="ruff", success=True, output="", issues_count=0)
     _setup_tool_manager(
-        monkeypatch, {"ruff": FakeTool("ruff", can_fix=True, result=result)}
+        monkeypatch,
+        {"ruff": FakeTool("ruff", can_fix=True, result=result)},
     )
     code = run_lint_tools_simple(
         action="check",
@@ -132,7 +133,8 @@ def test_executor_check_failure(monkeypatch):
     _stub_logger(monkeypatch)
     result = ToolResult(name="ruff", success=True, output="something", issues_count=2)
     _setup_tool_manager(
-        monkeypatch, {"ruff": FakeTool("ruff", can_fix=True, result=result)}
+        monkeypatch,
+        {"ruff": FakeTool("ruff", can_fix=True, result=result)},
     )
     code = run_lint_tools_simple(
         action="check",
@@ -160,7 +162,8 @@ def test_executor_fmt_success_with_counts(monkeypatch):
         remaining_issues_count=0,
     )
     _setup_tool_manager(
-        monkeypatch, {"prettier": FakeTool("prettier", can_fix=True, result=result)}
+        monkeypatch,
+        {"prettier": FakeTool("prettier", can_fix=True, result=result)},
     )
     code = run_lint_tools_simple(
         action="fmt",
@@ -224,7 +227,8 @@ def test_executor_handles_tool_failure_with_output(monkeypatch, tmp_path):
     _stub_logger(monkeypatch)
     failing = ToolResult(name="bandit", success=False, output="oops", issues_count=0)
     _setup_tool_manager(
-        monkeypatch, {"bandit": FakeTool("bandit", can_fix=False, result=failing)}
+        monkeypatch,
+        {"bandit": FakeTool("bandit", can_fix=False, result=failing)},
     )
     code = run_lint_tools_simple(
         action="check",
@@ -258,18 +262,18 @@ def test_parse_tool_options_typed_values():
     parsed = te._parse_tool_options(opt_str)
     assert_that(
         isinstance(parsed["ruff"]["unsafe_fixes"], bool)
-        and parsed["ruff"]["unsafe_fixes"]
+        and parsed["ruff"]["unsafe_fixes"],
     ).is_true()
     assert_that(
         isinstance(parsed["ruff"]["line_length"], int)
-        and parsed["ruff"]["line_length"] == 88
+        and parsed["ruff"]["line_length"] == 88,
     ).is_true()
     assert_that(parsed["ruff"]["target_version"]).is_equal_to("py313")
     assert_that(parsed["ruff"]["select"]).is_equal_to(["E", "F"])
     assert_that(parsed["prettier"]["verbose_fix_output"] is False).is_true()
     assert_that(parsed["yamllint"]["strict"]).is_none()
     assert_that(
-        isinstance(parsed["ruff"]["ratio"], float) and parsed["ruff"]["ratio"] == 0.5
+        isinstance(parsed["ruff"]["ratio"], float) and parsed["ruff"]["ratio"] == 0.5,
     ).is_true()
 
 

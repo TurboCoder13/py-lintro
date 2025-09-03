@@ -84,6 +84,7 @@ enforce_failure = true   # Fail the run if Black finds issues in check mode
 ```
 
 Notes:
+
 - With post-checks enabled for Black, Ruff’s `format`/`format_check` stages can
   be disabled or overridden via CLI when desired.
 - In `lintro check`, Black runs with `--check` and contributes to failure when

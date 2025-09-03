@@ -237,9 +237,7 @@ class SimpleLintroLogger:
             bold=True,
         )
         subtitle_styled: str = click.style(
-            text=(
-                "Running optional follow-up checks after primary tools"
-            ),
+            text=("Running optional follow-up checks after primary tools"),
             fg="magenta",
         )
 

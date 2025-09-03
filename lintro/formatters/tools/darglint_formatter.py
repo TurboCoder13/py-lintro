@@ -63,7 +63,9 @@ def format_darglint_issues(
     # For JSON format, pass tool name
     if format == "json":
         formatted_table = formatter.format(
-            columns=columns, rows=rows, tool_name="darglint"
+            columns=columns,
+            rows=rows,
+            tool_name="darglint",
         )
     else:
         # For other formats, use standard formatting

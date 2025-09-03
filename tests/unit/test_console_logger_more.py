@@ -23,5 +23,5 @@ def test_console_logger_parsing_messages(tmp_path: Path, capsys):
     )
     out = capsys.readouterr().out
     assert_that(
-        "auto-fixed" in out or "Would reformat" in out or "Found" in out
+        "auto-fixed" in out or "Would reformat" in out or "Found" in out,
     ).is_true()

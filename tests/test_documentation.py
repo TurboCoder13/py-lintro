@@ -33,7 +33,7 @@ class TestScriptDocumentation:
                 )
                 if result.returncode != 0:
                     failed_scripts.append(
-                        f"{script_file}: exit code {result.returncode}"
+                        f"{script_file}: exit code {result.returncode}",
                     )
             except subprocess.TimeoutExpired:
                 failed_scripts.append(f"{script_file}: timeout")
@@ -110,7 +110,7 @@ class TestScriptDocumentation:
         if missing_docs:
             pytest.fail(
                 "Scripts not documented in scripts/README.md:\n"
-                + "\n".join(missing_docs)
+                + "\n".join(missing_docs),
             )
 
 
@@ -331,12 +331,12 @@ class TestDocumentationConsistency:
             for alias in old_aliases:
                 if alias in content:
                     inconsistent_commands.append(
-                        f"{doc_file}: uses old alias '{alias}'"
+                        f"{doc_file}: uses old alias '{alias}'",
                     )
 
         if inconsistent_commands:
             pytest.fail(
-                "Inconsistent command usage:\n" + "\n".join(inconsistent_commands)
+                "Inconsistent command usage:\n" + "\n".join(inconsistent_commands),
             )
 
     def test_output_format_consistency(self) -> None:
@@ -359,13 +359,13 @@ class TestDocumentationConsistency:
             # Check for old --table-format references
             if "--table-format" in content:
                 inconsistent_formats.append(
-                    f"{doc_file}: uses old --table-format option"
+                    f"{doc_file}: uses old --table-format option",
                 )
 
         if inconsistent_formats:
             pytest.fail(
                 "Inconsistent output format options:\n"
-                + "\n".join(inconsistent_formats)
+                + "\n".join(inconsistent_formats),
             )
 
 

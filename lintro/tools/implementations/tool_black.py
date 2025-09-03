@@ -142,7 +142,9 @@ class BlackTool(BaseTool):
 
         logger.debug(f"[BlackTool] Running: {' '.join(cmd)} (cwd={cwd})")
         success, output = self._run_subprocess(
-            cmd=cmd, timeout=self.options.get("timeout", BLACK_DEFAULT_TIMEOUT), cwd=cwd
+            cmd=cmd,
+            timeout=self.options.get("timeout", BLACK_DEFAULT_TIMEOUT),
+            cwd=cwd,
         )
 
         issues = parse_black_output(output=output)
@@ -229,7 +231,7 @@ class BlackTool(BaseTool):
             summary.append(f"Fixed {fixed_count} issue(s)")
         if remaining_count > 0:
             summary.append(
-                f"Found {remaining_count} issue(s) that cannot be auto-fixed"
+                f"Found {remaining_count} issue(s) that cannot be auto-fixed",
             )
         final_summary = "\n".join(summary) if summary else "No fixes applied."
 

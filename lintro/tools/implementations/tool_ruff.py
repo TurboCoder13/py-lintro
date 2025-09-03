@@ -366,7 +366,9 @@ class RuffTool(BaseTool):
         success_lint: bool
         output_lint: str
         success_lint, output_lint = self._run_subprocess(
-            cmd=cmd, timeout=timeout, cwd=cwd
+            cmd=cmd,
+            timeout=timeout,
+            cwd=cwd,
         )
         lint_issues = parse_ruff_output(output=output_lint)
         lint_issues_count: int = len(lint_issues)

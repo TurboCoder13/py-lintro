@@ -56,7 +56,7 @@ def parse_darglint_output(output: str) -> list[DarglintIssue]:
                 line=int(line_num),
                 code=code,
                 message=full_message,
-            )
+            ),
         )
         i = j
     return issues

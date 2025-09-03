@@ -37,7 +37,9 @@ def main() -> int:
     parser.add_argument("--width", type=int, default=80)
     parser.add_argument("--height", type=int, default=20)
     parser.add_argument(
-        "--align", choices=["left", "center", "right"], default="center"
+        "--align",
+        choices=["left", "center", "right"],
+        default="center",
     )
     parser.add_argument(
         "--valign",

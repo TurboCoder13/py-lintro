@@ -32,7 +32,9 @@ def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
     hadolint_path = shutil.which("hadolint")
     print(f"[DEBUG] hadolint binary path: {hadolint_path}")
     version_result = subprocess.run(
-        ["hadolint", "--version"], capture_output=True, text=True
+        ["hadolint", "--version"],
+        capture_output=True,
+        text=True,
     )
     print(f"[DEBUG] hadolint version: {version_result.stdout}")
     cmd = ["hadolint", "--no-color", "-f", "tty", str(file_path)]
@@ -45,7 +47,7 @@ def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
         env["HOME"] = temp_home
         print(
             "[DEBUG] Subprocess environment: HOME=%s, PATH=%s"
-            % (env.get("HOME"), env.get("PATH"))
+            % (env.get("HOME"), env.get("PATH")),
         )
         print(f"[DEBUG] Subprocess CWD: {file_path.parent}")
         print(f"[DEBUG] Subprocess full env: {env}")
@@ -71,7 +73,10 @@ def test_hadolint_available():
     """Check if hadolint is available in PATH."""
     try:
         result = subprocess.run(
-            ["hadolint", "--version"], capture_output=True, text=True, check=False
+            ["hadolint", "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if result.returncode != 0:
             pytest.skip("hadolint not available")
@@ -97,16 +102,16 @@ def test_hadolint_reports_violations_direct(tmp_path):
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
         "[DEBUG] Environment: HOME=%s, PATH=%s"
-        % (os.environ.get("HOME"), os.environ.get("PATH"))
+        % (os.environ.get("HOME"), os.environ.get("PATH")),
     )
     logger.info("[TEST] Running hadolint directly on sample file...")
     success, output, issues = run_hadolint_directly(sample_file)
     logger.info(f"[LOG] Hadolint found {issues} issues. Output:\n{output}")
     assert not success, "Hadolint should fail when violations are present."
     assert issues > 0, "Hadolint should report at least one issue."
-    assert any((code in output for code in ["DL", "SC"])), (
-        "Hadolint output should contain error codes."
-    )
+    assert any(
+        (code in output for code in ["DL", "SC"]),
+    ), "Hadolint output should contain error codes."
 
 
 @pytest.mark.hadolint
@@ -126,17 +131,17 @@ def test_hadolint_reports_violations_through_lintro(tmp_path):
     result = tool.check([str(sample_file)])
     logger.info(
         "[LOG] Lintro HadolintTool found %s issues. Output:\n%s"
-        % (result.issues_count, result.output)
+        % (result.issues_count, result.output),
     )
-    assert not result.success, (
-        "Lintro HadolintTool should fail when violations are present."
-    )
-    assert result.issues_count > 0, (
-        "Lintro HadolintTool should report at least one issue."
-    )
-    assert any((code in result.output for code in ["DL", "SC"])), (
-        "Lintro HadolintTool output should contain error codes."
-    )
+    assert (
+        not result.success
+    ), "Lintro HadolintTool should fail when violations are present."
+    assert (
+        result.issues_count > 0
+    ), "Lintro HadolintTool should report at least one issue."
+    assert any(
+        (code in result.output for code in ["DL", "SC"]),
+    ), "Lintro HadolintTool output should contain error codes."
 
 
 @pytest.mark.hadolint
@@ -155,7 +160,7 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
         "[DEBUG] Environment: HOME=%s, PATH=%s"
-        % (os.environ.get("HOME"), os.environ.get("PATH"))
+        % (os.environ.get("HOME"), os.environ.get("PATH")),
     )
     logger.info("[TEST] Comparing hadolint CLI and Lintro HadolintTool outputs...")
     tool = HadolintTool()
@@ -163,18 +168,22 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
     direct_success, direct_output, direct_issues = run_hadolint_directly(sample_file)
     result = tool.check([str(sample_file)])
     logger.info(
-        f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}"
+        f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
-    assert direct_issues == result.issues_count, (
-        "Mismatch: CLI=%s, Lintro=%s\nCLI Output:\n%s\nLintro Output:\n%s"
-        % (direct_issues, result.issues_count, direct_output, result.output)
+    assert (
+        direct_issues == result.issues_count
+    ), "Mismatch: CLI=%s, Lintro=%s\nCLI Output:\n%s\nLintro Output:\n%s" % (
+        direct_issues,
+        result.issues_count,
+        direct_output,
+        result.output,
     )
-    assert direct_success == result.success, (
-        "Success/failure mismatch between CLI and Lintro."
-    )
-    assert direct_issues == result.issues_count, (
-        "Issue count mismatch between CLI and Lintro."
-    )
+    assert (
+        direct_success == result.success
+    ), "Success/failure mismatch between CLI and Lintro."
+    assert (
+        direct_issues == result.issues_count
+    ), "Issue count mismatch between CLI and Lintro."
 
 
 @pytest.mark.hadolint
@@ -210,7 +219,7 @@ def test_hadolint_fix_method_not_implemented(tmp_path):
     sample_file = tmp_path / "Dockerfile"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info(
-        "[TEST] Verifying that HadolintTool.fix() raises NotImplementedError..."
+        "[TEST] Verifying that HadolintTool.fix() raises NotImplementedError...",
     )
     tool = HadolintTool()
     with pytest.raises(NotImplementedError):

@@ -330,8 +330,8 @@ class TestRuffTool:
                 (
                     getattr(issue, "file", None) == file_path
                     for issue in result.issues or []
-                )
-            )
+                ),
+            ),
         ).is_true()
 
     def test_format_check_clean_file(self, ruff_tool, ruff_clean_file):
@@ -410,7 +410,7 @@ class TestRuffTool:
                         for line in result.stdout.splitlines()
                         if ":" in line
                         and any((code in line for code in ["E", "F", "I", "W"]))
-                    ]
+                    ],
                 )
         lintro_result = tool.check([ruff_violation_file])
         lintro_lint_issues = (
@@ -419,14 +419,14 @@ class TestRuffTool:
                     issue
                     for issue in lintro_result.issues
                     if hasattr(issue, "code") and issue.code != "FORMAT"
-                ]
+                ],
             )
             if lintro_result.issues
             else 0
         )
         logger.info(
             "[LOG] CLI issues: %s, Lintro lint issues: %s"
-            % (direct_issues, lintro_lint_issues)
+            % (direct_issues, lintro_lint_issues),
         )
         assert direct_issues == lintro_lint_issues, (
             "Issue count mismatch: "

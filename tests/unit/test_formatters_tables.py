@@ -26,7 +26,7 @@ from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 
 def test_darglint_table_and_formatting(tmp_path):
     issues = [
-        DarglintIssue(file=str(tmp_path / "f.py"), line=1, code="D100", message="m")
+        DarglintIssue(file=str(tmp_path / "f.py"), line=1, code="D100", message="m"),
     ]
     desc = DarglintTableDescriptor()
     assert_that(desc.get_columns()).is_equal_to(["File", "Line", "Code", "Message"])
@@ -44,11 +44,11 @@ def test_prettier_table_and_formatting(tmp_path):
             column=None,
             code="FORMAT",
             message="m",
-        )
+        ),
     ]
     desc = PrettierTableDescriptor()
     assert_that(desc.get_columns()).is_equal_to(
-        ["File", "Line", "Column", "Code", "Message"]
+        ["File", "Line", "Column", "Code", "Message"],
     )
     rows = desc.get_rows(issues)
     assert_that(rows and len(rows[0]) == 5).is_true()
@@ -70,7 +70,7 @@ def test_ruff_table_and_formatting(tmp_path):
     ]
     desc = RuffTableDescriptor()
     assert_that(desc.get_columns()).is_equal_to(
-        ["File", "Line", "Column", "Code", "Message"]
+        ["File", "Line", "Column", "Code", "Message"],
     )
     rows = desc.get_rows(issues)
     assert_that(rows and len(rows[0]) == 5).is_true()
@@ -87,11 +87,11 @@ def test_hadolint_table_and_formatting(tmp_path):
             level="error",
             code="DL3001",
             message="Test",
-        )
+        ),
     ]
     desc = HadolintTableDescriptor()
     assert_that(desc.get_columns()).is_equal_to(
-        ["File", "Line", "Column", "Level", "Code", "Message"]
+        ["File", "Line", "Column", "Level", "Code", "Message"],
     )
     rows = desc.get_rows(issues)
     assert_that(rows and len(rows[0]) == 6).is_true()
