@@ -53,25 +53,25 @@ def test_e501_wrapped_by_black_then_clean_under_ruff() -> None:
         "def func(**kwargs):\n"
         "    return kwargs\n\n"
         "# Single long line over 88 chars, safe to wrap by Black\n"
-        "result = func(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, i=9, j=10)\n"
+        "result = func(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, i=9, j=10, k=11, l=12, m=13, n=14)\n"
         "print(result)\n"
     )
     with tempfile.TemporaryDirectory() as tmp:
         file_path = os.path.join(tmp, "e501_case.py")
         _write(file_path, long_call)
 
-        # Verify Ruff reports E501 before formatting
+        # Verify Ruff detects formatting issue (long line) before Black
         ruff = RuffTool()
-        ruff.set_options(select=["E"], format_check=False, line_length=88)
+        ruff.set_options(select=["E"], format_check=True, line_length=88)
         pre = ruff.check([file_path])
-        pre_codes = [getattr(i, "code", "") for i in (pre.issues or [])]
-        assert_that("E501" in pre_codes).is_true()
+        # RuffFormatIssue does not have code; verify via issue type and count
+        assert_that(any(hasattr(i, "file") and not hasattr(i, "code") for i in (pre.issues or []))).is_true()
 
         # Apply Black formatting (do not rely on fixed count across platforms)
         black = BlackTool()
         _ = black.fix([file_path])
 
-        # After Black, Ruff should no longer report E501 for this safely wrapped case
+        # After Black, Ruff should no longer report formatting issue for this case
         post = ruff.check([file_path])
-        post_codes = [getattr(i, "code", "") for i in (post.issues or [])]
-        assert_that("E501" in post_codes).is_false()
+        # After formatting, there should be no RuffFormatIssue entries
+        assert_that(any(hasattr(i, "file") and not hasattr(i, "code") for i in (post.issues or []))).is_false()

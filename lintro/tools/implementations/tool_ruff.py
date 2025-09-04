@@ -252,12 +252,25 @@ class RuffTool(BaseTool):
             cmd.append("--isolated")
 
         # Add configuration options
-        if self.options.get("select"):
-            cmd.extend(["--select", ",".join(self.options["select"])])
-        if self.options.get("ignore"):
-            cmd.extend(["--ignore", ",".join(self.options["ignore"])])
-        if self.options.get("extend_select"):
-            cmd.extend(["--extend-select", ",".join(self.options["extend_select"])])
+        selected_rules = list(self.options.get("select") or [])
+        ignored_rules = set(self.options.get("ignore") or [])
+        extend_selected_rules = list(self.options.get("extend_select") or [])
+
+        # Ensure E501 is included when selecting E-family unless explicitly ignored
+        if (
+            "E" in selected_rules
+            and "E501" not in ignored_rules
+            and "E501" not in selected_rules
+            and "E501" not in extend_selected_rules
+        ):
+            extend_selected_rules.append("E501")
+
+        if selected_rules:
+            cmd.extend(["--select", ",".join(selected_rules)])
+        if ignored_rules:
+            cmd.extend(["--ignore", ",".join(sorted(ignored_rules))])
+        if extend_selected_rules:
+            cmd.extend(["--extend-select", ",".join(extend_selected_rules)])
         if self.options.get("extend_ignore"):
             cmd.extend(["--extend-ignore", ",".join(self.options["extend_ignore"])])
         if self.options.get("line_length"):
