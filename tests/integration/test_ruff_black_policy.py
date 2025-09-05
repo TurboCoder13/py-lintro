@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 
 from assertpy import assert_that
@@ -49,23 +50,22 @@ def test_e501_wrapped_by_black_then_clean_under_ruff() -> None:
     Create a safely breakable long line (function call with many keyword args),
     let Black apply formatting, then verify Ruff no longer reports E501.
     """
-    long_call = (
-        "def func(**kwargs):\n"
-        "    return kwargs\n\n"
-        "# Single long line over 88 chars, safe to wrap by Black\n"
-        "result = func(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, i=9, j=10, k=11, l=12, m=13, n=14)\n"
-        "print(result)\n"
-    )
     with tempfile.TemporaryDirectory() as tmp:
+        src = os.path.abspath("test_samples/ruff_black_e501_wrappable.py")
         file_path = os.path.join(tmp, "e501_case.py")
-        _write(file_path, long_call)
+        shutil.copy(src, file_path)
 
         # Verify Ruff detects formatting issue (long line) before Black
         ruff = RuffTool()
         ruff.set_options(select=["E"], format_check=True, line_length=88)
         pre = ruff.check([file_path])
         # RuffFormatIssue does not have code; verify via issue type and count
-        assert_that(any(hasattr(i, "file") and not hasattr(i, "code") for i in (pre.issues or []))).is_true()
+        assert_that(
+            any(
+                hasattr(i, "file") and not hasattr(i, "code")
+                for i in (pre.issues or [])
+            ),
+        ).is_true()
 
         # Apply Black formatting (do not rely on fixed count across platforms)
         black = BlackTool()
@@ -74,4 +74,9 @@ def test_e501_wrapped_by_black_then_clean_under_ruff() -> None:
         # After Black, Ruff should no longer report formatting issue for this case
         post = ruff.check([file_path])
         # After formatting, there should be no RuffFormatIssue entries
-        assert_that(any(hasattr(i, "file") and not hasattr(i, "code") for i in (post.issues or []))).is_false()
+        assert_that(
+            any(
+                hasattr(i, "file") and not hasattr(i, "code")
+                for i in (post.issues or [])
+            ),
+        ).is_false()

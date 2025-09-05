@@ -44,11 +44,7 @@ def parse_ruff_output(output: str) -> list[RuffIssue]:
 
     def _parse_item(item: dict) -> RuffIssue | None:
         try:
-            filename: str = (
-                item.get("filename")
-                or item.get("file")
-                or ""
-            )
+            filename: str = item.get("filename") or item.get("file") or ""
 
             loc: dict = item.get("location") or item.get("start") or {}
             end_loc: dict = item.get("end_location") or item.get("end") or {}
@@ -64,7 +60,9 @@ def parse_ruff_output(output: str) -> list[RuffIssue]:
 
             fix = item.get("fix") or {}
             fixable: bool = bool(fix)
-            fix_applicability = fix.get("applicability") if isinstance(fix, dict) else None
+            fix_applicability = (
+                fix.get("applicability") if isinstance(fix, dict) else None
+            )
 
             return RuffIssue(
                 file=filename,
