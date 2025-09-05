@@ -91,6 +91,33 @@ Notes:
   `enforce_failure` is true. In `lintro format`, Black formats files in the
   post-check phase.
 
+#### Black Options via `--tool-options`
+
+You can override Black behavior on the CLI. Supported options include
+`line_length`, `target_version`, `fast`, `preview`, and `diff`.
+
+```bash
+# Increase line length and target a specific Python version
+lintro check --tool-options "black:line_length=100,black:target_version=py313"
+
+# Enable fast and preview modes
+lintro format --tool-options "black:fast=True,black:preview=True"
+
+# Show diffs during formatting (in addition to applying changes)
+lintro format --tool-options "black:diff=True"
+```
+
+These options can also be set in `pyproject.toml` under `[tool.lintro.black]`:
+
+```toml
+[tool.lintro.black]
+line_length = 100
+target_version = "py313"
+fast = false
+preview = false
+diff = false
+```
+
 ### Ruff vs Black Policy (Python)
 
 Lintro enforces Ruff-first linting and Black-first formatting when Black is

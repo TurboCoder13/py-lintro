@@ -73,3 +73,101 @@ def test_black_fix_computes_counts(monkeypatch, tmp_path: Path):
     assert res.fixed_issues_count == 1
     assert res.remaining_issues_count == 0
     assert res.success
+
+
+def test_black_options_build_line_length_and_target(monkeypatch, tmp_path: Path):
+    tool = BlackTool()
+
+    f = tmp_path / "opt.py"
+    f.write_text("print('opt')\n")
+
+    monkeypatch.setattr(
+        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
+        raising=True,
+    )
+
+    captured: dict[str, list[str]] = {}
+
+    def fake_run(cmd, timeout=None, cwd=None):
+        captured["cmd"] = cmd
+        # Simulate no differences so command content is what we validate
+        return (True, "All done! 1 file left unchanged.")
+
+    monkeypatch.setattr(
+        tool,
+        "_run_subprocess",
+        lambda cmd, timeout, cwd=None: fake_run(cmd, timeout, cwd),
+    )
+
+    tool.set_options(line_length=100, target_version="py313")
+    _ = tool.check([str(tmp_path)])
+    cmd = captured["cmd"]
+    # Ensure flags are present
+    assert "--check" in cmd
+    assert "--line-length" in cmd and "100" in cmd
+    assert "--target-version" in cmd and "py313" in cmd
+
+
+def test_black_options_include_fast_and_preview(monkeypatch, tmp_path: Path):
+    tool = BlackTool()
+
+    f = tmp_path / "fastprev.py"
+    f.write_text("print('x')\n")
+
+    monkeypatch.setattr(
+        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
+        raising=True,
+    )
+
+    captured: dict[str, list[str]] = {}
+
+    def fake_run(cmd, timeout=None, cwd=None):
+        captured["cmd"] = cmd
+        return (True, "All done! 1 file left unchanged.")
+
+    monkeypatch.setattr(
+        tool,
+        "_run_subprocess",
+        lambda cmd, timeout, cwd=None: fake_run(cmd, timeout, cwd),
+    )
+
+    tool.set_options(fast=True, preview=True)
+    _ = tool.check([str(tmp_path)])
+    cmd = captured["cmd"]
+    assert "--fast" in cmd
+    assert "--preview" in cmd
+
+
+def test_black_diff_flag_in_fix(monkeypatch, tmp_path: Path):
+    tool = BlackTool()
+
+    f = tmp_path / "diff.py"
+    f.write_text("print('x')\n")
+
+    monkeypatch.setattr(
+        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
+        raising=True,
+    )
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, timeout=None, cwd=None):
+        calls.append(cmd)
+        # First and last are --check; middle is format run
+        if "--check" in cmd:
+            return (False, f"would reformat {f.name}\n")
+        return (True, f"reformatted {f.name}\n")
+
+    monkeypatch.setattr(
+        tool,
+        "_run_subprocess",
+        lambda cmd, timeout, cwd=None: fake_run(cmd, timeout, cwd),
+    )
+
+    tool.set_options(diff=True)
+    _ = tool.fix([str(tmp_path)])
+    # Middle call should include --diff
+    assert any("--diff" in c for idx, c in enumerate(calls) if idx == 1)

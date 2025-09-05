@@ -50,6 +50,27 @@ cmd = self._get_executable_command("ruff") + ["format"]
 - ✅ **Fix options**: `fix_only`, `unsafe_fixes`, `show_fixes`
 - ✅ **Formatting control**: `format` boolean to enable/disable formatting
 
+### Cooperation with Black (Policy)
+
+When Black is configured as a post-check in Lintro, Ruff focuses on linting by
+default:
+
+- In `lintro format`, Ruff fixes lint issues while `format=False` unless
+  explicitly overridden via `--tool-options ruff:format=True`.
+- In `lintro check`, Ruff runs lint checks with `format_check=False` unless
+  explicitly overridden via `--tool-options ruff:format_check=True`.
+
+This avoids double-formatting and lets Black handle final formatting. You can
+override either side via CLI or `[tool.lintro.ruff]` and `[tool.lintro.post_checks]`.
+
+```bash
+# Force Ruff to format even with Black post-checks enabled
+lintro format --tool-options "ruff:format=True"
+
+# Force Ruff to include format-check during check
+lintro check --tool-options "ruff:format_check=True"
+```
+
 ### ⚠️ Limited/Missing Features
 
 **Advanced Configuration:**

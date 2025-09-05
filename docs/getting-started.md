@@ -123,6 +123,9 @@ lintro format src/ --tools ruff
 
 # Run Black as a post-check (configured via pyproject)
 lintro check src/
+
+# Override Black on the fly
+lintro check src/ --tool-options "black:line_length=100,black:target_version=py313"
 ```
 
 **Tools:**
