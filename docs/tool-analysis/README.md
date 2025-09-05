@@ -60,6 +60,14 @@ This directory contains comprehensive analyses comparing Lintro's wrapper implem
 - ⚠️ **Limited**: Runtime rule customization, Docker Compose support, auto-fixing
 - 🚀 **Enhanced**: Issue normalization, Python integration, error parsing
 
+### [Black Analysis](./black-analysis.md)
+
+**Python Code Formatter**
+
+- ✅ **Preserved**: Core formatting, pyproject config, check and write flows
+- ⚙️ **Pass-throughs**: `line_length`, `target_version`, `fast`, `preview`, `diff`
+- 🚀 **Notes**: Cooperates with Ruff via Lintro post-check policy
+
 ## Analysis Framework
 
 Each analysis follows a consistent structure:
