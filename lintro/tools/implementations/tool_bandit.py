@@ -243,13 +243,15 @@ class BanditTool(BaseTool):
         Returns:
             list[str]: List of command arguments.
         """
-        # Prefer system bandit, then `uvx bandit`, then `uv run bandit`.
+        # Prefer the Bandit CLI directly; avoid module execution which can fail
+        # when Bandit isn't installed in the current venv. Fall back to uvx
+        # (which can run ephemeral tools), then finally to plain name.
         if shutil.which("bandit"):
             exec_cmd: list[str] = ["bandit"]
         elif shutil.which("uvx"):
             exec_cmd = ["uvx", "bandit"]
         else:
-            exec_cmd = self._get_executable_command(tool_name="bandit")
+            exec_cmd = ["bandit"]
 
         cmd: list[str] = exec_cmd + ["-r"]
 

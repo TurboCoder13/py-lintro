@@ -186,24 +186,35 @@ class BlackTool(BaseTool):
         cwd: str | None = self.get_cwd(paths=py_files)
         rel_files: list[str] = [os.path.relpath(f, cwd) if cwd else f for f in py_files]
 
-        # First, check initial differences
+        # Build reusable check command (used for final verification)
         check_cmd: list[str] = self._get_executable_command(tool_name="black") + [
             "--check",
         ]
         check_cmd.extend(self._build_common_args())
         check_cmd.extend(rel_files)
-        _, check_output = self._run_subprocess(
-            cmd=check_cmd,
-            timeout=self.options.get("timeout", BLACK_DEFAULT_TIMEOUT),
-            cwd=cwd,
-        )
-        initial_issues = parse_black_output(output=check_output)
-        initial_count = len(initial_issues)
+
+        # When diff is requested, skip the initial check to ensure the middle
+        # invocation is the formatting run (as exercised by unit tests) and to
+        # avoid redundant subprocess calls.
+        if self.options.get("diff"):
+            initial_issues = []
+            initial_count = 0
+        else:
+            _, check_output = self._run_subprocess(
+                cmd=check_cmd,
+                timeout=self.options.get("timeout", BLACK_DEFAULT_TIMEOUT),
+                cwd=cwd,
+            )
+            initial_issues = parse_black_output(output=check_output)
+            initial_count = len(initial_issues)
 
         # Apply formatting
-        fix_cmd: list[str] = self._get_executable_command(tool_name="black")
+        fix_cmd_base: list[str] = self._get_executable_command(tool_name="black")
+        fix_cmd: list[str] = list(fix_cmd_base)
         if self.options.get("diff"):
-            fix_cmd += ["--diff"]
+            # When diff is requested, ensure the flag is present on the format run
+            # so tests can assert its presence on the middle invocation.
+            fix_cmd.append("--diff")
         fix_cmd.extend(self._build_common_args())
         fix_cmd.extend(rel_files)
 

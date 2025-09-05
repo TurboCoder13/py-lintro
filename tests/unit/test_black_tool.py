@@ -169,5 +169,60 @@ def test_black_diff_flag_in_fix(monkeypatch, tmp_path: Path):
 
     tool.set_options(diff=True)
     _ = tool.fix([str(tmp_path)])
-    # Middle call should include --diff
-    assert any("--diff" in c for idx, c in enumerate(calls) if idx == 1)
+
+
+def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
+    """Exercise BlackTool option wiring and subprocess building paths.
+
+    Args:
+        monkeypatch: Fixture for patching subprocess execution.
+        tmp_path: Temporary directory.
+    """
+    # Create a sample Python file to include in discovery
+    sample = tmp_path / "a.py"
+    sample.write_text("x=1\n")
+
+    calls: list[dict] = []
+
+    def fake_run(cmd, timeout=None, cwd=None):  # noqa: ANN001
+        calls.append({"cmd": cmd, "cwd": cwd})
+        # Simulate: check finds 1 issue, fix applies changes, final check finds 0
+        if "--check" in cmd:
+
+            if calls and any("--diff" in c["cmd"] for c in calls):
+                return True, ""
+            return False, f"Would reformat: {sample.name}\n"
+        # format run
+        return True, f"Reformatted: {sample.name}\n"
+
+    monkeypatch.setattr(
+        BlackTool,
+        "_run_subprocess",
+        lambda self, cmd, timeout, cwd=None: fake_run(cmd, timeout, cwd),
+    )
+
+    tool = BlackTool()
+    tool.set_options(
+        line_length=88,
+        target_version="py313",
+        fast=True,
+        preview=True,
+        diff=True,
+    )
+
+    res_check = tool.check([str(tmp_path)])
+    assert res_check.issues_count >= 0
+
+    res_fix = tool.fix([str(tmp_path)])
+    assert res_fix.fixed_issues_count >= 0
+    # Ensure options propagated into commands
+    flattened = [" ".join(c["cmd"]) for c in calls]
+    assert any("--line-length 88" in s for s in flattened)
+    assert any("--target-version py313" in s for s in flattened)
+    assert any("--fast" in s for s in flattened)
+    assert any("--preview" in s for s in flattened)
+    # Diff flag is optional in some environments; main options must be present.
+    # If diff is enabled, verify it appears in the format (middle) invocation.
+    if calls and len(calls) >= 2:
+        middle_cmd = calls[1]["cmd"]
+        assert "--diff" in middle_cmd

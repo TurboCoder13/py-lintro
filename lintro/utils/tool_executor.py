@@ -241,6 +241,15 @@ def run_lint_tools_simple(
                 t for t in tools_to_run if t.name.lower() not in post_tools_early
             ]
 
+        # If early post-check filtering removed all tools from the main phase,
+        # return a failure to signal that nothing was executed in the main run.
+        if not tools_to_run:
+            logger.warning(
+                "All selected tools were filtered out by post-check configuration",
+            )
+            logger.save_console_log()
+            return DEFAULT_EXIT_CODE_FAILURE
+
         # Print main header (skip for JSON mode)
         tools_list: str = ", ".join(t.name.lower() for t in tools_to_run)
         if not json_output_mode:

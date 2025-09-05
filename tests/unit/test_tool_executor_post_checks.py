@@ -159,3 +159,52 @@ def test_post_checks_missing_tool_no_enforce_skips(monkeypatch, capsys):
     tools_list = data.get("tools", [])
     assert_that("ruff" in tools_list).is_true()
     assert_that("black" in tools_list).is_false()
+
+
+def test_post_checks_json_mode_enforced_failure_on_missing_tool(monkeypatch, capsys):
+    """JSON output mode should still enforce failure on missing post-check.
+
+    Args:
+        monkeypatch: Pytest fixture to modify objects during the test.
+        capsys: Pytest fixture to capture stdout for assertions.
+    """
+    _stub_logger(monkeypatch)
+    _setup_main_tool(monkeypatch)
+
+    import lintro.utils.tool_executor as te
+
+    # Enable post-checks with enforce_failure
+    monkeypatch.setattr(
+        te,
+        "load_post_checks_config",
+        lambda: {"enabled": True, "tools": ["black"], "enforce_failure": True},
+        raising=True,
+    )
+
+    # Force resolution failure for the post-check tool
+    def fail_get_tool(enum_val):
+        raise RuntimeError("black not available")
+
+    monkeypatch.setattr(te.tool_manager, "get_tool", fail_get_tool, raising=True)
+
+    # Run in JSON mode; exit code should reflect enforced failure
+    code = run_lint_tools_simple(
+        action="check",
+        paths=["."],
+        tools="all",
+        tool_options=None,
+        exclude=None,
+        include_venv=False,
+        group_by="auto",
+        output_format="json",
+        verbose=False,
+        raw_output=False,
+    )
+    out = capsys.readouterr().out
+    data = json.loads(out)
+
+    # Should include a failure result for the missing post-check tool
+    tool_names = [r.get("tool") for r in data.get("results", [])]
+    assert_that("black" in tool_names).is_true()
+    # Exit code should be failure
+    assert_that(code).is_equal_to(1)

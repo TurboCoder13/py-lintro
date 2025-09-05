@@ -86,6 +86,8 @@ discover_tests() {
 run_tests() {
     echo -e "${BLUE}Running all tests in the tests directory...${NC}"
     echo -e "${YELLOW}Using uv run pytest for consistent behavior${NC}"
+    # Avoid uv hardlink warnings/noise by defaulting to copy mode
+    export UV_LINK_MODE=${UV_LINK_MODE:-copy}
     
     # Determine pytest worker count
     local workers="${LINTRO_PYTEST_WORKERS:-auto}"
@@ -279,10 +281,24 @@ show_usage() {
     echo "Use './scripts/local/local-lintro.sh --install' to install missing tools."
 }
 
-# Handle help request
+# Handle help request or docker delegate
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     show_usage
+    echo ""
+    echo "Options:" 
+    echo "  --docker        Run tests inside Docker via scripts/docker/docker-test.sh"
     exit 0
+fi
+
+# Delegate to Docker-based test runner when requested
+if [ "$1" = "--docker" ]; then
+    SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+    DOCKER_SCRIPT="${SCRIPT_DIR%/local}/docker/docker-test.sh"
+    if [ ! -x "$DOCKER_SCRIPT" ]; then
+        echo -e "${RED}Error: Docker test script not found at $DOCKER_SCRIPT${NC}"
+        exit 1
+    fi
+    exec "$DOCKER_SCRIPT"
 fi
 
 # Run main function

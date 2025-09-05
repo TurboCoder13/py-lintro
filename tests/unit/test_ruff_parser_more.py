@@ -26,6 +26,20 @@ def test_parse_ruff_output_json_lines_and_variants():
     assert_that(codes).contains("E501", "F401", "E702")
 
 
+def test_parse_ruff_output_trailing_non_json():
+    # Parser should ignore trailing non-JSON after array
+    output = (
+        "[\n"
+        '  {"filename": "x.py", "location": {"row": 1, "column": 1}, '
+        '"code": "F401", "message": "unused"}\n'
+        "]\n"
+        "Ruff 0.4.0 summary...\n"
+    )
+    issues = parse_ruff_output(output)
+    assert len(issues) == 1
+    assert issues[0].file.endswith("x.py")
+
+
 def test_parse_ruff_format_check_output_various_lines():
     out = (
         "Would reformat: src/app.py\n"
@@ -35,3 +49,9 @@ def test_parse_ruff_format_check_output_various_lines():
     )
     files = parse_ruff_format_check_output(out)
     assert_that(files).contains("src/app.py", "tests/test_app.py")
+
+
+def test_parse_ruff_format_check_output_variants_more():
+    out = "Would reformat: a.py\n" "Would reformat b.py\n"
+    files = parse_ruff_format_check_output(out)
+    assert_that(sorted(files)).is_equal_to(["a.py", "b.py"])
