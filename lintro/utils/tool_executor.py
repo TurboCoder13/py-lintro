@@ -266,8 +266,23 @@ def run_lint_tools_simple(
 
         # Run each tool with rich formatting
         for tool_enum in tools_to_run:
-            tool = tool_manager.get_tool(tool_enum)
             tool_name: str = tool_enum.name.lower()
+            # Resolve the tool instance; if unavailable, record failure and continue
+            try:
+                tool = tool_manager.get_tool(tool_enum)
+            except Exception as e:
+                logger.warning(f"Tool '{tool_name}' unavailable: {e}")
+                from lintro.models.core.tool_result import ToolResult
+
+                all_results.append(
+                    ToolResult(
+                        name=tool_name,
+                        success=False,
+                        output=str(e),
+                        issues_count=0,
+                    ),
+                )
+                continue
 
             # Print rich tool header (skip for JSON mode)
             if not json_output_mode:
@@ -401,13 +416,50 @@ def run_lint_tools_simple(
 
             except Exception as e:
                 logger.error(f"Error running {tool_name}: {e}")
-                return DEFAULT_EXIT_CODE_FAILURE
+                # Record a failure result and continue so that structured output
+                # (e.g., JSON) is still produced even if a tool cannot be
+                # resolved or executed. This keeps behavior consistent with tests
+                # that validate JSON output presence independent of exit codes.
+                from lintro.models.core.tool_result import ToolResult
+
+                all_results.append(
+                    ToolResult(
+                        name=tool_name,
+                        success=False,
+                        output=str(e),
+                        issues_count=0,
+                    ),
+                )
+                # Continue to next tool rather than aborting the entire run
+                continue
 
         # Optionally run post-checks (explicit, after main tools)
         post_cfg = post_cfg_early or load_post_checks_config()
         post_enabled = bool(post_cfg.get("enabled", False))
         post_tools: list[str] = list(post_cfg.get("tools", [])) if post_enabled else []
         enforce_failure: bool = bool(post_cfg.get("enforce_failure", action == "check"))
+
+        # In JSON mode, we still need exit-code enforcement even if we skip
+        # rendering post-check outputs. If a post-check tool is unavailable
+        # and enforce_failure is enabled during check, append a failure result
+        # so summaries and exit codes reflect the condition.
+        if post_tools and json_output_mode and action == "check" and enforce_failure:
+            for post_tool_name in post_tools:
+                try:
+                    tool_enum = ToolEnum[post_tool_name.upper()]
+                    # Ensure tool can be resolved; we don't execute it in JSON mode
+                    _ = tool_manager.get_tool(tool_enum)
+                except Exception as e:
+                    from lintro.models.core.tool_result import ToolResult
+
+                    all_results.append(
+                        ToolResult(
+                            name=post_tool_name,
+                            success=False,
+                            output=str(e),
+                            issues_count=1,
+                        ),
+                    )
 
         if post_tools and not json_output_mode:
             # Print a clear post-checks section header
