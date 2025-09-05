@@ -506,7 +506,7 @@ class RuffTool(BaseTool):
             format_files = parse_ruff_format_check_output(output=output_format_check)
             initial_format_count = len(format_files)
 
-        # Total initial issues (linting + formatting when enabled)
+        # Track initial totals separately for accurate fixed/remaining math
         total_initial_count: int = initial_count + initial_format_count
 
         # Optionally run ruff check --fix (lint fixes)
@@ -520,28 +520,12 @@ class RuffTool(BaseTool):
             remaining_issues = parse_ruff_output(output=output)
             remaining_count = len(remaining_issues)
 
-        # Compute fixed lint issues by diffing initial vs remaining
-        # Use (file, code, line, column) for best-effort matching; fall back to
-        # (file, code)
-        def _issue_key(issue) -> tuple:
-            try:
-                return (
-                    getattr(issue, "file", ""),
-                    getattr(issue, "code", ""),
-                    getattr(issue, "line", None),
-                    getattr(issue, "column", None),
-                )
-            except Exception:
-                return (getattr(issue, "file", ""), getattr(issue, "code", ""))
+        # Compute fixed lint issues by diffing initial vs remaining (internal only)
+        # Not used for display; summary counts reflect totals.
 
-        remaining_keys = {_issue_key(i) for i in remaining_issues}
-        fixed_lint_issues = [
-            i for i in initial_issues if _issue_key(i) not in remaining_keys
-        ]
-
-        # Calculate how many issues were actually fixed
-        # Add formatting fixes if formatter ran
-        fixed_count: int = total_initial_count - remaining_count
+        # Calculate how many lint issues were actually fixed
+        fixed_lint_count: int = max(0, initial_count - remaining_count)
+        fixed_count: int = fixed_lint_count
 
         # Do not print raw initial counts; keep output concise and unified
 
@@ -613,9 +597,9 @@ class RuffTool(BaseTool):
                 cmd=format_cmd,
                 timeout=timeout,
             )
-            # If we detected formatting issues initially, consider them fixed now
+            # Formatting fixes are counted separately from lint fixes
             if initial_format_count > 0:
-                fixed_count += initial_format_count
+                fixed_count = fixed_lint_count + initial_format_count
             # Suppress raw formatter output for consistency; rely on unified summary
             # Only consider formatting failure if there are actual formatting
             # issues. Don't fail the overall operation just because formatting
@@ -642,16 +626,14 @@ class RuffTool(BaseTool):
         else:
             overall_success = remaining_count == 0
 
-        # Combine fixed and remaining issues for console display
-        combined_issues = list(fixed_lint_issues) + list(remaining_issues)
-
         return ToolResult(
             name=self.name,
             success=overall_success,
             output=final_output,
             # For fix operations, issues_count represents remaining for summaries
             issues_count=remaining_count,
-            issues=combined_issues,
+            # Display remaining issues only to align tables with summary counts
+            issues=remaining_issues,
             initial_issues_count=total_initial_count,
             fixed_issues_count=fixed_count,
             remaining_issues_count=remaining_count,
