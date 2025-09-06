@@ -451,7 +451,7 @@ class SimpleLintroLogger:
         # Build summary table
         self._print_summary_table(action=action, tool_results=tool_results)
 
-        # Final status and ASCII art
+        # Totals line and ASCII art
         if action == "fmt":
             # For format commands, track both fixed and remaining issues
             # Use standardized counts when provided by tools
@@ -484,7 +484,11 @@ class SimpleLintroLogger:
                         elif not getattr(result, "success", True):
                             total_remaining += DEFAULT_REMAINING_COUNT
 
-            # Show ASCII art as the last item; no status text after art
+            # Show totals line then ASCII art
+            totals_line: str = (
+                f"Totals: fixed={total_fixed}, remaining={total_remaining}"
+            )
+            self.console_output(text=click.style(totals_line, fg="cyan"))
             self._print_ascii_art_format(total_remaining=total_remaining)
             logger.debug(
                 f"{action} completed with {total_fixed} fixed, "
@@ -501,7 +505,9 @@ class SimpleLintroLogger:
             total_for_art: int = (
                 total_issues if not any_failed else max(1, total_issues)
             )
-            # Show ASCII art as the last item; no status text after art
+            # Show totals line then ASCII art
+            totals_line_chk: str = f"Total issues: {total_issues}"
+            self.console_output(text=click.style(totals_line_chk, fg="cyan"))
             self._print_ascii_art(total_issues=total_for_art)
             logger.debug(
                 f"{action} completed with {total_issues} total issues"
