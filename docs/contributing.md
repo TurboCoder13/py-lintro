@@ -53,6 +53,19 @@ Notes:
 - If work is ambiguous (e.g., a large refactor), explicitly signal with `!` or a `BREAKING CHANGE:` footer.
 - The PR title validator (`.github/workflows/semantic-pr-title.yml`) enforces the format before merge.
 
+## Developer Certificate of Origin (required)
+
+All contributions must be signed off under the Developer Certificate of
+Origin (DCO). Use `git commit -s` (or `--signoff`) so your commit message
+contains a line like:
+
+```
+Signed-off-by: Your Name <your.email@example.com>
+```
+
+See `DCO.md` for details. Pull requests without DCO sign-offs will be asked
+to amend commits before merge.
+
 ## Quick Start
 
 1. Clone the repository:
