@@ -23,6 +23,7 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 - 📊 **Detailed reporting** in GitHub Actions summaries
 - 🚀 **Multi-tool analysis:**
   - Python: Ruff + Darglint
+  - Python formatting (post-check): Black
   - YAML: Yamllint
   - JSON: Prettier
   - Docker: Hadolint
@@ -248,6 +249,7 @@ jobs:
 
       - name: Run Lintro
         run: |
+          # Run core tools, then post-checks (Black) per pyproject config
           uv run lintro check --output-format grid --output lintro-results.txt
           cat lintro-results.txt
 

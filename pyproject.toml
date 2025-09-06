@@ -38,7 +38,7 @@ Documentation = "https://github.com/TurboCoder13/py-lintro/docs"
 Source = "https://github.com/TurboCoder13/py-lintro"
 
 [tool.setuptools]
-packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.formatters.tools", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.darglint", "lintro.parsers.hadolint", "lintro.parsers.prettier", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.parsers.actionlint", "lintro.tools", "lintro.tools.core", "lintro.tools.implementations", "lintro.utils",]
+packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.formatters.tools", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.black", "lintro.parsers.darglint", "lintro.parsers.hadolint", "lintro.parsers.prettier", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.parsers.actionlint", "lintro.tools", "lintro.tools.core", "lintro.tools.implementations", "lintro.utils",]
 
 [tool.semantic_release]
 branch = "main"
@@ -56,11 +56,21 @@ target-version = "py313"
 unsafe-fixes = false
 exclude = [ ".venv", "venv", "env", "build", "dist", "__pycache__", "test_samples",]
 
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
 [tool.bandit]
 exclude_dirs = [ "tests", "test_samples",]
 
+[tool.lintro.post_checks]
+enabled = true
+tools = ["black"]
+enforce_failure = true
+
 [tool.ruff.lint]
-select = [ "E", "F", "W", "I",]
+select = [ "E", "F", "W", "I", "COM",]
 ignore = []
 
 [tool.pytest.ini_options]

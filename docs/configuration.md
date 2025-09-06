@@ -69,6 +69,94 @@ format = true      # run `ruff format` during fmt (default true)
 lint_fix = true    # run `ruff check --fix` during fmt (default true)
 ```
 
+### Post-checks Configuration
+
+Black is integrated as a post-check tool by default. Post-checks run after the
+main tools complete and can be configured to enforce failure if issues are
+found. This avoids double-formatting with Ruff and keeps formatting decisions
+explicit.
+
+```toml
+[tool.lintro.post_checks]
+enabled = true
+tools = ["black"]        # Black runs after core tools
+enforce_failure = true   # Fail the run if Black finds issues in check mode
+```
+
+Notes:
+
+- With post-checks enabled for Black, Ruff’s `format`/`format_check` stages can
+  be disabled or overridden via CLI when desired.
+- In `lintro check`, Black runs with `--check` and contributes to failure when
+  `enforce_failure` is true. In `lintro format`, Black formats files in the
+  post-check phase.
+
+#### Black Options via `--tool-options`
+
+You can override Black behavior on the CLI. Supported options include
+`line_length`, `target_version`, `fast`, `preview`, and `diff`.
+
+```bash
+# Increase line length and target a specific Python version
+lintro check --tool-options "black:line_length=100,black:target_version=py313"
+
+# Enable fast and preview modes
+lintro format --tool-options "black:fast=True,black:preview=True"
+
+# Show diffs during formatting (in addition to applying changes)
+lintro format --tool-options "black:diff=True"
+```
+
+These options can also be set in `pyproject.toml` under `[tool.lintro.black]`:
+
+```toml
+[tool.lintro.black]
+line_length = 100
+target_version = "py313"
+fast = false
+preview = false
+diff = false
+```
+
+### Ruff vs Black Policy (Python)
+
+Lintro enforces Ruff-first linting and Black-first formatting when Black is
+configured as a post-check.
+
+- Ruff: primary linter (keep strict rules like `COM812` trailing commas and
+  `E501` line length enabled for checks)
+- Black: primary formatter (applies formatting during post-checks; performs
+  safe line breaking where Ruff’s auto-format may be limited)
+
+Runtime behavior with Black as post-check:
+
+- lintro format
+  - Ruff fixes lint issues only (Ruff `format=False`) unless explicitly
+    overridden
+  - Black performs formatting in the post-check phase
+
+- lintro check
+  - Ruff runs lint checks (Ruff `format_check=False`) unless explicitly
+    overridden
+  - Black runs `--check` as a post-check to enforce formatting
+
+Overrides when needed:
+
+```bash
+# Force Ruff to format during fmt
+lintro format --tool-options ruff:format=True
+
+# Force Ruff to include format check during check
+lintro check --tool-options ruff:format_check=True
+```
+
+Rationale:
+
+- Avoids double-formatting churn (Ruff format followed by Black format) while
+  preserving Ruff’s stricter lint rules (e.g., `COM812`, `E501`).
+- Black’s safe wrapping is preferred for long lines; Ruff continues to enforce
+  lint limits during checks.
+
 ### Python Tools
 
 #### Ruff Configuration

@@ -61,7 +61,7 @@ class BaseTool(ABC):
 
     _default_timeout: int = DEFAULT_TIMEOUT
     _default_exclude_patterns: list[str] = field(
-        default_factory=lambda: DEFAULT_EXCLUDE_PATTERNS
+        default_factory=lambda: DEFAULT_EXCLUDE_PATTERNS,
     )
 
     def __post_init__(self) -> None:
@@ -256,9 +256,10 @@ class BaseTool(ABC):
     ) -> list[str]:
         """Get the command prefix to execute a tool.
 
-        This method provides common logic for tool executable detection.
-        It first tries to find the tool directly in PATH, and if not found,
-        falls back to running via 'uv run' if uv is available.
+        Prefer running via ``uv run`` when available to ensure the tool executes
+        within the active Python environment, avoiding PATH collisions with
+        user-level shims. Fall back to a direct executable when ``uv`` is not
+        present, and finally to the bare tool name.
 
         Args:
             tool_name: str: Name of the tool executable to find.
@@ -268,20 +269,49 @@ class BaseTool(ABC):
 
         Examples:
             >>> self._get_executable_command("ruff")
-            ["ruff"]  # if ruff is directly available
+            ["uv", "run", "ruff"]  # preferred when uv is available
 
             >>> self._get_executable_command("ruff")
-            ["uv", "run", "ruff"]  # if ruff not available but uv is
+            ["ruff"]  # if uv is not available but the tool is on PATH
         """
-        # First try direct tool execution
-        if shutil.which(tool_name):
+        # Tool-specific preferences to balance reliability vs. historical expectations
+        python_tools_prefer_uv = {"black", "bandit", "yamllint", "darglint"}
+
+        # Ruff: keep historical expectation for tests (direct invocation first)
+        if tool_name == "ruff":
+            if shutil.which(tool_name):
+                return [tool_name]
+            if shutil.which("uv"):
+                return ["uv", "run", tool_name]
             return [tool_name]
 
-        # If tool not directly available, try via uv
+        # Black: prefer system binary first, then project env via uv run,
+        # and finally uvx as a last resort.
+        if tool_name == "black":
+            if shutil.which(tool_name):
+                return [tool_name]
+            if shutil.which("uv"):
+                return ["uv", "run", tool_name]
+            if shutil.which("uvx"):
+                return ["uvx", tool_name]
+            return [tool_name]
+
+        # Python-based tools where running inside env avoids PATH shim issues
+        if tool_name in python_tools_prefer_uv:
+            if shutil.which(tool_name):
+                return [tool_name]
+            if shutil.which("uv"):
+                return ["uv", "run", tool_name]
+            if shutil.which("uvx"):
+                return ["uvx", tool_name]
+            return [tool_name]
+
+        # Default: prefer direct system executable (node/binary tools like
+        # prettier, hadolint, actionlint)
+        if shutil.which(tool_name):
+            return [tool_name]
         if shutil.which("uv"):
             return ["uv", "run", tool_name]
-
-        # Fallback to direct tool (will likely fail but gives clear error)
         return [tool_name]
 
     @abstractmethod

@@ -36,6 +36,10 @@ echo "### 🛠️ Step 1: Running Lintro Checks" >> $GITHUB_STEP_SUMMARY
 echo "Running \`lintro check\` in Docker container against the entire project..." >> $GITHUB_STEP_SUMMARY
 echo "" >> $GITHUB_STEP_SUMMARY
 
+# Always build a fresh Docker image to ensure tools and configs are current
+echo "Building fresh Docker image py-lintro:latest..." >> $GITHUB_STEP_SUMMARY
+docker build -t py-lintro:latest . > /dev/null 2>&1
+
 # Run lintro check in Docker container against the entire project
 # The .lintro-ignore file will automatically exclude test_samples/
 set +e  # Don't exit on error

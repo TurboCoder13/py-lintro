@@ -78,17 +78,17 @@ def test_darglint_reports_violations_through_lintro(tmp_path):
     result = tool.check([str(sample_file)])
     logger.info(
         f"[LOG] Lintro DarglintTool found {result.issues_count} issues. "
-        f"Output:\n{result.output}"
+        f"Output:\n{result.output}",
     )
-    assert not result.success, (
-        "Lintro DarglintTool should fail when violations are present."
-    )
-    assert result.issues_count > 0, (
-        "Lintro DarglintTool should report at least one issue."
-    )
-    assert "DAR" in result.output, (
-        "Lintro DarglintTool output should contain error codes."
-    )
+    assert (
+        not result.success
+    ), "Lintro DarglintTool should fail when violations are present."
+    assert (
+        result.issues_count > 0
+    ), "Lintro DarglintTool should report at least one issue."
+    assert (
+        "DAR" in result.output
+    ), "Lintro DarglintTool output should contain error codes."
 
 
 def test_darglint_output_consistency_direct_vs_lintro(tmp_path):
@@ -105,14 +105,14 @@ def test_darglint_output_consistency_direct_vs_lintro(tmp_path):
     direct_success, direct_output, direct_issues = run_darglint_directly(sample_file)
     result = tool.check([str(sample_file)])
     logger.info(
-        f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}"
+        f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
-    assert direct_success == result.success, (
-        "Success/failure mismatch between CLI and Lintro."
-    )
-    assert direct_issues == result.issues_count, (
-        "Issue count mismatch between CLI and Lintro."
-    )
+    assert (
+        direct_success == result.success
+    ), "Success/failure mismatch between CLI and Lintro."
+    assert (
+        direct_issues == result.issues_count
+    ), "Issue count mismatch between CLI and Lintro."
     # Optionally compare error codes if output format is stable
 
 
@@ -125,7 +125,7 @@ def test_darglint_fix_method_not_implemented(tmp_path):
     sample_file = tmp_path / "darglint_violations.py"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info(
-        "[TEST] Verifying that DarglintTool.fix() raises NotImplementedError..."
+        "[TEST] Verifying that DarglintTool.fix() raises NotImplementedError...",
     )
     tool = DarglintTool()
     with pytest.raises(NotImplementedError):

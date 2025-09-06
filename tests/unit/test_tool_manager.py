@@ -35,18 +35,17 @@ def test_tool_manager_execution_order_and_conflicts(monkeypatch):
         lambda e: (
             t1
             if e == ToolEnum.RUFF
-            else t2
-            if e == ToolEnum.PRETTIER
-            else tm.get_available_tools()[e]
+            else t2 if e == ToolEnum.PRETTIER else tm.get_available_tools()[e]
         ),
     )
     order = tm.get_tool_execution_order([ToolEnum.RUFF, ToolEnum.PRETTIER])
     assert_that(len(order)).is_equal_to(1)
     order2 = tm.get_tool_execution_order(
-        [ToolEnum.PRETTIER, ToolEnum.RUFF], ignore_conflicts=True
+        [ToolEnum.PRETTIER, ToolEnum.RUFF],
+        ignore_conflicts=True,
     )
     assert_that(order2).is_equal_to(
-        sorted([ToolEnum.PRETTIER, ToolEnum.RUFF], key=lambda e: e.name)
+        sorted([ToolEnum.PRETTIER, ToolEnum.RUFF], key=lambda e: e.name),
     )
 
 

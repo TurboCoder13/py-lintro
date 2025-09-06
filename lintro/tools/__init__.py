@@ -4,10 +4,9 @@ from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import Tool
 from lintro.models.core.tool_config import ToolConfig
 from lintro.tools.core.tool_manager import ToolManager
-
-# Import core implementations after Tool class definition to avoid circular imports
 from lintro.tools.implementations.tool_actionlint import ActionlintTool
 from lintro.tools.implementations.tool_bandit import BanditTool
+from lintro.tools.implementations.tool_black import BlackTool
 from lintro.tools.implementations.tool_darglint import DarglintTool
 from lintro.tools.implementations.tool_hadolint import HadolintTool
 from lintro.tools.implementations.tool_prettier import PrettierTool
@@ -34,6 +33,7 @@ __all__ = [
     "ToolEnum",
     "tool_manager",
     "AVAILABLE_TOOLS",
+    "BlackTool",
     "ActionlintTool",
     "BanditTool",
     "DarglintTool",

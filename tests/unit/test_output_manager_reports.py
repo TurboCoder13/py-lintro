@@ -17,7 +17,10 @@ class DummyIssue:
 
 class DummyResult:
     def __init__(
-        self, name: str, issues_count: int, issues: list[DummyIssue] | None = None
+        self,
+        name: str,
+        issues_count: int,
+        issues: list[DummyIssue] | None = None,
     ):
         self.name = name
         self.issues_count = issues_count

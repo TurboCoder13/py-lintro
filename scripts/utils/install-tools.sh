@@ -24,6 +24,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "This script installs:"
     echo "  - Ruff (Python linter and formatter)"
     echo "  - Darglint (docstring linter)"
+    echo "  - Black (Python formatter; runs as a post-check in Lintro)"
     echo "  - Prettier (code formatter)"
     echo "  - Yamllint (YAML linter)"
     echo "  - Hadolint (Dockerfile linter)"
@@ -330,6 +331,15 @@ main() {
             echo -e "${RED}✗ Cannot install ruff automatically; please install via your package manager.${NC}"
             exit 1
         fi
+    fi
+    
+    # Install black (Python code formatter)
+    echo -e "${BLUE}Installing black...${NC}"
+    if install_python_package "black"; then
+        echo -e "${GREEN}✓ black installed successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to install black${NC}"
+        exit 1
     fi
     
     # Install bandit (Python security linter)

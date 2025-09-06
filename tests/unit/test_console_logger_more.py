@@ -1,10 +1,20 @@
+"""Additional tests for console_logger small branches."""
+
 from __future__ import annotations
 
 from pathlib import Path
 
 from assertpy import assert_that
 
-from lintro.utils.console_logger import create_logger
+from lintro.utils.console_logger import create_logger, get_tool_emoji
+
+
+def test_get_tool_emoji_default():
+    # Unknown tool should return the default emoji
+    emoji = get_tool_emoji("unknown-tool")
+    assert_that(emoji).is_not_empty()
+    # Known tools return specific emojis, default is different character set
+    assert_that(emoji).is_not_equal_to("")
 
 
 def test_console_logger_parsing_messages(tmp_path: Path, capsys):
@@ -23,5 +33,5 @@ def test_console_logger_parsing_messages(tmp_path: Path, capsys):
     )
     out = capsys.readouterr().out
     assert_that(
-        "auto-fixed" in out or "Would reformat" in out or "Found" in out
+        "auto-fixed" in out or "Would reformat" in out or "Found" in out,
     ).is_true()

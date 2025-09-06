@@ -77,8 +77,8 @@ class TestEnvironmentHandling:
                     (
                         word in error_output.lower()
                         for word in ["docker", "not found", "not running", "error"]
-                    )
-                )
+                    ),
+                ),
             ).is_true()
 
     def test_install_tools_handles_missing_dependencies(self, scripts_dir, clean_env):
@@ -121,7 +121,10 @@ class TestScriptErrorHandling:
         script = scripts_dir / "utils" / "extract-coverage.py"
         with tempfile.TemporaryDirectory() as tmpdir:
             result = subprocess.run(
-                ["python3", str(script)], capture_output=True, text=True, cwd=tmpdir
+                ["python3", str(script)],
+                capture_output=True,
+                text=True,
+                cwd=tmpdir,
             )
             assert_that(result.returncode).is_equal_to(0)
             assert_that(result.stdout).contains("percentage=")
@@ -138,7 +141,10 @@ class TestScriptErrorHandling:
             coverage_file = Path(tmpdir) / "coverage.xml"
             coverage_file.write_text("")
             result = subprocess.run(
-                ["python3", str(script)], capture_output=True, text=True, cwd=tmpdir
+                ["python3", str(script)],
+                capture_output=True,
+                text=True,
+                cwd=tmpdir,
             )
             assert_that(result.returncode).is_equal_to(0)
             assert_that(result.stdout).contains("percentage=")
@@ -170,7 +176,10 @@ class TestScriptErrorHandling:
             coverage_file = Path(tmpdir) / "coverage.xml"
             coverage_file.write_text(valid_coverage_xml)
             result = subprocess.run(
-                ["python3", str(script)], capture_output=True, text=True, cwd=tmpdir
+                ["python3", str(script)],
+                capture_output=True,
+                text=True,
+                cwd=tmpdir,
             )
             assert_that(result.returncode).is_equal_to(0)
             assert_that(result.stdout).contains("percentage=")
@@ -220,7 +229,7 @@ class TestScriptSecurity:
                             (
                                 f"Potentially unsafe pattern '{pattern}' in "
                                 f"{script.name}: {line}"
-                            )
+                            ),
                         )
 
     def test_scripts_validate_inputs(self, scripts_dir):
@@ -247,11 +256,11 @@ class TestScriptSecurity:
                         "--help",
                         "-h",
                     ]
-                )
+                ),
             )
-            assert has_validation, (
-                f"{script_name} should validate command line arguments"
-            )
+            assert (
+                has_validation
+            ), f"{script_name} should validate command line arguments"
 
     def test_scripts_use_quoted_variables(self, scripts_dir):
         """Test that scripts properly quote variables to prevent injection.
@@ -294,9 +303,9 @@ class TestScriptCompatibility:
         for script in shell_scripts:
             with open(script, "r") as f:
                 first_line = f.readline().strip()
-            assert first_line == "#!/bin/bash", (
-                f"{script.name} should use '#!/bin/bash' shebang, found: {first_line}"
-            )
+            assert (
+                first_line == "#!/bin/bash"
+            ), f"{script.name} should use '#!/bin/bash' shebang, found: {first_line}"
 
     def test_scripts_avoid_bashisms_in_sh_context(self, scripts_dir):
         """Test that scripts avoid bash-specific features where inappropriate.

@@ -41,7 +41,7 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
         # Pattern for yamllint parsable format: "filename:line:column: [level]
         # message (rule)"
         pattern: re.Pattern[str] = re.compile(
-            r"^([^:]+):(\d+):(\d+):\s*\[(error|warning)\]\s+(.+?)(?:\s+\(([^)]+)\))?$"
+            r"^([^:]+):(\d+):(\d+):\s*\[(error|warning)\]\s+(.+?)(?:\s+\(([^)]+)\))?$",
         )
 
         match: re.Match[str] | None = pattern.match(line)
@@ -62,7 +62,7 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
                     level=level,
                     rule=rule,
                     message=message.strip(),
-                )
+                ),
             )
 
     return issues

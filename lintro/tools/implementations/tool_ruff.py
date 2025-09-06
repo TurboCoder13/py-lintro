@@ -252,12 +252,25 @@ class RuffTool(BaseTool):
             cmd.append("--isolated")
 
         # Add configuration options
-        if self.options.get("select"):
-            cmd.extend(["--select", ",".join(self.options["select"])])
-        if self.options.get("ignore"):
-            cmd.extend(["--ignore", ",".join(self.options["ignore"])])
-        if self.options.get("extend_select"):
-            cmd.extend(["--extend-select", ",".join(self.options["extend_select"])])
+        selected_rules = list(self.options.get("select") or [])
+        ignored_rules = set(self.options.get("ignore") or [])
+        extend_selected_rules = list(self.options.get("extend_select") or [])
+
+        # Ensure E501 is included when selecting E-family unless explicitly ignored
+        if (
+            "E" in selected_rules
+            and "E501" not in ignored_rules
+            and "E501" not in selected_rules
+            and "E501" not in extend_selected_rules
+        ):
+            extend_selected_rules.append("E501")
+
+        if selected_rules:
+            cmd.extend(["--select", ",".join(selected_rules)])
+        if ignored_rules:
+            cmd.extend(["--ignore", ",".join(sorted(ignored_rules))])
+        if extend_selected_rules:
+            cmd.extend(["--extend-select", ",".join(extend_selected_rules)])
         if self.options.get("extend_ignore"):
             cmd.extend(["--extend-ignore", ",".join(self.options["extend_ignore"])])
         if self.options.get("line_length"):
@@ -366,7 +379,9 @@ class RuffTool(BaseTool):
         success_lint: bool
         output_lint: str
         success_lint, output_lint = self._run_subprocess(
-            cmd=cmd, timeout=timeout, cwd=cwd
+            cmd=cmd,
+            timeout=timeout,
+            cwd=cwd,
         )
         lint_issues = parse_ruff_output(output=output_lint)
         lint_issues_count: int = len(lint_issues)
@@ -475,20 +490,23 @@ class RuffTool(BaseTool):
         initial_count: int = len(initial_issues)
 
         # Also check formatting issues before fixing
-        format_cmd_check: list[str] = self._build_format_command(
-            files=python_files,
-            check_only=True,
-        )
-        success_format_check: bool
-        output_format_check: str
-        success_format_check, output_format_check = self._run_subprocess(
-            cmd=format_cmd_check,
-            timeout=timeout,
-        )
-        format_files = parse_ruff_format_check_output(output=output_format_check)
-        initial_format_count: int = len(format_files)
+        initial_format_count: int = 0
+        format_files: list[str] = []
+        if self.options.get("format", False):
+            format_cmd_check: list[str] = self._build_format_command(
+                files=python_files,
+                check_only=True,
+            )
+            success_format_check: bool
+            output_format_check: str
+            success_format_check, output_format_check = self._run_subprocess(
+                cmd=format_cmd_check,
+                timeout=timeout,
+            )
+            format_files = parse_ruff_format_check_output(output=output_format_check)
+            initial_format_count = len(format_files)
 
-        # Total initial issues (linting + formatting)
+        # Track initial totals separately for accurate fixed/remaining math
         total_initial_count: int = initial_count + initial_format_count
 
         # Optionally run ruff check --fix (lint fixes)
@@ -502,9 +520,12 @@ class RuffTool(BaseTool):
             remaining_issues = parse_ruff_output(output=output)
             remaining_count = len(remaining_issues)
 
-        # Calculate how many issues were actually fixed
-        # Add formatting fixes if formatter ran
-        fixed_count: int = total_initial_count - remaining_count
+        # Compute fixed lint issues by diffing initial vs remaining (internal only)
+        # Not used for display; summary counts reflect totals.
+
+        # Calculate how many lint issues were actually fixed
+        fixed_lint_count: int = max(0, initial_count - remaining_count)
+        fixed_count: int = fixed_lint_count
 
         # Do not print raw initial counts; keep output concise and unified
 
@@ -576,9 +597,9 @@ class RuffTool(BaseTool):
                 cmd=format_cmd,
                 timeout=timeout,
             )
-            # If we detected formatting issues initially, consider them fixed now
+            # Formatting fixes are counted separately from lint fixes
             if initial_format_count > 0:
-                fixed_count += initial_format_count
+                fixed_count = fixed_lint_count + initial_format_count
             # Suppress raw formatter output for consistency; rely on unified summary
             # Only consider formatting failure if there are actual formatting
             # issues. Don't fail the overall operation just because formatting
@@ -611,6 +632,7 @@ class RuffTool(BaseTool):
             output=final_output,
             # For fix operations, issues_count represents remaining for summaries
             issues_count=remaining_count,
+            # Display remaining issues only to align tables with summary counts
             issues=remaining_issues,
             initial_issues_count=total_initial_count,
             fixed_issues_count=fixed_count,

@@ -83,7 +83,8 @@ def _validate_git_args(arguments: list[str]) -> None:
             return True
         # vX.Y.Z..HEAD or <sha>..HEAD
         if re.fullmatch(
-            rf"({TAG_RE.pattern[1:-1]}|[0-9a-fA-F]{{7,40}})\.\.HEAD", value
+            rf"({TAG_RE.pattern[1:-1]}|[0-9a-fA-F]{{7,40}})\.\.HEAD",
+            value,
         ):
             return True
         return False
@@ -154,7 +155,10 @@ def run_git(*args: str) -> str:
     # Validate arguments against allowlist before executing
     _validate_git_args([*args])
     result = subprocess.run(  # nosec
-        [git_path, *args], capture_output=True, text=True, check=False
+        [git_path, *args],
+        capture_output=True,
+        text=True,
+        check=False,
     )
     return (result.stdout or "").strip()
 
@@ -203,17 +207,20 @@ def detect_commit_types(base_ref: str) -> tuple[bool, bool, bool]:
     bodies = run_git("log", log_range, "--pretty=%B")
     has_breaking = bool(
         re.search(r"^[a-z][^:!]*!:", subjects, flags=re.MULTILINE)
-        or re.search(r"^BREAKING CHANGE:", bodies, flags=re.MULTILINE)
+        or re.search(r"^BREAKING CHANGE:", bodies, flags=re.MULTILINE),
     )
     has_feat = bool(re.search(r"^feat(\(|:)|^feat!", subjects, flags=re.MULTILINE))
     has_fix_or_perf = bool(
-        re.search(r"^(fix|perf)(\(|:)|^(fix|perf)!", subjects, flags=re.MULTILINE)
+        re.search(r"^(fix|perf)(\(|:)|^(fix|perf)!", subjects, flags=re.MULTILINE),
     )
     return has_breaking, has_feat, has_fix_or_perf
 
 
 def compute_next_version(
-    base_version: str, breaking: bool, feat: bool, fix: bool
+    base_version: str,
+    breaking: bool,
+    feat: bool,
+    fix: bool,
 ) -> str:
     major, minor, patch = parse_semver(base_version)
     if breaking:
@@ -253,11 +260,11 @@ def compute() -> ComputeResult:
     if not last_tag:
         raise RuntimeError(
             "No v*-prefixed release tag found. Tag the last release (e.g., v0.4.0) "
-            "before computing the next version."
+            "before computing the next version.",
         )
     if not TAG_RE.match(last_tag):
         raise RuntimeError(
-            f"Baseline tag '{last_tag}' is not a valid v*-prefixed semantic version."
+            f"Baseline tag '{last_tag}' is not a valid v*-prefixed semantic version.",
         )
     base_ref = last_tag
     base_version = last_tag.lstrip("v")
@@ -314,7 +321,7 @@ def compute() -> ComputeResult:
                 "Major bump detected but not permitted. Add the '"
                 + allow_label
                 + "' label to the PR to allow a major release, or set MAX_BUMP=minor "
-                "to clamp majors to minor."
+                "to clamp majors to minor.",
             )
 
     next_version = clamp_to_minor(base_version, next_version, os.getenv("MAX_BUMP"))
@@ -330,7 +337,7 @@ def compute() -> ComputeResult:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Compute next semantic version and write to GITHUB_OUTPUT"
+        description="Compute next semantic version and write to GITHUB_OUTPUT",
     )
     parser.add_argument(
         "--print-only",
@@ -353,7 +360,7 @@ def main() -> None:
         "Detected: "
         f"breaking={result.has_breaking} "
         f"feat={result.has_feat} "
-        f"fix/perf={result.has_fix_or_perf}"
+        f"fix/perf={result.has_fix_or_perf}",
     )
 
     if args.print_only or not os.getenv("GITHUB_OUTPUT"):

@@ -23,7 +23,9 @@ def actionlint_available() -> bool:
     """
     try:
         proc = subprocess.run(
-            ["actionlint", "-version"], capture_output=True, text=True
+            ["actionlint", "-version"],
+            capture_output=True,
+            text=True,
         )
         return proc.returncode == 0
     except FileNotFoundError:

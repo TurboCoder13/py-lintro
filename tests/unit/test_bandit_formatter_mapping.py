@@ -32,7 +32,10 @@ def test_format_tool_output_bandit_across_styles() -> None:
     styles: list[str] = ["grid", "plain", "markdown", "html", "json", "csv"]
     for style in styles:
         rendered = format_tool_output(
-            tool_name="bandit", output="", output_format=style, issues=issues
+            tool_name="bandit",
+            output="",
+            output_format=style,
+            issues=issues,
         )
         assert_that(isinstance(rendered, str)).is_true()
         assert_that(rendered.strip()).is_not_equal_to("")

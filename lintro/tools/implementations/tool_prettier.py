@@ -233,7 +233,7 @@ class PrettierTool(BaseTool):
 
         if remaining_count > 0:
             output_lines.append(
-                f"Found {remaining_count} issue(s) that cannot be auto-fixed"
+                f"Found {remaining_count} issue(s) that cannot be auto-fixed",
             )
             for issue in remaining_issues[:5]:
                 output_lines.append(f"  {issue.file} - {issue.message}")

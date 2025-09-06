@@ -21,7 +21,7 @@ from lintro.enums.yamllint_format import YamllintFormat, normalize_yamllint_form
 def test_output_format_normalization():
     assert_that(normalize_output_format("grid")).is_equal_to(OutputFormat.GRID)
     assert_that(normalize_output_format(OutputFormat.JSON)).is_equal_to(
-        OutputFormat.JSON
+        OutputFormat.JSON,
     )
     assert_that(normalize_output_format("unknown")).is_equal_to(OutputFormat.GRID)
 
@@ -39,28 +39,28 @@ def test_tool_name_normalization():
 
 def test_yamllint_format_normalization():
     assert_that(normalize_yamllint_format("parsable")).is_equal_to(
-        YamllintFormat.PARSABLE
+        YamllintFormat.PARSABLE,
     )
     assert_that(normalize_yamllint_format(YamllintFormat.GITHUB)).is_equal_to(
-        YamllintFormat.GITHUB
+        YamllintFormat.GITHUB,
     )
 
 
 def test_hadolint_normalization():
     assert_that(normalize_hadolint_format("json")).is_equal_to(HadolintFormat.JSON)
     assert_that(normalize_hadolint_threshold("warning")).is_equal_to(
-        HadolintFailureThreshold.WARNING
+        HadolintFailureThreshold.WARNING,
     )
     assert_that(normalize_hadolint_format("bogus")).is_equal_to(HadolintFormat.TTY)
     assert_that(normalize_hadolint_threshold("bogus")).is_equal_to(
-        HadolintFailureThreshold.INFO
+        HadolintFailureThreshold.INFO,
     )
 
 
 def test_darglint_strictness_normalization():
     assert_that(normalize_darglint_strictness("full")).is_equal_to(
-        DarglintStrictness.FULL
+        DarglintStrictness.FULL,
     )
     assert_that(normalize_darglint_strictness(DarglintStrictness.SHORT)).is_equal_to(
-        DarglintStrictness.SHORT
+        DarglintStrictness.SHORT,
     )

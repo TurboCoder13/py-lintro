@@ -19,6 +19,10 @@ from lintro.formatters.tools.bandit_formatter import (
     BanditTableDescriptor,
     format_bandit_issues,
 )
+from lintro.formatters.tools.black_formatter import (
+    BlackTableDescriptor,
+    format_black_issues,
+)
 from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
@@ -40,6 +44,8 @@ from lintro.formatters.tools.yamllint_formatter import (
     format_yamllint_issues,
 )
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
+from lintro.parsers.black.black_issue import BlackIssue
+from lintro.parsers.black.black_parser import parse_black_output
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
@@ -52,6 +58,7 @@ from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
     "darglint": (DarglintTableDescriptor(), format_darglint_issues),
     "hadolint": (HadolintTableDescriptor(), format_hadolint_issues),
+    "black": (BlackTableDescriptor(), format_black_issues),
     "prettier": (PrettierTableDescriptor(), format_prettier_issues),
     "ruff": (RuffTableDescriptor(), format_ruff_issues),
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
@@ -301,6 +308,8 @@ def format_tool_output(
                 )
             if tool == "prettier":
                 return lambda i: isinstance(i, PrettierIssue) or True
+            if tool == "black":
+                return lambda i: isinstance(i, BlackIssue) or True
             return None
 
         is_fixable = _is_fixable_predicate(tool_name)
@@ -354,6 +363,8 @@ def format_tool_output(
         parsed_issues = parse_ruff_output(output=output)
     elif tool_name == "prettier":
         parsed_issues = parse_prettier_output(output=output)
+    elif tool_name == "black":
+        parsed_issues = parse_black_output(output=output)
     elif tool_name == "darglint":
         parsed_issues = parse_darglint_output(output=output)
     elif tool_name == "hadolint":
@@ -364,7 +375,7 @@ def format_tool_output(
         # Bandit emits JSON; try parsing when raw output is provided
         try:
             parsed_issues = parse_bandit_output(
-                bandit_data=__import__("json").loads(output)
+                bandit_data=__import__("json").loads(output),
             )
         except Exception:
             parsed_issues = []

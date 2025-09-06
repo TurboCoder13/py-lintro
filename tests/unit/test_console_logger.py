@@ -36,7 +36,11 @@ def test_create_logger_and_basic_methods(tmp_path: Path, capsys: pytest.CaptureF
 
     class Result:
         def __init__(
-            self, name: str, issues_count: int, success: bool, output: str = ""
+            self,
+            name: str,
+            issues_count: int,
+            success: bool,
+            output: str = "",
         ):
             self.name = name
             self.issues_count = issues_count
@@ -44,7 +48,8 @@ def test_create_logger_and_basic_methods(tmp_path: Path, capsys: pytest.CaptureF
             self.output = output
 
     logger.print_execution_summary(
-        action="check", tool_results=[Result("ruff", 1, False)]
+        action="check",
+        tool_results=[Result("ruff", 1, False)],
     )
 
     class FmtResult:
@@ -75,13 +80,18 @@ def test_create_logger_and_basic_methods(tmp_path: Path, capsys: pytest.CaptureF
 
 
 def test_summary_marks_fail_on_tool_failure(
-    tmp_path: Path, capsys: pytest.CaptureFixture
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture,
 ) -> None:
     logger = create_logger(run_dir=tmp_path, verbose=False, raw_output=False)
 
     class Result:
         def __init__(
-            self, name: str, issues_count: int, success: bool, output: str = ""
+            self,
+            name: str,
+            issues_count: int,
+            success: bool,
+            output: str = "",
         ):
             self.name = name
             self.issues_count = issues_count

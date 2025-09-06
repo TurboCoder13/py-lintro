@@ -17,7 +17,10 @@ def _fake_completed(stdout: str = "") -> subprocess.CompletedProcess[str]:
         subprocess.CompletedProcess: Fake subprocess.CompletedProcess with stdout.
     """
     return subprocess.CompletedProcess(
-        args=["git"], returncode=0, stdout=stdout, stderr=""
+        args=["git"],
+        returncode=0,
+        stdout=stdout,
+        stderr="",
     )
 
 
@@ -44,7 +47,9 @@ def test_run_git_describe_allowed(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")
     monkeypatch.setattr(
-        mod.subprocess, "run", lambda *_, **__: _fake_completed("v1.2.3\n")
+        mod.subprocess,
+        "run",
+        lambda *_, **__: _fake_completed("v1.2.3\n"),
     )
 
     out = mod.run_git("describe", "--tags", "--abbrev=0", "--match", "v*")
@@ -61,7 +66,9 @@ def test_run_git_rev_parse_head_allowed(monkeypatch: pytest.MonkeyPatch) -> None
 
     monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")
     monkeypatch.setattr(
-        mod.subprocess, "run", lambda *_, **__: _fake_completed("abcd123\n")
+        mod.subprocess,
+        "run",
+        lambda *_, **__: _fake_completed("abcd123\n"),
     )
 
     out = mod.run_git("rev-parse", "HEAD")
@@ -77,7 +84,8 @@ def test_run_git_rev_parse_head_allowed(monkeypatch: pytest.MonkeyPatch) -> None
     ],
 )
 def test_run_git_log_allowed(
-    monkeypatch: pytest.MonkeyPatch, args: tuple[str, ...]
+    monkeypatch: pytest.MonkeyPatch,
+    args: tuple[str, ...],
 ) -> None:
     """run_git should allow the specific log forms used by the module.
 
@@ -104,7 +112,8 @@ def test_run_git_log_allowed(
     ],
 )
 def test_run_git_rejects_unsupported_or_unsafe(
-    monkeypatch: pytest.MonkeyPatch, args: tuple[str, ...]
+    monkeypatch: pytest.MonkeyPatch,
+    args: tuple[str, ...],
 ) -> None:
     """run_git should reject commands/args outside the strict allowlist.
 
@@ -118,7 +127,8 @@ def test_run_git_rejects_unsupported_or_unsafe(
 
     # subprocess.run should not be called; keep a guard that would fail if it is
     def _should_not_run(
-        *_a: Any, **_k: Any
+        *_a: Any,
+        **_k: Any,
     ) -> subprocess.CompletedProcess[str]:  # pragma: no cover
         raise AssertionError("subprocess.run must not be invoked for rejected args")
 

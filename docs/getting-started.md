@@ -120,11 +120,18 @@ lintro check src/ tests/ --tools ruff,darglint
 
 # Format Python code
 lintro format src/ --tools ruff
+
+# Run Black as a post-check (configured via pyproject)
+lintro check src/
+
+# Override Black on the fly
+lintro check src/ --tool-options "black:line_length=100,black:target_version=py313"
 ```
 
 **Tools:**
 
 - **Ruff** - Fast Python linter and formatter
+- **Black** - Python formatter (runs as a post-check by default)
 - **Darglint** - Docstring validation
 
 ### JavaScript/TypeScript Projects

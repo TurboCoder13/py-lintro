@@ -10,7 +10,11 @@ from lintro.utils.formatting import normalize_ascii_block, normalize_ascii_file_
 def test_normalize_ascii_block_center_and_alignments():
     src = ["XX", "XXXX", "X"]
     out = normalize_ascii_block(
-        src, width=10, height=5, align="center", valign="middle"
+        src,
+        width=10,
+        height=5,
+        align="center",
+        valign="middle",
     )
     assert_that(len(out)).is_equal_to(5)
     assert_that(all((len(line) == 10 for line in out))).is_true()

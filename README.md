@@ -47,6 +47,7 @@ Lintro is a unified command-line interface that brings together multiple code qu
 | [![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint)     | 🐍 Python           | -        |
 | [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)                  | 🐳 Dockerfile       | -        |
 | [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                              | 🟨 JS/TS · 🧾 JSON  | ✅       |
+| [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                              | 🐍 Python           | ✅       |
 | [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                         | 🐍 Python           | ✅       |
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                 | 🧾 YAML             | -        |
 
@@ -142,11 +143,12 @@ lintro check --exclude "migrations,node_modules,dist"
 # Tool-specific options use key=value (lists with |)
 lintro check --tool-options "ruff:line_length=88,prettier:print_width=80"
 
-# Ruff fix configuration (fmt):
-# By default, fmt applies both lint fixes and formatting for Ruff.
-# Disable either stage as needed:
-lintro format --tool-options ruff:lint_fix=False     # format only
-lintro format --tool-options ruff:format=False       # lint fixes only
+# Ruff + Black cooperation:
+# Lintro prefers Ruff for linting and Black for formatting.
+# When Black is configured as a post-check, Lintro disables Ruff formatting by
+# default to avoid double-formatting. Override if needed:
+lintro format --tool-options ruff:format=True        # force Ruff to format
+lintro check  --tool-options ruff:format_check=True  # force Ruff format check
 ```
 
 ### CI/CD Integration

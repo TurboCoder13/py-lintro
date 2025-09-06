@@ -37,3 +37,19 @@ def load_lintro_tool_config(tool_name: str) -> dict[str, Any]:
     if isinstance(section, dict):
         return section
     return {}
+
+
+def load_post_checks_config() -> dict[str, Any]:
+    """Load post-checks configuration from pyproject.
+
+    Returns:
+        Dict with keys like:
+            - enabled: bool
+            - tools: list[str]
+            - enforce_failure: bool
+    """
+    cfg = _load_pyproject()
+    section = cfg.get("post_checks", {})
+    if isinstance(section, dict):
+        return section
+    return {}
