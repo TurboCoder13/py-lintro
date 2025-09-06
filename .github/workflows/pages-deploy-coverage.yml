@@ -30,7 +30,7 @@ jobs:
           github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@0d0c3cfb3d6fff511d9a04dfdde15ee630084303
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@b283d861826a26273da40cc89c3c4b643d465111
       - name: Download coverage artifact
         uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
         with:
@@ -49,6 +49,6 @@ jobs:
         run: ./scripts/ci/pages-deploy.sh --badge-path coverage-badge/coverage-badge.svg
       - name: Deploy coverage to Pages
         id: deployment
-        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@0d0c3cfb3d6fff511d9a04dfdde15ee630084303
+        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@b283d861826a26273da40cc89c3c4b643d465111
         with:
           path: _site

@@ -55,7 +55,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@0d0c3cfb3d6fff511d9a04dfdde15ee630084303
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@b283d861826a26273da40cc89c3c4b643d465111
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
@@ -92,7 +92,7 @@ jobs:
         if: always()
         continue-on-error: true
         # Pin Codecov action to commit SHA containing pinned github-script usage
-        uses: codecov/codecov-action@3cb13a12348ef4ffcf9783ac0f74954f92113e33
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7
         with:
           files: coverage.xml
           flags: python-3.13
@@ -128,10 +128,10 @@ jobs:
     if: always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@0d0c3cfb3d6fff511d9a04dfdde15ee630084303
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@b283d861826a26273da40cc89c3c4b643d465111
         # Default allowlist suffices for PR comment step
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@0d0c3cfb3d6fff511d9a04dfdde15ee630084303
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@b283d861826a26273da40cc89c3c4b643d465111
       - name: Delete Previous Coverage PR Comments
         if: always()
         env:
@@ -151,7 +151,7 @@ jobs:
           ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@0d0c3cfb3d6fff511d9a04dfdde15ee630084303
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@b283d861826a26273da40cc89c3c4b643d465111
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'

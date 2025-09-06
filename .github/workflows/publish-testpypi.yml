@@ -6,11 +6,11 @@ name: Publish to TestPyPI
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@0d0c3cfb3d6fff511d9a04dfdde15ee630084303
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@b283d861826a26273da40cc89c3c4b643d465111
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@0d0c3cfb3d6fff511d9a04dfdde15ee630084303
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@b283d861826a26273da40cc89c3c4b643d465111
 
   publish:
     name: Upload to TestPyPI
@@ -34,7 +34,7 @@ jobs:
           name: dist
           path: dist/
       - name: Publish to TestPyPI (Trusted Publishing)
-        uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc # v1.12.4
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:
           repository-url: https://test.pypi.org/legacy/
           verbose: true
