@@ -19,6 +19,8 @@ Lintro is a unified command-line interface that brings together multiple code qu
 [![CodeQL](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/TurboCoder13/py-lintro)
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11142/badge)](https://www.bestpractices.dev/projects/11142)
+
 ### Why Lintro?
 
 - **🚀 Unified Interface**: One command to run all your linting and formatting tools
