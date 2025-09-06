@@ -285,14 +285,25 @@ class BaseTool(ABC):
                 return ["uv", "run", tool_name]
             return [tool_name]
 
-        # Python-based tools where running inside env avoids PATH shim issues
-        if tool_name in python_tools_prefer_uv:
-            if shutil.which("uvx"):
-                return ["uvx", tool_name]
-            if shutil.which("uv"):
-                return ["uv", "run", tool_name]
+        # Black: prefer system binary first, then project env via uv run,
+        # and finally uvx as a last resort.
+        if tool_name == "black":
             if shutil.which(tool_name):
                 return [tool_name]
+            if shutil.which("uv"):
+                return ["uv", "run", tool_name]
+            if shutil.which("uvx"):
+                return ["uvx", tool_name]
+            return [tool_name]
+
+        # Python-based tools where running inside env avoids PATH shim issues
+        if tool_name in python_tools_prefer_uv:
+            if shutil.which(tool_name):
+                return [tool_name]
+            if shutil.which("uv"):
+                return ["uv", "run", tool_name]
+            if shutil.which("uvx"):
+                return ["uvx", tool_name]
             return [tool_name]
 
         # Default: prefer direct system executable (node/binary tools like
