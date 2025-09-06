@@ -15,13 +15,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ea48a6ea8f75bdabac0a9d8fc32f9e122a0ee88e
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@8446c8ef13d73042bff9a7686ba7fe9a593fb4b4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate PR title follows Conventional Commits
         id: semantic
-        uses: TurboCoder13/py-lintro/.github/actions/semantic-pr-title-check@ea48a6ea8f75bdabac0a9d8fc32f9e122a0ee88e
+        uses: TurboCoder13/py-lintro/.github/actions/semantic-pr-title-check@8446c8ef13d73042bff9a7686ba7fe9a593fb4b4
         with:
           types: |
             chore
