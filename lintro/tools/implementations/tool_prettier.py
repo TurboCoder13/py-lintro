@@ -142,11 +142,14 @@ class PrettierTool(BaseTool):
         # so the unified logger prints a single, consistent success line.
         if success:
             output = None
-        return Tool.to_result(
+
+        # Return full ToolResult so table rendering can use parsed issues
+        return ToolResult(
             name=self.name,
             success=success,
             output=output,
             issues_count=issues_count,
+            issues=issues,
         )
 
     def fix(
@@ -264,6 +267,9 @@ class PrettierTool(BaseTool):
             output=final_output,
             # For fix operations, issues_count represents remaining for summaries
             issues_count=remaining_count,
+            # Provide issues so formatters can render tables. Use initial issues
+            # (auto-fixable set) for display; fall back to remaining when none.
+            issues=(initial_issues if initial_issues else remaining_issues),
             initial_issues_count=initial_count,
             fixed_issues_count=fixed_count,
             remaining_issues_count=remaining_count,

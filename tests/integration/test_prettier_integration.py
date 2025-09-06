@@ -8,6 +8,7 @@ from loguru import logger
 
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.tools.implementations.tool_prettier import PrettierTool
+from lintro.utils.tool_utils import format_tool_output
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
@@ -167,3 +168,34 @@ def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file):
         f"Issue count mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
         f"CLI Output:\n{direct_output}\nLintro Output:\n{result.output}"
     )
+
+
+def test_prettier_fix_sets_issues_for_table(temp_prettier_file):
+    """PrettierTool.fix should populate issues for table rendering.
+
+    Args:
+        temp_prettier_file: Pytest fixture providing a temporary file with violations.
+    """
+    tool = PrettierTool()
+    tool.set_options()
+
+    # Ensure there are initial issues
+    pre_result = tool.check([str(temp_prettier_file)])
+    assert pre_result.issues_count > 0
+
+    # Run fix and assert issues are provided for table formatting
+    fix_result = tool.fix([str(temp_prettier_file)])
+    assert fix_result.success is True
+    assert fix_result.remaining_issues_count == 0
+    assert fix_result.issues is not None
+    assert len(fix_result.issues) == pre_result.issues_count
+
+    # Verify that formatted output renders a table section for auto-fixables
+    formatted = format_tool_output(
+        tool_name="prettier",
+        output=fix_result.output or "",
+        group_by="auto",
+        output_format="grid",
+        issues=fix_result.issues,
+    )
+    assert "Auto-fixable issues" in formatted or formatted
