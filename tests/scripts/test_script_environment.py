@@ -263,6 +263,37 @@ class TestScriptErrorHandling:
         assert_that(plan).contains(" merge --alias project")
         assert_that(plan).contains(" push ")
 
+    def test_sbom_generate_dry_run_docker_invocation_no_duplicate_subcommand(
+        self,
+        scripts_dir,
+        tmp_path,
+    ):
+        """Dry-run with --use-docker should not append duplicate 'bomctl'.
+
+        Ensures the container run command uses the image entrypoint directly
+        and does not add an extra 'bomctl' token after the image reference.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+            tmp_path: Temporary directory path for test artifacts.
+        """
+        # Create a dummy import file to avoid network fetches
+        sbom_file = tmp_path / "dummy.cdx.json"
+        sbom_file.write_text("{}")
+
+        script = Path("scripts/ci/sbom-generate.sh").resolve()
+        wrapper = tmp_path / "run_sbom_docker.sh"
+        wrapper.write_text(
+            f"#!/usr/bin/env bash\nset -euo pipefail\ncd '{scripts_dir.parent}'\n"
+            f"'{script}' --dry-run --use-docker --skip-fetch --import '{sbom_file}'\n",
+        )
+        wrapper.chmod(0o755)
+        result = subprocess.run([str(wrapper)], capture_output=True, text=True)
+        assert_that(result.returncode).is_equal_to(0)
+        plan = result.stdout + result.stderr
+        # Ensure we do not have 'bomctl/bomctl bomctl' pattern in docker run
+        assert_that(plan).does_not_contain("bomctl/bomctl bomctl ")
+
 
 class TestScriptSecurity:
     """Test security aspects of shell scripts."""

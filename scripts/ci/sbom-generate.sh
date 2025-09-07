@@ -179,13 +179,23 @@ resolve_bomctl_arr() {
     if [ -n "${XDG_CACHE_HOME:-}" ]; then
       cache_flags=("-e" "XDG_CACHE_HOME=${XDG_CACHE_HOME}" "-v" "${XDG_CACHE_HOME}:${XDG_CACHE_HOME}")
     fi
+    # Pass through GitHub tokens if present to enable authenticated fetches
+    # Use "-e VAR" form to avoid leaking values in logs/dry-run output
+    local token_env_flags=()
+    if [ -n "${GH_TOKEN:-}" ]; then
+      token_env_flags+=("-e" "GH_TOKEN")
+    fi
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+      token_env_flags+=("-e" "GITHUB_TOKEN")
+    fi
     BOMCTL_ARR=(
       "docker" "run" "--rm"
       ${network_flags[@]:-}
       ${user_flags[@]:-}
       ${cache_flags[@]:-}
+      ${token_env_flags[@]:-}
       "-v" "$PWD:/work" "-w" "/work"
-      "${BOMCTL_IMAGE}" "bomctl"
+      "${BOMCTL_IMAGE}"
     )
     return 0
   fi
