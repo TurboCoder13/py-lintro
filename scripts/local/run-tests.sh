@@ -82,6 +82,21 @@ discover_tests() {
     echo -e "${GREEN}All tests in the tests directory will be run.${NC}"
 }
 
+# Ensure required Python CLI tools are available in the active uv environment
+ensure_python_cli_tools() {
+    echo -e "${BLUE}Ensuring required Python CLI tools are available...${NC}"
+    # Install bandit if missing or broken
+    if ! uv run python -c "import bandit" >/dev/null 2>&1; then
+        echo -e "${YELLOW}Installing bandit for integration tests...${NC}"
+        uv pip install bandit==1.8.6 >/dev/null 2>&1 || true
+    fi
+    # Install black if missing
+    if ! uv run python -c "import black" >/dev/null 2>&1; then
+        echo -e "${YELLOW}Installing black for formatting policy tests...${NC}"
+        uv pip install black >/dev/null 2>&1 || true
+    fi
+}
+
 # Function to run tests with coverage
 run_tests() {
     echo -e "${BLUE}Running all tests in the tests directory...${NC}"
@@ -176,6 +191,8 @@ main() {
     
     # Setup Python environment
     setup_python_env
+    # Ensure Python CLI tools used by integration tests are present
+    ensure_python_cli_tools
     
     # Discover available tools and tests
     discover_tests
