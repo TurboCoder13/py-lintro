@@ -1,0 +1,57 @@
+---
+name: Reusable SBOM Job
+
+'on':
+  workflow_call:
+    inputs:
+      bomctl-image:
+        description: Digest-pinned bomctl image
+        required: false
+        type: string
+    outputs:
+      artifact-name:
+        description: Name of uploaded SBOM artifact
+        value: sbom-artifacts
+
+jobs:
+  sbom:
+    name: Generate and verify SBOM
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    env:
+      BOMCTL_IMAGE: ${{ inputs.bomctl-image }}
+      XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
+    steps:
+      - name: Harden and Checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f73ba3032c8e1f25f72c033f8a8b590eec23257a
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Environment setup
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f73ba3032c8e1f25f72c033f8a8b590eec23257a
+        with:
+          python-version: '3.13'
+      - name: Restore bomctl cache
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4
+        with:
+          path: ${{ env.XDG_CACHE_HOME }}
+          key: bomctl-cache-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}-${{ github.sha }}
+          restore-keys: |
+            bomctl-cache-${{ runner.os }}-
+            bomctl-cache-
+      - name: Generate SBOMs (CycloneDX 1.6 JSON & SPDX 2.3)
+        run: bash scripts/ci/sbom-generate.sh --use-docker --format cyclonedx-1.6 --format spdx-2.3 --name "py-lintro-sbom" --alias project
+      - name: Rename SBOM artifacts with tag/sha for traceability
+        run: bash scripts/ci/sbom-rename-artifacts.sh dist/sbom
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sbom-artifacts
+          path: dist/sbom/*
+          if-no-files-found: error
+      - name: Verify bomctl image with cosign (keyless)
+        run: bash scripts/ci/sbom-verify-container.sh
+      - name: Attest SBOM artifacts with keyless cosign (optional)
+        run: bash scripts/ci/sbom-attest-artifacts.sh dist/sbom
