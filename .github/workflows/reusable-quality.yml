@@ -23,12 +23,12 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@936f47b6f6ff498b332fe29128ef97a922287cdd
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@936f47b6f6ff498b332fe29128ef97a922287cdd
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           python-version: '3.13'
 

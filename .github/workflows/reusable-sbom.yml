@@ -31,16 +31,16 @@ jobs:
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f73ba3032c8e1f25f72c033f8a8b590eec23257a
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f73ba3032c8e1f25f72c033f8a8b590eec23257a
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           python-version: '3.13'
       - name: Restore bomctl cache
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
         with:
           path: ${{ env.XDG_CACHE_HOME }}
           key: bomctl-cache-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}-${{ github.sha }}
