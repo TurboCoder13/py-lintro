@@ -53,10 +53,7 @@ jobs:
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
         with:
           path: ${{ env.XDG_CACHE_HOME }}
-          key: bomctl-cache-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}-${{ github.sha }}
-          restore-keys: |
-            bomctl-cache-${{ runner.os }}-
-            bomctl-cache-
+          key: bomctl-cache-${{ runner.os }}-${{ github.sha }}
       - name: Generate SBOMs (CycloneDX 1.6 JSON & SPDX 2.3)
         run: bash scripts/ci/sbom-generate.sh --use-docker --format cyclonedx-1.6 --format spdx-2.3 --name "py-lintro-sbom" --alias project
       - name: Rename SBOM artifacts with tag/sha for traceability
