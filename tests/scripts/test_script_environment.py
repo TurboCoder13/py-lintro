@@ -189,6 +189,10 @@ class TestScriptErrorHandling:
         """sbom-generate.sh --dry-run should print a plan and exit 0.
 
         Runs with --skip-fetch to avoid network access during tests.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+            tmp_path: Path to the temporary directory.
         """
         script = Path("scripts/ci/sbom-generate.sh").resolve()
         wrapper = tmp_path / "run_sbom.sh"
@@ -206,6 +210,10 @@ class TestScriptErrorHandling:
         """Dry-run should show import, merge, and push steps when multiple imports.
 
         Uses two placeholder local files and --skip-fetch to avoid network.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+            tmp_path: Path to the temporary directory.
         """
         # Create dummy files to pass as --import paths
         file1 = tmp_path / "a.cdx.json"
@@ -216,7 +224,9 @@ class TestScriptErrorHandling:
         wrapper = tmp_path / "run_sbom_merge.sh"
         wrapper.write_text(
             f"#!/usr/bin/env bash\nset -euo pipefail\ncd '{scripts_dir.parent}'\n"
-            f"'{script}' --dry-run --skip-fetch --import '{file1}' --import '{file2}'\n",
+            f"'{script}' --dry-run --skip-fetch "
+            f"--import '{file1}' "
+            f"--import '{file2}'\n",
         )
         wrapper.chmod(0o755)
         result = subprocess.run([str(wrapper)], capture_output=True, text=True)
@@ -234,6 +244,10 @@ class TestScriptErrorHandling:
         """Dry-run with fetch-only should show merge to alias and push of alias.
 
         Forces repo URL via --repo-url to avoid relying on git remotes.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+            tmp_path: Path to the temporary directory.
         """
         script = Path("scripts/ci/sbom-generate.sh").resolve()
         wrapper = tmp_path / "run_sbom_fetch.sh"
