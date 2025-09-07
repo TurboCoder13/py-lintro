@@ -171,6 +171,22 @@ class TestScriptHelp:
         assert_that(result.stdout).contains("Usage:")
         assert_that(result.stdout).contains("Codecov")
 
+    def test_sbom_generate_help(self, scripts_dir):
+        """sbom-generate.sh should provide help and exit 0.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+        """
+        script = scripts_dir / "ci" / "sbom-generate.sh"
+        result = subprocess.run(
+            [str(script), "--help"],
+            capture_output=True,
+            text=True,
+            cwd=scripts_dir.parent,
+        )
+        assert_that(result.returncode).is_equal_to(0)
+        assert_that(result.stdout).contains("Usage:")
+
 
 class TestScriptFunctionality:
     """Test basic functionality of shell scripts."""

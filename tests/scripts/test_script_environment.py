@@ -185,6 +185,84 @@ class TestScriptErrorHandling:
             assert_that(result.stdout).contains("percentage=")
             assert_that(result.stdout).contains("percentage=85.0")
 
+    def test_sbom_generate_dry_run_prints_plan(self, scripts_dir, tmp_path):
+        """sbom-generate.sh --dry-run should print a plan and exit 0.
+
+        Runs with --skip-fetch to avoid network access during tests.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+            tmp_path: Path to the temporary directory.
+        """
+        script = Path("scripts/ci/sbom-generate.sh").resolve()
+        wrapper = tmp_path / "run_sbom.sh"
+        wrapper.write_text(
+            f"#!/usr/bin/env bash\nset -euo pipefail\ncd '{scripts_dir.parent}'\n"
+            f"'{script}' --dry-run --skip-fetch\n",
+        )
+        wrapper.chmod(0o755)
+        result = subprocess.run([str(wrapper)], capture_output=True, text=True)
+        assert_that(result.returncode).is_equal_to(0)
+        out = result.stdout + result.stderr
+        assert_that(out.lower()).contains("dry-run")
+
+    def test_sbom_generate_dry_run_import_merge_push_plan(self, scripts_dir, tmp_path):
+        """Dry-run should show import, merge, and push steps when multiple imports.
+
+        Uses two placeholder local files and --skip-fetch to avoid network.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+            tmp_path: Path to the temporary directory.
+        """
+        # Create dummy files to pass as --import paths
+        file1 = tmp_path / "a.cdx.json"
+        file2 = tmp_path / "b.cdx.json"
+        file1.write_text("{}")
+        file2.write_text("{}")
+        script = Path("scripts/ci/sbom-generate.sh").resolve()
+        wrapper = tmp_path / "run_sbom_merge.sh"
+        wrapper.write_text(
+            f"#!/usr/bin/env bash\nset -euo pipefail\ncd '{scripts_dir.parent}'\n"
+            f"'{script}' --dry-run --skip-fetch "
+            f"--import '{file1}' "
+            f"--import '{file2}'\n",
+        )
+        wrapper.chmod(0o755)
+        result = subprocess.run([str(wrapper)], capture_output=True, text=True)
+        assert_that(result.returncode).is_equal_to(0)
+        plan = result.stdout + result.stderr
+        assert_that(plan).contains("import --alias project")
+        assert_that(plan).contains(" merge ")
+        assert_that(plan).contains(" push ")
+
+    def test_sbom_generate_dry_run_fetch_only_merges_to_alias(
+        self,
+        scripts_dir,
+        tmp_path,
+    ):
+        """Dry-run with fetch-only should show merge to alias and push of alias.
+
+        Forces repo URL via --repo-url to avoid relying on git remotes.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+            tmp_path: Path to the temporary directory.
+        """
+        script = Path("scripts/ci/sbom-generate.sh").resolve()
+        wrapper = tmp_path / "run_sbom_fetch.sh"
+        wrapper.write_text(
+            f"#!/usr/bin/env bash\nset -euo pipefail\ncd '{scripts_dir.parent}'\n"
+            f"'{script}' --dry-run --repo-url 'https://github.com/example/acme'\n",
+        )
+        wrapper.chmod(0o755)
+        result = subprocess.run([str(wrapper)], capture_output=True, text=True)
+        assert_that(result.returncode).is_equal_to(0)
+        plan = result.stdout + result.stderr
+        assert_that(plan).contains(" fetch ")
+        assert_that(plan).contains(" merge --alias project")
+        assert_that(plan).contains(" push ")
+
 
 class TestScriptSecurity:
     """Test security aspects of shell scripts."""

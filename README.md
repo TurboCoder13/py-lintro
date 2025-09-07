@@ -14,12 +14,12 @@ Lintro is a unified command-line interface that brings together multiple code qu
 [![Tests](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/test-and-coverage.yml?label=tests&branch=main&logo=githubactions&logoColor=white)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-and-coverage.yml?query=branch%3Amain)
 [![CI](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/ci-lintro-analysis.yml?label=ci&branch=main&logo=githubactions&logoColor=white)](https://github.com/TurboCoder13/py-lintro/actions/workflows/ci-lintro-analysis.yml?query=branch%3Amain)
 [![Docker](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/docker-build-publish.yml?label=docker&logo=docker&branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/docker-build-publish.yml?query=branch%3Amain)
+[![SBOM (main)](<https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/sbom-on-main.yml?label=sbom%20(main)&branch=main>)](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml?query=branch%3Amain)
+[![Release pipeline (tags)](<https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/publish-pypi-on-tag.yml?label=release%20pipeline%20(tags)&event=push>)](https://github.com/TurboCoder13/py-lintro/actions/workflows/publish-pypi-on-tag.yml?query=event%3Apush)
 [![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
 
 [![CodeQL](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/TurboCoder13/py-lintro)
-
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11142/badge)](https://www.bestpractices.dev/projects/11142)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/TurboCoder13/py-lintro) [![SBOM](https://img.shields.io/badge/SBOM-enabled-brightgreen)](docs/security/assurance.md) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11142/badge)](https://www.bestpractices.dev/projects/11142)
 
 ### Why Lintro?
 

@@ -79,6 +79,10 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `semantic-pr-title-check.sh`       | Validate PR title against Conventional Commits  | `./scripts/ci/semantic-pr-title-check.sh --help`                         |
 | `auto-tag-check-exists.sh`         | Check if a git tag exists and export result     | `./scripts/ci/auto-tag-check-exists.sh [TAG]`                            |
 | `verify-tag-matches-pyproject.sh`  | Verify tag matches `pyproject.toml` version     | `./scripts/ci/verify-tag-matches-pyproject.sh --help`                    |
+| `sbom-generate.sh`                 | Generate and export SBOMs via bomctl            | `./scripts/ci/sbom-generate.sh --help`                                   |
+| `sbom-rename-artifacts.sh`         | Prefix SBOMs with tag and SHA for traceability  | `./scripts/ci/sbom-rename-artifacts.sh dist/sbom`                        |
+| `sbom-verify-container.sh`         | Verify pinned bomctl image with cosign          | `./scripts/ci/sbom-verify-container.sh`                                  |
+| `sbom-attest-artifacts.sh`         | Create cosign attestations for SBOM artifacts   | `./scripts/ci/sbom-attest-artifacts.sh dist/sbom`                        |
 | `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed   | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`                       |
 | `detect-changes.sh`                | Detect repo diffs and set has_changes output    | `./scripts/ci/detect-changes.sh --help`                                  |
 
@@ -168,6 +172,86 @@ Generates and updates the coverage badge with color coding.
 
 ```bash
 ./scripts/ci/coverage-badge-update.sh
+```
+
+#### `sbom-generate.sh`
+
+Generate and export SBOMs using `bomctl` with optional merge and multiple output
+formats (CycloneDX/SPDX). Supports dry-run planning and Docker fallback when the
+`bomctl` binary is not installed locally.
+
+Features:
+
+- Fetch from GitHub dependency graph (public repos) via `bomctl fetch`
+- Import local SBOM files and optionally merge them
+- Export CycloneDX (1.5/1.6) JSON/XML and SPDX 2.3 JSON files
+- Dry-run mode to preview actions; optional `--netrc` for private repos
+- Docker fallback: `--use-docker` to run a containerized `bomctl`
+- Safe Docker execution with non-root user mapping; image override via `BOMCTL_IMAGE`
+- Optional network isolation for non-fetch operations via `BOMCTL_NETWORK=none`
+
+Usage:
+
+```bash
+# Show help
+./scripts/ci/sbom-generate.sh --help
+
+# Basic: fetch current repo and export CycloneDX 1.5 JSON to dist/sbom/
+./scripts/ci/sbom-generate.sh
+
+# Multiple formats and XML encoding for CycloneDX
+./scripts/ci/sbom-generate.sh \
+  --format cyclonedx-1.6 --format spdx-2.3 \
+  --encoding xml \
+  --output-dir dist/sbom
+
+# Import additional SBOMs and merge
+./scripts/ci/sbom-generate.sh \
+  --skip-fetch \
+  --import sboms/app.cdx.json \
+  --import sboms/image.cdx.json \
+  --alias combined --name lintro-sbom
+
+# Dry run to preview commands (container, pinned image via env)
+BOMCTL_IMAGE=bomctl/bomctl@sha256:PINNED_DIGEST \
+./scripts/ci/sbom-generate.sh --dry-run --use-docker
+```
+
+Notes:
+
+- For private GitHub repos, use `--netrc` with a configured `~/.netrc`.
+- Outputs are written under `dist/sbom/` by default.
+- To harden CI, set `BOMCTL_IMAGE` to a digest-pinned image and verify with cosign.
+  See the `bomctl` README (container verification) for guidance.
+
+#### `sbom-rename-artifacts.sh`
+
+Rename SBOM artifacts to include the current tag and commit SHA for easier traceability.
+
+Usage:
+
+```bash
+./scripts/ci/sbom-rename-artifacts.sh dist/sbom
+```
+
+#### `sbom-verify-container.sh`
+
+Verify a digest-pinned `bomctl` container image using cosign keyless.
+
+Usage:
+
+```bash
+BOMCTL_IMAGE=bomctl/bomctl@sha256:... ./scripts/ci/sbom-verify-container.sh
+```
+
+#### `sbom-attest-artifacts.sh`
+
+Create keyless cosign attestations for generated SBOM artifacts (best effort).
+
+Usage:
+
+```bash
+./scripts/ci/sbom-attest-artifacts.sh dist/sbom
 ```
 
 ### Docker Scripts

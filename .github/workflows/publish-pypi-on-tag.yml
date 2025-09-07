@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
 ---
 name: Publish to PyPI on Tag
 
@@ -29,9 +31,16 @@ jobs:
     permissions:
       contents: read
 
+  sbom:
+    name: Generate and verify SBOM
+    needs: [build, quality]
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@f73ba3032c8e1f25f72c033f8a8b590eec23257a
+    with:
+      bomctl-image: ${{ vars.BOMCTL_IMAGE }}
+
   publish:
     name: Upload to PyPI
-    needs: [build, quality]
+    needs: [build, quality, sbom]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
