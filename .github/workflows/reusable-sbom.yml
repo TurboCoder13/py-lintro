@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
 ---
 name: Reusable SBOM Job
 
@@ -12,6 +14,10 @@ name: Reusable SBOM Job
       artifact-name:
         description: Name of uploaded SBOM artifact
         value: sbom-artifacts
+
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   sbom:
