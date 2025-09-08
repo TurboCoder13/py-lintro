@@ -62,10 +62,6 @@ jobs:
             fulcio.sigstore.dev:443
             rekor.sigstore.dev:443
             tuf-repo-cdn.sigstore.dev:443
-      - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
-        with:
-          python-version: '3.13'
       - name: Restore bomctl cache
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
         with:
