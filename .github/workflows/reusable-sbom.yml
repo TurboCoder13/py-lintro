@@ -30,6 +30,19 @@ jobs:
       BOMCTL_IMAGE: ${{ inputs.bomctl-image }}
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
     steps:
+      - name: Enforce pinned bomctl image digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref="${BOMCTL_IMAGE:-}"
+          if [[ -z "${ref}" ]]; then
+            echo "BOMCTL_IMAGE is not set (input). Set a digest-pinned image like 'bomctl/bomctl@sha256:...'." >&2
+            exit 1
+          fi
+          if [[ "${ref}" != *@sha256:* ]]; then
+            echo "BOMCTL_IMAGE must be digest-pinned (contains '@sha256:'). Got: ${ref}" >&2
+            exit 1
+          fi
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
