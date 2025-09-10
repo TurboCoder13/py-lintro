@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@7f8591ebccf4a76a96e911101df5dfeba5006a5d
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       # Avoid PR comment on forks (token is read-only); still run the check

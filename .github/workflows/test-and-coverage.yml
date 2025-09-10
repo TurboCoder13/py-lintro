@@ -41,7 +41,7 @@ jobs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2
         with:
           egress-policy: audit
           allowed-endpoints: |
@@ -55,7 +55,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@7f8591ebccf4a76a96e911101df5dfeba5006a5d
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
@@ -128,10 +128,10 @@ jobs:
     if: always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@7f8591ebccf4a76a96e911101df5dfeba5006a5d
         # Default allowlist suffices for PR comment step
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@7f8591ebccf4a76a96e911101df5dfeba5006a5d
       - name: Delete Previous Coverage PR Comments
         if: always()
         env:
@@ -151,7 +151,7 @@ jobs:
           ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@7f8591ebccf4a76a96e911101df5dfeba5006a5d
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'

@@ -32,12 +32,12 @@ jobs:
 
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@7f8591ebccf4a76a96e911101df5dfeba5006a5d
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@7f8591ebccf4a76a96e911101df5dfeba5006a5d
 
       - name: Run Lintro on codebase
         run: ./scripts/ci/lintro-report-generate.sh
