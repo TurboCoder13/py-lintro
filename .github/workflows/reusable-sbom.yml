@@ -44,7 +44,7 @@ jobs:
             exit 1
           fi
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@7f8591ebccf4a76a96e911101df5dfeba5006a5d
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}

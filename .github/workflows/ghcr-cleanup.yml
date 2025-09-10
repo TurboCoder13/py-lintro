@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden Runner (audit for checkout)
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2
         with:
           egress-policy: audit
           allowed-endpoints: |
@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Harden Runner (block for API calls)
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2
         with:
           egress-policy: block
           allowed-endpoints: |
@@ -36,7 +36,7 @@ jobs:
             api.github.com:443
 
       - name: Setup environment
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@7f8591ebccf4a76a96e911101df5dfeba5006a5d
         with:
           python-version: '3.13'
 
