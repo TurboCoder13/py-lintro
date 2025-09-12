@@ -29,9 +29,9 @@ jobs:
     env:
       BOMCTL_IMAGE: ${{ inputs.bomctl-image }}
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
+      EGRESS_ALLOWED_ENDPOINTS: ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+      EGRESS_ALLOWED_ENDPOINTS_MIRROR: ${{ vars.EGRESS_ALLOWED_ENDPOINTS_MIRROR }}
     steps:
-      - name: Enforce pinned bomctl image digest
-        run: bash scripts/ci/sbom-enforce-pinned-image.sh
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
@@ -39,6 +39,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           egress_policy: block
           allowed-endpoints: ${{ env.EGRESS_ALLOWED_ENDPOINTS_MIRROR }}
+      - name: Enforce pinned bomctl image digest
+        run: bash scripts/ci/sbom-enforce-pinned-image.sh
       - name: Login to GHCR
         uses: ./.github/actions/setup-docker
         with:

@@ -16,6 +16,8 @@ jobs:
   bomctl-run:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      EGRESS_ALLOWED_ENDPOINTS: ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
@@ -36,5 +38,3 @@ jobs:
 
       - name: Run bomctl (containerized)
         run: scripts/ci/sbom-bomctl-run.sh
-
-

@@ -26,6 +26,8 @@ jobs:
     env:
       BOMCTL_IMAGE: ${{ vars.BOMCTL_IMAGE }}
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
+      EGRESS_ALLOWED_ENDPOINTS: ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+      EGRESS_ALLOWED_ENDPOINTS_MIRROR: ${{ vars.EGRESS_ALLOWED_ENDPOINTS_MIRROR }}
     steps:
       - name: Harden Runner (explicit allowlist)
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
