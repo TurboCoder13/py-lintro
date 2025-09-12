@@ -70,7 +70,8 @@ IMPORT_FILES=()
 # - BOMCTL_IMAGE: pin to a specific digest in CI (e.g., bomctl/bomctl@sha256:...)
 # - BOMCTL_NETWORK: set to 'none' for no-network operations (import/merge/push)
 #   Leave empty for default Docker networking.
-BOMCTL_IMAGE="${BOMCTL_IMAGE:-bomctl/bomctl:latest}"
+# Default to GHCR if BOMCTL_IMAGE not provided, to avoid Docker Hub pulls
+BOMCTL_IMAGE="${BOMCTL_IMAGE:-ghcr.io/bomctl/bomctl:0.4.3}"
 BOMCTL_NETWORK="${BOMCTL_NETWORK:-}"
 
 # Ensure bomctl cache directory exists and is used (improves fetch/push --tree)
