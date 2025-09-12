@@ -41,12 +41,10 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
-      - name: Login to GHCR (no buildx)
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install bomctl from GitHub Releases (no registries)
+        env:
+          BOMCTL_VERSION: v0.4.3
+        run: bash scripts/ci/sbom-install-binary-gh.sh
       # Diagnostics previously added; remove once stable
       - name: Restore bomctl cache
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
@@ -54,7 +52,15 @@ jobs:
           path: ${{ env.XDG_CACHE_HOME }}
           key: bomctl-cache-${{ runner.os }}-${{ github.sha }}
       - name: Generate SBOMs (CycloneDX 1.6 JSON & SPDX 2.3)
-        run: bash scripts/ci/sbom-generate.sh --use-docker --format cyclonedx-1.6 --format spdx-2.3 --name "py-lintro-sbom" --alias project
+        run: bash scripts/ci/sbom-generate.sh --skip-fetch --format cyclonedx-1.6 --format spdx-2.3 --name "py-lintro-sbom" --alias project || true
+      - name: Fetch SBOM via bomctl binary (GitHub graph)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          bomctl fetch https://github.com/${{ github.repository }}
+          # Export via script for consistency
+          bash scripts/ci/sbom-generate.sh --format cyclonedx-1.6 --format spdx-2.3 --name "py-lintro-sbom" --alias project
       - name: Rename SBOM artifacts with tag/sha for traceability
         run: bash scripts/ci/sbom-rename-artifacts.sh dist/sbom
       - name: Upload SBOM artifacts
