@@ -21,9 +21,17 @@ fi
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
-echo "[bomctl] Downloading ${VERSION} via gh release (Linux x86_64)..." >&2
-gh release download "${VERSION}" -R bomctl/bomctl \
-  -p 'bomctl_*_Linux_x86_64.tar.gz' -O "${tmpdir}/bomctl.tgz"
+echo "[bomctl] Resolving asset for ${VERSION} via gh API..." >&2
+asset=$(gh release view "${VERSION}" -R bomctl/bomctl --json assets --jq \
+  '.assets[].name | select(test("(?i)linux") and (test("x86_64|amd64")) and (endswith(".tar.gz")))' | head -n1)
+
+if [[ -z "${asset}" ]]; then
+  echo "[bomctl] No matching Linux amd64 .tar.gz asset found in ${VERSION}" >&2
+  exit 1
+fi
+
+echo "[bomctl] Downloading asset: ${asset}" >&2
+gh release download "${VERSION}" -R bomctl/bomctl -p "${asset}" -O "${tmpdir}/bomctl.tgz"
 
 tar -C "${tmpdir}" -xzf "${tmpdir}/bomctl.tgz" bomctl
 install -m 0755 "${tmpdir}/bomctl" /usr/local/bin/bomctl
