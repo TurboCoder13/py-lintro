@@ -32,12 +32,19 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          egress_policy: block
+          allowed-endpoints: ${{ env.EGRESS_ALLOWED_ENDPOINTS }}
 
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
 
       - name: Setup Docker (Buildx)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@ae541c778920330b6e82f3dd536bcf2a026324c0
+        with:
+          login: 'true'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # Removed no-op dependency listing step
 

@@ -210,6 +210,31 @@ if ! resolve_bomctl_arr; then
   fi
 fi
 
+# If using Docker, proactively pull the image with retries; on failure, try ALT
+attempt_docker_pull() {
+  local image_ref="$1"
+  local max_retries=3
+  local delay=2
+  local attempt=1
+  while [ $attempt -le $max_retries ]; do
+    if docker pull "$image_ref" >/dev/null 2>&1; then
+      return 0
+    fi
+    attempt=$((attempt+1))
+    sleep "$delay"
+    delay=$((delay*2))
+  done
+  return 1
+}
+
+if [ ${DRY_RUN} -eq 0 ] && command -v docker >/dev/null 2>&1; then
+  if ! attempt_docker_pull "${BOMCTL_IMAGE}"; then
+    log_error "Failed to pull BOMCTL_IMAGE: ${BOMCTL_IMAGE}."
+    log_error "Ensure the registry is reachable and allowed by egress policy."
+    exit 125
+  fi
+fi
+
 netrc_flag=""
 if [ ${PASSTHROUGH_NETRC} -eq 1 ]; then
   netrc_flag="--netrc"

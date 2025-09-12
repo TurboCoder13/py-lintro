@@ -35,6 +35,10 @@ jobs:
     name: Generate and verify SBOM
     needs: [build, quality]
     uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@ae541c778920330b6e82f3dd536bcf2a026324c0
+    permissions:
+      contents: read
+      actions: read
+      packages: read
     with:
       bomctl-image: ${{ vars.BOMCTL_IMAGE }}
 

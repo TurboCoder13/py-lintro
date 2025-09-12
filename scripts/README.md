@@ -83,6 +83,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `sbom-rename-artifacts.sh`         | Prefix SBOMs with tag and SHA for traceability  | `./scripts/ci/sbom-rename-artifacts.sh dist/sbom`                        |
 | `sbom-verify-container.sh`         | Verify pinned bomctl image with cosign          | `./scripts/ci/sbom-verify-container.sh`                                  |
 | `sbom-attest-artifacts.sh`         | Create cosign attestations for SBOM artifacts   | `./scripts/ci/sbom-attest-artifacts.sh dist/sbom`                        |
+| `mirror-bomctl-to-ghcr.sh`         | Mirror bomctl to GHCR and update repo variable  | `./scripts/ci/mirror-bomctl-to-ghcr.sh --help`                           |
 | `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed   | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`                       |
 | `detect-changes.sh`                | Detect repo diffs and set has_changes output    | `./scripts/ci/detect-changes.sh --help`                                  |
 

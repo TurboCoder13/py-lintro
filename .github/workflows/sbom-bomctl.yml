@@ -1,0 +1,40 @@
+---
+name: SBOM via bomctl
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sbom-bomctl.yml'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  bomctl-run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        with:
+          egress-policy: block
+          allowed-endpoints: ${{ env.EGRESS_ALLOWED_ENDPOINTS }}
+
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Setup Docker (Buildx + login GHCR)
+        uses: ./.github/actions/setup-docker
+        with:
+          login: 'true'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run bomctl (containerized)
+        run: scripts/ci/sbom-bomctl-run.sh
+
+

@@ -28,6 +28,8 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          egress_policy: block
+          allowed-endpoints: ${{ env.EGRESS_ALLOWED_ENDPOINTS }}
 
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
