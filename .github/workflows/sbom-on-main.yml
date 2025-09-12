@@ -28,6 +28,7 @@ jobs:
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
       EGRESS_ALLOWED_ENDPOINTS: ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
       EGRESS_ALLOWED_ENDPOINTS_MIRROR: ${{ vars.EGRESS_ALLOWED_ENDPOINTS_MIRROR }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner (explicit allowlist)
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
@@ -39,13 +40,13 @@ jobs:
           set -e
           echo "$EGRESS_ALLOWED_ENDPOINTS" | wc -l
           for h in api.github.com release-assets.githubusercontent.com github.com; do
-            echo "Testing TCP to $h:443"
-            timeout 5 bash -c "cat </dev/tcp/$h/443" && echo "OK: $h" || echo "FAIL: $h"
+            echo "Testing HTTPS HEAD to https://$h/"
+            if curl -sI --max-time 5 "https://$h/" >/dev/null; then echo "OK: $h"; else echo "FAIL: $h"; fi
           done
           if [ "${TEST_GHCR:-0}" = "1" ]; then
             for h in ghcr.io ghcr.github.com pkg-containers.githubusercontent.com cdn.pkg-containers.githubusercontent.com; do
-              echo "Testing TCP to $h:443"
-              timeout 5 bash -c "cat </dev/tcp/$h/443" && echo "OK: $h" || echo "FAIL: $h"
+              echo "Testing HTTPS HEAD to https://$h/"
+              if curl -sI --max-time 5 "https://$h/" >/dev/null; then echo "OK: $h"; else echo "FAIL: $h"; fi
             done
           fi
       - name: Enforce pinned bomctl image digest
