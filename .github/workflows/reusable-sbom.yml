@@ -39,6 +39,20 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           egress_policy: block
           allowed-endpoints: ${{ env.EGRESS_ALLOWED_ENDPOINTS_MIRROR }}
+      - name: Diagnose egress (GitHub endpoints)
+        run: |
+          set -e
+          echo "$EGRESS_ALLOWED_ENDPOINTS_MIRROR" | wc -l
+          for h in api.github.com release-assets.githubusercontent.com github.com; do
+            echo "Testing TCP to $h:443"
+            timeout 5 bash -c "cat </dev/tcp/$h/443" && echo "OK: $h" || echo "FAIL: $h"
+          done
+          if [ "${TEST_GHCR:-0}" = "1" ]; then
+            for h in ghcr.io ghcr.github.com pkg-containers.githubusercontent.com cdn.pkg-containers.githubusercontent.com; do
+              echo "Testing TCP to $h:443"
+              timeout 5 bash -c "cat </dev/tcp/$h/443" && echo "OK: $h" || echo "FAIL: $h"
+            done
+          fi
       - name: Enforce pinned bomctl image digest
         if: ${{ hashFiles('scripts/ci/sbom-enforce-pinned-image.sh') != '' }}
         run: bash scripts/ci/sbom-enforce-pinned-image.sh
