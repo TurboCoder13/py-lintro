@@ -34,7 +34,20 @@ jobs:
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
         with:
           egress-policy: block
-          allowed-endpoints: ${{ env.EGRESS_ALLOWED_ENDPOINTS }}
+          allowed-endpoints: |
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            raw.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            objects-origin.githubusercontent.com:443
+            token.actions.githubusercontent.com:443
+            hosted-compute-watchdog-prod-eus-01.githubapp.com:443
+            packages.stepsecurity.io:443
+            api.stepsecurity.io:443
+            cdn.stepsecurity.io:443
       - name: Diagnose egress (GitHub endpoints)
         run: |
           set -e

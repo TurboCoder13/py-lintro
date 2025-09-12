@@ -39,7 +39,20 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
           egress_policy: block
-          allowed-endpoints: ${{ env.EGRESS_ALLOWED_ENDPOINTS_MIRROR }}
+          allowed-endpoints: |
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            raw.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            objects-origin.githubusercontent.com:443
+            token.actions.githubusercontent.com:443
+            hosted-compute-watchdog-prod-eus-01.githubapp.com:443
+            packages.stepsecurity.io:443
+            api.stepsecurity.io:443
+            cdn.stepsecurity.io:443
       - name: Diagnose egress (GitHub endpoints)
         run: |
           set -e
