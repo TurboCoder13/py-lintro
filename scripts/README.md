@@ -72,6 +72,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `enforce-coverage-threshold.sh`    | Enforce minimum coverage threshold              | `./scripts/ci/enforce-coverage-threshold.sh --help`                      |
 | `ensure-tag-on-main.sh`            | Ensure tag ref points to commit on main         | `./scripts/ci/ensure-tag-on-main.sh --help`                              |
 | `guard-release-commit.sh`          | Check last commit is release bump               | `./scripts/ci/guard-release-commit.sh --help`                            |
+| `auto-tag-configure-auth.sh`       | Configure git remote auth for tag push          | `./scripts/ci/auto-tag-configure-auth.sh --help`                         |
 | `pre-release-quality.sh`           | Run Lintro format and check                     | `./scripts/ci/pre-release-quality.sh --help`                             |
 | `semantic_release_compute_next.py` | Compute next version (tag-only baseline)        | `uv run python scripts/ci/semantic_release_compute_next.py --print-only` |
 | `validate-action-pinning.sh`       | Scan for unpinned GitHub Actions                | `./scripts/ci/validate-action-pinning.sh --help`                         |
