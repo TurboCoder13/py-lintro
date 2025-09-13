@@ -83,6 +83,11 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `sbom-rename-artifacts.sh`         | Prefix SBOMs with tag and SHA for traceability  | `./scripts/ci/sbom-rename-artifacts.sh dist/sbom`                        |
 | `sbom-verify-container.sh`         | Verify pinned bomctl image with cosign          | `./scripts/ci/sbom-verify-container.sh`                                  |
 | `sbom-attest-artifacts.sh`         | Create cosign attestations for SBOM artifacts   | `./scripts/ci/sbom-attest-artifacts.sh dist/sbom`                        |
+| `egress-audit-lite.sh`             | Audit reachability of allowed endpoints         | `./scripts/ci/egress-audit-lite.sh --help`                               |
+| `sbom-bomctl-run.sh`               | Run bomctl container help/fetch (utility)       | `./scripts/ci/sbom-bomctl-run.sh --help`                                 |
+| `sbom-enforce-pinned-image.sh`     | Ensure BOMCTL_IMAGE is digest-pinned            | `./scripts/ci/sbom-enforce-pinned-image.sh --help`                       |
+| `sbom-install-binary.sh`           | Install bomctl from pinned URL with checksum    | `./scripts/ci/sbom-install-binary.sh --help`                             |
+| `sbom-install-binary-gh.sh`        | Install bomctl from GitHub Releases via gh CLI  | `./scripts/ci/sbom-install-binary-gh.sh --help`                          |
 | `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed   | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`                       |
 | `detect-changes.sh`                | Detect repo diffs and set has_changes output    | `./scripts/ci/detect-changes.sh --help`                                  |
 

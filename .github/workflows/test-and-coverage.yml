@@ -43,15 +43,9 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
         with:
-          egress-policy: audit
+          egress-policy: block
           allowed-endpoints: |
-            github.com:443
-            api.github.com:443
-            downloads.github.com:443
-            objects.githubusercontent.com:443
-            pkg-containers.githubusercontent.com:443
-            pypi.org:443
-            files.pythonhosted.org:443
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
@@ -97,7 +91,6 @@ jobs:
           files: coverage.xml
           flags: python-3.13
           fail_ci_if_error: false
-          # token: ${{ secrets.CODECOV_TOKEN }} # for private repos only
 
       - name: Generate coverage badge (no commit)
         if: success()
