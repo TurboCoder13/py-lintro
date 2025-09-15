@@ -39,8 +39,6 @@ jobs:
       contents: read
       actions: read
       packages: read
-    with:
-      bomctl-image: ${{ vars.BOMCTL_IMAGE }}
 
   publish:
     name: Upload to PyPI
