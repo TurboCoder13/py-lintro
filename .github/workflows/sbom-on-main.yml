@@ -33,12 +33,7 @@ jobs:
           fetch-depth: 0
           egress_policy: block
           allowed-endpoints: |
-            github.com:443
-            api.github.com:443
-            codeload.github.com:443
-            release-assets.githubusercontent.com:443
-            objects.githubusercontent.com:443
-            token.actions.githubusercontent.com:443
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
       - name: Install bomctl from GitHub Releases (no registries)
         env:
           BOMCTL_VERSION: v0.4.3
@@ -62,12 +57,7 @@ jobs:
         with:
           egress-policy: block
           allowed-endpoints: |
-            github.com:443
-            api.github.com:443
-            codeload.github.com:443
-            release-assets.githubusercontent.com:443
-            objects.githubusercontent.com:443
-            token.actions.githubusercontent.com:443
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS_SIGSTORE }}
       - name: Attest SBOM artifacts with keyless cosign (optional)
         env:
