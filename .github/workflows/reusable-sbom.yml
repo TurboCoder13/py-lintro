@@ -5,11 +5,6 @@ name: Reusable SBOM Job
 
 'on':
   workflow_call:
-    inputs:
-      bomctl-image:
-        description: Digest-pinned bomctl image
-        required: false
-        type: string
     outputs:
       artifact-name:
         description: Name of uploaded SBOM artifact
@@ -74,7 +69,5 @@ jobs:
           name: sbom-artifacts
           path: dist/sbom/*
           if-no-files-found: error
-      - name: Verify bomctl image with cosign (keyless)
-        run: bash scripts/ci/sbom-verify-container.sh
       - name: Attest SBOM artifacts with keyless cosign (optional)
         run: bash scripts/ci/sbom-attest-artifacts.sh dist/sbom

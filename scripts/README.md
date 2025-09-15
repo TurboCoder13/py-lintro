@@ -82,11 +82,8 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `verify-tag-matches-pyproject.sh`  | Verify tag matches `pyproject.toml` version     | `./scripts/ci/verify-tag-matches-pyproject.sh --help`                    |
 | `sbom-generate.sh`                 | Generate and export SBOMs via bomctl            | `./scripts/ci/sbom-generate.sh --help`                                   |
 | `sbom-rename-artifacts.sh`         | Prefix SBOMs with tag and SHA for traceability  | `./scripts/ci/sbom-rename-artifacts.sh dist/sbom`                        |
-| `sbom-verify-container.sh`         | Verify pinned bomctl image with cosign          | `./scripts/ci/sbom-verify-container.sh`                                  |
 | `sbom-attest-artifacts.sh`         | Create cosign attestations for SBOM artifacts   | `./scripts/ci/sbom-attest-artifacts.sh dist/sbom`                        |
 | `egress-audit-lite.sh`             | Audit reachability of allowed endpoints         | `./scripts/ci/egress-audit-lite.sh --help`                               |
-| `sbom-bomctl-run.sh`               | Run bomctl container help/fetch (utility)       | `./scripts/ci/sbom-bomctl-run.sh --help`                                 |
-| `sbom-enforce-pinned-image.sh`     | Ensure BOMCTL_IMAGE is digest-pinned            | `./scripts/ci/sbom-enforce-pinned-image.sh --help`                       |
 | `sbom-install-binary.sh`           | Install bomctl from pinned URL with checksum    | `./scripts/ci/sbom-install-binary.sh --help`                             |
 | `sbom-install-binary-gh.sh`        | Install bomctl from GitHub Releases via gh CLI  | `./scripts/ci/sbom-install-binary-gh.sh --help`                          |
 | `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed   | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`                       |
@@ -183,8 +180,8 @@ Generates and updates the coverage badge with color coding.
 #### `sbom-generate.sh`
 
 Generate and export SBOMs using `bomctl` with optional merge and multiple output
-formats (CycloneDX/SPDX). Supports dry-run planning and Docker fallback when the
-`bomctl` binary is not installed locally.
+formats (CycloneDX/SPDX). Supports dry-run planning. The script requires the
+`bomctl` binary to be installed (no container fallback).
 
 Features:
 
@@ -192,9 +189,7 @@ Features:
 - Import local SBOM files and optionally merge them
 - Export CycloneDX (1.5/1.6) JSON/XML and SPDX 2.3 JSON files
 - Dry-run mode to preview actions; optional `--netrc` for private repos
-- Docker fallback: `--use-docker` to run a containerized `bomctl`
-- Safe Docker execution with non-root user mapping; image override via `BOMCTL_IMAGE`
-- Optional network isolation for non-fetch operations via `BOMCTL_NETWORK=none`
+  
 
 Usage:
 
@@ -218,17 +213,15 @@ Usage:
   --import sboms/image.cdx.json \
   --alias combined --name lintro-sbom
 
-# Dry run to preview commands (container, pinned image via env)
-BOMCTL_IMAGE=bomctl/bomctl@sha256:PINNED_DIGEST \
-./scripts/ci/sbom-generate.sh --dry-run --use-docker
+# Dry run to preview commands
+./scripts/ci/sbom-generate.sh --dry-run
 ```
 
 Notes:
 
 - For private GitHub repos, use `--netrc` with a configured `~/.netrc`.
 - Outputs are written under `dist/sbom/` by default.
-- To harden CI, set `BOMCTL_IMAGE` to a digest-pinned image and verify with cosign.
-  See the `bomctl` README (container verification) for guidance.
+  
 
 #### `sbom-rename-artifacts.sh`
 
@@ -240,15 +233,7 @@ Usage:
 ./scripts/ci/sbom-rename-artifacts.sh dist/sbom
 ```
 
-#### `sbom-verify-container.sh`
-
-Verify a digest-pinned `bomctl` container image using cosign keyless.
-
-Usage:
-
-```bash
-BOMCTL_IMAGE=bomctl/bomctl@sha256:... ./scripts/ci/sbom-verify-container.sh
-```
+  
 
 #### `sbom-attest-artifacts.sh`
 
