@@ -33,7 +33,9 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
           egress_policy: block
-          allowed-endpoints: ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+          allowed-endpoints: |
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
 
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
