@@ -24,8 +24,9 @@ repo_url="https://github.com/${GITHUB_REPOSITORY}"
 
 set -e
 bomctl fetch "${repo_url}"
+bomctl merge --alias "project" --name "py-lintro-sbom" "${repo_url}"
 
 # Pass through any format args to sbom-generate.sh
-bash scripts/ci/sbom-generate.sh --format cyclonedx-1.6 --format spdx-2.3 --name "py-lintro-sbom" --alias project "$@"
+bash scripts/ci/sbom-generate.sh --skip-fetch --name "py-lintro-sbom" --alias project "$@"
 
 
