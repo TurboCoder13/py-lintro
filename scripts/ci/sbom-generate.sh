@@ -151,6 +151,7 @@ run_print_cmd() {
 
 # Determine bomctl invocation as an array for safe execution
 declare -a BOMCTL_ARR
+BOMCTL_ARR=()
 resolve_bomctl_arr() {
   if command -v bomctl >/dev/null 2>&1; then
     BOMCTL_ARR=("bomctl")
@@ -180,7 +181,12 @@ run_bomctl() {
   # Usage: run_bomctl <args...>
   if [ ${DRY_RUN} -eq 1 ]; then
     echo "# Dry-run: planned action"
-    run_print_cmd "${BOMCTL_ARR[*]} $*"
+    # Ensure stable placeholder when bomctl is not present
+    if [ ${#BOMCTL_ARR[@]} -eq 0 ]; then
+      run_print_cmd "bomctl $*"
+    else
+      run_print_cmd "${BOMCTL_ARR[*]} $*"
+    fi
     return 0
   fi
   log_info "Running: ${BOMCTL_ARR[*]} $*"
