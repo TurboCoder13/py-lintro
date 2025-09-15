@@ -2,6 +2,31 @@
 set -euo pipefail
 
 # auto-tag-configure-auth.sh
+# Configure git remote auth for tag push using a provided token.
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  cat <<'EOF'
+Configure git remote auth for tag push.
+
+Env:
+  RELEASE_TOKEN   GitHub App installation token (required)
+  REPOSITORY      owner/repo (required)
+
+EOF
+  exit 0
+fi
+
+: "${RELEASE_TOKEN:?RELEASE_TOKEN not set}"
+: "${REPOSITORY:?REPOSITORY not set}"
+
+git remote set-url origin "https://x-access-token:${RELEASE_TOKEN}@github.com/${REPOSITORY}.git"
+git config user.name "release-bot"
+git config user.email "releases@users.noreply.github.com"
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+# auto-tag-configure-auth.sh
 # Configure git remote auth using a provided installation token.
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then

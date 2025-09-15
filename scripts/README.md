@@ -83,6 +83,11 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `sbom-generate.sh`                 | Generate and export SBOMs via bomctl            | `./scripts/ci/sbom-generate.sh --help`                                   |
 | `sbom-rename-artifacts.sh`         | Prefix SBOMs with tag and SHA for traceability  | `./scripts/ci/sbom-rename-artifacts.sh dist/sbom`                        |
 | `sbom-attest-artifacts.sh`         | Create cosign attestations for SBOM artifacts   | `./scripts/ci/sbom-attest-artifacts.sh dist/sbom`                        |
+| `sbom-fetch.sh`                    | Fetch repo SBOM via bomctl; export via script   | `./scripts/ci/sbom-fetch.sh --help`                                      |
+| `semantic-release-helpers.sh`      | Helpers for semantic-release workflow steps     | `./scripts/ci/semantic-release-helpers.sh --help`                        |
+| `reusable-quality-entry.sh`        | Quality gate wrapper for reusable workflow      | `./scripts/ci/reusable-quality-entry.sh --help`                          |
+| `configure-git-user.sh`            | Configure git user/email and safe.directory     | `./scripts/ci/configure-git-user.sh --help`                              |
+| `bump-internal-refs-entry.sh`      | Wrapper to bump internal refs with SHA selection| `./scripts/ci/bump-internal-refs-entry.sh --help`                        |
 | `egress-audit-lite.sh`             | Audit reachability of allowed endpoints         | `./scripts/ci/egress-audit-lite.sh --help`                               |
 | `sbom-install-binary.sh`           | Install bomctl from pinned URL with checksum    | `./scripts/ci/sbom-install-binary.sh --help`                             |
 | `sbom-install-binary-gh.sh`        | Install bomctl from GitHub Releases via gh CLI  | `./scripts/ci/sbom-install-binary-gh.sh --help`                          |
@@ -189,7 +194,6 @@ Features:
 - Import local SBOM files and optionally merge them
 - Export CycloneDX (1.5/1.6) JSON/XML and SPDX 2.3 JSON files
 - Dry-run mode to preview actions; optional `--netrc` for private repos
-  
 
 Usage:
 
@@ -221,7 +225,6 @@ Notes:
 
 - For private GitHub repos, use `--netrc` with a configured `~/.netrc`.
 - Outputs are written under `dist/sbom/` by default.
-  
 
 #### `sbom-rename-artifacts.sh`
 
@@ -232,8 +235,6 @@ Usage:
 ```bash
 ./scripts/ci/sbom-rename-artifacts.sh dist/sbom
 ```
-
-  
 
 #### `sbom-attest-artifacts.sh`
 

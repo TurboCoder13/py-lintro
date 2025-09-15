@@ -39,18 +39,6 @@ jobs:
       - name: Sync dependencies
         run: uv sync --dev --no-progress
 
-      - name: Install external tools for Lintro
-        run: |
-          ./scripts/utils/install-tools.sh --local
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Lintro - format and check
-        run: |
-          uv run lintro format . --output-format grid
-          uv run lintro check . --output-format grid
-
-      - name: Read project version
+      - name: Quality gate
         id: version
-        run: |
-          python scripts/utils/extract-version.py | tee ver.txt
-          cat ver.txt >> "$GITHUB_OUTPUT"
+        run: scripts/ci/reusable-quality-entry.sh

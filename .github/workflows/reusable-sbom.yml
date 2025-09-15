@@ -57,10 +57,7 @@ jobs:
       - name: Fetch SBOM via bomctl binary (GitHub graph)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-          bomctl fetch https://github.com/${{ github.repository }}
-          bash scripts/ci/sbom-generate.sh --format cyclonedx-1.6 --format spdx-2.3 --name "py-lintro-sbom" --alias project
+        run: bash scripts/ci/sbom-fetch.sh --format cyclonedx-1.6 --format spdx-2.3
       - name: Rename SBOM artifacts with tag/sha for traceability
         run: bash scripts/ci/sbom-rename-artifacts.sh dist/sbom
       - name: Upload SBOM artifacts
@@ -69,5 +66,14 @@ jobs:
           name: sbom-artifacts
           path: dist/sbom/*
           if-no-files-found: error
+      - name: Harden Runner (allow Sigstore for attest)
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_SIGSTORE }}
       - name: Attest SBOM artifacts with keyless cosign (optional)
+        env:
+          COSIGN_EXPERIMENTAL: 1
         run: bash scripts/ci/sbom-attest-artifacts.sh dist/sbom

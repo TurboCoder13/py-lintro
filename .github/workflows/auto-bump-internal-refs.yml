@@ -35,12 +35,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Bump internal refs to current SHA
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            scripts/ci/bump-internal-refs.sh "${{ inputs.sha }}"
-          else
-            scripts/ci/bump-internal-refs.sh "${{ github.sha }}"
-          fi
+        env:
+          SHA_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.sha || '' }}
+        run: scripts/ci/bump-internal-refs-entry.sh
 
       - name: Detect changes
         id: diff
@@ -48,10 +45,10 @@ jobs:
 
       - name: Configure git for PR creation
         if: steps.diff.outputs.has_changes == 'true'
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        env:
+          GIT_USER: ${{ github.actor }}
+          GIT_EMAIL: ${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com
+        run: scripts/ci/configure-git-user.sh
           git config --global commit.gpgsign false
 
       - name: Create PR if changes

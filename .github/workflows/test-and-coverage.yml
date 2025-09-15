@@ -82,6 +82,15 @@ jobs:
           COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
         run: bash ./scripts/ci/enforce-coverage-threshold.sh
 
+      - name: Allow Codecov egress (GitHub + Codecov only)
+        if: always()
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CODECOV }}
+
       - name: Upload coverage to Codecov (always)
         if: always()
         continue-on-error: true
@@ -138,10 +147,7 @@ jobs:
         env:
           COVERAGE_PERCENTAGE: ${{ needs.run-test-suite.outputs.coverage-percentage }}
           JOB_RESULT: ${{ needs.run-test-suite.result }}
-        run: |
-          export COVERAGE_PERCENTAGE
-          export JOB_RESULT
-          ./scripts/ci/coverage-pr-comment.sh
+        run: ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
         uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@ae541c778920330b6e82f3dd536bcf2a026324c0

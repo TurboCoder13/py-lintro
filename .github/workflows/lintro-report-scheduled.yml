@@ -57,7 +57,4 @@ jobs:
 
     steps:
       - name: Report status
-        run: |
-          echo "Lintro report generated successfully"
-          echo "The report is available as a workflow artifact"
-          echo "Download it from the Actions tab in the GitHub repository"
+        run: echo "Lintro report generated successfully"
