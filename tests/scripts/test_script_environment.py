@@ -5,6 +5,7 @@ missing tools, and error conditions.
 """
 
 import subprocess
+import os
 import tempfile
 from pathlib import Path
 
@@ -50,6 +51,103 @@ class TestEnvironmentHandling:
         )
         assert_that(result.returncode).is_equal_to(0)
         assert_that(result.stdout).contains("Usage:")
+
+    def test_bootstrap_env_installs_uv_via_gh_offline(self, scripts_dir, tmp_path):
+        """bootstrap-env.sh should install uv via gh assets without network.
+
+        Mocks `gh release view` and `gh release download` to simulate a release
+        that contains a linux x86_64 asset. The test verifies the script detects
+        missing uv, downloads the mocked archive, extracts the uv binary, and
+        places it on PATH. The sync and tools install phases are skipped.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+            tmp_path: Path to the temporary directory.
+        """
+        script = scripts_dir.parent / "scripts" / "utils" / "bootstrap-env.sh"
+        work = tmp_path
+        bin_dir = work / "bin"
+        bin_dir.mkdir(parents=True)
+
+        # Mock gh: view prints a minimal JSON with tag and assets; download writes archive
+        gh_path = bin_dir / "gh"
+        release_json = (
+            '{"tagName":"0.0.0","assets":[{"name":"uv-x86_64-unknown-linux-gnu.tar.gz"}]}'
+        )
+        # Create a tar.gz containing a dummy 'uv' executable
+        asset_dir = work / "asset"
+        asset_dir.mkdir()
+        (asset_dir / "uv").write_text("#!/bin/sh\necho uv-mock\n")
+        (asset_dir / "uv").chmod(0o755)
+        archive_path = work / "uv-x86_64-unknown-linux-gnu.tar.gz"
+        import tarfile
+        with tarfile.open(archive_path, "w:gz") as tar:
+            tar.add(asset_dir / "uv", arcname="uv")
+
+        gh_path.write_text(
+            f"""#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "release" && "$2" == "view" ]]; then
+  # Print JSON
+  echo '{release_json}'
+  exit 0
+fi
+if [[ "$1" == "release" && "$2" == "download" ]]; then
+  # Copy our prepared archive to requested output path
+  out=""
+  # parse -O <outfile>
+  while [[ $# -gt 0 ]]; do
+    if [[ "$1" == "-O" ]]; then shift; out="$1"; break; fi
+    shift || true
+  done
+  cp "{archive_path}" "$out"
+  exit 0
+fi
+echo "unsupported gh mock usage" >&2
+exit 1
+"""
+        )
+        gh_path.chmod(0o755)
+
+        # Mock jq used by bootstrap script to extract tagName
+        jq_path = bin_dir / "jq"
+        jq_path.write_text(
+            """#!/usr/bin/env bash
+set -euo pipefail
+# Ignore input and print fixed tag
+echo 0.0.0
+""",
+        )
+        jq_path.chmod(0o755)
+
+        env = {
+            "PATH": f"{bin_dir}:{scripts_dir.parent}:" + os.environ.get("PATH", ""),
+            "HOME": str(work),
+            "USER": "testuser",
+            # Skip networked phases
+            "BOOTSTRAP_SKIP_SYNC": "1",
+            "BOOTSTRAP_SKIP_INSTALL_TOOLS": "1",
+            # Force linux/x86_64 path
+            "GITHUB_PATH": str(work / "gh_path.txt"),
+        }
+        # Ensure uv not present in PATH
+        result = subprocess.run(
+            ["bash", str(script), "3.13"],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=scripts_dir.parent,
+            timeout=30,
+        )
+        assert_that(result.returncode).is_equal_to(0)
+        # The mocked uv should be on PATH now
+        uv_check = subprocess.run(
+            ["uv", "--version"],
+            capture_output=True,
+            text=True,
+            env={"PATH": env["PATH"]},
+        )
+        assert_that(uv_check.returncode).is_equal_to(0)
 
     def test_scripts_handle_docker_missing(self, scripts_dir, clean_env):
         """Test Docker scripts behavior when Docker is not available.

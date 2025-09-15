@@ -41,55 +41,34 @@ if ! command -v uv >/dev/null 2>&1; then
   if [ -z "${GH_TOKEN:-}" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
     export GH_TOKEN="${GITHUB_TOKEN}"
   fi
-  # Select a release version (override via UV_VERSION env); default to latest
-  UV_VERSION_INPUT="${UV_VERSION:-}"
+  # Minimal CI-focused implementation: Linux x86_64 latest (or UV_VERSION)
   tmpdir="$(mktemp -d)"
   trap 'rm -rf "${tmpdir}"' EXIT
-  # Detect platform (Linux x86_64 expected in CI)
   os="$(uname -s | tr '[:upper:]' '[:lower:]')"
   arch="$(uname -m)"
-  case "${arch}" in
-    x86_64|amd64) arch_pat="x86_64|amd64" ;;
-    aarch64|arm64) arch_pat="aarch64|arm64" ;;
-    *) arch_pat="${arch}" ;;
-  esac
-  # Resolve release JSON (latest if no UV_VERSION provided)
-  if [ -n "${UV_VERSION_INPUT}" ]; then
-    release_json="$(gh release view "${UV_VERSION_INPUT}" -R astral-sh/uv --json tagName,assets || true)"
-  else
-    release_json="$(gh release view -R astral-sh/uv --json tagName,assets || true)"
+  if [ "${os}" != "linux" ] || ! echo "${arch}" | grep -Eq '^(x86_64|amd64)$'; then
+    echo "[setup] Unsupported platform ${os}/${arch} for automatic uv bootstrap." >&2
+    echo "[setup] Please pre-install 'uv' or set UV_VERSION and extend triples if needed." >&2
+    exit 1
   fi
-  tag_name="$(printf '%s' "${release_json}" | jq -r '.tagName // empty')"
+  tag_name="${UV_VERSION:-$(gh release view -R astral-sh/uv --json tagName --jq '.tagName' 2>/dev/null || true)}"
   if [ -z "${tag_name}" ]; then
-    echo "[setup] Unable to resolve uv release (tag not found)." >&2
-    echo "[setup] You can set UV_VERSION to a valid tag (e.g., '0.5.1' or 'v0.5.1')." >&2
+    echo "[setup] Unable to resolve uv release tag (try setting UV_VERSION)." >&2
     exit 1
   fi
   echo "[setup] Resolved uv release tag: ${tag_name}"
-  # Determine a download pattern to match Linux assets (.tar.gz or .tar.xz)
-  case "${os}" in
-    linux) os_pat="linux" ;;
-    darwin) os_pat="darwin|apple|macos" ;;
-    *) os_pat="${os}" ;;
-  esac
-  # Try gz first then xz
-  pattern_gz="*${os_pat}*${arch_pat}*.tar.gz"
-  pattern_xz="*${os_pat}*${arch_pat}*.tar.xz"
-  echo "[setup] Downloading uv asset matching: ${pattern_gz} (fallback: ${pattern_xz})"
-  if gh release download "${tag_name}" -R astral-sh/uv -p "${pattern_gz}" -O "${tmpdir}/uv.tgz"; then
-    archive_ext="gz"
-  elif gh release download "${tag_name}" -R astral-sh/uv -p "${pattern_xz}" -O "${tmpdir}/uv.txz"; then
-    archive_ext="xz"
+  primary="uv-x86_64-unknown-linux-gnu.tar.gz"
+  fallback="uv-x86_64-unknown-linux-musl.tar.gz"
+  if gh release download "${tag_name}" -R astral-sh/uv -p "${primary}" -O "${tmpdir}/uv.tgz"; then
+    :
+  elif gh release download "${tag_name}" -R astral-sh/uv -p "${fallback}" -O "${tmpdir}/uv.tgz"; then
+    :
   else
-    echo "[setup] Failed to find a matching uv asset for ${os}/${arch} in ${tag_name}" >&2
-    printf '%s' "${release_json}" | jq '.assets[].name' -r >&2 || true
+    echo "[setup] Failed to download uv asset (${primary} or ${fallback}) for ${tag_name}" >&2
+    gh release view "${tag_name}" -R astral-sh/uv --json assets --jq '.assets[].name' || true
     exit 1
   fi
-  if [ "${archive_ext}" = "gz" ]; then
-    tar -C "${tmpdir}" -xzf "${tmpdir}/uv.tgz" uv
-  else
-    tar -C "${tmpdir}" -xJf "${tmpdir}/uv.txz" uv
-  fi
+  tar -C "${tmpdir}" -xzf "${tmpdir}/uv.tgz" uv
   # Install to user bin when not root; fall back to /usr/local/bin
   if install -m 0755 "${tmpdir}/uv" "$HOME/.local/bin/uv" 2>/dev/null; then
     :
@@ -105,15 +84,23 @@ if ! command -v uv >/dev/null 2>&1; then
   fi
 fi
 
-echo "[setup] Ensuring Python ${REQ_PY_VER} via uv"
-uv python install "${REQ_PY_VER}"
-echo "UV_PYTHON=${REQ_PY_VER}" >> "${GITHUB_ENV:-/dev/null}" || true
+if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -ne 1 ]; then
+  echo "[setup] Ensuring Python ${REQ_PY_VER} via uv"
+  uv python install "${REQ_PY_VER}"
+  echo "UV_PYTHON=${REQ_PY_VER}" >> "${GITHUB_ENV:-/dev/null}" || true
 
-echo "[setup] Syncing Python dependencies (dev)..."
-uv sync --dev --no-progress
+  echo "[setup] Syncing Python dependencies (dev)..."
+  uv sync --dev --no-progress
+else
+  echo "[setup] Skipping uv python install and sync (BOOTSTRAP_SKIP_SYNC=1)"
+fi
 
-echo "[setup] Installing external tools (hadolint, prettier, ruff, yamllint, darglint)..."
-./scripts/utils/install-tools.sh --local
+if [ "${BOOTSTRAP_SKIP_INSTALL_TOOLS:-0}" -ne 1 ]; then
+  echo "[setup] Installing external tools (hadolint, prettier, ruff, yamllint, darglint)..."
+  ./scripts/utils/install-tools.sh --local
+else
+  echo "[setup] Skipping external tools install (BOOTSTRAP_SKIP_INSTALL_TOOLS=1)"
+fi
 
 # Ensure local bin is persisted in PATH for downstream steps in GitHub Actions
 if [ -n "$GITHUB_PATH" ] && [ -d "$HOME/.local/bin" ]; then
