@@ -39,6 +39,9 @@ jobs:
 
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Docker (Buildx)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@ae541c778920330b6e82f3dd536bcf2a026324c0
@@ -47,6 +50,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Ensure GH_TOKEN is set for uv install
+        run: echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
 
       # Removed no-op dependency listing step
 
