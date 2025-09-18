@@ -6,11 +6,11 @@ name: Publish to TestPyPI
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@ae541c778920330b6e82f3dd536bcf2a026324c0
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@c3a9415ca116833c685f194b66c4e00e852cbb70
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@ae541c778920330b6e82f3dd536bcf2a026324c0
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@c3a9415ca116833c685f194b66c4e00e852cbb70
 
   publish:
     name: Upload to TestPyPI
@@ -25,7 +25,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2
         with:
           egress-policy: audit
       - name: Download artifacts
