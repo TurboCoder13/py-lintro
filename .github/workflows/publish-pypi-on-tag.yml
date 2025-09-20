@@ -35,8 +35,10 @@ jobs:
     name: Generate and verify SBOM
     needs: [build, quality]
     uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@ae541c778920330b6e82f3dd536bcf2a026324c0
-    with:
-      bomctl-image: ${{ vars.BOMCTL_IMAGE }}
+    permissions:
+      contents: read
+      actions: read
+      packages: read
 
   publish:
     name: Upload to PyPI
@@ -56,8 +58,15 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          egress_policy: block
+          allowed-endpoints: |
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           python-version: '3.13'
       - name: Ensure tag points to a commit on main

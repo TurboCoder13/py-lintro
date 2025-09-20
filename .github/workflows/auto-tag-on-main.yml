@@ -49,6 +49,9 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           python-version: '3.13'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read version from pyproject.toml
         id: version
@@ -73,8 +76,10 @@ jobs:
         if: >-
           steps.prev.outputs.version != steps.version.outputs.version &&
           steps.check.outputs.exists == 'false'
-        run: |
-          git remote set-url origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}.git
+        env:
+          RELEASE_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: scripts/ci/auto-tag-configure-auth.sh
 
       - name: Create and push tag
         if: >-

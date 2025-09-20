@@ -171,6 +171,22 @@ class TestScriptHelp:
         assert_that(result.stdout).contains("Usage:")
         assert_that(result.stdout).contains("Codecov")
 
+    def test_egress_audit_help(self, scripts_dir):
+        """egress-audit-lite.sh should provide help and exit 0.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+        """
+        script = scripts_dir / "ci" / "egress-audit-lite.sh"
+        result = subprocess.run(
+            [str(script), "--help"],
+            capture_output=True,
+            text=True,
+            cwd=scripts_dir.parent,
+        )
+        assert_that(result.returncode).is_equal_to(0)
+        assert_that(result.stdout).contains("Usage:")
+
     def test_sbom_generate_help(self, scripts_dir):
         """sbom-generate.sh should provide help and exit 0.
 
@@ -294,6 +310,48 @@ class TestScriptFunctionality:
         )
         assert_that(result.returncode).is_equal_to(0)
         assert_that(result.stdout).contains("Usage:")
+
+    def test_egress_audit_reads_env_and_skips_ip_by_default(self, scripts_dir):
+        """egress-audit-lite should read env and skip IP literals by default.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+        """
+        script = scripts_dir / "ci" / "egress-audit-lite.sh"
+        env = os.environ.copy()
+        # include a valid domain and an IP literal; do not actually fail if unreachable
+        env["EGRESS_ALLOWED_ENDPOINTS"] = "github.com:443,54.185.253.63:443"
+        # run with fail=false; should not fail even if it tries both
+        proc = subprocess.run(
+            [str(script), "false"],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=scripts_dir.parent,
+        )
+        assert proc.returncode == 0
+        # Should indicate it skipped the IP
+        assert "Skipping IP literal" in (proc.stdout + proc.stderr)
+
+    def test_egress_audit_can_include_ip_with_flag(self, scripts_dir):
+        """egress-audit-lite should include IP when --check-ip is provided.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+        """
+        script = scripts_dir / "ci" / "egress-audit-lite.sh"
+        env = os.environ.copy()
+        env["EGRESS_ALLOWED_ENDPOINTS"] = "127.0.0.1:443"
+        proc = subprocess.run(
+            [str(script), "--check-ip", "false"],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=scripts_dir.parent,
+        )
+        # We do not assert success/failure since localhost:443 may be closed.
+        # But the script should run and not exit with usage error.
+        assert proc.returncode in (0, 1)
 
 
 class TestScriptIntegration:
