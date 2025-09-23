@@ -30,7 +30,6 @@ Welcome to the Lintro documentation! This hub provides comprehensive guides for 
 - **[Style Guide](style-guide.md)** - Coding standards and best practices
 - **[Coverage Setup](coverage-setup.md)** - Test coverage configuration reference
 - **[Self-Use Documentation](lintro-self-use.md)** - How Lintro uses itself
-- **[Removed CLI Options](removed_cli_options.md)** - Deprecated features reference
 
 ## 🚀 Quick Links
 
