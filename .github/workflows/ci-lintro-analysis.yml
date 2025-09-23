@@ -27,17 +27,31 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Docker Setup with Hardened Runner
+        uses: TurboCoder13/py-lintro/.github/actions/docker-setup@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          login: 'true'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+          egress_policy: block
+          allowed-endpoints: |
+            ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS), '\n') }}
+            ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER), '\n') }}
 
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOOTSTRAP_SKIP_SYNC: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
-      - name: Setup Docker (Buildx)
-        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Ensure GH_TOKEN is set for uv install
+        run: echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
 
       # Removed no-op dependency listing step
 
@@ -48,8 +62,9 @@ jobs:
           push: false
           load: true
           tags: py-lintro:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache disabled for docker driver - not supported
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
 
       - name: Auto-fix with Lintro (same-repo PRs only)
         if: >-
@@ -83,3 +98,4 @@ jobs:
         env:
           CHK_EXIT_CODE: ${{ env.CHK_EXIT_CODE }}
         run: scripts/ci/fail-on-lint.sh
+

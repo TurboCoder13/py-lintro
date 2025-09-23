@@ -40,22 +40,18 @@ jobs:
     outputs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+      - name: Harden and Checkout
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
-          egress-policy: audit
+          egress_policy: block
           allowed-endpoints: |
-            github.com:443
-            api.github.com:443
-            downloads.github.com:443
-            objects.githubusercontent.com:443
-            pkg-containers.githubusercontent.com:443
-            pypi.org:443
-            files.pythonhosted.org:443
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
@@ -88,6 +84,15 @@ jobs:
           COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
         run: bash ./scripts/ci/enforce-coverage-threshold.sh
 
+      - name: Allow Codecov egress (GitHub + Codecov only)
+        if: always()
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CODECOV }}
+
       - name: Upload coverage to Codecov (always)
         if: always()
         continue-on-error: true
@@ -97,7 +102,6 @@ jobs:
           files: coverage.xml
           flags: python-3.13
           fail_ci_if_error: false
-          # token: ${{ secrets.CODECOV_TOKEN }} # for private repos only
 
       - name: Generate coverage badge (no commit)
         if: success()
@@ -132,6 +136,9 @@ jobs:
         # Default allowlist suffices for PR comment step
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Delete Previous Coverage PR Comments
         if: always()
         env:
@@ -145,10 +152,7 @@ jobs:
         env:
           COVERAGE_PERCENTAGE: ${{ needs.run-test-suite.outputs.coverage-percentage }}
           JOB_RESULT: ${{ needs.run-test-suite.result }}
-        run: |
-          export COVERAGE_PERCENTAGE
-          export JOB_RESULT
-          ./scripts/ci/coverage-pr-comment.sh
+        run: ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
         uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@ae541c778920330b6e82f3dd536bcf2a026324c0
