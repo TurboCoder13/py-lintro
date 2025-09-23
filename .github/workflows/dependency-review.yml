@@ -17,6 +17,9 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          egress_policy: block
+          allowed-endpoints: |
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
       # Avoid PR comment on forks (token is read-only); still run the check
       - name: Dependency review (forks - no PR comment)
         if: github.event.pull_request.head.repo.fork == true

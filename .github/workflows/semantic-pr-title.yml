@@ -18,6 +18,9 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          egress_policy: block
+          allowed-endpoints: |
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
 
       - name: Validate PR title follows Conventional Commits
         id: semantic

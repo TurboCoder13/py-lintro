@@ -39,8 +39,8 @@ jobs:
           driver: docker
           egress_policy: block
           allowed-endpoints: |
-            ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS), '\n') }}
-            ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER), '\n') }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER }}
 
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0

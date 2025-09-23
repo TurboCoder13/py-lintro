@@ -45,8 +45,8 @@ Example:
     username: ${{ github.actor }}
     password: ${{ secrets.GITHUB_TOKEN }}
     allowed-endpoints: |
-      ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS), '\n') }}
-      ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER), '\n') }}
+      ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+      ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER }}
 ```
 
 ## .github/actions/post-pr-comment

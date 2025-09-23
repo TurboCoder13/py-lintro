@@ -36,7 +36,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           egress_policy: block
           allowed-endpoints: |
-            ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS), '\n') }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
 
       - name: Bump internal refs to current SHA
         env:

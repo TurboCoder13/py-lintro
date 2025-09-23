@@ -28,6 +28,10 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          egress_policy: block
+          allowed-endpoints: |
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
 
       - name: Create GitHub App installation token
         id: app-token
@@ -49,14 +53,16 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           python-version: '3.13'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read version from pyproject.toml
         id: version
-        run: scripts/ci/auto-tag-read-version.sh
+        run: scripts/ci/auto-tag-unified.sh read-version
 
       - name: Detect previous version
         id: prev
-        run: scripts/ci/auto-tag-detect-previous.sh
+        run: scripts/ci/auto-tag-unified.sh detect-previous
 
       - name: Skip if version unchanged
         if: steps.prev.outputs.version == steps.version.outputs.version
@@ -67,14 +73,15 @@ jobs:
         if: steps.prev.outputs.version != steps.version.outputs.version
         env:
           TAG: v${{ steps.version.outputs.version }}
-        run: scripts/ci/auto-tag-check-exists.sh
+        run: scripts/ci/auto-tag-unified.sh check-exists
 
       - name: Configure auth for push
         if: >-
           steps.prev.outputs.version != steps.version.outputs.version &&
           steps.check.outputs.exists == 'false'
-        run: |
-          git remote set-url origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}.git
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: scripts/ci/auto-tag-unified.sh configure-auth
 
       - name: Create and push tag
         if: >-
@@ -82,4 +89,4 @@ jobs:
           steps.check.outputs.exists == 'false'
         env:
           TAG: v${{ steps.version.outputs.version }}
-        run: scripts/ci/auto-tag-create-push-tag.sh
+        run: scripts/ci/auto-tag-unified.sh create-push

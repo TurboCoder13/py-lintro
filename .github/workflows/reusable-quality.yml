@@ -26,27 +26,24 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          egress_policy: block
+          allowed-endpoints: |
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
+      - name: Ensure GH_TOKEN is set for uv install
+        run: echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
 
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           python-version: '3.13'
 
       - name: Sync dependencies
         run: uv sync --dev --no-progress
 
-      - name: Install external tools for Lintro
-        run: |
-          ./scripts/utils/install-tools.sh --local
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Lintro - format and check
-        run: |
-          uv run lintro format . --output-format grid
-          uv run lintro check . --output-format grid
-
-      - name: Read project version
+      - name: Quality gate
         id: version
-        run: |
-          python scripts/utils/extract-version.py | tee ver.txt
-          cat ver.txt >> "$GITHUB_OUTPUT"
+        run: scripts/ci/reusable-quality-entry.sh

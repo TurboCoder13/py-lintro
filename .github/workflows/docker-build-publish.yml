@@ -92,7 +92,7 @@ jobs:
         with:
           egress-policy: block
           allowed-endpoints: |
-            ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS), '\n') }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
 
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
@@ -107,8 +107,8 @@ jobs:
         with:
           egress-policy: block
           allowed-endpoints: |
-            ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS), '\n') }}
-            ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER), '\n') }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER }}
 
       - name: Setup Docker (Buildx + login)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@ae541c778920330b6e82f3dd536bcf2a026324c0
