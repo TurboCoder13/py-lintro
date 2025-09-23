@@ -22,6 +22,8 @@ jobs:
 
       - name: Setup Docker via composite (no login)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@ae541c778920330b6e82f3dd536bcf2a026324c0
+        with:
+          login: 'false'
 
       - name: Prepare dummy comment file
         run: echo "Smoke test comment" > pr-comment.txt

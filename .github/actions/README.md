@@ -5,11 +5,13 @@ Centralized, reusable steps to keep workflows small and DRY. Each action exposes
 ## .github/actions/setup-docker
 
 - Purpose: Set up Docker Buildx; optionally log in to a registry (e.g., GHCR)
+- **Note**: This action does NOT include hardened runner - use in workflows that already have hardening
 - Inputs:
   - login (string, default 'false'): set to 'true' to enable login
   - registry (string, default ghcr.io)
   - username (string)
   - password (string)
+  - driver (string, default 'docker'): buildx driver
 
 Example:
 
@@ -21,6 +23,30 @@ Example:
     registry: ghcr.io
     username: ${{ github.actor }}
     password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+## .github/actions/docker-setup
+
+- Purpose: Complete Docker setup with hardened runner, checkout, and buildx in one action
+- **Recommended**: Use this for Docker workflows to avoid egress policy conflicts
+- Inputs:
+  - All inputs from harden-and-checkout action
+  - All inputs from setup-docker action
+  - allowed-endpoints (required): combined GitHub + container endpoints
+
+Example:
+
+```yaml
+- name: Docker Setup with Hardened Runner
+  uses: ./.github/actions/docker-setup
+  with:
+    login: 'true'
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+    allowed-endpoints: |
+      ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS), '\n') }}
+      ${{ join(fromJSON(vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER), '\n') }}
 ```
 
 ## .github/actions/post-pr-comment
