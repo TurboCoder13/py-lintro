@@ -39,7 +39,7 @@ jobs:
           BOMCTL_VERSION: v0.4.3
         run: bash scripts/ci/sbom-install-binary-gh.sh
       - name: Generate SBOMs (CycloneDX 1.6 JSON & SPDX 2.3)
-        run: bash scripts/ci/sbom-generate.sh --skip-fetch --format cyclonedx-1.6 --format spdx-2.3 --name "py-lintro-sbom" --alias project || true
+        run: scripts/ci/sbom-generate-safe.sh
       - name: Fetch SBOM via bomctl binary (GitHub graph)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

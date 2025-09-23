@@ -98,4 +98,3 @@ jobs:
         env:
           CHK_EXIT_CODE: ${{ env.CHK_EXIT_CODE }}
         run: scripts/ci/fail-on-lint.sh
-

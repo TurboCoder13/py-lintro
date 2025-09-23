@@ -170,10 +170,12 @@ docker run --rm -v "$(pwd):/code" lintro:latest check
 
 ## 🆕 Recent Updates
 
+- **Security audit framework** - Comprehensive security verification for workflows and scripts
+- **DRY consolidation** - Reduced duplicate patterns across workflows and actions
+- **Shell-free design** - Moved inline shell commands to dedicated scripts
+- **Environment standardization** - Consistent variable usage across all workflows
 - **Documentation restructure** - Improved organization and navigation
-- **New tool analysis** - Detailed comparisons with core tools
-- **Enhanced GitHub integration** - More workflow examples
-- **Comprehensive configuration guide** - All tools covered
+- **Enhanced tool analysis** - Detailed comparisons with core tools
 
 ## 🤝 Contributing to Documentation
 

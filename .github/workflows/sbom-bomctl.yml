@@ -32,4 +32,4 @@ jobs:
         run: bash scripts/ci/sbom-install-binary-gh.sh
 
       - name: Run bomctl (binary)
-        run: bomctl --help | sed -n '1,40p'
+        run: scripts/ci/bomctl-help-test.sh
