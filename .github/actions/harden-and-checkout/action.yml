@@ -18,7 +18,7 @@ inputs:
     default: ''
   egress_policy:
     description: step-security harden-runner egress policy (audit|block)
-    default: 'audit'
+    default: 'block'
   allowed-endpoints:
     description: |-
       Newline-separated allowlist for step-security/harden-runner allowed-endpoints
