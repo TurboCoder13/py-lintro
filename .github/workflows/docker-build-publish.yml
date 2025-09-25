@@ -55,7 +55,7 @@ jobs:
           fetch-tags: true
           persist-credentials: true
           driver: docker
-          egress_policy: block
+          egress_policy: audit
           allowed-endpoints: |
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER }}
@@ -90,7 +90,7 @@ jobs:
       - name: Harden and Checkout
         uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
-          egress_policy: block
+          egress_policy: audit
           allowed-endpoints: |
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER }}
