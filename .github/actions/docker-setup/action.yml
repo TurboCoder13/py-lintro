@@ -36,7 +36,7 @@ inputs:
     description: Token to use for checkout (GITHUB_TOKEN or RELEASE_TOKEN)
     required: false
     default: ''
-  egress_policy:
+  egress-policy:
     description: step-security harden-runner egress policy (audit|block)
     required: false
     default: 'block'

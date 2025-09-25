@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-          egress_policy: block
+          egress-policy: block
           allowed-endpoints: |
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
