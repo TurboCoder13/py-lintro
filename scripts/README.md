@@ -64,21 +64,17 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `pages-deploy.sh`                  | Deploy coverage reports to GitHub Pages            | `./scripts/ci/pages-deploy.sh`                                           |
 | `ghcr_prune_untagged.py`           | Prune untagged GHCR package versions               | `uv run python scripts/ci/ghcr_prune_untagged.py`                        |
 | `deployments-prune.sh`             | Prune GitHub deployments via gh (keep-n/ref)       | `./scripts/ci/deployments-prune.sh --help`                               |
-| `auto-tag-read-version.sh`         | Read version from pyproject to GITHUB_OUTPUT       | `./scripts/ci/auto-tag-read-version.sh`                                  |
-| `auto-tag-detect-previous.sh`      | Get previous version from HEAD^ pyproject          | `./scripts/ci/auto-tag-detect-previous.sh`                               |
-| `auto-tag-create-push-tag.sh`      | Create and push annotated git tag                  | `./scripts/ci/auto-tag-create-push-tag.sh`                               |
+| `auto-tag-unified.sh`              | Unified auto-tagging functions (check/read/create)  | `./scripts/ci/auto-tag-unified.sh --help`                                |
 | `ci-auto-fix.sh`                   | Auto-format via Docker and push changes            | `./scripts/ci/ci-auto-fix.sh`                                            |
 | `pypi-version-exists.sh`           | Check if version exists on PyPI                    | `./scripts/ci/pypi-version-exists.sh <project> <version>`                |
 | `enforce-coverage-threshold.sh`    | Enforce minimum coverage threshold                 | `./scripts/ci/enforce-coverage-threshold.sh --help`                      |
 | `ensure-tag-on-main.sh`            | Ensure tag ref points to commit on main            | `./scripts/ci/ensure-tag-on-main.sh --help`                              |
 | `guard-release-commit.sh`          | Check last commit is release bump                  | `./scripts/ci/guard-release-commit.sh --help`                            |
-| `auto-tag-configure-auth.sh`       | Configure git remote auth for tag push             | `./scripts/ci/auto-tag-configure-auth.sh --help`                         |
 | `pre-release-quality.sh`           | Run Lintro format and check                        | `./scripts/ci/pre-release-quality.sh --help`                             |
 | `semantic_release_compute_next.py` | Compute next version (tag-only baseline)           | `uv run python scripts/ci/semantic_release_compute_next.py --print-only` |
 | `validate-action-pinning.sh`       | Scan for unpinned GitHub Actions                   | `./scripts/ci/validate-action-pinning.sh --help`                         |
 | `bump-internal-refs.sh`            | Pin internal action/workflow refs to latest SHA    | `./scripts/ci/bump-internal-refs.sh --help`                              |
 | `semantic-pr-title-check.sh`       | Validate PR title against Conventional Commits     | `./scripts/ci/semantic-pr-title-check.sh --help`                         |
-| `auto-tag-check-exists.sh`         | Check if a git tag exists and export result        | `./scripts/ci/auto-tag-check-exists.sh [TAG]`                            |
 | `verify-tag-matches-pyproject.sh`  | Verify tag matches `pyproject.toml` version        | `./scripts/ci/verify-tag-matches-pyproject.sh --help`                    |
 | `sbom-generate.sh`                 | Generate and export SBOMs via bomctl               | `./scripts/ci/sbom-generate.sh --help`                                   |
 | `sbom-rename-artifacts.sh`         | Prefix SBOMs with tag and SHA for traceability     | `./scripts/ci/sbom-rename-artifacts.sh dist/sbom`                        |

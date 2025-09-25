@@ -2,9 +2,26 @@
 #
 # Test bomctl binary by displaying first 40 lines of help output
 #
-# Usage: scripts/ci/bomctl-help-test.sh
+# Usage: scripts/ci/bomctl-help-test.sh [--help|-h]
 
 set -euo pipefail
+
+# Show help if requested
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    cat <<'EOF'
+Test bomctl binary installation and help output.
+
+Usage:
+  scripts/ci/bomctl-help-test.sh [--help|-h]
+
+This script:
+  - Checks if bomctl is available in PATH
+  - Displays the first 40 lines of bomctl help output
+  - Used for verifying bomctl installation in CI
+
+EOF
+    exit 0
+fi
 
 # Source common utilities for consistent logging
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
