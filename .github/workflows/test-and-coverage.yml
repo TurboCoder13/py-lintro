@@ -41,14 +41,15 @@ jobs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           egress_policy: block
           allowed-endpoints: |
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CODECOV }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -83,15 +84,6 @@ jobs:
         env:
           COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
         run: bash ./scripts/ci/enforce-coverage-threshold.sh
-
-      - name: Allow Codecov egress (GitHub + Codecov only)
-        if: always()
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
-        with:
-          egress-policy: block
-          allowed-endpoints: |
-            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
-            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CODECOV }}
 
       - name: Upload coverage to Codecov (always)
         if: always()
@@ -132,10 +124,10 @@ jobs:
     if: always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f5c9374c8f60487ac34781fb6fb78496be0699bc
         # Default allowlist suffices for PR comment step
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -155,7 +147,7 @@ jobs:
         run: ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'

@@ -30,7 +30,7 @@ jobs:
           github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           egress_policy: block
           allowed-endpoints: |
@@ -53,6 +53,6 @@ jobs:
         run: ./scripts/ci/pages-deploy.sh --badge-path coverage-badge/coverage-badge.svg
       - name: Deploy coverage to Pages
         id: deployment
-        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           path: _site

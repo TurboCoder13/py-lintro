@@ -6,11 +6,11 @@ name: Publish to TestPyPI
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@f5c9374c8f60487ac34781fb6fb78496be0699bc
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@f5c9374c8f60487ac34781fb6fb78496be0699bc
 
   publish:
     name: Upload to TestPyPI
@@ -25,7 +25,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
           egress-policy: block
           allowed-endpoints: |

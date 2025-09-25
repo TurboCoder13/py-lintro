@@ -21,20 +21,20 @@ permissions:
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@f5c9374c8f60487ac34781fb6fb78496be0699bc
     permissions:
       contents: read
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@f5c9374c8f60487ac34781fb6fb78496be0699bc
     permissions:
       contents: read
 
   sbom:
     name: Generate and verify SBOM
     needs: [build, quality]
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@f5c9374c8f60487ac34781fb6fb78496be0699bc
     permissions:
       contents: read
       actions: read
@@ -54,7 +54,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -63,7 +63,7 @@ jobs:
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

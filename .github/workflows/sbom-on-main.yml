@@ -27,13 +27,14 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
           egress_policy: block
           allowed-endpoints: |
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_SIGSTORE }}
       - name: Install bomctl from GitHub Releases (no registries)
         env:
           BOMCTL_VERSION: v0.4.3
@@ -52,13 +53,6 @@ jobs:
           name: sbom-artifacts
           path: dist/sbom/*
           if-no-files-found: error
-      - name: Harden Runner (allow Sigstore for attest)
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
-        with:
-          egress-policy: block
-          allowed-endpoints: |
-            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
-            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_SIGSTORE }}
       - name: Attest SBOM artifacts with keyless cosign (optional)
         env:
           COSIGN_EXPERIMENTAL: 1

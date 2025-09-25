@@ -1,0 +1,166 @@
+---
+name: Infrastructure Health Check
+
+# Run on schedule and manual trigger for monitoring critical infrastructure
+'on':
+  schedule:
+    # Run every 6 hours to monitor infrastructure health
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      full_check:
+        description: 'Run comprehensive infrastructure validation'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  issues: write # For creating infrastructure alerts
+
+jobs:
+  health-check:
+    name: 🏥 Infrastructure Health Validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER }}
+            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
+
+      - name: Test GitHub Container Registry Connectivity
+        run: |
+          echo "🔍 Testing GitHub Container Registry (ghcr.io) connectivity"
+          if curl -fsSL --max-time 10 "https://ghcr.io/v2/" > /dev/null; then
+            echo "✅ ghcr.io is accessible"
+          else
+            echo "❌ ghcr.io connectivity issue detected"
+            exit 1
+          fi
+
+      - name: Test GitHub Release Assets Connectivity
+        run: |
+          echo "🔍 Testing GitHub Release Assets connectivity"
+          test_url="https://api.github.com/repos/astral-sh/uv/releases/latest"
+          if curl -fsSL --max-time 10 "${test_url}" | jq -r '.tag_name' > /dev/null; then
+            echo "✅ GitHub Release Assets accessible"
+          else
+            echo "❌ GitHub Release Assets connectivity issue detected"
+            exit 1
+          fi
+
+      - name: Test PyPI Connectivity
+        run: |
+          echo "🔍 Testing PyPI connectivity"
+          if curl -fsSL --max-time 10 "https://pypi.org/simple/" > /dev/null; then
+            echo "✅ PyPI is accessible"
+          else
+            echo "❌ PyPI connectivity issue detected"
+            exit 1
+          fi
+
+      - name: DNS Resolution Check
+        run: |
+          echo "🔍 Testing DNS resolution for critical endpoints"
+          endpoints=(
+            "ghcr.io"
+            "api.github.com"
+            "release-assets.githubusercontent.com"
+            "pypi.org"
+            "files.pythonhosted.org"
+          )
+
+          for endpoint in "${endpoints[@]}"; do
+            if nslookup "${endpoint}" > /dev/null 2>&1; then
+              ip=$(nslookup "${endpoint}" | awk '/^Address: / { print $2 }' | head -1)
+              echo "✅ ${endpoint} resolves to ${ip}"
+            else
+              echo "❌ DNS resolution failed for ${endpoint}"
+              exit 1
+            fi
+          done
+
+      - name: Comprehensive Network Test (if requested)
+        if: ${{ github.event.inputs.full_check == 'true' }}
+        run: |
+          echo "🔍 Running comprehensive network validation"
+          echo "Testing network connectivity to all configured endpoints..."
+
+          # Test all egress endpoints for reachability
+          echo "Validating egress allowlist endpoints..."
+          critical_endpoints=(
+            "github.com:443"
+            "api.github.com:443"
+            "ghcr.io:443" 
+            "pypi.org:443"
+            "files.pythonhosted.org:443"
+          )
+
+          for endpoint in "${critical_endpoints[@]}"; do
+            host="${endpoint%:*}"
+            port="${endpoint#*:}"
+            if timeout 5 bash -c "</dev/tcp/${host}/${port}"; then
+              echo "✅ ${endpoint} is reachable"
+            else
+              echo "❌ ${endpoint} is not reachable"
+              exit 1
+            fi
+          done
+
+      - name: Create Infrastructure Alert (on failure)
+        if: ${{ failure() }}
+        uses: actions/github-script@e69ef5462fd455e02edcaf4dd7708eda96b9eda0 # v7
+        with:
+          script: |
+            const title = `🚨 Infrastructure Health Check Failed - ${new Date().toISOString()}`;
+            const body = `
+            ## Infrastructure Health Check Failure
+
+            **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            **Time**: ${new Date().toISOString()}
+            **Trigger**: ${{ github.event_name }}
+
+            ### Recommended Actions:
+            1. Check GitHub Status: https://www.githubstatus.com
+            2. Review egress endpoint configurations
+            3. Monitor for DNS resolution issues
+            4. Consider enabling workflow retry mechanisms
+
+            ### Security Context:
+            This failure may indicate:
+            - GitHub infrastructure issues
+            - Network connectivity problems
+            - DNS resolution failures
+            - Egress policy conflicts
+
+            **Auto-created by Infrastructure Health Check workflow**
+            `;
+
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['infrastructure', 'security', 'automated-alert']
+            });
+
+  report:
+    name: 📊 Health Check Summary
+    needs: health-check
+    runs-on: ubuntu-24.04
+    if: ${{ always() }}
+    steps:
+      - name: Report Health Status
+        run: |
+          if [ "${{ needs.health-check.result }}" = "success" ]; then
+            echo "🎉 All infrastructure health checks passed"
+            echo "Critical endpoints are accessible and functioning properly"
+          else
+            echo "⚠️  Infrastructure health check detected issues"
+            echo "Review the health-check job for detailed failure information"
+            echo "Consider checking GitHub Status or retrying affected workflows"
+          fi

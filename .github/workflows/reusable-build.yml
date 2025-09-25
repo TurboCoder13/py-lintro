@@ -25,7 +25,7 @@ jobs:
       contents: read
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           egress_policy: block
@@ -36,7 +36,7 @@ jobs:
         run: echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

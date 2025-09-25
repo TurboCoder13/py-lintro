@@ -71,13 +71,41 @@ if ! command -v uv >/dev/null 2>&1; then
   echo "[setup] Resolved uv release tag: ${tag_name}"
   primary="uv-x86_64-unknown-linux-gnu.tar.gz"
   fallback="uv-x86_64-unknown-linux-musl.tar.gz"
-  if gh release download "${tag_name}" -R astral-sh/uv -p "${primary}" -O "${tmpdir}/uv.tgz"; then
-    :
-  elif gh release download "${tag_name}" -R astral-sh/uv -p "${fallback}" -O "${tmpdir}/uv.tgz"; then
-    :
-  else
+  # Retry logic with exponential backoff for enterprise resilience
+  download_success=0
+  max_retries=3
+  assets=("${primary}" "${fallback}")
+  
+  for asset in "${assets[@]}"; do
+    for attempt in $(seq 1 $max_retries); do
+      echo "[setup] Attempting to download ${asset} (attempt ${attempt}/${max_retries})"
+      if gh release download "${tag_name}" -R astral-sh/uv -p "${asset}" -O "${tmpdir}/uv.tgz"; then
+        download_success=1
+        echo "[setup] Successfully downloaded ${asset}"
+        break 2
+      else
+        if [ $attempt -lt $max_retries ]; then
+          sleep_time=$((attempt * 2))
+          echo "[setup] Download failed, retrying in ${sleep_time} seconds..."
+          sleep $sleep_time
+        fi
+      fi
+    done
+  done
+  
+  if [ $download_success -eq 0 ]; then
     echo "[setup] Failed to download uv asset (${primary} or ${fallback}) for ${tag_name}" >&2
-    gh release view "${tag_name}" -R astral-sh/uv --json assets --jq '.assets[].name' || true
+    echo "[setup] This may be due to GitHub infrastructure issues affecting release assets" >&2
+    echo "[setup] Error details for security incident response:" >&2
+    echo "[setup] - Target assets: ${primary}, ${fallback}" >&2
+    echo "[setup] - Release tag: ${tag_name}" >&2
+    echo "[setup] - Available assets:" >&2
+    gh release view "${tag_name}" -R astral-sh/uv --json assets --jq '.assets[].name' || echo "[setup] Unable to list assets (connectivity issue)"
+    echo "[setup] - Network connectivity test:" >&2
+    if command -v curl >/dev/null 2>&1; then
+      curl -I "https://api.github.com/repos/astral-sh/uv/releases/tags/${tag_name}" 2>&1 | head -3 || echo "[setup] GitHub API unreachable"
+    fi
+    echo "[setup] Recommendation: Check GitHub Status (https://www.githubstatus.com) or retry workflow" >&2
     exit 1
   fi
   # Extract uv binary regardless of inner directory layout

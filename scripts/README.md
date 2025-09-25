@@ -64,7 +64,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `pages-deploy.sh`                  | Deploy coverage reports to GitHub Pages            | `./scripts/ci/pages-deploy.sh`                                           |
 | `ghcr_prune_untagged.py`           | Prune untagged GHCR package versions               | `uv run python scripts/ci/ghcr_prune_untagged.py`                        |
 | `deployments-prune.sh`             | Prune GitHub deployments via gh (keep-n/ref)       | `./scripts/ci/deployments-prune.sh --help`                               |
-| `auto-tag-unified.sh`              | Unified auto-tagging functions (check/read/create)  | `./scripts/ci/auto-tag-unified.sh --help`                                |
+| `auto-tag-unified.sh`              | Unified auto-tagging functions (check/read/create) | `./scripts/ci/auto-tag-unified.sh --help`                                |
 | `ci-auto-fix.sh`                   | Auto-format via Docker and push changes            | `./scripts/ci/ci-auto-fix.sh`                                            |
 | `pypi-version-exists.sh`           | Check if version exists on PyPI                    | `./scripts/ci/pypi-version-exists.sh <project> <version>`                |
 | `enforce-coverage-threshold.sh`    | Enforce minimum coverage threshold                 | `./scripts/ci/enforce-coverage-threshold.sh --help`                      |
