@@ -37,7 +37,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          egress-policy: audit
+          egress_policy: 'block'
           allowed-endpoints: |
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER }}

@@ -58,7 +58,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-          egress-policy: block
+          egress_policy: 'block'
           allowed-endpoints: |
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
