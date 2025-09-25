@@ -104,6 +104,8 @@ create_and_push_tag() {
 detect_previous_version() {
     # Read version from the previous commit's pyproject.toml (original behavior)
     local previous_version
+    local script_dir
+    script_dir="$(dirname "${BASH_SOURCE[0]}")"
     
     # Get the previous commit SHA
     local prev_commit
@@ -115,12 +117,34 @@ detect_previous_version() {
         return
     fi
     
-    # Extract version from previous commit's pyproject.toml
-    previous_version=$(git show "$prev_commit:pyproject.toml" 2>/dev/null | grep '^version = ' | sed 's/version = "\(.*\)"/\1/' || true)
+    # Create temporary file for previous commit's pyproject.toml
+    local temp_file
+    temp_file=$(mktemp)
+    trap "rm -f '$temp_file'" EXIT
     
-    if [[ -n "$previous_version" ]]; then
-        echo "version=$previous_version" >> "${GITHUB_OUTPUT:-/dev/stdout}"
-        echo "Previous version: $previous_version"
+    # Extract pyproject.toml from previous commit
+    if ! git show "$prev_commit:pyproject.toml" > "$temp_file" 2>/dev/null; then
+        echo "version=" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+        echo "Could not access pyproject.toml from previous commit"
+        return
+    fi
+    
+    # Use robust Python-based version extraction on the temporary file
+    local extract_output
+    extract_output=$(python3 "${script_dir}/../utils/extract-version.py" --file "$temp_file" 2>&1)
+    local exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]] && [[ -n "$extract_output" ]]; then
+        # Extract version value from "version=X.Y.Z" output
+        previous_version="${extract_output#version=}"
+        
+        if [[ -n "$previous_version" ]]; then
+            echo "version=$previous_version" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+            echo "Previous version: $previous_version"
+        else
+            echo "version=" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+            echo "Could not extract version from previous commit's pyproject.toml"
+        fi
     else
         echo "version=" >> "${GITHUB_OUTPUT:-/dev/stdout}"
         echo "Could not extract version from previous commit's pyproject.toml"
@@ -129,24 +153,34 @@ detect_previous_version() {
 
 read_version_from_pyproject() {
     local version
+    local script_dir
+    script_dir="$(dirname "${BASH_SOURCE[0]}")"
     
     if [[ ! -f "pyproject.toml" ]]; then
         echo "Error: pyproject.toml not found" >&2
         exit 1
     fi
     
-    # Extract version from pyproject.toml
-    version=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+    # Use robust Python-based version extraction
+    local extract_output
+    extract_output=$(python3 "${script_dir}/../utils/extract-version.py" 2>&1)
+    local exit_code=$?
+    
+    if [[ $exit_code -ne 0 ]]; then
+        echo "Error: Failed to extract version from pyproject.toml: $extract_output" >&2
+        exit 1
+    fi
+    
+    # Extract version value from "version=X.Y.Z" output
+    version="${extract_output#version=}"
     
     if [[ -z "$version" ]]; then
         echo "Error: Could not extract version from pyproject.toml" >&2
         exit 1
     fi
     
-    # Add v prefix if not present
-    if [[ ! "$version" =~ ^v ]]; then
-        version="v$version"
-    fi
+    # Don't add 'v' prefix here - let the calling workflow handle prefixing
+    # This prevents double-prefixing when workflows add "v" to the output
     
     echo "version=$version" >> "${GITHUB_OUTPUT:-/dev/stdout}"
     echo "Version: $version"
