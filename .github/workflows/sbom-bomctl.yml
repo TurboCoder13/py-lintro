@@ -21,7 +21,7 @@ jobs:
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 

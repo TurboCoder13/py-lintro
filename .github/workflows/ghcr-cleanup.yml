@@ -34,7 +34,7 @@ jobs:
             ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
 
       - name: Setup environment
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@22ad0cf6123bc505fe23ef1629e40b7d32b6aa1b
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

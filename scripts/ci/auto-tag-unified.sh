@@ -102,16 +102,28 @@ create_and_push_tag() {
 }
 
 detect_previous_version() {
-    # Get the latest tag (excluding current if it exists)
-    local previous_tag
-    previous_tag=$(git tag -l "v*" | sort -V | tail -1)
+    # Read version from the previous commit's pyproject.toml (original behavior)
+    local previous_version
     
-    if [[ -n "$previous_tag" ]]; then
-        echo "previous_tag=$previous_tag" >> "${GITHUB_OUTPUT:-/dev/stdout}"
-        echo "Previous tag: $previous_tag"
+    # Get the previous commit SHA
+    local prev_commit
+    prev_commit=$(git rev-parse HEAD~1 2>/dev/null || true)
+    
+    if [[ -z "$prev_commit" ]]; then
+        echo "version=" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+        echo "No previous commit found"
+        return
+    fi
+    
+    # Extract version from previous commit's pyproject.toml
+    previous_version=$(git show "$prev_commit:pyproject.toml" 2>/dev/null | grep '^version = ' | sed 's/version = "\(.*\)"/\1/' || true)
+    
+    if [[ -n "$previous_version" ]]; then
+        echo "version=$previous_version" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+        echo "Previous version: $previous_version"
     else
-        echo "previous_tag=" >> "${GITHUB_OUTPUT:-/dev/stdout}"
-        echo "No previous tag found"
+        echo "version=" >> "${GITHUB_OUTPUT:-/dev/stdout}"
+        echo "Could not extract version from previous commit's pyproject.toml"
     fi
 }
 
