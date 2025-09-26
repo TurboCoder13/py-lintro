@@ -61,22 +61,31 @@ if [ -n "$MARKER" ]; then
     fi
 
     # Extract the first comment id containing the marker (prefer latest by scanning from end)
-    COMMENT_ID=$(python - <<'PY'
-import json,sys
-data=json.loads(sys.stdin.read())
-if isinstance(data, dict):
-    items=data.get('items') or []
-else:
-    items=data
-target=None
+    COMMENT_ID=$(EXISTING_JSON="$EXISTING_JSON" python - <<'PY'
+import json,sys,os
+
+# Read marker and JSON payload from environment
+marker = os.environ.get('MARKER', '')
+payload = os.environ.get('EXISTING_JSON', '[]')
+
+try:
+    data = json.loads(payload)
+except Exception:
+    data = []
+
+items = data.get('items') if isinstance(data, dict) else data
+items = items or []
+
+target = None
 for item in reversed(items):
-    body=item.get('body') or ''
-    if 'MARKER_PLACEHOLDER' in body:
-        target=item.get('id')
+    body = (item.get('body') or '')
+    if marker and (marker in body):
+        target = item.get('id')
         break
+
 print(target or '')
 PY
-<<<"$EXISTING_JSON" | sed "s/MARKER_PLACEHOLDER/${MARKER//\//\/}/g")
+)
 
     if [ -n "$COMMENT_ID" ]; then
         log_info "Found existing comment with marker (id=$COMMENT_ID); preparing merged body"
@@ -86,9 +95,13 @@ PY
         # Dump previous body
         python - <<'PY' "$EXISTING_JSON" "$COMMENT_ID" > "$PREV_FILE"
 import json,sys
-data=json.loads(sys.argv[1])
+payload=sys.argv[1]
 cid=sys.argv[2]
-items=data.get('items') or data
+try:
+    data=json.loads(payload)
+except Exception:
+    data=[]
+items=(data.get('items') if isinstance(data, dict) else data) or []
 for it in items:
     if str(it.get('id'))==cid:
         sys.stdout.write(it.get('body') or '')

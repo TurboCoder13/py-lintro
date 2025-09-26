@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 from assertpy import assert_that
+from textwrap import dedent
 
 
 class TestEnvironmentHandling:
@@ -198,6 +199,86 @@ echo 0.0.0
             timeout=10,
         )
         assert_that(result.returncode).is_not_none()
+
+    def test_ci_post_pr_comment_merges_existing_by_marker(self, tmp_path):
+        """ci-post-pr-comment should update an existing comment by marker.
+
+        Mocks `gh api` to return a JSON array with an existing comment body that
+        contains the marker, then verifies the script performs a PATCH call with
+        merged content where the marker appears only once at the top.
+        """
+        # Prepare a fake environment and working dir
+        work = tmp_path
+        scripts_root = Path("scripts").resolve()
+        post_script = scripts_root / "ci" / "ci-post-pr-comment.sh"
+
+        # Prepare a comment file containing the marker (as produced upstream)
+        new_body_path = work / "comment.txt"
+        new_body_path.write_text(
+            dedent(
+                """
+                <!-- coverage-report -->
+
+                ## 📊 Coverage Report
+
+                **Coverage:** ✅ **85.0%** (good)
+                """
+            ).strip()
+        )
+
+        # Create a mock gh that returns an existing comment with the marker and
+        # captures PATCH payloads
+        bin_dir = work / "bin"
+        bin_dir.mkdir()
+        gh_path = bin_dir / "gh"
+        existing_json = (
+            "[\n"
+            "  {\"id\": 111, \"body\": \"<!-- coverage-report -->\\nOld body\"}\n"
+            "]\n"
+        )
+        gh_path.write_text(
+            f"""#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "api" && "$2" == repos/*/issues/*/comments ]]; then
+  # list comments
+  echo '{existing_json}'
+  exit 0
+fi
+if [[ "$1" == "api" && "$2" == repos/*/issues/comments/* && "$3" == "-X" && "$4" == "PATCH" ]]; then
+  # capture body arg
+  for i in "$@"; do
+    if [[ "$i" == body=* ]]; then echo "$i"; fi
+  done > "{(work / 'patch_out.txt').as_posix()}"
+  exit 0
+fi
+echo gh-mock-unhandled >&2
+exit 1
+"""
+        )
+        gh_path.chmod(0o755)
+
+        env = {
+            "PATH": f"{bin_dir}:{os.environ.get('PATH','')}",
+            "PR_NUMBER": "123",
+            "GITHUB_TOKEN": "t",
+            "GITHUB_REPOSITORY": "o/r",
+            "MARKER": "<!-- coverage-report -->",
+            "GITHUB_EVENT_NAME": "pull_request",
+        }
+
+        result = subprocess.run(
+            [str(post_script), str(new_body_path)],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=Path.cwd(),
+        )
+        assert_that(result.returncode).is_equal_to(0)
+
+        sent = (work / "patch_out.txt").read_text()
+        # Body should contain marker exactly once at top
+        assert "<!-- coverage-report -->" in sent
+        assert sent.count("<!-- coverage-report -->") == 1
 
 
 class TestScriptErrorHandling:

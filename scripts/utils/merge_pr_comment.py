@@ -57,6 +57,10 @@ def merge_comment_bodies(
 
     marker_line: str = marker.strip()
     normalized_new: str = _normalize_newline(new_body).strip()
+    # Ensure the marker only appears once at the very top by removing any
+    # occurrences from the newly generated body.
+    if marker_line in normalized_new:
+        normalized_new = normalized_new.replace(marker_line, "").strip()
 
     now_utc: str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
 
