@@ -16,6 +16,7 @@ jobs:
     name: Upload to TestPyPI
     needs: [build, quality]
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
       id-token: write

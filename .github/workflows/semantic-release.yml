@@ -17,6 +17,7 @@ jobs:
       issues: write
     name: Compute next version and open Release PR
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     concurrency:
       group: release-pr-${{ github.ref }}
       cancel-in-progress: true
