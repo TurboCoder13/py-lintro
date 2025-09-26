@@ -138,18 +138,21 @@ For any script to be considered compliant with these boundaries:
 When reviewing or contributing scripts, use this checklist:
 
 ### Before Adding New Scripts
+
 1. **Determine correct directory** based on primary purpose and dependencies
 2. **Check for existing functionality** in `utils/` to avoid duplication
 3. **Follow naming conventions**: `kebab-case.sh` for shell, `snake_case.py` for Python
 4. **Implement standard interface** (`--help` minimum, `--dry-run`/`--verbose` preferred)
 
 ### When Modifying Existing Scripts
+
 1. **Verify directory placement** - does current location match responsibility?
 2. **Extract reusable parts** to `utils/` if they could benefit other scripts
 3. **Check environment assumptions** - does script match its directory's characteristics?
 4. **Update documentation** if changing interfaces or moving files
 
 ### Code Review Focus Areas
+
 - **Single Responsibility**: Does the script do exactly one thing well?
 - **Environment Assumptions**: Are CI/local assumptions appropriate for the directory?
 - **Error Handling**: Proper exit codes and user-friendly error messages?

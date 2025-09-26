@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 
 
 def _normalize_newline(value: str) -> str:
-    """Normalize newlines to Unix style (\n).
+    """Normalize newlines to Unix style.
 
     Args:
         value (str): The text to normalize.

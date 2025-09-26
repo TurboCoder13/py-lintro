@@ -25,7 +25,7 @@ jobs:
   run-test-suite:
     permissions:
       contents: read
-      id-token: write  # For codecov OIDC
+      id-token: write # For codecov OIDC
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     concurrency:
@@ -45,7 +45,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
-          egress_policy: 'block'
+          egress-policy: 'block'
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -95,13 +95,12 @@ jobs:
           retention-days: 30
       - name: Extract coverage percentage
         id: coverage
-        run: ./scripts/ci/ci-extract-coverage.sh
+        run: |
+          echo "percentage=$(./scripts/utils/coverage-manager.sh extract)" >> "$GITHUB_OUTPUT"
 
       - name: Enforce coverage threshold (80%)
         if: github.ref == 'refs/heads/main' && success()
-        env:
-          COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
-        run: bash ./scripts/ci/enforce-coverage-threshold.sh
+        run: ./scripts/utils/coverage-manager.sh threshold 80
 
       - name: Upload coverage to Codecov (always)
         if: always()
@@ -115,7 +114,7 @@ jobs:
 
       - name: Generate coverage badge (no commit)
         if: success()
-        run: ./scripts/ci/coverage-badge-update.sh
+        run: ./scripts/utils/coverage-manager.sh badge --output assets/images/coverage-badge.svg
 
       - name: Upload coverage badge artifact
         if: success()
@@ -126,7 +125,7 @@ jobs:
 
       - name: Generate coverage badge artifact only (no commit)
         if: github.ref == 'refs/heads/main' && success()
-        run: ./scripts/ci/coverage-badge-update.sh
+        run: ./scripts/utils/coverage-manager.sh badge --output assets/images/coverage-badge.svg
 
   comment-pr-coverage:
     needs: run-test-suite
@@ -140,7 +139,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
-          egress_policy: 'block'
+          egress-policy: 'block'
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -163,11 +162,10 @@ jobs:
         env:
           COVERAGE_PERCENTAGE: ${{ needs.run-test-suite.outputs.coverage-percentage }}
           JOB_RESULT: ${{ needs.run-test-suite.result }}
-        run: ./scripts/ci/coverage-pr-comment.sh
+        run: ./scripts/utils/coverage-manager.sh comment --output coverage-pr-comment.txt
         # yamllint enable
       - name: Comment PR with coverage info (merge-update)
         uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'
-          merge-update: 'true'

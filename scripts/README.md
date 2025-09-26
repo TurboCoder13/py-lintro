@@ -50,47 +50,48 @@ scripts/
 
 Scripts for GitHub Actions workflows and continuous integration.
 
-| Script                             | Purpose                                            | Usage                                                                    |
-| ---------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------ |
-| `ci-extract-coverage.sh`           | Extract coverage percentage from coverage.xml      | `./scripts/ci/ci-extract-coverage.sh`                                    |
-| `ci-lintro.sh`                     | Run Lintro analysis in Docker for CI               | `./scripts/ci/ci-lintro.sh`                                              |
-| `ci-post-pr-comment.sh`            | Post comments to PRs using GitHub API              | `./scripts/ci/ci-post-pr-comment.sh [file]`                              |
-| `ci-pr-comment.sh`                 | Generate PR comments with Lintro results           | `./scripts/ci/ci-pr-comment.sh`                                          |
-| `fail-on-lint.sh`                  | Fail CI job when lint checks fail                  | `CHK_EXIT_CODE=1 ./scripts/ci/fail-on-lint.sh`                           |
-| `post-pr-delete-previous.sh`       | Delete previous PR comments by marker              | `./scripts/ci/post-pr-delete-previous.sh --help`                         |
-| `coverage-badge-update.sh`         | Generate and update coverage badge                 | `./scripts/ci/coverage-badge-update.sh`                                  |
-| `coverage-pr-comment.sh`           | Generate PR comments with coverage info            | `./scripts/ci/coverage-pr-comment.sh`                                    |
-| `lintro-report-generate.sh`        | Generate comprehensive Lintro reports              | `./scripts/ci/lintro-report-generate.sh`                                 |
-| `pages-deploy.sh`                  | Deploy coverage reports to GitHub Pages            | `./scripts/ci/pages-deploy.sh`                                           |
-| `ghcr_prune_untagged.py`           | Prune untagged GHCR package versions               | `uv run python scripts/ci/ghcr_prune_untagged.py`                        |
-| `deployments-prune.sh`             | Prune GitHub deployments via gh (keep-n/ref)       | `./scripts/ci/deployments-prune.sh --help`                               |
-| `auto-tag-unified.sh`              | Unified auto-tagging functions (check/read/create) | `./scripts/ci/auto-tag-unified.sh --help`                                |
-| `ci-auto-fix.sh`                   | Auto-format via Docker and push changes            | `./scripts/ci/ci-auto-fix.sh`                                            |
-| `pypi-version-exists.sh`           | Check if version exists on PyPI                    | `./scripts/ci/pypi-version-exists.sh <project> <version>`                |
-| `enforce-coverage-threshold.sh`    | Enforce minimum coverage threshold                 | `./scripts/ci/enforce-coverage-threshold.sh --help`                      |
-| `ensure-tag-on-main.sh`            | Ensure tag ref points to commit on main            | `./scripts/ci/ensure-tag-on-main.sh --help`                              |
-| `guard-release-commit.sh`          | Check last commit is release bump                  | `./scripts/ci/guard-release-commit.sh --help`                            |
-| `pre-release-quality.sh`           | Run Lintro format and check                        | `./scripts/ci/pre-release-quality.sh --help`                             |
-| `semantic_release_compute_next.py` | Compute next version (tag-only baseline)           | `uv run python scripts/ci/semantic_release_compute_next.py --print-only` |
-| `validate-action-pinning.sh`       | Scan for unpinned GitHub Actions                   | `./scripts/ci/validate-action-pinning.sh --help`                         |
-| `bump-internal-refs.sh`            | Pin internal action/workflow refs to latest SHA    | `./scripts/ci/bump-internal-refs.sh --help`                              |
-| `semantic-pr-title-check.sh`       | Validate PR title against Conventional Commits     | `./scripts/ci/semantic-pr-title-check.sh --help`                         |
-| `verify-tag-matches-pyproject.sh`  | Verify tag matches `pyproject.toml` version        | `./scripts/ci/verify-tag-matches-pyproject.sh --help`                    |
-| `sbom-generate.sh`                 | Generate and export SBOMs via bomctl               | `./scripts/ci/sbom-generate.sh --help`                                   |
-| `sbom-rename-artifacts.sh`         | Prefix SBOMs with tag and SHA for traceability     | `./scripts/ci/sbom-rename-artifacts.sh dist/sbom`                        |
-| `sbom-attest-artifacts.sh`         | Create cosign attestations for SBOM artifacts      | `./scripts/ci/sbom-attest-artifacts.sh dist/sbom`                        |
-| `sbom-fetch.sh`                    | Fetch repo SBOM via bomctl; export via script      | `./scripts/ci/sbom-fetch.sh --help`                                      |
-| `semantic-release-helpers.sh`      | Helpers for semantic-release workflow steps        | `./scripts/ci/semantic-release-helpers.sh --help`                        |
-| `reusable-quality-entry.sh`        | Quality gate wrapper for reusable workflow         | `./scripts/ci/reusable-quality-entry.sh --help`                          |
-| `configure-git-user.sh`            | Configure git user/email and safe.directory        | `./scripts/ci/configure-git-user.sh --help`                              |
-| `bump-internal-refs-entry.sh`      | Wrapper to bump internal refs with SHA selection   | `./scripts/ci/bump-internal-refs-entry.sh --help`                        |
-| `egress-audit-lite.sh`             | Audit reachability of allowed endpoints            | `./scripts/ci/egress-audit-lite.sh --help`                               |
-| `sbom-install-binary-gh.sh`        | Install bomctl from GitHub Releases via gh         | `./scripts/ci/sbom-install-binary-gh.sh --help`                          |
-| `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed      | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`                       |
-| `detect-changes.sh`                | Detect repo diffs and set has_changes output       | `./scripts/ci/detect-changes.sh --help`                                  |
-| `security-audit.sh`                | Comprehensive security audit for workflows/scripts | `./scripts/ci/security-audit.sh --help`                                  |
-| `bomctl-help-test.sh`              | Test bomctl binary installation                    | `./scripts/ci/bomctl-help-test.sh`                                       |
-| `sbom-generate-safe.sh`            | Generate SBOMs with consolidated error handling    | `./scripts/ci/sbom-generate-safe.sh`                                     |
+| Script                             | Purpose                                                | Usage                                                                                 |
+| ---------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| `coverage-manager.sh`              | Unified coverage ops (extract/badge/comment/threshold) | `./scripts/utils/coverage-manager.sh --help`                                          |
+| `ci-extract-coverage.sh`           | Extract coverage percentage                            | `./scripts/ci/ci-extract-coverage.sh`                                                 |
+| `ci-lintro.sh`                     | Run Lintro analysis in Docker for CI                   | `./scripts/ci/ci-lintro.sh`                                                           |
+| `ci-post-pr-comment.sh`            | Post comments to PRs using GitHub API                  | `./scripts/ci/ci-post-pr-comment.sh [file]`                                           |
+| `ci-pr-comment.sh`                 | Generate PR comments with Lintro results               | `./scripts/ci/ci-pr-comment.sh`                                                       |
+| `fail-on-lint.sh`                  | Fail CI job when lint checks fail                      | `CHK_EXIT_CODE=1 ./scripts/ci/fail-on-lint.sh`                                        |
+| `post-pr-delete-previous.sh`       | Delete previous PR comments by marker                  | `./scripts/ci/post-pr-delete-previous.sh --help`                                      |
+| `coverage-badge-update.sh`         | Generate and update coverage badge                     | `./scripts/utils/coverage-manager.sh badge --output assets/images/coverage-badge.svg` |
+| `coverage-pr-comment.sh`           | Generate PR comments with coverage info                | `./scripts/utils/coverage-manager.sh comment --output coverage-pr-comment.txt`        |
+| `lintro-report-generate.sh`        | Generate comprehensive Lintro reports                  | `./scripts/ci/lintro-report-generate.sh`                                              |
+| `pages-deploy.sh`                  | Deploy coverage reports to GitHub Pages                | `./scripts/ci/pages-deploy.sh`                                                        |
+| `ghcr_prune_untagged.py`           | Prune untagged GHCR package versions                   | `uv run python scripts/ci/ghcr_prune_untagged.py`                                     |
+| `deployments-prune.sh`             | Prune GitHub deployments via gh (keep-n/ref)           | `./scripts/ci/deployments-prune.sh --help`                                            |
+| `auto-tag-unified.sh`              | Unified auto-tagging functions (check/read/create)     | `./scripts/ci/auto-tag-unified.sh --help`                                             |
+| `ci-auto-fix.sh`                   | Auto-format via Docker and push changes                | `./scripts/ci/ci-auto-fix.sh`                                                         |
+| `pypi-version-exists.sh`           | Check if version exists on PyPI                        | `./scripts/ci/pypi-version-exists.sh <project> <version>`                             |
+| `enforce-coverage-threshold.sh`    | Enforce minimum coverage threshold                     | `./scripts/utils/coverage-manager.sh threshold 80`                                    |
+| `ensure-tag-on-main.sh`            | Ensure tag ref points to commit on main                | `./scripts/ci/ensure-tag-on-main.sh --help`                                           |
+| `guard-release-commit.sh`          | Check last commit is release bump                      | `./scripts/ci/guard-release-commit.sh --help`                                         |
+| `pre-release-quality.sh`           | Run Lintro format and check                            | `./scripts/ci/pre-release-quality.sh --help`                                          |
+| `semantic_release_compute_next.py` | Compute next version (tag-only baseline)               | `uv run python scripts/ci/semantic_release_compute_next.py --print-only`              |
+| `validate-action-pinning.sh`       | Scan for unpinned GitHub Actions                       | `./scripts/ci/validate-action-pinning.sh --help`                                      |
+| `bump-internal-refs.sh`            | Pin internal action/workflow refs to latest SHA        | `./scripts/ci/bump-internal-refs.sh --help`                                           |
+| `semantic-pr-title-check.sh`       | Validate PR title against Conventional Commits         | `./scripts/ci/semantic-pr-title-check.sh --help`                                      |
+| `verify-tag-matches-pyproject.sh`  | Verify tag matches `pyproject.toml` version            | `./scripts/ci/verify-tag-matches-pyproject.sh --help`                                 |
+| `sbom-generate.sh`                 | Generate and export SBOMs via bomctl                   | `./scripts/ci/sbom-generate.sh --help`                                                |
+| `sbom-rename-artifacts.sh`         | Prefix SBOMs with tag and SHA for traceability         | `./scripts/ci/sbom-rename-artifacts.sh dist/sbom`                                     |
+| `sbom-attest-artifacts.sh`         | Create cosign attestations for SBOM artifacts          | `./scripts/ci/sbom-attest-artifacts.sh dist/sbom`                                     |
+| `sbom-fetch.sh`                    | Fetch repo SBOM via bomctl; export via script          | `./scripts/ci/sbom-fetch.sh --help`                                                   |
+| `semantic-release-helpers.sh`      | Helpers for semantic-release workflow steps            | `./scripts/ci/semantic-release-helpers.sh --help`                                     |
+| `reusable-quality-entry.sh`        | Quality gate wrapper for reusable workflow             | `./scripts/ci/reusable-quality-entry.sh --help`                                       |
+| `configure-git-user.sh`            | Configure git user/email and safe.directory            | `./scripts/ci/configure-git-user.sh --help`                                           |
+| `bump-internal-refs-entry.sh`      | Wrapper to bump internal refs with SHA selection       | `./scripts/ci/bump-internal-refs-entry.sh --help`                                     |
+| `egress-audit-lite.sh`             | Audit reachability of allowed endpoints                | `./scripts/ci/egress-audit-lite.sh --help`                                            |
+| `sbom-install-binary-gh.sh`        | Install bomctl from GitHub Releases via gh             | `./scripts/ci/sbom-install-binary-gh.sh --help`                                       |
+| `fail-if-semantic-invalid.sh`      | Fail step if semantic title validation failed          | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`                                    |
+| `detect-changes.sh`                | Detect repo diffs and set has_changes output           | `./scripts/ci/detect-changes.sh --help`                                               |
+| `security-audit.sh`                | Comprehensive security audit for workflows/scripts     | `./scripts/ci/security-audit.sh --help`                                               |
+| `bomctl-help-test.sh`              | Test bomctl binary installation                        | `./scripts/ci/bomctl-help-test.sh`                                                    |
+| `sbom-generate-safe.sh`            | Generate SBOMs with consolidated error handling        | `./scripts/ci/sbom-generate-safe.sh`                                                  |
 
 ### 🐳 Docker Scripts (`docker/`)
 
@@ -126,22 +127,25 @@ Notes:
 
 Shared utilities and helper scripts.
 
-| Script                               | Purpose                                           | Usage                                                        |
-| ------------------------------------ | ------------------------------------------------- | ------------------------------------------------------------ |
-| `check-pypi-version.py`              | Check if version exists on PyPI                   | `python scripts/utils/check-pypi-version.py <version>`       |
-| `create-release.py`                  | Create GitHub release with assets                 | `python scripts/utils/create-release.py <version>`           |
-| `delete-previous-lintro-comments.py` | Delete old PR comments                            | `python scripts/utils/delete-previous-lintro-comments.py`    |
-| `merge_pr_comment.py`                | Merge-update PR comment body, collapsing history  | `python scripts/utils/merge_pr_comment.py --help`            |
-| `determine-release.py`               | Determine next release version from commits       | `python scripts/utils/determine-release.py`                  |
-| `extract-coverage.py`                | Extract coverage from XML files                   | `python scripts/utils/extract-coverage.py`                   |
-| `extract-version.py`                 | Print `version=X.Y.Z` from TOML                   | `python scripts/utils/extract-version.py`                    |
-| `install-tools.sh`                   | Install external tools (hadolint, prettier, etc.) | `./scripts/utils/install-tools.sh --local`                   |
-| `install.sh`                         | Install Lintro with dependencies                  | `./scripts/utils/install.sh`                                 |
-| `update-version.py`                  | Update version in pyproject.toml                  | `python scripts/utils/update-version.py <version>`           |
-| `utils.sh`                           | Shared utilities for other scripts                | Sourced by other scripts                                     |
-| `bootstrap-env.sh`                   | Bootstrap CI env with uv and tools                | `./scripts/utils/bootstrap-env.sh --help`                    |
-| `bump_deps.py`                       | Bump exact pinned versions in pyproject           | `uv run python scripts/utils/bump_deps.py --help`            |
-| `convert_asserts_to_assertpy.py`     | Migrate bare asserts in tests to assertpy         | `uv run python scripts/utils/convert_asserts_to_assertpy.py` |
+| Script                               | Purpose                                           | Usage                                                              |
+| ------------------------------------ | ------------------------------------------------- | ------------------------------------------------------------------ | ---------- |
+| `check-pypi-version.py`              | Check if version exists on PyPI                   | `python scripts/utils/check-pypi-version.py <version>`             |
+| `create-release.py`                  | Create GitHub release with assets                 | `python scripts/utils/create-release.py <version>`                 |
+| `delete-previous-lintro-comments.py` | Delete old PR comments                            | `python scripts/utils/delete-previous-lintro-comments.py`          |
+| `merge_pr_comment.py`                | Merge-update PR comment body, collapsing history  | `python scripts/utils/merge_pr_comment.py --help`                  |
+| `determine-release.py`               | Determine next release version from commits       | `python scripts/utils/determine-release.py`                        |
+| `extract-coverage.py`                | Extract coverage from XML files                   | `python scripts/utils/extract-coverage.py`                         |
+| `extract-version.py`                 | Print `version=X.Y.Z` from TOML                   | `python scripts/utils/extract-version.py`                          |
+| `install-tools.sh`                   | Install external tools (hadolint, prettier, etc.) | `./scripts/utils/install-tools.sh [--dry-run] [--verbose] --local` |
+| `install.sh`                         | Install Lintro with dependencies                  | `./scripts/utils/install.sh`                                       |
+| `update-version.py`                  | Update version in pyproject.toml                  | `python scripts/utils/update-version.py <version>`                 |
+| `utils.sh`                           | Shared utilities for other scripts                | Sourced by other scripts                                           |
+| `bootstrap-env.sh`                   | Bootstrap CI env with uv and tools                | `./scripts/utils/bootstrap-env.sh [--dry-run] [--verbose] --help`  |
+| `install-uv.sh`                      | Install uv from GitHub Releases                   | `./scripts/utils/install-uv.sh [--dry-run] [--verbose]`            |
+| `setup-python.sh`                    | Install/configure specific Python via uv          | `./scripts/utils/setup-python.sh [--dry-run] [--verbose] [3.13]`   |
+| `sync-deps.sh`                       | Sync Python dependencies via uv                   | `./scripts/utils/sync-deps.sh [--dry-run] [--verbose] [--dev       | --no-dev]` |
+| `bump_deps.py`                       | Bump exact pinned versions in pyproject           | `uv run python scripts/utils/bump_deps.py --help`                  |
+| `convert_asserts_to_assertpy.py`     | Migrate bare asserts in tests to assertpy         | `uv run python scripts/utils/convert_asserts_to_assertpy.py`       |
 
 ## 🔍 Detailed Script Documentation
 
