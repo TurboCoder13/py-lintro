@@ -41,7 +41,7 @@ jobs:
             exit 1
           fi
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@c3a9415ca116833c685f194b66c4e00e852cbb70
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -63,7 +63,7 @@ jobs:
             rekor.sigstore.dev:443
             tuf-repo-cdn.sigstore.dev:443
       - name: Restore bomctl cache
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ env.XDG_CACHE_HOME }}
           key: bomctl-cache-${{ runner.os }}-${{ github.sha }}
