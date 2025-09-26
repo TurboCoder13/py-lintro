@@ -14,13 +14,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@c3a9415ca116833c685f194b66c4e00e852cbb70
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       # Avoid PR comment on forks (token is read-only); still run the check
       - name: Dependency review (forks - no PR comment)
         if: github.event.pull_request.head.repo.fork == true
-        uses: actions/dependency-review-action@595b5aeba73380359d98a5e087f648dbb0edce1b # v4.7.3
+        uses: actions/dependency-review-action@56339e523c0409420f6c2c9a2f4292bbb3c07dd3 # v4.8.0
         with:
           fail-on-severity: high
           comment-summary-in-pr: false
@@ -28,7 +28,7 @@ jobs:
 
       - name: Dependency review (with PR comment)
         if: github.event.pull_request.head.repo.fork == false
-        uses: actions/dependency-review-action@595b5aeba73380359d98a5e087f648dbb0edce1b # v4.7.3
+        uses: actions/dependency-review-action@56339e523c0409420f6c2c9a2f4292bbb3c07dd3 # v4.8.0
         with:
           fail-on-severity: high
           comment-summary-in-pr: true
