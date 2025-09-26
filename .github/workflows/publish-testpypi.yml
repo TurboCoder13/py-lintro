@@ -4,6 +4,9 @@ name: Publish to TestPyPI
 'on':
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   quality:
     uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@f5c9374c8f60487ac34781fb6fb78496be0699bc

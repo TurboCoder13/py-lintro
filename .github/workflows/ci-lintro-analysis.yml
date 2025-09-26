@@ -7,6 +7,10 @@ name: CI Pipeline
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   docker-lintro-analysis:
     name: 🛠️ Docker Lintro Code Quality & Analysis
@@ -18,10 +22,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    permissions:
-      contents: read
-      pull-requests: write
-      # id-token not required
     concurrency:
       group: lintro-ci-${{ github.ref }}
       cancel-in-progress: true

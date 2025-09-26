@@ -18,12 +18,14 @@ name: Test Suite & Coverage
 
 permissions:
   contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
   run-test-suite:
     permissions:
       contents: read
-      id-token: write
+      id-token: write  # For codecov OIDC
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     concurrency:
@@ -133,10 +135,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    permissions:
-      contents: read
-      pull-requests: write
-      issues: write
     if: always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false
     steps:
       - name: Harden Runner

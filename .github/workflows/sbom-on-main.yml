@@ -21,8 +21,6 @@ jobs:
     name: Generate and verify SBOM (main)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    permissions:
-      contents: read
     env:
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
