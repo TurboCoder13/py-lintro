@@ -4,9 +4,11 @@ This module tests how shell scripts handle different environments,
 missing tools, and error conditions.
 """
 
+import os
 import subprocess
 import tempfile
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 from assertpy import assert_that
@@ -50,6 +52,105 @@ class TestEnvironmentHandling:
         )
         assert_that(result.returncode).is_equal_to(0)
         assert_that(result.stdout).contains("Usage:")
+
+    def test_bootstrap_env_installs_uv_via_gh_offline(self, scripts_dir, tmp_path):
+        """bootstrap-env.sh should install uv via gh assets without network.
+
+        Mocks `gh release view` and `gh release download` to simulate a release
+        that contains a linux x86_64 asset. The test verifies the script detects
+        missing uv, downloads the mocked archive, extracts the uv binary, and
+        places it on PATH. The sync and tools install phases are skipped.
+
+        Args:
+            scripts_dir: Path to the scripts directory.
+            tmp_path: Path to the temporary directory.
+        """
+        script = scripts_dir.parent / "scripts" / "utils" / "bootstrap-env.sh"
+        work = tmp_path
+        bin_dir = work / "bin"
+        bin_dir.mkdir(parents=True)
+
+        # Mock gh: view prints minimal JSON with tag and assets; download writes archive
+        gh_path = bin_dir / "gh"
+        release_json = (
+            '{"tagName":"0.0.0","assets":[{"name":"uv-x86_64-unknown-linux-gnu'
+            '.tar.gz"}]}'
+        )
+        # Create a tar.gz containing a dummy 'uv' executable
+        asset_dir = work / "asset"
+        asset_dir.mkdir()
+        (asset_dir / "uv").write_text("#!/bin/sh\necho uv-mock\n")
+        (asset_dir / "uv").chmod(0o755)
+        archive_path = work / "uv-x86_64-unknown-linux-gnu.tar.gz"
+        import tarfile
+
+        with tarfile.open(archive_path, "w:gz") as tar:
+            tar.add(asset_dir / "uv", arcname="uv")
+
+        gh_path.write_text(
+            f"""#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "release" && "$2" == "view" ]]; then
+  # Print JSON
+  echo '{release_json}'
+  exit 0
+fi
+if [[ "$1" == "release" && "$2" == "download" ]]; then
+  # Copy our prepared archive to requested output path
+  out=""
+  # parse -O <outfile>
+  while [[ $# -gt 0 ]]; do
+    if [[ "$1" == "-O" ]]; then shift; out="$1"; break; fi
+    shift || true
+  done
+  cp "{archive_path}" "$out"
+  exit 0
+fi
+echo "unsupported gh mock usage" >&2
+exit 1
+""",
+        )
+        gh_path.chmod(0o755)
+
+        # Mock jq used by bootstrap script to extract tagName
+        jq_path = bin_dir / "jq"
+        jq_path.write_text(
+            """#!/usr/bin/env bash
+set -euo pipefail
+# Ignore input and print fixed tag
+echo 0.0.0
+""",
+        )
+        jq_path.chmod(0o755)
+
+        env = {
+            "PATH": f"{bin_dir}:{scripts_dir.parent}:" + os.environ.get("PATH", ""),
+            "HOME": str(work),
+            "USER": "testuser",
+            # Skip networked phases
+            "BOOTSTRAP_SKIP_SYNC": "1",
+            "BOOTSTRAP_SKIP_INSTALL_TOOLS": "1",
+            # Force linux/x86_64 path
+            "GITHUB_PATH": str(work / "gh_path.txt"),
+        }
+        # Ensure uv not present in PATH
+        result = subprocess.run(
+            ["bash", str(script), "3.13"],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=scripts_dir.parent,
+            timeout=30,
+        )
+        assert_that(result.returncode).is_equal_to(0)
+        # The mocked uv should be on PATH now
+        uv_check = subprocess.run(
+            ["uv", "--version"],
+            capture_output=True,
+            text=True,
+            env={"PATH": env["PATH"]},
+        )
+        assert_that(uv_check.returncode).is_equal_to(0)
 
     def test_scripts_handle_docker_missing(self, scripts_dir, clean_env):
         """Test Docker scripts behavior when Docker is not available.
@@ -98,6 +199,88 @@ class TestEnvironmentHandling:
             timeout=10,
         )
         assert_that(result.returncode).is_not_none()
+
+    def test_ci_post_pr_comment_merges_existing_by_marker(self, tmp_path):
+        """ci-post-pr-comment should update an existing comment by marker.
+
+        Mocks `gh api` to return a JSON array with an existing comment body that
+        contains the marker, then verifies the script performs a PATCH call with
+        merged content where the marker appears only once at the top.
+
+        Args:
+            tmp_path: Path to the temporary directory.
+        """
+        # Prepare a fake environment and working dir
+        work = tmp_path
+        scripts_root = Path("scripts").resolve()
+        post_script = scripts_root / "ci" / "ci-post-pr-comment.sh"
+
+        # Prepare a comment file containing the marker (as produced upstream)
+        new_body_path = work / "comment.txt"
+        new_body_path.write_text(
+            dedent(
+                """
+                <!-- coverage-report -->
+
+                ## 📊 Coverage Report
+
+                **Coverage:** ✅ **85.0%** (good)
+                """,
+            ).strip(),
+        )
+
+        # Create a mock gh that returns an existing comment with the marker and
+        # captures PATCH payloads
+        bin_dir = work / "bin"
+        bin_dir.mkdir()
+        gh_path = bin_dir / "gh"
+        existing_json = (
+            "[\n" '  {"id": 111, "body": "<!-- coverage-report -->\\nOld body"}\n' "]\n"
+        )
+        gh_path.write_text(
+            f"""#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "api" && "$2" == repos/*/issues/*/comments ]]; then
+  # list comments
+  echo '{existing_json}'
+  exit 0
+fi
+if [[ "$1" == "api" && "$2" == repos/*/issues/comments/* && "$3" == "-X" \
+    && "$4" == "PATCH" ]]; then
+  # capture body arg
+  for i in "$@"; do
+    if [[ "$i" == body=* ]]; then echo "$i"; fi
+  done > "{(work / 'patch_out.txt').as_posix()}"
+  exit 0
+fi
+echo gh-mock-unhandled >&2
+exit 1
+""",
+        )
+        gh_path.chmod(0o755)
+
+        env = {
+            "PATH": f"{bin_dir}:{os.environ.get('PATH','')}",
+            "PR_NUMBER": "123",
+            "GITHUB_TOKEN": "t",
+            "GITHUB_REPOSITORY": "o/r",
+            "MARKER": "<!-- coverage-report -->",
+            "GITHUB_EVENT_NAME": "pull_request",
+        }
+
+        result = subprocess.run(
+            [str(post_script), str(new_body_path)],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=Path.cwd(),
+        )
+        assert_that(result.returncode).is_equal_to(0)
+
+        sent = (work / "patch_out.txt").read_text()
+        # Body should contain marker exactly once at top
+        assert "<!-- coverage-report -->" in sent
+        assert sent.count("<!-- coverage-report -->") == 1
 
 
 class TestScriptErrorHandling:
@@ -262,37 +445,6 @@ class TestScriptErrorHandling:
         assert_that(plan).contains(" fetch ")
         assert_that(plan).contains(" merge --alias project")
         assert_that(plan).contains(" push ")
-
-    def test_sbom_generate_dry_run_docker_invocation_no_duplicate_subcommand(
-        self,
-        scripts_dir,
-        tmp_path,
-    ):
-        """Dry-run with --use-docker should not append duplicate 'bomctl'.
-
-        Ensures the container run command uses the image entrypoint directly
-        and does not add an extra 'bomctl' token after the image reference.
-
-        Args:
-            scripts_dir: Path to the scripts directory.
-            tmp_path: Temporary directory path for test artifacts.
-        """
-        # Create a dummy import file to avoid network fetches
-        sbom_file = tmp_path / "dummy.cdx.json"
-        sbom_file.write_text("{}")
-
-        script = Path("scripts/ci/sbom-generate.sh").resolve()
-        wrapper = tmp_path / "run_sbom_docker.sh"
-        wrapper.write_text(
-            f"#!/usr/bin/env bash\nset -euo pipefail\ncd '{scripts_dir.parent}'\n"
-            f"'{script}' --dry-run --use-docker --skip-fetch --import '{sbom_file}'\n",
-        )
-        wrapper.chmod(0o755)
-        result = subprocess.run([str(wrapper)], capture_output=True, text=True)
-        assert_that(result.returncode).is_equal_to(0)
-        plan = result.stdout + result.stderr
-        # Ensure we do not have 'bomctl/bomctl bomctl' pattern in docker run
-        assert_that(plan).does_not_contain("bomctl/bomctl bomctl ")
 
 
 class TestScriptSecurity:

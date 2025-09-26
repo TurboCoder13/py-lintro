@@ -1,5 +1,7 @@
 ---
-name: Dependency Review
+name: Security - Dependency Review
+# Reviews dependency changes in PRs for known security vulnerabilities.
+# Blocks merges if high-severity vulnerabilities are introduced.
 
 'on':
   pull_request:
@@ -12,11 +14,13 @@ jobs:
   review:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    concurrency:
+      group: dependency-review-${{ github.ref }}
+      cancel-in-progress: true
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Secure Checkout
+        uses: ./.github/actions/secure-checkout
+
       # Avoid PR comment on forks (token is read-only); still run the check
       - name: Dependency review (forks - no PR comment)
         if: github.event.pull_request.head.repo.fork == true

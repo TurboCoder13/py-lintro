@@ -277,12 +277,7 @@ def compute() -> ComputeResult:
     allow_label = os.getenv("ALLOW_MAJOR_LABEL", "allow-major")
     sha = os.getenv("GITHUB_SHA") or run_git("rev-parse", "HEAD")
     repo = os.getenv("GITHUB_REPOSITORY", "")
-    token = (
-        os.getenv("RELEASE_TOKEN")
-        or os.getenv("GH_TOKEN")
-        or os.getenv("GITHUB_TOKEN")
-        or ""
-    )
+    token = os.getenv("RELEASE_TOKEN") or os.getenv("GITHUB_TOKEN") or ""
 
     major_allowed = False
     if breaking and repo and sha and token:

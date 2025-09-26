@@ -1,0 +1,121 @@
+# SPDX-License-Identifier: MIT
+# Centralized Security Configuration for GitHub Actions Workflows
+---
+endpoints:
+  # Base endpoints required for all workflows
+  basic:
+    - github.com:443
+    - api.github.com:443
+    - codeload.github.com:443
+    - downloads.github.com:443
+    - objects.githubusercontent.com:443
+
+  # Python package management
+  python:
+    - pypi.org:443
+    - files.pythonhosted.org:443
+
+  # Docker registry operations
+  docker:
+    - ghcr.io:443
+    - pkg-containers.githubusercontent.com:443
+    - docker.io:443
+    - registry-1.docker.io:443
+    - auth.docker.io:443
+    - production.cloudflare.docker.com:443
+
+  # SBOM and signing operations
+  sbom:
+    - sigstore.dev:443
+    - fulcio.sigstore.dev:443
+    - rekor.sigstore.dev:443
+    - tuf-repo-cdn.sigstore.dev:443
+
+  # Coverage and analysis tools
+  analysis:
+    - img.shields.io:443
+    - codecov.io:443
+    - uploader.codecov.io:443
+    - storage.googleapis.com:443
+    - pings.codecov.com:443
+
+  # Security scanning
+  security:
+    - ossf.github.io:443
+
+# Security profiles for different workflow types
+profiles:
+  basic:
+    endpoints: [basic]
+    permissions:
+      contents: read
+
+  python_workflow:
+    endpoints: [basic, python]
+    permissions:
+      contents: read
+
+  docker_workflow:
+    endpoints: [basic, python, docker]
+    permissions:
+      contents: read
+      packages: write
+
+  sbom_workflow:
+    endpoints: [basic, sbom]
+    permissions:
+      contents: read
+      id-token: write
+
+  analysis_workflow:
+    endpoints: [basic, analysis]
+    permissions:
+      contents: read
+
+  security_workflow:
+    endpoints: [basic, security]
+    permissions:
+      contents: read
+      security-events: write
+
+  release_workflow:
+    endpoints: [basic, python]
+    permissions:
+      contents: write
+      id-token: write
+
+# Workflow-specific security profile mappings
+workflow_mappings:
+  # Core workflows
+  test-and-coverage.yml: analysis_workflow
+  reusable-quality.yml: python_workflow
+  reusable-build.yml: python_workflow
+  reusable-sbom.yml: sbom_workflow
+
+  # Publishing workflows
+  publish-pypi-on-tag.yml: release_workflow
+  publish-testpypi.yml: python_workflow
+  docker-build-publish.yml: docker_workflow
+
+  # Release workflows
+  auto-tag-on-main.yml: python_workflow
+  semantic-release.yml: python_workflow
+
+  # Security workflows
+  codeql.yml: security_workflow
+  scorecards.yml: security_workflow
+  dependency-review.yml: basic
+  validate-action-pinning.yml: basic
+
+  # Maintenance workflows
+  auto-bump-internal-refs.yml: basic
+  lintro-renovate.yml: basic
+  ci-lintro-analysis.yml: docker_workflow
+  lintro-report-scheduled.yml: python_workflow
+
+  # Utility workflows
+  ghcr-cleanup.yml: python_workflow
+  pr-comment-cleanup.yml: python_workflow
+  pages-deploy-coverage.yml: basic
+  sbom-on-main.yml: sbom_workflow
+  semantic-pr-title.yml: basic

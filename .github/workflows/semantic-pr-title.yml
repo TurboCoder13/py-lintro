@@ -1,5 +1,7 @@
 ---
-name: Semantic PR Title
+name: Quality Check - PR Title Validation
+# Validates PR titles follow Conventional Commits format. Comments with guidance
+# and blocks merges if title format is invalid to ensure semantic release compatibility.
 
 'on':
   pull_request:
@@ -13,15 +15,16 @@ jobs:
   check:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    concurrency:
+      group: semantic-pr-title-${{ github.ref }}
+      cancel-in-progress: true
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Secure Checkout
+        uses: ./.github/actions/secure-checkout
 
       - name: Validate PR title follows Conventional Commits
         id: semantic
-        uses: TurboCoder13/py-lintro/.github/actions/semantic-pr-title-check@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/semantic-pr-title-check@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           types: |
             chore

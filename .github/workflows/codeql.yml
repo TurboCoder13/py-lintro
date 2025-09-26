@@ -1,5 +1,7 @@
 ---
-name: CodeQL Analysis
+name: Security - CodeQL Code Scanning
+# GitHub CodeQL static analysis for security vulnerabilities and code quality issues.
+# Scans Python code and uploads results to GitHub Security tab.
 
 'on':
   push:
@@ -7,7 +9,8 @@ name: CodeQL Analysis
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 5 * * 1' # Weekly Monday 05:00 UTC
+    # Run weekly on Monday at 05:00 UTC
+    - cron: '0 5 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -23,10 +26,8 @@ jobs:
       group: codeql-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Secure Checkout
+        uses: ./.github/actions/secure-checkout
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@f1f6e5f6af878fb37288ce1c627459e94dbf7d01 # v3

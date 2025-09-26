@@ -7,17 +7,19 @@ set -euo pipefail
 # It uses consistent installation methods and is optimized for Docker environments.
 #
 # Usage:
-#   ./scripts/install-tools.sh [--local|--docker]
+#   ./scripts/install-tools.sh [--help] [--dry-run] [--verbose] [--local|--docker]
 
 # Show help if requested
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    echo "Usage: $0 [--help] [--local|--docker]"
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+    echo "Usage: $0 [--help] [--dry-run] [--verbose] [--local|--docker]"
     echo ""
     echo "Tool Installation Script"
     echo "Installs all required linting and formatting tools."
     echo ""
     echo "Options:"
     echo "  --help, -h     Show this help message"
+    echo "  --dry-run      Show what would be done without executing"
+    echo "  --verbose      Enable verbose output"
     echo "  --local        Install tools locally (default)"
     echo "  --docker       Install tools system-wide for Docker"
     echo ""
@@ -35,6 +37,38 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     exit 0
 fi
 
+# Global flags
+DRY_RUN=0
+VERBOSE=0
+
+# Parse flags and collect positional args
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        --verbose)
+            VERBOSE=1
+            shift
+            ;;
+        --help|-h)
+            # Already handled above
+            shift
+            ;;
+        *)
+            POSITIONAL+=("$1")
+            shift
+            ;;
+    esac
+done
+set -- "${POSITIONAL[@]}"
+
+# Logging helpers
+log_info() { echo "[install-tools] $*"; }
+log_verbose() { [ $VERBOSE -eq 1 ] && echo "[install-tools] [verbose] $*" || true; }
+
 # Color output for better readability
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -50,6 +84,10 @@ download_with_retries() {
     local delay=0.5
     local i
     for ((i=1; i<=attempts; i++)); do
+        if [ $DRY_RUN -eq 1 ]; then
+            log_info "[DRY-RUN] Would download $url to $out"
+            return 0
+        fi
         if curl -fsSL "$url" -o "$out"; then
             return 0
         fi
@@ -61,6 +99,7 @@ download_with_retries() {
 
 # Default to local installation
 INSTALL_MODE="${1:-local}"
+log_verbose "Selected mode: $INSTALL_MODE"
 
 echo -e "${BLUE}=== Lintro Tool Installer ===${NC}"
 echo -e "Mode: ${INSTALL_MODE}"
@@ -223,6 +262,10 @@ install_system_deps() {
         echo -e "${BLUE}Installing system dependencies...${NC}"
         
         # Update package lists
+        if [ $DRY_RUN -eq 1 ]; then
+            log_info "[DRY-RUN] Would run apt-get update and install system packages"
+            return
+        fi
         apt-get update
         
         # Install essential packages
@@ -318,14 +361,20 @@ main() {
     
     # Install ruff (Python linting and formatting)
     echo -e "${BLUE}Installing ruff...${NC}"
-    if install_python_package "ruff"; then
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install ruff"
+    elif install_python_package "ruff"; then
         echo -e "${GREEN}✓ ruff installed successfully${NC}"
     else
         if command -v brew &> /dev/null; then
             echo -e "${YELLOW}Trying Homebrew for ruff...${NC}"
-            brew install ruff || {
-                echo -e "${RED}✗ Failed to install ruff via Homebrew${NC}"; exit 1;
-            }
+            if [ $DRY_RUN -eq 1 ]; then
+                log_info "[DRY-RUN] Would install ruff via brew"
+            else
+                brew install ruff || {
+                    echo -e "${RED}✗ Failed to install ruff via Homebrew${NC}"; exit 1;
+                }
+            fi
             echo -e "${GREEN}✓ ruff installed successfully via Homebrew${NC}"
         else
             echo -e "${RED}✗ Cannot install ruff automatically; please install via your package manager.${NC}"
@@ -335,7 +384,9 @@ main() {
     
     # Install black (Python code formatter)
     echo -e "${BLUE}Installing black...${NC}"
-    if install_python_package "black"; then
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install black"
+    elif install_python_package "black"; then
         echo -e "${GREEN}✓ black installed successfully${NC}"
     else
         echo -e "${RED}✗ Failed to install black${NC}"
@@ -344,7 +395,9 @@ main() {
     
     # Install bandit (Python security linter)
     echo -e "${BLUE}Installing bandit...${NC}"
-    if install_python_package "bandit" "1.8.6"; then
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install bandit==1.8.6"
+    elif install_python_package "bandit" "1.8.6"; then
         echo -e "${GREEN}✓ bandit installed successfully${NC}"
     else
         echo -e "${RED}✗ Failed to install bandit${NC}"
@@ -361,22 +414,36 @@ main() {
         # Try to install Node.js based on platform
         if command -v apt-get &> /dev/null && [ "$(id -u)" = "0" ]; then
             # Debian/Ubuntu with root privileges (no curl|bash installers)
-            apt-get update
-            apt-get install -y --no-install-recommends nodejs npm || \
-            apt-get install -y --no-install-recommends nodejs
+            if [ $DRY_RUN -eq 1 ]; then
+                log_info "[DRY-RUN] Would install nodejs/npm via apt-get"
+            else
+                apt-get update
+                apt-get install -y --no-install-recommends nodejs npm || \
+                apt-get install -y --no-install-recommends nodejs
+            fi
         elif command -v brew &> /dev/null; then
             # macOS with Homebrew
-            brew install node
+            if [ $DRY_RUN -eq 1 ]; then
+                log_info "[DRY-RUN] Would install node via brew"
+            else
+                brew install node
+            fi
         elif command -v yum &> /dev/null && [ "$(id -u)" = "0" ]; then
             # RHEL/CentOS with root privileges (no curl|bash installers)
-            yum install -y nodejs npm || yum install -y nodejs
+            if [ $DRY_RUN -eq 1 ]; then
+                log_info "[DRY-RUN] Would install nodejs/npm via yum"
+            else
+                yum install -y nodejs npm || yum install -y nodejs
+            fi
         else
             echo -e "${RED}✗ Cannot install Node.js automatically. Please install Node.js manually.${NC}"
             exit 1
         fi
     fi
     
-    if npm install -g prettier@3.6.0; then
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install prettier@3.6.0 globally via npm"
+    elif npm install -g prettier@3.6.0; then
         echo -e "${GREEN}✓ prettier installed successfully${NC}"
     else
         echo -e "${RED}✗ Failed to install prettier${NC}"
@@ -427,7 +494,9 @@ main() {
         return 1
     }
     
-    if install_python_package "yamllint"; then
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install yamllint"
+    elif install_python_package "yamllint"; then
         echo -e "${GREEN}✓ yamllint installed successfully${NC}"
     else
         echo -e "${RED}✗ Failed to install yamllint${NC}"
@@ -437,7 +506,9 @@ main() {
     # Install darglint (Python package)
     echo -e "${BLUE}Installing darglint...${NC}"
     
-    if install_python_package "darglint" "1.8.1"; then
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install darglint==1.8.1"
+    elif install_python_package "darglint" "1.8.1"; then
         echo -e "${GREEN}✓ darglint installed successfully${NC}"
     else
         echo -e "${RED}✗ Failed to install darglint${NC}"

@@ -16,12 +16,24 @@ inputs:
   password:
     description: Registry password or token
     required: false
+  driver:
+    description: Buildx driver to use (docker or docker-container)
+    required: false
+    default: docker
 runs:
   using: composite
   steps:
+    - name: Pre Setup Docker (Buildx)
+      shell: bash
+      run: |
+        echo "[setup-docker] Configuring Docker Buildx with driver: ${{ inputs.driver }}"
+        echo "[setup-docker] Login: ${{ inputs.login }}"
+        echo "[setup-docker] Registry: ${{ inputs.registry }}"
     - name: Set up Docker Buildx
       # yamllint disable-line rule:line-length
       uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      with:
+        driver: ${{ inputs.driver }}
 
     - name: Log in to registry
       if: inputs.login == 'true'

@@ -1,0 +1,104 @@
+# SPDX-License-Identifier: MIT
+# Centralized Cache Configuration for GitHub Actions Workflows
+---
+# Cache profiles for different workflow types
+profiles:
+  # Basic Python environment caching
+  python_basic:
+    description: 'Basic Python environment with uv dependencies'
+    cache_keys:
+      uv: "uv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}"
+      pip: "pip-${{ runner.os }}-${{ hashFiles('**/requirements*.txt') }}"
+    paths:
+      uv: ~/.cache/uv
+      pip: ~/.cache/pip
+    restore_keys:
+      - 'uv-${{ runner.os }}-'
+      - 'pip-${{ runner.os }}-'
+
+  # Python workflow with additional tool caching
+  python_workflow:
+    description: 'Full Python development environment with tools'
+    extends: python_basic
+    cache_keys:
+      tools: "tools-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}"
+      coverage: 'coverage-${{ runner.os }}-${{ github.sha }}'
+    paths:
+      tools: ~/.local/bin
+      coverage: htmlcov/
+
+  # Docker workflow caching
+  docker_workflow:
+    description: 'Docker build with layer caching'
+    extends: python_basic
+    cache_keys:
+      docker: 'docker-${{ runner.os }}-${{ github.sha }}'
+    paths:
+      docker: /tmp/.buildx-cache
+
+  # SBOM workflow caching
+  sbom_workflow:
+    description: 'SBOM generation with bomctl caching'
+    cache_keys:
+      bomctl: "bomctl-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}-${{ github.sha }}"
+    paths:
+      bomctl: '${{ github.workspace }}/.bomctl-cache'
+    restore_keys:
+      - 'bomctl-${{ runner.os }}-'
+
+  # Analysis workflow caching
+  analysis_workflow:
+    description: 'Code analysis with result caching'
+    extends: python_basic
+    cache_keys:
+      analysis: "analysis-${{ runner.os }}-${{ hashFiles('**/*.py', '**/*.yml') }}"
+    paths:
+      analysis: .analysis-cache
+
+# Workflow-specific cache profile mappings
+workflow_mappings:
+  # Core workflows
+  test-and-coverage.yml: analysis_workflow
+  reusable-quality.yml: python_workflow
+  reusable-build.yml: python_workflow
+  reusable-sbom.yml: sbom_workflow
+
+  # Publishing workflows
+  publish-pypi-on-tag.yml: python_basic
+  publish-testpypi.yml: python_basic
+  docker-build-publish.yml: docker_workflow
+
+  # Release workflows
+  auto-tag-on-main.yml: python_basic
+  semantic-release.yml: python_basic
+
+  # Analysis workflows
+  ci-lintro-analysis.yml: docker_workflow
+  lintro-report-scheduled.yml: python_workflow
+
+  # Maintenance workflows
+  ghcr-cleanup.yml: python_basic
+  pr-comment-cleanup.yml: python_basic
+  sbom-on-main.yml: sbom_workflow
+
+# Cache optimization settings
+optimization:
+  # Maximum cache size (GitHub Actions limit: 10GB per repository)
+  max_size: '2GB'
+
+  # Cache TTL settings
+  ttl:
+    default: '7d'
+    long_lived: '30d' # For stable dependencies
+    short_lived: '1d' # For frequently changing files
+
+  # Cache compression settings
+  compression:
+    enabled: true
+    level: 6 # Balance between speed and size
+
+  # Cache key strategies
+  key_strategies:
+    exact: 'Use exact hash for immutable content'
+    prefix: 'Use prefix matching for partial cache hits'
+    fallback: 'Multi-level fallback for cache misses'

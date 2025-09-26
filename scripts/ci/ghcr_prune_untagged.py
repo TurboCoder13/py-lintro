@@ -3,7 +3,7 @@
 Google-style docstring.
 
 This script lists container package versions for the current repo on GHCR and
-deletes those that have no tags. Requires GH_TOKEN with packages:write scope in
+deletes those that have no tags. Requires GITHUB_TOKEN with packages:write scope in
 Actions (GITHUB_TOKEN is sufficient for deleting own repo packages).
 """
 
@@ -97,9 +97,9 @@ def main() -> int:
         int: Process exit code.
     """
 
-    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    token = os.environ.get("GITHUB_TOKEN")
     if not token:
-        logger.error("GH_TOKEN/GITHUB_TOKEN is required")
+        logger.error("GITHUB_TOKEN is required")
         return 2
 
     owner, _ = get_repo_owner_repo()

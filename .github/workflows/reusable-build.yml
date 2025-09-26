@@ -1,12 +1,9 @@
 ---
 # yamllint disable rule:line-length
-# Reusable workflow: Build Python artifacts and validate metadata
-# - Sets up Python and uv
-# - Syncs dev dependencies
-# - Builds sdist and wheel
-# - Runs twine check to validate artifacts
-# - Uploads dist/ as an artifact named "dist"
-name: Reusable Build
+name: Reusable - Build & Package Validation
+# Reusable workflow for Python package building and validation.
+# Sets up environment, syncs dependencies, builds sdist/wheel, validates with twine,
+# and uploads distribution artifacts.
 
 'on':
   workflow_call:
@@ -17,25 +14,23 @@ name: Reusable Build
         required: false
         default: '3.13'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    permissions:
-      contents: read
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Secure Checkout
+        uses: ./.github/actions/secure-checkout
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           python-version: ${{ inputs.python-version }}
-
-      - name: Sync dependencies
-        run: uv sync --dev --no-progress
 
       - name: Build sdist and wheel
         run: uv run python -m build

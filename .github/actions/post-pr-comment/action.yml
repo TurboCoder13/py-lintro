@@ -9,11 +9,15 @@ inputs:
     description: Marker string for previous comment deletion (optional)
     required: false
     default: ''
+  merge-update:
+    description: If true, edit previous comment (if found) and collapse history
+    required: false
+    default: 'true'
 runs:
   using: composite
   steps:
     - name: Delete previous comments (optional)
-      if: inputs.marker != '' && github.event_name == 'pull_request'
+      if: inputs.marker != '' && inputs.merge-update == 'false' && github.event_name == 'pull_request'
       shell: bash
       env:
         PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -27,4 +31,6 @@ runs:
         PR_NUMBER: ${{ github.event.pull_request.number }}
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_REPOSITORY: ${{ github.repository }}
-      run: ./scripts/ci/ci-post-pr-comment.sh "${{ inputs.file }}"
+      run: |
+        MARKER="${{ inputs.marker }}" \
+        ./scripts/ci/ci-post-pr-comment.sh "${{ inputs.file }}"

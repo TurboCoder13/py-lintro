@@ -1,5 +1,7 @@
 ---
-name: Auto Tag on Main
+name: Release - Auto Tag Creation
+# Automatically creates and pushes version tags when pyproject.toml version changes
+# on main branch. Guards against duplicate tags and validates release commit format.
 
 'on':
   push:
@@ -22,12 +24,12 @@ jobs:
     timeout-minutes: 10
     # Only run when version actually changed
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Secure Checkout
+        uses: ./.github/actions/secure-checkout
         with:
-          persist-credentials: false
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch_depth: '0'
+          persist_credentials: 'false'
+          security_profile: 'python_workflow'
 
       - name: Create GitHub App installation token
         id: app-token
@@ -45,18 +47,22 @@ jobs:
         if: steps.guard.outputs.ok != 'true'
         run: echo "Not a release bump commit; skipping tag creation."
 
-      - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Setup Environment (Cached)
+        uses: ./.github/actions/setup-env-cached
         with:
-          python-version: '3.13'
+          python_version: '3.13'
+          cache_profile: 'python_workflow'
+          security_profile: 'python_workflow'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Read version from pyproject.toml
         id: version
-        run: scripts/ci/auto-tag-read-version.sh
+        run: scripts/ci/auto-tag-unified.sh read-version
 
       - name: Detect previous version
         id: prev
-        run: scripts/ci/auto-tag-detect-previous.sh
+        run: scripts/ci/auto-tag-unified.sh detect-previous
 
       - name: Skip if version unchanged
         if: steps.prev.outputs.version == steps.version.outputs.version
@@ -67,14 +73,15 @@ jobs:
         if: steps.prev.outputs.version != steps.version.outputs.version
         env:
           TAG: v${{ steps.version.outputs.version }}
-        run: scripts/ci/auto-tag-check-exists.sh
+        run: scripts/ci/auto-tag-unified.sh check-exists
 
       - name: Configure auth for push
         if: >-
           steps.prev.outputs.version != steps.version.outputs.version &&
           steps.check.outputs.exists == 'false'
-        run: |
-          git remote set-url origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}.git
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: scripts/ci/auto-tag-unified.sh configure-auth
 
       - name: Create and push tag
         if: >-
@@ -82,4 +89,4 @@ jobs:
           steps.check.outputs.exists == 'false'
         env:
           TAG: v${{ steps.version.outputs.version }}
-        run: scripts/ci/auto-tag-create-push-tag.sh
+        run: scripts/ci/auto-tag-unified.sh create-push
