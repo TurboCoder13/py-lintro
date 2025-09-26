@@ -61,31 +61,7 @@ if [ -n "$MARKER" ]; then
     fi
 
     # Extract the first comment id containing the marker (prefer latest by scanning from end)
-    COMMENT_ID=$(EXISTING_JSON="$EXISTING_JSON" python - <<'PY'
-import json,sys,os
-
-# Read marker and JSON payload from environment
-marker = os.environ.get('MARKER', '')
-payload = os.environ.get('EXISTING_JSON', '[]')
-
-try:
-    data = json.loads(payload)
-except Exception:
-    data = []
-
-items = data.get('items') if isinstance(data, dict) else data
-items = items or []
-
-target = None
-for item in reversed(items):
-    body = (item.get('body') or '')
-    if marker and (marker in body):
-        target = item.get('id')
-        break
-
-print(target or '')
-PY
-)
+    COMMENT_ID=$(python3 scripts/utils/find_comment_with_marker.py "$EXISTING_JSON" "$MARKER")
 
     if [ -n "$COMMENT_ID" ]; then
         log_info "Found existing comment with marker (id=$COMMENT_ID); preparing merged body"
@@ -93,20 +69,7 @@ PY
         NEW_FILE=$(mktemp)
         MERGED_FILE=$(mktemp)
         # Dump previous body
-        python - <<'PY' "$EXISTING_JSON" "$COMMENT_ID" > "$PREV_FILE"
-import json,sys
-payload=sys.argv[1]
-cid=sys.argv[2]
-try:
-    data=json.loads(payload)
-except Exception:
-    data=[]
-items=(data.get('items') if isinstance(data, dict) else data) or []
-for it in items:
-    if str(it.get('id'))==cid:
-        sys.stdout.write(it.get('body') or '')
-        break
-PY
+        python3 scripts/utils/extract_comment_body.py "$EXISTING_JSON" "$COMMENT_ID" > "$PREV_FILE"
         # Read new body
         cat "$COMMENT_FILE" > "$NEW_FILE"
         # Merge with Python utility
@@ -117,12 +80,7 @@ PY
             log_success "PR comment updated successfully via gh api"
             exit 0
         else
-            JSON_BODY=$(python - <<'PY'
-import json,sys
-body=sys.stdin.read()
-print(json.dumps({"body": body}))
-PY
-<<<"$MERGED")
+            JSON_BODY=$(echo "$MERGED" | python3 scripts/utils/json_encode_body.py)
             curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
                  -H "Accept: application/vnd.github+json" \
                  -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -153,14 +111,7 @@ if command -v gh &>/dev/null; then
 else
     log_info "gh not found, using curl to post PR comment"
     # Fallback without requiring jq: safely JSON-encode body using Python
-    JSON_BODY=$(python - <<'PY'
-import json, sys
-path = sys.argv[1]
-with open(path, 'r', encoding='utf-8') as f:
-    body = f.read()
-print(json.dumps({"body": body}))
-PY
-"$COMMENT_FILE")
+    JSON_BODY=$(python3 scripts/utils/json_encode_body.py "$COMMENT_FILE")
     curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
          -H "Accept: application/vnd.github+json" \
          -H "X-GitHub-Api-Version: 2022-11-28" \

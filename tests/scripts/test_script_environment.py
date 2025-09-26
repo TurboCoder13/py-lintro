@@ -8,10 +8,10 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 from assertpy import assert_that
-from textwrap import dedent
 
 
 class TestEnvironmentHandling:
@@ -206,6 +206,9 @@ echo 0.0.0
         Mocks `gh api` to return a JSON array with an existing comment body that
         contains the marker, then verifies the script performs a PATCH call with
         merged content where the marker appears only once at the top.
+
+        Args:
+            tmp_path: Path to the temporary directory.
         """
         # Prepare a fake environment and working dir
         work = tmp_path
@@ -222,8 +225,8 @@ echo 0.0.0
                 ## 📊 Coverage Report
 
                 **Coverage:** ✅ **85.0%** (good)
-                """
-            ).strip()
+                """,
+            ).strip(),
         )
 
         # Create a mock gh that returns an existing comment with the marker and
@@ -232,9 +235,7 @@ echo 0.0.0
         bin_dir.mkdir()
         gh_path = bin_dir / "gh"
         existing_json = (
-            "[\n"
-            "  {\"id\": 111, \"body\": \"<!-- coverage-report -->\\nOld body\"}\n"
-            "]\n"
+            "[\n" '  {"id": 111, "body": "<!-- coverage-report -->\\nOld body"}\n' "]\n"
         )
         gh_path.write_text(
             f"""#!/usr/bin/env bash
@@ -244,7 +245,8 @@ if [[ "$1" == "api" && "$2" == repos/*/issues/*/comments ]]; then
   echo '{existing_json}'
   exit 0
 fi
-if [[ "$1" == "api" && "$2" == repos/*/issues/comments/* && "$3" == "-X" && "$4" == "PATCH" ]]; then
+if [[ "$1" == "api" && "$2" == repos/*/issues/comments/* && "$3" == "-X" \
+    && "$4" == "PATCH" ]]; then
   # capture body arg
   for i in "$@"; do
     if [[ "$i" == body=* ]]; then echo "$i"; fi
@@ -253,7 +255,7 @@ if [[ "$1" == "api" && "$2" == repos/*/issues/comments/* && "$3" == "-X" && "$4"
 fi
 echo gh-mock-unhandled >&2
 exit 1
-"""
+""",
         )
         gh_path.chmod(0o755)
 
