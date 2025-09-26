@@ -55,5 +55,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: scripts/ci/post-pr-delete-previous.sh '<!-- lintro-report -->'
-
-

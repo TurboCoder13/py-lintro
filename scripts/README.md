@@ -131,7 +131,7 @@ Shared utilities and helper scripts.
 | `check-pypi-version.py`              | Check if version exists on PyPI                   | `python scripts/utils/check-pypi-version.py <version>`       |
 | `create-release.py`                  | Create GitHub release with assets                 | `python scripts/utils/create-release.py <version>`           |
 | `delete-previous-lintro-comments.py` | Delete old PR comments                            | `python scripts/utils/delete-previous-lintro-comments.py`    |
-| `merge_pr_comment.py`               | Merge-update PR comment body, collapsing history  | `python scripts/utils/merge_pr_comment.py --help`            |
+| `merge_pr_comment.py`                | Merge-update PR comment body, collapsing history  | `python scripts/utils/merge_pr_comment.py --help`            |
 | `determine-release.py`               | Determine next release version from commits       | `python scripts/utils/determine-release.py`                  |
 | `extract-coverage.py`                | Extract coverage from XML files                   | `python scripts/utils/extract-coverage.py`                   |
 | `extract-version.py`                 | Print `version=X.Y.Z` from TOML                   | `python scripts/utils/extract-version.py`                    |

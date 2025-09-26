@@ -58,9 +58,7 @@ def merge_comment_bodies(
     marker_line: str = marker.strip()
     normalized_new: str = _normalize_newline(new_body).strip()
 
-    now_utc: str = (
-        datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
-    )
+    now_utc: str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     if previous_body:
         normalized_prev: str = _normalize_newline(previous_body).strip()
@@ -122,5 +120,3 @@ if __name__ == "__main__":  # pragma: no cover - simple CLI aid
         place_new_above=not args.place_new_below,
     )
     sys.stdout.write(merged_out)
-
-
