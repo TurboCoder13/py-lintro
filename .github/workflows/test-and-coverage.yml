@@ -45,31 +45,9 @@ jobs:
     outputs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
-        with:
-          egress-policy: 'block'
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            codeload.github.com:443
-            downloads.github.com:443
-            objects.githubusercontent.com:443
-            img.shields.io:443
-            ghcr.io:443
-            pkg-containers.githubusercontent.com:443
-            docker.io:443
-            registry-1.docker.io:443
-            auth.docker.io:443
-            production.cloudflare.docker.com:443
-            pypi.org:443
-            files.pythonhosted.org:443
-            codecov.io:443
-            uploader.codecov.io:443
-            storage.googleapis.com:443
-            pings.codecov.com:443
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - name: Secure Checkout
+        uses: ./.github/actions/secure-checkout
+
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
       - name: Run comprehensive test suite (with Docker tests)
@@ -139,23 +117,9 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
-        with:
-          egress-policy: 'block'
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            codeload.github.com:443
-            downloads.github.com:443
-            objects.githubusercontent.com:443
-            img.shields.io:443
-            pings.codecov.com:443
-            codecov.io:443
-            uploader.codecov.io:443
-            storage.googleapis.com:443
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - name: Secure Checkout
+        uses: ./.github/actions/secure-checkout
+
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
       - name: Generate coverage PR comment (always)

@@ -1,0 +1,52 @@
+name: 'Secure Checkout'
+description: >-
+  Centralized secure checkout with harden-runner using security profiles
+  from .github/data/security-config.yml
+
+inputs:
+  fetch_depth:
+    description: 'Number of commits to fetch'
+    required: false
+    default: '1'
+
+  fetch_tags:
+    description: 'Whether to fetch tags'
+    required: false
+    default: 'false'
+
+  persist_credentials:
+    description: 'Whether to persist credentials'
+    required: false
+    default: 'true'
+
+  token:
+    description: 'GitHub token to use'
+    required: false
+    default: ${{ github.token }}
+
+  security_profile:
+    description: 'Security profile from .github/data/security-config.yml'
+    required: false
+    default: 'basic'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Load security profile endpoints
+      id: security-config
+      shell: bash
+      run: scripts/utils/load-security-profile.sh "${{ inputs.security_profile }}" >> $GITHUB_OUTPUT
+
+    - name: Harden Runner
+      uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.10.2
+      with:
+        egress_policy: 'block'
+        allowed-endpoints: ${{ steps.security-config.outputs.endpoints }}
+
+    - name: Checkout
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      with:
+        fetch-depth: ${{ inputs.fetch_depth }}
+        fetch-tags: ${{ inputs.fetch_tags }}
+        persist-credentials: ${{ inputs.persist_credentials }}
+        token: ${{ inputs.token }}

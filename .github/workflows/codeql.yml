@@ -26,20 +26,8 @@ jobs:
       group: codeql-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
-        with:
-          egress_policy: 'block'
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            codeload.github.com:443
-            downloads.github.com:443
-            objects.githubusercontent.com:443
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Secure Checkout
+        uses: ./.github/actions/secure-checkout
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@f1f6e5f6af878fb37288ce1c627459e94dbf7d01 # v3

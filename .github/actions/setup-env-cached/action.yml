@@ -1,0 +1,130 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+name: Setup Environment (Cached)
+description: >-
+  Advanced Python environment setup with intelligent caching based on 
+  centralized cache profiles and security configurations
+inputs:
+  python_version:
+    description: Python version to use
+    required: false
+    default: '3.13'
+  cache_profile:
+    description: Cache profile from .github/data/cache-config.yml
+    required: false
+    default: 'python_basic'
+  security_profile:
+    description: Security profile from .github/data/security-config.yml
+    required: false
+    default: 'python_workflow'
+  skip_cache:
+    description: Skip caching entirely (for troubleshooting)
+    required: false
+    default: 'false'
+  cache_prefix:
+    description: Additional cache key prefix for isolation
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Load cache configuration
+      id: cache-config
+      shell: bash
+      run: |
+        if [[ ! -f .github/data/cache-config.yml ]]; then
+          echo "❌ Cache configuration not found: .github/data/cache-config.yml"
+          exit 1
+        fi
+
+        echo "✅ Cache configuration loaded"
+        echo "profile=${{ inputs.cache_profile }}" >> $GITHUB_OUTPUT
+        echo "prefix=${{ inputs.cache_prefix }}" >> $GITHUB_OUTPUT
+
+    - name: Setup Python with version caching
+      uses: actions/setup-python@3105fb18c05ddd93efea5f9e0bef7a03a6e9e7df # v4
+      with:
+        python-version: ${{ inputs.python_version }}
+        cache: 'pip'
+        cache-dependency-path: |
+          **/requirements*.txt
+          **/pyproject.toml
+
+    - name: Cache uv installation
+      if: inputs.skip_cache != 'true'
+      uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+      with:
+        path: ~/.cache/uv
+        key: ${{ inputs.cache_prefix }}uv-${{ runner.os }}-${{ hashFiles('**/uv.lock') }}
+        restore-keys: |
+          ${{ inputs.cache_prefix }}uv-${{ runner.os }}-
+
+    - name: Cache Python tools
+      if: inputs.skip_cache != 'true' && (inputs.cache_profile == 'python_workflow' || inputs.cache_profile == 'analysis_workflow')
+      uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+      with:
+        path: ~/.local/bin
+        key: ${{ inputs.cache_prefix }}tools-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ inputs.cache_prefix }}tools-${{ runner.os }}-
+
+    - name: Cache Docker buildx
+      if: inputs.skip_cache != 'true' && inputs.cache_profile == 'docker_workflow'
+      uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ inputs.cache_prefix }}docker-${{ runner.os }}-${{ github.sha }}
+        restore-keys: |
+          ${{ inputs.cache_prefix }}docker-${{ runner.os }}-
+
+    - name: Cache bomctl data
+      if: inputs.skip_cache != 'true' && inputs.cache_profile == 'sbom_workflow'
+      uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+      with:
+        path: ${{ github.workspace }}/.bomctl-cache
+        key: ${{ inputs.cache_prefix }}bomctl-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}-${{ github.sha }}
+        restore-keys: |
+          ${{ inputs.cache_prefix }}bomctl-${{ runner.os }}-
+          ${{ inputs.cache_prefix }}bomctl-
+
+    - name: Bootstrap environment with caching awareness
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        CACHE_PROFILE: ${{ inputs.cache_profile }}
+        SECURITY_PROFILE: ${{ inputs.security_profile }}
+        UV_CACHE_DIR: ~/.cache/uv
+        PYTHONPYCACHEPREFIX: /tmp/pycache
+      run: |
+        echo "🚀 Setting up Python ${{ inputs.python_version }} environment"
+        echo "📦 Cache profile: ${{ inputs.cache_profile }}"
+        echo "🔒 Security profile: ${{ inputs.security_profile }}"
+
+        # Run the bootstrap script with cache awareness
+        scripts/utils/bootstrap-env.sh "${{ inputs.python_version }}"
+
+        echo "✅ Environment setup complete"
+
+    - name: Cache validation and reporting
+      if: inputs.skip_cache != 'true'
+      shell: bash
+      run: |
+        echo "📊 Cache Status Report"
+        echo "===================="
+        echo "Profile: ${{ inputs.cache_profile }}"
+        echo "Python: ${{ inputs.python_version }}"
+
+        # Report cache sizes if available
+        if [[ -d ~/.cache/uv ]]; then
+          UV_SIZE=$(du -sh ~/.cache/uv 2>/dev/null | cut -f1 || echo "unknown")
+          echo "UV cache: $UV_SIZE"
+        fi
+
+        if [[ -d ~/.local/bin ]]; then
+          TOOLS_COUNT=$(ls ~/.local/bin 2>/dev/null | wc -l || echo "0")
+          echo "Cached tools: $TOOLS_COUNT binaries"
+        fi
+
+        echo "✅ Cache validation complete"
