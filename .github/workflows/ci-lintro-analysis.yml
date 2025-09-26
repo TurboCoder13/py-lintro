@@ -103,12 +103,13 @@ jobs:
         if: github.event_name == 'pull_request'
         run: ./scripts/ci/ci-pr-comment.sh
 
-      - name: Comment PR with Lintro Results
+      - name: Comment PR with Lintro Results (merge-update)
         if: github.event_name == 'pull_request'
         uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           file: pr-comment.txt
           marker: '<!-- lintro-report -->'
+          merge-update: 'true'
 
       - name: Fail on Linting Issues
         if: ${{ env.CHK_EXIT_CODE != '0' }}

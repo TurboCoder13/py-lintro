@@ -160,14 +160,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Delete Previous Coverage PR Comments
-        if: always()
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: scripts/ci/post-pr-delete-previous.sh '<!-- coverage-report -->'
-
       - name: Generate coverage PR comment (always)
         if: always()
         env:
@@ -175,8 +167,9 @@ jobs:
           JOB_RESULT: ${{ needs.run-test-suite.result }}
         run: ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
-      - name: Comment PR with coverage info
+      - name: Comment PR with coverage info (merge-update)
         uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'
+          merge-update: 'true'
