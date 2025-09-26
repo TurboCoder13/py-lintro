@@ -232,14 +232,49 @@ EOF
   # Create directory if it doesn't exist
   mkdir -p "$(dirname "$output_path")"
 
-  # Generate badge using shields.io
+  # Try shields.io first (CI uses harden-runner allowlist). Fallback to local.
   local badge_url="https://img.shields.io/badge/coverage-${coverage_pct}%25-${color}.svg"
-  if ! curl -s "$badge_url" -o "$output_path"; then
-    log_error "Failed to generate coverage badge"
-    return 1
+  if curl -fsSL "$badge_url" -o "$output_path"; then
+    log_success "Coverage badge updated from shields.io: $output_path"
+    return 0
   fi
 
-  log_success "Coverage badge updated: $output_path"
+  # Fallback: generate badge locally (no network egress)
+  local hex_color
+  case "$color" in
+    brightgreen) hex_color="#4c1" ;;
+    green)       hex_color="#4c1" ;;
+    yellow)      hex_color="#dfb317" ;;
+    orange)      hex_color="#fe7d37" ;;
+    red)         hex_color="#e05d44" ;;
+    *)           hex_color="#4c1" ;;
+  esac
+
+  cat > "$output_path" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="99" height="20">
+    <linearGradient id="b" x2="0" y2="100%">
+        <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+        <stop offset="1" stop-opacity=".1"/>
+    </linearGradient>
+    <clipPath id="a">
+        <rect width="99" height="20" rx="3" fill="#fff"/>
+    </clipPath>
+    <g clip-path="url(#a)">
+        <path fill="#555" d="M0 0h63v20H0z"/>
+        <path fill="${hex_color}" d="M63 0h36v20H63z"/>
+        <path fill="url(#b)" d="M0 0h99v20H0z"/>
+    </g>
+    <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110">
+        <text x="325" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="530">coverage</text>
+        <text x="325" y="140" transform="scale(.1)" textLength="530">coverage</text>
+        <text x="800" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="260">${coverage_pct}%</text>
+        <text x="800" y="140" transform="scale(.1)" textLength="260">${coverage_pct}%</text>
+    </g>
+</svg>
+EOF
+
+  log_success "Coverage badge updated locally: $output_path"
 }
 
 # PR comment generation function

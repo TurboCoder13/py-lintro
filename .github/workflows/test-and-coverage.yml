@@ -52,6 +52,7 @@ jobs:
             codeload.github.com:443
             downloads.github.com:443
             objects.githubusercontent.com:443
+            img.shields.io:443
             ghcr.io:443
             pkg-containers.githubusercontent.com:443
             docker.io:443
@@ -146,6 +147,7 @@ jobs:
             codeload.github.com:443
             downloads.github.com:443
             objects.githubusercontent.com:443
+            img.shields.io:443
             pings.codecov.com:443
             codecov.io:443
             uploader.codecov.io:443
