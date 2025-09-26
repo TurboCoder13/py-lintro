@@ -1,6 +1,6 @@
 ---
 name: Quality Check - CI Pipeline
-# Runs lintro quality analysis on PRs and pushes using Docker. 
+# Runs lintro quality analysis on PRs and pushes using Docker.
 # Builds Docker image, executes lintro checks, and posts PR comments with results.
 
 'on':
