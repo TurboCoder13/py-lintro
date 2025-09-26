@@ -1,10 +1,8 @@
 ---
-# Reusable workflow: Quality checks and version export
-# - Sets up Python and uv
-# - Installs external tools used by Lintro
-# - Runs Lintro format/check to gate quality
-# - Reads the project version from pyproject.toml and outputs it
-name: Reusable Quality Checks
+name: Reusable - Quality Gate & Version Export
+# Reusable workflow for quality checks and version extraction.
+# Sets up Python/uv environment, installs external tools, runs lintro format/check,
+# and exports project version for downstream workflows.
 
 'on':
   workflow_call:

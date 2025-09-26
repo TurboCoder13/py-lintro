@@ -1,5 +1,8 @@
 ---
-name: Docker Build & Publish
+name: Build - Docker Image & Registry
+# Builds and tests Docker image on PR changes. Publishes to GHCR on main branch pushes,
+# releases, or manual dispatch. Includes multi-platform support and SBOM generation.
+
 'on':
   push:
     branches: [main]

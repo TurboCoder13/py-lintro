@@ -1,5 +1,7 @@
 ---
-name: Automated Release PR (no direct push to main)
+name: Release - Automated PR Creation
+# Computes next semantic version using conventional commits and opens release PR.
+# Prevents direct pushes to main by requiring PR workflow for all releases.
 
 'on':
   push:

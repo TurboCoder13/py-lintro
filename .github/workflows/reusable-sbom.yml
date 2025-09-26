@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: MIT
 # For license details, see the repository root LICENSE file.
 ---
-name: Reusable SBOM Job
+name: Reusable - SBOM Generation & Verification
+# Reusable workflow for Software Bill of Materials generation.
+# Creates SBOM in multiple formats, verifies with bomctl, and uploads artifacts
+# with proper naming for traceability.
 
 'on':
   workflow_call:

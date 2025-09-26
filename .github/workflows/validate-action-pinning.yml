@@ -1,5 +1,7 @@
 ---
-name: Validate Action Pinning
+name: Quality Check - Action Pinning Validation
+# Validates that all GitHub Actions in workflows are pinned to specific SHA commits
+# for security compliance. Prevents use of mutable tag references.
 
 'on':
   pull_request:

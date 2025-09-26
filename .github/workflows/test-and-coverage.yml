@@ -1,5 +1,7 @@
 ---
-name: Test Suite & Coverage
+name: Testing - Full Suite & Coverage
+# Executes comprehensive test suite in Docker, generates coverage reports,
+# uploads artifacts, and posts coverage information to PRs.
 
 'on':
   push:

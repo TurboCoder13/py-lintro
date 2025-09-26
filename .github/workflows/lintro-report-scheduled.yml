@@ -1,5 +1,7 @@
 ---
-name: Lintro Report
+name: Reporting - Scheduled Lintro Analysis
+# Runs comprehensive lintro analysis weekly on schedule or manual dispatch.
+# Generates detailed markdown report and uploads as workflow artifact.
 
 'on':
   push:
@@ -16,7 +18,8 @@ name: Lintro Report
       - .github/workflows/lintro-report-scheduled.yml
       - scripts/local/local-lintro.sh
   schedule:
-    - cron: 0 0 * * 0 # Run weekly on Sunday at midnight
+    # Run weekly on Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
   workflow_dispatch:
 
 permissions:

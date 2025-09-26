@@ -1,5 +1,7 @@
 ---
-name: Auto Tag on Main
+name: Release - Auto Tag Creation
+# Automatically creates and pushes version tags when pyproject.toml version changes
+# on main branch. Guards against duplicate tags and validates release commit format.
 
 'on':
   push:

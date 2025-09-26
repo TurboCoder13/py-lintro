@@ -1,8 +1,11 @@
 ---
-name: GitHub Pages
+name: Deploy - Coverage Reports to Pages
+# Deploys HTML coverage reports to GitHub Pages after successful test runs.
+# Triggered by completion of test-and-coverage workflow on main branch.
+
 'on':
   workflow_run:
-    workflows: [Test Suite & Coverage, Test and Coverage]
+    workflows: [Testing - Full Suite & Coverage]
     types:
       - completed
     branches:

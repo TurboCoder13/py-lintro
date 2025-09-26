@@ -1,12 +1,9 @@
 ---
 # yamllint disable rule:line-length
-# Reusable workflow: Build Python artifacts and validate metadata
-# - Sets up Python and uv
-# - Syncs dev dependencies
-# - Builds sdist and wheel
-# - Runs twine check to validate artifacts
-# - Uploads dist/ as an artifact named "dist"
-name: Reusable Build
+name: Reusable - Build & Package Validation
+# Reusable workflow for Python package building and validation.
+# Sets up environment, syncs dependencies, builds sdist/wheel, validates with twine,
+# and uploads distribution artifacts.
 
 'on':
   workflow_call:

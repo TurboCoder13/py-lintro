@@ -1,5 +1,7 @@
 ---
-name: Semantic PR Title
+name: Quality Check - PR Title Validation
+# Validates PR titles follow Conventional Commits format. Comments with guidance
+# and blocks merges if title format is invalid to ensure semantic release compatibility.
 
 'on':
   pull_request:

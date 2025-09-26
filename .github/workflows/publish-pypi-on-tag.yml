@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: MIT
 # For license details, see the repository root LICENSE file.
 ---
-name: Publish to PyPI on Tag
+name: Publish - PyPI Production
+# Publishes package to PyPI when version tags are pushed. Validates tag matches 
+# pyproject.toml version, runs quality/build checks, generates SBOM, and uses OIDC for secure publishing.
 
 'on':
   push:

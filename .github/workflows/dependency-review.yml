@@ -1,5 +1,7 @@
 ---
-name: Dependency Review
+name: Security - Dependency Review
+# Reviews dependency changes in PRs for known security vulnerabilities.
+# Blocks merges if high-severity vulnerabilities are introduced.
 
 'on':
   pull_request:

@@ -1,5 +1,7 @@
 ---
-name: PR Comment Cleanup
+name: Maintenance - PR Comment Cleanup
+# Manual workflow to clean up automated comments from PRs (coverage reports, etc.).
+# Helps maintain clean PR comment history by removing outdated bot comments.
 
 'on':
   workflow_dispatch:

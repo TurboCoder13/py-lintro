@@ -1,5 +1,7 @@
 ---
-name: Auto-bump internal refs
+name: Maintenance - Auto-bump Internal References
+# Automatically updates internal workflow and action SHA references to latest commit.
+# Creates PR with updated references to maintain security pinning compliance.
 
 'on':
   push:
