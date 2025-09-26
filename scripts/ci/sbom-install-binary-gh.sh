@@ -13,7 +13,7 @@ Install bomctl via GitHub Releases using gh CLI (pinned version pattern).
 
 Environment:
   BOMCTL_VERSION  Optional. Release tag (default: v0.4.3)
-  GH_TOKEN        Optional. Token for gh (mapped from GITHUB_TOKEN when present)
+  GITHUB_TOKEN    Optional. GitHub token for API access
 USAGE
   exit 0
 fi
@@ -26,8 +26,8 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
-# Map token for gh if provided
-if [[ -z "${GH_TOKEN:-}" && -n "${GITHUB_TOKEN:-}" ]]; then
+# Set GH_TOKEN for gh CLI from GITHUB_TOKEN if available
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
   export GH_TOKEN="${GITHUB_TOKEN}"
 fi
 

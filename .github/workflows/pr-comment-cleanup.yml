@@ -39,7 +39,6 @@ jobs:
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Delete previous Coverage comments

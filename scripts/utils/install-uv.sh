@@ -19,7 +19,6 @@ Options:
 
 Environment Variables:
   UV_VERSION    Specific uv version to install (default: latest)
-  GH_TOKEN      GitHub token for API access (fallback to GITHUB_TOKEN)
   GITHUB_TOKEN  GitHub token for API access
 EOF
   exit 0
@@ -74,8 +73,8 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
-# Map token for gh if provided by Actions
-if [ -z "${GH_TOKEN:-}" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
+# Set GH_TOKEN for gh CLI from GITHUB_TOKEN if available
+if [ -n "${GITHUB_TOKEN:-}" ]; then
   export GH_TOKEN="${GITHUB_TOKEN}"
 fi
 

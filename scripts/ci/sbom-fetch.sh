@@ -13,7 +13,7 @@ Usage:
 
 Notes:
   - Requires bomctl binary installed on PATH
-  - Uses GITHUB_TOKEN/ GH_TOKEN if present
+  - Uses GITHUB_TOKEN if present
 EOF
   exit 0
 fi

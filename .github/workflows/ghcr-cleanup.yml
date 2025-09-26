@@ -35,7 +35,6 @@ jobs:
       - name: Setup environment
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BOOTSTRAP_SKIP_SYNC: '1'
           BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
@@ -44,5 +43,5 @@ jobs:
 
       - name: Prune untagged GHCR versions
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run python scripts/ci/ghcr_prune_untagged.py

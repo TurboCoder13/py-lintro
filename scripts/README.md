@@ -498,5 +498,5 @@ When adding new scripts:
   ```
   - Notes:
     - Requires `gh` (GitHub CLI) available on the runner.
-    - In GitHub Actions, `gh` expects `GH_TOKEN`. The script will automatically map the built-in `GITHUB_TOKEN` to `GH_TOKEN` if the latter is unset.
+    - In GitHub Actions, `gh` expects `GH_TOKEN`. The script will automatically set `GH_TOKEN` from `GITHUB_TOKEN`.
     - Set `CODECOV_VERSION` (and optionally `CODECOV_SHA256`) via organization or repo vars.

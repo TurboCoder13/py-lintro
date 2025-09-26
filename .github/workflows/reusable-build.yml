@@ -24,6 +24,8 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
@@ -41,13 +43,8 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Ensure GITHUB_TOKEN is set for uv install
-        run: echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
-
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           python-version: ${{ inputs.python-version }}
 

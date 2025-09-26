@@ -279,7 +279,6 @@ def compute() -> ComputeResult:
     repo = os.getenv("GITHUB_REPOSITORY", "")
     token = (
         os.getenv("RELEASE_TOKEN")
-        or os.getenv("GH_TOKEN")
         or os.getenv("GITHUB_TOKEN")
         or ""
     )

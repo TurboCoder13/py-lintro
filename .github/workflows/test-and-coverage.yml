@@ -39,6 +39,7 @@ jobs:
       github.event.pull_request.draft == false
     env:
       LINTRO_OUTPUT_DIR: /tmp/lintro
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
     steps:
@@ -69,9 +70,6 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
@@ -136,6 +134,8 @@ jobs:
       run:
         shell: bash
     if: always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
@@ -156,9 +156,6 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate coverage PR comment (always)
         if: always()
         env:

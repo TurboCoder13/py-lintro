@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 20
     env:
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf

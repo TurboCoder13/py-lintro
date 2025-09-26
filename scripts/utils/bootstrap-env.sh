@@ -24,7 +24,6 @@ Environment Variables:
   BOOTSTRAP_SKIP_SYNC         Skip dependency sync (default: 0)
   BOOTSTRAP_SKIP_INSTALL_TOOLS Skip external tools install (default: 0)
   UV_VERSION                  Specific uv version to install
-  GH_TOKEN                    GitHub token (fallback to GITHUB_TOKEN)
   GITHUB_TOKEN                GitHub token for API access
   GITHUB_PATH                 GitHub Actions PATH persistence
   GITHUB_ENV                  GitHub Actions environment persistence

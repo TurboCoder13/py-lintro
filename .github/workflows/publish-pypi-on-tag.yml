@@ -52,6 +52,8 @@ jobs:
     concurrency:
       group: pypi-tag-publish-${{ github.ref }}
       cancel-in-progress: true
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
@@ -72,9 +74,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           python-version: '3.13'
       - name: Ensure tag points to a commit on main
