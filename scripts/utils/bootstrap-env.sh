@@ -1,159 +1,149 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# bootstrap-env.sh - Ensure Python env tools and project deps are installed
-# - Installs uv if missing (policy-compliant via pip; no curl)
-# - Ensures requested Python version is available via uv
-# - Syncs Python dependencies (dev)
-# - Installs external tools used by Lintro
-# - Ensures ~/.local/bin is on PATH for the current workflow
+# bootstrap-env.sh - Orchestrate complete environment setup
+# Delegates to focused single-responsibility scripts
 
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   cat <<'EOF'
-Bootstraps CI environment with Python, uv, and external tools.
+Bootstrap complete CI environment with Python, uv, and external tools.
 
 Usage:
-  scripts/utils/bootstrap-env.sh [--help|-h] [PYTHON_VERSION]
+  scripts/utils/bootstrap-env.sh [--help|-h] [--dry-run] [--verbose] [PYTHON_VERSION]
 
-Actions:
-  - Install uv if missing and add ~/.local/bin to PATH
-  - Ensure specified Python via 'uv python install'
-  - uv sync --dev --no-progress
-  - ./scripts/utils/install-tools.sh --local
-  - Persist ~/.local/bin to GITHUB_PATH when available
+Options:
+  --help, -h    Show this help message
+  --dry-run     Show what would be done without executing
+  --verbose     Enable verbose output for all components
+
+Arguments:
+  PYTHON_VERSION  Python version to install (default: 3.13)
+
+Environment Variables:
+  BOOTSTRAP_SKIP_SYNC         Skip dependency sync (default: 0)
+  BOOTSTRAP_SKIP_INSTALL_TOOLS Skip external tools install (default: 0)
+  UV_VERSION                  Specific uv version to install
+  GH_TOKEN                    GitHub token (fallback to GITHUB_TOKEN)
+  GITHUB_TOKEN                GitHub token for API access
+  GITHUB_PATH                 GitHub Actions PATH persistence
+  GITHUB_ENV                  GitHub Actions environment persistence
+
+Components:
+  1. Install uv (scripts/utils/install-uv.sh)
+  2. Setup Python version (scripts/utils/setup-python.sh) 
+  3. Sync dependencies (scripts/utils/sync-deps.sh)
+  4. Install external tools (scripts/utils/install-tools.sh)
+  5. Ensure PATH persistence
 EOF
   exit 0
 fi
 
-REQ_PY_VER="${1:-3.13}"
-echo "[setup] Bootstrapping environment (Python ${REQ_PY_VER})..."
+DRY_RUN=0
+VERBOSE=0
+PYTHON_VERSION=""
 
-# If both sync and external tool installation are skipped, avoid bootstrapping uv.
-# This is primarily used by Docker-centric jobs that don't need a Python toolchain
-# on the runner itself.
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --dry-run)
+      DRY_RUN=1
+      shift
+      ;;
+    --verbose)
+      VERBOSE=1
+      shift
+      ;;
+    --help|-h)
+      # Already handled above
+      shift
+      ;;
+    *)
+      if [ -z "$PYTHON_VERSION" ]; then
+        PYTHON_VERSION="$1"
+      else
+        echo "Unknown argument: $1" >&2
+        exit 1
+      fi
+      shift
+      ;;
+  esac
+done
+
+PYTHON_VERSION="${PYTHON_VERSION:-3.13}"
+
+log_info() {
+  echo "[bootstrap-env] $*"
+}
+
+# Build common flags for sub-scripts
+script_flags=""
+if [ $DRY_RUN -eq 1 ]; then
+  script_flags="$script_flags --dry-run"
+fi
+if [ $VERBOSE -eq 1 ]; then
+  script_flags="$script_flags --verbose"
+fi
+
+log_info "Starting environment bootstrap (Python ${PYTHON_VERSION})"
+
+# Early exit check for Docker-centric jobs
 if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -eq 1 ] && [ "${BOOTSTRAP_SKIP_INSTALL_TOOLS:-0}" -eq 1 ]; then
-  echo "[setup] Skipping uv bootstrap and installs (both SKIP flags set)"
-  if [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
+  log_info "Skipping bootstrap (both BOOTSTRAP_SKIP_* flags set)"
+  if [ $DRY_RUN -eq 0 ] && [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
     echo "$HOME/.local/bin" >> "$GITHUB_PATH"
   fi
-  echo "[setup] Early-exit complete."
+  log_info "Early-exit complete"
   exit 0
 fi
 
-# Ensure uv is available with egress-friendly install (GitHub Releases)
-if ! command -v uv >/dev/null 2>&1; then
-  echo "[setup] 'uv' not found; installing from GitHub Releases (binary)"
-  # Prefer GitHub CLI to avoid non-GitHub endpoints under egress block
-  if ! command -v gh >/dev/null 2>&1; then
-    echo "[setup] gh CLI is required to install 'uv' from GitHub releases" >&2
-    exit 1
-  fi
-  # Map token for gh if provided by Actions
-  if [ -z "${GH_TOKEN:-}" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
-    export GH_TOKEN="${GITHUB_TOKEN}"
-  fi
-  # Minimal CI-focused implementation: Linux x86_64 latest (or UV_VERSION)
-  tmpdir="$(mktemp -d)"
-  trap 'rm -rf "${tmpdir}"' EXIT
-  os="$(uname -s | tr '[:upper:]' '[:lower:]')"
-  arch="$(uname -m)"
-  if [ "${os}" != "linux" ] || ! echo "${arch}" | grep -Eq '^(x86_64|amd64)$'; then
-    echo "[setup] Unsupported platform ${os}/${arch} for automatic uv bootstrap." >&2
-    echo "[setup] Please pre-install 'uv' or set UV_VERSION and extend triples if needed." >&2
-    exit 1
-  fi
-  tag_name="${UV_VERSION:-$(gh release view -R astral-sh/uv --json tagName --jq '.tagName' 2>/dev/null || true)}"
-  if [ -z "${tag_name}" ]; then
-    echo "[setup] Unable to resolve uv release tag (try setting UV_VERSION)." >&2
-    exit 1
-  fi
-  echo "[setup] Resolved uv release tag: ${tag_name}"
-  primary="uv-x86_64-unknown-linux-gnu.tar.gz"
-  fallback="uv-x86_64-unknown-linux-musl.tar.gz"
-  # Retry logic with exponential backoff for enterprise resilience
-  download_success=0
-  max_retries=3
-  assets=("${primary}" "${fallback}")
-  
-  for asset in "${assets[@]}"; do
-    for attempt in $(seq 1 $max_retries); do
-      echo "[setup] Attempting to download ${asset} (attempt ${attempt}/${max_retries})"
-      if gh release download "${tag_name}" -R astral-sh/uv -p "${asset}" -O "${tmpdir}/uv.tgz"; then
-        download_success=1
-        echo "[setup] Successfully downloaded ${asset}"
-        break 2
-      else
-        if [ $attempt -lt $max_retries ]; then
-          sleep_time=$((attempt * 2))
-          echo "[setup] Download failed, retrying in ${sleep_time} seconds..."
-          sleep $sleep_time
-        fi
-      fi
-    done
-  done
-  
-  if [ $download_success -eq 0 ]; then
-    echo "[setup] Failed to download uv asset (${primary} or ${fallback}) for ${tag_name}" >&2
-    echo "[setup] This may be due to GitHub infrastructure issues affecting release assets" >&2
-    echo "[setup] Error details for security incident response:" >&2
-    echo "[setup] - Target assets: ${primary}, ${fallback}" >&2
-    echo "[setup] - Release tag: ${tag_name}" >&2
-    echo "[setup] - Available assets:" >&2
-    gh release view "${tag_name}" -R astral-sh/uv --json assets --jq '.assets[].name' || echo "[setup] Unable to list assets (connectivity issue)"
-    echo "[setup] - Network connectivity test:" >&2
-    if command -v curl >/dev/null 2>&1; then
-      curl -I "https://api.github.com/repos/astral-sh/uv/releases/tags/${tag_name}" 2>&1 | head -3 || echo "[setup] GitHub API unreachable"
-    fi
-    echo "[setup] Recommendation: Check GitHub Status (https://www.githubstatus.com) or retry workflow" >&2
-    exit 1
-  fi
-  # Extract uv binary regardless of inner directory layout
-  uv_path_in_tgz="$(tar -tzf "${tmpdir}/uv.tgz" | grep -E '(^|/)uv$' | head -n1 || true)"
-  if [ -z "${uv_path_in_tgz}" ]; then
-    echo "[setup] 'uv' binary not found in archive listing; contents:" >&2
-    tar -tzf "${tmpdir}/uv.tgz" || true
-    exit 1
-  fi
-  tar -C "${tmpdir}" -xzf "${tmpdir}/uv.tgz" "${uv_path_in_tgz}"
-  # Install to user bin when not root; fall back to /usr/local/bin
-  if install -m 0755 "${tmpdir}/${uv_path_in_tgz}" "$HOME/.local/bin/uv" 2>/dev/null; then
-    :
-  else
-    sudo install -m 0755 "${tmpdir}/${uv_path_in_tgz}" /usr/local/bin/uv
-  fi
-  if [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
-    echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-  fi
-  if ! command -v uv >/dev/null 2>&1; then
-    echo "[setup] Failed to provision 'uv' from GitHub releases" >&2
-    exit 1
-  fi
+# Component 1: Install uv
+log_info "Step 1/5: Installing uv"
+if ! ./scripts/utils/install-uv.sh $script_flags; then
+  echo "[bootstrap-env] ERROR: Failed to install uv" >&2
+  exit 1
 fi
 
+# Component 2: Setup Python version  
 if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -ne 1 ]; then
-  echo "[setup] Ensuring Python ${REQ_PY_VER} via uv"
-  uv python install "${REQ_PY_VER}"
-  echo "UV_PYTHON=${REQ_PY_VER}" >> "${GITHUB_ENV:-/dev/null}" || true
-
-  echo "[setup] Syncing Python dependencies (dev)..."
-  uv sync --dev --no-progress
+  log_info "Step 2/5: Setting up Python ${PYTHON_VERSION}"
+  if ! ./scripts/utils/setup-python.sh $script_flags "$PYTHON_VERSION"; then
+    echo "[bootstrap-env] ERROR: Failed to setup Python" >&2
+    exit 1
+  fi
 else
-  echo "[setup] Skipping uv python install and sync (BOOTSTRAP_SKIP_SYNC=1)"
+  log_info "Step 2/5: Skipping Python setup (BOOTSTRAP_SKIP_SYNC=1)"
 fi
 
+# Component 3: Sync dependencies
+if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -ne 1 ]; then
+  log_info "Step 3/5: Syncing Python dependencies"
+  if ! ./scripts/utils/sync-deps.sh $script_flags --dev; then
+    echo "[bootstrap-env] ERROR: Failed to sync dependencies" >&2
+    exit 1
+  fi
+else
+  log_info "Step 3/5: Skipping dependency sync (BOOTSTRAP_SKIP_SYNC=1)"
+fi
+
+# Component 4: Install external tools
 if [ "${BOOTSTRAP_SKIP_INSTALL_TOOLS:-0}" -ne 1 ]; then
-  echo "[setup] Installing external tools (hadolint, prettier, ruff, yamllint, darglint)..."
-  ./scripts/utils/install-tools.sh --local
+  log_info "Step 4/5: Installing external tools"
+  if ! ./scripts/utils/install-tools.sh --local; then
+    echo "[bootstrap-env] ERROR: Failed to install external tools" >&2
+    exit 1
+  fi
 else
-  echo "[setup] Skipping external tools install (BOOTSTRAP_SKIP_INSTALL_TOOLS=1)"
+  log_info "Step 4/5: Skipping external tools install (BOOTSTRAP_SKIP_INSTALL_TOOLS=1)"
 fi
 
-# Ensure local bin is persisted in PATH for downstream steps in GitHub Actions
-if [ -n "$GITHUB_PATH" ] && [ -d "$HOME/.local/bin" ]; then
+# Component 5: Ensure PATH persistence
+log_info "Step 5/5: Ensuring PATH persistence"
+if [ $DRY_RUN -eq 0 ] && [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
   echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+  log_info "Added $HOME/.local/bin to GitHub Actions PATH"
+elif [ $DRY_RUN -eq 1 ]; then
+  log_info "[DRY-RUN] Would add $HOME/.local/bin to PATH"
 fi
 
-echo "[setup] Environment bootstrap complete."
-
-
+log_info "Environment bootstrap complete ✅"
