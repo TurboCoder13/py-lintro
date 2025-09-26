@@ -82,6 +82,16 @@ check_hardened_runners() {
         fi
     done < <(find "$WORKFLOWS_DIR" -name "*.yml" -print0)
     
+    # Enforce direct StepSecurity harden-runner usage (no composites)
+    if grep -R "uses: .*\.github/actions/harden-and-checkout@" "$WORKFLOWS_DIR" "$ACTIONS_DIR" 2>/dev/null; then
+        log_warning "Found composite 'harden-and-checkout' usage; prefer direct step-security/harden-runner"
+        violations=$((violations + 1))
+    fi
+    if grep -R "uses: .*\.github/actions/docker-setup@" "$WORKFLOWS_DIR" "$ACTIONS_DIR" 2>/dev/null; then
+        log_warning "Found composite 'docker-setup' usage; prefer explicit steps with direct harden-runner"
+        violations=$((violations + 1))
+    fi
+
     if [ $violations -eq 0 ]; then
         log_success "Hardened runner check passed"
     else
@@ -94,9 +104,10 @@ check_endpoint_consistency() {
     
     local violations=0
     
-    # Check for hardcoded endpoints instead of variables (excluding documentation and input definitions)
-    if grep -r "allowed-endpoints:" "$WORKFLOWS_DIR" "$ACTIONS_DIR" | grep -v "vars.EGRESS_ALLOWED_ENDPOINTS" | grep -v "README.md\|description:\|inputs:"; then
-        log_warning "Found hardcoded endpoints that should use variables"
+    # Require explicit endpoints in workflows (no env/vars indirection)
+    # Flag any allowed-endpoints that reference env/vars instead of literal host:port entries
+    if grep -R "allowed-endpoints:\s*[|>]" "$WORKFLOWS_DIR" "$ACTIONS_DIR" 2>/dev/null | grep -E "\$\{\{\s*(env|vars)\.[A-Z0-9_]+\s*\}\}" >/dev/null; then
+        log_warning "Found allowed-endpoints using env/vars; replace with explicit host:port entries"
         violations=$((violations + 1))
     fi
     

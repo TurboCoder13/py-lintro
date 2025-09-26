@@ -28,10 +28,15 @@ jobs:
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
           egress_policy: 'block'
-          allowed-endpoints: |
-            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
-            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
-            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_TESTPYPI }}
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            test.pypi.org:443
       - name: Download artifacts
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:

@@ -27,10 +27,16 @@ jobs:
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
           egress_policy: 'block'
-          allowed-endpoints: |
-            ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
-            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER }}
-            ${{ vars.EGRESS_ALLOWED_ENDPOINTS_PYPI }}
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
 
       - name: Test GitHub Container Registry Connectivity
         run: |

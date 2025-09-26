@@ -25,30 +25,6 @@ Example:
     password: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-## .github/actions/docker-setup
-
-- Purpose: Complete Docker setup with hardened runner, checkout, and buildx in one action
-- **Recommended**: Use this for Docker workflows to avoid egress policy conflicts
-- Inputs:
-  - All inputs from harden-and-checkout action
-  - All inputs from setup-docker action
-  - allowed-endpoints (required): combined GitHub + container endpoints
-
-Example:
-
-```yaml
-- name: Docker Setup with Hardened Runner
-  uses: ./.github/actions/docker-setup
-  with:
-    login: 'true'
-    registry: ghcr.io
-    username: ${{ github.actor }}
-    password: ${{ secrets.GITHUB_TOKEN }}
-    allowed-endpoints: |
-      ${{ vars.EGRESS_ALLOWED_ENDPOINTS }}
-      ${{ vars.EGRESS_ALLOWED_ENDPOINTS_CONTAINER }}
-```
-
 ## .github/actions/post-pr-comment
 
 - Purpose: Delete previous PR comments by marker (optional) and post a prepared comment file
