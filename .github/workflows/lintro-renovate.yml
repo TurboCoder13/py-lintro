@@ -9,6 +9,9 @@ jobs:
   renovate:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    concurrency:
+      group: renovate-${{ github.ref }}
+      cancel-in-progress: false  # Don't cancel renovate runs
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf

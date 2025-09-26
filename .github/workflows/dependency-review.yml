@@ -12,6 +12,9 @@ jobs:
   review:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    concurrency:
+      group: dependency-review-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
