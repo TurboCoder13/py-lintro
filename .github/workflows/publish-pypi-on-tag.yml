@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: MIT
 # For license details, see the repository root LICENSE file.
 ---
-name: Publish to PyPI on Tag
+name: Publish - PyPI Production
+# Publishes package to PyPI when version tags are pushed. Validates tag matches
+# pyproject.toml version, runs quality/build checks, generates SBOM, and uses OIDC for secure publishing.
 
 'on':
   push:
@@ -21,22 +23,24 @@ permissions:
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@ae541c778920330b6e82f3dd536bcf2a026324c0
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@f5c9374c8f60487ac34781fb6fb78496be0699bc
     permissions:
       contents: read
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@ae541c778920330b6e82f3dd536bcf2a026324c0
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@f5c9374c8f60487ac34781fb6fb78496be0699bc
     permissions:
       contents: read
 
   sbom:
     name: Generate and verify SBOM
     needs: [build, quality]
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@ae541c778920330b6e82f3dd536bcf2a026324c0
-    with:
-      bomctl-image: ${{ vars.BOMCTL_IMAGE }}
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@f5c9374c8f60487ac34781fb6fb78496be0699bc
+    permissions:
+      contents: read
+      actions: read
+      packages: read
 
   publish:
     name: Upload to PyPI
@@ -50,14 +54,28 @@ jobs:
     concurrency:
       group: pypi-tag-publish-${{ github.ref }}
       cancel-in-progress: true
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress_policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           python-version: '3.13'
       - name: Ensure tag points to a commit on main

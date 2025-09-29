@@ -1,5 +1,7 @@
 ---
-name: Lintro Report
+name: Reporting - Scheduled Lintro Analysis
+# Runs comprehensive lintro analysis weekly on schedule or manual dispatch.
+# Generates detailed markdown report and uploads as workflow artifact.
 
 'on':
   push:
@@ -16,7 +18,8 @@ name: Lintro Report
       - .github/workflows/lintro-report-scheduled.yml
       - scripts/local/local-lintro.sh
   schedule:
-    - cron: 0 0 * * 0 # Run weekly on Sunday at midnight
+    # Run weekly on Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
   workflow_dispatch:
 
 permissions:
@@ -29,15 +32,27 @@ jobs:
     concurrency:
       group: report-${{ github.ref }}
       cancel-in-progress: true
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress_policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
 
       - name: Run Lintro on codebase
         run: ./scripts/ci/lintro-report-generate.sh
@@ -57,7 +72,4 @@ jobs:
 
     steps:
       - name: Report status
-        run: |
-          echo "Lintro report generated successfully"
-          echo "The report is available as a workflow artifact"
-          echo "Download it from the Actions tab in the GitHub repository"
+        run: echo "Lintro report generated successfully"

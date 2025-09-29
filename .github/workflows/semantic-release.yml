@@ -1,5 +1,7 @@
 ---
-name: Automated Release PR (no direct push to main)
+name: Release - Automated PR Creation
+# Computes next semantic version using conventional commits and opens release PR.
+# Prevents direct pushes to main by requiring PR workflow for all releases.
 
 'on':
   push:
@@ -17,6 +19,7 @@ jobs:
       issues: write
     name: Compute next version and open Release PR
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     concurrency:
       group: release-pr-${{ github.ref }}
       cancel-in-progress: true
@@ -25,17 +28,15 @@ jobs:
         shell: bash
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
-          egress-policy: audit
-          allowed-endpoints: |
+          egress_policy: 'block'
+          allowed-endpoints: >
             github.com:443
             api.github.com:443
+            codeload.github.com:443
             downloads.github.com:443
             objects.githubusercontent.com:443
-            pkg-containers.githubusercontent.com:443
-            pypi.org:443
-            files.pythonhosted.org:443
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
@@ -44,9 +45,11 @@ jobs:
           token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           python-version: '3.13'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Use python-semantic-release via uvx (tool isolation)
         run: echo "python-semantic-release will be invoked via uvx; not installed into project env"
@@ -54,38 +57,30 @@ jobs:
       - name: Compute next version (semantic-release dry run)
         id: semrel
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAX_BUMP: minor
         run: uv run python scripts/ci/semantic_release_compute_next.py
       - name: Fail if no release tag baseline
         if: ${{ failure() }}
-        run: |
-          echo "No v*-prefixed tag found. Please create a release tag (e.g., v0.4.0) before running." >&2
-          exit 2
+        run: scripts/ci/semantic-release-helpers.sh fail_no_tag_baseline
 
       - name: Read current version from pyproject.toml
         id: current
-        run: |
-          echo "current_version=$(uv run python scripts/utils/extract-version.py | sed 's/^version=//')" >> "$GITHUB_OUTPUT"
+        run: scripts/ci/semantic-release-helpers.sh read_current_version
         # yamllint enable
 
       - name: Skip if no new version
         if: ${{ steps.semrel.outputs.next_version == '' || steps.semrel.outputs.next_version == steps.current.outputs.current_version }}
-        run: |
-          echo "No new version to release (next='${{ steps.semrel.outputs.next_version }}', current='${{ steps.current.outputs.current_version }}'). Skipping."
+        run: scripts/ci/semantic-release-helpers.sh skip_no_new_version "${{ steps.semrel.outputs.next_version }}" "${{ steps.current.outputs.current_version }}"
 
       - name: Update version files
         if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
-        env:
-          VERSION: ${{ steps.semrel.outputs.next_version }}
-        run: |
-          uv run python scripts/utils/update-version.py "$VERSION"
+        run: scripts/ci/semantic-release-helpers.sh update_version_files "${{ steps.semrel.outputs.next_version }}"
 
       - name: Install external tools for Lintro (formatting)
         if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
-        run: |
-          ./scripts/utils/install-tools.sh --local
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        run: scripts/ci/semantic-release-helpers.sh install_external_tools
 
       - name: Run Lintro format
         if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
@@ -119,5 +114,4 @@ jobs:
         if: ${{ steps.cpr.outputs.pull-request-number != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr merge --auto --squash ${{ steps.cpr.outputs.pull-request-number }} || true
+        run: scripts/ci/semantic-release-helpers.sh merge_release_pr "${{ steps.cpr.outputs.pull-request-number }}"

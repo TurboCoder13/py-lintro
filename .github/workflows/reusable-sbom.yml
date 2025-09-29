@@ -1,15 +1,13 @@
 # SPDX-License-Identifier: MIT
 # For license details, see the repository root LICENSE file.
 ---
-name: Reusable SBOM Job
+name: Reusable - SBOM Generation & Verification
+# Reusable workflow for Software Bill of Materials generation.
+# Creates SBOM in multiple formats, verifies with bomctl, and uploads artifacts
+# with proper naming for traceability.
 
 'on':
   workflow_call:
-    inputs:
-      bomctl-image:
-        description: Digest-pinned bomctl image
-        required: false
-        type: string
     outputs:
       artifact-name:
         description: Name of uploaded SBOM artifact
@@ -23,48 +21,33 @@ jobs:
   sbom:
     name: Generate and verify SBOM
     runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      actions: read
+    timeout-minutes: 20
     env:
-      BOMCTL_IMAGE: ${{ inputs.bomctl-image }}
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Enforce pinned bomctl image digest
-        shell: bash
-        run: |
-          set -euo pipefail
-          ref="${BOMCTL_IMAGE:-}"
-          if [[ -z "${ref}" ]]; then
-            echo "BOMCTL_IMAGE is not set (input). Set a digest-pinned image like 'bomctl/bomctl@sha256:...'." >&2
-            exit 1
-          fi
-          if [[ "${ref}" != *@sha256:* ]]; then
-            echo "BOMCTL_IMAGE must be digest-pinned (contains '@sha256:'). Got: ${ref}" >&2
-            exit 1
-          fi
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-          egress_policy: block
-          allowed-endpoints: |
+          egress_policy: 'block'
+          allowed-endpoints: >
             github.com:443
             api.github.com:443
             codeload.github.com:443
             downloads.github.com:443
             objects.githubusercontent.com:443
-            ghcr.io:443
-            production.cloudflare.docker.com:443
-            auth.docker.io:443
-            registry-1.docker.io:443
-            index.docker.io:443
-            storage.googleapis.com:443
             sigstore.dev:443
             fulcio.sigstore.dev:443
             rekor.sigstore.dev:443
             tuf-repo-cdn.sigstore.dev:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
+      - name: Install bomctl from GitHub Releases (no registries)
+        env:
+          BOMCTL_VERSION: v0.4.3
+        run: bash scripts/ci/sbom-install-binary-gh.sh
       - name: Restore bomctl cache
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
         with:
@@ -74,7 +57,11 @@ jobs:
             bomctl-cache-${{ runner.os }}-
             bomctl-cache-
       - name: Generate SBOMs (CycloneDX 1.6 JSON & SPDX 2.3)
-        run: bash scripts/ci/sbom-generate.sh --use-docker --format cyclonedx-1.6 --format spdx-2.3 --name "py-lintro-sbom" --alias project
+        run: scripts/ci/sbom-generate-safe.sh
+      - name: Fetch SBOM via bomctl binary (GitHub graph)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/ci/sbom-fetch.sh --format cyclonedx-1.6 --format spdx-2.3
       - name: Rename SBOM artifacts with tag/sha for traceability
         run: bash scripts/ci/sbom-rename-artifacts.sh dist/sbom
       - name: Upload SBOM artifacts
@@ -83,7 +70,7 @@ jobs:
           name: sbom-artifacts
           path: dist/sbom/*
           if-no-files-found: error
-      - name: Verify bomctl image with cosign (keyless)
-        run: bash scripts/ci/sbom-verify-container.sh
       - name: Attest SBOM artifacts with keyless cosign (optional)
+        env:
+          COSIGN_EXPERIMENTAL: 1
         run: bash scripts/ci/sbom-attest-artifacts.sh dist/sbom

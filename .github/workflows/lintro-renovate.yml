@@ -1,17 +1,38 @@
 ---
-name: Renovate
+name: Maintenance - Renovate Dependencies
+# Automated dependency updates using Renovate bot. Runs daily to check for
+# outdated dependencies and creates PRs with updates.
+
 'on':
   schedule:
-    # Run every day at 10:00 PM UTC
-    - cron: 0 22 * * *
+    # Run daily at 22:00 UTC
+    - cron: '0 22 * * *'
   workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   renovate:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    concurrency:
+      group: renovate-${{ github.ref }}
+      cancel-in-progress: false # Don't cancel renovate runs
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress_policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
           fetch-tags: true
