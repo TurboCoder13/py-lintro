@@ -28,9 +28,12 @@ while IFS= read -r line; do
   if echo "$uses_line" | grep -Eq '^\s*uses:\s*(\./|docker://)'; then
     continue
   fi
-  ref=$(echo "$uses_line" | sed -n 's/.*@\([^ ]\+\).*/\1/p')
-  # Accept commit SHAs (40 hex) or expressions (matrix/inputs)
-  if echo "$ref" | grep -Eq '^[0-9a-f]{40}$|^\$\{\{'; then
+  # Extract the reference after '@' up to whitespace or end
+  ref=$(echo "$uses_line" | awk -F'@' '{print $2}' | awk '{print $1}')
+  # Normalize and validate reference
+  ref=$(echo "$ref" | tr -d '\r\n\t ')
+  # Accept commit SHAs (40 hex, case-insensitive) or expressions (matrix/inputs)
+  if echo "$ref" | grep -Eq '^[A-Fa-f0-9]{40}$|^\$\{\{'; then
     continue
   fi
   echo "Non-pinned action in $file: $uses_line"
