@@ -37,13 +37,10 @@ EOF
   exit 0
 fi
 
-COMMAND="$1"
-shift
-
 DRY_RUN=0
 VERBOSE=0
 
-# Parse global options
+# Parse global options first
 while [[ $# -gt 0 ]]; do
   case $1 in
     --dry-run)
@@ -55,15 +52,57 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --help|-h)
-      # Command-specific help will be handled below
-      break
+      # Show main help and exit
+      cat <<'EOF'
+Unified coverage management tool with subcommands.
+
+Usage:
+  scripts/utils/coverage-manager.sh <COMMAND> [OPTIONS]
+
+Commands:
+  extract     Extract coverage percentage from coverage.xml
+  badge       Generate and update coverage badge
+  comment     Generate PR comment with coverage info
+  threshold   Enforce minimum coverage threshold
+  status      Get coverage status and color coding
+
+Global Options:
+  --help, -h    Show this help message
+  --verbose     Enable verbose output
+  --dry-run     Show what would be done without executing
+
+Examples:
+  scripts/utils/coverage-manager.sh extract --verbose
+  scripts/utils/coverage-manager.sh badge --dry-run
+  scripts/utils/coverage-manager.sh comment
+  scripts/utils/coverage-manager.sh threshold 85
+  scripts/utils/coverage-manager.sh status
+
+For command-specific help:
+  scripts/utils/coverage-manager.sh <COMMAND> --help
+EOF
+      exit 0
+      ;;
+    -*)
+      # Unknown global option
+      echo "Error: Unknown global option: $1" >&2
+      exit 1
       ;;
     *)
-      # Pass remaining args to subcommand
+      # This should be the command
       break
       ;;
   esac
 done
+
+if [ $# -eq 0 ]; then
+  echo "Error: Command required" >&2
+  echo "Run 'coverage-manager.sh --help' for usage information"
+  exit 1
+fi
+
+COMMAND="$1"
+shift
 
 # Source shared utilities for all coverage operations
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -72,11 +111,11 @@ if [ -f "${SCRIPT_DIR}/utils.sh" ]; then
   source "${SCRIPT_DIR}/utils.sh"
 else
   # Basic logging if utils.sh not available
-  log_info() { echo "[coverage-manager] $*"; }
-  log_verbose() { [ $VERBOSE -eq 1 ] && echo "[coverage-manager] [verbose] $*" || true; }
-  log_success() { echo "[coverage-manager] ✅ $*"; }
-  log_warning() { echo "[coverage-manager] ⚠️  $*"; }
-  log_error() { echo "[coverage-manager] ❌ $*" >&2; }
+  log_info() { echo -e "\033[0;34mℹ️  $*\033[0m"; }
+  log_verbose() { [ "${VERBOSE:-0}" -eq 1 ] && echo -e "\033[0;36m[verbose] $*\033[0m" || true; }
+  log_success() { echo -e "\033[0;32m✅ $*\033[0m"; }
+  log_warning() { echo -e "\033[0;33m⚠️  $*\033[0m"; }
+  log_error() { echo -e "\033[0;31m❌ $*\033[0m" >&2; }
 fi
 
 # Coverage extraction function
@@ -118,7 +157,7 @@ EOF
     return 0
   fi
 
-  coverage_pct="$(uv run python "${SCRIPT_DIR}/extract-coverage.py" 2>&1 | grep "percentage=" | tail -1 | cut -d'=' -f2 || true)"
+  coverage_pct="$(uv run python "${SCRIPT_DIR}/extract-coverage.py" 2>&1 | grep "percentage=" | tail -1 | cut -d'=' -f2 | tr -d '\n' || true)"
   
   if [ -z "$coverage_pct" ]; then
     log_error "Failed to extract coverage percentage"
@@ -126,11 +165,11 @@ EOF
   fi
 
   echo "$coverage_pct"
-  log_verbose "Extracted coverage: ${coverage_pct}%"
+  log_verbose "Extracted coverage: ${coverage_pct}%" >&2
 
   if [ $output_env -eq 1 ] && [ -n "${GITHUB_ENV:-}" ]; then
     echo "COVERAGE_PERCENTAGE=$coverage_pct" >> "$GITHUB_ENV"
-    log_verbose "Set COVERAGE_PERCENTAGE=$coverage_pct in GitHub environment"
+    log_verbose "Set COVERAGE_PERCENTAGE=$coverage_pct in GitHub environment" >&2
   fi
 }
 
