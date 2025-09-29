@@ -121,7 +121,7 @@ class TestCLIDocumentation:
         """Test that lintro --help works and shows expected commands."""
         try:
             result = subprocess.run(
-                ["uv", "run", "lintro", "--help"],
+                ["uv", "run", "python", "-m", "lintro", "--help"],
                 capture_output=True,
                 text=True,
                 timeout=10,
