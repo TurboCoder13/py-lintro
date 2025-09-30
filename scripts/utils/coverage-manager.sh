@@ -157,10 +157,19 @@ EOF
     return 0
   fi
 
-  coverage_pct="$(uv run python "${SCRIPT_DIR}/extract-coverage.py" 2>&1 | grep "percentage=" | tail -1 | cut -d'=' -f2 | tr -d '\n' || true)"
+  # Extract coverage with detailed error handling
+  local extract_output
+  extract_output="$(uv run python "${SCRIPT_DIR}/extract-coverage.py" 2>&1)" || {
+    log_error "Failed to run extract-coverage.py"
+    log_error "Output: $extract_output"
+    return 1
+  }
+  
+  coverage_pct="$(echo "$extract_output" | grep "percentage=" | tail -1 | cut -d'=' -f2 | tr -d '\n' || true)"
   
   if [ -z "$coverage_pct" ]; then
-    log_error "Failed to extract coverage percentage"
+    log_error "Failed to extract coverage percentage from output"
+    log_error "Extract output: $extract_output"
     return 1
   fi
 
@@ -379,30 +388,47 @@ EOF
   # Generate comment content
   local job_result="${JOB_RESULT:-success}"
   local run_id="${GITHUB_RUN_ID:-unknown}"
-  local status_emoji
+  local github_sha="${GITHUB_SHA:-unknown}"
+  local github_repo="${GITHUB_REPOSITORY:-unknown/unknown}"
+  local status_emoji build_status status_text
   
-  case $status in
-    excellent) status_emoji="🎉" ;;
-    good) status_emoji="✅" ;;
-    decent) status_emoji="⚠️" ;;
-    poor) status_emoji="🔴" ;;
-    critical) status_emoji="💥" ;;
-  esac
+  # Determine coverage status emoji
+  if (( $(echo "$coverage_pct >= 80" | bc -l 2>/dev/null || echo 0) )); then
+    status_emoji="✅"
+    status_text="Target met (>80%)"
+  else
+    status_emoji="⚠️"
+    status_text="Below target (<80%)"
+  fi
+  
+  # Determine build status
+  if [ "$job_result" != "success" ]; then
+    build_status="❌ Tests failed"
+  else
+    build_status="✅ Tests passed"
+  fi
 
   cat > "$output_path" << EOF
-## 📊 Coverage Report
-
-**Coverage:** ${status_emoji} **${coverage_pct}%** (${status})
-
-| Metric | Value |
-|--------|-------|
-| **Coverage** | ${coverage_pct}% |
-| **Status** | ${status} |
-| **Job Result** | ${job_result} |
-
-[View full coverage report](https://github.com/\${GITHUB_REPOSITORY}/actions/runs/${run_id})
-
 <!-- coverage-report -->
+
+**Build:** $build_status
+
+**Coverage:** $status_emoji **${coverage_pct}%**
+
+**Status:** $status_text
+
+### 📋 Coverage Details
+- **Generated:** $(date +%Y-%m-%d)
+- **Commit:** [${github_sha:0:7}](https://github.com/${github_repo}/commit/${github_sha})
+
+### 📁 View Detailed Report
+**Direct Link:** [📊 HTML Coverage Report](https://github.com/${github_repo}/actions/runs/${run_id}/artifacts)
+
+Or download manually:
+1. Go to the [Actions tab](https://github.com/${github_repo}/actions)
+2. Find this workflow run
+3. Download the "coverage-report-python-3.13" artifact
+4. Extract and open \`index.html\` in your browser
 EOF
 
   log_success "Coverage comment generated: $output_path"
