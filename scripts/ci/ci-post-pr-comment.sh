@@ -61,15 +61,14 @@ if [ -n "$MARKER" ]; then
     fi
 
     # Extract the first comment id containing the marker (prefer latest by scanning from end)
-    COMMENT_ID=$(python3 scripts/utils/find_comment_with_marker.py "$EXISTING_JSON" "$MARKER")
+    COMMENT_ID=$(uv run python scripts/utils/find_comment_with_marker.py "$EXISTING_JSON" "$MARKER")
 
     if [ -n "$COMMENT_ID" ]; then
         log_info "Found existing comment with marker (id=$COMMENT_ID); preparing merged body"
         PREV_FILE=$(mktemp)
         NEW_FILE=$(mktemp)
-        MERGED_FILE=$(mktemp)
         # Dump previous body
-        python3 scripts/utils/extract_comment_body.py "$EXISTING_JSON" "$COMMENT_ID" > "$PREV_FILE"
+        uv run python scripts/utils/extract_comment_body.py "$EXISTING_JSON" "$COMMENT_ID" > "$PREV_FILE"
         # Read new body
         cat "$COMMENT_FILE" > "$NEW_FILE"
         # Merge with Python utility
@@ -80,7 +79,7 @@ if [ -n "$MARKER" ]; then
             log_success "PR comment updated successfully via gh api"
             exit 0
         else
-            JSON_BODY=$(echo "$MERGED" | python3 scripts/utils/json_encode_body.py)
+            JSON_BODY=$(echo "$MERGED" | uv run python scripts/utils/json_encode_body.py)
             curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
                  -H "Accept: application/vnd.github+json" \
                  -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -111,7 +110,7 @@ if command -v gh &>/dev/null; then
 else
     log_info "gh not found, using curl to post PR comment"
     # Fallback without requiring jq: safely JSON-encode body using Python
-    JSON_BODY=$(python3 scripts/utils/json_encode_body.py "$COMMENT_FILE")
+    JSON_BODY=$(uv run python scripts/utils/json_encode_body.py "$COMMENT_FILE")
     curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
          -H "Accept: application/vnd.github+json" \
          -H "X-GitHub-Api-Version: 2022-11-28" \
