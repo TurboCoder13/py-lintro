@@ -183,7 +183,7 @@ Usage:
   coverage-manager.sh status [--help] [COVERAGE_PERCENTAGE]
 
 Arguments:
-  COVERAGE_PERCENTAGE  Coverage percentage (if not provided, extracts from coverage.xml)
+  COVERAGE_PERCENTAGE  Coverage percentage (if not provided, reads from COVERAGE_PERCENTAGE env var or extracts from coverage.xml)
 
 Returns:
   Prints status information in format: STATUS|COLOR|PERCENTAGE
@@ -195,7 +195,14 @@ EOF
 
   local coverage_pct="${1:-}"
   
+  # Try to get coverage from: 1) argument, 2) environment variable, 3) coverage.xml
   if [ -z "$coverage_pct" ]; then
+    coverage_pct="${COVERAGE_PERCENTAGE:-}"
+    log_verbose "Using COVERAGE_PERCENTAGE from environment: ${coverage_pct}%" >&2
+  fi
+  
+  if [ -z "$coverage_pct" ]; then
+    log_verbose "Extracting coverage from coverage.xml" >&2
     coverage_pct="$(extract_coverage)"
     if [ $? -ne 0 ]; then
       return 1

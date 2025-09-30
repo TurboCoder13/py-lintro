@@ -97,7 +97,9 @@ jobs:
       - name: Extract coverage percentage
         id: coverage
         run: |
-          echo "percentage=$(./scripts/utils/coverage-manager.sh extract)" >> "$GITHUB_OUTPUT"
+          COVERAGE_PCT=$(./scripts/utils/coverage-manager.sh extract)
+          echo "percentage=${COVERAGE_PCT}" >> "$GITHUB_OUTPUT"
+          echo "COVERAGE_PERCENTAGE=${COVERAGE_PCT}" >> "$GITHUB_ENV"
 
       - name: Enforce coverage threshold (80%)
         if: github.ref == 'refs/heads/main' && success()
@@ -115,6 +117,8 @@ jobs:
 
       - name: Generate coverage badge (no commit)
         if: success()
+        env:
+          COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
         run: ./scripts/utils/coverage-manager.sh badge --output assets/images/coverage-badge.svg
 
       - name: Upload coverage badge artifact
@@ -158,6 +162,13 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
+      - name: Download coverage XML artifact (fallback for comment generation)
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: coverage-xml
+          path: .
       - name: Generate coverage PR comment (always)
         if: always()
         env:
