@@ -297,7 +297,12 @@ main() {
     fi
     
     local size
-    size=$(stat -f%z "${file}" 2>/dev/null || stat -c%s "${file}" 2>/dev/null || echo "0")
+    # Try macOS/BSD stat format first, then Linux format
+    if ! size=$(stat -f %z "${file}" 2>/dev/null || stat -c %s "${file}" 2>/dev/null); then
+      handle_error "Failed to get file size for: ${file}"
+      validation_failed=true
+      continue
+    fi
     if [ "${size}" -lt 100 ]; then
       handle_error "Exported file suspiciously small (${size} bytes): ${file}"
       validation_failed=true
