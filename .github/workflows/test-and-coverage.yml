@@ -96,14 +96,13 @@ jobs:
           retention-days: 30
       - name: Extract coverage percentage
         id: coverage
-        run: |
-          COVERAGE_PCT=$(./scripts/utils/coverage-manager.sh extract)
-          echo "percentage=${COVERAGE_PCT}" >> "$GITHUB_OUTPUT"
-          echo "COVERAGE_PERCENTAGE=${COVERAGE_PCT}" >> "$GITHUB_ENV"
+        run: ./scripts/ci/ci-extract-coverage.sh
 
       - name: Enforce coverage threshold (80%)
         if: github.ref == 'refs/heads/main' && success()
-        run: ./scripts/utils/coverage-manager.sh threshold 80
+        env:
+          COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
+        run: bash ./scripts/ci/enforce-coverage-threshold.sh
 
       - name: Upload coverage to Codecov (always)
         if: always()
@@ -119,7 +118,7 @@ jobs:
         if: success()
         env:
           COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
-        run: ./scripts/utils/coverage-manager.sh badge --output assets/images/coverage-badge.svg
+        run: ./scripts/ci/coverage-badge-update.sh
 
       - name: Upload coverage badge artifact
         if: success()
@@ -127,10 +126,6 @@ jobs:
         with:
           name: coverage-badge
           path: assets/images/coverage-badge.svg
-
-      - name: Generate coverage badge artifact only (no commit)
-        if: github.ref == 'refs/heads/main' && success()
-        run: ./scripts/utils/coverage-manager.sh badge --output assets/images/coverage-badge.svg
 
   comment-pr-coverage:
     needs: run-test-suite
@@ -174,12 +169,12 @@ jobs:
         env:
           COVERAGE_PERCENTAGE: ${{ needs.run-test-suite.outputs.coverage-percentage }}
           JOB_RESULT: ${{ needs.run-test-suite.result }}
-          GITHUB_SHA: ${{ github.sha }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: ./scripts/utils/coverage-manager.sh comment --output coverage-pr-comment.txt
+        run: |
+          export COVERAGE_PERCENTAGE
+          export JOB_RESULT
+          ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
-      - name: Comment PR with coverage info (merge-update)
+      - name: Comment PR with coverage info
         uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@f5c9374c8f60487ac34781fb6fb78496be0699bc
         with:
           file: coverage-pr-comment.txt
