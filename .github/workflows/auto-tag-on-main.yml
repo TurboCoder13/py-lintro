@@ -60,7 +60,7 @@ jobs:
         run: echo "Not a release bump commit; skipping tag creation."
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@f5c9374c8f60487ac34781fb6fb78496be0699bc
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@29c57ba89e0e481418f457a5bbde61e72ab01027
         with:
           python-version: '3.13'
         env:
