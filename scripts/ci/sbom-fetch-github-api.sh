@@ -9,7 +9,8 @@ set -euo pipefail
 # - Fetches GitHub dependency graph SBOM via REST API
 # - Validates JSON structure before import
 # - Merges with local SBOM and exports to CycloneDX 1.6 and SPDX 2.3
-# - Strict mode in CI: fails on errors; graceful mode in dev: warns only
+# - Strict mode in CI: fails on errors; graceful mode in dev: continues with local SBOM
+# - Graceful mode exports local SBOM even if GitHub fetch/merge fails
 # - Comprehensive logging and validation
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
@@ -28,8 +29,9 @@ Notes:
   - Requires gh CLI and bomctl on PATH
   - Requires jq for JSON validation
   - Requires 'project' alias in bomctl cache (from sbom-generate-safe.sh)
-  - In CI mode: fails if GitHub SBOM fetch/merge/export fails
-  - In dev mode: continues with local SBOM only on failures
+  - In CI mode (strict): fails if GitHub SBOM fetch/merge/export fails
+  - In dev mode (graceful): warns on GitHub SBOM failures, exports local SBOM only
+  - Graceful mode continues to export step even if GitHub fetch/merge fails
   - Exports: dist/sbom/py-lintro-sbom.cyclonedx-1.6.json
   - Exports: dist/sbom/py-lintro-sbom.spdx-2.3.json
 
@@ -168,6 +170,9 @@ main() {
   repo="${GITHUB_REPOSITORY#*/}"
   log_info "Repository: ${owner}/${repo}"
   
+  # Flag to track if GitHub SBOM was successfully merged
+  github_merged=false
+  
   # Fetch SBOM from GitHub REST API
   log_info "Fetching SBOM from GitHub Dependency Graph API..."
   
@@ -175,44 +180,60 @@ main() {
     log_warn "Failed to fetch SBOM from GitHub API"
     cat "${tmpdir}/gh-api-error.log" >&2
     handle_error "GitHub API SBOM fetch failed (may not be available for this repository)"
-    exit 0
+  else
+    log_success "Fetched SBOM from GitHub API"
+    
+    # Validate JSON structure
+    log_info "Validating SBOM JSON structure..."
+    if ! validate_json "${tmpdir}/github-sbom.json"; then
+      handle_error "SBOM validation failed: invalid JSON structure"
+    else
+      log_success "SBOM JSON structure validated"
+      
+      # Import into bomctl
+      log_info "Importing GitHub SBOM into bomctl with alias '${GITHUB_DEPS_ALIAS}'..."
+      if ! bomctl import --alias "${GITHUB_DEPS_ALIAS}" "${tmpdir}/github-sbom.json" 2>"${tmpdir}/bomctl-import-error.log"; then
+        log_error "Failed to import GitHub SBOM into bomctl"
+        cat "${tmpdir}/bomctl-import-error.log" >&2
+        handle_error "bomctl import failed"
+      else
+        log_success "Imported GitHub SBOM into bomctl"
+        
+        # Verify project alias exists
+        if ! verify_bomctl_cache "${PROJECT_ALIAS}"; then
+          handle_error "Required '${PROJECT_ALIAS}' alias not found in bomctl cache"
+          exit 1
+        fi
+        
+        # Merge GitHub SBOM with local SBOM
+        log_info "Merging GitHub SBOM ('${GITHUB_DEPS_ALIAS}') with local SBOM ('${PROJECT_ALIAS}')..."
+        if ! bomctl merge --alias "${PROJECT_ALIAS}" --name "${SBOM_NAME}" "${GITHUB_DEPS_ALIAS}" "${PROJECT_ALIAS}" 2>"${tmpdir}/bomctl-merge-error.log"; then
+          log_error "Failed to merge SBOMs"
+          cat "${tmpdir}/bomctl-merge-error.log" >&2
+          handle_error "bomctl merge failed"
+        else
+          log_success "Merged GitHub and local SBOMs into '${PROJECT_ALIAS}' alias"
+          github_merged=true
+        fi
+      fi
+    fi
   fi
   
-  log_success "Fetched SBOM from GitHub API"
-  
-  # Validate JSON structure
-  log_info "Validating SBOM JSON structure..."
-  if ! validate_json "${tmpdir}/github-sbom.json"; then
-    handle_error "SBOM validation failed: invalid JSON structure"
-    exit 0
+  # If GitHub merge failed in graceful mode, continue with local SBOM only
+  if [ "${github_merged}" = false ]; then
+    if [ "${STRICT_MODE}" = "true" ]; then
+      log_error "GitHub SBOM processing failed in strict mode"
+      exit 1
+    fi
+    log_info "Continuing with local SBOM only (from '${PROJECT_ALIAS}' alias)"
+    
+    # Verify project alias exists for local-only export
+    if ! verify_bomctl_cache "${PROJECT_ALIAS}"; then
+      log_error "Required '${PROJECT_ALIAS}' alias not found in bomctl cache"
+      log_error "Cannot export SBOM without local project data"
+      exit 1
+    fi
   fi
-  log_success "SBOM JSON structure validated"
-  
-  # Import into bomctl
-  log_info "Importing GitHub SBOM into bomctl with alias '${GITHUB_DEPS_ALIAS}'..."
-  if ! bomctl import --alias "${GITHUB_DEPS_ALIAS}" "${tmpdir}/github-sbom.json" 2>"${tmpdir}/bomctl-import-error.log"; then
-    log_error "Failed to import GitHub SBOM into bomctl"
-    cat "${tmpdir}/bomctl-import-error.log" >&2
-    handle_error "bomctl import failed"
-    exit 0
-  fi
-  log_success "Imported GitHub SBOM into bomctl"
-  
-  # Verify project alias exists
-  if ! verify_bomctl_cache "${PROJECT_ALIAS}"; then
-    handle_error "Required '${PROJECT_ALIAS}' alias not found in bomctl cache"
-    exit 0
-  fi
-  
-  # Merge GitHub SBOM with local SBOM
-  log_info "Merging GitHub SBOM ('${GITHUB_DEPS_ALIAS}') with local SBOM ('${PROJECT_ALIAS}')..."
-  if ! bomctl merge --alias "${PROJECT_ALIAS}" --name "${SBOM_NAME}" "${GITHUB_DEPS_ALIAS}" "${PROJECT_ALIAS}" 2>"${tmpdir}/bomctl-merge-error.log"; then
-    log_error "Failed to merge SBOMs"
-    cat "${tmpdir}/bomctl-merge-error.log" >&2
-    handle_error "bomctl merge failed"
-    exit 0
-  fi
-  log_success "Merged GitHub and local SBOMs into '${PROJECT_ALIAS}' alias"
   
   # Prepare output directory
   mkdir -p "${OUTPUT_DIR}"
@@ -221,57 +242,86 @@ main() {
   # Export CycloneDX 1.6 JSON
   log_info "Exporting CycloneDX 1.6 JSON format..."
   cyclonedx_file="${OUTPUT_DIR}/${SBOM_NAME}.cyclonedx-1.6.json"
+  cyclonedx_success=false
+  
   if ! bomctl push "${PROJECT_ALIAS}" "${cyclonedx_file}" -f "cyclonedx-1.6" -e "json" --tree 2>"${tmpdir}/bomctl-push-cdx-error.log"; then
     log_error "Failed to export CycloneDX 1.6 format"
     cat "${tmpdir}/bomctl-push-cdx-error.log" >&2
     handle_error "CycloneDX export failed"
-    exit 0
-  fi
-  
-  if [ ! -f "${cyclonedx_file}" ]; then
+  elif [ ! -f "${cyclonedx_file}" ]; then
     handle_error "CycloneDX file was not created: ${cyclonedx_file}"
-    exit 0
+  else
+    log_success "Exported CycloneDX 1.6: ${cyclonedx_file}"
+    cyclonedx_success=true
   fi
-  
-  log_success "Exported CycloneDX 1.6: ${cyclonedx_file}"
   
   # Export SPDX 2.3 JSON
   log_info "Exporting SPDX 2.3 JSON format..."
   spdx_file="${OUTPUT_DIR}/${SBOM_NAME}.spdx-2.3.json"
+  spdx_success=false
+  
   if ! bomctl push "${PROJECT_ALIAS}" "${spdx_file}" -f "spdx-2.3" --tree 2>"${tmpdir}/bomctl-push-spdx-error.log"; then
     log_error "Failed to export SPDX 2.3 format"
     cat "${tmpdir}/bomctl-push-spdx-error.log" >&2
     handle_error "SPDX export failed"
-    exit 0
-  fi
-  
-  if [ ! -f "${spdx_file}" ]; then
+  elif [ ! -f "${spdx_file}" ]; then
     handle_error "SPDX file was not created: ${spdx_file}"
-    exit 0
+  else
+    log_success "Exported SPDX 2.3: ${spdx_file}"
+    spdx_success=true
   fi
   
-  log_success "Exported SPDX 2.3: ${spdx_file}"
+  # Check if at least one export succeeded
+  if [ "${cyclonedx_success}" = false ] && [ "${spdx_success}" = false ]; then
+    log_error "Both SBOM exports failed"
+    if [ "${STRICT_MODE}" = "true" ]; then
+      exit 1
+    else
+      log_warn "No SBOM files were successfully exported"
+      return 1
+    fi
+  fi
   
   # Validate exported files
   log_info "Validating exported SBOM files..."
+  validation_failed=false
   
   for file in "${cyclonedx_file}" "${spdx_file}"; do
+    # Skip validation if file doesn't exist (export already failed)
+    [ ! -f "${file}" ] && continue
+    
     if ! validate_json "${file}"; then
       handle_error "Exported file validation failed: ${file}"
-      exit 0
+      validation_failed=true
+      continue
     fi
     
     local size
     size=$(stat -f%z "${file}" 2>/dev/null || stat -c%s "${file}" 2>/dev/null || echo "0")
     if [ "${size}" -lt 100 ]; then
       handle_error "Exported file suspiciously small (${size} bytes): ${file}"
-      exit 0
+      validation_failed=true
+      continue
     fi
     log_info "Validated: ${file} (${size} bytes)"
   done
   
-  log_success "All SBOM exports validated successfully"
-  log_success "GitHub SBOM fetch, merge, and export complete"
+  if [ "${validation_failed}" = true ]; then
+    log_warn "Some SBOM files failed validation"
+    if [ "${STRICT_MODE}" = "true" ]; then
+      exit 1
+    fi
+  fi
+  
+  if [ "${cyclonedx_success}" = true ] || [ "${spdx_success}" = true ]; then
+    log_success "SBOM export(s) completed successfully"
+  fi
+  
+  if [ "${github_merged}" = true ]; then
+    log_success "GitHub SBOM fetch, merge, and export complete"
+  else
+    log_success "Local SBOM export complete (GitHub SBOM not available)"
+  fi
   
   return 0
 }
