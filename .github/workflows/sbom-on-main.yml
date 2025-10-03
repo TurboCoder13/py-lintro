@@ -55,7 +55,7 @@ jobs:
       - name: Fetch SBOM via GitHub REST API
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
-        run: bash scripts/ci/sbom-fetch-github-api.sh --format cyclonedx-1.6 --format spdx-2.3
+        run: bash scripts/ci/sbom-fetch-github-api.sh
       - name: Rename SBOM artifacts with tag/sha for traceability
         run: bash scripts/ci/sbom-rename-artifacts.sh dist/sbom
       - name: Upload SBOM artifacts
