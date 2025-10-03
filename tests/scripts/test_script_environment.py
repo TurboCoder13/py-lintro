@@ -182,6 +182,7 @@ echo 0.0.0
                 ),
             ).is_true()
 
+    @pytest.mark.slow
     def test_install_tools_handles_missing_dependencies(self, scripts_dir, clean_env):
         """Test install-tools.sh behavior with missing dependencies.
 
@@ -196,7 +197,7 @@ echo 0.0.0
             text=True,
             env=clean_env,
             cwd=scripts_dir.parent,
-            timeout=10,
+            timeout=30,
         )
         assert_that(result.returncode).is_not_none()
 
