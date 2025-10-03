@@ -175,7 +175,7 @@ jobs:
           ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@f5c9374c8f60487ac34781fb6fb78496be0699bc
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@99cd2945232470e78dfdc7871d875125ad926ecb
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'
