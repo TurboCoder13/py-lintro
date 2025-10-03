@@ -86,21 +86,21 @@ fi
 
 log_info "Starting environment bootstrap (Python ${PYTHON_VERSION})"
 
-# Early exit check for Docker-centric jobs
-if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -eq 1 ] && [ "${BOOTSTRAP_SKIP_INSTALL_TOOLS:-0}" -eq 1 ]; then
-  log_info "Skipping bootstrap (both BOOTSTRAP_SKIP_* flags set)"
-  if [ $DRY_RUN -eq 0 ] && [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
-    echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-  fi
-  log_info "Early-exit complete"
-  exit 0
-fi
-
-# Component 1: Install uv
+# Component 1: Install uv (always required, even for Docker-centric jobs that skip sync)
 log_info "Step 1/5: Installing uv"
 if ! ./scripts/utils/install-uv.sh $script_flags; then
   echo "[bootstrap-env] ERROR: Failed to install uv" >&2
   exit 1
+fi
+
+# Early exit check for Docker-centric jobs
+if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -eq 1 ] && [ "${BOOTSTRAP_SKIP_INSTALL_TOOLS:-0}" -eq 1 ]; then
+  log_info "Skipping remaining bootstrap steps (both BOOTSTRAP_SKIP_* flags set)"
+  if [ $DRY_RUN -eq 0 ] && [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
+    echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+  fi
+  log_info "Early-exit complete (uv installed)"
+  exit 0
 fi
 
 # Component 2: Setup Python version  
