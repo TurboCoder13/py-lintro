@@ -12,7 +12,7 @@ set -euo pipefail
 #
 # Environment:
 #   DRY_RUN=1               Print what would happen without calling gh
-#   GH_TOKEN/GITHUB_TOKEN   Token for gh (if not already logged in)
+#   GITHUB_TOKEN            Token for gh (if not already logged in)
 #
 # Examples:
 #   DRY_RUN=1 ./deployments-prune.sh --keep-n github-pages 0 --keep-ref pypi 0.3.2

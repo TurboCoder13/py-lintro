@@ -1,0 +1,9 @@
+## Test Comment Body
+
+This is a simple test comment body for testing JSON encoding.
+
+- Point 1
+- Point 2
+- Point 3
+
+End of comment.

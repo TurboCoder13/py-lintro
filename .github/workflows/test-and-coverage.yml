@@ -1,5 +1,7 @@
 ---
-name: Test Suite & Coverage
+name: Testing - Full Suite & Coverage
+# Executes comprehensive test suite in Docker, generates coverage reports,
+# uploads artifacts, and posts coverage information to PRs.
 
 'on':
   push:
@@ -18,12 +20,14 @@ name: Test Suite & Coverage
 
 permissions:
   contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
   run-test-suite:
     permissions:
       contents: read
-      id-token: write
+      id-token: write # For codecov OIDC
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     concurrency:
@@ -37,25 +41,37 @@ jobs:
       github.event.pull_request.draft == false
     env:
       LINTRO_OUTPUT_DIR: /tmp/lintro
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
-          egress-policy: audit
-          allowed-endpoints: |
+          egress-policy: 'block'
+          allowed-endpoints: >
             github.com:443
             api.github.com:443
+            codeload.github.com:443
             downloads.github.com:443
             objects.githubusercontent.com:443
+            img.shields.io:443
+            ghcr.io:443
             pkg-containers.githubusercontent.com:443
+            docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
             pypi.org:443
             files.pythonhosted.org:443
+            codecov.io:443
+            uploader.codecov.io:443
+            storage.googleapis.com:443
+            pings.codecov.com:443
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
@@ -97,10 +113,11 @@ jobs:
           files: coverage.xml
           flags: python-3.13
           fail_ci_if_error: false
-          # token: ${{ secrets.CODECOV_TOKEN }} # for private repos only
 
       - name: Generate coverage badge (no commit)
         if: success()
+        env:
+          COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
         run: ./scripts/ci/coverage-badge-update.sh
 
       - name: Upload coverage badge artifact
@@ -110,10 +127,6 @@ jobs:
           name: coverage-badge
           path: assets/images/coverage-badge.svg
 
-      - name: Generate coverage badge artifact only (no commit)
-        if: github.ref == 'refs/heads/main' && success()
-        run: ./scripts/ci/coverage-badge-update.sh
-
   comment-pr-coverage:
     needs: run-test-suite
     runs-on: ubuntu-24.04
@@ -121,25 +134,36 @@ jobs:
     defaults:
       run:
         shell: bash
-    permissions:
-      contents: read
-      pull-requests: write
-      issues: write
     if: always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
-        # Default allowlist suffices for PR comment step
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+            img.shields.io:443
+            pings.codecov.com:443
+            codecov.io:443
+            uploader.codecov.io:443
+            storage.googleapis.com:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
-      - name: Delete Previous Coverage PR Comments
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
+      - name: Download coverage XML artifact (fallback for comment generation)
         if: always()
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: scripts/ci/post-pr-delete-previous.sh '<!-- coverage-report -->'
-
+        continue-on-error: true
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: coverage-xml
+          path: .
       - name: Generate coverage PR comment (always)
         if: always()
         env:
@@ -151,7 +175,7 @@ jobs:
           ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'

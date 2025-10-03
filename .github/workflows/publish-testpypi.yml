@@ -1,21 +1,27 @@
 ---
-name: Publish to TestPyPI
+name: Publish - TestPyPI Staging
+# Manual publish to TestPyPI for testing package distribution before production release.
+# Uses same quality and build workflows as production for consistency.
 
 'on':
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@ae541c778920330b6e82f3dd536bcf2a026324c0
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@ae541c778920330b6e82f3dd536bcf2a026324c0
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
 
   publish:
     name: Upload to TestPyPI
     needs: [build, quality]
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
       id-token: write
@@ -25,9 +31,18 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
-          egress-policy: audit
+          egress_policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            test.pypi.org:443
       - name: Download artifacts
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:

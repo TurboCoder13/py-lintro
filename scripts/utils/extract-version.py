@@ -32,7 +32,7 @@ def _read_version_from_toml_bytes(data: bytes) -> str:
     try:
         import tomllib  # type: ignore[attr-defined]
 
-        parsed = tomllib.loads(data)
+        parsed = tomllib.loads(data.decode("utf-8"))
     except Exception:  # pragma: no cover - fallback path for older envs
         try:
             import toml  # type: ignore

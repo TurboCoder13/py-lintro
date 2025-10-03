@@ -43,6 +43,10 @@ log_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
+log_verbose() {
+    [ "${VERBOSE:-0}" -eq 1 ] && echo -e "${BLUE}[verbose] $1${NC}" || true
+}
+
 # Function to generate PR comment file
 generate_pr_comment() {
     local title="$1"

@@ -1,0 +1,19 @@
+---
+name: Egress Audit (Lite)
+description: Non-enforcing audit of allowed endpoints via HTTPS HEAD checks
+inputs:
+  allowed-endpoints:
+    description: Newline-separated host:port entries allowed for this job
+    required: true
+  fail-on-missing:
+    description: Fail if any endpoint is unreachable (true/false)
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Audit egress endpoints
+      shell: bash
+      env:
+        EGRESS_ALLOWED_ENDPOINTS: ${{ inputs.allowed-endpoints }}
+      run: scripts/ci/egress-audit-lite.sh "${{ inputs.fail-on-missing }}"

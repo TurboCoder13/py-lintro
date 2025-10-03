@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "id": 98765,
+      "body": "Paginated response first comment\n\nNo marker here.",
+      "created_at": "2023-01-01T10:00:00Z",
+      "updated_at": "2023-01-01T10:00:00Z"
+    },
+    {
+      "id": 87654,
+      "body": "<!-- test-marker -->\n\nPaginated response with marker\n\nTest content here.",
+      "created_at": "2023-01-02T10:00:00Z",
+      "updated_at": "2023-01-02T10:00:00Z"
+    }
+  ]
+}

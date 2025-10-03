@@ -5,11 +5,13 @@ Centralized, reusable steps to keep workflows small and DRY. Each action exposes
 ## .github/actions/setup-docker
 
 - Purpose: Set up Docker Buildx; optionally log in to a registry (e.g., GHCR)
+- **Note**: This action does NOT include hardened runner - use in workflows that already have hardening
 - Inputs:
   - login (string, default 'false'): set to 'true' to enable login
   - registry (string, default ghcr.io)
   - username (string)
   - password (string)
+  - driver (string, default 'docker'): buildx driver
 
 Example:
 

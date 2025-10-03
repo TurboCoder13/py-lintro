@@ -1,5 +1,7 @@
 ---
-name: OpenSSF Scorecards
+name: Security - OpenSSF Scorecard Analysis
+# Weekly OpenSSF Scorecard security analysis. Evaluates repository security practices
+# and uploads results to GitHub Security tab for visibility.
 
 'on':
   schedule:
@@ -19,36 +21,20 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Harden Runner (egress allowlist)
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
-          egress-policy: audit
-          allowed-endpoints: |
+          egress_policy: 'block'
+          allowed-endpoints: >
             github.com:443
             api.github.com:443
             codeload.github.com:443
-            raw.githubusercontent.com:443
+            downloads.github.com:443
             objects.githubusercontent.com:443
-            uploads.github.com:443
-            ghcr.io:443
-            pkg-containers.githubusercontent.com:443
-            actions.githubusercontent.com:443
-            token.actions.githubusercontent.com:443
-            productionresultssa8.blob.core.windows.net:443
-            agent.api.stepsecurity.io:443
-            app.stepsecurity.io:443
-            oss-fuzz-build-logs.storage.googleapis.com:443
-            api.osv.dev:443
-            packages.stepsecurity.io:443
+            sigstore.dev:443
             fulcio.sigstore.dev:443
             rekor.sigstore.dev:443
             tuf-repo-cdn.sigstore.dev:443
-            tuf-repo.sigstore.dev:443
-            www.googleapis.com:443
-            api.securityscorecards.dev:443
-            storage.googleapis.com:443
-            storage.googleapis.com:443
-            proxy.golang.org:443
-            sum.golang.org:443
+            ossf.github.io:443
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:

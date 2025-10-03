@@ -1,11 +1,17 @@
 ---
-name: CI Pipeline
+name: Quality Check - CI Pipeline
+# Runs lintro quality analysis on PRs and pushes using Docker.
+# Builds Docker image, executes lintro checks, and posts PR comments with results.
 
 'on':
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   docker-lintro-analysis:
@@ -18,26 +24,49 @@ jobs:
     defaults:
       run:
         shell: bash
-    permissions:
-      contents: read
-      pull-requests: write
-      # id-token not required
     concurrency:
       group: lintro-ci-${{ github.ref }}
       cancel-in-progress: true
 
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress_policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        with:
+          driver: docker
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
-
-      - name: Setup Docker (Buildx)
-        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOOTSTRAP_SKIP_SYNC: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
       # Removed no-op dependency listing step
 
@@ -48,8 +77,9 @@ jobs:
           push: false
           load: true
           tags: py-lintro:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache disabled for docker driver - not supported
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
 
       - name: Auto-fix with Lintro (same-repo PRs only)
         if: >-
@@ -71,12 +101,13 @@ jobs:
         if: github.event_name == 'pull_request'
         run: ./scripts/ci/ci-pr-comment.sh
 
-      - name: Comment PR with Lintro Results
+      - name: Comment PR with Lintro Results (merge-update)
         if: github.event_name == 'pull_request'
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
         with:
           file: pr-comment.txt
           marker: '<!-- lintro-report -->'
+          merge-update: 'true'
 
       - name: Fail on Linting Issues
         if: ${{ env.CHK_EXIT_CODE != '0' }}

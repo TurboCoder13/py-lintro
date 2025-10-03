@@ -9,7 +9,6 @@ set -euo pipefail
 # - Import local SBOM files and optionally merge them
 # - Output CycloneDX and/or SPDX variants to an output directory
 # - Dry-run mode to preview planned actions
-# - Optional Docker fallback for bomctl (no host install required)
 #
 # Usage:
 #   scripts/ci/sbom-generate.sh [options]
@@ -26,7 +25,6 @@ set -euo pipefail
 #   --repo-url URL       GitHub repo URL to fetch (default inferred from GITHUB_REPOSITORY)
 #   --skip-fetch         Skip bomctl fetch step
 #   --import FILE        Import a local SBOM file (repeat to include multiple)
-#   --use-docker         Use bomctl container if bomctl binary is not installed
 #   --netrc              Pass --netrc to bomctl for authenticated fetch/push
 #
 # Notes:
@@ -62,16 +60,11 @@ FORMATS=("cyclonedx-1.5")
 ENCODING="json"
 REPO_URL=""
 SKIP_FETCH=0
-USE_DOCKER=0
 PASSTHROUGH_NETRC=0
 IMPORT_FILES=()
 
-# Container configuration (override via environment for CI hardening)
-# - BOMCTL_IMAGE: pin to a specific digest in CI (e.g., bomctl/bomctl@sha256:...)
-# - BOMCTL_NETWORK: set to 'none' for no-network operations (import/merge/push)
-#   Leave empty for default Docker networking.
-BOMCTL_IMAGE="${BOMCTL_IMAGE:-bomctl/bomctl:latest}"
-BOMCTL_NETWORK="${BOMCTL_NETWORK:-}"
+## Container execution is no longer supported.
+## This script now requires the bomctl binary to be installed on PATH.
 
 # Ensure bomctl cache directory exists and is used (improves fetch/push --tree)
 if [ -z "${XDG_CACHE_HOME:-}" ]; then
@@ -101,8 +94,6 @@ while (( "$#" )); do
       SKIP_FETCH=1; shift ;;
     --import)
       IMPORT_FILES+=("${2:-}"); shift 2 ;;
-    --use-docker)
-      USE_DOCKER=1; shift ;;
     --netrc)
       PASSTHROUGH_NETRC=1; shift ;;
     *)
@@ -160,43 +151,10 @@ run_print_cmd() {
 
 # Determine bomctl invocation as an array for safe execution
 declare -a BOMCTL_ARR
+BOMCTL_ARR=()
 resolve_bomctl_arr() {
   if command -v bomctl >/dev/null 2>&1; then
     BOMCTL_ARR=("bomctl")
-    return 0
-  fi
-  if [ ${USE_DOCKER} -eq 1 ] || command -v docker >/dev/null 2>&1; then
-    # Map user to avoid root-owned outputs; optionally restrict network
-    local user_flags=()
-    if command -v id >/dev/null 2>&1; then
-      user_flags=("-u" "$(id -u):$(id -g)")
-    fi
-    local network_flags=()
-    if [ -n "${BOMCTL_NETWORK}" ]; then
-      network_flags=("--network=${BOMCTL_NETWORK}")
-    fi
-    local cache_flags=()
-    if [ -n "${XDG_CACHE_HOME:-}" ]; then
-      cache_flags=("-e" "XDG_CACHE_HOME=${XDG_CACHE_HOME}" "-v" "${XDG_CACHE_HOME}:${XDG_CACHE_HOME}")
-    fi
-    # Pass through GitHub tokens if present to enable authenticated fetches
-    # Use "-e VAR" form to avoid leaking values in logs/dry-run output
-    local token_env_flags=()
-    if [ -n "${GH_TOKEN:-}" ]; then
-      token_env_flags+=("-e" "GH_TOKEN")
-    fi
-    if [ -n "${GITHUB_TOKEN:-}" ]; then
-      token_env_flags+=("-e" "GITHUB_TOKEN")
-    fi
-    BOMCTL_ARR=(
-      "docker" "run" "--rm"
-      ${network_flags[@]:-}
-      ${user_flags[@]:-}
-      ${cache_flags[@]:-}
-      ${token_env_flags[@]:-}
-      "-v" "$PWD:/work" "-w" "/work"
-      "${BOMCTL_IMAGE}"
-    )
     return 0
   fi
   return 1
@@ -205,7 +163,7 @@ resolve_bomctl_arr() {
 REPO_URL_RESOLVED="$(infer_repo_url)"
 if ! resolve_bomctl_arr; then
   if [ ${DRY_RUN} -eq 0 ]; then
-    log_error "bomctl is not available. Install it or use --use-docker with Docker."
+    log_error "bomctl is not available on PATH. Install it via scripts/ci/sbom-install-binary-gh.sh before running this script."
     exit 1
   fi
 fi
@@ -223,7 +181,12 @@ run_bomctl() {
   # Usage: run_bomctl <args...>
   if [ ${DRY_RUN} -eq 1 ]; then
     echo "# Dry-run: planned action"
-    run_print_cmd "${BOMCTL_ARR[*]} $*"
+    # Ensure stable placeholder when bomctl is not present
+    if [ ${#BOMCTL_ARR[@]} -eq 0 ]; then
+      run_print_cmd "bomctl $*"
+    else
+      run_print_cmd "${BOMCTL_ARR[*]} $*"
+    fi
     return 0
   fi
   log_info "Running: ${BOMCTL_ARR[*]} $*"

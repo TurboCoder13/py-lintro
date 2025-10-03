@@ -1,8 +1,11 @@
 ---
-name: GitHub Pages
+name: Deploy - Coverage Reports to Pages
+# Deploys HTML coverage reports to GitHub Pages after successful test runs.
+# Triggered by completion of test-and-coverage workflow on main branch.
+
 'on':
   workflow_run:
-    workflows: [Test Suite & Coverage, Test and Coverage]
+    workflows: [Testing - Full Suite & Coverage]
     types:
       - completed
     branches:
@@ -29,8 +32,18 @@ jobs:
       ${{ github.event.workflow_run.conclusion == 'success' ||
           github.event_name == 'workflow_dispatch' }}
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress_policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Download coverage artifact
         uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
         with:
@@ -49,6 +62,6 @@ jobs:
         run: ./scripts/ci/pages-deploy.sh --badge-path coverage-badge/coverage-badge.svg
       - name: Deploy coverage to Pages
         id: deployment
-        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
         with:
           path: _site

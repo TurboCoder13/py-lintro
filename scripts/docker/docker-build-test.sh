@@ -3,6 +3,8 @@
 # Docker Build and Test Script
 # Handles Docker image building and testing
 
+set -euo pipefail
+
 # Show help if requested
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "Usage: $0 [--help]"

@@ -1,10 +1,8 @@
 ---
-# Reusable workflow: Quality checks and version export
-# - Sets up Python and uv
-# - Installs external tools used by Lintro
-# - Runs Lintro format/check to gate quality
-# - Reads the project version from pyproject.toml and outputs it
-name: Reusable Quality Checks
+name: Reusable - Quality Gate & Version Export
+# Reusable workflow for quality checks and version extraction.
+# Sets up Python/uv environment, installs external tools, runs lintro format/check,
+# and exports project version for downstream workflows.
 
 'on':
   workflow_call:
@@ -13,40 +11,42 @@ name: Reusable Quality Checks
         description: Project version from pyproject.toml
         value: ${{ jobs.quality.outputs.version }}
 
+permissions:
+  contents: read
+
 jobs:
   quality:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    permissions:
-      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Harden and Checkout
-        uses: TurboCoder13/py-lintro/.github/actions/harden-and-checkout@ae541c778920330b6e82f3dd536bcf2a026324c0
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress_policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
         with:
           python-version: '3.13'
 
       - name: Sync dependencies
         run: uv sync --dev --no-progress
 
-      - name: Install external tools for Lintro
-        run: |
-          ./scripts/utils/install-tools.sh --local
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Lintro - format and check
-        run: |
-          uv run lintro format . --output-format grid
-          uv run lintro check . --output-format grid
-
-      - name: Read project version
+      - name: Quality gate
         id: version
-        run: |
-          python scripts/utils/extract-version.py | tee ver.txt
-          cat ver.txt >> "$GITHUB_OUTPUT"
+        run: scripts/ci/reusable-quality-entry.sh

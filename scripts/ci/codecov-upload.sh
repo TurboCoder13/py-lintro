@@ -56,8 +56,8 @@ command -v gh >/dev/null 2>&1 || {
   exit 2
 }
 
-# In GitHub Actions, gh requires GH_TOKEN. Map GITHUB_TOKEN if present.
-if [[ -z "${GH_TOKEN:-}" && -n "${GITHUB_TOKEN:-}" ]]; then
+# Set GH_TOKEN for gh CLI from GITHUB_TOKEN if available
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
   export GH_TOKEN="${GITHUB_TOKEN}"
 fi
 

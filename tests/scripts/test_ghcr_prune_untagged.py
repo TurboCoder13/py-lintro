@@ -160,7 +160,7 @@ def test_main_deletes_only_untagged(monkeypatch):
     # Patch httpx.Client used inside the module
     import scripts.ci.ghcr_prune_untagged as mod
 
-    monkeypatch.setenv("GH_TOKEN", "x")
+    monkeypatch.setenv("GITHUB_TOKEN", "x")
     monkeypatch.setenv("GITHUB_REPOSITORY", "owner/name")
     monkeypatch.setattr(mod, "httpx", type("HX", (), {"Client": DummyClient}))
 
@@ -239,7 +239,7 @@ def test_main_respects_keep_n_and_dry_run(monkeypatch):
     import scripts.ci.ghcr_prune_untagged as mod
 
     # Dry-run with keep 2 -> no deletions performed
-    monkeypatch.setenv("GH_TOKEN", "x")
+    monkeypatch.setenv("GITHUB_TOKEN", "x")
     monkeypatch.setenv("GITHUB_REPOSITORY", "owner/name")
     monkeypatch.setenv("GHCR_PRUNE_DRY_RUN", "1")
     monkeypatch.setenv("GHCR_PRUNE_KEEP_UNTAGGED_N", "2")

@@ -1,7 +1,11 @@
 ---
-name: GHCR Cleanup
+name: Maintenance - GHCR Registry Cleanup
+# Weekly cleanup of untagged container images from GitHub Container Registry.
+# Reduces storage costs and maintains clean registry state.
+
 'on':
   schedule:
+    # Run weekly on Monday at 03:00 UTC
     - cron: '0 3 * * 1'
   workflow_dispatch:
 
@@ -14,33 +18,34 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Harden Runner (audit for checkout)
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
         with:
-          egress-policy: audit
-          allowed-endpoints: |
+          egress_policy: 'block'
+          allowed-endpoints: >
             github.com:443
             api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            objects.githubusercontent.com:443
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
 
-      - name: Harden Runner (block for API calls)
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
-        with:
-          egress-policy: block
-          allowed-endpoints: |
-            github.com:443
-            api.github.com:443
-
       - name: Setup environment
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@ae541c778920330b6e82f3dd536bcf2a026324c0
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOOTSTRAP_SKIP_SYNC: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
         with:
           python-version: '3.13'
 
       - name: Prune untagged GHCR versions
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run python scripts/ci/ghcr_prune_untagged.py
