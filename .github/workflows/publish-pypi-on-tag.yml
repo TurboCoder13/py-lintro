@@ -23,20 +23,20 @@ permissions:
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@29c57ba89e0e481418f457a5bbde61e72ab01027
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
     permissions:
       contents: read
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@29c57ba89e0e481418f457a5bbde61e72ab01027
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
     permissions:
       contents: read
 
   sbom:
     name: Generate and verify SBOM
     needs: [build, quality]
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@29c57ba89e0e481418f457a5bbde61e72ab01027
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
     permissions:
       contents: read
       actions: read
@@ -75,7 +75,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@29c57ba89e0e481418f457a5bbde61e72ab01027
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
         with:
           python-version: '3.13'
       - name: Ensure tag points to a commit on main
