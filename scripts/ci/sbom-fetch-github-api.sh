@@ -115,7 +115,7 @@ validate_prerequisites() {
   log_info "Prerequisites validated: gh, bomctl, jq"
 }
 
-# Validate JSON structure
+# Validate JSON structure and unwrap GitHub format if needed
 validate_json() {
   local file="$1"
   
@@ -125,9 +125,14 @@ validate_json() {
     return 1
   fi
   
-  # Validate SPDX/CycloneDX structure
+  # Validate SPDX/CycloneDX structure and unwrap GitHub format
   if jq -e '.sbom' "${file}" >/dev/null 2>&1; then
     log_info "Detected GitHub SBOM format (SPDX wrapper)"
+    # Extract the actual SBOM from the wrapper
+    log_info "Extracting SBOM from GitHub wrapper..."
+    jq '.sbom' "${file}" > "${file}.unwrapped"
+    mv "${file}.unwrapped" "${file}"
+    log_success "Extracted SBOM from wrapper"
     return 0
   elif jq -e '.spdxVersion' "${file}" >/dev/null 2>&1; then
     log_info "Detected SPDX format"
