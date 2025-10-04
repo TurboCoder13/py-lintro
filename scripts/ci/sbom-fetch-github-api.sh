@@ -219,13 +219,13 @@ main() {
         else
           # No local SBOM, use GitHub SBOM only
           log_info "No local SBOM found ('${PROJECT_ALIAS}' alias missing), using GitHub SBOM only"
-          log_info "Creating '${PROJECT_ALIAS}' alias from GitHub SBOM..."
-          if ! bomctl merge --alias "${PROJECT_ALIAS}" --name "${SBOM_NAME}" "${GITHUB_DEPS_ALIAS}" 2>"${tmpdir}/bomctl-merge-error.log"; then
-            log_error "Failed to create project alias from GitHub SBOM"
-            cat "${tmpdir}/bomctl-merge-error.log" >&2
-            handle_error "bomctl merge failed"
+          log_info "Adding '${PROJECT_ALIAS}' alias to GitHub SBOM..."
+          if ! bomctl alias set --force "${GITHUB_DEPS_ALIAS}" "${PROJECT_ALIAS}" 2>"${tmpdir}/bomctl-alias-error.log"; then
+            log_error "Failed to add project alias to GitHub SBOM"
+            cat "${tmpdir}/bomctl-alias-error.log" >&2
+            handle_error "bomctl alias set failed"
           else
-            log_success "Created '${PROJECT_ALIAS}' alias from GitHub SBOM"
+            log_success "Added '${PROJECT_ALIAS}' alias to GitHub SBOM"
             github_merged=true
           fi
         fi
@@ -259,9 +259,9 @@ main() {
   cyclonedx_file="${OUTPUT_DIR}/${SBOM_NAME}.cyclonedx-1.6.json"
   cyclonedx_success=false
   
-  if ! bomctl push "${PROJECT_ALIAS}" "${cyclonedx_file}" -f "cyclonedx-1.6" -e "json" --tree 2>"${tmpdir}/bomctl-push-cdx-error.log"; then
+  if ! bomctl export "${PROJECT_ALIAS}" -f "cyclonedx-1.6" -e "json" -o "${cyclonedx_file}" 2>"${tmpdir}/bomctl-export-cdx-error.log"; then
     log_error "Failed to export CycloneDX 1.6 format"
-    cat "${tmpdir}/bomctl-push-cdx-error.log" >&2
+    cat "${tmpdir}/bomctl-export-cdx-error.log" >&2
     handle_error "CycloneDX export failed"
   elif [ ! -f "${cyclonedx_file}" ]; then
     handle_error "CycloneDX file was not created: ${cyclonedx_file}"
@@ -275,9 +275,9 @@ main() {
   spdx_file="${OUTPUT_DIR}/${SBOM_NAME}.spdx-2.3.json"
   spdx_success=false
   
-  if ! bomctl push "${PROJECT_ALIAS}" "${spdx_file}" -f "spdx-2.3" --tree 2>"${tmpdir}/bomctl-push-spdx-error.log"; then
+  if ! bomctl export "${PROJECT_ALIAS}" -f "spdx-2.3" -o "${spdx_file}" 2>"${tmpdir}/bomctl-export-spdx-error.log"; then
     log_error "Failed to export SPDX 2.3 format"
-    cat "${tmpdir}/bomctl-push-spdx-error.log" >&2
+    cat "${tmpdir}/bomctl-export-spdx-error.log" >&2
     handle_error "SPDX export failed"
   elif [ ! -f "${spdx_file}" ]; then
     handle_error "SPDX file was not created: ${spdx_file}"
