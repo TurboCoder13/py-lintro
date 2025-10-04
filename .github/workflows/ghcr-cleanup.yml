@@ -27,6 +27,7 @@ jobs:
             api.github.com:443
             codeload.github.com:443
             downloads.github.com:443
+            release-assets.githubusercontent.com:443
             objects.githubusercontent.com:443
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
