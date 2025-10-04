@@ -23,20 +23,20 @@ permissions:
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@3953c8a373c25faf2d6f376ea1f4c3c751aa1b4c
     permissions:
       contents: read
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@3953c8a373c25faf2d6f376ea1f4c3c751aa1b4c
     permissions:
       contents: read
 
   sbom:
     name: Generate and verify SBOM
     needs: [build, quality]
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@3953c8a373c25faf2d6f376ea1f4c3c751aa1b4c
     permissions:
       contents: read
       actions: read
@@ -58,7 +58,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -76,7 +76,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@3953c8a373c25faf2d6f376ea1f4c3c751aa1b4c
         with:
           python-version: '3.13'
       - name: Ensure tag points to a commit on main
