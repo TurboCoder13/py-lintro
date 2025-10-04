@@ -204,21 +204,30 @@ main() {
       else
         log_success "Imported GitHub SBOM into bomctl"
         
-        # Verify project alias exists
-        if ! verify_bomctl_cache "${PROJECT_ALIAS}"; then
-          handle_error "Required '${PROJECT_ALIAS}' alias not found in bomctl cache"
-          exit 1
-        fi
-        
-        # Merge GitHub SBOM with local SBOM
-        log_info "Merging GitHub SBOM ('${GITHUB_DEPS_ALIAS}') with local SBOM ('${PROJECT_ALIAS}')..."
-        if ! bomctl merge --alias "${PROJECT_ALIAS}" --name "${SBOM_NAME}" "${GITHUB_DEPS_ALIAS}" "${PROJECT_ALIAS}" 2>"${tmpdir}/bomctl-merge-error.log"; then
-          log_error "Failed to merge SBOMs"
-          cat "${tmpdir}/bomctl-merge-error.log" >&2
-          handle_error "bomctl merge failed"
+        # Check if local SBOM exists before attempting merge
+        if bomctl list 2>/dev/null | grep -q "${PROJECT_ALIAS}"; then
+          # Merge GitHub SBOM with local SBOM
+          log_info "Merging GitHub SBOM ('${GITHUB_DEPS_ALIAS}') with local SBOM ('${PROJECT_ALIAS}')..."
+          if ! bomctl merge --alias "${PROJECT_ALIAS}" --name "${SBOM_NAME}" "${GITHUB_DEPS_ALIAS}" "${PROJECT_ALIAS}" 2>"${tmpdir}/bomctl-merge-error.log"; then
+            log_error "Failed to merge SBOMs"
+            cat "${tmpdir}/bomctl-merge-error.log" >&2
+            handle_error "bomctl merge failed"
+          else
+            log_success "Merged GitHub and local SBOMs into '${PROJECT_ALIAS}' alias"
+            github_merged=true
+          fi
         else
-          log_success "Merged GitHub and local SBOMs into '${PROJECT_ALIAS}' alias"
-          github_merged=true
+          # No local SBOM, use GitHub SBOM only
+          log_info "No local SBOM found ('${PROJECT_ALIAS}' alias missing), using GitHub SBOM only"
+          log_info "Creating '${PROJECT_ALIAS}' alias from GitHub SBOM..."
+          if ! bomctl merge --alias "${PROJECT_ALIAS}" --name "${SBOM_NAME}" "${GITHUB_DEPS_ALIAS}" 2>"${tmpdir}/bomctl-merge-error.log"; then
+            log_error "Failed to create project alias from GitHub SBOM"
+            cat "${tmpdir}/bomctl-merge-error.log" >&2
+            handle_error "bomctl merge failed"
+          else
+            log_success "Created '${PROJECT_ALIAS}' alias from GitHub SBOM"
+            github_merged=true
+          fi
         fi
       fi
     fi
@@ -230,12 +239,13 @@ main() {
       log_error "GitHub SBOM processing failed in strict mode"
       exit 1
     fi
-    log_info "Continuing with local SBOM only (from '${PROJECT_ALIAS}' alias)"
     
-    # Verify project alias exists for local-only export
-    if ! verify_bomctl_cache "${PROJECT_ALIAS}"; then
-      log_error "Required '${PROJECT_ALIAS}' alias not found in bomctl cache"
-      log_error "Cannot export SBOM without local project data"
+    # Check if local SBOM exists for fallback
+    if bomctl list 2>/dev/null | grep -q "${PROJECT_ALIAS}"; then
+      log_info "Continuing with local SBOM only (from '${PROJECT_ALIAS}' alias)"
+    else
+      log_error "No SBOM data available: GitHub fetch failed and no local SBOM exists"
+      log_error "Cannot export SBOM without any source data"
       exit 1
     fi
   fi
