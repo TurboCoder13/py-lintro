@@ -37,7 +37,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -53,7 +53,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@3953c8a373c25faf2d6f376ea1f4c3c751aa1b4c
 
       - name: Run Lintro on codebase
         run: ./scripts/ci/lintro-report-generate.sh

@@ -27,7 +27,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -50,7 +50,7 @@ jobs:
           BOMCTL_VERSION: v0.4.3
         run: bash scripts/ci/sbom-install-binary-gh.sh
       - name: Restore bomctl cache
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ env.XDG_CACHE_HOME }}
           key: bomctl-cache-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}-${{ github.sha }}
