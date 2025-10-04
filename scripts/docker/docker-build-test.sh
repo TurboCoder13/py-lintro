@@ -6,7 +6,7 @@
 set -euo pipefail
 
 # Show help if requested
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
     echo "Usage: $0 [--help]"
     echo ""
     echo "Docker Build and Test Script"
