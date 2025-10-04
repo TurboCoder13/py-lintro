@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@a43f1e2cedee7c582dd9d0b79387e4d31a2dce5c
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@c711e9142e693ef21961088252d4c59c12cfe83a
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
