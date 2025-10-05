@@ -89,7 +89,8 @@ def test_find_comment_with_marker_success(
     json_data = json_file.read_text(encoding="utf-8")
 
     result = subprocess.run(
-        [str(find_comment_script_path), json_data, "<!-- coverage-report -->"],
+        [str(find_comment_script_path), "<!-- coverage-report -->"],
+        input=json_data,
         capture_output=True,
         text=True,
         check=True,
@@ -114,7 +115,8 @@ def test_find_comment_with_marker_paginated(
     json_data = json_file.read_text(encoding="utf-8")
 
     result = subprocess.run(
-        [str(find_comment_script_path), json_data, "<!-- test-marker -->"],
+        [str(find_comment_script_path), "<!-- test-marker -->"],
+        input=json_data,
         capture_output=True,
         text=True,
         check=True,
@@ -139,7 +141,8 @@ def test_find_comment_no_marker_found(
     json_data = json_file.read_text(encoding="utf-8")
 
     result = subprocess.run(
-        [str(find_comment_script_path), json_data, "<!-- coverage-report -->"],
+        [str(find_comment_script_path), "<!-- coverage-report -->"],
+        input=json_data,
         capture_output=True,
         text=True,
         check=True,
@@ -157,7 +160,8 @@ def test_find_comment_invalid_json(find_comment_script_path: Path) -> None:
         find_comment_script_path (Path): Path to the script being tested.
     """
     result = subprocess.run(
-        [str(find_comment_script_path), "invalid json", "<!-- marker -->"],
+        [str(find_comment_script_path), "<!-- marker -->"],
+        input="invalid json",
         capture_output=True,
         text=True,
         check=True,
@@ -182,7 +186,8 @@ def test_find_comment_empty_marker(
     json_data = json_file.read_text(encoding="utf-8")
 
     result = subprocess.run(
-        [str(find_comment_script_path), json_data, ""],
+        [str(find_comment_script_path), ""],
+        input=json_data,
         capture_output=True,
         text=True,
         check=True,
@@ -210,7 +215,8 @@ def test_extract_comment_body_success(
     json_data = json_file.read_text(encoding="utf-8")
 
     result = subprocess.run(
-        [str(extract_comment_script_path), json_data, "54321"],
+        [str(extract_comment_script_path), "54321"],
+        input=json_data,
         capture_output=True,
         text=True,
         check=True,
@@ -242,7 +248,8 @@ def test_extract_comment_body_paginated(
     json_data = json_file.read_text(encoding="utf-8")
 
     result = subprocess.run(
-        [str(extract_comment_script_path), json_data, "87654"],
+        [str(extract_comment_script_path), "87654"],
+        input=json_data,
         capture_output=True,
         text=True,
         check=True,
@@ -272,7 +279,8 @@ def test_extract_comment_body_not_found(
     json_data = json_file.read_text(encoding="utf-8")
 
     result = subprocess.run(
-        [str(extract_comment_script_path), json_data, "99999"],
+        [str(extract_comment_script_path), "99999"],
+        input=json_data,
         capture_output=True,
         text=True,
         check=True,
@@ -290,7 +298,8 @@ def test_extract_comment_body_invalid_json(extract_comment_script_path: Path) ->
         extract_comment_script_path (Path): Path to the script being tested.
     """
     result = subprocess.run(
-        [str(extract_comment_script_path), "invalid json", "12345"],
+        [str(extract_comment_script_path), "12345"],
+        input="invalid json",
         capture_output=True,
         text=True,
         check=True,
