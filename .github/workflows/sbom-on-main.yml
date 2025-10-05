@@ -51,9 +51,7 @@ jobs:
         env:
           BOMCTL_VERSION: v0.4.3
         run: bash scripts/ci/sbom-install-binary-gh.sh
-      - name: Generate SBOMs (CycloneDX 1.6 JSON & SPDX 2.3)
-        run: scripts/ci/sbom-generate-safe.sh
-      - name: Fetch SBOM via GitHub REST API
+      - name: Generate SBOM from GitHub Dependency Graph
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
         run: bash scripts/ci/sbom-fetch-github-api.sh
