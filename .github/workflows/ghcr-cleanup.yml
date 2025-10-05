@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup environment
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@3b97378f34381606a521059a041ad1e86165c546
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@574d5c58f0f75a103e9c01f08679045cc5447fd5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BOOTSTRAP_SKIP_SYNC: '1'
