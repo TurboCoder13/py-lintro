@@ -45,6 +45,7 @@ py-lintro automatically generates Software Bill of Materials (SBOM) for supply c
    - Download "sbom-artifacts" from the Artifacts section
 
 2. **Via GitHub CLI**:
+
    ```bash
    gh run download -R TurboCoder13/py-lintro --name sbom-artifacts
    ```

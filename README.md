@@ -53,6 +53,7 @@ Lintro follows modern security best practices and provides comprehensive supply 
 ### What's in the SBOM?
 
 The SBOM provides a complete inventory of all dependencies:
+
 - All Python packages with exact versions
 - All npm packages (like Prettier)
 - All GitHub Actions dependencies (pinned by SHA)
