@@ -19,7 +19,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
         with:
           egress-policy: 'block'
           allowed-endpoints: >
