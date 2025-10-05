@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup environment
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@3b0ca558326f103e41c515d05d7c7813ed3fee04
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@d2dccc81734cc0ee5a89ff5dec4c591b4ac42239
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BOOTSTRAP_SKIP_SYNC: '1'
