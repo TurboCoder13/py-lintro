@@ -63,7 +63,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@d2dccc81734cc0ee5a89ff5dec4c591b4ac42239
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@29a4260f0f045699b5d0f953af83b8d31e6d8396
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BOOTSTRAP_SKIP_SYNC: '1'
@@ -104,7 +104,7 @@ jobs:
 
       - name: Comment PR with Lintro Results (merge-update)
         if: github.event_name == 'pull_request'
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@d2dccc81734cc0ee5a89ff5dec4c591b4ac42239
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@29a4260f0f045699b5d0f953af83b8d31e6d8396
         with:
           file: pr-comment.txt
           marker: '<!-- lintro-report -->'
