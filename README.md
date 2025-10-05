@@ -19,7 +19,7 @@ Lintro is a unified command-line interface that brings together multiple code qu
 [![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
 
 [![CodeQL](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/TurboCoder13/py-lintro) [![SBOM](https://img.shields.io/badge/SBOM-enabled-brightgreen)](docs/security/assurance.md) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11142/badge)](https://www.bestpractices.dev/projects/11142)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/TurboCoder13/py-lintro) [![SBOM](https://img.shields.io/badge/SBOM-enabled-brightgreen)](docs/security/assurance.md) [![Download SBOM](https://img.shields.io/badge/SBOM-download_latest-blue?logo=github)](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11142/badge)](https://www.bestpractices.dev/projects/11142)
 
 ### Why Lintro?
 
@@ -39,6 +39,42 @@ Lintro is a unified command-line interface that brings together multiple code qu
 - **Beautiful output formatting** with table views
 - **Docker support** for containerized environments
 - **CI/CD integration** with GitHub Actions
+
+## Security & Compliance
+
+Lintro follows modern security best practices and provides comprehensive supply chain transparency:
+
+- **SBOM Generation**: Automated Software Bill of Materials on every push to main
+- **Formats**: CycloneDX 1.6 and SPDX 2.3 (industry standards)
+- **Compliance**: Meets Executive Order 14028 requirements for federal software
+- **Download**: [Latest SBOM artifacts](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml)
+- **Documentation**: See [Security Assurance](docs/security/assurance.md) for details
+
+### What's in the SBOM?
+
+The SBOM provides a complete inventory of all dependencies:
+
+- All Python packages with exact versions
+- All npm packages (like Prettier)
+- All GitHub Actions dependencies (pinned by SHA)
+- Transitive dependencies
+- License information
+
+### For Enterprise Users
+
+Download SBOMs for security auditing and compliance:
+
+```bash
+# Download latest SBOM artifacts
+gh run download -R TurboCoder13/py-lintro \
+  --name sbom-artifacts \
+  $(gh run list -R TurboCoder13/py-lintro \
+    -w "Security - SBOM Generation" -L 1 \
+    --json databaseId -q '.[0].databaseId')
+
+# Scan for vulnerabilities (requires grype)
+grype sbom:main-*-py-lintro-sbom.spdx-2.3.json
+```
 
 ## Supported Tools
 
