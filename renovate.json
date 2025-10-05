@@ -37,7 +37,7 @@
       "matchUpdateTypes": ["major"],
       "groupName": "all major dependencies",
       "groupSlug": "all-major",
-      "matchPackagePatterns": ["*"]
+      "matchPackageNames": ["*"]
     },
     {
       "matchDatasources": ["pypi"],
@@ -55,7 +55,7 @@
     {
       "groupName": "pytest packages",
       "groupSlug": "pytest",
-      "matchPackagePatterns": ["^pytest"]
+      "matchPackageNames": ["/^pytest/"]
     },
     {
       "matchManagers": ["github-actions"],
@@ -84,8 +84,12 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/test-and-coverage\\.yml$/"],
-      "matchStrings": ["CODECOV_VERSION:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "managerFilePatterns": [
+        "/^\\.github/workflows/test-and-coverage\\.yml$/"
+      ],
+      "matchStrings": [
+        "CODECOV_VERSION:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "codecov/uploader"
     }
