@@ -80,6 +80,6 @@ jobs:
           body: |
             Automated update of internal action/workflow references to the
             latest commit SHA to satisfy org policy for pinned refs.
-          branch: chore/bump-internal-refs-${{ github.run_id }}-${{ github.sha }}
+          branch: chore/bump-internal-refs
           labels: maintenance
           delete-branch: true
