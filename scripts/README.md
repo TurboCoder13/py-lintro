@@ -108,10 +108,11 @@ Scripts for containerized development and testing.
 
 Scripts for local development and testing.
 
-| Script             | Purpose                                     | Usage                                     |
-| ------------------ | ------------------------------------------- | ----------------------------------------- |
-| `local-lintro.sh`  | Enhanced local Lintro runner                | `./scripts/local/local-lintro.sh check`   |
-| `sign-all-tags.sh` | Re-sign annotated git tags (GPG/SSH) safely | `./scripts/local/sign-all-tags.sh --help` |
+| Script                       | Purpose                                     | Usage                                           |
+| ---------------------------- | ------------------------------------------- | ----------------------------------------------- |
+| `local-lintro.sh`            | Enhanced local Lintro runner                | `./scripts/local/local-lintro.sh check`         |
+| `sign-all-tags.sh`           | Re-sign annotated git tags (GPG/SSH) safely | `./scripts/local/sign-all-tags.sh --help`       |
+| `validate-docker-buildx.sh`  | Validate Docker Buildx driver configuration | `./scripts/local/validate-docker-buildx.sh`     |
 
 Notes:
 
