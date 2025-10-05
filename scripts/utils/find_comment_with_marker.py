@@ -44,12 +44,18 @@ def find_comment_id(json_payload: str, marker: str) -> str | None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: find_comment_with_marker.py JSON_PAYLOAD MARKER", file=sys.stderr)
+    if len(sys.argv) < 2:
+        print("Usage: find_comment_with_marker.py MARKER < JSON_FILE", file=sys.stderr)
+        print(
+            "   or: find_comment_with_marker.py MARKER (with JSON via stdin)",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
-    json_payload = sys.argv[1]
-    marker = sys.argv[2]
+    marker = sys.argv[1]
+
+    # Read JSON from stdin to avoid "Argument list too long" error
+    json_payload = sys.stdin.read()
 
     # Also support reading from environment variables for compatibility
     if not json_payload:

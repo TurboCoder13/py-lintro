@@ -41,12 +41,18 @@ def extract_comment_body(json_payload: str, comment_id: str) -> str:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: extract_comment_body.py JSON_PAYLOAD COMMENT_ID", file=sys.stderr)
+    if len(sys.argv) != 2:
+        print("Usage: extract_comment_body.py COMMENT_ID < JSON_FILE", file=sys.stderr)
+        print(
+            "   or: extract_comment_body.py COMMENT_ID (with JSON via stdin)",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
-    json_payload = sys.argv[1]
-    comment_id = sys.argv[2]
+    comment_id = sys.argv[1]
+
+    # Read JSON from stdin to avoid "Argument list too long" error
+    json_payload = sys.stdin.read()
 
     body = extract_comment_body(json_payload, comment_id)
     sys.stdout.write(body)

@@ -61,14 +61,14 @@ if [ -n "$MARKER" ]; then
     fi
 
     # Extract the first comment id containing the marker (prefer latest by scanning from end)
-    COMMENT_ID=$(uv run python scripts/utils/find_comment_with_marker.py "$EXISTING_JSON" "$MARKER")
+    COMMENT_ID=$(echo "$EXISTING_JSON" | uv run python scripts/utils/find_comment_with_marker.py "$MARKER")
 
     if [ -n "$COMMENT_ID" ]; then
         log_info "Found existing comment with marker (id=$COMMENT_ID); preparing merged body"
         PREV_FILE=$(mktemp)
         NEW_FILE=$(mktemp)
         # Dump previous body
-        uv run python scripts/utils/extract_comment_body.py "$EXISTING_JSON" "$COMMENT_ID" > "$PREV_FILE"
+        echo "$EXISTING_JSON" | uv run python scripts/utils/extract_comment_body.py "$COMMENT_ID" > "$PREV_FILE"
         # Read new body
         cat "$COMMENT_FILE" > "$NEW_FILE"
         # Merge with Python utility
