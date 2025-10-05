@@ -534,8 +534,8 @@ class TestScriptIntegration:
         assert_that(result.stderr).contains("Invalid SHA")
 
     def test_renovate_regex_manager_current_value(self):
-        """Ensure Renovate regex manager uses currentValue to satisfy schema."""
+        """Ensure Renovate custom managers use currentValue to satisfy schema."""
         config_path = Path("renovate.json")
         content = config_path.read_text()
-        assert_that(content).contains("regexManagers")
+        assert_that(content).contains("customManagers")
         assert_that(content).contains("currentValue")
