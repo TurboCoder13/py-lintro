@@ -3,6 +3,14 @@
   "extends": ["config:recommended"],
   "packageRules": [
     {
+      "matchCategories": ["python"],
+      "enabled": true
+    },
+    {
+      "matchCategories": ["docker"],
+      "enabled": true
+    },
+    {
       "matchDatasources": ["pypi"],
       "matchUpdateTypes": ["patch"],
       "automerge": true,
@@ -26,10 +34,10 @@
       "automerge": false
     },
     {
-      "matchPackagePatterns": ["*"],
       "matchUpdateTypes": ["major"],
       "groupName": "all major dependencies",
-      "groupSlug": "all-major"
+      "groupSlug": "all-major",
+      "matchPackagePatterns": ["*"]
     },
     {
       "matchDatasources": ["pypi"],
@@ -45,9 +53,9 @@
       "automerge": false
     },
     {
-      "matchPackagePatterns": ["^pytest"],
       "groupName": "pytest packages",
-      "groupSlug": "pytest"
+      "groupSlug": "pytest",
+      "matchPackagePatterns": ["^pytest"]
     },
     {
       "matchManagers": ["github-actions"],
@@ -57,30 +65,26 @@
     }
   ],
   "pip_requirements": {
-    "fileMatch": ["^requirements.*\\.txt$"]
-  },
-  "python": {
-    "enabled": true
-  },
-  "docker": {
-    "enabled": true
+    "managerFilePatterns": ["/^requirements.*\\.txt$/"]
   },
   "github-actions": {
     "enabled": true,
     "pinDigests": true
   },
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["^\\.github/workflows/.*\\.yml$"],
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/.*\\.yml$/"],
       "matchStrings": [
         "TurboCoder13/py-lintro/\\.github/(?:actions|workflows)/(?<depPath>[^@\\s]+)@(?<currentValue>[0-9a-f]{40})"
       ],
       "datasourceTemplate": "github-commits",
-      "lookupNameTemplate": "TurboCoder13/py-lintro",
+      "packageNameTemplate": "TurboCoder13/py-lintro",
       "extractVersionTemplate": null
     },
     {
-      "fileMatch": ["^\\.github/workflows/test-and-coverage\\.yml$"],
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/test-and-coverage\\.yml$/"],
       "matchStrings": ["CODECOV_VERSION:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "codecov/uploader"
