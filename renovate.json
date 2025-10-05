@@ -37,7 +37,7 @@
       "matchUpdateTypes": ["major"],
       "groupName": "all major dependencies",
       "groupSlug": "all-major",
-      "matchPackagePatterns": ["*"]
+      "matchPackageNames": ["**"]
     },
     {
       "matchDatasources": ["pypi"],
@@ -49,13 +49,16 @@
     {
       "groupName": "click + psr",
       "matchDatasources": ["pypi"],
-      "matchPackageNames": ["click", "python-semantic-release"],
+      "matchPackageNames": [
+        "click",
+        "python-semantic-release"
+      ],
       "automerge": false
     },
     {
       "groupName": "pytest packages",
       "groupSlug": "pytest",
-      "matchPackagePatterns": ["^pytest"]
+      "matchPackageNames": ["/^pytest/"]
     },
     {
       "matchManagers": ["github-actions"],
@@ -65,7 +68,9 @@
     }
   ],
   "pip_requirements": {
-    "managerFilePatterns": ["/^requirements.*\\.txt$/"]
+    "managerFilePatterns": [
+      "/^requirements.*\\.txt$/"
+    ]
   },
   "github-actions": {
     "enabled": true,
@@ -74,7 +79,9 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/.*\\.yml$/"],
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.*\\.yml$/"
+      ],
       "matchStrings": [
         "TurboCoder13/py-lintro/\\.github/(?:actions|workflows)/(?<depPath>[^@\\s]+)@(?<currentValue>[0-9a-f]{40})"
       ],
@@ -84,8 +91,12 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^\\.github/workflows/test-and-coverage\\.yml$/"],
-      "matchStrings": ["CODECOV_VERSION:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "managerFilePatterns": [
+        "/^\\.github/workflows/test-and-coverage\\.yml$/"
+      ],
+      "matchStrings": [
+        "CODECOV_VERSION:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "codecov/uploader"
     }
