@@ -37,7 +37,7 @@ jobs:
 
       - name: Validate PR title follows Conventional Commits
         id: semantic
-        uses: TurboCoder13/py-lintro/.github/actions/semantic-pr-title-check@9980358d7a7093996aafb4112bee69b114fdfe40
+        uses: TurboCoder13/py-lintro/.github/actions/semantic-pr-title-check@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
         with:
           types: |
             chore
