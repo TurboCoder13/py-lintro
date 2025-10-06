@@ -57,7 +57,7 @@ check_tag_exists() {
     else
         echo "exists=false" >> "${GITHUB_OUTPUT:-/dev/stdout}"
         echo "Tag $tag does not exist"
-        return 1
+        return 0
     fi
 }
 
