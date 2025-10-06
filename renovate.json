@@ -110,7 +110,7 @@
   "semanticCommits": "enabled",
   "semanticCommitType": "chore",
   "semanticCommitScope": "deps",
-  "prTitle": "{{semanticCommitType}}({{semanticCommitScope}}): {{#if isMajor}}update {{depName}} to {{newVersion}} (major){{else if isMinor}}update {{depName}} to {{newVersion}} (minor){{else}}update {{depName}} to {{newVersion}}{{/if}}",
+  "prTitle": "{{semanticCommitType}}({{semanticCommitScope}}): {{#if isMajor}}update {{depName}} to {{newVersion}} (major){{else if isMinor}}update {{depName}} to {{newVersion}} (minor){{else}}{{#if newVersion}}update {{depName}} to {{newVersion}}{{else}}update {{depName}} digest{{/if}}{{/if}}",
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "Dependency Dashboard",
   "commitMessagePrefix": "chore(deps):",
