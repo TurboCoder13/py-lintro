@@ -8,7 +8,7 @@ uniform tables and reports across styles.
 from __future__ import annotations
 
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 from lintro.parsers.actionlint.actionlint_issue import ActionlintIssue
 

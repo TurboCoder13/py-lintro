@@ -98,12 +98,12 @@ def test_prettier_reports_violations_through_lintro(temp_prettier_file):
         f"[LOG] Lintro PrettierTool found {result.issues_count} issues. "
         f"Output:\n{result.output}",
     )
-    assert (
-        not result.success
-    ), "Lintro PrettierTool should fail when violations are present."
-    assert (
-        result.issues_count > 0
-    ), "Lintro PrettierTool should report at least one issue."
+    assert not result.success, (
+        "Lintro PrettierTool should fail when violations are present."
+    )
+    assert result.issues_count > 0, (
+        "Lintro PrettierTool should report at least one issue."
+    )
     # Check for warning indicators (handles both plain and ANSI-coded output)
     has_warnings = "[warn]" in result.output or "warn" in result.output
     assert has_warnings, "Lintro PrettierTool output should contain warning indicators."
@@ -169,9 +169,9 @@ def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file):
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
-    assert (
-        direct_success == result.success
-    ), "Success/failure mismatch between CLI and Lintro."
+    assert direct_success == result.success, (
+        "Success/failure mismatch between CLI and Lintro."
+    )
     assert direct_issues == result.issues_count, (
         f"Issue count mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
         f"CLI Output:\n{direct_output}\nLintro Output:\n{result.output}"

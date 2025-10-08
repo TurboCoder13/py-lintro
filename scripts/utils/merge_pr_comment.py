@@ -14,7 +14,7 @@ Google-style docstrings are used per project standards.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def _normalize_newline(value: str) -> str:
@@ -60,7 +60,7 @@ def merge_comment_bodies(
     if marker_line in normalized_new:
         normalized_new = normalized_new.replace(marker_line, "").strip()
 
-    now_utc: str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
+    now_utc: str = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     if previous_body:
         normalized_prev: str = _normalize_newline(previous_body).strip()
@@ -107,12 +107,12 @@ if __name__ == "__main__":  # pragma: no cover - simple CLI aid
     prev_text: str | None = None
     if args.previous_file:
         try:
-            with open(args.previous_file, "r", encoding="utf-8") as f:
+            with open(args.previous_file, encoding="utf-8") as f:
                 prev_text = f.read()
         except FileNotFoundError:
             prev_text = None
 
-    with open(args.new_file, "r", encoding="utf-8") as f:
+    with open(args.new_file, encoding="utf-8") as f:
         new_text = f.read()
 
     merged_out = merge_comment_bodies(

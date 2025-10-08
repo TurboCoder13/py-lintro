@@ -75,9 +75,9 @@ def test_walk_files_with_excludes(tmp_path):
         exclude_patterns=["ignore*"],
         include_venv=False,
     )
-    assert_that(any((p.endswith("a.py") for p in files))).is_true()
-    assert_that(any((p.endswith("b.js") for p in files))).is_true()
-    assert_that(any((p.endswith("ignore.txt") for p in files))).is_false()
+    assert_that(any(p.endswith("a.py") for p in files)).is_true()
+    assert_that(any(p.endswith("b.js") for p in files)).is_true()
+    assert_that(any(p.endswith("ignore.txt") for p in files)).is_false()
 
 
 def test_is_venv_directory_predicate():

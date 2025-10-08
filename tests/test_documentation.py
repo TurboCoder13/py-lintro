@@ -58,7 +58,7 @@ class TestScriptDocumentation:
             if not Path(doc_file).exists():
                 continue
 
-            with open(doc_file, "r", encoding="utf-8") as f:
+            with open(doc_file, encoding="utf-8") as f:
                 content = f.read()
 
             # Find script references (patterns like ./scripts/...)
@@ -89,7 +89,7 @@ class TestScriptDocumentation:
         if not scripts_readme.exists():
             pytest.skip("scripts/README.md not found")
 
-        with open(scripts_readme, "r", encoding="utf-8") as f:
+        with open(scripts_readme, encoding="utf-8") as f:
             content = f.read()
 
         # Get all script files
@@ -146,7 +146,7 @@ class TestCLIDocumentation:
             if not Path(doc_file).exists():
                 continue
 
-            with open(doc_file, "r", encoding="utf-8") as f:
+            with open(doc_file, encoding="utf-8") as f:
                 content = f.read()
 
             # Find code blocks with lintro commands
@@ -209,7 +209,7 @@ class TestDocumentationLinks:
             if not Path(doc_file).exists():
                 continue
 
-            with open(doc_file, "r", encoding="utf-8") as f:
+            with open(doc_file, encoding="utf-8") as f:
                 content = f.read()
 
             # Find markdown links
@@ -245,7 +245,7 @@ class TestDocumentationLinks:
             if not Path(doc_file).exists():
                 continue
 
-            with open(doc_file, "r", encoding="utf-8") as f:
+            with open(doc_file, encoding="utf-8") as f:
                 content = f.read()
 
             # Find workflow references
@@ -278,7 +278,7 @@ class TestDocumentationCompleteness:
             if not Path(doc_file).exists():
                 continue
 
-            with open(doc_file, "r", encoding="utf-8") as f:
+            with open(doc_file, encoding="utf-8") as f:
                 first_line = f.readline().strip()
 
             if not first_line.startswith("# "):
@@ -293,7 +293,7 @@ class TestDocumentationCompleteness:
         if not scripts_readme.exists():
             pytest.skip("scripts/README.md not found")
 
-        with open(scripts_readme, "r", encoding="utf-8") as f:
+        with open(scripts_readme, encoding="utf-8") as f:
             content = f.read()
 
         # Check for directory structure section
@@ -323,7 +323,7 @@ class TestDocumentationConsistency:
             if not Path(doc_file).exists():
                 continue
 
-            with open(doc_file, "r", encoding="utf-8") as f:
+            with open(doc_file, encoding="utf-8") as f:
                 content = f.read()
 
             # Check for old command aliases that shouldn't be in docs
@@ -353,7 +353,7 @@ class TestDocumentationConsistency:
             if not Path(doc_file).exists():
                 continue
 
-            with open(doc_file, "r", encoding="utf-8") as f:
+            with open(doc_file, encoding="utf-8") as f:
                 content = f.read()
 
             # Check for old --table-format references

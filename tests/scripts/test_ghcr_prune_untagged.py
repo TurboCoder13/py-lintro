@@ -160,7 +160,7 @@ def test_main_deletes_only_untagged(monkeypatch):
         ) -> None:  # noqa: ARG002
             pass
 
-        def __enter__(self) -> "DummyClient":  # type: ignore[name-defined]
+        def __enter__(self) -> DummyClient:  # type: ignore[name-defined]
             return self
 
         def __exit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
@@ -245,7 +245,7 @@ def test_main_respects_keep_n_and_dry_run(monkeypatch):
         ) -> None:  # noqa: ARG002
             pass
 
-        def __enter__(self) -> "DummyClient":  # type: ignore[name-defined]
+        def __enter__(self) -> DummyClient:  # type: ignore[name-defined]
             return self
 
         def __exit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
