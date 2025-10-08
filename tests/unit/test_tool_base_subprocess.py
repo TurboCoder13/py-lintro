@@ -48,3 +48,20 @@ def test_run_subprocess_timeout(
     monkeypatch.setattr(subprocess, "run", _raise_timeout)
     with pytest.raises(subprocess.TimeoutExpired):
         tool._run_subprocess(["echo"])  # validated args; will raise timeout
+
+
+def test_run_subprocess_called_process_error(
+    tool: _DummyTool,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _raise_cpe(*_a, **_k):
+        raise subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["false"],
+            output="oops",
+            stderr="fail",
+        )
+
+    monkeypatch.setattr(subprocess, "run", _raise_cpe)
+    with pytest.raises(subprocess.CalledProcessError):
+        tool._run_subprocess(["false"])  # validated args; will raise CPE
