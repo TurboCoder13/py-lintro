@@ -209,6 +209,7 @@ Lintro preserves all Ruff rule categories:
 | **Pyflakes**              | F      | Logical errors and undefined names |
 | **pycodestyle**           | E, W   | PEP 8 style violations             |
 | **isort**                 | I      | Import sorting issues              |
+| **pep8-naming**           | N      | Naming conventions (PEP 8)         |
 | **pydocstyle**            | D      | Docstring style violations         |
 | **pyupgrade**             | UP     | Python upgrade suggestions         |
 | **flake8-bugbear**        | B      | Bug detection and complexity       |
