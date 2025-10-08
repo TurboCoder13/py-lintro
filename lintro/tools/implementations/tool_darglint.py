@@ -136,7 +136,9 @@ class DarglintTool(BaseTool):
         Returns:
             list[str]: List of command arguments.
         """
-        cmd: list[str] = ["darglint"]
+        # Prefer running via the active environment (uv run) if available,
+        # falling back to a direct executable when necessary.
+        cmd: list[str] = self._get_executable_command("darglint")
 
         # Add configuration options
         if self.options.get("ignore"):

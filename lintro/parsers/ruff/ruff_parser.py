@@ -129,8 +129,12 @@ def parse_ruff_format_check_output(output: str) -> list[str]:
     if not output:
         return []
     files = []
-    for line in output.splitlines():
-        line = line.strip()
+    import re
+
+    ansi_re = re.compile(r"\x1b\[[0-9;]*m")
+    for raw in output.splitlines():
+        # Strip ANSI color codes for stable parsing across environments
+        line = ansi_re.sub("", raw).strip()
         # Ruff format --check output: 'Would reformat: path/to/file.py' or
         # 'Would reformat path/to/file.py'
         if line.startswith("Would reformat: "):

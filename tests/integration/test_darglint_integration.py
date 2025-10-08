@@ -47,12 +47,31 @@ def run_darglint_directly(file_path: Path) -> tuple[bool, str, int]:
     return success, result.stdout, issues_count
 
 
+def _ensure_darglint_cli_available() -> None:
+    """Skip test if darglint CLI is not runnable.
+
+    Attempts to execute `darglint --version` to verify that the CLI exists
+    and is runnable in the current environment. Some installations may have
+    an entrypoint present but an invalid shebang, which raises ENOENT on exec.
+    """
+    try:
+        subprocess.run(
+            ["darglint", "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        pytest.skip("darglint CLI not installed/runnable; skipping direct CLI test")
+
+
 def test_darglint_reports_violations_direct(tmp_path):
     """Darglint CLI: Should detect and report violations in a sample file.
 
     Args:
         tmp_path: Pytest temporary directory fixture.
     """
+    _ensure_darglint_cli_available()
     sample_file = tmp_path / "darglint_violations.py"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info("[TEST] Running darglint directly on sample file...")
@@ -69,6 +88,7 @@ def test_darglint_reports_violations_through_lintro(tmp_path):
     Args:
         tmp_path: Pytest temporary directory fixture.
     """
+    _ensure_darglint_cli_available()
     sample_file = tmp_path / "darglint_violations.py"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info(f"SAMPLE_FILE: {sample_file}, exists: {sample_file.exists()}")
@@ -97,6 +117,7 @@ def test_darglint_output_consistency_direct_vs_lintro(tmp_path):
     Args:
         tmp_path: Pytest temporary directory fixture.
     """
+    _ensure_darglint_cli_available()
     sample_file = tmp_path / "darglint_violations.py"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info("[TEST] Comparing darglint CLI and Lintro DarglintTool outputs...")

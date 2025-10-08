@@ -2,7 +2,6 @@
 
 import json
 import os
-import shutil
 import subprocess  # nosec B404 - deliberate, shell disabled
 import tomllib
 from dataclasses import dataclass, field
@@ -243,15 +242,10 @@ class BanditTool(BaseTool):
         Returns:
             list[str]: List of command arguments.
         """
-        # Prefer the Bandit CLI directly; avoid module execution which can fail
-        # when Bandit isn't installed in the current venv. Fall back to uvx
-        # (which can run ephemeral tools), then finally to plain name.
-        if shutil.which("bandit"):
-            exec_cmd: list[str] = ["bandit"]
-        elif shutil.which("uvx"):
-            exec_cmd = ["uvx", "bandit"]
-        else:
-            exec_cmd = ["bandit"]
+        # Resolve executable via BaseTool preferences to ensure reliable
+        # execution inside the active environment (prefers 'uv run bandit' when
+        # available), falling back to a direct executable.
+        exec_cmd: list[str] = self._get_executable_command("bandit")
 
         cmd: list[str] = exec_cmd + ["-r"]
 
@@ -367,21 +361,16 @@ class BanditTool(BaseTool):
         cmd: list[str] = self._build_check_command(files=rel_files)
 
         output: str
-        # Run Bandit and capture both stdout and stderr; Bandit may emit logs
-        # and JSON to different streams depending on version/settings.
+        # Run Bandit via the shared safe runner in BaseTool. This enforces
+        # argument validation and consistent subprocess handling across tools.
         try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
+            success, combined = self._run_subprocess(
+                cmd=cmd,
                 timeout=timeout,
                 cwd=cwd,
-            )  # nosec B603 - cmd args list; no shell
-            # Combine streams for robust JSON extraction
-            stdout_text: str = result.stdout or ""
-            stderr_text: str = result.stderr or ""
-            output = (stdout_text + "\n" + stderr_text).strip()
-            rc: int = result.returncode
+            )
+            output = (combined or "").strip()
+            rc: int = 0 if success else 1
         except subprocess.TimeoutExpired:
             raise
         except Exception as e:
