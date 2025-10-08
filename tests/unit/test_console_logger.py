@@ -1,3 +1,5 @@
+"""Unit tests for console logger output and summaries."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -9,6 +11,12 @@ from lintro.utils.console_logger import SimpleLintroLogger, create_logger
 
 
 def test_create_logger_and_basic_methods(tmp_path: Path, capsys: pytest.CaptureFixture):
+    """Exercise basic logging methods and ensure files are created.
+
+    Args:
+        tmp_path: Temporary directory for artifacts.
+        capsys: Pytest capture fixture for stdout.
+    """
     logger = create_logger(run_dir=tmp_path, verbose=True, raw_output=False)
     assert_that(isinstance(logger, SimpleLintroLogger)).is_true()
     logger.info("info message")
@@ -83,6 +91,12 @@ def test_summary_marks_fail_on_tool_failure(
     tmp_path: Path,
     capsys: pytest.CaptureFixture,
 ) -> None:
+    """Ensure summary marks FAIL when any tool result indicates failure.
+
+    Args:
+        tmp_path: Temporary directory for artifacts.
+        capsys: Pytest capture fixture for stdout.
+    """
     logger = create_logger(run_dir=tmp_path, verbose=False, raw_output=False)
 
     class Result:

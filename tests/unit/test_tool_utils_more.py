@@ -1,3 +1,5 @@
+"""Additional tests for tool_utils formatting and walking behavior."""
+
 from __future__ import annotations
 
 from assertpy import assert_that
@@ -7,6 +9,11 @@ from lintro.utils.tool_utils import format_tool_output, walk_files_with_excludes
 
 
 def test_format_tool_output_with_parsed_issues_and_fixable_sections(monkeypatch):
+    """Format tool output, including fixable issues section when present.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
     import lintro.utils.tool_utils as tu
 
     def fake_tabulate(tabular_data, headers, tablefmt, stralign, disable_numparse):
@@ -40,6 +47,11 @@ def test_format_tool_output_with_parsed_issues_and_fixable_sections(monkeypatch)
 
 
 def test_format_tool_output_parsing_fallbacks(monkeypatch):
+    """Fallback to raw output for unknown tools or missing issues.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture (not used).
+    """
     out = format_tool_output(
         tool_name="unknown",
         output="some raw output",

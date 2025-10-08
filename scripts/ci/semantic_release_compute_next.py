@@ -164,10 +164,20 @@ def run_git(*args: str) -> str:
 
 
 def read_last_tag() -> str:
+    """Read the most recent v*-prefixed tag.
+
+    Returns:
+        Latest tag matching the pattern ``vX.Y.Z``.
+    """
     return run_git("describe", "--tags", "--abbrev=0", "--match", "v*")
 
 
 def read_last_prepare_commit() -> tuple[str, str]:
+    """Read the last release-prepare commit and extract its version.
+
+    Returns:
+        Tuple of (short_sha, prepared_version). Empty strings if missing.
+    """
     sha = run_git(
         "log",
         "--grep=^chore(release): prepare ",
@@ -184,6 +194,11 @@ def read_last_prepare_commit() -> tuple[str, str]:
 
 
 def read_pyproject_version() -> str:
+    """Read the current version from ``pyproject.toml`` if present.
+
+    Returns:
+        Version string or an empty string when not found.
+    """
     path = Path("pyproject.toml")
     if not path.exists():
         return ""
@@ -195,6 +210,14 @@ def read_pyproject_version() -> str:
 
 
 def parse_semver(version: str) -> tuple[int, int, int]:
+    """Parse a semantic version into integer components.
+
+    Args:
+        version: Version string in the form ``MAJOR.MINOR.PATCH``.
+
+    Returns:
+        Tuple of (major, minor, patch); zeros when parsing fails.
+    """
     m = SEMVER_RE.match(version)
     if not m:
         return 0, 0, 0
@@ -202,6 +225,14 @@ def parse_semver(version: str) -> tuple[int, int, int]:
 
 
 def detect_commit_types(base_ref: str) -> tuple[bool, bool, bool]:
+    """Detect breaking/feature/fix commits since a base reference.
+
+    Args:
+        base_ref: Baseline ref (tag or commit) to compare against.
+
+    Returns:
+        Tuple of booleans: (has_breaking, has_feat, has_fix_or_perf).
+    """
     log_range = f"{base_ref}..HEAD" if base_ref else "HEAD"
     subjects = run_git("log", log_range, "--pretty=%s")
     bodies = run_git("log", log_range, "--pretty=%B")
@@ -222,6 +253,17 @@ def compute_next_version(
     feat: bool,
     fix: bool,
 ) -> str:
+    """Compute the next semantic version based on commit signals.
+
+    Args:
+        base_version: Baseline version string.
+        breaking: Whether breaking changes were detected.
+        feat: Whether features were detected.
+        fix: Whether fixes/perf were detected.
+
+    Returns:
+        Next semantic version or an empty string if no bump is needed.
+    """
     major, minor, patch = parse_semver(base_version)
     if breaking:
         major += 1
@@ -242,6 +284,16 @@ def clamp_to_minor(
     next_version: str,
     max_bump: str | None,
 ) -> str:
+    """Clamp a computed version to a minor bump when required.
+
+    Args:
+        base_version: Baseline version string.
+        next_version: Computed next version.
+        max_bump: Policy value; when ``"minor"``, clamp majors to minor.
+
+    Returns:
+        Possibly clamped next version string.
+    """
     if not base_version or not next_version:
         return next_version
     if (max_bump or "").lower() != "minor":
@@ -254,6 +306,15 @@ def clamp_to_minor(
 
 
 def compute() -> ComputeResult:
+    """Compute the next version honoring enterprise release policies.
+
+    Returns:
+        ComputeResult with baseline, next version, and detected signals.
+
+    Raises:
+        RuntimeError: When no valid baseline tag exists or policy forbids
+            an unapproved major release and clamping is not configured.
+    """
     # Enterprise policy: tags are the single source of truth.
     # Require an existing v*-prefixed tag as the baseline; fail if missing.
     last_tag = read_last_tag()
@@ -331,6 +392,11 @@ def compute() -> ComputeResult:
 
 
 def main() -> None:
+    """CLI entry to compute and emit the next semantic version.
+
+    Raises:
+        SystemExit: With exit code 2 on policy/usage errors.
+    """
     parser = argparse.ArgumentParser(
         description="Compute next semantic version and write to GITHUB_OUTPUT",
     )

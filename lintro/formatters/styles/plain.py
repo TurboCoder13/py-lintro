@@ -1,3 +1,5 @@
+"""Plain text output style implementation."""
+
 from typing import Any
 
 from lintro.formatters.core.output_style import OutputStyle

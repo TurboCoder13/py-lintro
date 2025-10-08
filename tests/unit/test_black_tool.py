@@ -1,3 +1,5 @@
+"""Unit tests for Black tool integration and option wiring."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -6,6 +8,12 @@ from lintro.tools.implementations.tool_black import BlackTool
 
 
 def test_black_check_parses_issues(monkeypatch, tmp_path: Path):
+    """Ensure check mode recognizes would-reformat output as an issue.
+
+    Args:
+        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
+        tmp_path: Temporary directory for creating files.
+    """
     tool = BlackTool()
 
     # Create a dummy file path
@@ -38,6 +46,12 @@ def test_black_check_parses_issues(monkeypatch, tmp_path: Path):
 
 
 def test_black_fix_computes_counts(monkeypatch, tmp_path: Path):
+    """Ensure fix mode computes initial/fixed/remaining issue counts.
+
+    Args:
+        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
+        tmp_path: Temporary directory for creating files.
+    """
     tool = BlackTool()
 
     f = tmp_path / "b.py"
@@ -76,6 +90,12 @@ def test_black_fix_computes_counts(monkeypatch, tmp_path: Path):
 
 
 def test_black_options_build_line_length_and_target(monkeypatch, tmp_path: Path):
+    """Verify line-length and target version flags are passed in check mode.
+
+    Args:
+        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
+        tmp_path: Temporary directory for creating files.
+    """
     tool = BlackTool()
 
     f = tmp_path / "opt.py"
@@ -110,6 +130,12 @@ def test_black_options_build_line_length_and_target(monkeypatch, tmp_path: Path)
 
 
 def test_black_options_include_fast_and_preview(monkeypatch, tmp_path: Path):
+    """Verify fast and preview flags are honored in check mode.
+
+    Args:
+        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
+        tmp_path: Temporary directory for creating files.
+    """
     tool = BlackTool()
 
     f = tmp_path / "fastprev.py"
@@ -141,6 +167,12 @@ def test_black_options_include_fast_and_preview(monkeypatch, tmp_path: Path):
 
 
 def test_black_diff_flag_in_fix(monkeypatch, tmp_path: Path):
+    """Ensure the diff flag is present during formatting in fix mode.
+
+    Args:
+        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
+        tmp_path: Temporary directory for creating files.
+    """
     tool = BlackTool()
 
     f = tmp_path / "diff.py"
@@ -188,7 +220,6 @@ def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
         calls.append({"cmd": cmd, "cwd": cwd})
         # Simulate: check finds 1 issue, fix applies changes, final check finds 0
         if "--check" in cmd:
-
             if calls and any("--diff" in c["cmd"] for c in calls):
                 return True, ""
             return False, f"Would reformat: {sample.name}\n"

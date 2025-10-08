@@ -1,3 +1,5 @@
+"""Programmatic invocation tests for CLI command functions."""
+
 from __future__ import annotations
 
 import pytest
@@ -8,6 +10,11 @@ from lintro.cli_utils.commands.format import format_code_legacy
 
 
 def test_check_programmatic_success(monkeypatch):
+    """Programmatic check returns None on success.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture to stub executor return.
+    """
     import lintro.cli_utils.commands.check as check_mod
 
     monkeypatch.setattr(check_mod, "run_lint_tools_simple", lambda **k: 0, raising=True)
@@ -29,6 +36,11 @@ def test_check_programmatic_success(monkeypatch):
 
 
 def test_format_programmatic_success(monkeypatch):
+    """Programmatic format returns None on success.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture to stub executor return.
+    """
     import lintro.cli_utils.commands.format as format_mod
 
     monkeypatch.setattr(
@@ -52,6 +64,11 @@ def test_format_programmatic_success(monkeypatch):
 
 
 def test_format_programmatic_failure_raises(monkeypatch):
+    """Programmatic format raises when executor returns non-zero.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture to stub executor return.
+    """
     import lintro.cli_utils.commands.format as format_mod
 
     monkeypatch.setattr(

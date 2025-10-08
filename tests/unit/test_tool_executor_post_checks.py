@@ -1,3 +1,5 @@
+"""Unit tests for executor post-check behavior (e.g., Black as post-check)."""
+
 from __future__ import annotations
 
 import json
@@ -9,23 +11,55 @@ from lintro.utils.tool_executor import run_lint_tools_simple
 
 
 class FakeTool:
+    """Simple tool stub returning a pre-baked ToolResult."""
+
     def __init__(self, name: str, can_fix: bool, result: ToolResult):
+        """Initialize the fake tool.
+
+        Args:
+            name: Tool name.
+            can_fix: Whether fixes are supported.
+            result: Result object to return from check/fix.
+        """
         self.name = name
         self.can_fix = can_fix
         self._result = result
         self.options: dict[str, object] = {}
 
     def set_options(self, **kwargs):
+        """Record option values provided to the tool stub.
+
+        Args:
+            **kwargs: Arbitrary options to store for assertions.
+        """
         self.options.update(kwargs)
 
     def check(self, paths):
+        """Return the stored result for a check invocation.
+
+        Args:
+            paths: Target paths (ignored in stub).
+
+        Returns:
+            ToolResult: Pre-baked result instance.
+        """
         return self._result
 
     def fix(self, paths):
+        """Return the stored result for a fix invocation.
+
+        Args:
+            paths: Target paths (ignored in stub).
+
+        Returns:
+            ToolResult: Pre-baked result instance.
+        """
         return self._result
 
 
 class _EnumLike:
+    """Tiny enum-like wrapper exposing a `name` attribute."""
+
     def __init__(self, name: str):
         self.name = name
 
@@ -44,6 +78,14 @@ def _stub_logger(monkeypatch):
 
 
 def _setup_main_tool(monkeypatch):
+    """Configure the main (ruff) tool and output manager stubs.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Returns:
+        FakeTool: Configured ruff tool stub.
+    """
     import lintro.utils.tool_executor as te
 
     ok = ToolResult(name="ruff", success=True, output="", issues_count=0)

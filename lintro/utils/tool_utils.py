@@ -394,21 +394,17 @@ def walk_files_with_excludes(
     exclude_patterns: list[str],
     include_venv: bool = False,
 ) -> list[str]:
-    """Walk through directories and find files matching patterns, excluding
-    specified patterns.
+    """Return files under ``paths`` matching patterns and not excluded.
 
     Args:
-        paths: list[str]: List of file or directory paths to search.
-        file_patterns: list[str]: List of file patterns to include (e.g.,
-            ["*.py", "*.js"]).
-        exclude_patterns: list[str]: List of patterns to exclude (e.g.,
-            ["__pycache__", "*.pyc"]).
-        include_venv: bool: Whether to include virtual environment directories.
+        paths: list[str]: Files or directories to search.
+        file_patterns: list[str]: Glob patterns to include.
+        exclude_patterns: list[str]: Glob patterns to exclude.
+        include_venv: bool: Include virtual environment directories when True.
 
     Returns:
-        list[str]: List of file paths that match the patterns and are not excluded.
+        list[str]: Sorted file paths matching include filters and not excluded.
     """
-
     all_files: list[str] = []
 
     for path in paths:

@@ -1,4 +1,4 @@
-"""Tests for pyproject config hydration in BanditTool.__post_init__."""
+"""Tests for pyproject config hydration in ``BanditTool.__post_init__``."""
 
 import io
 import os
@@ -11,6 +11,14 @@ from lintro.tools.implementations.tool_bandit import BanditTool
 
 @contextmanager
 def temp_pyproject(content: str):
+    """Temporarily write a pyproject.toml with provided content.
+
+    Args:
+        content: TOML to write while the context manager is active.
+
+    Yields:
+        None: Context in which the temporary file is present.
+    """
     path = "pyproject.toml"
     exists = os.path.exists(path)
     backup = None
@@ -30,6 +38,7 @@ def temp_pyproject(content: str):
 
 
 def test_hydrates_severity_confidence_from_pyproject() -> None:
+    """Hydrate severity/confidence values from pyproject settings."""
     io.BytesIO()
     toml_content = '[tool.bandit]\nseverity = "HIGH"\nconfidence = "MEDIUM"\n'
     with temp_pyproject(toml_content):

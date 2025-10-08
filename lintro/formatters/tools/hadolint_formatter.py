@@ -19,6 +19,11 @@ class HadolintTableDescriptor(TableDescriptor):
     """Describe hadolint issue columns and row extraction."""
 
     def get_columns(self) -> list[str]:
+        """Return ordered column headers for the Hadolint table.
+
+        Returns:
+            list[str]: Column names for the formatted table.
+        """
         return [
             "File",
             "Line",
@@ -32,6 +37,14 @@ class HadolintTableDescriptor(TableDescriptor):
         self,
         issues: list[HadolintIssue],
     ) -> list[list[Any]]:
+        """Return rows for the Hadolint issues table.
+
+        Args:
+            issues: Parsed Hadolint issues to render.
+
+        Returns:
+            list[list[Any]]: Table rows with normalized file path and fields.
+        """
         rows: list[list[Any]] = []
         for issue in issues:
             rows.append(

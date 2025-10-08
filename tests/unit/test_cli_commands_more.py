@@ -1,3 +1,5 @@
+"""Unit tests exercising subcommand wiring for CLI commands."""
+
 from __future__ import annotations
 
 from assertpy import assert_that
@@ -9,6 +11,11 @@ from lintro.cli_utils.commands.list_tools import list_tools_command
 
 
 def test_check_invokes_executor(monkeypatch):
+    """Invoke check subcommand and verify executor receives parameters.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture to stub executor call.
+    """
     calls = {}
     import lintro.cli_utils.commands.check as check_mod
 
@@ -24,6 +31,11 @@ def test_check_invokes_executor(monkeypatch):
 
 
 def test_format_invokes_executor(monkeypatch):
+    """Invoke format subcommand and verify executor receives parameters.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture to stub executor call.
+    """
     calls = {}
     import lintro.cli_utils.commands.format as format_mod
 
@@ -39,6 +51,11 @@ def test_format_invokes_executor(monkeypatch):
 
 
 def test_list_tools_outputs(monkeypatch):
+    """Run list-tools command and validate expected text in output.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture (not used).
+    """
     runner = CliRunner()
     result = runner.invoke(list_tools_command, [])
     assert_that(result.exit_code).is_equal_to(0)

@@ -10,6 +10,7 @@ from lintro.tools.implementations.tool_black import BlackTool
 
 
 def test_black_set_options_validation_errors():
+    """Validate type checking for option setters raises ValueError."""
     tool = BlackTool()
     with pytest.raises(ValueError):
         tool.set_options(line_length="88")  # type: ignore[arg-type]
@@ -24,6 +25,12 @@ def test_black_set_options_validation_errors():
 
 
 def test_black_no_files_paths(tmp_path: Path, monkeypatch):
+    """Return success and informative output when no files are discovered.
+
+    Args:
+        tmp_path: Temporary directory for file discovery.
+        monkeypatch: Pytest patching of file discovery.
+    """
     tool = BlackTool()
     # Stub discovery to empty list to simulate "no files to check/format"
     monkeypatch.setattr(

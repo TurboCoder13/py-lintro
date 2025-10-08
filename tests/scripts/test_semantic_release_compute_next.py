@@ -1,3 +1,5 @@
+"""Tests for the semantic_release_compute_next utility."""
+
 from __future__ import annotations
 
 import subprocess

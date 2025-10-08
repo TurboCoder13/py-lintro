@@ -10,10 +10,12 @@ from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output
 
 
 def test_parse_actionlint_empty():
+    """Return an empty list for empty parser input."""
     assert_that(parse_actionlint_output("")).is_equal_to([])
 
 
 def test_parse_actionlint_lines():
+    """Parse typical actionlint lines and produce structured issues."""
     out = (
         "workflow.yml:10:5: error: unexpected key [AL100]\n"
         "workflow.yml:12:3: warning: something minor"

@@ -1,3 +1,5 @@
+"""Tests for Black formatter table and output rendering."""
+
 from __future__ import annotations
 
 from assertpy import assert_that
@@ -10,6 +12,7 @@ from lintro.parsers.black.black_issue import BlackIssue
 
 
 def test_black_table_descriptor_columns_and_rows():
+    """Ensure columns and rows render expected values for issues."""
     desc = BlackTableDescriptor()
     assert_that(desc.get_columns()).is_equal_to(["File", "Message"])
     issues = [
@@ -22,6 +25,7 @@ def test_black_table_descriptor_columns_and_rows():
 
 
 def test_format_black_issues_all_styles():
+    """Ensure all styles return a non-empty string for issues list."""
     issues = [
         BlackIssue(file="a.py", message="Would reformat file"),
         BlackIssue(file="b.py", message="Reformatted file"),
@@ -33,6 +37,7 @@ def test_format_black_issues_all_styles():
 
 
 def test_format_black_issues_empty():
+    """Ensure empty issues still produce a valid string output."""
     out = format_black_issues(issues=[], format="grid")
     # Grid formatter returns an empty string when no rows
     assert_that(isinstance(out, str)).is_true()

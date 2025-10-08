@@ -42,7 +42,6 @@ def pytest_collection_modifyitems(config, items):
         config: Pytest configuration object.
         items: Collected test items that may be modified.
     """
-
     if os.getenv("LINTRO_RUN_DOCKER_TESTS") == "1":
         return
 
@@ -82,7 +81,8 @@ def temp_dir():
 
 @pytest.fixture
 def ruff_violation_file(temp_dir):
-    """Copy the ruff_violations.py sample to a temp directory for testing and
+    """Copy the ruff_violations.py sample to a temp directory.
+
     return normalized path.
 
     Args:

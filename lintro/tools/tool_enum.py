@@ -13,6 +13,8 @@ from lintro.tools.implementations.tool_yamllint import YamllintTool
 
 
 class ToolEnum(Enum):
+    """Enumeration mapping tool names to their implementation classes."""
+
     BLACK = BlackTool
     DARGLINT = DarglintTool
     HADOLINT = HadolintTool

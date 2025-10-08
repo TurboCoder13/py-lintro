@@ -9,6 +9,12 @@ from lintro.cli_utils.commands.list_tools import list_tools_command
 
 
 class LintroGroup(click.Group):
+    """Custom Click group with enhanced help rendering.
+
+    This group prints command aliases alongside their canonical names to make
+    the CLI help output more discoverable.
+    """
+
     def format_commands(
         self,
         ctx: click.Context,

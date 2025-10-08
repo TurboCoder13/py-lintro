@@ -1,3 +1,5 @@
+"""Additional unit tests for Ruff parser variants and format check output."""
+
 from __future__ import annotations
 
 from assertpy import assert_that
@@ -9,6 +11,7 @@ from lintro.parsers.ruff.ruff_parser import (
 
 
 def test_parse_ruff_output_json_lines_and_variants():
+    """Parse JSON lines with variant keys and fix metadata."""
     # Mixed JSON lines with different location key variants and fix metadata
     jl = (
         '{"filename":"a.py","location":{"row":1,"column":2},'
@@ -27,6 +30,7 @@ def test_parse_ruff_output_json_lines_and_variants():
 
 
 def test_parse_ruff_output_trailing_non_json():
+    """Ignore trailing non-JSON content after a JSON array."""
     # Parser should ignore trailing non-JSON after array
     output = (
         "[\n"
@@ -41,6 +45,7 @@ def test_parse_ruff_output_trailing_non_json():
 
 
 def test_parse_ruff_format_check_output_various_lines():
+    """Extract files from various format-check output lines."""
     out = (
         "Would reformat: src/app.py\n"
         "Some other text\n"
@@ -52,6 +57,7 @@ def test_parse_ruff_format_check_output_various_lines():
 
 
 def test_parse_ruff_format_check_output_variants_more():
-    out = "Would reformat: a.py\n" "Would reformat b.py\n"
+    """Support alternate wording for 'Would reformat' lines."""
+    out = "Would reformat: a.py\nWould reformat b.py\n"
     files = parse_ruff_format_check_output(out)
     assert_that(sorted(files)).is_equal_to(["a.py", "b.py"])

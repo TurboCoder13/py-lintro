@@ -18,6 +18,14 @@ SAMPLE_FILE = Path("test_samples/prettier_violations.js")
 
 @pytest.fixture
 def temp_prettier_file(tmp_path):
+    """Create a temp copy of the sample JS file with violations.
+
+    Args:
+        tmp_path: Temporary directory provided by pytest.
+
+    Returns:
+        Path to the copied temporary JavaScript file containing violations.
+    """
     temp_file = tmp_path / SAMPLE_FILE.name
     temp_file.write_text(SAMPLE_FILE.read_text())
     return temp_file

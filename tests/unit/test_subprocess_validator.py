@@ -1,3 +1,5 @@
+"""Unit tests for subprocess command validation and error handling."""
+
 from __future__ import annotations
 
 import pytest
@@ -27,6 +29,11 @@ class _DummyTool(BaseTool):
 
 @pytest.fixture()
 def tool() -> _DummyTool:
+    """Provide a dummy tool instance for subprocess validation tests.
+
+    Returns:
+        _DummyTool: Configured dummy tool instance.
+    """
     return _DummyTool(name="dummy", description="dummy", can_fix=False)
 
 
@@ -39,6 +46,12 @@ def tool() -> _DummyTool:
     ],
 )
 def test_validator_allows_safe_commands(tool: _DummyTool, cmd: list[str]) -> None:
+    """Allow listed safe commands without raising.
+
+    Args:
+        tool: Dummy tool instance used for validation.
+        cmd: Command vector to validate.
+    """
     tool._validate_subprocess_command(cmd=cmd)
 
 
@@ -55,5 +68,11 @@ def test_validator_allows_safe_commands(tool: _DummyTool, cmd: list[str]) -> Non
     ],
 )
 def test_validator_rejects_unsafe_commands(tool: _DummyTool, cmd: list[str]) -> None:
+    """Reject unsafe commands that include shell metacharacters or empties.
+
+    Args:
+        tool: Dummy tool instance used for validation.
+        cmd: Command vector to validate.
+    """
     with pytest.raises(ValueError):
         tool._validate_subprocess_command(cmd=cmd)

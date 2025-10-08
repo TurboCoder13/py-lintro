@@ -32,6 +32,11 @@ def _write_sections(
 
 
 def main() -> int:
+    """Normalize ASCII art files based on width/height and alignment.
+
+    Returns:
+        int: Zero on success, non-zero when the base directory is missing.
+    """
     parser = argparse.ArgumentParser(description="Normalize ASCII art files.")
     parser.add_argument("files", nargs="*", help="Specific ASCII art files to process")
     parser.add_argument("--width", type=int, default=80)

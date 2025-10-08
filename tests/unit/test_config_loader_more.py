@@ -10,6 +10,12 @@ from lintro.utils.config import load_post_checks_config
 
 
 def test_load_post_checks_config_present(tmp_path: Path, monkeypatch):
+    """Load post-checks config from pyproject.
+
+    Args:
+        tmp_path: Temporary directory to host a pyproject.
+        monkeypatch: Pytest monkeypatch for chdir.
+    """
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
         (

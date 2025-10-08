@@ -26,7 +26,6 @@ def _normalize_newline(value: str) -> str:
     Returns:
         str: Normalized text with Unix newlines.
     """
-
     return value.replace("\r\n", "\n").replace("\r", "\n")
 
 
@@ -54,7 +53,6 @@ def merge_comment_bodies(
     Returns:
         str: The merged comment body ready to send to the GitHub API.
     """
-
     marker_line: str = marker.strip()
     normalized_new: str = _normalize_newline(new_body).strip()
     # Ensure the marker only appears once at the very top by removing any

@@ -8,6 +8,7 @@ import lintro.utils.tool_utils as tu
 
 
 def test_format_as_table_fallback_when_no_tabulate():
+    """Fallback to plain text table when tabulate is unavailable."""
     # Force TABULATE_AVAILABLE False
     tu.TABULATE_AVAILABLE = False
     issues = [
@@ -23,6 +24,7 @@ def test_format_as_table_fallback_when_no_tabulate():
 
 
 def test_parse_tool_list_error_on_bad_name():
+    """Raise ValueError when parsing an unknown tool name."""
     try:
         _ = tu.parse_tool_list("notatool")
         assert False, "Expected ValueError for bad tool name"

@@ -260,11 +260,10 @@ class BaseTool(ABC):
         self,
         paths: list[str],
     ) -> str | None:
-        """Return the common parent directory for the given paths, or None if not
-        applicable.
+        """Return the common parent directory for the given paths.
 
         Args:
-            paths: list[str]: List of file paths to find common parent directory for.
+            paths: list[str]: Paths to compute a common parent directory for.
 
         Returns:
             str | None: Common parent directory path, or None if not applicable.

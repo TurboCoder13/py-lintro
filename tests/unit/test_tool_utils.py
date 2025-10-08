@@ -1,3 +1,5 @@
+"""Unit tests for tool_utils helpers and tabulate formatting."""
+
 from __future__ import annotations
 
 from assertpy import assert_that
@@ -11,12 +13,18 @@ from lintro.utils.tool_utils import (
 
 
 def test_should_exclude_path_patterns():
+    """Evaluate exclude pattern behavior on file paths."""
     assert_that(should_exclude_path("a/b/.venv/lib.py", [".venv"]) is True).is_true()
     assert_that(should_exclude_path("a/b/c.py", ["*.md"]) is False).is_true()
     assert_that(should_exclude_path("dir/file.md", ["*.md"]) is True).is_true()
 
 
 def test_get_table_columns_and_format_tabulate(monkeypatch):
+    """Use tabulate when available and validate headers/rows are passed.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture to stub tabulate.
+    """
     rows_captured = {}
 
     def fake_tabulate(
@@ -51,6 +59,11 @@ def test_get_table_columns_and_format_tabulate(monkeypatch):
 
 
 def test_walk_files_with_excludes(tmp_path):
+    """Walk files with include/exclude patterns.
+
+    Args:
+        tmp_path: Temporary directory fixture to build a sample tree.
+    """
     d = tmp_path / "proj"
     (d / "sub").mkdir(parents=True)
     (d / "sub" / "a.py").write_text("x")
@@ -68,6 +81,7 @@ def test_walk_files_with_excludes(tmp_path):
 
 
 def test_is_venv_directory_predicate():
+    """Detect typical virtual environment directory names."""
     assert_that(_is_venv_directory(".venv")).is_true()
     assert_that(_is_venv_directory("venv")).is_true()
     assert_that(_is_venv_directory("site-packages")).is_true()

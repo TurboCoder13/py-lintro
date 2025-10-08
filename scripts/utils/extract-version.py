@@ -24,10 +24,31 @@ from pathlib import Path
 
 
 def _load_toml_bytes(path: Path) -> bytes:
+    """Load raw TOML bytes from a file.
+
+    Args:
+        path: Path to the TOML file.
+
+    Returns:
+        Raw file contents as bytes.
+    """
     return path.read_bytes()
 
 
 def _read_version_from_toml_bytes(data: bytes) -> str:
+    """Parse TOML bytes and extract ``project.version``.
+
+    Prefer stdlib ``tomllib`` when available; fall back to ``toml``.
+
+    Args:
+        data: The TOML file contents as bytes.
+
+    Returns:
+        The project version string.
+
+    Raises:
+        SystemExit: If parsing fails or the version key is missing/invalid.
+    """
     # Prefer stdlib tomllib (Python 3.11+); fall back to 'toml' if present
     try:
         import tomllib  # type: ignore[attr-defined]
@@ -51,6 +72,14 @@ def _read_version_from_toml_bytes(data: bytes) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry to extract and print the project version.
+
+    Args:
+        argv: Optional argument vector for testing.
+
+    Returns:
+        Process exit code (0 on success).
+    """
     parser = argparse.ArgumentParser(description="Extract version from TOML")
     parser.add_argument(
         "--file",

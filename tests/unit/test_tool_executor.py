@@ -1,3 +1,5 @@
+"""Unit tests for main tool executor: success/failure and JSON outputs."""
+
 from __future__ import annotations
 
 import json
@@ -10,7 +12,10 @@ from lintro.utils.tool_executor import run_lint_tools_simple
 
 
 class FakeLogger:
+    """Minimal logger stub capturing method calls for assertions."""
+
     def __init__(self):
+        """Initialize the fake logger with call storage and run dir."""
         self.calls: list[tuple[str, tuple, dict]] = []
         self.run_dir = ".lintro/test"
 
@@ -18,65 +23,175 @@ class FakeLogger:
         self.calls.append((name, a, k))
 
     def info(self, *a, **k):
+        """Record an info call.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("info", *a, **k)
 
     def debug(self, *a, **k):
+        """Record a debug call.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("debug", *a, **k)
 
     def warning(self, *a, **k):
+        """Record a warning call.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("warning", *a, **k)
 
     def error(self, *a, **k):
+        """Record an error call.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("error", *a, **k)
 
     def success(self, *a, **k):
+        """Record a success call.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("success", *a, **k)
 
     def console_output(self, *a, **k):
+        """Record console output.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("console_output", *a, **k)
 
     def print_lintro_header(self, *a, **k):
+        """Record header printing.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("print_lintro_header", *a, **k)
 
     def print_verbose_info(self, *a, **k):
+        """Record verbose info printing.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("print_verbose_info", *a, **k)
 
     def print_tool_header(self, *a, **k):
+        """Record tool header printing.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("print_tool_header", *a, **k)
 
     def print_tool_result(self, *a, **k):
+        """Record tool result printing.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("print_tool_result", *a, **k)
 
     def print_execution_summary(self, *a, **k):
+        """Record execution summary printing.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("print_execution_summary", *a, **k)
 
     def save_console_log(self, *a, **k):
+        """Record console log saving.
+
+        Args:
+            *a: Positional arguments passed to the logger.
+            **k: Keyword arguments passed to the logger.
+        """
         self._rec("save_console_log", *a, **k)
 
 
 class FakeTool:
+    """Simple tool stub returning a pre-baked ToolResult."""
+
     def __init__(self, name: str, can_fix: bool, result: ToolResult):
+        """Initialize the fake tool.
+
+        Args:
+            name: Tool name.
+            can_fix: Whether fixes are supported.
+            result: Result object to return from check/fix.
+        """
         self.name = name
         self.can_fix = can_fix
         self._result = result
         self.options = {}
 
     def set_options(self, **kwargs):
+        """Record option values provided to the tool stub.
+
+        Args:
+            **kwargs: Arbitrary options to store for assertions.
+        """
         self.options.update(kwargs)
 
     def check(self, paths):
+        """Return the stored result for a check invocation.
+
+        Args:
+            paths: Target paths (ignored in stub).
+
+        Returns:
+            ToolResult: Pre-baked result instance.
+        """
         return self._result
 
     def fix(self, paths):
+        """Return the stored result for a fix invocation.
+
+        Args:
+            paths: Target paths (ignored in stub).
+
+        Returns:
+            ToolResult: Pre-baked result instance.
+        """
         return self._result
 
 
 class _EnumLike:
+    """Tiny enum-like wrapper exposing a `name` attribute."""
+
     def __init__(self, name: str):
         self.name = name
 
 
 def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]):
+    """Configure tool manager stubs to return provided tools.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        tools: Mapping of tool name to FakeTool instance.
+    """
     import lintro.utils.tool_executor as te
 
     def fake_get_tools(*, tools: str | None, action: str):
@@ -102,12 +217,22 @@ def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]):
 
 
 def _stub_logger(monkeypatch):
+    """Patch create_logger to return a FakeLogger instance.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
     import lintro.utils.console_logger as cl
 
     monkeypatch.setattr(cl, "create_logger", lambda **k: FakeLogger(), raising=True)
 
 
 def test_executor_check_success(monkeypatch):
+    """Exit with 0 when check succeeds and has zero issues.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
     _stub_logger(monkeypatch)
     result = ToolResult(name="ruff", success=True, output="", issues_count=0)
     _setup_tool_manager(
@@ -130,6 +255,11 @@ def test_executor_check_success(monkeypatch):
 
 
 def test_executor_check_failure(monkeypatch):
+    """Exit with 1 when check succeeds but issues are reported.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
     _stub_logger(monkeypatch)
     result = ToolResult(name="ruff", success=True, output="something", issues_count=2)
     _setup_tool_manager(
@@ -152,6 +282,11 @@ def test_executor_check_failure(monkeypatch):
 
 
 def test_executor_fmt_success_with_counts(monkeypatch):
+    """Exit with 0 when format succeeds and counts are populated.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
     _stub_logger(monkeypatch)
     result = ToolResult(
         name="prettier",
@@ -181,6 +316,12 @@ def test_executor_fmt_success_with_counts(monkeypatch):
 
 
 def test_executor_json_output(monkeypatch, capsys):
+    """Emit JSON output containing action and results when requested.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        capsys: Pytest capture fixture for stdout.
+    """
     _stub_logger(monkeypatch)
     t1 = ToolResult(name="ruff", success=True, output="", issues_count=1)
     t2 = ToolResult(
@@ -278,6 +419,11 @@ def test_parse_tool_options_typed_values():
 
 
 def test_executor_unknown_tool(monkeypatch):
+    """Exit with 1 when an unknown tool is requested.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
     _stub_logger(monkeypatch)
     import lintro.utils.tool_executor as te
 

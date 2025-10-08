@@ -21,13 +21,28 @@ FORMAT_MAP = {
 
 
 class PrettierTableDescriptor(TableDescriptor):
+    """Describe columns and rows for Prettier issues."""
+
     def get_columns(self) -> list[str]:
+        """Return ordered column headers for the Prettier table.
+
+        Returns:
+            list[str]: Column names for the formatted table.
+        """
         return ["File", "Line", "Column", "Code", "Message"]
 
     def get_rows(
         self,
         issues: list[PrettierIssue],
     ) -> list[list[str]]:
+        """Return rows for the Prettier issues table.
+
+        Args:
+            issues: Parsed Prettier issues to render.
+
+        Returns:
+            list[list[str]]: Table rows with normalized file path and fields.
+        """
         rows = []
         for issue in issues:
             rows.append(
