@@ -20,14 +20,11 @@ name: Testing - Full Suite & Coverage
 
 permissions:
   contents: read
-  pull-requests: write
-  issues: write
 
 jobs:
   run-test-suite:
     permissions:
       contents: read
-      id-token: write # For codecov OIDC
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     concurrency:
@@ -138,6 +135,9 @@ jobs:
     if: always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33

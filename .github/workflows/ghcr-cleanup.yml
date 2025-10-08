@@ -11,12 +11,14 @@ name: Maintenance - GHCR Registry Cleanup
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   prune-untagged:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33

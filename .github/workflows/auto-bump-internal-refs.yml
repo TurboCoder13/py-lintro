@@ -17,8 +17,7 @@ name: Maintenance - Auto-bump Internal References
         type: string
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   bump:
@@ -32,6 +31,9 @@ jobs:
       ) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
     concurrency:
       group: auto-bump-refs-${{ github.ref }}
       cancel-in-progress: true
