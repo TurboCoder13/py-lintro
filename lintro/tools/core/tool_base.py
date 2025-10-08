@@ -147,6 +147,9 @@ class BaseTool(ABC):
             TimeoutExpired: If command times out.
             FileNotFoundError: If command executable is not found.
         """
+        # Validate command arguments for safety prior to execution
+        self._validate_subprocess_command(cmd=cmd)
+
         try:
             result = subprocess.run(  # nosec B603 - args list, shell=False
                 cmd,
@@ -157,7 +160,6 @@ class BaseTool(ABC):
                     "timeout",
                     self._default_timeout,
                 ),
-                check=False,
                 cwd=cwd,
             )
             return result.returncode == 0, result.stdout + result.stderr
@@ -183,6 +185,31 @@ class BaseTool(ABC):
                 f"Command not found: {cmd[0]}. "
                 f"Please ensure it is installed and in your PATH.",
             ) from e
+
+    def _validate_subprocess_command(self, cmd: list[str]) -> None:
+        """Validate a subprocess command argument list for safety.
+
+        Ensures that the command is a non-empty list of strings and that no
+        argument contains shell metacharacters that could enable command
+        injection when passed to subprocess (even with ``shell=False``).
+
+        Args:
+            cmd: list[str]: Command and arguments to validate.
+
+        Raises:
+            ValueError: If the command list is empty, contains non-strings,
+                or contains unsafe characters.
+        """
+        if not cmd or not isinstance(cmd, list):
+            raise ValueError("Command must be a non-empty list of strings")
+
+        unsafe_chars: set[str] = {";", "&", "|", ">", "<", "`", "$", "\\", "\n", "\r"}
+
+        for arg in cmd:
+            if not isinstance(arg, str):
+                raise ValueError("All command arguments must be strings")
+            if any(ch in arg for ch in unsafe_chars):
+                raise ValueError("Unsafe character detected in command argument")
 
     def set_options(self, **kwargs) -> None:
         """Set core options.
@@ -300,10 +327,10 @@ class BaseTool(ABC):
         if tool_name in python_tools_prefer_uv:
             if shutil.which(tool_name):
                 return [tool_name]
-            if shutil.which("uv"):
-                return ["uv", "run", tool_name]
             if shutil.which("uvx"):
                 return ["uvx", tool_name]
+            if shutil.which("uv"):
+                return ["uv", "run", tool_name]
             return [tool_name]
 
         # Default: prefer direct system executable (node/binary tools like
