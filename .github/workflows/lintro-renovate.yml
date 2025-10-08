@@ -10,13 +10,15 @@ name: Maintenance - Renovate Dependencies
   workflow_dispatch: # Allow manual triggering
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   renovate:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
     concurrency:
       group: renovate-${{ github.ref }}
       cancel-in-progress: false # Don't cancel renovate runs
