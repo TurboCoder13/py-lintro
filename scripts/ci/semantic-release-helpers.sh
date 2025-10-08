@@ -42,4 +42,5 @@ merge_release_pr() {
   gh pr merge --auto --squash "$pr_number" || true
 }
 
-
+# Call the specified function with its arguments
+"$@"
