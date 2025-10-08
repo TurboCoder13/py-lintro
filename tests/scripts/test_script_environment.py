@@ -520,9 +520,9 @@ class TestScriptSecurity:
                     ]
                 ),
             )
-            assert has_validation, (
-                f"{script_name} should validate command line arguments"
-            )
+            assert (
+                has_validation
+            ), f"{script_name} should validate command line arguments"
 
     def test_scripts_use_quoted_variables(self, scripts_dir):
         """Test that scripts properly quote variables to prevent injection.
@@ -565,9 +565,9 @@ class TestScriptCompatibility:
         for script in shell_scripts:
             with open(script) as f:
                 first_line = f.readline().strip()
-            assert first_line == "#!/bin/bash", (
-                f"{script.name} should use '#!/bin/bash' shebang, found: {first_line}"
-            )
+            assert (
+                first_line == "#!/bin/bash"
+            ), f"{script.name} should use '#!/bin/bash' shebang, found: {first_line}"
 
     def test_scripts_avoid_bashisms_in_sh_context(self, scripts_dir):
         """Test that scripts avoid bash-specific features where inappropriate.

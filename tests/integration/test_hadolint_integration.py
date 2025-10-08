@@ -133,12 +133,12 @@ def test_hadolint_reports_violations_through_lintro(tmp_path):
         f"[LOG] Lintro HadolintTool found {result.issues_count} issues. "
         f"Output:\n{result.output}",
     )
-    assert not result.success, (
-        "Lintro HadolintTool should fail when violations are present."
-    )
-    assert result.issues_count > 0, (
-        "Lintro HadolintTool should report at least one issue."
-    )
+    assert (
+        not result.success
+    ), "Lintro HadolintTool should fail when violations are present."
+    assert (
+        result.issues_count > 0
+    ), "Lintro HadolintTool should report at least one issue."
     assert any(
         (code in result.output for code in ["DL", "SC"]),
     ), "Lintro HadolintTool output should contain error codes."
@@ -175,12 +175,12 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
         f"CLI Output:\n{direct_output}\n"
         f"Lintro Output:\n{result.output}"
     )
-    assert direct_success == result.success, (
-        "Success/failure mismatch between CLI and Lintro."
-    )
-    assert direct_issues == result.issues_count, (
-        "Issue count mismatch between CLI and Lintro."
-    )
+    assert (
+        direct_success == result.success
+    ), "Success/failure mismatch between CLI and Lintro."
+    assert (
+        direct_issues == result.issues_count
+    ), "Issue count mismatch between CLI and Lintro."
 
 
 @pytest.mark.hadolint

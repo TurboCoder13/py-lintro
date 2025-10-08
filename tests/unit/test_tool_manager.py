@@ -43,9 +43,7 @@ def test_tool_manager_execution_order_and_conflicts(monkeypatch):
         lambda e: (
             t1
             if e == ToolEnum.RUFF
-            else t2
-            if e == ToolEnum.PRETTIER
-            else tm.get_available_tools()[e]
+            else t2 if e == ToolEnum.PRETTIER else tm.get_available_tools()[e]
         ),
     )
     order = tm.get_tool_execution_order([ToolEnum.RUFF, ToolEnum.PRETTIER])

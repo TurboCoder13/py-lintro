@@ -100,15 +100,15 @@ def test_darglint_reports_violations_through_lintro(tmp_path):
         f"[LOG] Lintro DarglintTool found {result.issues_count} issues. "
         f"Output:\n{result.output}",
     )
-    assert not result.success, (
-        "Lintro DarglintTool should fail when violations are present."
-    )
-    assert result.issues_count > 0, (
-        "Lintro DarglintTool should report at least one issue."
-    )
-    assert "DAR" in result.output, (
-        "Lintro DarglintTool output should contain error codes."
-    )
+    assert (
+        not result.success
+    ), "Lintro DarglintTool should fail when violations are present."
+    assert (
+        result.issues_count > 0
+    ), "Lintro DarglintTool should report at least one issue."
+    assert (
+        "DAR" in result.output
+    ), "Lintro DarglintTool output should contain error codes."
 
 
 def test_darglint_output_consistency_direct_vs_lintro(tmp_path):
@@ -128,12 +128,12 @@ def test_darglint_output_consistency_direct_vs_lintro(tmp_path):
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
-    assert direct_success == result.success, (
-        "Success/failure mismatch between CLI and Lintro."
-    )
-    assert direct_issues == result.issues_count, (
-        "Issue count mismatch between CLI and Lintro."
-    )
+    assert (
+        direct_success == result.success
+    ), "Success/failure mismatch between CLI and Lintro."
+    assert (
+        direct_issues == result.issues_count
+    ), "Issue count mismatch between CLI and Lintro."
     # Optionally compare error codes if output format is stable
 
 

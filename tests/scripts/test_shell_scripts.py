@@ -61,9 +61,9 @@ class TestShellScriptSyntax:
                 capture_output=True,
                 text=True,
             )
-            assert result.returncode == 0, (
-                f"Syntax error in {script.name}: {result.stderr}"
-            )
+            assert (
+                result.returncode == 0
+            ), f"Syntax error in {script.name}: {result.stderr}"
 
     def test_scripts_are_executable(self, shell_scripts):
         """Test that all shell scripts are executable.
@@ -150,9 +150,9 @@ class TestScriptHelp:
         with open(script) as f:
             content = f.read()
         assert "Usage:" in content, "install-tools.sh should have usage documentation"
-        assert "--local" in content or "--docker" in content, (
-            "Should document command options"
-        )
+        assert (
+            "--local" in content or "--docker" in content
+        ), "Should document command options"
 
     def test_codecov_upload_help(self, scripts_dir):
         """codecov-upload.sh should provide help and exit 0.
@@ -238,9 +238,9 @@ class TestScriptFunctionality:
             capture_output=True,
             text=True,
         )
-        assert result.returncode == 0, (
-            f"Python syntax error in {script.name}: {result.stderr}"
-        )
+        assert (
+            result.returncode == 0
+        ), f"Python syntax error in {script.name}: {result.stderr}"
 
     def test_utils_script_sources_correctly(self, scripts_dir):
         """Test that utils.sh can be sourced without errors.
@@ -444,9 +444,9 @@ class TestScriptIntegration:
         if len(color_patterns) > 5:
             red_definitions = [p for p in color_patterns if p.startswith("RED=")]
             if len(set(red_definitions)) > 1:
-                assert len(red_definitions) > 0, (
-                    "Scripts should define RED color consistently"
-                )
+                assert (
+                    len(red_definitions) > 0
+                ), "Scripts should define RED color consistently"
 
     def test_script_dependencies_documented(self, scripts_dir):
         """Test that script dependencies are documented in comments.

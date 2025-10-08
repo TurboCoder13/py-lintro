@@ -134,12 +134,12 @@ def test_yamllint_reports_violations_through_lintro(tmp_path):
         f"[LOG] Lintro YamllintTool found {result.issues_count} issues. "
         f"Output:\n{result.output}",
     )
-    assert not result.success, (
-        "Lintro YamllintTool should fail when violations are present."
-    )
-    assert result.issues_count > 0, (
-        "Lintro YamllintTool should report at least one issue."
-    )
+    assert (
+        not result.success
+    ), "Lintro YamllintTool should fail when violations are present."
+    assert (
+        result.issues_count > 0
+    ), "Lintro YamllintTool should report at least one issue."
     assert result.issues, "Parsed issues list should be present"
     assert any(
         (getattr(i, "level", None) in {"error", "warning"} for i in result.issues),
