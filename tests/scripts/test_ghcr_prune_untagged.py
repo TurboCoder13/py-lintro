@@ -1,3 +1,5 @@
+"""Tests for the GHCR prune untagged utility script."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -11,12 +13,19 @@ from scripts.ci.ghcr_prune_untagged import (
 
 
 def test_version_dataclass():
+    """Construct ``GhcrVersion`` and validate fields are populated."""
     v = GhcrVersion(id=123, tags=["latest"])  # type: ignore[call-arg]
     assert v.id == 123
     assert v.tags == ["latest"]
 
 
 def test_list_container_versions_parses_minimal_structure(monkeypatch):
+    """Parse a minimal response structure into version objects.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture (not used).
+    """
+
     class DummyResp:
         def __init__(self, data: list[dict[str, Any]]):
             self._data = data
@@ -43,6 +52,11 @@ def test_list_container_versions_parses_minimal_structure(monkeypatch):
 
 
 def test_delete_version_calls_delete(monkeypatch):
+    """Call delete and ensure correct endpoint is used.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture (not used).
+    """
     calls: list[tuple[str, dict[str, str]]] = []
 
     class DummyResp:
@@ -65,6 +79,12 @@ def test_delete_version_calls_delete(monkeypatch):
 
 
 def test_delete_version_raises_on_non_204_non_404():
+    """Raise when the delete operation returns an unexpected status code.
+
+    Raises:
+        AssertionError: If the expected RuntimeError is not raised.
+    """
+
     class DummyResp:
         status_code = 500
 
@@ -87,6 +107,11 @@ def test_delete_version_raises_on_non_204_non_404():
 
 
 def test_main_deletes_only_untagged(monkeypatch):
+    """Delete only untagged versions using the main entry point.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture for environment and client.
+    """
     deleted: list[int] = []
 
     class DummyRespGet:
@@ -171,6 +196,11 @@ def test_main_deletes_only_untagged(monkeypatch):
 
 
 def test_main_respects_keep_n_and_dry_run(monkeypatch):
+    """Respect keep-N and dry-run options when pruning.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture for environment and client.
+    """
     deleted: list[int] = []
 
     class DummyRespGet:

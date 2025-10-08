@@ -236,7 +236,7 @@ echo 0.0.0
         bin_dir.mkdir()
         gh_path = bin_dir / "gh"
         existing_json = (
-            "[\n" '  {"id": 111, "body": "<!-- coverage-report -->\\nOld body"}\n' "]\n"
+            '[\n  {"id": 111, "body": "<!-- coverage-report -->\\nOld body"}\n]\n'
         )
         gh_path.write_text(
             f"""#!/usr/bin/env bash
@@ -251,7 +251,7 @@ if [[ "$1" == "api" && "$2" == repos/*/issues/comments/* && "$3" == "-X" \
   # capture body arg
   for i in "$@"; do
     if [[ "$i" == body=* ]]; then echo "$i"; fi
-  done > "{(work / 'patch_out.txt').as_posix()}"
+  done > "{(work / "patch_out.txt").as_posix()}"
   exit 0
 fi
 echo gh-mock-unhandled >&2
@@ -261,7 +261,7 @@ exit 1
         gh_path.chmod(0o755)
 
         env = {
-            "PATH": f"{bin_dir}:{os.environ.get('PATH','')}",
+            "PATH": f"{bin_dir}:{os.environ.get('PATH', '')}",
             "PR_NUMBER": "123",
             "GITHUB_TOKEN": "t",
             "GITHUB_REPOSITORY": "o/r",

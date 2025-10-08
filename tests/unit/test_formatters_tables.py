@@ -1,3 +1,5 @@
+"""Unit tests for table descriptors and issue formatters for tools."""
+
 from __future__ import annotations
 
 from assertpy import assert_that
@@ -25,6 +27,11 @@ from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 
 
 def test_darglint_table_and_formatting(tmp_path):
+    """Validate Darglint table layout and grid formatting.
+
+    Args:
+        tmp_path: Temporary directory used to fabricate file paths.
+    """
     issues = [
         DarglintIssue(file=str(tmp_path / "f.py"), line=1, code="D100", message="m"),
     ]
@@ -37,6 +44,11 @@ def test_darglint_table_and_formatting(tmp_path):
 
 
 def test_prettier_table_and_formatting(tmp_path):
+    """Validate Prettier table layout and plain formatting.
+
+    Args:
+        tmp_path: Temporary directory used to fabricate file paths.
+    """
     issues = [
         PrettierIssue(
             file=str(tmp_path / "f.js"),
@@ -57,6 +69,11 @@ def test_prettier_table_and_formatting(tmp_path):
 
 
 def test_ruff_table_and_formatting(tmp_path):
+    """Validate Ruff table layout and grid formatting for issues.
+
+    Args:
+        tmp_path: Temporary directory used to fabricate file paths.
+    """
     issues = [
         RuffIssue(
             file=str(tmp_path / "f.py"),
@@ -79,6 +96,11 @@ def test_ruff_table_and_formatting(tmp_path):
 
 
 def test_hadolint_table_and_formatting(tmp_path):
+    """Validate Hadolint table layout and markdown formatting.
+
+    Args:
+        tmp_path: Temporary directory used to fabricate file paths.
+    """
     issues = [
         HadolintIssue(
             file=str(tmp_path / "Dockerfile"),

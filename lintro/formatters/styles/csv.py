@@ -1,3 +1,5 @@
+"""CSV output style implementation."""
+
 import csv
 import io
 from typing import Any

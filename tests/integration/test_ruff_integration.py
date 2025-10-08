@@ -360,8 +360,7 @@ class TestRuffTool:
         assert_that(result.issues and len(result.issues) > 0).is_true()
 
     def test_fmt_fixes_violations(self, ruff_tool, ruff_violation_file):
-        """
-        Test that applying format/fix to a file with violations improves the file.
+        """Apply fix to a file and expect fewer or equal issues after.
 
         Args:
             ruff_tool: RuffTool fixture instance.

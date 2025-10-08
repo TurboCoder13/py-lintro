@@ -6,6 +6,8 @@ from enum import StrEnum, auto
 
 
 class HadolintFormat(StrEnum):
+    """Supported output formats for Hadolint."""
+
     TTY = auto()
     JSON = auto()
     CHECKSTYLE = auto()
@@ -18,6 +20,8 @@ class HadolintFormat(StrEnum):
 
 
 class HadolintFailureThreshold(StrEnum):
+    """Hadolint failure thresholds used to gate exit status."""
+
     ERROR = auto()
     WARNING = auto()
     INFO = auto()
@@ -27,6 +31,15 @@ class HadolintFailureThreshold(StrEnum):
 
 
 def normalize_hadolint_format(value: str | HadolintFormat) -> HadolintFormat:
+    """Normalize user input to a HadolintFormat.
+
+    Args:
+        value: Existing enum member or string name of the format.
+
+    Returns:
+        HadolintFormat: Canonical enum value, defaulting to ``TTY`` when
+        parsing fails.
+    """
     if isinstance(value, HadolintFormat):
         return value
     try:
@@ -38,6 +51,15 @@ def normalize_hadolint_format(value: str | HadolintFormat) -> HadolintFormat:
 def normalize_hadolint_threshold(
     value: str | HadolintFailureThreshold,
 ) -> HadolintFailureThreshold:
+    """Normalize user input to a HadolintFailureThreshold.
+
+    Args:
+        value: Existing enum member or string name of the threshold.
+
+    Returns:
+        HadolintFailureThreshold: Canonical enum value, defaulting to ``INFO``
+        when parsing fails.
+    """
     if isinstance(value, HadolintFailureThreshold):
         return value
     try:

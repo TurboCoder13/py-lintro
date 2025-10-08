@@ -1,3 +1,5 @@
+"""Integration tests validating Ruff/Black policy behavior."""
+
 from __future__ import annotations
 
 import os

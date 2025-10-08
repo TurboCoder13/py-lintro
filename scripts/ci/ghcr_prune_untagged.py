@@ -37,7 +37,6 @@ def get_repo_owner_repo() -> tuple[str, str]:
     Returns:
         tuple[str, str]: owner and repo.
     """
-
     repo = os.environ.get("GITHUB_REPOSITORY", "TurboCoder13/py-lintro")
     owner, name = repo.split("/", 1)
     return owner, name
@@ -53,7 +52,6 @@ def list_container_versions(client: httpx.Client, owner: str) -> list[GhcrVersio
     Returns:
         list[GhcrVersion]: Version entries.
     """
-
     # User package API path
     url = (
         f"https://api.github.com/users/{owner}/packages/container/py-lintro/versions"
@@ -79,7 +77,6 @@ def delete_version(client: httpx.Client, owner: str, version_id: int) -> None:
         owner: Repository owner (user/org).
         version_id: GHCR version id to delete.
     """
-
     url = (
         f"https://api.github.com/users/{owner}/packages/container/py-lintro/versions/"
         f"{version_id}"
@@ -96,7 +93,6 @@ def main() -> int:
     Returns:
         int: Process exit code.
     """
-
     token = os.environ.get("GITHUB_TOKEN")
     if not token:
         logger.error("GITHUB_TOKEN is required")

@@ -1,3 +1,5 @@
+"""Unit tests for lintro configuration loaders from pyproject.toml."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,6 +10,12 @@ from lintro.utils.config import load_lintro_tool_config
 
 
 def test_load_lintro_tool_config(tmp_path: Path, monkeypatch):
+    """Load tool-specific config sections from pyproject.
+
+    Args:
+        tmp_path: Temporary directory for pyproject creation.
+        monkeypatch: Pytest monkeypatch to chdir into temp dir.
+    """
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
         (

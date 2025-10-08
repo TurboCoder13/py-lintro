@@ -256,9 +256,7 @@ def test_extract_comment_body_paginated(
     )
 
     expected_body = (
-        "<!-- test-marker -->\n\n"
-        "Paginated response with marker\n\n"
-        "Test content here."
+        "<!-- test-marker -->\n\nPaginated response with marker\n\nTest content here."
     )
 
     assert_that(result.stdout).is_equal_to(expected_body)

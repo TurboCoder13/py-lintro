@@ -6,6 +6,7 @@ from lintro.tools.implementations.tool_bandit import BanditTool
 
 
 def test_build_check_command_basic() -> None:
+    """Build a basic bandit check command and verify core flags are set."""
     tool = BanditTool()
     cmd = tool._build_check_command(["a.py"])
     assert_that(cmd[0:3]).contains("bandit")
@@ -16,6 +17,7 @@ def test_build_check_command_basic() -> None:
 
 
 def test_build_check_command_with_severity_confidence() -> None:
+    """Include severity and confidence options in the bandit command."""
     tool = BanditTool()
     tool.set_options(severity="HIGH", confidence="MEDIUM")
     cmd = tool._build_check_command(["a.py"])
@@ -24,6 +26,7 @@ def test_build_check_command_with_severity_confidence() -> None:
 
 
 def test_build_check_command_with_various_options() -> None:
+    """Include a wide range of options in the constructed bandit command."""
     tool = BanditTool()
     tool.set_options(
         tests="B101,B102",

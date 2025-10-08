@@ -1,3 +1,5 @@
+"""Unit tests for BaseTool subprocess wrapper behaviors."""
+
 from __future__ import annotations
 
 import subprocess
@@ -29,10 +31,20 @@ class _DummyTool(BaseTool):
 
 @pytest.fixture()
 def tool() -> _DummyTool:
+    """Provide a dummy tool instance for subprocess wrapper tests.
+
+    Returns:
+        _DummyTool: Configured dummy tool instance.
+    """
     return _DummyTool(name="dummy", description="dummy", can_fix=False)
 
 
 def test_run_subprocess_file_not_found(tool: _DummyTool) -> None:
+    """Raise FileNotFoundError when command is not found.
+
+    Args:
+        tool: Dummy tool instance used to invoke subprocess wrapper.
+    """
     with pytest.raises(FileNotFoundError) as exc:
         tool._run_subprocess(["this-command-should-not-exist-xyz"])
     assert "Command not found:" in str(exc.value)
@@ -42,6 +54,13 @@ def test_run_subprocess_timeout(
     tool: _DummyTool,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Raise TimeoutExpired when subprocess exceeds timeout.
+
+    Args:
+        tool: Dummy tool instance.
+        monkeypatch: Pytest monkeypatch to stub subprocess.
+    """
+
     def _raise_timeout(*_a, **_k):
         raise subprocess.TimeoutExpired(cmd=["echo"], timeout=0.01)
 
@@ -54,6 +73,13 @@ def test_run_subprocess_called_process_error(
     tool: _DummyTool,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Raise CalledProcessError when subprocess fails with error.
+
+    Args:
+        tool: Dummy tool instance.
+        monkeypatch: Pytest monkeypatch to stub subprocess.
+    """
+
     def _raise_cpe(*_a, **_k):
         raise subprocess.CalledProcessError(
             returncode=1,

@@ -1,3 +1,5 @@
+"""Unit tests for ASCII art normalization helpers."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,6 +10,7 @@ from lintro.utils.formatting import normalize_ascii_block, normalize_ascii_file_
 
 
 def test_normalize_ascii_block_center_and_alignments():
+    """Normalize ASCII blocks across horizontal/vertical alignments."""
     src = ["XX", "XXXX", "X"]
     out = normalize_ascii_block(
         src,
@@ -26,6 +29,11 @@ def test_normalize_ascii_block_center_and_alignments():
 
 
 def test_normalize_ascii_file_sections(tmp_path: Path):
+    """Normalize sections from a file and enforce width/height constraints.
+
+    Args:
+        tmp_path: Temporary directory path provided by pytest.
+    """
     p = tmp_path / "art.txt"
     p.write_text("A\nAA\n\nBBB\nB\n", encoding="utf-8")
     sections = normalize_ascii_file_sections(p, width=6, height=3)

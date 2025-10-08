@@ -1,8 +1,19 @@
+"""Output style abstraction for rendering tabular data.
+
+Defines a minimal interface consumed by format-specific implementations.
+"""
+
 from abc import ABC, abstractmethod
 from typing import Any
 
 
 class OutputStyle(ABC):
+    """Abstract base class for output style renderers.
+
+    Implementations convert tabular data into a concrete textual
+    representation (e.g., grid, markdown, plain).
+    """
+
     @abstractmethod
     def format(
         self,

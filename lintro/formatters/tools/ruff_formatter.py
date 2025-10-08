@@ -21,13 +21,28 @@ FORMAT_MAP = {
 
 
 class RuffTableDescriptor(TableDescriptor):
+    """Describe columns and rows for Ruff issues."""
+
     def get_columns(self) -> list[str]:
+        """Return ordered column headers for the Ruff table.
+
+        Returns:
+            list[str]: Column names for the formatted table.
+        """
         return ["File", "Line", "Column", "Code", "Message"]
 
     def get_rows(
         self,
         issues: list[RuffIssue | RuffFormatIssue],
     ) -> list[list[str]]:
+        """Return rows for the Ruff issues table.
+
+        Args:
+            issues: Parsed Ruff issues to render.
+
+        Returns:
+            list[list[str]]: Table rows with normalized file path and fields.
+        """
         rows = []
         for issue in issues:
             if isinstance(issue, RuffIssue):
@@ -69,7 +84,7 @@ def format_ruff_issues(
         format: Output format (plain, grid, markdown, html, json, csv).
 
     Returns:
-        Formatted string (one or two tables depending on format).
+        str: Formatted string (one or two tables depending on format).
     """
     descriptor = RuffTableDescriptor()
     formatter = FORMAT_MAP.get(format, GridStyle())

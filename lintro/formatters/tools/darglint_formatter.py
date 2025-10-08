@@ -21,13 +21,28 @@ FORMAT_MAP = {
 
 
 class DarglintTableDescriptor(TableDescriptor):
+    """Describe columns and rows for Darglint issues."""
+
     def get_columns(self) -> list[str]:
+        """Return column headers for the Darglint issues table.
+
+        Returns:
+            list[str]: Column names for the formatted table.
+        """
         return ["File", "Line", "Code", "Message"]
 
     def get_rows(
         self,
         issues: list[DarglintIssue],
     ) -> list[list[str]]:
+        """Return rows for the Darglint table.
+
+        Args:
+            issues: Parsed Darglint issues to format.
+
+        Returns:
+            list[list[str]]: Table rows with normalized path, line, code, message.
+        """
         rows = []
         for issue in issues:
             rows.append(
@@ -52,7 +67,7 @@ def format_darglint_issues(
         format: Output format (plain, grid, markdown, html, json, csv).
 
     Returns:
-        Formatted string representation of the issues.
+        str: Formatted string representation of the issues.
     """
     descriptor = DarglintTableDescriptor()
     columns = descriptor.get_columns()

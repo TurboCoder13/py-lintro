@@ -1,3 +1,5 @@
+"""Unit tests for `OutputManager` write helpers and report generation."""
+
 import csv
 import json
 import shutil
@@ -13,12 +15,27 @@ from lintro.utils.output_manager import OutputManager
 
 @pytest.fixture
 def temp_output_dir():
+    """Provide a temporary directory path and clean up afterwards.
+
+    Yields:
+        str: Path to a temporary directory for test outputs.
+    """
     d = tempfile.mkdtemp()
     yield d
     shutil.rmtree(d)
 
 
 def make_tool_result(name, issues_count=0, issues=None):
+    """Factory for tool-like result objects used in report tests.
+
+    Args:
+        name: Tool name.
+        issues_count: Total issues count.
+        issues: Optional list of issues.
+
+    Returns:
+        SimpleNamespace with name, issues_count, output, and issues.
+    """
     return SimpleNamespace(
         name=name,
         issues_count=issues_count,
@@ -28,6 +45,17 @@ def make_tool_result(name, issues_count=0, issues=None):
 
 
 def make_issue(file, line, code, message):
+    """Factory for issue-like objects used in report tests.
+
+    Args:
+        file: File path.
+        line: Line number.
+        code: Issue code.
+        message: Description.
+
+    Returns:
+        SimpleNamespace with file, line, code, and message.
+    """
     return SimpleNamespace(file=file, line=line, code=code, message=message)
 
 

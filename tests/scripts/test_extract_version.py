@@ -1,3 +1,5 @@
+"""Tests for the extract-version utility script."""
+
 from __future__ import annotations
 
 import subprocess
@@ -7,10 +9,24 @@ from assertpy import assert_that
 
 
 def run(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    """Run a command and capture output for assertions.
+
+    Args:
+        cmd: Command and arguments to execute.
+        cwd: Working directory for the command.
+
+    Returns:
+        CompletedProcess[str]: Completed process with stdout/stderr.
+    """
     return subprocess.run(cmd, cwd=cwd, text=True, capture_output=True, check=False)
 
 
 def test_extract_version_from_repo_root(tmp_path: Path) -> None:
+    """Extract version with default file from repo root copy.
+
+    Args:
+        tmp_path: Temporary directory provided by pytest.
+    """
     repo_root = Path(__file__).resolve().parents[2]
     src = repo_root / "pyproject.toml"
     dst = tmp_path / "pyproject.toml"
@@ -23,6 +39,11 @@ def test_extract_version_from_repo_root(tmp_path: Path) -> None:
 
 
 def test_extract_version_with_custom_file(tmp_path: Path) -> None:
+    """Extract version when a custom TOML file is provided.
+
+    Args:
+        tmp_path: Temporary directory provided by pytest.
+    """
     toml = tmp_path / "custom.toml"
     toml.write_text('\n[project]\nversion = "9.9.9"\n'.strip(), encoding="utf-8")
     repo_root = Path(__file__).resolve().parents[2]

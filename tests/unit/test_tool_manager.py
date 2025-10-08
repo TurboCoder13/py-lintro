@@ -1,3 +1,5 @@
+"""Unit tests for ToolManager registration and resolution behavior."""
+
 from __future__ import annotations
 
 import pytest
@@ -8,6 +10,7 @@ from lintro.tools.tool_enum import ToolEnum
 
 
 def test_tool_manager_register_and_get_tools():
+    """Register all tools and validate discovery and accessors."""
     tm = ToolManager()
     for enum_member in ToolEnum:
         tm.register_tool(enum_member.value)
@@ -22,6 +25,11 @@ def test_tool_manager_register_and_get_tools():
 
 
 def test_tool_manager_execution_order_and_conflicts(monkeypatch):
+    """Honor conflicts in execution order unless ignore_conflicts is set.
+
+    Args:
+        monkeypatch: Pytest fixture to adjust tool resolver behavior.
+    """
     tm = ToolManager()
     for enum_member in ToolEnum:
         tm.register_tool(enum_member.value)
@@ -50,6 +58,7 @@ def test_tool_manager_execution_order_and_conflicts(monkeypatch):
 
 
 def test_tool_manager_get_tool_missing():
+    """Raise ValueError when attempting to get an unregistered tool."""
     tm = ToolManager()
     with pytest.raises(ValueError):
         tm.get_tool(ToolEnum.RUFF)

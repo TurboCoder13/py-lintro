@@ -19,6 +19,11 @@ class YamllintTableDescriptor(TableDescriptor):
     """Describe yamllint issue columns and row extraction."""
 
     def get_columns(self) -> list[str]:
+        """Return ordered column headers for the Yamllint table.
+
+        Returns:
+            list[str]: Column names for the formatted table.
+        """
         return [
             "File",
             "Line",
@@ -32,6 +37,14 @@ class YamllintTableDescriptor(TableDescriptor):
         self,
         issues: list[YamllintIssue],
     ) -> list[list[Any]]:
+        """Return rows for the Yamllint issues table.
+
+        Args:
+            issues: Parsed Yamllint issues to render.
+
+        Returns:
+            list[list[Any]]: Table rows with normalized file path and fields.
+        """
         rows: list[list[Any]] = []
         for issue in issues:
             rows.append(
@@ -61,7 +74,7 @@ def format_yamllint_issues(
         tool_name: Tool name for JSON metadata.
 
     Returns:
-        Rendered string for the issues table.
+        str: Rendered string for the issues table.
     """
     descriptor = YamllintTableDescriptor()
     columns = descriptor.get_columns()
