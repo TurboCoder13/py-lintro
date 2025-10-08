@@ -65,7 +65,7 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 
 [tool.ruff.lint]
-select = [ "E", "F", "W", "I", "COM", "D",]
+select = [ "E", "F", "W", "I", "COM", "D", "UP",]
 ignore = []
 
 [tool.ruff.pydocstyle]

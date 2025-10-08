@@ -109,6 +109,6 @@ def list_tools(
                 f.write(output_text + "\n")
             success_msg = f"Output written to: {output}"
             click.echo(success_msg)
-        except IOError as e:
+        except OSError as e:
             error_msg = f"Error writing to file {output}: {e}"
             click.echo(error_msg, err=True)

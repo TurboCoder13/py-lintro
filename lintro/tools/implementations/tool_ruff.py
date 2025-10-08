@@ -59,7 +59,7 @@ def _load_lintro_ignore() -> list[str]:
 
     if lintro_ignore_path.exists():
         try:
-            with open(lintro_ignore_path, "r", encoding="utf-8") as f:
+            with open(lintro_ignore_path, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     # Skip empty lines and comments

@@ -469,7 +469,7 @@ class TestScriptSecurity:
         shell_scripts = list(scripts_dir.glob("*.sh"))
         dangerous_patterns = ["eval ", "exec ", "$(curl", "| sh", "| bash"]
         for script in shell_scripts:
-            with open(script, "r") as f:
+            with open(script) as f:
                 content = f.read()
             for pattern in dangerous_patterns:
                 if pattern in content:
@@ -505,7 +505,7 @@ class TestScriptSecurity:
             script = scripts_dir / script_name
             if not script.exists():
                 continue
-            with open(script, "r") as f:
+            with open(script) as f:
                 content = f.read()
             has_validation = any(
                 (
@@ -532,14 +532,14 @@ class TestScriptSecurity:
         """
         shell_scripts = list(scripts_dir.glob("*.sh"))
         for script in shell_scripts:
-            with open(script, "r") as f:
+            with open(script) as f:
                 content = f.read()
             lines = content.split("\n")
             for i, line in enumerate(lines, 1):
                 if line.strip().startswith("#"):
                     continue
                 if " $1" in line and '"$1"' not in line and ("'$1'" not in line):
-                    if not any((safe in line for safe in ["[$1]", "=$1", "shift"])):
+                    if not any(safe in line for safe in ["[$1]", "=$1", "shift"]):
                         pass
 
 
@@ -563,7 +563,7 @@ class TestScriptCompatibility:
         """
         shell_scripts = list(scripts_dir.glob("*.sh"))
         for script in shell_scripts:
-            with open(script, "r") as f:
+            with open(script) as f:
                 first_line = f.readline().strip()
             assert (
                 first_line == "#!/bin/bash"
@@ -577,10 +577,10 @@ class TestScriptCompatibility:
         """
         shell_scripts = list(scripts_dir.glob("*.sh"))
         for script in shell_scripts:
-            with open(script, "r") as f:
+            with open(script) as f:
                 first_line = f.readline().strip()
             if first_line == "#!/bin/sh":
-                with open(script, "r") as f:
+                with open(script) as f:
                     content = f.read()
                 bash_features = ["[[", "function ", "$(", "source "]
                 for feature in bash_features:
@@ -599,7 +599,7 @@ class TestScriptCompatibility:
             f for f in scripts_dir.glob("*.py") if f.name != "__init__.py"
         ]
         for script in python_scripts:
-            with open(script, "r") as f:
+            with open(script) as f:
                 first_line = f.readline().strip()
             assert first_line in [
                 "#!/usr/bin/env python3",

@@ -162,5 +162,5 @@ def test_write_reports_from_results(temp_output_dir):
     with open(csv_path) as f:
         reader = list(csv.reader(f))
     assert_that(reader[0][:2]).is_equal_to(["tool", "issues_count"])
-    assert_that(any(("tool1" in row for row in reader))).is_true()
-    assert_that(any(("foo.py" in row for row in reader))).is_true()
+    assert_that(any("tool1" in row for row in reader)).is_true()
+    assert_that(any("foo.py" in row for row in reader)).is_true()

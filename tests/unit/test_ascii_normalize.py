@@ -20,7 +20,7 @@ def test_normalize_ascii_block_center_and_alignments():
         valign="middle",
     )
     assert_that(len(out)).is_equal_to(5)
-    assert_that(all((len(line) == 10 for line in out))).is_true()
+    assert_that(all(len(line) == 10 for line in out)).is_true()
     assert_that({"XX", "XXXX", "X"}).contains(out[2].strip())
     left = normalize_ascii_block(["X"], width=5, height=1, align="left")
     right = normalize_ascii_block(["X"], width=5, height=1, align="right")
@@ -40,4 +40,4 @@ def test_normalize_ascii_file_sections(tmp_path: Path):
     assert_that(len(sections)).is_equal_to(2)
     for sec in sections:
         assert_that(len(sec)).is_equal_to(3)
-        assert_that(all((len(line) == 6 for line in sec))).is_true()
+        assert_that(all(len(line) == 6 for line in sec)).is_true()

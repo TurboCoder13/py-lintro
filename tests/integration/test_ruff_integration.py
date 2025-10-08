@@ -91,7 +91,7 @@ def temp_python_file(request):
         f.flush()
         file_path = f.name
     print(f"[DEBUG] temp_python_file path: {file_path}")
-    with open(file_path, "r") as debug_f:
+    with open(file_path) as debug_f:
         print("[DEBUG] temp_python_file contents:")
         print(debug_f.read())
 
@@ -408,7 +408,7 @@ class TestRuffTool:
                         line
                         for line in result.stdout.splitlines()
                         if ":" in line
-                        and any((code in line for code in ["E", "F", "I", "W"]))
+                        and any(code in line for code in ["E", "F", "I", "W"])
                     ],
                 )
         lintro_result = tool.check([ruff_violation_file])
@@ -424,8 +424,8 @@ class TestRuffTool:
             else 0
         )
         logger.info(
-            "[LOG] CLI issues: %s, Lintro lint issues: %s"
-            % (direct_issues, lintro_lint_issues),
+            f"[LOG] CLI issues: {direct_issues}, "
+            f"Lintro lint issues: {lintro_lint_issues}",
         )
         assert direct_issues == lintro_lint_issues, (
             "Issue count mismatch: "

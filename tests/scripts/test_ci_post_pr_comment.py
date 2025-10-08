@@ -278,7 +278,7 @@ def test_script_has_proper_shebang(ci_script_path: Path) -> None:
     Args:
         ci_script_path (Path): Path to the script being tested.
     """
-    with open(ci_script_path, "r") as f:
+    with open(ci_script_path) as f:
         first_line = f.readline().strip()
 
     assert_that(first_line).starts_with("#!/bin/bash")

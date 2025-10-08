@@ -39,15 +39,15 @@ def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
     print(f"[DEBUG] hadolint version: {version_result.stdout}")
     cmd = ["hadolint", "--no-color", "-f", "tty", str(file_path)]
     print(f"[DEBUG] Running hadolint command: {' '.join(cmd)}")
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         print(f"[DEBUG] File contents for {file_path}:")
         print(f.read())
     with tempfile.TemporaryDirectory() as temp_home:
         env = os.environ.copy()
         env["HOME"] = temp_home
         print(
-            "[DEBUG] Subprocess environment: HOME=%s, PATH=%s"
-            % (env.get("HOME"), env.get("PATH")),
+            f"[DEBUG] Subprocess environment: HOME={env.get('HOME')}, "
+            f"PATH={env.get('PATH')}",
         )
         print(f"[DEBUG] Subprocess CWD: {file_path.parent}")
         print(f"[DEBUG] Subprocess full env: {env}")
@@ -61,7 +61,7 @@ def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
         )
     issues = []
     for line in result.stdout.splitlines():
-        if any((level in line for level in ["error:", "warning:", "info:", "style:"])):
+        if any(level in line for level in ["error:", "warning:", "info:", "style:"]):
             issues.append(line)
     issues_count = len(issues)
     success = issues_count == 0 and result.returncode == 0
@@ -101,8 +101,8 @@ def test_hadolint_reports_violations_direct(tmp_path):
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
-        "[DEBUG] Environment: HOME=%s, PATH=%s"
-        % (os.environ.get("HOME"), os.environ.get("PATH")),
+        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
+        f"PATH={os.environ.get('PATH')}",
     )
     logger.info("[TEST] Running hadolint directly on sample file...")
     success, output, issues = run_hadolint_directly(sample_file)
@@ -130,8 +130,8 @@ def test_hadolint_reports_violations_through_lintro(tmp_path):
     tool.set_options(no_color=True, format="tty")
     result = tool.check([str(sample_file)])
     logger.info(
-        "[LOG] Lintro HadolintTool found %s issues. Output:\n%s"
-        % (result.issues_count, result.output),
+        f"[LOG] Lintro HadolintTool found {result.issues_count} issues. "
+        f"Output:\n{result.output}",
     )
     assert (
         not result.success
@@ -159,8 +159,8 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
     print(f"[DEBUG] CWD: {os.getcwd()}")
     print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
     print(
-        "[DEBUG] Environment: HOME=%s, PATH=%s"
-        % (os.environ.get("HOME"), os.environ.get("PATH")),
+        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
+        f"PATH={os.environ.get('PATH')}",
     )
     logger.info("[TEST] Comparing hadolint CLI and Lintro HadolintTool outputs...")
     tool = HadolintTool()
@@ -170,13 +170,10 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
-    assert (
-        direct_issues == result.issues_count
-    ), "Mismatch: CLI=%s, Lintro=%s\nCLI Output:\n%s\nLintro Output:\n%s" % (
-        direct_issues,
-        result.issues_count,
-        direct_output,
-        result.output,
+    assert direct_issues == result.issues_count, (
+        f"Mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
+        f"CLI Output:\n{direct_output}\n"
+        f"Lintro Output:\n{result.output}"
     )
     assert (
         direct_success == result.success

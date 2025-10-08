@@ -44,7 +44,7 @@ class TestShellScriptSyntax:
             shell_scripts: List of shell script file paths.
         """
         for script in shell_scripts:
-            with open(script, "r") as f:
+            with open(script) as f:
                 first_line = f.readline().strip()
             assert first_line.startswith("#!"), f"{script.name} missing shebang"
             assert "bash" in first_line, f"{script.name} should use bash"
@@ -89,7 +89,7 @@ class TestShellScriptSyntax:
         ]
         for script in shell_scripts:
             if script.name in critical_scripts:
-                with open(script, "r") as f:
+                with open(script) as f:
                     content = f.read()
                 assert "set -e" in content, f"{script.name} should use 'set -e'"
 
@@ -147,7 +147,7 @@ class TestScriptHelp:
             scripts_dir: Path to the scripts directory.
         """
         script = scripts_dir / "utils" / "install-tools.sh"
-        with open(script, "r") as f:
+        with open(script) as f:
             content = f.read()
         assert "Usage:" in content, "install-tools.sh should have usage documentation"
         assert (
@@ -274,7 +274,7 @@ class TestScriptFunctionality:
         for script_name in docker_scripts:
             script = scripts_dir / script_name
             if script.exists():
-                with open(script, "r") as f:
+                with open(script) as f:
                     content = f.read()
                 assert any(
                     (
@@ -378,7 +378,7 @@ class TestScriptIntegration:
             if p.name != "semantic-release-compute-next.sh"
         ]
         for script in ci_scripts:
-            with open(script, "r") as f:
+            with open(script) as f:
                 content = f.read()
             if "run-tests.sh" in content:
                 assert_that((scripts_dir / "run-tests.sh").exists()).is_true()
@@ -433,7 +433,7 @@ class TestScriptIntegration:
         shell_scripts = list(scripts_dir.glob("*.sh"))
         color_patterns = []
         for script in shell_scripts:
-            with open(script, "r") as f:
+            with open(script) as f:
                 content = f.read()
             if "RED=" in content and "GREEN=" in content:
                 for line in content.split("\n"):
@@ -458,7 +458,7 @@ class TestScriptIntegration:
         for script_name in critical_scripts:
             script = scripts_dir / script_name
             if script.exists():
-                with open(script, "r") as f:
+                with open(script) as f:
                     lines = [f.readline() for _ in range(20)]
                     header = "".join(lines)
                 assert any(
