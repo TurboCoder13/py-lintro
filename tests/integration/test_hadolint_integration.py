@@ -69,7 +69,7 @@ def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
 
 
 @pytest.mark.hadolint
-def test_hadolint_available():
+def test_hadolint_available() -> None:
     """Check if hadolint is available in PATH."""
     try:
         result = subprocess.run(
@@ -85,7 +85,7 @@ def test_hadolint_available():
 
 
 @pytest.mark.hadolint
-def test_hadolint_reports_violations_direct(tmp_path):
+def test_hadolint_reports_violations_direct(tmp_path) -> None:
     """Hadolint CLI: Should detect and report violations in a sample file.
 
     Args:
@@ -115,7 +115,7 @@ def test_hadolint_reports_violations_direct(tmp_path):
 
 
 @pytest.mark.hadolint
-def test_hadolint_reports_violations_through_lintro(tmp_path):
+def test_hadolint_reports_violations_through_lintro(tmp_path) -> None:
     """Lintro HadolintTool: Should detect and report violations in a sample file.
 
     Args:
@@ -145,7 +145,7 @@ def test_hadolint_reports_violations_through_lintro(tmp_path):
 
 
 @pytest.mark.hadolint
-def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
+def test_hadolint_output_consistency_direct_vs_lintro(tmp_path) -> None:
     """Hadolint CLI vs Lintro: Should produce consistent results for the same file.
 
     Args:
@@ -184,7 +184,7 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path):
 
 
 @pytest.mark.hadolint
-def test_hadolint_with_ignore_rules(tmp_path):
+def test_hadolint_with_ignore_rules(tmp_path) -> None:
     """Lintro HadolintTool: Should properly ignore specified rules.
 
     Args:
@@ -206,7 +206,7 @@ def test_hadolint_with_ignore_rules(tmp_path):
 
 
 @pytest.mark.hadolint
-def test_hadolint_fix_method_not_implemented(tmp_path):
+def test_hadolint_fix_method_not_implemented(tmp_path) -> None:
     """Lintro HadolintTool: .fix() should raise NotImplementedError.
 
     Args:
@@ -225,7 +225,7 @@ def test_hadolint_fix_method_not_implemented(tmp_path):
 
 
 @pytest.mark.hadolint
-def test_hadolint_empty_directory(tmp_path):
+def test_hadolint_empty_directory(tmp_path) -> None:
     """Lintro HadolintTool: Should handle empty directories gracefully.
 
     Args:
@@ -243,7 +243,7 @@ def test_hadolint_empty_directory(tmp_path):
 
 
 @pytest.mark.hadolint
-def test_hadolint_parser_validation(tmp_path):
+def test_hadolint_parser_validation(tmp_path) -> None:
     """Test that hadolint parser correctly parses output.
 
     Args:

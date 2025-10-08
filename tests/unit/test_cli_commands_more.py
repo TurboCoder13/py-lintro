@@ -10,7 +10,7 @@ from lintro.cli_utils.commands.format import format_code
 from lintro.cli_utils.commands.list_tools import list_tools_command
 
 
-def test_check_invokes_executor(monkeypatch):
+def test_check_invokes_executor(monkeypatch) -> None:
     """Invoke check subcommand and verify executor receives parameters.
 
     Args:
@@ -19,7 +19,7 @@ def test_check_invokes_executor(monkeypatch):
     calls = {}
     import lintro.cli_utils.commands.check as check_mod
 
-    def fake_run(**kwargs):
+    def fake_run(**kwargs) -> int:
         calls.update(kwargs)
         return 0
 
@@ -30,7 +30,7 @@ def test_check_invokes_executor(monkeypatch):
     assert_that(calls.get("action")).is_equal_to("check")
 
 
-def test_format_invokes_executor(monkeypatch):
+def test_format_invokes_executor(monkeypatch) -> None:
     """Invoke format subcommand and verify executor receives parameters.
 
     Args:
@@ -39,7 +39,7 @@ def test_format_invokes_executor(monkeypatch):
     calls = {}
     import lintro.cli_utils.commands.format as format_mod
 
-    def fake_run(**kwargs):
+    def fake_run(**kwargs) -> int:
         calls.update(kwargs)
         return 0
 
@@ -50,7 +50,7 @@ def test_format_invokes_executor(monkeypatch):
     assert_that(calls.get("action")).is_equal_to("fmt")
 
 
-def test_list_tools_outputs(monkeypatch):
+def test_list_tools_outputs(monkeypatch) -> None:
     """Run list-tools command and validate expected text in output.
 
     Args:

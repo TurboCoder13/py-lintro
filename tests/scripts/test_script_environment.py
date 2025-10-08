@@ -35,7 +35,7 @@ class TestEnvironmentHandling:
         """
         return {"PATH": "/usr/bin:/bin", "HOME": "/tmp", "USER": "testuser"}
 
-    def test_local_test_handles_missing_uv(self, scripts_dir, clean_env):
+    def test_local_test_handles_missing_uv(self, scripts_dir, clean_env) -> None:
         """Test local-test.sh behavior when uv is not available.
 
         Args:
@@ -53,7 +53,11 @@ class TestEnvironmentHandling:
         assert_that(result.returncode).is_equal_to(0)
         assert_that(result.stdout).contains("Usage:")
 
-    def test_bootstrap_env_installs_uv_via_gh_offline(self, scripts_dir, tmp_path):
+    def test_bootstrap_env_installs_uv_via_gh_offline(
+        self,
+        scripts_dir,
+        tmp_path,
+    ) -> None:
         """bootstrap-env.sh should install uv via gh assets without network.
 
         Mocks `gh release view` and `gh release download` to simulate a release
@@ -152,7 +156,7 @@ echo 0.0.0
         )
         assert_that(uv_check.returncode).is_equal_to(0)
 
-    def test_scripts_handle_docker_missing(self, scripts_dir, clean_env):
+    def test_scripts_handle_docker_missing(self, scripts_dir, clean_env) -> None:
         """Test Docker scripts behavior when Docker is not available.
 
         Args:
@@ -183,7 +187,11 @@ echo 0.0.0
             ).is_true()
 
     @pytest.mark.slow
-    def test_install_tools_handles_missing_dependencies(self, scripts_dir, clean_env):
+    def test_install_tools_handles_missing_dependencies(
+        self,
+        scripts_dir,
+        clean_env,
+    ) -> None:
         """Test install-tools.sh behavior with missing dependencies.
 
         Args:
@@ -201,7 +209,7 @@ echo 0.0.0
         )
         assert_that(result.returncode).is_not_none()
 
-    def test_ci_post_pr_comment_merges_existing_by_marker(self, tmp_path):
+    def test_ci_post_pr_comment_merges_existing_by_marker(self, tmp_path) -> None:
         """ci-post-pr-comment should update an existing comment by marker.
 
         Mocks `gh api` to return a JSON array with an existing comment body that
@@ -296,7 +304,7 @@ class TestScriptErrorHandling:
         """
         return Path(__file__).parent.parent.parent / "scripts"
 
-    def test_extract_coverage_handles_missing_file(self, scripts_dir):
+    def test_extract_coverage_handles_missing_file(self, scripts_dir) -> None:
         """Test extract-coverage.py handles missing coverage.xml.
 
         Args:
@@ -314,7 +322,7 @@ class TestScriptErrorHandling:
             assert_that(result.stdout).contains("percentage=")
             assert_that(result.stdout).contains("percentage=0.0")
 
-    def test_extract_coverage_handles_empty_file(self, scripts_dir):
+    def test_extract_coverage_handles_empty_file(self, scripts_dir) -> None:
         """Test extract-coverage.py handles empty coverage.xml.
 
         Args:
@@ -333,7 +341,7 @@ class TestScriptErrorHandling:
             assert_that(result.returncode).is_equal_to(0)
             assert_that(result.stdout).contains("percentage=")
 
-    def test_extract_coverage_handles_valid_file(self, scripts_dir):
+    def test_extract_coverage_handles_valid_file(self, scripts_dir) -> None:
         """Test extract-coverage.py handles valid coverage.xml.
 
         Args:
@@ -369,7 +377,7 @@ class TestScriptErrorHandling:
             assert_that(result.stdout).contains("percentage=")
             assert_that(result.stdout).contains("percentage=85.0")
 
-    def test_sbom_generate_dry_run_prints_plan(self, scripts_dir, tmp_path):
+    def test_sbom_generate_dry_run_prints_plan(self, scripts_dir, tmp_path) -> None:
         """sbom-generate.sh --dry-run should print a plan and exit 0.
 
         Runs with --skip-fetch to avoid network access during tests.
@@ -390,7 +398,11 @@ class TestScriptErrorHandling:
         out = result.stdout + result.stderr
         assert_that(out.lower()).contains("dry-run")
 
-    def test_sbom_generate_dry_run_import_merge_push_plan(self, scripts_dir, tmp_path):
+    def test_sbom_generate_dry_run_import_merge_push_plan(
+        self,
+        scripts_dir,
+        tmp_path,
+    ) -> None:
         """Dry-run should show import, merge, and push steps when multiple imports.
 
         Uses two placeholder local files and --skip-fetch to avoid network.
@@ -424,7 +436,7 @@ class TestScriptErrorHandling:
         self,
         scripts_dir,
         tmp_path,
-    ):
+    ) -> None:
         """Dry-run with fetch-only should show merge to alias and push of alias.
 
         Forces repo URL via --repo-url to avoid relying on git remotes.
@@ -460,7 +472,7 @@ class TestScriptSecurity:
         """
         return Path(__file__).parent.parent.parent / "scripts"
 
-    def test_scripts_avoid_eval_or_exec(self, scripts_dir):
+    def test_scripts_avoid_eval_or_exec(self, scripts_dir) -> None:
         """Test that scripts avoid dangerous eval or exec commands.
 
         Args:
@@ -494,7 +506,7 @@ class TestScriptSecurity:
                             ),
                         )
 
-    def test_scripts_validate_inputs(self, scripts_dir):
+    def test_scripts_validate_inputs(self, scripts_dir) -> None:
         """Test that scripts validate inputs appropriately.
 
         Args:
@@ -524,7 +536,7 @@ class TestScriptSecurity:
                 has_validation
             ), f"{script_name} should validate command line arguments"
 
-    def test_scripts_use_quoted_variables(self, scripts_dir):
+    def test_scripts_use_quoted_variables(self, scripts_dir) -> None:
         """Test that scripts properly quote variables to prevent injection.
 
         Args:
@@ -555,7 +567,7 @@ class TestScriptCompatibility:
         """
         return Path(__file__).parent.parent.parent / "scripts"
 
-    def test_scripts_use_portable_shebang(self, scripts_dir):
+    def test_scripts_use_portable_shebang(self, scripts_dir) -> None:
         """Test that scripts use portable shebang lines.
 
         Args:
@@ -569,7 +581,7 @@ class TestScriptCompatibility:
                 first_line == "#!/bin/bash"
             ), f"{script.name} should use '#!/bin/bash' shebang, found: {first_line}"
 
-    def test_scripts_avoid_bashisms_in_sh_context(self, scripts_dir):
+    def test_scripts_avoid_bashisms_in_sh_context(self, scripts_dir) -> None:
         """Test that scripts avoid bash-specific features where inappropriate.
 
         Args:
@@ -589,7 +601,7 @@ class TestScriptCompatibility:
                         "shebang"
                     )
 
-    def test_python_script_compatibility(self, scripts_dir):
+    def test_python_script_compatibility(self, scripts_dir) -> None:
         """Test that Python scripts use appropriate shebang.
 
         Args:

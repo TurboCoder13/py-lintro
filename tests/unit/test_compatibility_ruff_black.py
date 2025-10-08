@@ -11,7 +11,7 @@ from lintro.utils.tool_executor import run_lint_tools_simple
 class FakeTool:
     """Simple stub representing a tool with check/fix capability."""
 
-    def __init__(self, name: str, can_fix: bool):
+    def __init__(self, name: str, can_fix: bool) -> None:
         """Initialize stub tool.
 
         Args:
@@ -22,7 +22,7 @@ class FakeTool:
         self.can_fix = can_fix
         self.options = {}
 
-    def set_options(self, **kwargs):
+    def set_options(self, **kwargs) -> None:
         """Record provided options for later assertions.
 
         Args:
@@ -56,11 +56,11 @@ class FakeTool:
 class _EnumLike:
     """Tiny stand-in for enum entries returned by tool discovery."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
 
 
-def _stub_logger(monkeypatch):
+def _stub_logger(monkeypatch) -> None:
     """Silence console logger for deterministic tests.
 
     Args:
@@ -70,7 +70,7 @@ def _stub_logger(monkeypatch):
 
     class SilentLogger:
         def __getattr__(self, name):
-            def _(*a, **k):
+            def _(*a, **k) -> None:
                 return None
 
             return _
@@ -108,7 +108,7 @@ def _setup_tools(monkeypatch):
     monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
     monkeypatch.setattr(te.tool_manager, "get_tool", lambda e: tool_map[e.name.lower()])
 
-    def noop_write_reports_from_results(self, results):
+    def noop_write_reports_from_results(self, results) -> None:
         """No-op writer used to avoid filesystem interaction.
 
         Args:
@@ -129,7 +129,7 @@ def _setup_tools(monkeypatch):
     return ruff, black
 
 
-def test_ruff_formatting_disabled_when_black_present(monkeypatch):
+def test_ruff_formatting_disabled_when_black_present(monkeypatch) -> None:
     """Black present: Ruff formatting should be disabled by default.
 
     Args:
@@ -155,7 +155,7 @@ def test_ruff_formatting_disabled_when_black_present(monkeypatch):
     assert_that(ruff.options.get("format")).is_false()
 
 
-def test_ruff_formatting_respects_cli_override(monkeypatch):
+def test_ruff_formatting_respects_cli_override(monkeypatch) -> None:
     """CLI options should re-enable Ruff format and format_check.
 
     Args:
@@ -182,7 +182,7 @@ def test_ruff_formatting_respects_cli_override(monkeypatch):
     assert_that(ruff.options.get("format_check")).is_true()
 
 
-def test_ruff_format_check_disabled_in_check_when_black_present(monkeypatch):
+def test_ruff_format_check_disabled_in_check_when_black_present(monkeypatch) -> None:
     """Black present: Ruff format_check should be disabled in check.
 
     Args:

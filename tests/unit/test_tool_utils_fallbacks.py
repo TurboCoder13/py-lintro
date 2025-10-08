@@ -7,7 +7,7 @@ from assertpy import assert_that
 import lintro.utils.tool_utils as tu
 
 
-def test_format_as_table_fallback_when_no_tabulate():
+def test_format_as_table_fallback_when_no_tabulate() -> None:
     """Fallback to plain text table when tabulate is unavailable."""
     # Force TABULATE_AVAILABLE False
     tu.TABULATE_AVAILABLE = False
@@ -23,7 +23,7 @@ def test_format_as_table_fallback_when_no_tabulate():
     ).is_true()
 
 
-def test_parse_tool_list_error_on_bad_name():
+def test_parse_tool_list_error_on_bad_name() -> None:
     """Raise ValueError when parsing an unknown tool name."""
     try:
         _ = tu.parse_tool_list("notatool")

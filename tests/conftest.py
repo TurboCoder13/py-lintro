@@ -32,7 +32,7 @@ def _ensure_test_docker_images_built() -> None:
     return
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(config, items) -> None:
     """Optionally skip docker tests locally unless explicitly enabled.
 
     If `LINTRO_RUN_DOCKER_TESTS` is not set to "1", mark tests under

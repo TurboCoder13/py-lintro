@@ -9,7 +9,7 @@ from assertpy import assert_that
 from lintro.utils.config import load_post_checks_config
 
 
-def test_load_post_checks_config_present(tmp_path: Path, monkeypatch):
+def test_load_post_checks_config_present(tmp_path: Path, monkeypatch) -> None:
     """Load post-checks config from pyproject.
 
     Args:

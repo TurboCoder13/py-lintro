@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+from typing import Never
 
 import pytest
 
@@ -22,10 +23,10 @@ class _DummyTool(BaseTool):
         tool_type=ToolType.SECURITY,
     )
 
-    def check(self, paths: list[str]):  # type: ignore[override]
+    def check(self, paths: list[str]) -> Never:  # type: ignore[override]
         raise NotImplementedError
 
-    def fix(self, paths: list[str]):  # type: ignore[override]
+    def fix(self, paths: list[str]) -> Never:  # type: ignore[override]
         raise NotImplementedError
 
 
@@ -61,7 +62,7 @@ def test_run_subprocess_timeout(
         monkeypatch: Pytest monkeypatch to stub subprocess.
     """
 
-    def _raise_timeout(*_a, **_k):
+    def _raise_timeout(*_a, **_k) -> Never:
         raise subprocess.TimeoutExpired(cmd=["echo"], timeout=0.01)
 
     monkeypatch.setattr(subprocess, "run", _raise_timeout)
@@ -80,7 +81,7 @@ def test_run_subprocess_called_process_error(
         monkeypatch: Pytest monkeypatch to stub subprocess.
     """
 
-    def _raise_cpe(*_a, **_k):
+    def _raise_cpe(*_a, **_k) -> Never:
         raise subprocess.CalledProcessError(
             returncode=1,
             cmd=["false"],

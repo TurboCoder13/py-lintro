@@ -69,7 +69,7 @@ def run_yamllint_directly(file_path: Path) -> tuple[bool, str, int]:
 
 
 @pytest.mark.yamllint
-def test_yamllint_available():
+def test_yamllint_available() -> None:
     """Check if yamllint is available in PATH."""
     try:
         result = subprocess.run(
@@ -85,7 +85,7 @@ def test_yamllint_available():
 
 
 @pytest.mark.yamllint
-def test_yamllint_reports_violations_direct(tmp_path):
+def test_yamllint_reports_violations_direct(tmp_path) -> None:
     """Yamllint CLI: Should detect and report violations in a sample file.
 
     Args:
@@ -116,7 +116,7 @@ def test_yamllint_reports_violations_direct(tmp_path):
 
 
 @pytest.mark.yamllint
-def test_yamllint_reports_violations_through_lintro(tmp_path):
+def test_yamllint_reports_violations_through_lintro(tmp_path) -> None:
     """Lintro YamllintTool: Should detect and report violations in a sample file.
 
     Args:
@@ -147,7 +147,7 @@ def test_yamllint_reports_violations_through_lintro(tmp_path):
 
 
 @pytest.mark.yamllint
-def test_yamllint_output_consistency_direct_vs_lintro(tmp_path):
+def test_yamllint_output_consistency_direct_vs_lintro(tmp_path) -> None:
     """Yamllint CLI vs Lintro: Should produce consistent results for the same file.
 
     Args:
@@ -187,7 +187,7 @@ def test_yamllint_output_consistency_direct_vs_lintro(tmp_path):
 
 
 @pytest.mark.yamllint
-def test_yamllint_with_config_options(tmp_path):
+def test_yamllint_with_config_options(tmp_path) -> None:
     """Lintro YamllintTool: Should properly handle config options.
 
     Args:
@@ -209,7 +209,7 @@ def test_yamllint_with_config_options(tmp_path):
 
 
 @pytest.mark.yamllint
-def test_yamllint_with_no_warnings_option(tmp_path):
+def test_yamllint_with_no_warnings_option(tmp_path) -> None:
     """Lintro YamllintTool: Should properly handle no-warnings option.
 
     Args:
@@ -231,7 +231,7 @@ def test_yamllint_with_no_warnings_option(tmp_path):
 
 
 @pytest.mark.yamllint
-def test_yamllint_fix_method_implemented(tmp_path):
+def test_yamllint_fix_method_implemented(tmp_path) -> None:
     """Lintro YamllintTool: .fix() should be implemented and work correctly.
 
     Args:
@@ -252,7 +252,7 @@ def test_yamllint_fix_method_implemented(tmp_path):
 
 
 @pytest.mark.yamllint
-def test_yamllint_empty_directory(tmp_path):
+def test_yamllint_empty_directory(tmp_path) -> None:
     """Lintro YamllintTool: Should handle empty directories gracefully.
 
     Args:
@@ -270,7 +270,7 @@ def test_yamllint_empty_directory(tmp_path):
 
 
 @pytest.mark.yamllint
-def test_yamllint_parser_validation(tmp_path):
+def test_yamllint_parser_validation(tmp_path) -> None:
     """Test that yamllint parser correctly parses output.
 
     Args:

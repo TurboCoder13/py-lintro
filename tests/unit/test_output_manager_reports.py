@@ -12,7 +12,7 @@ from lintro.utils.output_manager import OutputManager
 class DummyIssue:
     """Simple container for issue fields used in reports."""
 
-    def __init__(self, file: str, line: int, code: str, message: str):
+    def __init__(self, file: str, line: int, code: str, message: str) -> None:
         """Initialize an issue container.
 
         Args:
@@ -35,7 +35,7 @@ class DummyResult:
         name: str,
         issues_count: int,
         issues: list[DummyIssue] | None = None,
-    ):
+    ) -> None:
         """Initialize a result wrapper.
 
         Args:
@@ -48,7 +48,7 @@ class DummyResult:
         self.issues = issues or []
 
 
-def test_output_manager_writes_reports(tmp_path: Path, monkeypatch):
+def test_output_manager_writes_reports(tmp_path: Path, monkeypatch) -> None:
     """Write multiple report formats and verify artifacts exist.
 
     Args:

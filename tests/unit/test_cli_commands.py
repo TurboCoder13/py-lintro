@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from lintro.cli import cli
 
 
-def test_cli_lists_commands_and_aliases():
+def test_cli_lists_commands_and_aliases() -> None:
     """Ensure help lists primary commands and their common aliases."""
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])

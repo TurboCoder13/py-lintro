@@ -9,7 +9,7 @@ from lintro.tools.core.tool_manager import ToolManager
 from lintro.tools.tool_enum import ToolEnum
 
 
-def test_tool_manager_register_and_get_tools():
+def test_tool_manager_register_and_get_tools() -> None:
     """Register all tools and validate discovery and accessors."""
     tm = ToolManager()
     for enum_member in ToolEnum:
@@ -24,7 +24,7 @@ def test_tool_manager_register_and_get_tools():
     assert_that(set(fix_tools.keys()) <= set(ToolEnum)).is_true()
 
 
-def test_tool_manager_execution_order_and_conflicts(monkeypatch):
+def test_tool_manager_execution_order_and_conflicts(monkeypatch) -> None:
     """Honor conflicts in execution order unless ignore_conflicts is set.
 
     Args:
@@ -57,7 +57,7 @@ def test_tool_manager_execution_order_and_conflicts(monkeypatch):
     )
 
 
-def test_tool_manager_get_tool_missing():
+def test_tool_manager_get_tool_missing() -> None:
     """Raise ValueError when attempting to get an unregistered tool."""
     tm = ToolManager()
     with pytest.raises(ValueError):

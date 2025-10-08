@@ -212,6 +212,7 @@ Lintro preserves all Ruff rule categories:
 | **pep8-naming**           | N      | Naming conventions (PEP 8)         |
 | **pydocstyle**            | D      | Docstring style violations         |
 | **pyupgrade**             | UP     | Python upgrade suggestions         |
+| **flake8-annotations**    | ANN    | Type annotation requirements       |
 | **flake8-bugbear**        | B      | Bug detection and complexity       |
 | **flake8-comprehensions** | C4     | Comprehension improvements         |
 | **flake8-simplify**       | SIM    | Code simplification suggestions    |

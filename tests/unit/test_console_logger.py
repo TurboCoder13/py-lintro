@@ -10,7 +10,10 @@ from assertpy import assert_that
 from lintro.utils.console_logger import SimpleLintroLogger, create_logger
 
 
-def test_create_logger_and_basic_methods(tmp_path: Path, capsys: pytest.CaptureFixture):
+def test_create_logger_and_basic_methods(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture,
+) -> None:
     """Exercise basic logging methods and ensure files are created.
 
     Args:
@@ -49,7 +52,7 @@ def test_create_logger_and_basic_methods(tmp_path: Path, capsys: pytest.CaptureF
             issues_count: int,
             success: bool,
             output: str = "",
-        ):
+        ) -> None:
             self.name = name
             self.issues_count = issues_count
             self.success = success
@@ -68,7 +71,7 @@ def test_create_logger_and_basic_methods(tmp_path: Path, capsys: pytest.CaptureF
             remaining: int,
             success: bool = True,
             output: str = "",
-        ):
+        ) -> None:
             self.name = name
             self.fixed_issues_count = fixed
             self.remaining_issues_count = remaining
@@ -106,7 +109,7 @@ def test_summary_marks_fail_on_tool_failure(
             issues_count: int,
             success: bool,
             output: str = "",
-        ):
+        ) -> None:
             self.name = name
             self.issues_count = issues_count
             self.success = success

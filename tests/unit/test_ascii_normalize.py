@@ -9,7 +9,7 @@ from assertpy import assert_that
 from lintro.utils.formatting import normalize_ascii_block, normalize_ascii_file_sections
 
 
-def test_normalize_ascii_block_center_and_alignments():
+def test_normalize_ascii_block_center_and_alignments() -> None:
     """Normalize ASCII blocks across horizontal/vertical alignments."""
     src = ["XX", "XXXX", "X"]
     out = normalize_ascii_block(
@@ -28,7 +28,7 @@ def test_normalize_ascii_block_center_and_alignments():
     assert_that(right[0].startswith("    ") and right[0].endswith("X")).is_true()
 
 
-def test_normalize_ascii_file_sections(tmp_path: Path):
+def test_normalize_ascii_file_sections(tmp_path: Path) -> None:
     """Normalize sections from a file and enforce width/height constraints.
 
     Args:

@@ -11,7 +11,7 @@ These tests focus on unhit branches in the simple executor:
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Never
 
 from assertpy import assert_that
 
@@ -20,16 +20,16 @@ from lintro.utils.tool_executor import run_lint_tools_simple
 
 
 class _EnumLike:
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
 
 
-def _stub_logger(monkeypatch):
+def _stub_logger(monkeypatch) -> None:
     import lintro.utils.console_logger as cl
 
     class SilentLogger:
         def __getattr__(self, name: str):  # noqa: D401 - test stub
-            def _(*a: Any, **k: Any):
+            def _(*a: Any, **k: Any) -> None:
                 return None
 
             return _
@@ -37,7 +37,7 @@ def _stub_logger(monkeypatch):
     monkeypatch.setattr(cl, "create_logger", lambda *a, **k: SilentLogger())
 
 
-def test_get_tools_to_run_unknown_tool_raises(monkeypatch):
+def test_get_tools_to_run_unknown_tool_raises(monkeypatch) -> None:
     """Unknown tool name should raise ValueError.
 
     Args:
@@ -62,7 +62,7 @@ def test_get_tools_to_run_unknown_tool_raises(monkeypatch):
         assert_that(str(e)).contains("Unknown tool")
 
 
-def test_get_tools_to_run_fmt_with_cannot_fix_raises(monkeypatch):
+def test_get_tools_to_run_fmt_with_cannot_fix_raises(monkeypatch) -> None:
     """Selecting a non-fix tool for fmt should raise a validation error.
 
     Args:
@@ -75,7 +75,7 @@ def test_get_tools_to_run_fmt_with_cannot_fix_raises(monkeypatch):
     class NoFixTool:
         can_fix = False
 
-        def set_options(self, **kwargs):  # noqa: D401
+        def set_options(self, **kwargs) -> None:  # noqa: D401
             return None
 
     # Ensure we resolve a tool instance with can_fix False
@@ -94,7 +94,7 @@ def test_get_tools_to_run_fmt_with_cannot_fix_raises(monkeypatch):
         assert_that(str(e)).contains("does not support formatting")
 
 
-def test_main_loop_get_tool_raises_appends_failure(monkeypatch, capsys):
+def test_main_loop_get_tool_raises_appends_failure(monkeypatch, capsys) -> None:
     """If a tool cannot be resolved, a failure result is appended and run continues.
 
     Args:
@@ -155,7 +155,7 @@ def test_main_loop_get_tool_raises_appends_failure(monkeypatch, capsys):
     assert_that(code).is_equal_to(1)
 
 
-def test_write_reports_errors_are_swallowed(monkeypatch):
+def test_write_reports_errors_are_swallowed(monkeypatch) -> None:
     """Errors while saving outputs should not crash or change exit semantics.
 
     Args:
@@ -186,7 +186,7 @@ def test_write_reports_errors_are_swallowed(monkeypatch):
     monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
     monkeypatch.setattr(te.tool_manager, "get_tool", lambda e: ruff_tool)
 
-    def boom(self, results):
+    def boom(self, results) -> Never:
         raise RuntimeError("disk full")
 
     monkeypatch.setattr(
@@ -211,7 +211,7 @@ def test_write_reports_errors_are_swallowed(monkeypatch):
     assert_that(code).is_equal_to(0)
 
 
-def test_unknown_post_check_tool_is_skipped(monkeypatch):
+def test_unknown_post_check_tool_is_skipped(monkeypatch) -> None:
     """Unknown post-check tool names should be warned and skipped gracefully.
 
     Args:
@@ -264,7 +264,7 @@ def test_unknown_post_check_tool_is_skipped(monkeypatch):
     assert_that(code).is_equal_to(0)
 
 
-def test_post_checks_early_filter_removes_black_from_main(monkeypatch):
+def test_post_checks_early_filter_removes_black_from_main(monkeypatch) -> None:
     """Black should be excluded from main phase when configured as post-check.
 
     Args:
@@ -273,16 +273,22 @@ def test_post_checks_early_filter_removes_black_from_main(monkeypatch):
     import lintro.utils.tool_executor as te
 
     class LoggerCapture:
-        def __init__(self):
+        def __init__(self) -> None:
             self.tools_list = None
 
         def __getattr__(self, name: str):  # default no-ops
-            def _(*a: Any, **k: Any):
+            def _(*a: Any, **k: Any) -> None:
                 return None
 
             return _
 
-        def print_lintro_header(self, *, action: str, tool_count: int, tools_list: str):
+        def print_lintro_header(
+            self,
+            *,
+            action: str,
+            tool_count: int,
+            tools_list: str,
+        ) -> None:
             self.tools_list = tools_list
             return None
 
@@ -349,7 +355,7 @@ def test_post_checks_early_filter_removes_black_from_main(monkeypatch):
     assert_that("black" in (logger.tools_list or "")).is_false()
 
 
-def test_all_filtered_results_in_no_tools_warning(monkeypatch):
+def test_all_filtered_results_in_no_tools_warning(monkeypatch) -> None:
     """If filtering removes all tools, executor should return failure gracefully.
 
     Args:

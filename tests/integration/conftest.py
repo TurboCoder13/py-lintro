@@ -33,7 +33,7 @@ def test_files_dir():
 
 
 @pytest.fixture
-def sample_python_file():
+def sample_python_file() -> str:
     """Provide a sample Python file with violations.
 
     Returns:
@@ -50,7 +50,7 @@ def sample_python_file():
 
 
 @pytest.fixture
-def sample_js_file():
+def sample_js_file() -> str:
     """Provide a sample JavaScript file with formatting issues.
 
     Returns:

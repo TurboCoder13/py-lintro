@@ -7,7 +7,7 @@ from assertpy import assert_that
 from lintro.parsers.ruff.ruff_parser import parse_ruff_output
 
 
-def test_parse_ruff_output_plain_json_array():
+def test_parse_ruff_output_plain_json_array() -> None:
     """Parse a simple JSON array output into issues list."""
     output = (
         "[\n"
@@ -20,7 +20,7 @@ def test_parse_ruff_output_plain_json_array():
     assert_that(issues[0].file.endswith("a.py")).is_true()
 
 
-def test_parse_ruff_output_empty_and_malformed_line_skipped():
+def test_parse_ruff_output_empty_and_malformed_line_skipped() -> None:
     """Skip empty and malformed lines in JSONL output gracefully."""
     jl = (
         "\n\n"  # empties ignored

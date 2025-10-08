@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Never
 
 from assertpy import assert_that
 
@@ -13,7 +14,7 @@ from lintro.utils.tool_executor import run_lint_tools_simple
 class FakeTool:
     """Simple tool stub returning a pre-baked ToolResult."""
 
-    def __init__(self, name: str, can_fix: bool, result: ToolResult):
+    def __init__(self, name: str, can_fix: bool, result: ToolResult) -> None:
         """Initialize the fake tool.
 
         Args:
@@ -26,7 +27,7 @@ class FakeTool:
         self._result = result
         self.options: dict[str, object] = {}
 
-    def set_options(self, **kwargs):
+    def set_options(self, **kwargs) -> None:
         """Record option values provided to the tool stub.
 
         Args:
@@ -60,16 +61,16 @@ class FakeTool:
 class _EnumLike:
     """Tiny enum-like wrapper exposing a `name` attribute."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
 
 
-def _stub_logger(monkeypatch):
+def _stub_logger(monkeypatch) -> None:
     import lintro.utils.console_logger as cl
 
     class SilentLogger:
         def __getattr__(self, name):
-            def _(*a, **k):
+            def _(*a, **k) -> None:
                 return None
 
             return _
@@ -97,7 +98,7 @@ def _setup_main_tool(monkeypatch):
     monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
     monkeypatch.setattr(te.tool_manager, "get_tool", lambda e: ruff, raising=True)
 
-    def noop_write_reports_from_results(self, results):
+    def noop_write_reports_from_results(self, results) -> None:
         return None
 
     monkeypatch.setattr(
@@ -110,7 +111,7 @@ def _setup_main_tool(monkeypatch):
     return ruff
 
 
-def test_post_checks_enforce_failure_on_unavailable_tool(monkeypatch):
+def test_post_checks_enforce_failure_on_unavailable_tool(monkeypatch) -> None:
     """When enforce_failure is True, missing post-check yields failure exit.
 
     This exercises the exception path in the post-check loop where resolving the
@@ -156,7 +157,7 @@ def test_post_checks_enforce_failure_on_unavailable_tool(monkeypatch):
     assert_that(code).is_equal_to(1)
 
 
-def test_post_checks_missing_tool_no_enforce_skips(monkeypatch, capsys):
+def test_post_checks_missing_tool_no_enforce_skips(monkeypatch, capsys) -> None:
     """When enforce_failure is False, missing post-check is skipped gracefully.
 
     We validate behavior by inspecting JSON output rather than exit code, to
@@ -179,7 +180,7 @@ def test_post_checks_missing_tool_no_enforce_skips(monkeypatch, capsys):
         raising=True,
     )
 
-    def fail_get_tool(enum_val):
+    def fail_get_tool(enum_val) -> Never:
         raise RuntimeError("black not available")
 
     monkeypatch.setattr(te.tool_manager, "get_tool", fail_get_tool, raising=True)
@@ -203,7 +204,10 @@ def test_post_checks_missing_tool_no_enforce_skips(monkeypatch, capsys):
     assert_that("black" in tools_list).is_false()
 
 
-def test_post_checks_json_mode_enforced_failure_on_missing_tool(monkeypatch, capsys):
+def test_post_checks_json_mode_enforced_failure_on_missing_tool(
+    monkeypatch,
+    capsys,
+) -> None:
     """JSON output mode should still enforce failure on missing post-check.
 
     Args:
@@ -224,7 +228,7 @@ def test_post_checks_json_mode_enforced_failure_on_missing_tool(monkeypatch, cap
     )
 
     # Force resolution failure for the post-check tool
-    def fail_get_tool(enum_val):
+    def fail_get_tool(enum_val) -> Never:
         raise RuntimeError("black not available")
 
     monkeypatch.setattr(te.tool_manager, "get_tool", fail_get_tool, raising=True)

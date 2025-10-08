@@ -26,7 +26,7 @@ from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 
 
-def test_darglint_table_and_formatting(tmp_path):
+def test_darglint_table_and_formatting(tmp_path) -> None:
     """Validate Darglint table layout and grid formatting.
 
     Args:
@@ -43,7 +43,7 @@ def test_darglint_table_and_formatting(tmp_path):
     assert_that(out).contains("D100")
 
 
-def test_prettier_table_and_formatting(tmp_path):
+def test_prettier_table_and_formatting(tmp_path) -> None:
     """Validate Prettier table layout and plain formatting.
 
     Args:
@@ -68,7 +68,7 @@ def test_prettier_table_and_formatting(tmp_path):
     assert_that("Auto-fixable" in out or out).is_true()
 
 
-def test_ruff_table_and_formatting(tmp_path):
+def test_ruff_table_and_formatting(tmp_path) -> None:
     """Validate Ruff table layout and grid formatting for issues.
 
     Args:
@@ -95,7 +95,7 @@ def test_ruff_table_and_formatting(tmp_path):
     assert_that("Auto-fixable" in out or "Not auto-fixable" in out or out).is_true()
 
 
-def test_hadolint_table_and_formatting(tmp_path):
+def test_hadolint_table_and_formatting(tmp_path) -> None:
     """Validate Hadolint table layout and markdown formatting.
 
     Args:

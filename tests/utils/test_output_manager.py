@@ -59,7 +59,7 @@ def make_issue(file, line, code, message):
     return SimpleNamespace(file=file, line=line, code=code, message=message)
 
 
-def test_run_dir_creation(temp_output_dir):
+def test_run_dir_creation(temp_output_dir) -> None:
     """Test that OutputManager creates a timestamped run directory.
 
     Args:
@@ -70,7 +70,7 @@ def test_run_dir_creation(temp_output_dir):
     assert_that(om.get_run_dir().parent).is_equal_to(Path(temp_output_dir))
 
 
-def test_write_console_log(temp_output_dir):
+def test_write_console_log(temp_output_dir) -> None:
     """Test writing console.log file.
 
     Args:
@@ -83,7 +83,7 @@ def test_write_console_log(temp_output_dir):
     assert_that(log_path.read_text()).is_equal_to("hello world")
 
 
-def test_write_json(temp_output_dir):
+def test_write_json(temp_output_dir) -> None:
     """Test writing results.json file.
 
     Args:
@@ -99,7 +99,7 @@ def test_write_json(temp_output_dir):
     assert_that(loaded).is_equal_to(data)
 
 
-def test_write_markdown(temp_output_dir):
+def test_write_markdown(temp_output_dir) -> None:
     """Test writing report.md file.
 
     Args:
@@ -112,7 +112,7 @@ def test_write_markdown(temp_output_dir):
     assert_that(md_path.read_text().startswith("# Title")).is_true()
 
 
-def test_write_html(temp_output_dir):
+def test_write_html(temp_output_dir) -> None:
     """Test writing report.html file.
 
     Args:
@@ -125,7 +125,7 @@ def test_write_html(temp_output_dir):
     assert_that(html_path.read_text()).contains("<h1>Title</h1>")
 
 
-def test_write_csv(temp_output_dir):
+def test_write_csv(temp_output_dir) -> None:
     """Test writing summary.csv file.
 
     Args:
@@ -144,7 +144,7 @@ def test_write_csv(temp_output_dir):
     assert_that(reader[2]).is_equal_to(["b", "2"])
 
 
-def test_write_reports_from_results(temp_output_dir):
+def test_write_reports_from_results(temp_output_dir) -> None:
     """Test write_reports_from_results generates all report files with correct content.
 
     Args:

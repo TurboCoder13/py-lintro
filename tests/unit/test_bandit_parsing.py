@@ -110,7 +110,7 @@ def test_parse_bandit_handles_malformed_issue_gracefully(caplog) -> None:
     assert_that(issues).is_equal_to([])
 
 
-def test_bandit_check_parses_mixed_output_json(monkeypatch, tmp_path):
+def test_bandit_check_parses_mixed_output_json(monkeypatch, tmp_path) -> None:
     """BanditTool.check should parse JSON amidst mixed stdout/stderr text.
 
     Args:
@@ -151,7 +151,10 @@ def test_bandit_check_parses_mixed_output_json(monkeypatch, tmp_path):
     assert_that(result.issues_count).is_equal_to(1)
 
 
-def test_bandit_check_handles_nonzero_rc_with_errors_array(monkeypatch, tmp_path):
+def test_bandit_check_handles_nonzero_rc_with_errors_array(
+    monkeypatch,
+    tmp_path,
+) -> None:
     """Ensure nonzero return with JSON errors[] sets success False but parses.
 
     Args:
@@ -181,7 +184,7 @@ def test_bandit_check_handles_nonzero_rc_with_errors_array(monkeypatch, tmp_path
     }
 
     class NS:
-        def __init__(self, stdout, stderr, returncode):
+        def __init__(self, stdout, stderr, returncode) -> None:
             self.stdout = stdout
             self.stderr = stderr
             self.returncode = returncode
@@ -196,7 +199,7 @@ def test_bandit_check_handles_nonzero_rc_with_errors_array(monkeypatch, tmp_path
     assert_that(result.issues_count).is_equal_to(1)
 
 
-def test_bandit_check_handles_unparseable_output(monkeypatch, tmp_path):
+def test_bandit_check_handles_unparseable_output(monkeypatch, tmp_path) -> None:
     """On unparseable output, BanditTool.check should fail gracefully.
 
     Args:

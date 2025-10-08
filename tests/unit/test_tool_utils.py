@@ -12,14 +12,14 @@ from lintro.utils.tool_utils import (
 )
 
 
-def test_should_exclude_path_patterns():
+def test_should_exclude_path_patterns() -> None:
     """Evaluate exclude pattern behavior on file paths."""
     assert_that(should_exclude_path("a/b/.venv/lib.py", [".venv"]) is True).is_true()
     assert_that(should_exclude_path("a/b/c.py", ["*.md"]) is False).is_true()
     assert_that(should_exclude_path("dir/file.md", ["*.md"]) is True).is_true()
 
 
-def test_get_table_columns_and_format_tabulate(monkeypatch):
+def test_get_table_columns_and_format_tabulate(monkeypatch) -> None:
     """Use tabulate when available and validate headers/rows are passed.
 
     Args:
@@ -33,7 +33,7 @@ def test_get_table_columns_and_format_tabulate(monkeypatch):
         tablefmt,
         stralign=None,
         disable_numparse=None,
-    ):
+    ) -> str:
         rows_captured["headers"] = headers
         rows_captured["rows"] = tabular_data
         return "TABLE"
@@ -58,7 +58,7 @@ def test_get_table_columns_and_format_tabulate(monkeypatch):
     assert_that(rows_captured["rows"]).is_true()
 
 
-def test_walk_files_with_excludes(tmp_path):
+def test_walk_files_with_excludes(tmp_path) -> None:
     """Walk files with include/exclude patterns.
 
     Args:
@@ -80,7 +80,7 @@ def test_walk_files_with_excludes(tmp_path):
     assert_that(any(p.endswith("ignore.txt") for p in files)).is_false()
 
 
-def test_is_venv_directory_predicate():
+def test_is_venv_directory_predicate() -> None:
     """Detect typical virtual environment directory names."""
     assert_that(_is_venv_directory(".venv")).is_true()
     assert_that(_is_venv_directory("venv")).is_true()

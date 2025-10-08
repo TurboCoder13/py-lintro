@@ -65,7 +65,7 @@ def _ensure_darglint_cli_available() -> None:
         pytest.skip("darglint CLI not installed/runnable; skipping direct CLI test")
 
 
-def test_darglint_reports_violations_direct(tmp_path):
+def test_darglint_reports_violations_direct(tmp_path) -> None:
     """Darglint CLI: Should detect and report violations in a sample file.
 
     Args:
@@ -82,7 +82,7 @@ def test_darglint_reports_violations_direct(tmp_path):
     assert "DAR" in output, "Darglint output should contain error codes."
 
 
-def test_darglint_reports_violations_through_lintro(tmp_path):
+def test_darglint_reports_violations_through_lintro(tmp_path) -> None:
     """Lintro DarglintTool: Should detect and report violations in a sample file.
 
     Args:
@@ -111,7 +111,7 @@ def test_darglint_reports_violations_through_lintro(tmp_path):
     ), "Lintro DarglintTool output should contain error codes."
 
 
-def test_darglint_output_consistency_direct_vs_lintro(tmp_path):
+def test_darglint_output_consistency_direct_vs_lintro(tmp_path) -> None:
     """Darglint CLI vs Lintro: Should produce consistent results for the same file.
 
     Args:
@@ -137,7 +137,7 @@ def test_darglint_output_consistency_direct_vs_lintro(tmp_path):
     # Optionally compare error codes if output format is stable
 
 
-def test_darglint_fix_method_not_implemented(tmp_path):
+def test_darglint_fix_method_not_implemented(tmp_path) -> None:
     """Lintro DarglintTool: .fix() should raise NotImplementedError.
 
     Args:

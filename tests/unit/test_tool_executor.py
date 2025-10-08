@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Never
 
 from assertpy import assert_that
 
@@ -14,15 +15,15 @@ from lintro.utils.tool_executor import run_lint_tools_simple
 class FakeLogger:
     """Minimal logger stub capturing method calls for assertions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the fake logger with call storage and run dir."""
         self.calls: list[tuple[str, tuple, dict]] = []
         self.run_dir = ".lintro/test"
 
-    def _rec(self, name: str, *a, **k):
+    def _rec(self, name: str, *a, **k) -> None:
         self.calls.append((name, a, k))
 
-    def info(self, *a, **k):
+    def info(self, *a, **k) -> None:
         """Record an info call.
 
         Args:
@@ -31,7 +32,7 @@ class FakeLogger:
         """
         self._rec("info", *a, **k)
 
-    def debug(self, *a, **k):
+    def debug(self, *a, **k) -> None:
         """Record a debug call.
 
         Args:
@@ -40,7 +41,7 @@ class FakeLogger:
         """
         self._rec("debug", *a, **k)
 
-    def warning(self, *a, **k):
+    def warning(self, *a, **k) -> None:
         """Record a warning call.
 
         Args:
@@ -49,7 +50,7 @@ class FakeLogger:
         """
         self._rec("warning", *a, **k)
 
-    def error(self, *a, **k):
+    def error(self, *a, **k) -> None:
         """Record an error call.
 
         Args:
@@ -58,7 +59,7 @@ class FakeLogger:
         """
         self._rec("error", *a, **k)
 
-    def success(self, *a, **k):
+    def success(self, *a, **k) -> None:
         """Record a success call.
 
         Args:
@@ -67,7 +68,7 @@ class FakeLogger:
         """
         self._rec("success", *a, **k)
 
-    def console_output(self, *a, **k):
+    def console_output(self, *a, **k) -> None:
         """Record console output.
 
         Args:
@@ -76,7 +77,7 @@ class FakeLogger:
         """
         self._rec("console_output", *a, **k)
 
-    def print_lintro_header(self, *a, **k):
+    def print_lintro_header(self, *a, **k) -> None:
         """Record header printing.
 
         Args:
@@ -85,7 +86,7 @@ class FakeLogger:
         """
         self._rec("print_lintro_header", *a, **k)
 
-    def print_verbose_info(self, *a, **k):
+    def print_verbose_info(self, *a, **k) -> None:
         """Record verbose info printing.
 
         Args:
@@ -94,7 +95,7 @@ class FakeLogger:
         """
         self._rec("print_verbose_info", *a, **k)
 
-    def print_tool_header(self, *a, **k):
+    def print_tool_header(self, *a, **k) -> None:
         """Record tool header printing.
 
         Args:
@@ -103,7 +104,7 @@ class FakeLogger:
         """
         self._rec("print_tool_header", *a, **k)
 
-    def print_tool_result(self, *a, **k):
+    def print_tool_result(self, *a, **k) -> None:
         """Record tool result printing.
 
         Args:
@@ -112,7 +113,7 @@ class FakeLogger:
         """
         self._rec("print_tool_result", *a, **k)
 
-    def print_execution_summary(self, *a, **k):
+    def print_execution_summary(self, *a, **k) -> None:
         """Record execution summary printing.
 
         Args:
@@ -121,7 +122,7 @@ class FakeLogger:
         """
         self._rec("print_execution_summary", *a, **k)
 
-    def save_console_log(self, *a, **k):
+    def save_console_log(self, *a, **k) -> None:
         """Record console log saving.
 
         Args:
@@ -134,7 +135,7 @@ class FakeLogger:
 class FakeTool:
     """Simple tool stub returning a pre-baked ToolResult."""
 
-    def __init__(self, name: str, can_fix: bool, result: ToolResult):
+    def __init__(self, name: str, can_fix: bool, result: ToolResult) -> None:
         """Initialize the fake tool.
 
         Args:
@@ -147,7 +148,7 @@ class FakeTool:
         self._result = result
         self.options = {}
 
-    def set_options(self, **kwargs):
+    def set_options(self, **kwargs) -> None:
         """Record option values provided to the tool stub.
 
         Args:
@@ -181,11 +182,11 @@ class FakeTool:
 class _EnumLike:
     """Tiny enum-like wrapper exposing a `name` attribute."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
 
 
-def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]):
+def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]) -> None:
     """Configure tool manager stubs to return provided tools.
 
     Args:
@@ -205,7 +206,7 @@ def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]):
 
     monkeypatch.setattr(te.tool_manager, "get_tool", fake_get_tool, raising=True)
 
-    def noop_write_reports_from_results(self, results):
+    def noop_write_reports_from_results(self, results) -> None:
         return None
 
     monkeypatch.setattr(
@@ -216,7 +217,7 @@ def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]):
     )
 
 
-def _stub_logger(monkeypatch):
+def _stub_logger(monkeypatch) -> None:
     """Patch create_logger to return a FakeLogger instance.
 
     Args:
@@ -227,7 +228,7 @@ def _stub_logger(monkeypatch):
     monkeypatch.setattr(cl, "create_logger", lambda **k: FakeLogger(), raising=True)
 
 
-def test_executor_check_success(monkeypatch):
+def test_executor_check_success(monkeypatch) -> None:
     """Exit with 0 when check succeeds and has zero issues.
 
     Args:
@@ -254,7 +255,7 @@ def test_executor_check_success(monkeypatch):
     assert_that(code).is_equal_to(0)
 
 
-def test_executor_check_failure(monkeypatch):
+def test_executor_check_failure(monkeypatch) -> None:
     """Exit with 1 when check succeeds but issues are reported.
 
     Args:
@@ -281,7 +282,7 @@ def test_executor_check_failure(monkeypatch):
     assert_that(code).is_equal_to(1)
 
 
-def test_executor_fmt_success_with_counts(monkeypatch):
+def test_executor_fmt_success_with_counts(monkeypatch) -> None:
     """Exit with 0 when format succeeds and counts are populated.
 
     Args:
@@ -315,7 +316,7 @@ def test_executor_fmt_success_with_counts(monkeypatch):
     assert_that(code).is_equal_to(0)
 
 
-def test_executor_json_output(monkeypatch, capsys):
+def test_executor_json_output(monkeypatch, capsys) -> None:
     """Emit JSON output containing action and results when requested.
 
     Args:
@@ -358,7 +359,7 @@ def test_executor_json_output(monkeypatch, capsys):
     assert_that("results" in data and len(data["results"]) >= 2).is_true()
 
 
-def test_executor_handles_tool_failure_with_output(monkeypatch, tmp_path):
+def test_executor_handles_tool_failure_with_output(monkeypatch, tmp_path) -> None:
     """Return non-zero when a tool fails but emits output (coverage branch).
 
     Args:
@@ -386,7 +387,7 @@ def test_executor_handles_tool_failure_with_output(monkeypatch, tmp_path):
     assert_that(code).is_equal_to(1)
 
 
-def test_parse_tool_options_typed_values():
+def test_parse_tool_options_typed_values() -> None:
     """Ensure --tool-options parsing coerces values into proper types.
 
     Supported coercions:
@@ -418,7 +419,7 @@ def test_parse_tool_options_typed_values():
     ).is_true()
 
 
-def test_executor_unknown_tool(monkeypatch):
+def test_executor_unknown_tool(monkeypatch) -> None:
     """Exit with 1 when an unknown tool is requested.
 
     Args:
@@ -427,7 +428,7 @@ def test_executor_unknown_tool(monkeypatch):
     _stub_logger(monkeypatch)
     import lintro.utils.tool_executor as te
 
-    def raise_value_error(tools, action):
+    def raise_value_error(tools, action) -> Never:
         raise ValueError("unknown tool")
 
     monkeypatch.setattr(te, "_get_tools_to_run", raise_value_error, raising=True)

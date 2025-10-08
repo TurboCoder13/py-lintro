@@ -68,7 +68,7 @@ def run_prettier_directly(
     return success, full_output, issues_count
 
 
-def test_prettier_reports_violations_direct(temp_prettier_file):
+def test_prettier_reports_violations_direct(temp_prettier_file) -> None:
     """Prettier CLI: Should detect and report violations in a sample file.
 
     Args:
@@ -84,7 +84,7 @@ def test_prettier_reports_violations_direct(temp_prettier_file):
     assert has_warnings, "Prettier output should contain warning indicators."
 
 
-def test_prettier_reports_violations_through_lintro(temp_prettier_file):
+def test_prettier_reports_violations_through_lintro(temp_prettier_file) -> None:
     """Lintro PrettierTool: Should detect and report violations in a sample file.
 
     Args:
@@ -109,7 +109,7 @@ def test_prettier_reports_violations_through_lintro(temp_prettier_file):
     assert has_warnings, "Lintro PrettierTool output should contain warning indicators."
 
 
-def test_prettier_fix_method(temp_prettier_file):
+def test_prettier_fix_method(temp_prettier_file) -> None:
     """Lintro PrettierTool: Should fix formatting issues.
 
     Args:
@@ -147,7 +147,7 @@ def test_prettier_fix_method(temp_prettier_file):
     assert final_result.issues_count == 0, "Should have no issues after fixing"
 
 
-def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file):
+def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file) -> None:
     """Prettier CLI vs Lintro: Should produce consistent results for the same file.
 
     Args:
@@ -178,7 +178,7 @@ def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file):
     )
 
 
-def test_prettier_fix_sets_issues_for_table(temp_prettier_file):
+def test_prettier_fix_sets_issues_for_table(temp_prettier_file) -> None:
     """PrettierTool.fix should populate issues for table rendering.
 
     Args:
