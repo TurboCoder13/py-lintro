@@ -9,7 +9,7 @@ from lintro.utils.path_utils import normalize_file_path_for_display
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_absolute():
+def test_normalize_file_path_for_display_absolute() -> None:
     """Test normalizing an absolute path."""
     with patch("os.getcwd", return_value="/project/root"):
         with patch("os.path.abspath", return_value="/project/root/src/file.py"):
@@ -19,7 +19,7 @@ def test_normalize_file_path_for_display_absolute():
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_relative():
+def test_normalize_file_path_for_display_relative() -> None:
     """Test normalizing a relative path."""
     with patch("os.getcwd", return_value="/project/root"):
         with patch("os.path.abspath", return_value="/project/root/src/file.py"):
@@ -29,7 +29,7 @@ def test_normalize_file_path_for_display_relative():
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_current_dir():
+def test_normalize_file_path_for_display_current_dir() -> None:
     """Test normalizing a file in current directory."""
     with patch("os.getcwd", return_value="/project/root"):
         with patch("os.path.abspath", return_value="/project/root/file.py"):
@@ -39,7 +39,7 @@ def test_normalize_file_path_for_display_current_dir():
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_parent_dir():
+def test_normalize_file_path_for_display_parent_dir() -> None:
     """Test normalizing a path that goes up directories."""
     with patch("os.getcwd", return_value="/project/root"):
         with patch("os.path.abspath", return_value="/project/file.py"):
@@ -49,7 +49,7 @@ def test_normalize_file_path_for_display_parent_dir():
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_already_relative():
+def test_normalize_file_path_for_display_already_relative() -> None:
     """Test normalizing a path that already starts with './'."""
     with patch("os.getcwd", return_value="/project/root"):
         with patch("os.path.abspath", return_value="/project/root/src/file.py"):
@@ -59,7 +59,7 @@ def test_normalize_file_path_for_display_already_relative():
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_error():
+def test_normalize_file_path_for_display_error() -> None:
     """Test handling errors in path normalization."""
     with patch("os.path.abspath", side_effect=ValueError("Invalid path")):
         result = normalize_file_path_for_display("invalid/path")
@@ -67,7 +67,7 @@ def test_normalize_file_path_for_display_error():
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_os_error():
+def test_normalize_file_path_for_display_os_error() -> None:
     """Test handling OS errors in path normalization."""
     with patch("os.getcwd", side_effect=OSError("Permission denied")):
         result = normalize_file_path_for_display("src/file.py")

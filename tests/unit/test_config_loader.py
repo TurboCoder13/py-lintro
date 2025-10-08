@@ -9,7 +9,7 @@ from assertpy import assert_that
 from lintro.utils.config import load_lintro_tool_config
 
 
-def test_load_lintro_tool_config(tmp_path: Path, monkeypatch):
+def test_load_lintro_tool_config(tmp_path: Path, monkeypatch) -> None:
     """Load tool-specific config sections from pyproject.
 
     Args:
@@ -40,7 +40,7 @@ def test_load_lintro_tool_config(tmp_path: Path, monkeypatch):
 def test_config_loader_handles_missing_and_malformed_pyproject(
     tmp_path: Path,
     monkeypatch,
-):
+) -> None:
     """Validate loaders handle missing and malformed pyproject files.
 
     Args:

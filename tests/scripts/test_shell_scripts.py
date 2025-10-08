@@ -37,7 +37,7 @@ class TestShellScriptSyntax:
         """
         return list(scripts_dir.glob("*.sh"))
 
-    def test_all_scripts_have_shebang(self, shell_scripts):
+    def test_all_scripts_have_shebang(self, shell_scripts) -> None:
         """Test that all shell scripts have proper shebang.
 
         Args:
@@ -49,7 +49,7 @@ class TestShellScriptSyntax:
             assert first_line.startswith("#!"), f"{script.name} missing shebang"
             assert "bash" in first_line, f"{script.name} should use bash"
 
-    def test_all_scripts_syntax_valid(self, shell_scripts):
+    def test_all_scripts_syntax_valid(self, shell_scripts) -> None:
         """Test that all shell scripts have valid syntax.
 
         Args:
@@ -65,7 +65,7 @@ class TestShellScriptSyntax:
                 result.returncode == 0
             ), f"Syntax error in {script.name}: {result.stderr}"
 
-    def test_scripts_are_executable(self, shell_scripts):
+    def test_scripts_are_executable(self, shell_scripts) -> None:
         """Test that all shell scripts are executable.
 
         Args:
@@ -74,7 +74,7 @@ class TestShellScriptSyntax:
         for script in shell_scripts:
             assert os.access(script, os.X_OK), f"{script.name} is not executable"
 
-    def test_scripts_have_set_e(self, shell_scripts):
+    def test_scripts_have_set_e(self, shell_scripts) -> None:
         """Test that critical scripts use 'set -e' for error handling.
 
         Args:
@@ -106,7 +106,7 @@ class TestScriptHelp:
         """
         return Path(__file__).parent.parent.parent / "scripts"
 
-    def test_local_test_help(self, scripts_dir):
+    def test_local_test_help(self, scripts_dir) -> None:
         """Test that local-test.sh provides help.
 
         Args:
@@ -123,7 +123,7 @@ class TestScriptHelp:
         assert_that(result.stdout).contains("Usage:")
         assert_that(result.stdout.lower()).contains("verbose")
 
-    def test_local_lintro_help(self, scripts_dir):
+    def test_local_lintro_help(self, scripts_dir) -> None:
         """Test that local-lintro.sh provides help for itself.
 
         Args:
@@ -140,7 +140,7 @@ class TestScriptHelp:
         assert_that(result.stdout).contains("Usage:")
         assert_that(result.stdout.lower()).contains("install")
 
-    def test_install_tools_help(self, scripts_dir):
+    def test_install_tools_help(self, scripts_dir) -> None:
         """Test that install-tools.sh has usage documentation in comments.
 
         Args:
@@ -154,7 +154,7 @@ class TestScriptHelp:
             "--local" in content or "--docker" in content
         ), "Should document command options"
 
-    def test_codecov_upload_help(self, scripts_dir):
+    def test_codecov_upload_help(self, scripts_dir) -> None:
         """codecov-upload.sh should provide help and exit 0.
 
         Args:
@@ -171,7 +171,7 @@ class TestScriptHelp:
         assert_that(result.stdout).contains("Usage:")
         assert_that(result.stdout).contains("Codecov")
 
-    def test_egress_audit_help(self, scripts_dir):
+    def test_egress_audit_help(self, scripts_dir) -> None:
         """egress-audit-lite.sh should provide help and exit 0.
 
         Args:
@@ -187,7 +187,7 @@ class TestScriptHelp:
         assert_that(result.returncode).is_equal_to(0)
         assert_that(result.stdout).contains("Usage:")
 
-    def test_sbom_generate_help(self, scripts_dir):
+    def test_sbom_generate_help(self, scripts_dir) -> None:
         """sbom-generate.sh should provide help and exit 0.
 
         Args:
@@ -226,7 +226,7 @@ class TestScriptFunctionality:
         with tempfile.TemporaryDirectory() as tmpdir:
             yield {"PATH": f"{tmpdir}:{os.environ.get('PATH', '')}", "HOME": tmpdir}
 
-    def test_extract_coverage_python_script(self, scripts_dir):
+    def test_extract_coverage_python_script(self, scripts_dir) -> None:
         """Test that extract-coverage.py runs without syntax errors.
 
         Args:
@@ -242,7 +242,7 @@ class TestScriptFunctionality:
             result.returncode == 0
         ), f"Python syntax error in {script.name}: {result.stderr}"
 
-    def test_utils_script_sources_correctly(self, scripts_dir):
+    def test_utils_script_sources_correctly(self, scripts_dir) -> None:
         """Test that utils.sh can be sourced without errors.
 
         Args:
@@ -264,7 +264,7 @@ class TestScriptFunctionality:
         )
         assert result.returncode == 0, f"utils.sh sourcing failed: {result.stderr}"
 
-    def test_docker_scripts_check_docker_availability(self, scripts_dir):
+    def test_docker_scripts_check_docker_availability(self, scripts_dir) -> None:
         """Test that Docker scripts check for Docker availability.
 
         Args:
@@ -291,7 +291,7 @@ class TestScriptFunctionality:
         self,
         scripts_dir,
         mock_env,
-    ):
+    ) -> None:
         """Test that scripts handle missing dependencies gracefully.
 
         Args:
@@ -311,7 +311,7 @@ class TestScriptFunctionality:
         assert_that(result.returncode).is_equal_to(0)
         assert_that(result.stdout).contains("Usage:")
 
-    def test_egress_audit_reads_env_and_skips_ip_by_default(self, scripts_dir):
+    def test_egress_audit_reads_env_and_skips_ip_by_default(self, scripts_dir) -> None:
         """egress-audit-lite should read env and skip IP literals by default.
 
         Args:
@@ -333,7 +333,7 @@ class TestScriptFunctionality:
         # Should indicate it skipped the IP
         assert "Skipping IP literal" in (proc.stdout + proc.stderr)
 
-    def test_egress_audit_can_include_ip_with_flag(self, scripts_dir):
+    def test_egress_audit_can_include_ip_with_flag(self, scripts_dir) -> None:
         """egress-audit-lite should include IP when --check-ip is provided.
 
         Args:
@@ -366,7 +366,7 @@ class TestScriptIntegration:
         """
         return Path(__file__).parent.parent.parent / "scripts"
 
-    def test_ci_scripts_reference_correct_files(self, scripts_dir):
+    def test_ci_scripts_reference_correct_files(self, scripts_dir) -> None:
         """Test that CI scripts reference files that exist.
 
         Args:
@@ -397,7 +397,7 @@ class TestScriptIntegration:
                     (scripts_dir / "ci" / "detect-changes.sh").exists(),
                 ).is_true()
 
-    def test_detect_changes_help(self):
+    def test_detect_changes_help(self) -> None:
         """detect-changes.sh should provide help and exit 0."""
         script_path = Path("scripts/ci/detect-changes.sh").resolve()
         result = subprocess.run(
@@ -408,7 +408,7 @@ class TestScriptIntegration:
         assert_that(result.returncode).is_equal_to(0)
         assert_that(result.stdout).contains("Usage:")
 
-    def test_semantic_release_compute_python_runs(self):
+    def test_semantic_release_compute_python_runs(self) -> None:
         """semantic_release_compute_next.py should run and print next_version."""
         script_path = Path("scripts/ci/semantic_release_compute_next.py").resolve()
         result = subprocess.run(
@@ -424,7 +424,7 @@ class TestScriptIntegration:
             assert_that(result.returncode).is_equal_to(2)
             assert_that(result.stdout).contains("No v*-prefixed release tag found")
 
-    def test_scripts_use_consistent_color_codes(self, scripts_dir):
+    def test_scripts_use_consistent_color_codes(self, scripts_dir) -> None:
         """Test that scripts use consistent color coding.
 
         Args:
@@ -448,7 +448,7 @@ class TestScriptIntegration:
                     len(red_definitions) > 0
                 ), "Scripts should define RED color consistently"
 
-    def test_script_dependencies_documented(self, scripts_dir):
+    def test_script_dependencies_documented(self, scripts_dir) -> None:
         """Test that script dependencies are documented in comments.
 
         Args:
@@ -468,7 +468,7 @@ class TestScriptIntegration:
                     ),
                 ), f"{script_name} should have descriptive comments"
 
-    def test_bump_internal_refs_updates_refs(self, tmp_path):
+    def test_bump_internal_refs_updates_refs(self, tmp_path) -> None:
         """Test that the bump-internal-refs.sh updates SHAs in workflow files.
 
         Creates a temporary workflow file that includes internal refs and runs the
@@ -509,7 +509,7 @@ class TestScriptIntegration:
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         )
 
-    def test_bump_internal_refs_invalid_sha_fails(self, tmp_path):
+    def test_bump_internal_refs_invalid_sha_fails(self, tmp_path) -> None:
         """Invalid SHA should cause the bump script to fail early.
 
         Args:
@@ -533,7 +533,7 @@ class TestScriptIntegration:
         assert_that(result.returncode).is_not_equal_to(0)
         assert_that(result.stderr).contains("Invalid SHA")
 
-    def test_renovate_regex_manager_current_value(self):
+    def test_renovate_regex_manager_current_value(self) -> None:
         """Ensure Renovate custom managers use currentValue to satisfy schema."""
         config_path = Path("renovate.json")
         content = config_path.read_text()

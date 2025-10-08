@@ -10,7 +10,7 @@ from lintro.parsers.ruff.ruff_parser import (
 )
 
 
-def test_parse_ruff_output_json_lines_and_variants():
+def test_parse_ruff_output_json_lines_and_variants() -> None:
     """Parse JSON lines with variant keys and fix metadata."""
     # Mixed JSON lines with different location key variants and fix metadata
     jl = (
@@ -29,7 +29,7 @@ def test_parse_ruff_output_json_lines_and_variants():
     assert_that(codes).contains("E501", "F401", "E702")
 
 
-def test_parse_ruff_output_trailing_non_json():
+def test_parse_ruff_output_trailing_non_json() -> None:
     """Ignore trailing non-JSON content after a JSON array."""
     # Parser should ignore trailing non-JSON after array
     output = (
@@ -44,7 +44,7 @@ def test_parse_ruff_output_trailing_non_json():
     assert issues[0].file.endswith("x.py")
 
 
-def test_parse_ruff_format_check_output_various_lines():
+def test_parse_ruff_format_check_output_various_lines() -> None:
     """Extract files from various format-check output lines."""
     out = (
         "Would reformat: src/app.py\n"
@@ -56,7 +56,7 @@ def test_parse_ruff_format_check_output_various_lines():
     assert_that(files).contains("src/app.py", "tests/test_app.py")
 
 
-def test_parse_ruff_format_check_output_variants_more():
+def test_parse_ruff_format_check_output_variants_more() -> None:
     """Support alternate wording for 'Would reformat' lines."""
     out = "Would reformat: a.py\nWould reformat b.py\n"
     files = parse_ruff_format_check_output(out)

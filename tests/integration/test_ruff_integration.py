@@ -95,7 +95,7 @@ def temp_python_file(request):
         print("[DEBUG] temp_python_file contents:")
         print(debug_f.read())
 
-    def cleanup():
+    def cleanup() -> None:
         try:
             os.unlink(file_path)
         except FileNotFoundError:
@@ -108,7 +108,7 @@ def temp_python_file(request):
 class TestRuffTool:
     """Test cases for RuffTool."""
 
-    def test_tool_initialization(self, ruff_tool):
+    def test_tool_initialization(self, ruff_tool) -> None:
         """Test that RuffTool initializes correctly.
 
         Args:
@@ -119,7 +119,7 @@ class TestRuffTool:
         assert_that(ruff_tool.config.file_patterns).contains("*.py")
         assert_that(ruff_tool.config.file_patterns).contains("*.pyi")
 
-    def test_tool_priority(self, ruff_tool):
+    def test_tool_priority(self, ruff_tool) -> None:
         """Test that RuffTool has high priority.
 
         Args:
@@ -127,7 +127,7 @@ class TestRuffTool:
         """
         assert_that(ruff_tool.config.priority).is_equal_to(85)
 
-    def test_lint_check_clean_file(self, ruff_tool, ruff_clean_file):
+    def test_lint_check_clean_file(self, ruff_tool, ruff_clean_file) -> None:
         """Test Ruff lint check on a clean file.
 
         Args:
@@ -141,7 +141,7 @@ class TestRuffTool:
         assert_that(result.success is True).is_true()
         assert_that(result.issues_count).is_equal_to(0)
 
-    def test_lint_check_violations(self, ruff_tool, ruff_violation_file):
+    def test_lint_check_violations(self, ruff_tool, ruff_violation_file) -> None:
         """Test Ruff lint check on a file with violations.
 
         Args:
@@ -155,7 +155,7 @@ class TestRuffTool:
         assert_that(result.success is False).is_true()
         assert_that(result.issues_count > 0).is_true()
 
-    def test_check_nonexistent_file(self, ruff_tool):
+    def test_check_nonexistent_file(self, ruff_tool) -> None:
         """Test checking a nonexistent file.
 
         Args:
@@ -164,7 +164,7 @@ class TestRuffTool:
         with pytest.raises(FileNotFoundError):
             ruff_tool.check(["/nonexistent/file.py"])
 
-    def test_check_empty_paths(self, ruff_tool):
+    def test_check_empty_paths(self, ruff_tool) -> None:
         """Test checking with empty paths.
 
         Args:
@@ -176,7 +176,7 @@ class TestRuffTool:
         assert_that(result.output).is_equal_to("No files to check.")
         assert_that(result.issues_count).is_equal_to(0)
 
-    def test_fix_with_violations(self, ruff_tool, temp_python_file):
+    def test_fix_with_violations(self, ruff_tool, temp_python_file) -> None:
         """Test fixing a file with violations.
 
         Args:
@@ -188,7 +188,7 @@ class TestRuffTool:
         assert_that(result.name).is_equal_to("ruff")
         assert_that(result.output).is_not_equal_to("No fixes applied.")
 
-    def test_set_options_valid(self, ruff_tool):
+    def test_set_options_valid(self, ruff_tool) -> None:
         """Test setting valid options.
 
         Args:
@@ -209,7 +209,7 @@ class TestRuffTool:
         assert_that(ruff_tool.options["unsafe_fixes"] is True).is_true()
         assert_that(ruff_tool.options["format"] is False).is_true()
 
-    def test_set_options_invalid_select(self, ruff_tool):
+    def test_set_options_invalid_select(self, ruff_tool) -> None:
         """Test setting invalid select option.
 
         Args:
@@ -218,7 +218,7 @@ class TestRuffTool:
         with pytest.raises(ValueError, match="select must be a list"):
             ruff_tool.set_options(select="E,F")
 
-    def test_set_options_invalid_line_length(self, ruff_tool):
+    def test_set_options_invalid_line_length(self, ruff_tool) -> None:
         """Test setting invalid line length.
 
         Args:
@@ -229,7 +229,7 @@ class TestRuffTool:
         with pytest.raises(ValueError, match="line_length must be positive"):
             ruff_tool.set_options(line_length=-1)
 
-    def test_build_check_command_basic(self, ruff_tool):
+    def test_build_check_command_basic(self, ruff_tool) -> None:
         """Test building basic check command.
 
         Args:
@@ -243,7 +243,7 @@ class TestRuffTool:
         assert_that(cmd).contains("json")
         assert_that(cmd).contains("test.py")
 
-    def test_build_check_command_with_fix(self, ruff_tool):
+    def test_build_check_command_with_fix(self, ruff_tool) -> None:
         """Test building check command with fix option.
 
         Args:
@@ -253,7 +253,7 @@ class TestRuffTool:
         cmd = ruff_tool._build_check_command(files, fix=True)
         assert_that(cmd).contains("--fix")
 
-    def test_build_check_command_with_options(self, ruff_tool):
+    def test_build_check_command_with_options(self, ruff_tool) -> None:
         """Test building check command with various options.
 
         Args:
@@ -269,7 +269,7 @@ class TestRuffTool:
         assert_that(cmd).contains("--line-length")
         assert_that(cmd).contains("88")
 
-    def test_build_format_command_basic(self, ruff_tool):
+    def test_build_format_command_basic(self, ruff_tool) -> None:
         """Test building basic format command.
 
         Args:
@@ -281,7 +281,7 @@ class TestRuffTool:
         assert_that(cmd[1]).is_equal_to("format")
         assert_that(cmd).contains("test.py")
 
-    def test_build_format_command_check_only(self, ruff_tool):
+    def test_build_format_command_check_only(self, ruff_tool) -> None:
         """Test building format command in check-only mode.
 
         Args:
@@ -291,7 +291,7 @@ class TestRuffTool:
         cmd = ruff_tool._build_format_command(files, check_only=True)
         assert_that(cmd).contains("--check")
 
-    def test_check_reports_formatting_issues(self, ruff_tool, request):
+    def test_check_reports_formatting_issues(self, ruff_tool, request) -> None:
         """Test that check reports formatting issues (not just lint issues).
 
         Args:
@@ -304,7 +304,7 @@ class TestRuffTool:
             f.flush()
             file_path = f.name
 
-        def cleanup():
+        def cleanup() -> None:
             try:
                 os.unlink(file_path)
             except FileNotFoundError:
@@ -334,7 +334,7 @@ class TestRuffTool:
             ),
         ).is_true()
 
-    def test_format_check_clean_file(self, ruff_tool, ruff_clean_file):
+    def test_format_check_clean_file(self, ruff_tool, ruff_clean_file) -> None:
         """Test format check on a clean file.
 
         Args:
@@ -346,7 +346,7 @@ class TestRuffTool:
         assert_that(result.success is True).is_true()
         assert_that(result.issues_count).is_equal_to(0)
 
-    def test_format_check_violations(self, ruff_tool, ruff_violation_file):
+    def test_format_check_violations(self, ruff_tool, ruff_violation_file) -> None:
         """Test format check on a file with violations.
 
         Args:
@@ -359,7 +359,7 @@ class TestRuffTool:
         assert_that(result.issues_count > 0).is_true()
         assert_that(result.issues and len(result.issues) > 0).is_true()
 
-    def test_fmt_fixes_violations(self, ruff_tool, ruff_violation_file):
+    def test_fmt_fixes_violations(self, ruff_tool, ruff_violation_file) -> None:
         """Apply fix to a file and expect fewer or equal issues after.
 
         Args:
@@ -377,7 +377,10 @@ class TestRuffTool:
             f"{check_result.issues_count} (was {initial_issues})"
         )
 
-    def test_ruff_output_consistency_direct_vs_lintro(self, ruff_violation_file):
+    def test_ruff_output_consistency_direct_vs_lintro(
+        self,
+        ruff_violation_file,
+    ) -> None:
         """Ruff CLI vs Lintro: Should produce consistent results for the same file.
 
         Args:

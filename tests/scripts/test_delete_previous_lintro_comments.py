@@ -24,7 +24,7 @@ spec.loader.exec_module(del_script)
 
 
 @pytest.fixture(autouse=True)
-def patch_env(monkeypatch):
+def patch_env(monkeypatch) -> None:
     """Patch environment variables for the script.
 
     Args:
@@ -35,7 +35,7 @@ def patch_env(monkeypatch):
     monkeypatch.setenv("PR_NUMBER", "123")
 
 
-def test_deletes_only_marker_comments(monkeypatch):
+def test_deletes_only_marker_comments(monkeypatch) -> None:
     """Test that only comments with the marker are deleted.
 
     Args:
@@ -52,7 +52,7 @@ def test_deletes_only_marker_comments(monkeypatch):
     def mock_get_pr_comments(repo: str, pr_number: str, token: str):
         return comments
 
-    def mock_delete_comment(repo: str, comment_id: int, token: str):
+    def mock_delete_comment(repo: str, comment_id: int, token: str) -> None:
         deleted.append(comment_id)
 
     monkeypatch.setattr(del_script, "get_pr_comments", mock_get_pr_comments)
@@ -69,7 +69,7 @@ def test_deletes_only_marker_comments(monkeypatch):
     assert_that(set(deleted)).is_equal_to({2, 3})
 
 
-def test_no_marker_comments(monkeypatch):
+def test_no_marker_comments(monkeypatch) -> None:
     """Test that script prints message if no marker comments are found.
 
     Args:
@@ -84,7 +84,7 @@ def test_no_marker_comments(monkeypatch):
     def mock_get_pr_comments(repo: str, pr_number: str, token: str):
         return comments
 
-    def mock_delete_comment(repo: str, comment_id: int, token: str):
+    def mock_delete_comment(repo: str, comment_id: int, token: str) -> None:
         deleted.append(comment_id)
 
     monkeypatch.setattr(del_script, "get_pr_comments", mock_get_pr_comments)

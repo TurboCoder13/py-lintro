@@ -13,7 +13,7 @@ from lintro.formatters.styles.markdown import MarkdownStyle
 from lintro.formatters.styles.plain import PlainStyle
 
 
-def test_output_style_abstract():
+def test_output_style_abstract() -> None:
     """Test that OutputStyle is an abstract base class."""
     from abc import ABC
 
@@ -21,7 +21,7 @@ def test_output_style_abstract():
     assert_that(hasattr(OutputStyle, "format")).is_true()
 
 
-def test_table_descriptor_abstract():
+def test_table_descriptor_abstract() -> None:
     """Test TableDescriptor is an abstract base class."""
     from abc import ABC
 
@@ -30,13 +30,13 @@ def test_table_descriptor_abstract():
     assert_that(hasattr(TableDescriptor, "get_rows")).is_true()
 
 
-def test_table_descriptor_methods():
+def test_table_descriptor_methods() -> None:
     """Test TableDescriptor abstract methods exist."""
     assert_that(callable(TableDescriptor.get_columns)).is_true()
     assert_that(callable(TableDescriptor.get_rows)).is_true()
 
 
-def test_csv_style_format():
+def test_csv_style_format() -> None:
     """Test CSV style formatting."""
     style = CsvStyle()
     result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
@@ -45,14 +45,14 @@ def test_csv_style_format():
     assert_that(result).contains("val3,val4")
 
 
-def test_csv_style_format_empty():
+def test_csv_style_format_empty() -> None:
     """Test CSV style formatting with empty data."""
     style = CsvStyle()
     result = style.format([], [])
     assert_that(result).is_equal_to("")
 
 
-def test_grid_style_format():
+def test_grid_style_format() -> None:
     """Test grid style formatting."""
     style = GridStyle()
     result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
@@ -62,14 +62,14 @@ def test_grid_style_format():
     assert_that(result).contains("val2")
 
 
-def test_grid_style_format_empty():
+def test_grid_style_format_empty() -> None:
     """Test grid style formatting with empty data."""
     style = GridStyle()
     result = style.format([], [])
     assert_that(result).is_equal_to("")
 
 
-def test_grid_style_format_fallback():
+def test_grid_style_format_fallback() -> None:
     """Test grid style formatting fallback when tabulate is not available."""
     style = GridStyle()
     with pytest.MonkeyPatch().context() as m:
@@ -83,7 +83,7 @@ def test_grid_style_format_fallback():
         assert_that(result).contains(" | ")
 
 
-def test_grid_style_format_fallback_empty():
+def test_grid_style_format_fallback_empty() -> None:
     """Test grid style formatting fallback with empty data."""
     style = GridStyle()
     with pytest.MonkeyPatch().context() as m:
@@ -93,7 +93,7 @@ def test_grid_style_format_fallback_empty():
         assert_that(result).is_equal_to("")
 
 
-def test_grid_style_format_fallback_single_column():
+def test_grid_style_format_fallback_single_column() -> None:
     """Test grid style formatting fallback with single column."""
     style = GridStyle()
     with pytest.MonkeyPatch().context() as m:
@@ -105,7 +105,7 @@ def test_grid_style_format_fallback_single_column():
         assert_that(result).contains("val2")
 
 
-def test_html_style_format():
+def test_html_style_format() -> None:
     """Test HTML style formatting."""
     style = HtmlStyle()
     result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
@@ -116,7 +116,7 @@ def test_html_style_format():
     assert_that(result).contains("<td>val2</td>")
 
 
-def test_json_style_format():
+def test_json_style_format() -> None:
     """Test JSON style formatting."""
     style = JsonStyle()
     result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
@@ -126,7 +126,7 @@ def test_json_style_format():
     assert_that(result).contains("val2")
 
 
-def test_markdown_style_format():
+def test_markdown_style_format() -> None:
     """Test markdown style formatting."""
     style = MarkdownStyle()
     result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
@@ -135,7 +135,7 @@ def test_markdown_style_format():
     assert_that(result).contains("| val3 | val4 |")
 
 
-def test_plain_style_format():
+def test_plain_style_format() -> None:
     """Test plain style formatting."""
     style = PlainStyle()
     result = style.format(["col1", "col2"], [["val1", "val2"], ["val3", "val4"]])
@@ -145,7 +145,7 @@ def test_plain_style_format():
     assert_that(result).contains("val2")
 
 
-def test_all_styles_produce_output():
+def test_all_styles_produce_output() -> None:
     """Test that all styles produce some output."""
     styles = [
         CsvStyle(),
@@ -163,7 +163,7 @@ def test_all_styles_produce_output():
         assert_that(len(result) > 0).is_true()
 
 
-def test_styles_handle_empty_results():
+def test_styles_handle_empty_results() -> None:
     """Test that all styles handle empty results gracefully."""
     styles = [
         CsvStyle(),

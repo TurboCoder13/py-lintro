@@ -12,14 +12,14 @@ from scripts.ci.ghcr_prune_untagged import (
 )
 
 
-def test_version_dataclass():
+def test_version_dataclass() -> None:
     """Construct ``GhcrVersion`` and validate fields are populated."""
     v = GhcrVersion(id=123, tags=["latest"])  # type: ignore[call-arg]
     assert v.id == 123
     assert v.tags == ["latest"]
 
 
-def test_list_container_versions_parses_minimal_structure(monkeypatch):
+def test_list_container_versions_parses_minimal_structure(monkeypatch) -> None:
     """Parse a minimal response structure into version objects.
 
     Args:
@@ -27,7 +27,7 @@ def test_list_container_versions_parses_minimal_structure(monkeypatch):
     """
 
     class DummyResp:
-        def __init__(self, data: list[dict[str, Any]]):
+        def __init__(self, data: list[dict[str, Any]]) -> None:
             self._data = data
 
         def raise_for_status(self) -> None:  # pragma: no cover
@@ -51,7 +51,7 @@ def test_list_container_versions_parses_minimal_structure(monkeypatch):
     assert versions[1].tags == []
 
 
-def test_delete_version_calls_delete(monkeypatch):
+def test_delete_version_calls_delete(monkeypatch) -> None:
     """Call delete and ensure correct endpoint is used.
 
     Args:
@@ -78,7 +78,7 @@ def test_delete_version_calls_delete(monkeypatch):
     assert calls and "versions/42" in calls[0][0]
 
 
-def test_delete_version_raises_on_non_204_non_404():
+def test_delete_version_raises_on_non_204_non_404() -> None:
     """Raise when the delete operation returns an unexpected status code.
 
     Raises:
@@ -106,7 +106,7 @@ def test_delete_version_raises_on_non_204_non_404():
     raise AssertionError("Expected RuntimeError on non-204/404 response")
 
 
-def test_main_deletes_only_untagged(monkeypatch):
+def test_main_deletes_only_untagged(monkeypatch) -> None:
     """Delete only untagged versions using the main entry point.
 
     Args:
@@ -195,7 +195,7 @@ def test_main_deletes_only_untagged(monkeypatch):
     assert sorted(deleted) == [22, 44]
 
 
-def test_main_respects_keep_n_and_dry_run(monkeypatch):
+def test_main_respects_keep_n_and_dry_run(monkeypatch) -> None:
     """Respect keep-N and dry-run options when pruning.
 
     Args:

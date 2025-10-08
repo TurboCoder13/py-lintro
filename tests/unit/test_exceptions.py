@@ -11,7 +11,7 @@ from lintro.exceptions.errors import (
 )
 
 
-def test_custom_exceptions_str_and_inheritance():
+def test_custom_exceptions_str_and_inheritance() -> None:
     """Ensure custom exceptions inherit and stringify as expected."""
     base = LintroError("base")
     assert_that(isinstance(base, Exception)).is_true()

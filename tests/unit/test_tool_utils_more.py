@@ -8,7 +8,9 @@ from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 from lintro.utils.tool_utils import format_tool_output, walk_files_with_excludes
 
 
-def test_format_tool_output_with_parsed_issues_and_fixable_sections(monkeypatch):
+def test_format_tool_output_with_parsed_issues_and_fixable_sections(
+    monkeypatch,
+) -> None:
     """Format tool output, including fixable issues section when present.
 
     Args:
@@ -16,7 +18,13 @@ def test_format_tool_output_with_parsed_issues_and_fixable_sections(monkeypatch)
     """
     import lintro.utils.tool_utils as tu
 
-    def fake_tabulate(tabular_data, headers, tablefmt, stralign, disable_numparse):
+    def fake_tabulate(
+        tabular_data,
+        headers,
+        tablefmt,
+        stralign,
+        disable_numparse,
+    ) -> str:
         return "TABLE"
 
     monkeypatch.setattr(tu, "TABULATE_AVAILABLE", True, raising=True)
@@ -46,7 +54,7 @@ def test_format_tool_output_with_parsed_issues_and_fixable_sections(monkeypatch)
     assert_that("Auto-fixable" in txt or txt == "TABLE").is_true()
 
 
-def test_format_tool_output_parsing_fallbacks(monkeypatch):
+def test_format_tool_output_parsing_fallbacks(monkeypatch) -> None:
     """Fallback to raw output for unknown tools or missing issues.
 
     Args:
@@ -62,7 +70,7 @@ def test_format_tool_output_parsing_fallbacks(monkeypatch):
     assert_that(out).is_equal_to("some raw output")
 
 
-def test_walk_files_excludes_venv(tmp_path):
+def test_walk_files_excludes_venv(tmp_path) -> None:
     """walk_files_with_excludes should omit venv directories by default.
 
     Args:

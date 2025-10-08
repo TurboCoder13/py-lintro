@@ -33,7 +33,7 @@ def actionlint_available() -> bool:
 
 
 @pytest.mark.actionlint
-def test_actionlint_available():
+def test_actionlint_available() -> None:
     """Skip the suite if actionlint is not present locally.
 
     Ensures local runs behave like CI (which always has actionlint in Docker),
@@ -47,7 +47,7 @@ SAMPLE_BAD = Path("test_samples/actionlint_violations.yml")
 
 
 @pytest.mark.actionlint
-def test_actionlint_reports_violations(tmp_path):
+def test_actionlint_reports_violations(tmp_path) -> None:
     """Assert that Lintro detects violations reported by actionlint.
 
     Args:
@@ -71,7 +71,7 @@ def test_actionlint_reports_violations(tmp_path):
 
 
 @pytest.mark.actionlint
-def test_actionlint_no_files(tmp_path):
+def test_actionlint_no_files(tmp_path) -> None:
     """Assert that Lintro succeeds when no workflow files are present.
 
     Args:

@@ -9,7 +9,7 @@ from lintro.cli_utils.commands.check import check as check_prog
 from lintro.cli_utils.commands.format import format_code_legacy
 
 
-def test_check_programmatic_success(monkeypatch):
+def test_check_programmatic_success(monkeypatch) -> None:
     """Programmatic check returns None on success.
 
     Args:
@@ -35,7 +35,7 @@ def test_check_programmatic_success(monkeypatch):
     ).is_none()
 
 
-def test_format_programmatic_success(monkeypatch):
+def test_format_programmatic_success(monkeypatch) -> None:
     """Programmatic format returns None on success.
 
     Args:
@@ -63,7 +63,7 @@ def test_format_programmatic_success(monkeypatch):
     ).is_none()
 
 
-def test_format_programmatic_failure_raises(monkeypatch):
+def test_format_programmatic_failure_raises(monkeypatch) -> None:
     """Programmatic format raises when executor returns non-zero.
 
     Args:

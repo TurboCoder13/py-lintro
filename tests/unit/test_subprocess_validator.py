@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Never
+
 import pytest
 
 from lintro.enums.tool_type import ToolType
@@ -20,10 +22,10 @@ class _DummyTool(BaseTool):
         tool_type=ToolType.SECURITY,
     )
 
-    def check(self, paths: list[str]):  # type: ignore[override]
+    def check(self, paths: list[str]) -> Never:  # type: ignore[override]
         raise NotImplementedError
 
-    def fix(self, paths: list[str]):  # type: ignore[override]
+    def fix(self, paths: list[str]) -> Never:  # type: ignore[override]
         raise NotImplementedError
 
 

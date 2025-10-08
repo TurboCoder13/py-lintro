@@ -9,7 +9,7 @@ from assertpy import assert_that
 from lintro.utils.console_logger import create_logger, get_tool_emoji
 
 
-def test_get_tool_emoji_default():
+def test_get_tool_emoji_default() -> None:
     """Return a default emoji for unknown tools and non-empty string."""
     # Unknown tool should return the default emoji
     emoji = get_tool_emoji("unknown-tool")
@@ -18,7 +18,7 @@ def test_get_tool_emoji_default():
     assert_that(emoji).is_not_equal_to("")
 
 
-def test_console_logger_parsing_messages(tmp_path: Path, capsys):
+def test_console_logger_parsing_messages(tmp_path: Path, capsys) -> None:
     """Parse typical messages and print a concise summary.
 
     Args:
