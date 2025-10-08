@@ -12,13 +12,13 @@ import sys
 
 try:
     # Prefer hardened XML parsing
-    from defusedxml import ElementTree as ET  # type: ignore
+    from defusedxml import ElementTree  # type: ignore
 
     _DEFUSED = True
 except Exception:  # pragma: no cover - fallback path
     # Fallback to stdlib. This script parses a local CI-generated coverage.xml,
     # not untrusted input. We explicitly justify the fallback usage.
-    import xml.etree.ElementTree as ET  # nosec B405
+    import xml.etree.ElementTree as ElementTree  # nosec B405
 
     _DEFUSED = False
 
@@ -61,7 +61,7 @@ def extract_coverage_percentage() -> None:
         dbg(f"Coverage XML file size: {os.path.getsize(coverage_file)} bytes")
 
         # Read and parse the XML file
-        tree = ET.parse(coverage_file)  # nosec B314 - see module docstring
+        tree = ElementTree.parse(coverage_file)  # nosec B314 - see module docstring
         root = tree.getroot()
 
         dbg(f"XML root tag: {root.tag}")
