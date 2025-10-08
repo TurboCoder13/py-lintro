@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import subprocess
-from typing import Callable
 
 import pytest
 
@@ -39,12 +38,13 @@ def test_run_subprocess_file_not_found(tool: _DummyTool) -> None:
     assert "Command not found:" in str(exc.value)
 
 
-def test_run_subprocess_timeout(tool: _DummyTool, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_subprocess_timeout(
+    tool: _DummyTool,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     def _raise_timeout(*_a, **_k):
         raise subprocess.TimeoutExpired(cmd=["echo"], timeout=0.01)
 
     monkeypatch.setattr(subprocess, "run", _raise_timeout)
     with pytest.raises(subprocess.TimeoutExpired):
         tool._run_subprocess(["echo"])  # validated args; will raise timeout
-
-
