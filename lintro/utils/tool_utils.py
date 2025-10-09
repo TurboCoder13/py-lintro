@@ -200,10 +200,7 @@ def get_table_columns(
         columns = expected_columns
     else:
         # Fallback: use all unique keys from the first issue
-        if issues:
-            columns = list(issues[0].keys())
-        else:
-            columns = []
+        columns = list(issues[0].keys()) if issues else []
 
     # Convert issues to rows
     rows: list[list[str]] = []
@@ -434,13 +431,11 @@ def walk_files_with_excludes(
                             matches_pattern = True
                             break
 
-                    if matches_pattern:
-                        # Check if file should be excluded
-                        if not should_exclude_path(
-                            path=rel_path,
-                            exclude_patterns=exclude_patterns,
-                        ):
-                            all_files.append(file_path)
+                    if matches_pattern and not should_exclude_path(
+                        path=rel_path,
+                        exclude_patterns=exclude_patterns,
+                    ):
+                        all_files.append(file_path)
 
     return sorted(all_files)
 

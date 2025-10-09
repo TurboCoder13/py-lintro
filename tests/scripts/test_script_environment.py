@@ -179,10 +179,8 @@ echo 0.0.0
             error_output = result.stderr + result.stdout
             assert_that(
                 any(
-                    (
-                        word in error_output.lower()
-                        for word in ["docker", "not found", "not running", "error"]
-                    ),
+                    word in error_output.lower()
+                    for word in ["docker", "not found", "not running", "error"]
                 ),
             ).is_true()
 
@@ -550,9 +548,13 @@ class TestScriptSecurity:
             for _i, line in enumerate(lines, 1):
                 if line.strip().startswith("#"):
                     continue
-                if " $1" in line and '"$1"' not in line and ("'$1'" not in line):
-                    if not any(safe in line for safe in ["[$1]", "=$1", "shift"]):
-                        pass
+                if (
+                    " $1" in line
+                    and '"$1"' not in line
+                    and ("'$1'" not in line)
+                    and not any(safe in line for safe in ["[$1]", "=$1", "shift"])
+                ):
+                    pass
 
 
 class TestScriptCompatibility:
