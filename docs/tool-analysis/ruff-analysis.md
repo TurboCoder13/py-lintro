@@ -151,7 +151,7 @@ lintro check --tool-options "ruff:format_check=True"
 ruff check src/
 
 # With specific rules
-ruff check --select E501,W503 src/
+ruff check --select E501,W503,B006 src/
 
 # Auto-fixing
 ruff check --fix src/
@@ -176,7 +176,7 @@ ruff_tool.fix()
 
 # With specific options
 ruff_tool.set_options(
-    select=["E501", "W503"],
+    select=["E501", "W503", "B006"],
     line_length=88,
     unsafe_fixes=True
 )
