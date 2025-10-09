@@ -1,5 +1,6 @@
 """Integration tests for Ruff tool."""
 
+import contextlib
 import os
 import shutil
 import tempfile
@@ -96,10 +97,8 @@ def temp_python_file(request):
         print(debug_f.read())
 
     def cleanup() -> None:
-        try:
+        with contextlib.suppress(FileNotFoundError):
             os.unlink(file_path)
-        except FileNotFoundError:
-            pass
 
     request.addfinalizer(cleanup)
     yield file_path
@@ -215,8 +214,8 @@ class TestRuffTool:
         Args:
             ruff_tool: RuffTool fixture instance.
         """
-        with pytest.raises(ValueError, match="select must be a list"):
-            ruff_tool.set_options(select="E,F")
+        with pytest.raises(ValueError, match="select must be a string or list"):
+            ruff_tool.set_options(select=123)
 
     def test_set_options_invalid_line_length(self, ruff_tool) -> None:
         """Test setting invalid line length.
@@ -305,10 +304,8 @@ class TestRuffTool:
             file_path = f.name
 
         def cleanup() -> None:
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 os.unlink(file_path)
-            except FileNotFoundError:
-                pass
 
         request.addfinalizer(cleanup)
         ruff_tool.set_options(select=["E", "F"])
@@ -437,3 +434,134 @@ class TestRuffTool:
             f"CLI Output:\n{result.stdout}\n"
             f"Lintro Output:\n{lintro_result.output}"
         )
+
+    def test_c4_comprehensions_rules(self, ruff_tool) -> None:
+        """Test C4 (flake8-comprehensions) rule detection.
+
+        Args:
+            ruff_tool: RuffTool fixture instance.
+        """
+        ruff_tool.set_options(select=["C4"])
+        result = ruff_tool.check(["test_samples/ruff_c4_comprehensions_violations.py"])
+        assert_that(isinstance(result, ToolResult)).is_true()
+        assert_that(result.name).is_equal_to("ruff")
+        assert_that(result.success is False).is_true()
+        assert_that(result.issues_count > 0).is_true()
+
+        # Check that C4 rules are detected
+        c4_issues = [
+            issue
+            for issue in result.issues
+            if hasattr(issue, "code") and issue.code.startswith("C4")
+        ]
+        assert_that(len(c4_issues)).is_greater_than(0)
+
+    def test_sim_simplify_rules(self, ruff_tool) -> None:
+        """Test SIM (flake8-simplify) rule detection.
+
+        Args:
+            ruff_tool: RuffTool fixture instance.
+        """
+        ruff_tool.set_options(select=["SIM"])
+        result = ruff_tool.check(["test_samples/ruff_sim_simplify_violations.py"])
+        assert_that(isinstance(result, ToolResult)).is_true()
+        assert_that(result.name).is_equal_to("ruff")
+        assert_that(result.success is False).is_true()
+        assert_that(result.issues_count > 0).is_true()
+
+        # Check that SIM rules are detected
+        sim_issues = [
+            issue
+            for issue in result.issues
+            if hasattr(issue, "code") and issue.code.startswith("SIM")
+        ]
+        assert_that(len(sim_issues)).is_greater_than(0)
+
+    def test_c4_comprehensions_fixing(self, ruff_tool) -> None:
+        """Test C4 (flake8-comprehensions) rule fixing.
+
+        Args:
+            ruff_tool: RuffTool fixture instance.
+        """
+        import os
+        import tempfile
+
+        # Create a temporary file with C4 violations
+        content = """
+def test_function():
+    numbers = [1, 2, 3, 4, 5]
+    # C401: Unnecessary list comprehension
+    result = [x for x in numbers]
+    return result
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(content)
+            f.flush()
+            temp_file = f.name
+
+        try:
+            # Check initial issues
+            ruff_tool.set_options(select=["C4"], unsafe_fixes=True)
+            initial_result = ruff_tool.check([temp_file])
+            initial_count = initial_result.issues_count
+
+            # Apply fixes
+            fix_result = ruff_tool.fix([temp_file])
+            assert_that(fix_result.success).is_true()
+
+            # Check remaining issues
+            final_result = ruff_tool.check([temp_file])
+            final_count = final_result.issues_count
+
+            # Should have fewer issues after fixing
+            assert_that(final_count).is_less_than_or_equal_to(initial_count)
+
+        finally:
+            os.unlink(temp_file)
+
+    def test_sim_simplify_fixing(self, ruff_tool) -> None:
+        """Test SIM (flake8-simplify) rule fixing.
+
+        Args:
+            ruff_tool: RuffTool fixture instance.
+        """
+        import os
+        import tempfile
+
+        # Create a temporary file with SIM violations
+        content = """
+def test_function():
+    x = 5
+    # SIM101: Unnecessary if-else
+    if x > 0:
+        result = True
+    else:
+        result = False
+    return result
+"""
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(content)
+            f.flush()
+            temp_file = f.name
+
+        try:
+            # Check initial issues
+            ruff_tool.set_options(select=["SIM"], unsafe_fixes=True)
+            initial_result = ruff_tool.check([temp_file])
+            initial_count = initial_result.issues_count
+
+            # Apply fixes
+            fix_result = ruff_tool.fix([temp_file])
+            assert_that(fix_result.success).is_true()
+
+            # Check remaining issues
+            final_result = ruff_tool.check([temp_file])
+            final_count = final_result.issues_count
+
+            # Should have fewer issues after fixing
+            assert_that(final_count).is_less_than_or_equal_to(initial_count)
+
+        finally:
+            os.unlink(temp_file)

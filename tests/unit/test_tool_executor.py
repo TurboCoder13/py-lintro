@@ -196,7 +196,7 @@ def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]) -> None:
     import lintro.utils.tool_executor as te
 
     def fake_get_tools(*, tools: str | None, action: str):
-        return [_EnumLike(name.upper()) for name in tools_dict.keys()]
+        return [_EnumLike(name.upper()) for name in tools_dict]
 
     tools_dict = tools
     monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)

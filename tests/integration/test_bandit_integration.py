@@ -1,5 +1,6 @@
 """Integration tests for Bandit tool (security linter)."""
 
+import contextlib
 import os
 import shutil
 import tempfile
@@ -45,7 +46,5 @@ def test_bandit_no_crash_on_clean_temp_file() -> None:
         assert_that(result.name).is_equal_to("bandit")
         assert_that(result.issues_count >= 0).is_true()
     finally:
-        try:
+        with contextlib.suppress(FileNotFoundError):
             os.unlink(path)
-        except FileNotFoundError:
-            pass

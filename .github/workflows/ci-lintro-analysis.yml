@@ -91,10 +91,13 @@ jobs:
           github.event.pull_request.head.repo.fork == false
         env:
           HEAD_REF: ${{ github.head_ref }}
+          RUFF_UNSAFE_FIXES: true # Enable unsafe fixes for auto-fixing C4/SIM issues
         run: scripts/ci/ci-auto-fix.sh
 
       - name: Run Lintro Analysis in Docker
         id: lintro
+        env:
+          RUFF_UNSAFE_FIXES: true # Enable unsafe fixes for CI to catch C4/SIM issues
         run: ./scripts/ci/ci-lintro.sh
         continue-on-error: true
 
