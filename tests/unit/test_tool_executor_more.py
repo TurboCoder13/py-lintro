@@ -42,6 +42,9 @@ def test_get_tools_to_run_unknown_tool_raises(monkeypatch) -> None:
 
     Args:
         monkeypatch: Pytest fixture to modify objects during the test.
+
+    Raises:
+        ValueError: If the tool is unknown.
     """
     import lintro.utils.tool_executor as te
 
@@ -67,6 +70,9 @@ def test_get_tools_to_run_fmt_with_cannot_fix_raises(monkeypatch) -> None:
 
     Args:
         monkeypatch: Pytest fixture to modify objects during the test.
+
+    Raises:
+        ValueError: If the tool cannot be fixed.
     """
     import lintro.utils.tool_executor as te
 

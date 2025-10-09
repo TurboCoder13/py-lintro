@@ -24,7 +24,11 @@ def test_format_as_table_fallback_when_no_tabulate() -> None:
 
 
 def test_parse_tool_list_error_on_bad_name() -> None:
-    """Raise ValueError when parsing an unknown tool name."""
+    """Raise ValueError when parsing an unknown tool name.
+
+    Raises:
+        ValueError: If the tool is unknown.
+    """
     try:
         _ = tu.parse_tool_list("notatool")
         raise AssertionError("Expected ValueError for bad tool name")
