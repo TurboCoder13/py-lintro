@@ -27,7 +27,7 @@ def test_parse_tool_list_error_on_bad_name() -> None:
     """Raise ValueError when parsing an unknown tool name.
 
     Raises:
-        ValueError: If the tool is unknown.
+        AssertionError: If the expected ValueError is not raised.
     """
     try:
         _ = tu.parse_tool_list("notatool")
