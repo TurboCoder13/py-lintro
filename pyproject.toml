@@ -65,10 +65,10 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 
 [tool.ruff.lint]
-select = [ "E", "F", "W", "I", "COM", "N", "D", "UP", "ANN",]
-ignore = [ "ANN",]
+select = [ "E", "F", "W", "I", "COM", "N", "D", "UP", "ANN", "B",]
+ignore = ["ANN"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.lintro.post_checks]

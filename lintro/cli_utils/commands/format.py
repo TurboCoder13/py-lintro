@@ -140,7 +140,7 @@ def format_code_legacy(
         None: This function does not return a value.
 
     Raises:
-        Exception: If format fails for any reason.
+        RuntimeError: If format fails for any reason.
     """
     args: list[str] = []
     if paths:
@@ -163,5 +163,5 @@ def format_code_legacy(
     runner = CliRunner()
     result = runner.invoke(format_code, args)
     if result.exit_code != DEFAULT_EXIT_CODE:
-        raise Exception(f"Format failed: {result.output}")
+        raise RuntimeError(f"Format failed: {result.output}")
     return None

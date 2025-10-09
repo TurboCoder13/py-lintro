@@ -547,7 +547,7 @@ class TestScriptSecurity:
             with open(script) as f:
                 content = f.read()
             lines = content.split("\n")
-            for i, line in enumerate(lines, 1):
+            for _i, line in enumerate(lines, 1):
                 if line.strip().startswith("#"):
                     continue
                 if " $1" in line and '"$1"' not in line and ("'$1'" not in line):

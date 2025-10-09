@@ -65,7 +65,7 @@ def _get_tools_to_run(
             available_names: list[str] = [e.name.lower() for e in ToolEnum]
             raise ValueError(
                 f"Unknown tool '{name.lower()}'. Available tools: {available_names}",
-            )
+            ) from None
 
     return tools_to_run
 

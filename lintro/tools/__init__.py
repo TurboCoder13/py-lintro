@@ -21,7 +21,7 @@ tool_manager = ToolManager()
 AVAILABLE_TOOLS = {tool_enum: tool_enum.value for tool_enum in ToolEnum}
 
 
-for tool_enum, tool_class in AVAILABLE_TOOLS.items():
+for _tool_enum, tool_class in AVAILABLE_TOOLS.items():
     tool_manager.register_tool(tool_class)
 
 # Consolidated exports

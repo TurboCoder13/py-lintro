@@ -77,7 +77,7 @@ def test_format_programmatic_failure_raises(monkeypatch) -> None:
         lambda **k: 1,
         raising=True,
     )
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         format_code_legacy(
             paths=["."],
             tools="prettier",
