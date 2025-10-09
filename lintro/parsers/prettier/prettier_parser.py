@@ -36,7 +36,7 @@ def parse_prettier_output(output: str) -> list[PrettierIssue]:
 
     lines = normalized_output.splitlines()
 
-    for i, line in enumerate(lines):
+    for _i, line in enumerate(lines):
         line = line.strip()
         if not line:
             continue

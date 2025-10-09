@@ -60,12 +60,12 @@ def _read_version_from_toml_bytes(data: bytes) -> str:
 
             parsed = toml.loads(data.decode("utf-8"))
         except Exception as exc:  # pragma: no cover
-            raise SystemExit(f"Failed to parse TOML: {exc}")
+            raise SystemExit(f"Failed to parse TOML: {exc}") from None
 
     try:
         version = parsed["project"]["version"]
     except Exception as exc:
-        raise SystemExit(f"Missing project.version in TOML: {exc}")
+        raise SystemExit(f"Missing project.version in TOML: {exc}") from None
     if not isinstance(version, str) or not version:
         raise SystemExit("Invalid project.version value")
     return version

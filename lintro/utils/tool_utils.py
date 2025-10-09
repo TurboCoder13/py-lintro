@@ -104,7 +104,7 @@ def parse_tool_list(tools_str: str | None) -> list[str]:
         try:
             result.append(ToolEnum[t.upper()])
         except KeyError:
-            raise ValueError(f"Unknown core: {t}")
+            raise ValueError(f"Unknown core: {t}") from None
     return result
 
 

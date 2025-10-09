@@ -57,7 +57,7 @@ def test_get_tools_to_run_unknown_tool_raises(monkeypatch) -> None:
 
     try:
         _ = te._get_tools_to_run(tools="notatool", action="check")
-        assert False, "Expected ValueError for unknown tool"
+        raise AssertionError("Expected ValueError for unknown tool")
     except ValueError as e:  # noqa: PT017
         assert_that(str(e)).contains("Unknown tool")
 
@@ -89,7 +89,7 @@ def test_get_tools_to_run_fmt_with_cannot_fix_raises(monkeypatch) -> None:
     # Directly call the helper
     try:
         _ = te._get_tools_to_run(tools="bandit", action="fmt")
-        assert False, "Expected ValueError for non-fix tool in fmt"
+        raise AssertionError("Expected ValueError for non-fix tool in fmt")
     except ValueError as e:  # noqa: PT017
         assert_that(str(e)).contains("does not support formatting")
 

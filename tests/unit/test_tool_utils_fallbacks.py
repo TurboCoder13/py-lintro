@@ -27,6 +27,6 @@ def test_parse_tool_list_error_on_bad_name() -> None:
     """Raise ValueError when parsing an unknown tool name."""
     try:
         _ = tu.parse_tool_list("notatool")
-        assert False, "Expected ValueError for bad tool name"
+        raise AssertionError("Expected ValueError for bad tool name")
     except ValueError as e:  # noqa: PT017
         assert_that("Unknown core" in str(e) or "Unknown tool" in str(e)).is_true()

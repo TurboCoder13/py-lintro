@@ -412,7 +412,7 @@ def main() -> None:
     except RuntimeError as exc:
         msg = str(exc)
         print(msg)
-        raise SystemExit(2)
+        raise SystemExit(2) from None
 
     print(
         "Base: "
