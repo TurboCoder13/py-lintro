@@ -21,6 +21,11 @@ if [ -f .env ]; then
     export $(grep -v '^#' .env | xargs)
 fi
 
+# Enable unsafe fixes for local development
+# This allows C4 and SIM rules to be auto-fixed during development
+export RUFF_UNSAFE_FIXES=true
+echo -e "${YELLOW}Enabled unsafe fixes for local development (RUFF_UNSAFE_FIXES=true)${NC}"
+
 # Function to check if tools are installed
 check_and_install_tools() {
     echo -e "${BLUE}Checking tool availability...${NC}"

@@ -82,12 +82,12 @@ def _validate_git_args(arguments: list[str]) -> None:
         if value == "HEAD":
             return True
         # vX.Y.Z..HEAD or <sha>..HEAD
-        if re.fullmatch(
-            rf"({TAG_RE.pattern[1:-1]}|[0-9a-fA-F]{{7,40}})\.\.HEAD",
-            value,
-        ):
-            return True
-        return False
+        return bool(
+            re.fullmatch(
+                rf"({TAG_RE.pattern[1:-1]}|[0-9a-fA-F]{{7,40}})\.\.HEAD",
+                value,
+            ),
+        )
 
     allowed_fixed = {
         "--tags",

@@ -15,7 +15,20 @@ name = "TurboCoder13"
 email = "turbocoder13@gmail.com"
 
 [dependency-groups]
-dev = [ "build==1.3.0", "pytest==8.4.2", "pytest-cov==7.0.0", "pytest-xdist==3.8.0", "twine==6.2.0", "assertpy==1.1", "pytest-mock==3.15.1", "darglint==1.8.1", "bandit==1.8.6", "black==25.9.0", "ruff==0.14.0", "yamllint==1.37.1",]
+dev = [
+ "build==1.3.0",
+ "pytest==8.4.2",
+ "pytest-cov==7.0.0",
+ "pytest-xdist==3.8.0",
+ "twine==6.2.0",
+ "assertpy==1.1",
+ "pytest-mock==3.15.1",
+ "darglint==1.8.1",
+ "bandit==1.8.6",
+ "black==25.9.0",
+ "ruff==0.14.0",
+ "yamllint==1.37.1",
+]
 
 [project.license]
 file = "LICENSE"
@@ -65,7 +78,7 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 
 [tool.ruff.lint]
-select = [ "E", "F", "W", "I", "COM", "N", "D", "UP", "ANN", "B",]
+select = [ "E", "F", "W", "I", "COM", "N", "D", "UP", "ANN", "B", "C4", "SIM",]
 ignore = [ "ANN",]
 
 [tool.lintro.post_checks]
@@ -81,3 +94,9 @@ python_functions = "test_*"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+# Development-specific configuration
+# This section can be used to override settings for local development
+# Copy these settings to your local pyproject.toml if you want unsafe fixes enabled
+[tool.lintro.ruff]
+# unsafe_fixes = true  # Uncomment to enable unsafe fixes locally

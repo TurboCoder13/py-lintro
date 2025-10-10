@@ -94,9 +94,11 @@ def format_ruff_issues(
     non_fixable_issues: list[RuffIssue] = []
 
     for issue in issues:
-        if isinstance(issue, RuffFormatIssue):
-            fixable_issues.append(issue)
-        elif isinstance(issue, RuffIssue) and issue.fixable:
+        if (
+            isinstance(issue, RuffFormatIssue)
+            or isinstance(issue, RuffIssue)
+            and issue.fixable
+        ):
             fixable_issues.append(issue)
         elif isinstance(issue, RuffIssue):
             non_fixable_issues.append(issue)
@@ -105,7 +107,11 @@ def format_ruff_issues(
     if format == "json":
         columns = descriptor.get_columns()
         rows = descriptor.get_rows(issues)
-        return formatter.format(columns=columns, rows=rows, tool_name="ruff")
+        return formatter.format(
+            columns=columns,
+            rows=rows,
+            tool_name="ruff",
+        )
 
     sections: list[str] = []
 

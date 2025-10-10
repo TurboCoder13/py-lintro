@@ -127,6 +127,7 @@ class RuffTool(BaseTool):
     def __post_init__(self) -> None:
         """Initialize the tool with default configuration."""
         super().__post_init__()
+
         # Load ruff configuration from pyproject.toml
         ruff_config = _load_ruff_config()
 
@@ -150,6 +151,13 @@ class RuffTool(BaseTool):
             self.options["ignore"] = ruff_config["ignore"]
         if "unsafe_fixes" in ruff_config:
             self.options["unsafe_fixes"] = ruff_config["unsafe_fixes"]
+
+        # Allow environment variable override for unsafe fixes
+        # Useful for development and CI environments
+        # This must come after config loading to override config values
+        env_unsafe_fixes = os.environ.get("RUFF_UNSAFE_FIXES", "").lower()
+        if env_unsafe_fixes in ("true", "1", "yes", "on"):
+            self.options["unsafe_fixes"] = True
 
     def set_options(
         self,
@@ -187,14 +195,26 @@ class RuffTool(BaseTool):
         Raises:
             ValueError: If an option value is invalid.
         """
-        if select is not None and not isinstance(select, list):
-            raise ValueError("select must be a list of rule codes")
-        if ignore is not None and not isinstance(ignore, list):
-            raise ValueError("ignore must be a list of rule codes")
-        if extend_select is not None and not isinstance(extend_select, list):
-            raise ValueError("extend_select must be a list of rule codes")
-        if extend_ignore is not None and not isinstance(extend_ignore, list):
-            raise ValueError("extend_ignore must be a list of rule codes")
+        if select is not None:
+            if isinstance(select, str):
+                select = [select]
+            elif not isinstance(select, list):
+                raise ValueError("select must be a string or list of rule codes")
+        if ignore is not None:
+            if isinstance(ignore, str):
+                ignore = [ignore]
+            elif not isinstance(ignore, list):
+                raise ValueError("ignore must be a string or list of rule codes")
+        if extend_select is not None:
+            if isinstance(extend_select, str):
+                extend_select = [extend_select]
+            elif not isinstance(extend_select, list):
+                raise ValueError("extend_select must be a string or list of rule codes")
+        if extend_ignore is not None:
+            if isinstance(extend_ignore, str):
+                extend_ignore = [extend_ignore]
+            elif not isinstance(extend_ignore, list):
+                raise ValueError("extend_ignore must be a string or list of rule codes")
         if line_length is not None:
             if not isinstance(line_length, int):
                 raise ValueError("line_length must be an integer")
@@ -512,9 +532,9 @@ class RuffTool(BaseTool):
         # Optionally run ruff check --fix (lint fixes)
         remaining_issues = []
         remaining_count = 0
+        success: bool = True  # Default to True when lint_fix is disabled
         if self.options.get("lint_fix", True):
             cmd: list[str] = self._build_check_command(files=python_files, fix=True)
-            success: bool
             output: str
             success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
             remaining_issues = parse_ruff_output(output=output)
@@ -621,10 +641,7 @@ class RuffTool(BaseTool):
 
         # Success should be based on whether there are remaining issues after fixing
         # If there are no initial issues, success should be True
-        if total_initial_count == 0:
-            overall_success = True
-        else:
-            overall_success = remaining_count == 0
+        overall_success = True if total_initial_count == 0 else remaining_count == 0
 
         return ToolResult(
             name=self.name,

@@ -231,7 +231,7 @@ def run_lint_tools_simple(
         post_cfg_early = load_post_checks_config()
         post_enabled_early = bool(post_cfg_early.get("enabled", False))
         post_tools_early: set[str] = (
-            set(t.lower() for t in (post_cfg_early.get("tools", []) or []))
+            {t.lower() for t in (post_cfg_early.get("tools", []) or [])}
             if post_enabled_early
             else set()
         )
@@ -392,10 +392,7 @@ def run_lint_tools_simple(
                 if not json_output_mode:
                     # Use raw output if raw_output is true, otherwise use
                     # formatted output
-                    if raw_output:
-                        display_output = output
-                    else:
-                        display_output = formatted_output
+                    display_output = output if raw_output else formatted_output
                     logger.print_tool_result(
                         tool_name=tool_name,
                         output=display_output,

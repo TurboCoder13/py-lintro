@@ -95,6 +95,43 @@ def test_ruff_table_and_formatting(tmp_path) -> None:
     assert_that("Auto-fixable" in out or "Not auto-fixable" in out or out).is_true()
 
 
+def test_ruff_json_format(tmp_path) -> None:
+    """Test JSON format path in ruff formatter.
+
+    Args:
+        tmp_path: Temporary directory used to fabricate file paths.
+    """
+    issues = [
+        RuffIssue(
+            file=str(tmp_path / "f.py"),
+            line=1,
+            column=2,
+            code="E123",
+            message="m",
+            fixable=False,
+        ),
+        RuffFormatIssue(file=str(tmp_path / "g.py")),
+    ]
+    out = format_ruff_issues(issues=issues, format="json")
+    # JSON format should return a single table without sections
+    assert_that(out).is_not_empty()
+    assert_that("Auto-fixable" not in out).is_true()
+    assert_that("Not auto-fixable" not in out).is_true()
+
+
+def test_ruff_empty_sections(tmp_path) -> None:
+    """Test empty sections path in ruff formatter.
+
+    Args:
+        tmp_path: Temporary directory used to fabricate file paths.
+    """
+    # Empty issues list should trigger the empty sections path
+    issues: list[RuffIssue | RuffFormatIssue] = []
+    out = format_ruff_issues(issues=issues, format="grid")
+    # GridStyle returns empty string when no rows
+    assert_that(out).is_equal_to("")
+
+
 def test_hadolint_table_and_formatting(tmp_path) -> None:
     """Validate Hadolint table layout and markdown formatting.
 

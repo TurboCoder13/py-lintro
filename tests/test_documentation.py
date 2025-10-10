@@ -155,10 +155,11 @@ class TestCLIDocumentation:
                 lines = block.strip().split("\n")
                 for line in lines:
                     line = line.strip()
-                    if line.startswith("lintro "):
+                    if line.startswith("lintro ") and not self._is_valid_lintro_command(
+                        line,
+                    ):
                         # Basic validation of command structure
-                        if not self._is_valid_lintro_command(line):
-                            invalid_examples.append(f"{doc_file}: {line}")
+                        invalid_examples.append(f"{doc_file}: {line}")
 
         if invalid_examples:
             pytest.fail("Invalid CLI examples in docs:\n" + "\n".join(invalid_examples))
@@ -184,10 +185,7 @@ class TestCLIDocumentation:
         if len(parts) < 2 or parts[0] != "lintro":
             return False
 
-        if parts[1] not in valid_commands:
-            return False
-
-        return True
+        return parts[1] in valid_commands
 
 
 class TestDocumentationLinks:
