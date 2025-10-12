@@ -92,20 +92,79 @@ jobs:
         env:
           HEAD_REF: ${{ github.head_ref }}
           RUFF_UNSAFE_FIXES: true # Enable unsafe fixes for auto-fixing C4/SIM issues
-        run: scripts/ci/ci-auto-fix.sh
+        run: |
+          # Auto-fix with lintro
+          docker run --rm -v "$PWD:/code" -w /code py-lintro:latest lintro format . --output-format grid || true
+          
+          # Check for changes and commit
+          CHANGED=$(git status --porcelain)
+          if [ -n "$CHANGED" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A '*.py' '*.md' '*.yml' '*.yaml' '*.json' '*.toml' '*.js' '*.ts' '*.tsx' || true
+            if ! git diff --cached --quiet; then
+              git commit -m "style: auto-format via Lintro"
+              git push origin HEAD:"$HEAD_REF"
+            fi
+          fi
 
       - name: Run Lintro Analysis in Docker
         id: lintro
         env:
           RUFF_UNSAFE_FIXES: true # Enable unsafe fixes for CI to catch C4/SIM issues
-        run: ./scripts/ci/ci-lintro.sh
+        run: |
+          # Run lintro check in Docker
+          docker run --rm -v "$PWD:/code" -w /code py-lintro:latest lintro check . > chk-output.txt 2>&1
+          CHK_EXIT_CODE=$?
+          echo "CHK_EXIT_CODE=$CHK_EXIT_CODE" >> $GITHUB_ENV
         continue-on-error: true
 
       # Deletion handled by composite action below via marker
 
       - name: Generate PR Comment
         if: github.event_name == 'pull_request'
-        run: ./scripts/ci/ci-pr-comment.sh
+        run: |
+          # Generate PR comment from lintro output
+          if [ -f chk-output.txt ]; then
+            # Extract summary from output
+            start_line=$(grep -n "EXECUTION SUMMARY" chk-output.txt | head -n1 | cut -d: -f1 || true)
+            if [ -n "${start_line:-}" ]; then
+              tail -n +"$start_line" chk-output.txt > chk-summary.txt || true
+            else
+              tail -n 50 chk-output.txt > chk-summary.txt || true
+            fi
+          fi
+          
+          if [ -f chk-summary.txt ]; then
+            OUTPUT=$(cat chk-summary.txt)
+          else
+            OUTPUT="❌ Analysis failed - check the CI logs for details"
+          fi
+          
+          # Determine status
+          if [ "${CHK_EXIT_CODE:-1}" != "0" ]; then
+            STATUS="⚠️ ISSUES FOUND"
+          else
+            if echo "$OUTPUT" | grep -q "❌\|FAILED\|ERROR"; then
+              STATUS="⚠️ ISSUES FOUND"
+            else
+              STATUS="✅ PASSED"
+            fi
+          fi
+          
+          # Create comment file
+          cat > pr-comment.txt << EOF
+          <!-- lintro-report -->
+          
+          **Workflow:**
+          1. ✅ Applied formatting fixes with \`lintro format\`
+          2. 🔍 Performed code quality checks with \`lintro check\`
+          
+          ### 📋 Results:
+          \`\`\`
+          $OUTPUT
+          \`\`\`
+          EOF
 
       - name: Comment PR with Lintro Results (merge-update)
         if: github.event_name == 'pull_request'
@@ -119,4 +178,7 @@ jobs:
         if: ${{ env.CHK_EXIT_CODE != '0' }}
         env:
           CHK_EXIT_CODE: ${{ env.CHK_EXIT_CODE }}
-        run: scripts/ci/fail-on-lint.sh
+        run: |
+          echo "❌ Linting issues found. Check the output above for details."
+          echo "Exit code: $CHK_EXIT_CODE"
+          exit $CHK_EXIT_CODE

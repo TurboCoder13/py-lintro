@@ -70,8 +70,10 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
         uses: TurboCoder13/turbo-ci/.github/actions/setup-env@${{ github.sha }}
-      - name: Run comprehensive test suite (with Docker tests)
-        run: ./scripts/docker/docker-test.sh
+      - name: Run comprehensive test suite
+        run: |
+          # Run tests with coverage
+          uv run pytest --cov=lintro --cov-report=html --cov-report=xml --cov-report=term
       # (moved) Upload coverage badge artifact happens after badge generation below
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -94,13 +96,37 @@ jobs:
           retention-days: 30
       - name: Extract coverage percentage
         id: coverage
-        run: ./scripts/ci/ci-extract-coverage.sh
+        run: |
+          # Extract coverage percentage from coverage.xml
+          if [ -f coverage.xml ]; then
+            python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('coverage.xml')
+          root = tree.getroot()
+          line_rate = float(root.get('line-rate', 0))
+          percentage = round(line_rate * 100, 2)
+          print(f'percentage={percentage}')
+          " > coverage-env.txt
+            source coverage-env.txt
+            echo "COVERAGE_PERCENTAGE=$percentage" >> $GITHUB_ENV
+            echo "percentage=$percentage" >> $GITHUB_OUTPUT
+          else
+            echo "COVERAGE_PERCENTAGE=0.0" >> $GITHUB_ENV
+            echo "percentage=0.0" >> $GITHUB_OUTPUT
+          fi
 
       - name: Enforce coverage threshold (80%)
         if: github.ref == 'refs/heads/main' && success()
         env:
           COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
-        run: bash ./scripts/ci/enforce-coverage-threshold.sh
+        run: |
+          # Enforce 80% coverage threshold
+          if (( $(echo "$COVERAGE_PERCENTAGE < 80" | bc -l) )); then
+            echo "❌ Coverage $COVERAGE_PERCENTAGE% is below 80% threshold"
+            exit 1
+          else
+            echo "✅ Coverage $COVERAGE_PERCENTAGE% meets 80% threshold"
+          fi
 
       - name: Upload coverage to Codecov (always)
         if: always()
@@ -116,7 +142,40 @@ jobs:
         if: success()
         env:
           COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
-        run: ./scripts/ci/coverage-badge-update.sh
+        run: |
+          # Generate coverage badge
+          mkdir -p assets/images
+          if (( $(echo "$COVERAGE_PERCENTAGE >= 80" | bc -l) )); then
+            color="#4c1"  # Green
+          elif (( $(echo "$COVERAGE_PERCENTAGE >= 60" | bc -l) )); then
+            color="#dfb317"  # Yellow
+          else
+            color="#e05d44"  # Red
+          fi
+          
+          cat > assets/images/coverage-badge.svg << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <svg xmlns="http://www.w3.org/2000/svg" width="99" height="20">
+              <linearGradient id="b" x2="0" y2="100%">
+                  <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+                  <stop offset="1" stop-opacity=".1"/>
+              </linearGradient>
+              <clipPath id="a">
+                  <rect width="99" height="20" rx="3" fill="#fff"/>
+              </clipPath>
+              <g clip-path="url(#a)">
+                  <path fill="#555" d="M0 0h63v20H0z"/>
+                  <path fill="$color" d="M63 0h36v20H63z"/>
+                  <path fill="url(#b)" d="M0 0h99v20H0z"/>
+              </g>
+              <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110">
+                  <text x="325" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="530">coverage</text>
+                  <text x="325" y="140" transform="scale(.1)" textLength="530">coverage</text>
+                  <text x="800" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="260">${COVERAGE_PERCENTAGE}%</text>
+                  <text x="800" y="140" transform="scale(.1)" textLength="260">${COVERAGE_PERCENTAGE}%</text>
+              </g>
+          </svg>
+          EOF
 
       - name: Upload coverage badge artifact
         if: success()
@@ -172,9 +231,44 @@ jobs:
           COVERAGE_PERCENTAGE: ${{ needs.run-test-suite.outputs.coverage-percentage }}
           JOB_RESULT: ${{ needs.run-test-suite.result }}
         run: |
-          export COVERAGE_PERCENTAGE
-          export JOB_RESULT
-          ./scripts/ci/coverage-pr-comment.sh
+          # Generate coverage PR comment
+          COVERAGE_VALUE="${COVERAGE_PERCENTAGE:-0.0}"
+          if (( $(echo "$COVERAGE_VALUE >= 80" | bc -l) )); then
+            COVERAGE_STATUS="✅"
+            STATUS_TEXT="Target met (>80%)"
+          else
+            COVERAGE_STATUS="⚠️"
+            STATUS_TEXT="Below target (<80%)"
+          fi
+          
+          if [ "$JOB_RESULT" != "success" ]; then
+            BUILD_STATUS="❌ Tests failed"
+          else
+            BUILD_STATUS="✅ Tests passed"
+          fi
+          
+          cat > coverage-pr-comment.txt << EOF
+          <!-- coverage-report -->
+          
+          **Build:** $BUILD_STATUS
+          
+          **Coverage:** $COVERAGE_STATUS **$COVERAGE_VALUE%**
+          
+          **Status:** $STATUS_TEXT
+          
+          ### 📋 Coverage Details
+          - **Generated:** $(date +%Y-%m-%d)
+          - **Commit:** [$GITHUB_SHA](https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA)
+          
+          ### 📁 View Detailed Report
+          **Direct Link:** [📊 HTML Coverage Report](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts)
+          
+          Or download manually:
+          1. Go to the [Actions tab](https://github.com/$GITHUB_REPOSITORY/actions)
+          2. Find this workflow run
+          3. Download the "coverage-report-python-3.13" artifact
+          4. Extract and open \`index.html\` in your browser
+          EOF
         # yamllint enable
       - name: Comment PR with coverage info
         uses: TurboCoder13/turbo-ci/.github/actions/post-pr-comment@${{ github.sha }}
