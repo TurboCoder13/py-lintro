@@ -2,6 +2,7 @@
 name: Reporting - Scheduled Lintro Analysis
 # Runs comprehensive lintro analysis weekly on schedule or manual dispatch.
 # Generates detailed markdown report and uploads as workflow artifact.
+# Uses turbo-ci reusable workflow for consistency and maintainability.
 
 'on':
   push:
@@ -27,35 +28,29 @@ permissions:
 
 jobs:
   lintro-report:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    concurrency:
-      group: report-${{ github.ref }}
-      cancel-in-progress: true
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    uses: TurboCoder13/turbo-ci/.github/workflows/reusable-lintro-analysis.yml@474343982ec62e4a6c93c05034c18d2cde527df2
+    with:
+      python-version: '3.13'
+      docker-registry: 'ghcr.io'
+      auto-fix: false
+      post-pr-comment: false
+      docker-image-name: 'py-lintro:latest'
+      ruff-unsafe-fixes: true
 
+  generate-report:
+    needs: lintro-report
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
-        with:
-          egress-policy: 'block'
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            codeload.github.com:443
-            downloads.github.com:443
-            release-assets.githubusercontent.com:443
-            objects.githubusercontent.com:443
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/turbo-ci/.github/actions/setup-env@${{ github.sha }}
+        uses: TurboCoder13/turbo-ci/.github/actions/setup-env@474343982ec62e4a6c93c05034c18d2cde527df2
+        with:
+          python-version: '3.13'
 
-      - name: Run Lintro on codebase
+      - name: Run Lintro report generation
         run: |
           # Install lintro and run analysis
           uv run lintro check . --output-format markdown --output lintro-report/report.md
@@ -66,13 +61,3 @@ jobs:
           name: lintro-report
           path: lintro-report/report.md
           retention-days: 90
-
-  notify:
-    needs: lintro-report
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    if: success()
-
-    steps:
-      - name: Report status
-        run: echo "Lintro report generated successfully"

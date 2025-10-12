@@ -20,16 +20,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
-        with:
-          egress-policy: 'block'
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            codeload.github.com:443
-            downloads.github.com:443
-            release-assets.githubusercontent.com:443
-            objects.githubusercontent.com:443
+        uses: TurboCoder13/turbo-ci/.github/actions/harden-runner@474343982ec62e4a6c93c05034c18d2cde527df2
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
@@ -37,7 +28,7 @@ jobs:
 
       - name: Validate PR title follows Conventional Commits
         id: semantic
-        uses: TurboCoder13/turbo-ci/.github/actions/semantic-pr-title-check@${{ github.sha }}
+        uses: TurboCoder13/turbo-ci/.github/actions/semantic-pr-title-check@474343982ec62e4a6c93c05034c18d2cde527df2
         with:
           types: |
             chore
@@ -55,6 +46,4 @@ jobs:
 
       - name: Fail if invalid
         if: steps.semantic.outputs.ok != 'true'
-        env:
-          OK: ${{ steps.semantic.outputs.ok }}
-        run: scripts/ci/fail-if-semantic-invalid.sh
+        run: exit 1

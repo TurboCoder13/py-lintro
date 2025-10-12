@@ -23,20 +23,20 @@ permissions:
 
 jobs:
   quality:
-    uses: TurboCoder13/turbo-ci/.github/workflows/reusable-quality.yml@${{ github.sha }}
+    uses: TurboCoder13/turbo-ci/.github/workflows/reusable-quality.yml@474343982ec62e4a6c93c05034c18d2cde527df2
     permissions:
       contents: read
 
   build:
     needs: quality
-    uses: TurboCoder13/turbo-ci/.github/workflows/reusable-build.yml@${{ github.sha }}
+    uses: TurboCoder13/turbo-ci/.github/workflows/reusable-build.yml@474343982ec62e4a6c93c05034c18d2cde527df2
     permissions:
       contents: read
 
   sbom:
     name: Generate and verify SBOM
     needs: [build, quality]
-    uses: TurboCoder13/turbo-ci/.github/workflows/reusable-sbom.yml@${{ github.sha }}
+    uses: TurboCoder13/turbo-ci/.github/workflows/reusable-sbom.yml@474343982ec62e4a6c93c05034c18d2cde527df2
     permissions:
       contents: read
       actions: read
@@ -58,32 +58,23 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
-        with:
-          egress-policy: 'block'
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            codeload.github.com:443
-            downloads.github.com:443
-            release-assets.githubusercontent.com:443
-            objects.githubusercontent.com:443
-            pypi.org:443
-            files.pythonhosted.org:443
+        uses: TurboCoder13/turbo-ci/.github/actions/harden-runner@474343982ec62e4a6c93c05034c18d2cde527df2
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
-        uses: TurboCoder13/turbo-ci/.github/actions/setup-env@${{ github.sha }}
+        uses: TurboCoder13/turbo-ci/.github/actions/setup-env@474343982ec62e4a6c93c05034c18d2cde527df2
         with:
           python-version: '3.13'
       - name: Ensure tag points to a commit on main
-        run: bash scripts/ci/ensure-tag-on-main.sh
+        uses: TurboCoder13/turbo-ci/.github/actions/ensure-tag-on-main@474343982ec62e4a6c93c05034c18d2cde527df2
 
       - name: Verify tag matches pyproject version
-        run: scripts/ci/verify-tag-matches-pyproject.sh
+        uses: TurboCoder13/turbo-ci/.github/actions/verify-tag-matches-pyproject@474343982ec62e4a6c93c05034c18d2cde527df2
+        with:
+          file: pyproject.toml
         # yamllint enable
 
       - name: Build sdist and wheel

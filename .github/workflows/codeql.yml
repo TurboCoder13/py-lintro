@@ -29,16 +29,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
-        with:
-          egress-policy: 'block'
-          allowed-endpoints: >
-            github.com:443
-            api.github.com:443
-            codeload.github.com:443
-            downloads.github.com:443
-            release-assets.githubusercontent.com:443
-            objects.githubusercontent.com:443
+        uses: TurboCoder13/turbo-ci/.github/actions/harden-runner@474343982ec62e4a6c93c05034c18d2cde527df2
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
@@ -48,7 +39,7 @@ jobs:
         uses: github/codeql-action/init@e296a935590eb16afc0c0108289f68c87e2a89a5 # v4
         with:
           languages: python,javascript
-          config-file: TurboCoder13/turbo-ci/.github/codeql/codeql-config.yml@${{ github.sha }}
+          config-file: TurboCoder13/turbo-ci/.github/codeql/codeql-config.yml@474343982ec62e4a6c93c05034c18d2cde527df2
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@e296a935590eb16afc0c0108289f68c87e2a89a5 # v4
