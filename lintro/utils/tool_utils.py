@@ -43,6 +43,10 @@ from lintro.formatters.tools.yamllint_formatter import (
     YamllintTableDescriptor,
     format_yamllint_issues,
 )
+from lintro.formatters.tools.pytest_formatter import (
+    PytestTableDescriptor,
+    format_pytest_issues,
+)
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
@@ -64,6 +68,7 @@ TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
     "actionlint": (ActionlintTableDescriptor(), format_actionlint_issues),
     "bandit": (BanditTableDescriptor(), format_bandit_issues),
+    "pt": (PytestTableDescriptor(), format_pytest_issues),
 }
 VENV_PATTERNS: list[str] = [
     "venv",
@@ -376,6 +381,10 @@ def format_tool_output(
             )
         except Exception:
             parsed_issues = []
+    elif tool_name == "pt":
+        # Pytest emits text output; parse it
+        from lintro.parsers.pytest.pytest_parser import parse_pytest_text_output
+        parsed_issues = parse_pytest_text_output(output)
 
     if parsed_issues and tool_name in TOOL_TABLE_FORMATTERS:
         _, formatter_func = TOOL_TABLE_FORMATTERS[tool_name]

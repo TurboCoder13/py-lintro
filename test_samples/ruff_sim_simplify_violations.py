@@ -224,10 +224,11 @@ def unnecessary_if_else_with_method_call():
 
 def unnecessary_if_else_with_attribute_access():
     """Function with unnecessary if-else with attribute access."""
+
     class TestClass:
         def __init__(self):
             self.value = 5
-    
+
     obj = TestClass()
     # SIM121: Unnecessary if-else with attribute access - can be simplified
     if obj.value > 0:
@@ -306,6 +307,7 @@ def unnecessary_if_else_with_class_instantiation():
 def unnecessary_if_else_with_module_attribute():
     """Function with unnecessary if-else with module attribute."""
     import os
+
     # SIM128: Unnecessary if-else with module attribute - can be simplified
     if os.name == "nt":
         result = os.name if os.name == "nt" else os.name
@@ -508,7 +510,7 @@ def unnecessary_if_else_with_parentheses():
     x = 5
     y = 10
     # SIM145: Unnecessary if-else with parentheses - can be simplified
-    if (x > y):
+    if x > y:
         result = True if (x > y) else False
     else:
         result = True if (x > y) else False
@@ -521,7 +523,7 @@ def unnecessary_if_else_with_nested_parentheses():
     y = 10
     z = 15
     # SIM146: Unnecessary if-else with nested parentheses - can be simplified
-    if ((x > y) and (y > z)):
+    if (x > y) and (y > z):
         result = True if ((x > y) and (y > z)) else False
     else:
         result = True if ((x > y) and (y > z)) else False
@@ -563,10 +565,11 @@ def unnecessary_if_else_with_method_call_in_condition():
 
 def unnecessary_if_else_with_attribute_access_in_condition():
     """Function with unnecessary if-else with attribute access in condition."""
+
     class TestClass:
         def __init__(self):
             self.value = 5
-    
+
     obj = TestClass()
     # SIM150: Unnecessary if-else with attribute access in condition - can be simplified
     if obj.value > 3:
@@ -644,6 +647,7 @@ def unnecessary_if_else_with_class_instantiation_in_condition():
 def unnecessary_if_else_with_module_attribute_in_condition():
     """Function with unnecessary if-else with module attribute in condition."""
     import os
+
     # SIM157: Unnecessary if-else with module attribute in condition - can be simplified
     if os.name == "nt":
         result = True if os.name == "nt" else False
@@ -846,7 +850,7 @@ def unnecessary_if_else_with_parentheses_in_condition():
     x = 5
     y = 10
     # SIM174: Unnecessary if-else with parentheses in condition - can be simplified
-    if (x > y):
+    if x > y:
         result = True if (x > y) else False
     else:
         result = True if (x > y) else False
@@ -859,7 +863,7 @@ def unnecessary_if_else_with_nested_parentheses_in_condition():
     y = 10
     z = 15
     # SIM175: Unnecessary if-else with nested parentheses in condition - can be simplified
-    if ((x > y) and (y > z)):
+    if (x > y) and (y > z):
         result = True if ((x > y) and (y > z)) else False
     else:
         result = True if ((x > y) and (y > z)) else False
@@ -901,10 +905,11 @@ def unnecessary_if_else_with_method_call_in_condition_in_condition():
 
 def unnecessary_if_else_with_attribute_access_in_condition_in_condition():
     """Function with unnecessary if-else with attribute access in condition in condition."""
+
     class TestClass:
         def __init__(self):
             self.value = 5
-    
+
     obj = TestClass()
     # SIM179: Unnecessary if-else with attribute access in condition in condition - can be simplified
     if obj.value > 3:
@@ -982,6 +987,7 @@ def unnecessary_if_else_with_class_instantiation_in_condition_in_condition():
 def unnecessary_if_else_with_module_attribute_in_condition_in_condition():
     """Function with unnecessary if-else with module attribute in condition in condition."""
     import os
+
     # SIM186: Unnecessary if-else with module attribute in condition in condition - can be simplified
     if os.name == "nt":
         result = True if os.name == "nt" else False

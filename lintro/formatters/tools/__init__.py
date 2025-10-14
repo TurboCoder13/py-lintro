@@ -20,6 +20,10 @@ from lintro.formatters.tools.prettier_formatter import (
     PrettierTableDescriptor,
     format_prettier_issues,
 )
+from lintro.formatters.tools.pytest_formatter import (
+    PytestTableDescriptor,
+    format_pytest_issues,
+)
 from lintro.formatters.tools.ruff_formatter import (
     RuffTableDescriptor,
     format_ruff_issues,
@@ -40,6 +44,8 @@ __all__ = [
     "format_hadolint_issues",
     "PrettierTableDescriptor",
     "format_prettier_issues",
+    "PytestTableDescriptor",
+    "format_pytest_issues",
     "RuffTableDescriptor",
     "format_ruff_issues",
     "YamllintTableDescriptor",

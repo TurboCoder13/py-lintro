@@ -14,6 +14,7 @@ class ToolName(StrEnum):
     DARGLINT = auto()
     HADOLINT = auto()
     PRETTIER = auto()
+    PT = auto()
     RUFF = auto()
     YAMLLINT = auto()
 

@@ -6,6 +6,7 @@ from lintro.parsers import (
     darglint,
     hadolint,
     prettier,
+    pytest,
     ruff,
     yamllint,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "darglint",
     "hadolint",
     "prettier",
+    "pytest",
     "ruff",
     "yamllint",
 ]
