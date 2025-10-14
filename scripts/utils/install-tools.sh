@@ -310,7 +310,7 @@ main() {
     # Install actionlint (GitHub Actions workflow linter)
     # Prebuilt binaries: https://github.com/rhysd/actionlint/releases
     echo -e "${BLUE}Installing actionlint...${NC}"
-    ACTIONLINT_VERSION="v1.7.5"
+    ACTIONLINT_VERSION="v1.7.7"
     # actionlint release assets are named actionlint_${version}_${os}_${arch}.tar.gz
     # We'll try to download and extract the binary
     tmpdir=$(mktemp -d)
