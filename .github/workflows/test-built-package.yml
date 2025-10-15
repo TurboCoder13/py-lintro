@@ -12,12 +12,14 @@ name: Testing - Built Package Validation
       - pyproject.toml
       - MANIFEST.in
       - .github/workflows/test-built-package.yml
+      - scripts/ci/test-*.sh
   pull_request:
     branches: [main]
     paths:
       - '**.py'
       - pyproject.toml
       - MANIFEST.in
+      - scripts/ci/test-*.sh
   workflow_dispatch:
 
 permissions:
@@ -47,44 +49,52 @@ jobs:
           allowed-endpoints: >
             github.com:443
             api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
             pypi.org:443
             files.pythonhosted.org:443
 
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
+      - name: Egress audit (allowlist verification)
+        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        with:
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+          fail-on-missing: 'true'
+
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        with:
+          python-version: '3.13'
+        env:
+          BOOTSTRAP_SKIP_SYNC: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
       - name: Build wheel
         run: uv build --wheel --out-dir dist/
 
       - name: Create isolated test environment
-        run: |
-          python -m venv test_venv
-          source test_venv/bin/activate
-          python -m pip install --upgrade pip
-          echo "TEST_VENV_PYTHON=$(pwd)/test_venv/bin/python" >> "$GITHUB_ENV"
+        run: bash scripts/ci/test-venv-setup.sh
 
       - name: Install wheel in isolated environment
-        run: |
-          WHEEL_FILE=$(find dist/ -name '*.whl' -type f | head -n 1)
-          echo "Installing wheel: ${WHEEL_FILE}"
-          "${{ env.TEST_VENV_PYTHON }}" -m pip install "${WHEEL_FILE}"
+        run: bash scripts/ci/test-install-package.sh wheel
 
       - name: Verify package imports
-        run: |
-          "${{ env.TEST_VENV_PYTHON }}" -c "import lintro; print(f'lintro {lintro.__version__}')"
-          "${{ env.TEST_VENV_PYTHON }}" -c "import lintro.parsers"
-          "${{ env.TEST_VENV_PYTHON }}" -c "from lintro.parsers import bandit"
-          "${{ env.TEST_VENV_PYTHON }}" -c "from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output"
-          "${{ env.TEST_VENV_PYTHON }}" -c "from lintro.tools.implementations.tool_actionlint import ActionlintTool"
-          "${{ env.TEST_VENV_PYTHON }}" -c "from lintro.cli import cli"
+        run: bash scripts/ci/test-verify-imports.sh wheel
 
       - name: Verify CLI entry points
-        run: |
-          "${{ env.TEST_VENV_PYTHON }}" -m lintro --version
-          "${{ env.TEST_VENV_PYTHON }}" -m lintro --help
+        run: bash scripts/ci/test-verify-cli.sh
 
       - name: Run built package integration test
         run: |
@@ -115,39 +125,49 @@ jobs:
           allowed-endpoints: >
             github.com:443
             api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
             pypi.org:443
             files.pythonhosted.org:443
 
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
+      - name: Egress audit (allowlist verification)
+        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        with:
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+          fail-on-missing: 'true'
+
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        with:
+          python-version: '3.13'
+        env:
+          BOOTSTRAP_SKIP_SYNC: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
       - name: Build source distribution
         run: uv build --sdist --out-dir dist/
 
       - name: Create isolated test environment
-        run: |
-          python -m venv test_venv
-          source test_venv/bin/activate
-          python -m pip install --upgrade pip
-          echo "TEST_VENV_PYTHON=$(pwd)/test_venv/bin/python" >> "$GITHUB_ENV"
+        run: bash scripts/ci/test-venv-setup.sh
 
       - name: Install sdist in isolated environment
-        run: |
-          SDIST_FILE=$(find dist/ -name '*.tar.gz' -type f | head -n 1)
-          echo "Installing sdist: ${SDIST_FILE}"
-          "${{ env.TEST_VENV_PYTHON }}" -m pip install "${SDIST_FILE}"
+        run: bash scripts/ci/test-install-package.sh sdist
 
       - name: Verify package imports from sdist
-        run: |
-          "${{ env.TEST_VENV_PYTHON }}" -c "import lintro; print(f'lintro {lintro.__version__}')"
-          "${{ env.TEST_VENV_PYTHON }}" -c "import lintro.parsers"
-          "${{ env.TEST_VENV_PYTHON }}" -c "from lintro.parsers import bandit"
-          "${{ env.TEST_VENV_PYTHON }}" -c "from lintro.cli import cli"
+        run: bash scripts/ci/test-verify-imports.sh sdist
 
       - name: Verify CLI from sdist
-        run: |
-          "${{ env.TEST_VENV_PYTHON }}" -m lintro --version
-          "${{ env.TEST_VENV_PYTHON }}" -m lintro --help
+        run: bash scripts/ci/test-verify-cli.sh
