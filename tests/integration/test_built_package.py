@@ -110,4 +110,3 @@ def test_built_wheel_imports() -> None:
         )
         assert_that(cli_result.returncode).is_equal_to(0)
         assert_that(cli_result.stdout).contains("lintro")
-

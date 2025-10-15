@@ -44,13 +44,15 @@ def test_parsers_submodules_accessible() -> None:
 
 def test_parser_submodule_direct_imports() -> None:
     """Test that parser submodules can be imported directly."""
-    from lintro.parsers import actionlint
-    from lintro.parsers import bandit
-    from lintro.parsers import darglint
-    from lintro.parsers import hadolint
-    from lintro.parsers import prettier
-    from lintro.parsers import ruff
-    from lintro.parsers import yamllint
+    from lintro.parsers import (
+        actionlint,
+        bandit,
+        darglint,
+        hadolint,
+        prettier,
+        ruff,
+        yamllint,
+    )
 
     assert actionlint is not None
     assert bandit is not None
@@ -139,11 +141,10 @@ def test_cross_package_imports() -> None:
     dependency, where multiple packages are imported in various orders.
     """
     # Import in various orders to catch potential circular deps
+    from lintro.formatters.tools.bandit_formatter import BanditTableDescriptor
     from lintro.parsers import bandit
     from lintro.tools.implementations.tool_bandit import BanditTool
-    from lintro.formatters.tools.bandit_formatter import BanditTableDescriptor
 
     assert bandit is not None
     assert BanditTool is not None
     assert BanditTableDescriptor is not None
-
