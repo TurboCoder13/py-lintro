@@ -56,10 +56,11 @@ def test_get_tools_to_run_format_action_rejects_pytest() -> None:
 
 
 def test_get_tools_to_run_test_action_unavailable() -> None:
-    """Test _get_tools_to_run handles pytest tool unavailable."""
-    with patch.dict("lintro.tools.tool_enum.ToolEnum.__members__", {}):
-        # When pytest tool is not in ToolEnum
-        pass
+    """Test _get_tools_to_run with test action ensures PT is available."""
+    # Verify that pytest is available in ToolEnum
+    result = _get_tools_to_run(tools=None, action="test")
+    assert_that(result).is_not_empty()
+    assert_that(result[0].name).is_equal_to("PT")
 
 
 def test_get_tools_to_run_check_action_filters_out_pytest() -> None:
@@ -95,6 +96,7 @@ def test_run_lint_tools_simple_test_action_basic() -> None:
         mock_pytest_tool.check.return_value = Mock(
             success=True,
             issues=[],
+            issues_count=0,
             output="All tests passed",
         )
         mock_manager.get_tool.return_value = mock_pytest_tool
