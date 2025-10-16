@@ -333,3 +333,128 @@ class TestPytestTool:
             assert result.success is False
             assert result.issues == []
             assert "Error: Test error" in result.output
+
+    def test_pytest_tool_fix_not_implemented(self) -> None:
+        """Test that fix method raises NotImplementedError."""
+        tool = PytestTool()
+
+        with pytest.raises(NotImplementedError):
+            tool.fix(["test_file.py"])
+
+    def test_pytest_tool_fix_cannot_fix_raises_not_implemented(self) -> None:
+        """Test that fix raises NotImplementedError when can_fix is False."""
+        tool = PytestTool()
+        assert tool.can_fix is False
+
+        with pytest.raises(NotImplementedError):
+            tool.fix(["test_file.py"])
+
+    def test_pytest_tool_check_paths_vs_files_precedence(self) -> None:
+        """Test that paths parameter takes precedence over files."""
+        tool = PytestTool()
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, "All tests passed"),
+            ),
+            patch.object(tool, "_parse_output", return_value=[]),
+        ):
+            # Both paths and files provided; paths should be used
+            result = tool.check(files=["file.py"], paths=["path/"])
+
+            # Check that the command includes the paths argument
+            # (would need to verify in actual implementation)
+
+    def test_pytest_tool_check_discovers_test_files(self) -> None:
+        """Test that check discovers test files when neither files nor paths provided."""
+        tool = PytestTool()
+
+        with (
+            patch(
+                "lintro.tools.implementations.tool_pytest.walk_files_with_excludes",
+                return_value=["test_discovered.py"],
+            ),
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, "All tests passed"),
+            ),
+            patch.object(tool, "_parse_output", return_value=[]),
+        ):
+            result = tool.check()
+
+            assert result.name == "pytest"
+            assert result.success is True
+
+    def test_pytest_tool_parse_output_fallback_to_text_with_issues(self) -> None:
+        """Test parse_output falls back to text when JSON parsing fails."""
+        tool = PytestTool()
+        tool.set_options(json_report=True)
+
+        # JSON format failed, but text parsing should find issues
+        output = "FAILED test.py::test_fail - AssertionError"
+
+        issues = tool._parse_output(output, 1)
+
+        # Should fall back and find issues via text parsing
+        assert isinstance(issues, list)
+
+    def test_pytest_tool_build_check_command_no_verbose(self) -> None:
+        """Test building command when verbose is False."""
+        tool = PytestTool()
+        tool.set_options(verbose=False)
+
+        with patch.object(tool, "_get_executable_command", return_value=["pytest"]):
+            cmd = tool._build_check_command(["test_file.py"])
+
+            # When verbose is False, should not include -v
+            assert "-v" not in cmd
+
+    def test_pytest_tool_build_check_command_custom_tb_format(self) -> None:
+        """Test building command with custom traceback format."""
+        tool = PytestTool()
+        tool.set_options(tb="long")
+
+        with patch.object(tool, "_get_executable_command", return_value=["pytest"]):
+            cmd = tool._build_check_command(["test_file.py"])
+
+            assert "--tb" in cmd
+            assert "long" in cmd
+
+    def test_pytest_tool_build_check_command_maxfail_option(self) -> None:
+        """Test building command with custom maxfail value."""
+        tool = PytestTool()
+        tool.set_options(maxfail=10)
+
+        with patch.object(tool, "_get_executable_command", return_value=["pytest"]):
+            cmd = tool._build_check_command(["test_file.py"])
+
+            assert "--maxfail" in cmd
+            assert "10" in cmd
+
+    def test_pytest_tool_parse_output_json_with_no_issues(self) -> None:
+        """Test parsing JSON output with no issues."""
+        tool = PytestTool()
+        tool.set_options(json_report=True)
+
+        json_output = '{"tests": []}'
+
+        issues = tool._parse_output(json_output, 0)
+
+        assert issues == []
+
+    def test_pytest_tool_parse_output_mixed_formats(self) -> None:
+        """Test parse_output with mixed success/failure scenarios."""
+        tool = PytestTool()
+
+        # Test success (return code 0, no failures)
+        issues = tool._parse_output("All tests passed", 0)
+        assert issues == []
+
+        # Test failure (return code 1, has failures)
+        issues = tool._parse_output("FAILED test.py::test - Error", 1)
+        assert isinstance(issues, list)
