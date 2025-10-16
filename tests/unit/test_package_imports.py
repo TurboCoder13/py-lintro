@@ -13,6 +13,8 @@ is installed as a built distribution. However, these tests serve as:
 
 from __future__ import annotations
 
+import pytest
+
 
 def test_main_package_import() -> None:
     """Test that the main lintro package can be imported."""
@@ -148,3 +150,73 @@ def test_cross_package_imports() -> None:
     assert bandit is not None
     assert BanditTool is not None
     assert BanditTableDescriptor is not None
+
+
+def test_bandit_parser_direct_import() -> None:
+    """Test that bandit parser can be imported directly.
+
+    This test specifically catches circular import issues that would occur
+    when lintro is installed as a built package (wheel). The issue manifests
+    when trying to import bandit parser submodules before the formatters
+    have loaded, which triggers a specific circular dependency pattern.
+    """
+    # This import sequence triggers the circular import that was fixed
+    from lintro.parsers.bandit import bandit_issue, bandit_parser
+
+    assert bandit_issue is not None
+    assert bandit_parser is not None
+
+
+def test_parser_lazy_loading() -> None:
+    """Test that parser submodules are lazily loaded, not eagerly imported.
+
+    Verifies that accessing parser submodules through the parent package
+    works via __getattr__ and doesn't cause circular imports.
+    """
+    import lintro.parsers
+
+    # Access submodules via attribute access (triggers __getattr__)
+    bandit = lintro.parsers.bandit
+    actionlint = lintro.parsers.actionlint
+
+    assert bandit is not None
+    assert actionlint is not None
+
+
+def test_parser_lazy_loading_attribute_error() -> None:
+    """Test that accessing non-existent parser raises AttributeError.
+
+    Verifies that the __getattr__ error handling works correctly.
+    """
+    import lintro.parsers
+
+    # Accessing a non-existent submodule should raise AttributeError
+    with pytest.raises(AttributeError) as exc_info:
+        _ = lintro.parsers.nonexistent_parser
+
+    assert "nonexistent_parser" in str(exc_info.value)
+
+
+def test_parser_dir_function() -> None:
+    """Test that dir() works on parsers module.
+
+    Verifies that the __dir__ function returns all available submodules.
+    """
+    import lintro.parsers
+
+    # Get the directory listing of the parsers module
+    dir_listing = dir(lintro.parsers)
+
+    # All expected submodules should be in the directory
+    expected_modules = {
+        "actionlint",
+        "bandit",
+        "darglint",
+        "hadolint",
+        "prettier",
+        "ruff",
+        "yamllint",
+    }
+
+    for module in expected_modules:
+        assert module in dir_listing

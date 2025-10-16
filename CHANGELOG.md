@@ -10,11 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Critical**: Fixed circular import bug in `lintro.parsers` module
-  - Issue: `ImportError: cannot import name 'bandit' from partially initialized module 'lintro.parsers'`
-  - Impact: Prevents lintro from being installed as a dependency in other projects
-  - Fix: Changed absolute imports to relative imports in `lintro/parsers/__init__.py`
-  - Affected versions: All versions prior to this release
-  - Tests: Added comprehensive import tests and built package validation
+  - Issue: `ImportError: cannot import name 'bandit' from partially initialized module 'lintro.parsers'` when running lintro as a dependency
+  - Root causes:
+    1. Eager imports in `parsers/__init__.py` causing circular dependencies
+    2. Missing `lintro.parsers.bandit` package in setuptools configuration
+  - Impact: Prevents lintro CLI from working when installed as a wheel distribution
+  - Fix:
+    1. Replaced eager imports with lazy loading via `__getattr__` in `lintro/parsers/__init__.py`
+    2. Added `lintro.parsers.bandit` to setuptools packages list
+  - Tests: Added comprehensive import tests for direct imports and lazy loading patterns
+  - Verified: Works in both editable install (development) and built wheel (production)
 - **PyPI Publication Workflow**: Fixed test failures in PyPI publish workflow by adding missing tool installation step
   - Added tool installation step (`./scripts/utils/install-tools.sh --local`) to PyPI workflow
   - Added PATH setup to ensure tools are available during test execution
