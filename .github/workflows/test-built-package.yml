@@ -99,7 +99,7 @@ jobs:
       - name: Run built package integration test
         run: |
           source test_venv/bin/activate
-          pip install pytest assertpy
+          pip install pytest pytest-cov assertpy
           pytest tests/integration/test_built_package.py -v
 
   test-sdist-install:
