@@ -287,9 +287,7 @@ class TestPytestParser:
 
     def test_parse_pytest_text_output_alternative_failure_format(self) -> None:
         """Test parsing text output with alternative failure format."""
-        text_output = (
-            "FAILED test_example.py::test_failure Some error message"
-        )
+        text_output = "FAILED test_example.py::test_failure Some error message"
         result = parse_pytest_text_output(text_output)
         # Should parse using alternative pattern
         assert len(result) >= 0
@@ -308,7 +306,7 @@ class TestPytestParser:
         """Test parsing JUnit XML with missing attributes."""
         xml_output = (
             '<?xml version="1.0" encoding="utf-8"?>\n'
-            '<testsuite>\n'
+            "<testsuite>\n"
             '    <testcase name="test_failure">\n'
             '        <failure message="Error">Traceback</failure>\n'
             "    </testcase>\n"
@@ -322,9 +320,9 @@ class TestPytestParser:
         """Test parsing JUnit XML failure without message attribute."""
         xml_output = (
             '<?xml version="1.0" encoding="utf-8"?>\n'
-            '<testsuite>\n'
+            "<testsuite>\n"
             '    <testcase name="test_failure" file="test.py">\n'
-            '        <failure>Error text content</failure>\n'
+            "        <failure>Error text content</failure>\n"
             "    </testcase>\n"
             "</testsuite>"
         )
@@ -336,7 +334,7 @@ class TestPytestParser:
         """Test parsing JUnit XML with passed testcase."""
         xml_output = (
             '<?xml version="1.0" encoding="utf-8"?>\n'
-            '<testsuite>\n'
+            "<testsuite>\n"
             '    <testcase name="test_success" file="test.py">\n'
             "    </testcase>\n"
             "</testsuite>"
@@ -364,9 +362,9 @@ class TestPytestParser:
         """Test that parse_pytest_output dispatches to correct parser."""
         json_result = parse_pytest_output("{}", format="json")
         assert isinstance(json_result, list)
-        
+
         text_result = parse_pytest_output("test", format="text")
         assert isinstance(text_result, list)
-        
+
         xml_result = parse_pytest_output("<xml/>", format="junit")
         assert isinstance(xml_result, list)

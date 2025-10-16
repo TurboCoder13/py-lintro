@@ -2,11 +2,10 @@
 
 from unittest.mock import Mock, patch
 
-import pytest
 from assertpy import assert_that
 from click.testing import CliRunner
 
-from lintro.cli import LintroGroup, cli
+from lintro.cli import cli
 
 
 def test_format_commands_displays_canonical_names() -> None:
@@ -80,7 +79,7 @@ def test_invoke_with_comma_separated_commands() -> None:
     ):
         mock_check.return_value = 0
         mock_fmt.return_value = 0
-        result = runner.invoke(cli, ["check", ".", ",", "format", "."])
+        runner.invoke(cli, ["check", ".", ",", "format", "."])
         # Both commands should have been attempted
         # Note: The actual behavior depends on how the invoke method works
 
@@ -141,7 +140,7 @@ def test_chaining_preserves_command_order() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(cli, ["check", ".", ",", "check", "."])
+        runner.invoke(cli, ["check", ".", ",", "check", "."])
         # At least one check command should have been called
         assert_that(mock_run.call_count).is_greater_than_or_equal_to(1)
 
@@ -155,7 +154,7 @@ def test_chaining_with_multiple_commands() -> None:
         mock_tm.return_value = mock_instance
         # This would chain multiple commands (though functionality
         # depends on implementation)
-        result = runner.invoke(cli, ["list-tools", ",", "list-tools"])
+        runner.invoke(cli, ["list-tools", ",", "list-tools"])
         # Should handle multiple comma-separated commands
 
 
@@ -165,7 +164,7 @@ def test_chaining_ignores_empty_command_groups() -> None:
     with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
         # Multiple commas in a row would create empty groups
-        result = runner.invoke(cli, ["check", ".", ",", ",", "check", "."])
+        runner.invoke(cli, ["check", ".", ",", ",", "check", "."])
         # Should still execute the check commands, ignoring empty groups
 
 
@@ -174,7 +173,7 @@ def test_chaining_with_flags() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(
+        runner.invoke(
             cli,
             ["check", ".", "--tools", "ruff", ",", "check", "."],
         )
@@ -186,7 +185,7 @@ def test_invoke_handles_system_exit() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock_run:
         mock_run.side_effect = SystemExit(1)
-        result = runner.invoke(cli, ["check", "."])
+        runner.invoke(cli, ["check", "."])
         # Should handle SystemExit gracefully
 
 
@@ -196,7 +195,7 @@ def test_invoke_preserves_max_exit_code() -> None:
     with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock_run:
         # Simulate different exit codes from multiple runs
         mock_run.side_effect = [0, 1]
-        result = runner.invoke(cli, ["check", ".", ",", "check", "."])
+        runner.invoke(cli, ["check", ".", ",", "check", "."])
         # Result should reflect the maximum exit code (1)
 
 
@@ -205,5 +204,5 @@ def test_invoke_with_exception_in_command() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock_run:
         mock_run.side_effect = Exception("Test error")
-        result = runner.invoke(cli, ["check", "."])
+        runner.invoke(cli, ["check", "."])
         # Should handle exceptions gracefully

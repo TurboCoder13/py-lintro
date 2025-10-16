@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from assertpy import assert_that
 
-from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 from lintro.parsers.pytest.pytest_issue import PytestIssue
+from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 from lintro.utils.tool_utils import (
+    TOOL_TABLE_FORMATTERS,
     format_tool_output,
     walk_files_with_excludes,
-    TOOL_TABLE_FORMATTERS,
 )
 
 
@@ -59,7 +59,7 @@ def test_format_tool_output_with_parsed_issues_and_fixable_sections(
     assert_that("Auto-fixable" in txt or txt == "TABLE").is_true()
 
 
-def test_format_tool_output_parsing_fallbacks(monkeypatch,) -> None:
+def test_format_tool_output_parsing_fallbacks(monkeypatch) -> None:
     """Fallback to raw output for unknown tools or missing issues.
 
     Args:
@@ -75,7 +75,7 @@ def test_format_tool_output_parsing_fallbacks(monkeypatch,) -> None:
     assert_that(out).is_equal_to("some raw output")
 
 
-def test_walk_files_excludes_venv(tmp_path,) -> None:
+def test_walk_files_excludes_venv(tmp_path) -> None:
     """walk_files_with_excludes should omit venv directories by default.
 
     Args:
@@ -110,7 +110,7 @@ def test_tool_table_formatters_contains_pytest() -> None:
     assert_that(formatter).is_not_none()
 
 
-def test_format_tool_output_with_pytest_issues(monkeypatch,) -> None:
+def test_format_tool_output_with_pytest_issues(monkeypatch) -> None:
     """Test format_tool_output with pytest test issues.
 
     Args:
