@@ -5,10 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2024-12-19
+## [Unreleased] - 2025-01-15
 
 ### Fixed
 
+- **Critical**: Fixed circular import bug in `lintro.parsers` module
+  - Issue: `ImportError: cannot import name 'bandit' from partially initialized module 'lintro.parsers'`
+  - Impact: Prevents lintro from being installed as a dependency in other projects
+  - Fix: Changed absolute imports to relative imports in `lintro/parsers/__init__.py`
+  - Affected versions: All versions prior to this release
+  - Tests: Added comprehensive import tests and built package validation
 - **PyPI Publication Workflow**: Fixed test failures in PyPI publish workflow by adding missing tool installation step
   - Added tool installation step (`./scripts/utils/install-tools.sh --local`) to PyPI workflow
   - Added PATH setup to ensure tools are available during test execution

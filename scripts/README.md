@@ -51,7 +51,7 @@ scripts/
 Scripts for GitHub Actions workflows and continuous integration.
 
 | Script                             | Purpose                                                | Usage                                                                                 |
-| ---------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| ---------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------- |
 | `coverage-manager.sh`              | Unified coverage ops (extract/badge/comment/threshold) | `./scripts/utils/coverage-manager.sh --help`                                          |
 | `ci-extract-coverage.sh`           | Extract coverage percentage                            | `./scripts/ci/ci-extract-coverage.sh`                                                 |
 | `ci-lintro.sh`                     | Run Lintro analysis in Docker for CI                   | `./scripts/ci/ci-lintro.sh`                                                           |
@@ -92,6 +92,10 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `security-audit.sh`                | Comprehensive security audit for workflows/scripts     | `./scripts/ci/security-audit.sh --help`                                               |
 | `bomctl-help-test.sh`              | Test bomctl binary installation                        | `./scripts/ci/bomctl-help-test.sh`                                                    |
 | `sbom-generate-safe.sh`            | Generate SBOMs with consolidated error handling        | `./scripts/ci/sbom-generate-safe.sh`                                                  |
+|                                    | `test-install-package.sh`                              | Install and verify built package in isolated venv                                     | `./scripts/ci/test-install-package.sh wheel` |
+|                                    | `test-venv-setup.sh`                                   | Create isolated Python 3.13 virtual environment                                       | `./scripts/ci/test-venv-setup.sh`            |
+|                                    | `test-verify-cli.sh`                                   | Verify lintro CLI entry points in installed package                                   | `./scripts/ci/test-verify-cli.sh`            |
+|                                    | `test-verify-imports.sh`                               | Verify critical package imports in installed lintro                                   | `./scripts/ci/test-verify-imports.sh wheel`  |
 
 ### 🐳 Docker Scripts (`docker/`)
 

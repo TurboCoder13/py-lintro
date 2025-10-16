@@ -95,8 +95,10 @@ grype sbom:main-*-py-lintro-sbom.spdx-2.3.json
 
 #### From PyPI (Recommended)
 
+⚠️ **Important**: Versions prior to 0.13.2 contain a circular import bug that prevents installation as a dependency. Please use version 0.13.2 or later.
+
 ```bash
-pip install lintro
+pip install lintro>=0.13.2
 ```
 
 #### Development Installation

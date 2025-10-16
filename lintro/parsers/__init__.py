@@ -1,6 +1,6 @@
 """Parser modules for Lintro tools."""
 
-from lintro.parsers import (
+from . import (
     actionlint,
     bandit,
     darglint,

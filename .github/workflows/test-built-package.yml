@@ -1,0 +1,173 @@
+---
+name: Testing - Built Package Validation
+# Tests lintro installed from built distributions (wheel and sdist) rather than
+# editable mode. This catches packaging issues like circular imports, missing files,
+# and entry point errors that only manifest when installed as a dependency.
+
+'on':
+  push:
+    branches: [main]
+    paths:
+      - '**.py'
+      - pyproject.toml
+      - MANIFEST.in
+      - .github/workflows/test-built-package.yml
+      - scripts/ci/test-*.sh
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.py'
+      - pyproject.toml
+      - MANIFEST.in
+      - scripts/ci/test-*.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-wheel-install:
+    name: Validate wheel installation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: built-package-wheel-${{ github.ref }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        shell: bash
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.draft == false
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Egress audit (allowlist verification)
+        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        with:
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+          fail-on-missing: 'true'
+
+      - name: Environment setup
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        with:
+          python-version: '3.13'
+        env:
+          BOOTSTRAP_SKIP_SYNC: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
+
+      - name: Build wheel
+        run: uv build --wheel --out-dir dist/
+
+      - name: Create isolated test environment
+        run: bash scripts/ci/test-venv-setup.sh
+
+      - name: Install wheel in isolated environment
+        run: bash scripts/ci/test-install-package.sh wheel
+
+      - name: Verify package imports
+        run: bash scripts/ci/test-verify-imports.sh wheel
+
+      - name: Verify CLI entry points
+        run: bash scripts/ci/test-verify-cli.sh
+
+      - name: Run built package integration test
+        run: |
+          source test_venv/bin/activate
+          pip install pytest pytest-cov assertpy
+          pytest tests/integration/test_built_package.py -v
+
+  test-sdist-install:
+    name: Validate sdist installation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: built-package-sdist-${{ github.ref }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        shell: bash
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.draft == false
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Egress audit (allowlist verification)
+        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        with:
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+          fail-on-missing: 'true'
+
+      - name: Environment setup
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        with:
+          python-version: '3.13'
+        env:
+          BOOTSTRAP_SKIP_SYNC: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
+
+      - name: Build source distribution
+        run: uv build --sdist --out-dir dist/
+
+      - name: Create isolated test environment
+        run: bash scripts/ci/test-venv-setup.sh
+
+      - name: Install sdist in isolated environment
+        run: bash scripts/ci/test-install-package.sh sdist
+
+      - name: Verify package imports from sdist
+        run: bash scripts/ci/test-verify-imports.sh sdist
+
+      - name: Verify CLI from sdist
+        run: bash scripts/ci/test-verify-cli.sh
