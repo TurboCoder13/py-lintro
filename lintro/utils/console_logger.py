@@ -21,6 +21,8 @@ TOOL_EMOJIS: dict[str, str] = {
     "hadolint": "🐳",
     "yamllint": "📄",
     "black": "🖤",
+    "pt": "🧪",
+    "pytest": "🧪",
 }
 DEFAULT_EMOJI: str = "🔧"
 BORDER_LENGTH: int = 70
@@ -270,6 +272,12 @@ class SimpleLintroLogger:
                 the result is treated as a failure even if no issues were
                 counted (e.g., parse or runtime errors).
         """
+        # Add section header for pytest/test results
+        if tool_name.lower() in ("pt", "pytest"):
+            self.console_output(text="")
+            self.console_output(text="🧪 Test Results")
+            self.console_output(text="-" * INFO_BORDER_LENGTH)
+
         if output and output.strip():
             # Display the output (either raw or formatted, depending on what was passed)
             self.console_output(text=output)
