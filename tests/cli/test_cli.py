@@ -40,6 +40,8 @@ def test_cli_commands_registered() -> None:
     assert_that(result.exit_code).is_equal_to(0)
     result = runner.invoke(cli, ["list-tools", "--help"])
     assert_that(result.exit_code).is_equal_to(0)
+    result = runner.invoke(cli, ["test", "--help"])
+    assert_that(result.exit_code).is_equal_to(0)
 
 
 def test_main_function() -> None:
@@ -62,6 +64,8 @@ def test_cli_command_aliases() -> None:
     result = runner.invoke(cli, ["fmt", "--help"])
     assert_that(result.exit_code).is_equal_to(0)
     result = runner.invoke(cli, ["ls", "--help"])
+    assert_that(result.exit_code).is_equal_to(0)
+    result = runner.invoke(cli, ["tst", "--help"])
     assert_that(result.exit_code).is_equal_to(0)
 
 
@@ -93,3 +97,57 @@ def test_main_module_as_script() -> None:
     )
     assert_that(result.returncode).is_equal_to(0)
     assert_that(result.stdout).contains("Lintro")
+
+
+def test_test_command_help() -> None:
+    """Test that test command displays help."""
+    from click.testing import CliRunner
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["test", "--help"])
+    assert_that(result.exit_code).is_equal_to(0)
+    assert_that(result.output).contains("Run tests")
+
+
+def test_test_command_alias() -> None:
+    """Test that 'tst' alias works for test command."""
+    from click.testing import CliRunner
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["tst", "--help"])
+    assert_that(result.exit_code).is_equal_to(0)
+    assert_that(result.output).contains("Run tests")
+
+
+def test_command_chaining_basic() -> None:
+    """Test basic command chaining syntax recognition."""
+    from click.testing import CliRunner
+
+    runner = CliRunner()
+    # Test that chaining syntax is accepted (may fail due to missing files/tools
+    # but should parse correctly)
+    result = runner.invoke(cli, ["fmt", ",", "chk"])
+    # We expect this to fail with tool-related errors, not parsing errors
+    assert_that(result.output).does_not_contain("Error: unexpected argument")
+
+
+def test_pytest_excluded_from_check_help() -> None:
+    """Test that pytest is excluded from available tools in check command."""
+    from click.testing import CliRunner
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["check", "--help"])
+    assert_that(result.exit_code).is_equal_to(0)
+    # The help should not mention pytest as an available tool for check
+    assert_that(result.output).does_not_contain("pytest")
+
+
+def test_pytest_excluded_from_fmt_help() -> None:
+    """Test that pytest is excluded from available tools in format command."""
+    from click.testing import CliRunner
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["format", "--help"])
+    assert_that(result.exit_code).is_equal_to(0)
+    # The help should not mention pytest as an available tool for format
+    assert_that(result.output).does_not_contain("pytest")
