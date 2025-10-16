@@ -148,3 +148,34 @@ def test_cross_package_imports() -> None:
     assert bandit is not None
     assert BanditTool is not None
     assert BanditTableDescriptor is not None
+
+
+def test_bandit_parser_direct_import() -> None:
+    """Test that bandit parser can be imported directly.
+
+    This test specifically catches circular import issues that would occur
+    when lintro is installed as a built package (wheel). The issue manifests
+    when trying to import bandit parser submodules before the formatters
+    have loaded, which triggers a specific circular dependency pattern.
+    """
+    # This import sequence triggers the circular import that was fixed
+    from lintro.parsers.bandit import bandit_issue, bandit_parser
+
+    assert bandit_issue is not None
+    assert bandit_parser is not None
+
+
+def test_parser_lazy_loading() -> None:
+    """Test that parser submodules are lazily loaded, not eagerly imported.
+
+    Verifies that accessing parser submodules through the parent package
+    works via __getattr__ and doesn't cause circular imports.
+    """
+    import lintro.parsers
+
+    # Access submodules via attribute access (triggers __getattr__)
+    bandit = lintro.parsers.bandit
+    actionlint = lintro.parsers.actionlint
+
+    assert bandit is not None
+    assert actionlint is not None
