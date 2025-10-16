@@ -1,15 +1,13 @@
 """Tests for pytest CLI test command."""
 
-import os
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import pytest
 from assertpy import assert_that
 from click.testing import CliRunner
 
-from lintro.cli_utils.commands.test import test_command, test
+from lintro.cli_utils.commands.test import test, test_command
 
 
 def test_test_command_help() -> None:
@@ -25,7 +23,7 @@ def test_test_command_default_paths() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(test_command, [])
+        runner.invoke(test_command, [])
         assert_that(mock_run.called).is_true()
         call_args = mock_run.call_args
         assert_that(call_args.kwargs["paths"]).is_equal_to(["."])
@@ -40,7 +38,7 @@ def test_test_command_explicit_paths() -> None:
         (test_dir / "test_file.py").write_text("def test(): pass\n")
         with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
             mock_run.return_value = 0
-            result = runner.invoke(
+            runner.invoke(
                 test_command,
                 [str(test_dir / "test_file.py")],
             )
@@ -55,7 +53,7 @@ def test_test_command_exclude_patterns() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(
+        runner.invoke(
             test_command,
             ["--exclude", "*.venv,__pycache__"],
         )
@@ -68,7 +66,7 @@ def test_test_command_include_venv() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(test_command, ["--include-venv"])
+        runner.invoke(test_command, ["--include-venv"])
         call_args = mock_run.call_args
         assert_that(call_args.kwargs["include_venv"]).is_true()
 
@@ -78,7 +76,7 @@ def test_test_command_output_format() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(
+        runner.invoke(
             test_command,
             ["--output-format", "json"],
         )
@@ -91,7 +89,7 @@ def test_test_command_group_by() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(test_command, ["--group-by", "code"])
+        runner.invoke(test_command, ["--group-by", "code"])
         call_args = mock_run.call_args
         assert_that(call_args.kwargs["group_by"]).is_equal_to("code")
 
@@ -101,7 +99,7 @@ def test_test_command_verbose() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(test_command, ["--verbose"])
+        runner.invoke(test_command, ["--verbose"])
         call_args = mock_run.call_args
         assert_that(call_args.kwargs["verbose"]).is_true()
 
@@ -111,7 +109,7 @@ def test_test_command_raw_output() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(test_command, ["--raw-output"])
+        runner.invoke(test_command, ["--raw-output"])
         call_args = mock_run.call_args
         assert_that(call_args.kwargs["raw_output"]).is_true()
 
@@ -121,7 +119,7 @@ def test_test_command_tool_options_without_prefix() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(
+        runner.invoke(
             test_command,
             ["--tool-options", "verbose=true,tb=long"],
         )
@@ -136,7 +134,7 @@ def test_test_command_tool_options_with_prefix() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(
+        runner.invoke(
             test_command,
             ["--tool-options", "pt:verbose=true"],
         )
@@ -150,7 +148,7 @@ def test_test_command_tool_options_mixed() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(
+        runner.invoke(
             test_command,
             ["--tool-options", "verbose=true,pt:tb=long"],
         )
@@ -183,7 +181,7 @@ def test_test_command_combined_options() -> None:
     runner = CliRunner()
     with patch("lintro.cli_utils.commands.test.run_lint_tools_simple") as mock_run:
         mock_run.return_value = 0
-        result = runner.invoke(
+        runner.invoke(
             test_command,
             [
                 ".",

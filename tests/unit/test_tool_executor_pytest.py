@@ -1,7 +1,6 @@
 """Tests for pytest-specific tool executor functionality."""
 
 import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -158,32 +157,32 @@ def test_run_lint_tools_simple_test_action_with_failures() -> None:
 
 def test_run_lint_tools_simple_test_action_invalid_tool() -> None:
     """Test run_lint_tools_simple with invalid tool for test action."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        with (
-            patch("lintro.utils.tool_executor.OutputManager") as mock_output,
-            patch("lintro.utils.tool_executor.create_logger") as mock_logger,
-        ):
-            mock_logger_inst = Mock()
-            mock_logger.return_value = mock_logger_inst
-            mock_output_inst = Mock()
-            mock_output_inst.run_dir = tmpdir
-            mock_output.return_value = mock_output_inst
+    with (
+        tempfile.TemporaryDirectory() as tmpdir,
+        patch("lintro.utils.tool_executor.OutputManager") as mock_output,
+        patch("lintro.utils.tool_executor.create_logger") as mock_logger,
+    ):
+        mock_logger_inst = Mock()
+        mock_logger.return_value = mock_logger_inst
+        mock_output_inst = Mock()
+        mock_output_inst.run_dir = tmpdir
+        mock_output.return_value = mock_output_inst
 
-            result = run_lint_tools_simple(
-                action="test",
-                paths=["."],
-                tools="ruff",
-                tool_options=None,
-                exclude=None,
-                include_venv=False,
-                group_by="file",
-                output_format="plain",
-                verbose=False,
-                raw_output=False,
-            )
+        result = run_lint_tools_simple(
+            action="test",
+            paths=["."],
+            tools="ruff",
+            tool_options=None,
+            exclude=None,
+            include_venv=False,
+            group_by="file",
+            output_format="plain",
+            verbose=False,
+            raw_output=False,
+        )
 
-            # Should return failure when tool is not available
-            assert_that(result).is_equal_to(1)
+        # Should return failure when tool is not available
+        assert_that(result).is_equal_to(1)
 
 
 def test_run_lint_tools_simple_test_action_with_tool_options() -> None:
@@ -209,7 +208,7 @@ def test_run_lint_tools_simple_test_action_with_tool_options() -> None:
         )
         mock_manager.get_tool.return_value = mock_pytest_tool
 
-        result = run_lint_tools_simple(
+        run_lint_tools_simple(
             action="test",
             paths=["."],
             tools="pt",
@@ -249,7 +248,7 @@ def test_run_lint_tools_simple_test_action_exclude_patterns() -> None:
         )
         mock_manager.get_tool.return_value = mock_pytest_tool
 
-        result = run_lint_tools_simple(
+        run_lint_tools_simple(
             action="test",
             paths=["."],
             tools="pt",
@@ -289,7 +288,7 @@ def test_run_lint_tools_simple_test_action_verbose() -> None:
         )
         mock_manager.get_tool.return_value = mock_pytest_tool
 
-        result = run_lint_tools_simple(
+        run_lint_tools_simple(
             action="test",
             paths=["."],
             tools="pt",

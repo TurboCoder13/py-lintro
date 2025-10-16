@@ -363,13 +363,13 @@ class TestPytestTool:
             patch.object(tool, "_parse_output", return_value=[]),
         ):
             # Both paths and files provided; paths should be used
-            result = tool.check(files=["file.py"], paths=["path/"])
+            tool.check(files=["file.py"], paths=["path/"])
 
             # Check that the command includes the paths argument
             # (would need to verify in actual implementation)
 
     def test_pytest_tool_check_discovers_test_files(self) -> None:
-        """Test that check discovers test files when neither files nor paths provided."""
+        """Verify that check discovers test files without files or paths."""
         tool = PytestTool()
 
         with (
