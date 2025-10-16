@@ -62,6 +62,7 @@ def test_actionlint_reports_violations(tmp_path) -> None:
     proc = subprocess.run(["actionlint", str(wf)], capture_output=True, text=True)
     direct_out = proc.stdout + proc.stderr
     logger.info(f"[LOG] actionlint stdout+stderr:\n{direct_out}")
+
     assert_that(proc.returncode).is_not_equal_to(0)
     tool = ActionlintTool()
     result = tool.check([str(tmp_path)])
