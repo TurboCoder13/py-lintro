@@ -13,6 +13,8 @@ is installed as a built distribution. However, these tests serve as:
 
 from __future__ import annotations
 
+import pytest
+
 
 def test_main_package_import() -> None:
     """Test that the main lintro package can be imported."""
@@ -179,3 +181,42 @@ def test_parser_lazy_loading() -> None:
 
     assert bandit is not None
     assert actionlint is not None
+
+
+def test_parser_lazy_loading_attribute_error() -> None:
+    """Test that accessing non-existent parser raises AttributeError.
+
+    Verifies that the __getattr__ error handling works correctly.
+    """
+    import lintro.parsers
+
+    # Accessing a non-existent submodule should raise AttributeError
+    with pytest.raises(AttributeError) as exc_info:
+        _ = lintro.parsers.nonexistent_parser
+
+    assert "nonexistent_parser" in str(exc_info.value)
+
+
+def test_parser_dir_function() -> None:
+    """Test that dir() works on parsers module.
+
+    Verifies that the __dir__ function returns all available submodules.
+    """
+    import lintro.parsers
+
+    # Get the directory listing of the parsers module
+    dir_listing = dir(lintro.parsers)
+
+    # All expected submodules should be in the directory
+    expected_modules = {
+        "actionlint",
+        "bandit",
+        "darglint",
+        "hadolint",
+        "prettier",
+        "ruff",
+        "yamllint",
+    }
+
+    for module in expected_modules:
+        assert module in dir_listing
