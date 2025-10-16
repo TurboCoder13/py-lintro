@@ -30,7 +30,7 @@ def _get_tools_to_run(
 
     Args:
         tools: str | None: Comma-separated tool names, "all", or None.
-        action: str: "check" or "fmt".
+        action: str: "check", "fmt", or "test".
 
     Returns:
         list[ToolEnum]: List of ToolEnum instances to run.
@@ -38,19 +38,41 @@ def _get_tools_to_run(
     Raises:
         ValueError: If unknown tool names are provided.
     """
+    if action == "test":
+        # Test action only supports pytest
+        if tools and tools.lower() not in ("pt", "pytest"):
+            raise ValueError(
+                "The 'test' action only supports pytest. Use 'lintro test' instead.",
+            )
+        try:
+            return [ToolEnum["PT"]]
+        except KeyError:
+            raise ValueError(
+                "pytest tool is not available",
+            ) from None
+
     if tools == "all" or tools is None:
         # Get all available tools for the action
         if action == "fmt":
             available_tools = tool_manager.get_fix_tools()
         else:  # check
             available_tools = tool_manager.get_check_tools()
-        return list(available_tools.keys())
+        # Filter out pytest for check/fmt actions
+        return [
+            t for t in available_tools.keys() if t.name.upper() != "PT"
+        ]
 
     # Parse specific tools
     tool_names: list[str] = [name.strip().upper() for name in tools.split(",")]
     tools_to_run: list[ToolEnum] = []
 
     for name in tool_names:
+        # Reject pytest for check/fmt actions
+        if name == "PT":
+            raise ValueError(
+                "pytest tool is not available for check/fmt actions. "
+                "Use 'lintro test' instead.",
+            )
         try:
             tool_enum = ToolEnum[name]
             # Verify the tool supports the requested action
@@ -62,7 +84,9 @@ def _get_tools_to_run(
                     )
             tools_to_run.append(tool_enum)
         except KeyError:
-            available_names: list[str] = [e.name.lower() for e in ToolEnum]
+            available_names: list[str] = [
+                e.name.lower() for e in ToolEnum if e.name.upper() != "PT"
+            ]
             raise ValueError(
                 f"Unknown tool '{name.lower()}'. Available tools: {available_names}",
             ) from None
