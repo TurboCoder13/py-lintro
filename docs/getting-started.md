@@ -50,7 +50,7 @@ cd py-lintro
 chmod +x scripts/**/*.sh
 
 # Use Lintro via Docker
-./scripts/docker/docker-lintro.sh check --output-format grid
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
 ```
 
 ## First Steps

@@ -79,11 +79,11 @@ to amend commits before merge.
    ```
 3. Run tests:
    ```bash
-   ./scripts/local/run-tests.sh
+   uv run pytest tests/ --cov=lintro
    ```
 4. Run Lintro on the codebase:
    ```bash
-   ./scripts/local/local-lintro.sh check --output-format grid
+   uv run lintro check --output-format grid
    ```
 
 ## More Information
