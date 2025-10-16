@@ -331,24 +331,24 @@ module.exports = {
   tabWidth: 2,
   semi: true,
   singleQuote: true,
-  trailingComma: 'es5',
+  trailingComma: "es5",
   bracketSpacing: true,
-  arrowParens: 'avoid',
+  arrowParens: "avoid",
   printWidth: 80,
 
   // Override for specific file types
   overrides: [
     {
-      files: '*.json',
+      files: "*.json",
       options: {
         tabWidth: 4,
       },
     },
     {
-      files: '*.md',
+      files: "*.md",
       options: {
         printWidth: 120,
-        proseWrap: 'always',
+        proseWrap: "always",
       },
     },
   ],
@@ -409,7 +409,7 @@ rules:
 
   # Truthy values
   truthy:
-    allowed-values: ['true', 'false']
+    allowed-values: ["true", "false"]
     check-keys: true
 ```
 

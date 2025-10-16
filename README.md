@@ -150,10 +150,10 @@ docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check --to
 # Clone and setup
 git clone https://github.com/TurboCoder13/py-lintro.git
 cd py-lintro
-chmod +x scripts/**/*.sh
 
-# Run with local Docker build
-./scripts/docker/docker-lintro.sh check --output-format grid
+# Run with Docker
+docker run --rm -v $(pwd):/workspace \
+  ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
 ```
 
 See [Docker Documentation](docs/docker.md) for detailed usage.
@@ -164,31 +164,31 @@ See [Docker Documentation](docs/docker.md) for detailed usage.
 
 ```bash
 # Grid format (recommended)
-lintro check --output-format grid --group-by code
+uv run lintro check --output-format grid --group-by code
 
 # Export to file
-lintro check --output report.txt
+uv run lintro check --output report.txt
 
 # Different grouping options
-lintro check --output-format grid --group-by file  # Group by file
-lintro check --output-format grid --group-by code  # Group by error type
+uv run lintro check --output-format grid --group-by file  # Group by file
+uv run lintro check --output-format grid --group-by code  # Group by error type
 ```
 
 ### Tool-Specific Options
 
 ```bash
 # Exclude patterns
-lintro check --exclude "migrations,node_modules,dist"
+uv run lintro check --exclude "migrations,node_modules,dist"
 
 # Tool-specific options use key=value (lists with |)
-lintro check --tool-options "ruff:line_length=88,prettier:print_width=80"
+uv run lintro check --tool-options "ruff:line_length=88,prettier:print_width=80"
 
 # Ruff + Black cooperation:
 # Lintro prefers Ruff for linting and Black for formatting.
 # When Black is configured as a post-check, Lintro disables Ruff formatting by
 # default to avoid double-formatting. Override if needed:
-lintro format --tool-options ruff:format=True        # force Ruff to format
-lintro check  --tool-options ruff:format_check=True  # force Ruff format check
+uv run lintro format --tool-options ruff:format=True        # force Ruff to format
+uv run lintro check  --tool-options ruff:format_check=True  # force Ruff format check
 ```
 
 ### CI/CD Integration
@@ -215,18 +215,21 @@ For comprehensive documentation, see our **[Documentation Hub](docs/README.md)**
 ## Development
 
 ```bash
+# Install dependencies
+uv sync --dev
+
 # Run tests
-./scripts/local/run-tests.sh
+uv run pytest tests/ --cov=lintro
 
 # Run Lintro on itself
-./scripts/local/local-lintro.sh check --output-format grid
+uv run lintro check --output-format grid
 
 # Docker development
-./scripts/docker/docker-test.sh
-./scripts/docker/docker-lintro.sh check --output-format grid
+docker build -t py-lintro:dev .
+docker run --rm -v $(pwd):/workspace py-lintro:dev check --output-format grid
 ```
 
-For detailed information about all available scripts, see [Scripts Documentation](scripts/README.md).
+For detailed information about CI testing scripts, see [Scripts Documentation](scripts/README.md).
 
 ## Dependencies
 

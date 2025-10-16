@@ -4,11 +4,11 @@ name: Testing - Full Suite & Coverage
 # uploads artifacts, and posts coverage information to PRs.
 # Uses turbo-ci reusable workflow for consistency and maintainability.
 
-'on':
+"on":
   push:
     branches: [main]
     paths:
-      - '**.py'
+      - "**.py"
       - pyproject.toml
       - .github/workflows/test-and-coverage.yml
       - scripts/local/run-tests.sh
@@ -26,9 +26,9 @@ jobs:
   test-coverage:
     uses: TurboCoder13/turbo-ci/.github/workflows/reusable-test-coverage.yml@474343982ec62e4a6c93c05034c18d2cde527df2
     with:
-      python-version: '3.13'
+      python-version: "3.13"
       coverage-threshold: 80
       upload-codecov: true
       generate-badge: true
       post-pr-comment: true
-      test-command: 'uv run pytest --cov=lintro --cov-report=html --cov-report=xml --cov-report=term'
+      test-command: "uv run pytest --cov=lintro --cov-report=html --cov-report=xml --cov-report=term"

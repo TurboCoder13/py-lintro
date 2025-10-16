@@ -3,14 +3,14 @@ name: Security - CodeQL Code Scanning
 # GitHub CodeQL static analysis for security vulnerabilities and code quality issues.
 # Scans Python code and uploads results to GitHub Security tab.
 
-'on':
+"on":
   push:
     branches: [main]
   pull_request:
     branches: [main]
   schedule:
     # Run weekly on Monday at 05:00 UTC
-    - cron: '0 5 * * 1'
+    - cron: "0 5 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -47,4 +47,4 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@e296a935590eb16afc0c0108289f68c87e2a89a5 # v4
         with:
-          category: '/language:all'
+          category: "/language:all"

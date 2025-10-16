@@ -3,9 +3,9 @@ name: Security - OpenSSF Scorecard Analysis
 # Weekly OpenSSF Scorecard security analysis. Evaluates repository security practices
 # and uploads results to GitHub Security tab for visibility.
 
-'on':
+"on":
   schedule:
-    - cron: '0 6 * * 1' # Weekly on Monday 06:00 UTC
+    - cron: "0 6 * * 1" # Weekly on Monday 06:00 UTC
   workflow_dispatch:
 
 permissions:

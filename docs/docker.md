@@ -33,23 +33,23 @@ cd py-lintro
 chmod +x scripts/**/*.sh
 
 # Run Lintro with Docker
-./scripts/docker/docker-lintro.sh check --output-format grid
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
 ```
 
 ### Basic Commands
 
 ```bash
 # Check code for issues
-./scripts/docker/docker-lintro.sh check
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check
 
 # Auto-fix issues where possible
-./scripts/docker/docker-lintro.sh format
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest format
 
 # Use grid formatting (recommended)
-./scripts/docker/docker-lintro.sh check --output-format grid --group-by code
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check --output-format grid --group-by code
 
 # List available tools
-./scripts/docker/docker-lintro.sh list-tools
+docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest list-tools
 ```
 
 ## Published Docker Image
@@ -107,35 +107,17 @@ docker compose build
 
 ## Running Commands
 
-### Using the Shell Script (Recommended)
-
-The `scripts/docker/docker-lintro.sh` script provides the easiest way to run Lintro in Docker:
-
-```bash
-# Basic usage
-./scripts/docker/docker-lintro.sh check --output-format grid
-
-# Specific tools
-./scripts/docker/docker-lintro.sh check --tools ruff,prettier
-
-# Format code
-./scripts/docker/docker-lintro.sh fmt --tools ruff
-
-# Export results
-./scripts/docker/docker-lintro.sh check --output-format grid --output results.txt
-```
-
 ### Using Docker Directly
 
 ```bash
 # Basic check
-docker run --rm -v "$(pwd):/code" lintro:latest check
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check
 
 # With grid formatting
-docker run --rm -v "$(pwd):/code" lintro:latest check --output-format grid
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
 
 # Format code
-docker run --rm -v "$(pwd):/code" lintro:latest fmt --tools ruff
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest format --tools ruff
 ```
 
 ### Using Docker Compose
@@ -156,7 +138,7 @@ docker compose run --rm lintro check --tools ruff,prettier
 ### Check Command
 
 ```bash
-./scripts/docker/docker-lintro.sh check [OPTIONS] [PATHS]...
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check [OPTIONS] [PATHS]...
 ```
 
 **Options:**
@@ -175,7 +157,7 @@ docker compose run --rm lintro check --tools ruff,prettier
 ### Format Command
 
 ```bash
-./scripts/docker/docker-lintro.sh fmt [OPTIONS] [PATHS]...
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest format [OPTIONS] [PATHS]...
 ```
 
 Same options as check command, but only runs tools that can auto-fix issues.
@@ -183,7 +165,7 @@ Same options as check command, but only runs tools that can auto-fix issues.
 ### List Tools Command
 
 ```bash
-./scripts/docker/docker-lintro.sh list-tools [OPTIONS]
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest list-tools [OPTIONS]
 ```
 
 **Options:**
@@ -197,13 +179,13 @@ When using the `--output` option, files are created in your current directory:
 
 ```bash
 # Save check results
-./scripts/docker/docker-lintro.sh check --output-format grid --output results.txt
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --output-format grid --output results.txt
 
 # Save to subdirectory (make sure it exists)
-./scripts/docker/docker-lintro.sh check --output-format grid --output reports/results.txt
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --output-format grid --output reports/results.txt
 
 # Save tool list
-./scripts/docker/docker-lintro.sh list-tools --output tools.txt
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest list-tools --output tools.txt
 ```
 
 ## Common Use Cases
@@ -212,39 +194,39 @@ When using the `--output` option, files are created in your current directory:
 
 ```bash
 # Basic quality check
-./scripts/docker/docker-lintro.sh check --output-format grid
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
 
 # Group by error type for easier fixing
-./scripts/docker/docker-lintro.sh check --output-format grid --group-by code
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --output-format grid --group-by code
 
 # Check specific files or directories
-./scripts/docker/docker-lintro.sh check src/ tests/ --output-format grid
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check src/ tests/ --output-format grid
 
 # Use only specific tools
-./scripts/docker/docker-lintro.sh check --tools ruff,darglint --output-format grid
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --tools ruff,darglint --output-format grid
 ```
 
 ### Code Formatting
 
 ```bash
 # Format with all available tools
-./scripts/docker/docker-lintro.sh fmt
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest format
 
 # Format with specific tools
-./scripts/docker/docker-lintro.sh fmt --tools ruff,prettier
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest format --tools ruff,prettier
 
 # Format specific directories
-./scripts/docker/docker-lintro.sh fmt src/ --tools ruff
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest format src/ --tools ruff
 ```
 
 ### CI/CD Integration
 
 ```bash
 # CI-friendly output (no grid formatting)
-./scripts/docker/docker-lintro.sh check --output ci-results.txt
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --output ci-results.txt
 
 # Exit with error code if issues found
-./scripts/docker/docker-lintro.sh check && echo "No issues found" || echo "Issues detected"
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check && echo "No issues found" || echo "Issues detected"
 ```
 
 ## Testing
@@ -263,16 +245,16 @@ When using the `--output` option, files are created in your current directory:
 
 ```bash
 # Check your changes
-./scripts/docker/docker-lintro.sh check --output-format grid
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
 
 # Fix auto-fixable issues
-./scripts/docker/docker-lintro.sh fmt
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest format
 
 # Run tests
 ./docker-test.sh
 
 # Check again to ensure everything is clean
-./scripts/docker/docker-lintro.sh check --output-format grid
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
 ```
 
 ## Troubleshooting
@@ -283,7 +265,7 @@ If you encounter permission issues with output files:
 
 ```bash
 # Run with your user ID
-docker run --rm -v "$(pwd):/code" --user "$(id -u):$(id -g)" lintro:latest check
+docker run --rm -v "$(pwd):/code" --user "$(id -u):$(id -g)" ghcr.io/turbocoder13/py-lintro:latest check
 ```
 
 ### Volume Mounting Issues
@@ -292,19 +274,19 @@ Ensure you're using the absolute path for volume mounting:
 
 ```bash
 # Use absolute path
-docker run --rm -v "$(pwd):/code" lintro:latest check
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check
 
 # Check current directory
 pwd
 ```
 
-### Docker Script Issues
+### Docker Command Issues
 
-If the `scripts/docker/docker-lintro.sh` script isn't working:
+If Docker commands aren't working:
 
-1. **Check permissions:** `chmod +x scripts/docker/docker-lintro.sh`
-2. **Verify Docker is running:** `docker --version`
-3. **Ensure you're in the correct directory:** Should contain `Dockerfile`
+1. **Verify Docker is running:** `docker --version`
+2. **Ensure you're in the correct directory:** Should contain code to lint
+3. **Check volume permissions:** You may need to add `--user "$(id -u):$(id -g)"` to the docker run command
 
 ### Build Issues
 
@@ -338,13 +320,13 @@ For large codebases:
 
 ```bash
 # Use specific tools only
-./scripts/docker/docker-lintro.sh check --tools ruff --output-format grid
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --tools ruff --output-format grid
 
 # Exclude unnecessary patterns
-./scripts/docker/docker-lintro.sh check --exclude "*.pyc,venv,node_modules" --output-format grid
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --exclude "*.pyc,venv,node_modules" --output-format grid
 
 # Process specific directories
-./scripts/docker/docker-lintro.sh check src/ --output-format grid
+docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check src/ --output-format grid
 ```
 
 ## Integration with Other Tools
@@ -353,13 +335,13 @@ For large codebases:
 
 ```makefile
 lint:
-	./scripts/docker/docker-lintro.sh check --output-format grid
+	docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
 
 fix:
-	./scripts/docker/docker-lintro.sh fmt
+	docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest format
 
 lint-ci:
-	./scripts/docker/docker-lintro.sh check --output lint-results.txt
+	docker run --rm -v "$(pwd):/code" ghcr.io/turbocoder13/py-lintro:latest check --output lint-results.txt
 ```
 
 ### GitHub Actions
@@ -367,8 +349,8 @@ lint-ci:
 ```yaml
 - name: Run Lintro
   run: |
-    chmod +x scripts/docker/docker-lintro.sh
-    ./scripts/docker/docker-lintro.sh check --output-format grid --output lintro-results.txt
+    docker run --rm -v ${{ github.workspace }}:/code \
+      ghcr.io/turbocoder13/py-lintro:latest check --output-format grid --output lintro-results.txt
 ```
 
 ## Best Practices

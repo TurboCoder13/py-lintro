@@ -3,7 +3,7 @@ name: Publish - TestPyPI Staging
 # Manual publish to TestPyPI for testing package distribution before production release.
 # Uses same quality and build workflows as production for consistency.
 
-'on':
+"on":
   workflow_dispatch:
 
 permissions:

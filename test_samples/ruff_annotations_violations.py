@@ -48,6 +48,8 @@ def kwargs_function(**kwargs):  # ANN003: missing type for **kwargs
 
 def nested_function():
     """Function that returns a nested function."""
+
     def inner(x: int):  # ANN201: missing return type
         return x + 1
+
     return inner

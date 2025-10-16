@@ -5,7 +5,10 @@
     {
       "description": "Auto-bump turbo-ci SHA references",
       "matchManagers": ["github-actions"],
-      "matchPaths": ["**/.github/workflows/*.yml", "**/.github/workflows/*.yaml"],
+      "matchPaths": [
+        "**/.github/workflows/*.yml",
+        "**/.github/workflows/*.yaml"
+      ],
       "matchPatterns": ["TurboCoder13/turbo-ci"],
       "automerge": true,
       "automergeType": "pr",

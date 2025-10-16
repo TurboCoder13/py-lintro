@@ -3,7 +3,7 @@ name: Quality Check - CI Pipeline
 # Runs lintro quality analysis on PRs and pushes using Docker.
 # Uses turbo-ci reusable workflow for consistency and maintainability.
 
-'on':
+"on":
   push:
     branches: [main]
   pull_request:
@@ -16,9 +16,9 @@ jobs:
   lintro-analysis:
     uses: TurboCoder13/turbo-ci/.github/workflows/reusable-lintro-analysis.yml@474343982ec62e4a6c93c05034c18d2cde527df2
     with:
-      python-version: '3.13'
-      docker-registry: 'ghcr.io'
+      python-version: "3.13"
+      docker-registry: "ghcr.io"
       auto-fix: true
       post-pr-comment: true
-      docker-image-name: 'py-lintro:latest'
+      docker-image-name: "py-lintro:latest"
       ruff-unsafe-fixes: true

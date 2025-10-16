@@ -3,7 +3,7 @@ name: Quality Check - PR Title Validation
 # Validates PR titles follow Conventional Commits format. Comments with guidance
 # and blocks merges if title format is invalid to ensure semantic release compatibility.
 
-'on':
+"on":
   pull_request:
     types: [opened, edited, synchronize, reopened, ready_for_review]
 
@@ -41,8 +41,8 @@ jobs:
             revert
             style
             test
-          require-scope: 'false'
-          comment-on-fail: 'true'
+          require-scope: "false"
+          comment-on-fail: "true"
 
       - name: Fail if invalid
         if: steps.semantic.outputs.ok != 'true'

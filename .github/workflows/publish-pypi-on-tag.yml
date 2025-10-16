@@ -5,16 +5,16 @@ name: Publish - PyPI Production
 # Publishes package to PyPI when version tags are pushed. Validates tag matches
 # pyproject.toml version, runs quality/build checks, generates SBOM, and uses OIDC for secure publishing.
 
-'on':
+"on":
   push:
     tags:
-      - '*.*.*'
+      - "*.*.*"
       - v*.*.*
-      - '*.*.*a*'
+      - "*.*.*a*"
       - v*.*.*a*
-      - '*.*.*b*'
+      - "*.*.*b*"
       - v*.*.*b*
-      - '*.*.*rc*'
+      - "*.*.*rc*"
       - v*.*.*rc*
   workflow_dispatch:
 
@@ -67,7 +67,7 @@ jobs:
       - name: Environment setup
         uses: TurboCoder13/turbo-ci/.github/actions/setup-env@474343982ec62e4a6c93c05034c18d2cde527df2
         with:
-          python-version: '3.13'
+          python-version: "3.13"
       - name: Ensure tag points to a commit on main
         uses: TurboCoder13/turbo-ci/.github/actions/ensure-tag-on-main@474343982ec62e4a6c93c05034c18d2cde527df2
 

@@ -21,12 +21,12 @@ scripts/
 Scripts for testing package installation and CLI verification in isolated
 environments.
 
-| Script                | Purpose                                     | Usage                                      |
-| --------------------- | ------------------------------------------- | ------------------------------------------ |
-| `test-venv-setup.sh`  | Create isolated Python 3.13 venv            | `./scripts/ci/test-venv-setup.sh`          |
-| `test-install-package.sh` | Install built package in isolated venv  | `./scripts/ci/test-install-package.sh wheel` |
-| `test-verify-cli.sh`  | Verify lintro CLI entry points              | `./scripts/ci/test-verify-cli.sh`          |
-| `test-verify-imports.sh` | Verify critical package imports         | `./scripts/ci/test-verify-imports.sh wheel` |
+| Script                    | Purpose                                | Usage                                        |
+| ------------------------- | -------------------------------------- | -------------------------------------------- |
+| `test-venv-setup.sh`      | Create isolated Python 3.13 venv       | `./scripts/ci/test-venv-setup.sh`            |
+| `test-install-package.sh` | Install built package in isolated venv | `./scripts/ci/test-install-package.sh wheel` |
+| `test-verify-cli.sh`      | Verify lintro CLI entry points         | `./scripts/ci/test-verify-cli.sh`            |
+| `test-verify-imports.sh`  | Verify critical package imports        | `./scripts/ci/test-verify-imports.sh wheel`  |
 
 ## 🔗 CI/CD Infrastructure
 
