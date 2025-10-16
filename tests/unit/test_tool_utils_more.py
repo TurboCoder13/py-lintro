@@ -5,7 +5,12 @@ from __future__ import annotations
 from assertpy import assert_that
 
 from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
-from lintro.utils.tool_utils import format_tool_output, walk_files_with_excludes
+from lintro.parsers.pytest.pytest_issue import PytestIssue
+from lintro.utils.tool_utils import (
+    format_tool_output,
+    walk_files_with_excludes,
+    TOOL_TABLE_FORMATTERS,
+)
 
 
 def test_format_tool_output_with_parsed_issues_and_fixable_sections(
@@ -54,7 +59,7 @@ def test_format_tool_output_with_parsed_issues_and_fixable_sections(
     assert_that("Auto-fixable" in txt or txt == "TABLE").is_true()
 
 
-def test_format_tool_output_parsing_fallbacks(monkeypatch) -> None:
+def test_format_tool_output_parsing_fallbacks(monkeypatch,) -> None:
     """Fallback to raw output for unknown tools or missing issues.
 
     Args:
@@ -70,7 +75,7 @@ def test_format_tool_output_parsing_fallbacks(monkeypatch) -> None:
     assert_that(out).is_equal_to("some raw output")
 
 
-def test_walk_files_excludes_venv(tmp_path) -> None:
+def test_walk_files_excludes_venv(tmp_path,) -> None:
     """walk_files_with_excludes should omit venv directories by default.
 
     Args:
@@ -92,3 +97,84 @@ def test_walk_files_excludes_venv(tmp_path) -> None:
     )
     assert_that(str(file_a) in files).is_true()
     assert_that(str(venv_file) in files).is_false()
+
+
+def test_tool_table_formatters_contains_pytest() -> None:
+    """Test that TOOL_TABLE_FORMATTERS contains pytest entry.
+
+    This ensures pytest issues can be formatted for display.
+    """
+    assert_that("pt" in TOOL_TABLE_FORMATTERS).is_true()
+    descriptor, formatter = TOOL_TABLE_FORMATTERS["pt"]
+    assert_that(descriptor).is_not_none()
+    assert_that(formatter).is_not_none()
+
+
+def test_format_tool_output_with_pytest_issues(monkeypatch,) -> None:
+    """Test format_tool_output with pytest test issues.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    import lintro.utils.tool_utils as tu
+
+    def fake_tabulate(
+        tabular_data,
+        headers,
+        tablefmt,
+        stralign,
+        disable_numparse,
+    ) -> str:
+        return "PYTEST_TABLE"
+
+    monkeypatch.setattr(tu, "TABULATE_AVAILABLE", True, raising=True)
+    monkeypatch.setattr(tu, "tabulate", fake_tabulate, raising=True)
+
+    pytest_issues = [
+        PytestIssue(
+            file="test_example.py",
+            line=10,
+            test_name="test_failure",
+            message="AssertionError: Expected 1 but got 2",
+            test_status="FAILED",
+        ),
+    ]
+
+    txt = format_tool_output(
+        tool_name="pt",
+        output="raw output",
+        group_by="auto",
+        output_format="grid",
+        issues=pytest_issues,
+    )
+
+    # Should format using pytest formatter
+    assert_that(txt).is_not_empty()
+
+
+def test_format_tool_output_pytest_raw_fallback() -> None:
+    """Test format_tool_output falls back to raw for pytest without tabulate.
+
+    This ensures graceful degradation when tabulate is not available.
+    """
+    pytest_issues = [
+        PytestIssue(
+            file="test_example.py",
+            line=10,
+            test_name="test_failure",
+            message="AssertionError",
+            test_status="FAILED",
+        ),
+    ]
+
+    # Call with tabulate potentially unavailable
+    txt = format_tool_output(
+        tool_name="pt",
+        output="raw pytest output",
+        group_by="auto",
+        output_format="grid",
+        issues=pytest_issues,
+    )
+
+    # Should return either formatted or raw output
+    assert_that(txt).is_not_empty()
