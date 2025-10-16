@@ -1,7 +1,5 @@
 """Command-line interface for Lintro."""
 
-import sys
-
 import click
 
 from lintro import __version__

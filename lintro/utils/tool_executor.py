@@ -58,9 +58,7 @@ def _get_tools_to_run(
         else:  # check
             available_tools = tool_manager.get_check_tools()
         # Filter out pytest for check/fmt actions
-        return [
-            t for t in available_tools.keys() if t.name.upper() != "PT"
-        ]
+        return [t for t in available_tools if t.name.upper() != "PT"]
 
     # Parse specific tools
     tool_names: list[str] = [name.strip().upper() for name in tools.split(",")]
