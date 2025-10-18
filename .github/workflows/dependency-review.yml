@@ -36,7 +36,7 @@ jobs:
       # Avoid PR comment on forks (token is read-only); still run the check
       - name: Dependency review (forks - no PR comment)
         if: github.event.pull_request.head.repo.fork == true
-        uses: actions/dependency-review-action@56339e523c0409420f6c2c9a2f4292bbb3c07dd3 # v4.8.0
+        uses: actions/dependency-review-action@40c09b7dc99638e5ddb0bfd91c1673effc064d8a # v4.8.1
         with:
           fail-on-severity: high
           comment-summary-in-pr: false
@@ -44,7 +44,7 @@ jobs:
 
       - name: Dependency review (with PR comment)
         if: github.event.pull_request.head.repo.fork == false
-        uses: actions/dependency-review-action@56339e523c0409420f6c2c9a2f4292bbb3c07dd3 # v4.8.0
+        uses: actions/dependency-review-action@40c09b7dc99638e5ddb0bfd91c1673effc064d8a # v4.8.1
         with:
           fail-on-severity: high
           comment-summary-in-pr: true
