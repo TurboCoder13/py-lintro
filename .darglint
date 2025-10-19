@@ -1,4 +1,0 @@
-[darglint]
-docstring_style=google
-strictness=full
-message_template={path}:{line}: {msg_id} {msg}

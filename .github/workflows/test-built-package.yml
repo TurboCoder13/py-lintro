@@ -4,11 +4,11 @@ name: Testing - Built Package Validation
 # editable mode. This catches packaging issues like circular imports, missing files,
 # and entry point errors that only manifest when installed as a dependency.
 
-'on':
+"on":
   push:
     branches: [main]
     paths:
-      - '**.py'
+      - "**.py"
       - pyproject.toml
       - MANIFEST.in
       - .github/workflows/test-built-package.yml
@@ -16,7 +16,7 @@ name: Testing - Built Package Validation
   pull_request:
     branches: [main]
     paths:
-      - '**.py'
+      - "**.py"
       - pyproject.toml
       - MANIFEST.in
       - scripts/ci/test-*.sh
@@ -45,7 +45,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -71,15 +71,15 @@ jobs:
             objects.githubusercontent.com:443
             pypi.org:443
             files.pythonhosted.org:443
-          fail-on-missing: 'true'
+          fail-on-missing: "true"
 
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
         with:
-          python-version: '3.13'
+          python-version: "3.13"
         env:
-          BOOTSTRAP_SKIP_SYNC: '1'
-          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
+          BOOTSTRAP_SKIP_SYNC: "1"
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: "1"
 
       - name: Build wheel
         run: uv build --wheel --out-dir dist/
@@ -121,7 +121,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -147,15 +147,15 @@ jobs:
             objects.githubusercontent.com:443
             pypi.org:443
             files.pythonhosted.org:443
-          fail-on-missing: 'true'
+          fail-on-missing: "true"
 
       - name: Environment setup
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
         with:
-          python-version: '3.13'
+          python-version: "3.13"
         env:
-          BOOTSTRAP_SKIP_SYNC: '1'
-          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
+          BOOTSTRAP_SKIP_SYNC: "1"
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: "1"
 
       - name: Build source distribution
         run: uv build --sdist --out-dir dist/

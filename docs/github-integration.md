@@ -44,19 +44,7 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 - 📈 **GitHub Pages deployment** for coverage badges
 - 🔄 **Auto-updating** on each push to main
 
-### 3. Coverage Pages Deployment
-
-**File:** `.github/workflows/pages-deploy-coverage.yml`
-
-**Features:**
-
-- 🌐 Deploys the `htmlcov/` coverage report to GitHub Pages
-- 🔗 Links the artifact produced by the test-and-coverage workflow
-- 🧷 Uses a dedicated workflow_run trigger for reliable handoff
-
-> Tip: Ensure Pages is enabled (Settings → Pages → Source: GitHub Actions)
-
-### 4. Lintro Report Workflow
+### 3. Lintro Report Workflow
 
 **File:** `.github/workflows/lintro-report-scheduled.yml`
 
@@ -68,9 +56,7 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 - 📦 **Artifact upload** for report retention
 - 🌐 **Optional GitHub Pages deployment** for report hosting
 
-If you want to publish the weekly report to Pages, prefer using the dedicated `pages-deploy-coverage.yml` pattern as shown above.
-
-### 5. Complete CI Pipeline
+### 4. Complete CI Pipeline
 
 **File:** `.github/workflows/ci-lintro-analysis.yml`
 
@@ -80,16 +66,25 @@ If you want to publish the weekly report to Pages, prefer using the dedicated `p
 - 📋 **Combined reporting** - Quality + testing results
 - 🚀 **Showcase integration** - Demonstrates Lintro capabilities
 
-### 6. Docker Image Publishing
+### 5. OpenSSF Scorecard
 
-**File:** `.github/workflows/docker-build-publish.yml`
+**File:** `.github/workflows/scorecards.yml`
 
 **Features:**
 
-- 🐳 **Automated Docker image building** and publishing to GHCR
-- 🏷️ **Smart tagging** - Latest, main branch, and semantic versions
-- 🔄 **Release integration** - Images published on releases
-- 📦 **GHCR integration** - Images available at `ghcr.io/turbocoder13/py-lintro`
+- 🔒 **Security analysis** via OpenSSF Scorecard
+- 📊 **Supply chain security** assessment
+- 🔄 **Weekly runs** to track security posture
+
+### 6. CodeQL Analysis
+
+**File:** `.github/workflows/codeql.yml`
+
+**Features:**
+
+- 🔍 **Static code analysis** for security vulnerabilities
+- 🐍 **Python-specific scanning** for common issues
+- 🔄 **Automatic runs** on push and PRs
 
 ### 7. OpenSSF Allstar (Repository Security Enforcement)
 
@@ -165,19 +160,16 @@ Edit the workflow files to match your project structure:
 
 ## Release Automation (Single Release Train)
 
-The repository ships with fully automated semantic releases and PyPI publishing.
+The repository ships with fully automated semantic releases and PyPI publishing via turbo-ci.
 
-- **Automated Release PR** (`.github/workflows/semantic-release.yml`)
+- **Automated Release PR**
   - On push to `main`, computes the next version from Conventional Commits
   - Updates `pyproject.toml` and `lintro/__init__.py`
-  - Opens a Release PR (no direct push to main) and enables auto-merge; once checks pass, it merges
+  - Opens a Release PR and enables auto-merge; once checks pass, it merges
 
-- **Auto Tag on Main** (`.github/workflows/auto-tag-on-main.yml`)
-  - After the Release PR is merged, a guard step ensures the last commit matches `chore(release):` pattern
-  - Detects the new version in `pyproject.toml`, and creates/pushes the tag if it does not already exist
-
-- **Publish to PyPI on Tag** (`.github/workflows/publish-pypi-on-tag.yml`)
-  - On tag push (e.g., `1.2.3`), verifies tag equals `pyproject.toml` version
+- **Automatic Tagging & PyPI Publishing**
+  - After the Release PR is merged, the turbo-ci release workflow creates and pushes a version tag
+  - On tag push, the workflow verifies tag equals `pyproject.toml` version
   - Uses Trusted Publishing (OIDC) to upload to PyPI
   - Also creates a GitHub Release and attaches built artifacts
 
@@ -210,7 +202,7 @@ Deprecated/manual flows (e.g., direct Release creation workflows) are removed to
 ### Labels & guards
 
 - Release PRs are labeled `release-bump` to make them easy to target in policies.
-- Tagging is guarded in `auto-tag-on-main.yml` by checking the last commit title starts with `chore(release):` to ensure tags are only created after Release PR merges.
+- Tagging is handled by the turbo-ci release workflow to ensure tags are only created after Release PR merges.
 
 ### Security & Pinning
 
@@ -239,7 +231,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Install UV
         run: pip install uv
@@ -281,7 +273,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Install UV and dependencies
         run: |
@@ -327,7 +319,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Install UV and dependencies
         run: |
@@ -407,8 +399,8 @@ Reference installation docs: `https://github.com/ossf/scorecard?tab=readme-ov-fi
 ```yaml
 strategy:
   matrix:
-    python-version: ['3.11', '3.12', '3.13']
-    tool: ['ruff', 'darglint', 'prettier']
+    python-version: ["3.11", "3.12", "3.13"]
+    tool: ["ruff", "darglint", "prettier"]
 ```
 
 ### Conditional Execution
