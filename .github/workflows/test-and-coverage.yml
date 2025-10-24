@@ -74,19 +74,19 @@ jobs:
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
       - name: Upload coverage report as artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: coverage-report-python-3.13
           path: htmlcov/
           retention-days: 30
       - name: Upload coverage XML as artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: coverage-xml
           path: coverage.xml
           retention-days: 30
       - name: Upload .coverage as artifact (if present)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: ${{ hashFiles('.coverage') != '' }}
         with:
           name: coverage-dotfile
@@ -120,7 +120,7 @@ jobs:
 
       - name: Upload coverage badge artifact
         if: success()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: coverage-badge
           path: assets/images/coverage-badge.svg
@@ -162,7 +162,7 @@ jobs:
       - name: Download coverage XML artifact (fallback for comment generation)
         if: always()
         continue-on-error: true
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: coverage-xml
           path: .
