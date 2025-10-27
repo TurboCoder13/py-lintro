@@ -542,11 +542,12 @@ class PytestTool(BaseTool):
 
             # Calculate docker skipped tests
             # If docker tests are disabled and we have some,
-            # they're in the skipped count
+            # they should show as skipped in the output
             docker_skipped = 0
             if not run_docker_tests and docker_test_count > 0:
-                # The skipped count should include docker tests
-                docker_skipped = min(docker_test_count, summary.skipped)
+                # When Docker tests are disabled, they are deselected by pytest
+                # so they won't appear in summary.skipped
+                docker_skipped = docker_test_count
 
             # Calculate actual skipped tests (tests that exist but weren't run)
             # This includes deselected tests that pytest doesn't report in summary
@@ -564,10 +565,17 @@ class PytestTool(BaseTool):
                 f"error={summary.error}",
             )
             logger.debug(f"Actual skipped: {actual_skipped}")
+            logger.debug(f"Docker skipped: {docker_skipped}")
 
             # Use the larger of summary.skipped or actual_skipped
             # (summary.skipped is runtime skips, actual_skipped includes deselected)
+            # But ensure docker_skipped is included in the total
             total_skipped = max(summary.skipped, actual_skipped)
+            
+            # Ensure docker_skipped is included in the total skipped count
+            # This makes Docker tests show as skipped when --enable-docker is not used
+            if docker_skipped > 0 and total_skipped < docker_skipped:
+                total_skipped = docker_skipped
 
             summary_data = {
                 "passed": summary.passed,
