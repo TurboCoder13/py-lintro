@@ -108,7 +108,7 @@ class TestPytestTool:
             assert "--tb" in cmd
             assert "short" in cmd
             assert "--maxfail" in cmd
-            assert "1" in cmd
+            assert "0" in cmd  # Default to 0 to run all tests
             assert "--no-header" in cmd
             assert "--disable-warnings" in cmd
             assert "test_file.py" in cmd
@@ -269,7 +269,7 @@ class TestPytestTool:
             patch.object(
                 tool,
                 "_run_subprocess",
-                return_value=(True, "All tests passed"),
+                return_value=(True, "All tests passed\n511 passed in 18.53s"),
             ),
             patch.object(tool, "_parse_output", return_value=[]),
         ):
@@ -278,7 +278,10 @@ class TestPytestTool:
             assert result.name == "pytest"
             assert result.success is True
             assert result.issues == []
-            assert result.output == "All tests passed"
+            # Output should contain JSON summary
+            assert '"passed": 511' in result.output
+            assert '"failed": 0' in result.output
+            assert result.issues_count == 0
 
     def test_pytest_tool_check_failure(self) -> None:
         """Test failed check method."""
@@ -304,7 +307,10 @@ class TestPytestTool:
             patch.object(
                 tool,
                 "_run_subprocess",
-                return_value=(False, "FAILED test_file.py::test_failure"),
+                return_value=(
+                    False,
+                    "FAILED test_file.py::test_failure\n510 passed, 1 failed in 18.53s",
+                ),
             ),
             patch.object(tool, "_parse_output", return_value=mock_issues),
         ):
@@ -313,7 +319,9 @@ class TestPytestTool:
             assert result.name == "pytest"
             assert result.success is False
             assert len(result.issues) == 1
-            assert result.output == "FAILED test_file.py::test_failure"
+            # Output should contain JSON summary
+            assert '"failed": 1' in result.output
+            assert result.issues_count == 1
 
     def test_pytest_tool_check_exception(self) -> None:
         """Test check method with exception."""
@@ -435,6 +443,17 @@ class TestPytestTool:
 
             assert "--maxfail" in cmd
             assert "10" in cmd
+
+    def test_pytest_tool_build_check_command_maxfail_default_zero(self) -> None:
+        """Test that maxfail defaults to 0 to run all tests."""
+        tool = PytestTool()
+        # Don't set maxfail explicitly
+
+        with patch.object(tool, "_get_executable_command", return_value=["pytest"]):
+            cmd = tool._build_check_command(["test_file.py"])
+
+            assert "--maxfail" in cmd
+            assert "0" in cmd
 
     def test_pytest_tool_parse_output_json_with_no_issues(self) -> None:
         """Test parsing JSON output with no issues."""

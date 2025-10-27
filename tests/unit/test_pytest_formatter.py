@@ -15,7 +15,7 @@ class TestPytestFormatter:
         descriptor = PytestTableDescriptor()
         columns = descriptor.get_columns()
 
-        expected_columns = ["File", "Line", "Test Name", "Status", "Message"]
+        expected_columns = ["File", "Status", "Error"]
         assert columns == expected_columns
 
     def test_pytest_table_descriptor_rows(self) -> None:
@@ -48,16 +48,12 @@ class TestPytestFormatter:
         assert len(rows) == 2
         assert rows[0] == [
             "./test_example.py",
-            "10",
-            "test_failure",
-            "FAILED",
+            "❌ FAIL",
             "AssertionError: Expected 1 but got 2",
         ]
         assert rows[1] == [
             "./test_example.py",
-            "15",
-            "test_error",
-            "ERROR",
+            "⚠️ ERROR",
             "ZeroDivisionError: division by zero",
         ]
 
@@ -80,9 +76,7 @@ class TestPytestFormatter:
         assert len(rows) == 1
         assert rows[0] == [
             "./test_example.py",
-            "-",
-            "test_failure",
-            "FAILED",
+            "❌ FAIL",
             "AssertionError",
         ]
 
@@ -105,7 +99,7 @@ class TestPytestFormatter:
 
         assert len(rows) == 1
         expected_message = "A" * 100 + "..."
-        assert rows[0][4] == expected_message
+        assert rows[0][2] == expected_message
 
     def test_pytest_table_descriptor_rows_empty_test_name(self) -> None:
         """Test that PytestTableDescriptor handles empty test names."""
@@ -126,9 +120,7 @@ class TestPytestFormatter:
         assert len(rows) == 1
         assert rows[0] == [
             "./test_example.py",
-            "10",
-            "-",
-            "FAILED",
+            "❌ FAIL",
             "Some error",
         ]
 
@@ -154,9 +146,7 @@ class TestPytestFormatter:
         result = format_pytest_issues(issues, format="grid")
 
         assert "test_example.py" in result
-        assert "10" in result
-        assert "test_failure" in result
-        assert "FAILED" in result
+        assert "❌ FAIL" in result
         assert "AssertionError" in result
 
     def test_format_pytest_issues_markdown_format(self) -> None:
@@ -175,9 +165,7 @@ class TestPytestFormatter:
 
         assert "| File" in result
         assert "| ./test_example.py" in result
-        assert "| 10" in result
-        assert "| test_failure" in result
-        assert "| FAILED" in result
+        assert "| ❌ FAIL" in result
         assert "| AssertionError" in result
 
     def test_format_pytest_issues_json_format(self) -> None:
@@ -197,9 +185,7 @@ class TestPytestFormatter:
         # JSON format should contain the tool name (but it's null in this case)
         assert "tool" in result
         assert "test_example.py" in result
-        assert "10" in result
-        assert "test_failure" in result
-        assert "FAILED" in result
+        assert "❌ FAIL" in result
         assert "AssertionError" in result
 
     def test_format_pytest_issues_html_format(self) -> None:
@@ -218,9 +204,7 @@ class TestPytestFormatter:
 
         assert "<table" in result
         assert "test_example.py" in result
-        assert "10" in result
-        assert "test_failure" in result
-        assert "FAILED" in result
+        assert "❌ FAIL" in result
         assert "AssertionError" in result
 
     def test_format_pytest_issues_csv_format(self) -> None:
@@ -237,8 +221,8 @@ class TestPytestFormatter:
 
         result = format_pytest_issues(issues, format="csv")
 
-        assert "File,Line,Test Name,Status,Message" in result
-        assert "test_example.py,10,test_failure,FAILED,AssertionError" in result
+        assert "File,Status,Error" in result
+        assert "test_example.py,❌ FAIL,AssertionError" in result
 
     def test_format_pytest_issues_plain_format(self) -> None:
         """Test formatting issues in plain format."""
@@ -255,9 +239,7 @@ class TestPytestFormatter:
         result = format_pytest_issues(issues, format="plain")
 
         assert "test_example.py" in result
-        assert "10" in result
-        assert "test_failure" in result
-        assert "FAILED" in result
+        assert "❌ FAIL" in result
         assert "AssertionError" in result
 
     def test_format_pytest_issues_default_format(self) -> None:
@@ -276,9 +258,7 @@ class TestPytestFormatter:
 
         # Default format should be grid
         assert "test_example.py" in result
-        assert "10" in result
-        assert "test_failure" in result
-        assert "FAILED" in result
+        assert "❌ FAIL" in result
         assert "AssertionError" in result
 
     def test_format_pytest_issues_unknown_format(self) -> None:
@@ -297,7 +277,5 @@ class TestPytestFormatter:
 
         # Should fall back to grid format
         assert "test_example.py" in result
-        assert "10" in result
-        assert "test_failure" in result
-        assert "FAILED" in result
+        assert "❌ FAIL" in result
         assert "AssertionError" in result
