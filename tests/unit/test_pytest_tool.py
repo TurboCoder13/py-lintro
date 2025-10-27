@@ -243,17 +243,23 @@ class TestPytestTool:
         """Test check method with no files."""
         tool = PytestTool()
 
-        # Mock the walk_files_with_excludes function to return empty list
-        with patch(
-            "lintro.tools.implementations.tool_pytest.walk_files_with_excludes",
-            return_value=[],
+        # Mock subprocess to simulate no tests found
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, "no tests ran"),
+            ),
+            patch.object(tool, "_parse_output", return_value=[]),
+            patch.object(tool, "_get_total_test_count", return_value=0),
+            patch.object(tool, "_count_docker_tests", return_value=0),
         ):
             result = tool.check()
 
             assert result.name == "pytest"
             assert result.success is True
             assert result.issues == []
-            assert "No test files found" in result.output
 
     def test_pytest_tool_check_success(self) -> None:
         """Test successful check method."""
@@ -381,17 +387,15 @@ class TestPytestTool:
         tool = PytestTool()
 
         with (
-            patch(
-                "lintro.tools.implementations.tool_pytest.walk_files_with_excludes",
-                return_value=["test_discovered.py"],
-            ),
             patch.object(tool, "_get_executable_command", return_value=["pytest"]),
             patch.object(
                 tool,
                 "_run_subprocess",
-                return_value=(True, "All tests passed"),
+                return_value=(True, "5 passed in 0.10s"),
             ),
             patch.object(tool, "_parse_output", return_value=[]),
+            patch.object(tool, "_get_total_test_count", return_value=5),
+            patch.object(tool, "_count_docker_tests", return_value=0),
         ):
             result = tool.check()
 
