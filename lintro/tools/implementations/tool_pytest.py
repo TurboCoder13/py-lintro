@@ -166,9 +166,6 @@ class PytestTool(BaseTool):
         if config_file_patterns:
             # Override default patterns with config patterns
             self.config.file_patterns = config_file_patterns
-            logger.debug(
-                f"Loaded file patterns from pytest config: {config_file_patterns}",
-            )
 
         # Set default options based on configuration
         default_options = {

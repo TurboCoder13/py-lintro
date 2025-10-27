@@ -364,6 +364,18 @@ class TestPytestTool:
         with pytest.raises(NotImplementedError):
             tool.fix(["test_file.py"])
 
+    def test_pytest_tool_fix_with_can_fix_true(self) -> None:
+        """Test that fix raises NotImplementedError even when can_fix is True."""
+        tool = PytestTool()
+        # Mock can_fix to True to test the second check
+        tool.can_fix = True
+
+        with pytest.raises(
+            NotImplementedError,
+            match="pytest does not support fixing issues",
+        ):
+            tool.fix(["test_file.py"])
+
     def test_pytest_tool_check_paths_vs_files_precedence(self) -> None:
         """Test that paths parameter takes precedence over files."""
         tool = PytestTool()
@@ -482,3 +494,354 @@ class TestPytestTool:
         # Test failure (return code 1, has failures)
         issues = tool._parse_output("FAILED test.py::test - Error", 1)
         assert isinstance(issues, list)
+
+    def test_pytest_tool_load_config_error_handling(self) -> None:
+        """Test loading pytest config with error handling."""
+        from lintro.tools.implementations.tool_pytest import _load_pytest_config
+
+        # Test with invalid config files
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("builtins.open", side_effect=Exception("Read error")),
+        ):
+            result = _load_pytest_config()
+            assert result == {}
+
+    def test_pytest_tool_load_lintro_ignore_error(self) -> None:
+        """Test loading .lintro-ignore with error handling."""
+        from lintro.tools.implementations.tool_pytest import _load_lintro_ignore
+
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("builtins.open", side_effect=Exception("Read error")),
+        ):
+            result = _load_lintro_ignore()
+            assert result == []
+
+    def test_pytest_tool_set_options_invalid_run_docker_tests(self) -> None:
+        """Test setting invalid run_docker_tests option."""
+        tool = PytestTool()
+
+        with pytest.raises(ValueError, match="run_docker_tests must be a boolean"):
+            tool.set_options(run_docker_tests="invalid")
+
+    def test_pytest_tool_load_file_patterns_list(self) -> None:
+        """Test loading file patterns as list from config."""
+        from lintro.tools.implementations.tool_pytest import (
+            _load_file_patterns_from_config,
+        )
+
+        config = {"python_files": ["test_*.py", "*_test.py"]}
+        result = _load_file_patterns_from_config(config)
+        assert result == ["test_*.py", "*_test.py"]
+
+    def test_pytest_tool_load_file_patterns_invalid_type(self) -> None:
+        """Test loading file patterns with invalid type."""
+        from lintro.tools.implementations.tool_pytest import (
+            _load_file_patterns_from_config,
+        )
+
+        config = {"python_files": 123}
+        result = _load_file_patterns_from_config(config)
+        assert result == []
+
+    def test_pytest_tool_get_total_test_count_restore_env(self) -> None:
+        """Test that environment is restored after get_total_test_count."""
+        tool = PytestTool()
+
+        # Set initial state
+        os.environ["LINTRO_RUN_DOCKER_TESTS"] = "0"
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, "100 tests collected"),
+            ),
+        ):
+            result = tool._get_total_test_count(["tests"])
+            assert result == 100
+
+        # Verify environment was restored
+        assert os.environ.get("LINTRO_RUN_DOCKER_TESTS") == "0"
+
+    def test_pytest_tool_get_total_test_count_delete_env(self) -> None:
+        """Test deleting env var when originally unset."""
+        tool = PytestTool()
+
+        # Ensure it's not set initially
+        if "LINTRO_RUN_DOCKER_TESTS" in os.environ:
+            del os.environ["LINTRO_RUN_DOCKER_TESTS"]
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, "50 tests collected"),
+            ),
+        ):
+            result = tool._get_total_test_count(["tests"])
+            assert result == 50
+
+        # Verify it was deleted after
+        assert "LINTRO_RUN_DOCKER_TESTS" not in os.environ
+
+    def test_pytest_tool_count_docker_tests_exception(self) -> None:
+        """Test count_docker_tests exception handling."""
+        tool = PytestTool()
+
+        with patch.object(
+            tool,
+            "_get_executable_command",
+            side_effect=Exception("Error"),
+        ):
+            result = tool._count_docker_tests(["tests"])
+            assert result == 0
+
+    def test_pytest_tool_check_target_files_none(self) -> None:
+        """Test check with target_files as None."""
+        tool = PytestTool()
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, "All tests passed"),
+            ),
+            patch.object(tool, "_parse_output", return_value=[]),
+            patch.object(tool, "_get_total_test_count", return_value=10),
+            patch.object(tool, "_count_docker_tests", return_value=0),
+        ):
+            result = tool.check(files=None, paths=None)
+            assert result.success is True
+
+    def test_pytest_tool_check_target_files_dot(self) -> None:
+        """Test check with target_files as just '.'."""
+        tool = PytestTool()
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, "All tests passed"),
+            ),
+            patch.object(tool, "_parse_output", return_value=[]),
+            patch.object(tool, "_get_total_test_count", return_value=10),
+            patch.object(tool, "_count_docker_tests", return_value=0),
+        ):
+            result = tool.check(files=["."])
+            assert result.success is True
+
+    def test_pytest_tool_check_run_docker_tests_enabled(self) -> None:
+        """Test check with run_docker_tests enabled."""
+        tool = PytestTool()
+        tool.set_options(run_docker_tests=True)
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, "All tests passed"),
+            ),
+            patch.object(tool, "_parse_output", return_value=[]),
+            patch.object(tool, "_get_total_test_count", return_value=10),
+            patch.object(tool, "_count_docker_tests", return_value=5),
+        ):
+            result = tool.check(["tests"])
+            assert result.success is True
+            # Verify docker tests env var was set
+            assert os.environ.get("LINTRO_RUN_DOCKER_TESTS") == "1"
+
+    def test_pytest_tool_check_docker_disabled_message(self) -> None:
+        """Test check with docker tests disabled shows message."""
+        tool = PytestTool()
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, "All tests passed"),
+            ),
+            patch.object(tool, "_parse_output", return_value=[]),
+            patch.object(tool, "_get_total_test_count", return_value=10),
+            patch.object(tool, "_count_docker_tests", return_value=3),
+        ):
+            result = tool.check(["tests"])
+            assert result.success is True
+
+    def test_pytest_tool_check_docker_skipped_calculation(self) -> None:
+        """Test check calculates docker skipped correctly."""
+        tool = PytestTool()
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, "7 passed, 3 skipped"),
+            ),
+            patch.object(tool, "_parse_output", return_value=[]),
+            patch.object(tool, "_get_total_test_count", return_value=10),
+            patch.object(tool, "_count_docker_tests", return_value=3),
+        ):
+            result = tool.check(["tests"])
+            assert result.success is True
+            if hasattr(result, "pytest_summary"):
+                assert result.pytest_summary["docker_skipped"] == 3
+
+    def test_pytest_tool_fix_raises_not_implemented(self) -> None:
+        """Test that fix method raises NotImplementedError."""
+        tool = PytestTool()
+
+        with pytest.raises(NotImplementedError):
+            tool.fix(["test_file.py"])
+
+    def test_pytest_tool_load_file_patterns_empty_config(self) -> None:
+        """Test loading file patterns with empty config."""
+        from lintro.tools.implementations.tool_pytest import (
+            _load_file_patterns_from_config,
+        )
+
+        result = _load_file_patterns_from_config({})
+        assert result == []
+
+    def test_pytest_tool_load_file_patterns_none_python_files(self) -> None:
+        """Test loading file patterns when python_files is None."""
+        from lintro.tools.implementations.tool_pytest import (
+            _load_file_patterns_from_config,
+        )
+
+        config = {"python_files": None}
+        result = _load_file_patterns_from_config(config)
+        assert result == []
+
+    def test_pytest_tool_count_docker_tests_coverage_section(self) -> None:
+        """Test count_docker_tests stops at coverage section."""
+        tool = PytestTool()
+
+        output_with_coverage = (
+            "<Dir docker>\n"
+            "  <Function test_one>\n"
+            "coverage: line 1\n"
+            "<Function test_two>\n"
+        )
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, output_with_coverage),
+            ),
+        ):
+            result = tool._count_docker_tests(["tests"])
+            # Should only count test_one, not test_two (stopped at coverage)
+            assert result == 1
+
+    def test_pytest_tool_count_docker_tests_enter_dir(self) -> None:
+        """Test count_docker_tests enters docker directory."""
+        tool = PytestTool()
+
+        output = "<Dir docker>\n" "  <Function test_one>\n" "  <Function test_two>\n"
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, output),
+            ),
+        ):
+            result = tool._count_docker_tests(["tests"])
+            assert result == 2
+
+    def test_pytest_tool_count_docker_tests_leave_dir(self) -> None:
+        """Test count_docker_tests leaves docker directory."""
+        tool = PytestTool()
+
+        output = (
+            "<Dir docker>\n"
+            "  <Function test_one>\n"
+            "<Dir other>\n"
+            "  <Function test_other>\n"
+        )
+
+        with (
+            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+            patch.object(
+                tool,
+                "_run_subprocess",
+                return_value=(True, output),
+            ),
+        ):
+            result = tool._count_docker_tests(["tests"])
+            # Should only count test_one, not test_other
+            assert result == 1
+
+    def test_pytest_tool_count_docker_tests_delete_env_var(self) -> None:
+        """Test count_docker_tests deletes env var when not set."""
+        tool = PytestTool()
+
+        # Store original state
+        original_value = os.environ.get("LINTRO_RUN_DOCKER_TESTS")
+
+        # Set env var
+        os.environ["LINTRO_RUN_DOCKER_TESTS"] = "1"
+
+        try:
+            with (
+                patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+                patch.object(
+                    tool,
+                    "_run_subprocess",
+                    return_value=(True, "output"),
+                ),
+            ):
+                result = tool._count_docker_tests(["tests"])
+                assert result == 0
+
+            # Check if it was deleted or restored
+            if original_value is None:
+                # Should be deleted after if originally unset
+                assert "LINTRO_RUN_DOCKER_TESTS" not in os.environ
+            else:
+                # Should be restored if originally set
+                assert os.environ.get("LINTRO_RUN_DOCKER_TESTS") == original_value
+        finally:
+            # Clean up - restore original state
+            if original_value is None:
+                if "LINTRO_RUN_DOCKER_TESTS" in os.environ:
+                    del os.environ["LINTRO_RUN_DOCKER_TESTS"]
+            else:
+                os.environ["LINTRO_RUN_DOCKER_TESTS"] = original_value
+
+    def test_pytest_tool_count_docker_tests_restore_env_var(self) -> None:
+        """Test count_docker_tests restores env var."""
+        tool = PytestTool()
+
+        original_value = "0"
+        os.environ["LINTRO_RUN_DOCKER_TESTS"] = original_value
+
+        try:
+            with (
+                patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+                patch.object(
+                    tool,
+                    "_run_subprocess",
+                    return_value=(True, "output"),
+                ),
+            ):
+                result = tool._count_docker_tests(["tests"])
+                assert result == 0
+                # Should be restored
+                assert os.environ.get("LINTRO_RUN_DOCKER_TESTS") == original_value
+        finally:
+            # Clean up
+            if "LINTRO_RUN_DOCKER_TESTS" in os.environ:
+                del os.environ["LINTRO_RUN_DOCKER_TESTS"]

@@ -84,14 +84,11 @@ class SimpleLintroLogger:
         logger.remove()
 
         # Add console handler (for immediate display)
-        console_level: str = "DEBUG" if self.verbose else "INFO"
+        # Only capture WARNING and ERROR for console
         logger.add(
             sys.stderr,
-            level=console_level,
-            format=(
-                "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | "
-                "{message}"
-            ),
+            level="WARNING",  # Only show warnings and errors
+            format="{message}",  # Simple format without timestamps/log levels
             colorize=True,
         )
 
