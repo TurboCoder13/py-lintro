@@ -396,9 +396,8 @@ class PytestTool(BaseTool):
                     # (next directory at same or higher level)
                     if in_docker_dir and stripped.startswith("<"):
                         current_depth = len(line) - len(stripped)
-                        if (
-                            current_depth <= depth
-                            and not stripped.startswith("<Function")
+                        if current_depth <= depth and not stripped.startswith(
+                            "<Function",
                         ):
                             # We've left the docker directory
                             # (backed up to same or higher level)
@@ -513,10 +512,7 @@ class PytestTool(BaseTool):
             # Calculate actual skipped tests (tests that exist but weren't run)
             # This includes deselected tests that pytest doesn't report in summary
             collected_tests = (
-                summary.passed
-                + actual_failures
-                + summary.skipped
-                + summary.error
+                summary.passed + actual_failures + summary.skipped + summary.error
             )
             actual_skipped = total_available_tests - collected_tests
 
@@ -526,7 +522,7 @@ class PytestTool(BaseTool):
                 f"Summary: passed={summary.passed}, "
                 f"failed={actual_failures}, "
                 f"skipped={summary.skipped}, "
-                f"error={summary.error}"
+                f"error={summary.error}",
             )
             logger.debug(f"Actual skipped: {actual_skipped}")
 
