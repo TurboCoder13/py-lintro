@@ -55,6 +55,12 @@ DEFAULT_ACTION: str = "test"
     type=str,
     help="Tool-specific options in the format option=value,option=value",
 )
+@click.option(
+    "--enable-docker",
+    is_flag=True,
+    default=False,
+    help="Enable Docker-specific tests",
+)
 def test_command(
     paths,
     exclude,
@@ -65,6 +71,7 @@ def test_command(
     verbose,
     raw_output,
     tool_options,
+    enable_docker,
 ) -> None:
     """Run tests using pytest.
 
@@ -78,6 +85,7 @@ def test_command(
         verbose: bool: Whether to show verbose output during execution.
         raw_output: bool: Whether to show raw tool output instead of formatted output.
         tool_options: str | None: Tool-specific options.
+        enable_docker: bool: Whether to enable Docker-specific tests.
 
     Raises:
         SystemExit: Process exit with the aggregated exit code.
@@ -88,6 +96,11 @@ def test_command(
 
     # Build tool options with pytest prefix
     tool_option_parts: list[str] = []
+
+    # Add Docker enable option if flag is set
+    if enable_docker:
+        tool_option_parts.append("pt:run_docker_tests=True")
+
     if tool_options:
         # Prefix with "pt:" for pytest tool
         prefixed_options: list[str] = []
