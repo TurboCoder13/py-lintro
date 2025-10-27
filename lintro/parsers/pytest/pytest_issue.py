@@ -1,5 +1,7 @@
 """Models for pytest issues."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 

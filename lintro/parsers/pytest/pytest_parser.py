@@ -8,10 +8,91 @@ This module provides functions to parse pytest output in various formats:
 
 import json
 import re
+from dataclasses import dataclass
 
 from defusedxml import ElementTree
 
 from lintro.parsers.pytest.pytest_issue import PytestIssue
+
+
+@dataclass
+class PytestSummary:
+    """Summary statistics from pytest execution.
+
+    Attributes:
+        total: Total number of tests run.
+        passed: Number of tests that passed.
+        failed: Number of tests that failed.
+        skipped: Number of tests that were skipped.
+        error: Number of tests that had errors (setup/teardown failures).
+        duration: Total execution duration in seconds.
+    """
+
+    total: int = 0
+    passed: int = 0
+    failed: int = 0
+    skipped: int = 0
+    error: int = 0
+    duration: float = 0.0
+
+
+def extract_pytest_summary(output: str) -> PytestSummary:
+    """Extract test summary statistics from pytest output.
+
+    Parses the summary line from pytest output to extract:
+    - Number of passed tests
+    - Number of failed tests
+    - Number of skipped tests
+    - Number of error tests
+    - Execution duration
+
+    Args:
+        output: Raw output from pytest.
+
+    Returns:
+        PytestSummary: Extracted summary statistics.
+    """
+    summary = PytestSummary()
+
+    if not output:
+        return summary
+
+    # Strip ANSI color codes
+    ansi_re = re.compile(r"\x1b\[[0-9;]*m")
+    clean_output = ansi_re.sub("", output)
+
+    # Extract duration first (it's always at the end)
+    duration_match = re.search(r"in\s+([\d.]+)s", clean_output)
+    if duration_match:
+        summary.duration = float(duration_match.group(1))
+
+    # Extract counts independently since order can vary
+    # Patterns handle various formats like:
+    # - "511 passed in 18.53s"
+    # - "509 passed, 2 failed in 18.53s"
+    # - "7 failed, 505 passed, 1 warning in 17.06s"
+    # - "510 passed, 1 skipped in 18.53s"
+
+    passed_match = re.search(r"(\d+)\s+passed", clean_output)
+    if passed_match:
+        summary.passed = int(passed_match.group(1))
+
+    failed_match = re.search(r"(\d+)\s+failed", clean_output)
+    if failed_match:
+        summary.failed = int(failed_match.group(1))
+
+    skipped_match = re.search(r"(\d+)\s+skipped", clean_output)
+    if skipped_match:
+        summary.skipped = int(skipped_match.group(1))
+
+    error_match = re.search(r"(\d+)\s+error", clean_output)
+    if error_match:
+        summary.error = int(error_match.group(1))
+
+    # Calculate total as sum of all test outcomes
+    summary.total = summary.passed + summary.failed + summary.skipped + summary.error
+
+    return summary
 
 
 def parse_pytest_json_output(output: str) -> list[PytestIssue]:
