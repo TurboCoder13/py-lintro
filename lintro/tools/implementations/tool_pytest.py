@@ -1,6 +1,7 @@
 """Pytest test runner integration."""
 
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -9,9 +10,11 @@ from loguru import logger
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.parsers.pytest.pytest_issue import PytestIssue
-from lintro.parsers.pytest.pytest_parser import parse_pytest_output
+from lintro.parsers.pytest.pytest_parser import (
+    extract_pytest_summary,
+    parse_pytest_output,
+)
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
 
 # Constants for pytest configuration
 PYTEST_DEFAULT_TIMEOUT: int = 300  # 5 minutes for test runs
@@ -129,7 +132,7 @@ class PytestTool(BaseTool):
         default_options = {
             "verbose": True,
             "tb": "short",  # Traceback format
-            "maxfail": 1,  # Stop after first failure
+            "maxfail": None,  # Don't stop early - run all tests
             "no_header": True,
             "disable_warnings": True,
         }
@@ -157,6 +160,7 @@ class PytestTool(BaseTool):
         disable_warnings: bool | None = None,
         json_report: bool | None = None,
         junitxml: str | None = None,
+        run_docker_tests: bool | None = None,
         **kwargs,
     ) -> None:
         """Set pytest-specific options.
@@ -169,6 +173,7 @@ class PytestTool(BaseTool):
             disable_warnings: Disable warnings.
             json_report: Enable JSON report output.
             junitxml: Path for JUnit XML output.
+            run_docker_tests: Enable Docker tests (default: False).
             **kwargs: Additional options.
 
         Raises:
@@ -195,6 +200,9 @@ class PytestTool(BaseTool):
         if junitxml is not None and not isinstance(junitxml, str):
             raise ValueError("junitxml must be a string")
 
+        if run_docker_tests is not None and not isinstance(run_docker_tests, bool):
+            raise ValueError("run_docker_tests must be a boolean")
+
         options: dict = {
             "verbose": verbose,
             "tb": tb,
@@ -203,6 +211,7 @@ class PytestTool(BaseTool):
             "disable_warnings": disable_warnings,
             "json_report": json_report,
             "junitxml": junitxml,
+            "run_docker_tests": run_docker_tests,
         }
         # Remove None values
         options = {k: v for k, v in options.items() if v is not None}
@@ -232,9 +241,15 @@ class PytestTool(BaseTool):
         tb_format = self.options.get("tb", "short")
         cmd.extend(["--tb", tb_format])
 
-        # Add maxfail
-        maxfail = self.options.get("maxfail", 1)
-        cmd.extend(["--maxfail", str(maxfail)])
+        # Add maxfail only if specified
+        # Note: We default to None to avoid stopping early and run all tests
+        maxfail = self.options.get("maxfail")
+        if maxfail is not None:
+            cmd.extend(["--maxfail", str(maxfail)])
+        else:
+            # Explicitly set maxfail=0 to run all tests when not specified
+            # This overrides pytest.ini addopts which may have --maxfail=3
+            cmd.extend(["--maxfail", "0"])
 
         # Add no-header
         if self.options.get("no_header", True):
@@ -292,6 +307,117 @@ class PytestTool(BaseTool):
 
         return issues
 
+    def _get_total_test_count(self, target_files: list[str]) -> int:
+        """Get total count of all available tests (including deselected ones).
+
+        Args:
+            target_files: list[str]: Files or directories to check.
+
+        Returns:
+            int: Total number of tests that exist.
+        """
+        try:
+            # Use pytest --collect-only to list all tests
+            collect_cmd = self._get_executable_command(tool_name="pytest")
+            collect_cmd.extend(["--collect-only", "-q"])
+            collect_cmd.extend(target_files)
+
+            # Temporarily enable all tests to see total count
+            original_docker_env = os.environ.get("LINTRO_RUN_DOCKER_TESTS")
+            os.environ["LINTRO_RUN_DOCKER_TESTS"] = "1"
+
+            try:
+                success, output = self._run_subprocess(collect_cmd)
+                if not success:
+                    return 0
+
+                # Extract the total count from collection output
+                # Format: "XXXX tests collected in Y.YYs"
+                match = re.search(r"(\d+)\s+tests\s+collected", output)
+                if match:
+                    return int(match.group(1))
+
+                return 0
+            finally:
+                # Restore original environment
+                if original_docker_env is not None:
+                    os.environ["LINTRO_RUN_DOCKER_TESTS"] = original_docker_env
+                elif "LINTRO_RUN_DOCKER_TESTS" in os.environ:
+                    del os.environ["LINTRO_RUN_DOCKER_TESTS"]
+        except Exception as e:
+            logger.debug(f"Failed to get total test count: {e}")
+            return 0
+
+    def _count_docker_tests(self, target_files: list[str]) -> int:
+        """Count docker tests that would be skipped.
+
+        Args:
+            target_files: list[str]: Files or directories to check.
+
+        Returns:
+            int: Number of docker tests found.
+        """
+        try:
+            # Use pytest --collect-only to list all tests
+            collect_cmd = self._get_executable_command(tool_name="pytest")
+            collect_cmd.extend(["--collect-only", "-q"])
+            collect_cmd.extend(target_files)
+
+            # Temporarily disable docker tests to see what would be skipped
+            original_docker_env = os.environ.get("LINTRO_RUN_DOCKER_TESTS")
+            if "LINTRO_RUN_DOCKER_TESTS" in os.environ:
+                del os.environ["LINTRO_RUN_DOCKER_TESTS"]
+
+            try:
+                success, output = self._run_subprocess(collect_cmd)
+                if not success:
+                    return 0
+
+                # Count test functions under tests/scripts/docker/
+                # Track when we're inside the docker directory and count Function items
+                docker_test_count = 0
+                in_docker_dir = False
+                depth = 0
+
+                for line in output.splitlines():
+                    # Stop counting when we hit coverage section
+                    if "coverage:" in line or "TOTAL" in line:
+                        break
+
+                    stripped = line.strip()
+
+                    # Check if we're entering the docker directory
+                    if "<Dir docker>" in line or "<Package docker>" in line:
+                        in_docker_dir = True
+                        depth = len(line) - len(stripped)  # Track indentation level
+                        continue
+
+                    # Check if we're leaving the docker directory
+                    # (next directory at same or higher level)
+                    if in_docker_dir and stripped.startswith("<"):
+                        current_depth = len(line) - len(stripped)
+                        if (
+                            current_depth <= depth
+                            and not stripped.startswith("<Function")
+                        ):
+                            # We've left the docker directory
+                            # (backed up to same or higher level)
+                            in_docker_dir = False
+                            continue
+
+                    # Count Function items while inside docker directory
+                    if in_docker_dir and "<Function" in line:
+                        docker_test_count += 1
+
+                return docker_test_count
+            finally:
+                # Restore original environment
+                if original_docker_env is not None:
+                    os.environ["LINTRO_RUN_DOCKER_TESTS"] = original_docker_env
+        except Exception as e:
+            logger.debug(f"Failed to count docker tests: {e}")
+            return 0
+
     def check(
         self,
         files: list[str] | None = None,
@@ -302,42 +428,152 @@ class PytestTool(BaseTool):
 
         Args:
             files: list[str] | None: Files to test. If None, uses file patterns.
-            paths: list[str] | None: Paths to test. If None, uses file patterns.
+            paths: list[str] | None: Paths to test. If None, uses "tests" directory.
             fix: bool: Ignored for pytest.
 
         Returns:
             ToolResult: Results from pytest execution.
         """
-        # Use paths if provided, otherwise files, otherwise discover files
+        # For pytest, when no specific files are provided, use directories to let
+        # pytest discover all tests. This allows running all tests by default.
         target_files = paths or files
         if target_files is None:
-            target_files = walk_files_with_excludes(
-                paths=["."],
-                file_patterns=self.config.file_patterns,
-                exclude_patterns=self.exclude_patterns,
-                include_venv=self.include_venv,
-            )
-
-        if not target_files:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                issues=[],
-                output="No test files found.",
-            )
+            # Default to "tests" directory to match pytest conventions
+            target_files = ["tests"]
+        elif (
+            isinstance(target_files, list)
+            and len(target_files) == 1
+            and target_files[0] == "."
+        ):
+            # If just "." is provided, also default to "tests" directory
+            target_files = ["tests"]
 
         cmd = self._build_check_command(target_files, fix)
 
+        logger.debug(f"Running pytest with command: {' '.join(cmd)}")
+        logger.debug(f"Target files: {target_files}")
+
+        # Docker tests are disabled by default and must be explicitly enabled
+        run_docker_tests = self.options.get("run_docker_tests", False)
+
+        # Get total count of all tests (including deselected ones)
+        total_available_tests = self._get_total_test_count(target_files)
+
+        # Count docker tests before execution
+        docker_test_count = self._count_docker_tests(target_files)
+
+        if run_docker_tests:
+            # Set environment variable to enable Docker tests
+            os.environ["LINTRO_RUN_DOCKER_TESTS"] = "1"
+            # Log that Docker tests are enabled (may take longer) in blue format
+            docker_msg = (
+                f"[LINTRO] Docker tests enabled ({docker_test_count} tests) - "
+                "this may take longer than usual."
+            )
+            logger.info(f"\033[36;1m{docker_msg}\033[0m")
+        elif docker_test_count > 0:
+            # Log that Docker tests are disabled in blue format
+            docker_msg = (
+                f"[LINTRO] Docker tests disabled "
+                f"({docker_test_count} tests not collected). "
+                "Use --enable-docker to include them."
+            )
+            logger.info(f"\033[36;1m{docker_msg}\033[0m")
+
         try:
             success, output = self._run_subprocess(cmd)
-            issues = self._parse_output(output, 0 if success else 1)
+            # Parse output with actual success status
+            # (pytest returns non-zero on failures)
+            return_code = 0 if success else 1
+            issues = self._parse_output(output, return_code)
 
-            return ToolResult(
+            # Extract summary statistics
+            summary = extract_pytest_summary(output)
+
+            # Filter to only failed/error issues for display
+            failed_issues = [
+                issue for issue in issues if issue.test_status in ("FAILED", "ERROR")
+            ]
+
+            # Use actual failed issues count, not summary count
+            # (in case parsing is inconsistent)
+            actual_failures = len(failed_issues)
+
+            # Store summary data in output metadata with actual failures count
+            import json
+
+            # Calculate docker skipped tests
+            # If docker tests are disabled and we have some,
+            # they're in the skipped count
+            docker_skipped = 0
+            if not run_docker_tests and docker_test_count > 0:
+                # The skipped count should include docker tests
+                docker_skipped = min(docker_test_count, summary.skipped)
+
+            # Calculate actual skipped tests (tests that exist but weren't run)
+            # This includes deselected tests that pytest doesn't report in summary
+            collected_tests = (
+                summary.passed
+                + actual_failures
+                + summary.skipped
+                + summary.error
+            )
+            actual_skipped = total_available_tests - collected_tests
+
+            logger.debug(f"Total available tests: {total_available_tests}")
+            logger.debug(f"Collected tests: {collected_tests}")
+            logger.debug(
+                f"Summary: passed={summary.passed}, "
+                f"failed={actual_failures}, "
+                f"skipped={summary.skipped}, "
+                f"error={summary.error}"
+            )
+            logger.debug(f"Actual skipped: {actual_skipped}")
+
+            # Use the larger of summary.skipped or actual_skipped
+            # (summary.skipped is runtime skips, actual_skipped includes deselected)
+            total_skipped = max(summary.skipped, actual_skipped)
+
+            summary_data = {
+                "passed": summary.passed,
+                # Use actual parsed failures, not regex summary
+                "failed": actual_failures,
+                "skipped": total_skipped,
+                "error": summary.error,
+                "docker_skipped": docker_skipped,
+                "duration": summary.duration,
+                "total": total_available_tests,
+            }
+
+            # Build output with summary and failure details
+            output_lines = [json.dumps(summary_data)]
+
+            # If there are failures, format them as a table
+            if failed_issues:
+                # Import the pytest formatter to format failures as a table
+                from lintro.formatters.tools.pytest_formatter import (
+                    format_pytest_issues,
+                )
+
+                # Format failures as a table (will be empty if no failures)
+                failures_table = format_pytest_issues(failed_issues, format="grid")
+                if failures_table.strip():
+                    output_lines.append("")  # Blank line before failures
+                    output_lines.append("Test Failures:")
+                    output_lines.append(failures_table)
+
+            result = ToolResult(
                 name=self.name,
                 success=success,
-                issues=issues,
-                output=output,
+                issues=failed_issues,
+                output="\n".join(output_lines),
+                issues_count=actual_failures,  # Count actual parsed failures
             )
+
+            # Store summary data for display in Execution Summary table
+            result.pytest_summary = summary_data
+
+            return result
         except Exception as e:
             logger.error(f"Error running pytest: {e}")
             return ToolResult(
