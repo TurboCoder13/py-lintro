@@ -29,7 +29,7 @@ class PytestTableDescriptor(TableDescriptor):
         Returns:
             list[str]: Column names for the formatted table.
         """
-        return ["File", "Line", "Test Name", "Status", "Message"]
+        return ["File", "Status", "Error"]
 
     def get_rows(
         self,
@@ -45,15 +45,20 @@ class PytestTableDescriptor(TableDescriptor):
         """
         rows = []
         for issue in issues:
+            # Only show failed/error tests
+            if issue.test_status not in ("FAILED", "ERROR"):
+                continue
+
             truncated_message = issue.message
             if len(truncated_message) > 100:
                 truncated_message = f"{truncated_message[:100]}..."
+
+            status_emoji = "❌ FAIL" if issue.test_status == "FAILED" else "⚠️ ERROR"
+
             rows.append(
                 [
                     normalize_file_path_for_display(issue.file),
-                    str(issue.line) if issue.line > 0 else "-",
-                    issue.test_name or "-",
-                    issue.test_status,
+                    status_emoji,
                     truncated_message,
                 ],
             )
