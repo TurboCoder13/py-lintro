@@ -86,6 +86,39 @@ def _load_lintro_ignore() -> list[str]:
     return ignore_patterns
 
 
+def _load_file_patterns_from_config(
+    pytest_config: dict,
+) -> list[str]:
+    """Load file patterns from pytest configuration.
+
+    Args:
+        pytest_config: Pytest configuration dictionary.
+
+    Returns:
+        list[str]: File patterns from config, or empty list if not configured.
+    """
+    if not pytest_config:
+        return []
+
+    # Get python_files from config
+    python_files = pytest_config.get("python_files")
+    if not python_files:
+        return []
+
+    # Handle both string and list formats
+    if isinstance(python_files, str):
+        # Split on whitespace and commas
+        patterns = [
+            p.strip() for p in python_files.replace(",", " ").split() if p.strip()
+        ]
+        return patterns
+    elif isinstance(python_files, list):
+        return python_files
+    else:
+        logger.warning(f"Unexpected python_files type: {type(python_files)}")
+        return []
+
+
 @dataclass
 class PytestTool(BaseTool):
     """Pytest test runner integration.
@@ -114,7 +147,7 @@ class PytestTool(BaseTool):
             priority=PYTEST_DEFAULT_PRIORITY,
             conflicts_with=[],
             file_patterns=PYTEST_FILE_PATTERNS,
-            tool_type=ToolType.LINTER,
+            tool_type=ToolType.TEST_RUNNER,
         ),
     )
     exclude_patterns: list[str] = field(default_factory=_load_lintro_ignore)
@@ -127,6 +160,15 @@ class PytestTool(BaseTool):
 
         # Load pytest configuration
         pytest_config = _load_pytest_config()
+
+        # Load file patterns from config if available
+        config_file_patterns = _load_file_patterns_from_config(pytest_config)
+        if config_file_patterns:
+            # Override default patterns with config patterns
+            self.config.file_patterns = config_file_patterns
+            logger.debug(
+                f"Loaded file patterns from pytest config: {config_file_patterns}",
+            )
 
         # Set default options based on configuration
         default_options = {
