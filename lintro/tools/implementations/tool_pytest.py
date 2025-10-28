@@ -494,6 +494,9 @@ class PytestTool(BaseTool):
         # Docker tests are disabled by default and must be explicitly enabled
         run_docker_tests = self.options.get("run_docker_tests", False)
 
+        # Store original environment state for cleanup
+        original_docker_env = os.environ.get("LINTRO_RUN_DOCKER_TESTS")
+
         # Get total count of all tests (including deselected ones)
         total_available_tests = self._get_total_test_count(target_files)
 
@@ -630,6 +633,12 @@ class PytestTool(BaseTool):
                 issues=[],
                 output=f"Error: {e}",
             )
+        finally:
+            # Restore original environment state
+            if original_docker_env is not None:
+                os.environ["LINTRO_RUN_DOCKER_TESTS"] = original_docker_env
+            elif "LINTRO_RUN_DOCKER_TESTS" in os.environ:
+                del os.environ["LINTRO_RUN_DOCKER_TESTS"]
 
     def fix(
         self,
