@@ -641,21 +641,32 @@ class TestPytestTool:
         tool = PytestTool()
         tool.set_options(run_docker_tests=True)
 
-        with (
-            patch.object(tool, "_get_executable_command", return_value=["pytest"]),
-            patch.object(
-                tool,
-                "_run_subprocess",
-                return_value=(True, "All tests passed"),
-            ),
-            patch.object(tool, "_parse_output", return_value=[]),
-            patch.object(tool, "_get_total_test_count", return_value=10),
-            patch.object(tool, "_count_docker_tests", return_value=5),
-        ):
-            result = tool.check(["tests"])
-            assert result.success is True
-            # Verify docker tests env var was set
-            assert os.environ.get("LINTRO_RUN_DOCKER_TESTS") == "1"
+        # Store original state
+        original_value = os.environ.get("LINTRO_RUN_DOCKER_TESTS")
+
+        try:
+            with (
+                patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+                patch.object(
+                    tool,
+                    "_run_subprocess",
+                    return_value=(True, "All tests passed"),
+                ),
+                patch.object(tool, "_parse_output", return_value=[]),
+                patch.object(tool, "_get_total_test_count", return_value=10),
+                patch.object(tool, "_count_docker_tests", return_value=5),
+            ):
+                result = tool.check(["tests"])
+                assert result.success is True
+                # Verify docker tests env var was set
+                assert os.environ.get("LINTRO_RUN_DOCKER_TESTS") == "1"
+        finally:
+            # Clean up environment variable
+            if original_value is None:
+                if "LINTRO_RUN_DOCKER_TESTS" in os.environ:
+                    del os.environ["LINTRO_RUN_DOCKER_TESTS"]
+            else:
+                os.environ["LINTRO_RUN_DOCKER_TESTS"] = original_value
 
     def test_pytest_tool_check_docker_disabled_message(self) -> None:
         """Test check with docker tests disabled shows message."""
@@ -788,8 +799,10 @@ class TestPytestTool:
         """Test count_docker_tests deletes env var when not set."""
         tool = PytestTool()
 
-        # Store original state
+        # Store original state and clean up environment first
         original_value = os.environ.get("LINTRO_RUN_DOCKER_TESTS")
+        if "LINTRO_RUN_DOCKER_TESTS" in os.environ:
+            del os.environ["LINTRO_RUN_DOCKER_TESTS"]
 
         # Set env var
         os.environ["LINTRO_RUN_DOCKER_TESTS"] = "1"

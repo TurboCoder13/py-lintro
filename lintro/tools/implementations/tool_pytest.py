@@ -509,14 +509,19 @@ class PytestTool(BaseTool):
                 "this may take longer than usual."
             )
             logger.info(f"\033[36;1m{docker_msg}\033[0m")
-        elif docker_test_count > 0:
-            # Log that Docker tests are disabled in blue format
-            docker_msg = (
-                f"[LINTRO] Docker tests disabled "
-                f"({docker_test_count} tests not collected). "
-                "Use --enable-docker to include them."
-            )
-            logger.info(f"\033[36;1m{docker_msg}\033[0m")
+        else:
+            # Explicitly unset the environment variable to disable Docker tests
+            if "LINTRO_RUN_DOCKER_TESTS" in os.environ:
+                del os.environ["LINTRO_RUN_DOCKER_TESTS"]
+
+            if docker_test_count > 0:
+                # Log that Docker tests are disabled in blue format
+                docker_msg = (
+                    f"[LINTRO] Docker tests disabled "
+                    f"({docker_test_count} tests not collected). "
+                    "Use --enable-docker to include them."
+                )
+                logger.info(f"\033[36;1m{docker_msg}\033[0m")
 
         try:
             success, output = self._run_subprocess(cmd)
@@ -571,7 +576,7 @@ class PytestTool(BaseTool):
             # (summary.skipped is runtime skips, actual_skipped includes deselected)
             # But ensure docker_skipped is included in the total
             total_skipped = max(summary.skipped, actual_skipped)
-            
+
             # Ensure docker_skipped is included in the total skipped count
             # This makes Docker tests show as skipped when --enable-docker is not used
             if docker_skipped > 0 and total_skipped < docker_skipped:

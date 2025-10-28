@@ -35,8 +35,8 @@ def _ensure_test_docker_images_built() -> None:
 def pytest_collection_modifyitems(config, items) -> None:
     """Optionally skip docker tests locally unless explicitly enabled.
 
-    If `LINTRO_RUN_DOCKER_TESTS` is not set to "1", mark tests under
-    `tests/scripts/docker/` to be skipped. CI can set the env var to run them.
+    If `LINTRO_RUN_DOCKER_TESTS` is not set to "1", skip tests marked with
+    `@pytest.mark.docker_only`. CI can set the env var to run them.
 
     Args:
         config: Pytest configuration object.
@@ -50,8 +50,8 @@ def pytest_collection_modifyitems(config, items) -> None:
     )
 
     for item in items:
-        # Path-based detection keeps it simple and non-invasive
-        if "tests/scripts/docker/" in str(item.fspath):
+        # Marker-based detection for docker_only tests
+        if item.get_closest_marker("docker_only"):
             item.add_marker(skip_marker)
 
 
