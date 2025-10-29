@@ -42,7 +42,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@448d8d96fea3374dd1e534f67afd8d61182c0de7
         with:
           python-version: ${{ inputs.python-version }}
 

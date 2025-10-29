@@ -60,7 +60,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Egress audit (allowlist verification)
-        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@448d8d96fea3374dd1e534f67afd8d61182c0de7
         with:
           allowed-endpoints: >
             github.com:443
@@ -74,7 +74,7 @@ jobs:
           fail-on-missing: 'true'
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@448d8d96fea3374dd1e534f67afd8d61182c0de7
         with:
           python-version: '3.13'
         env:
@@ -136,7 +136,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Egress audit (allowlist verification)
-        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@448d8d96fea3374dd1e534f67afd8d61182c0de7
         with:
           allowed-endpoints: >
             github.com:443
@@ -150,7 +150,7 @@ jobs:
           fail-on-missing: 'true'
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@e0f7754e7bd5205ae3e8794e153b4eb10dba2de1
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@448d8d96fea3374dd1e534f67afd8d61182c0de7
         with:
           python-version: '3.13'
         env:
