@@ -30,7 +30,7 @@ def _get_tools_to_run(
 
     Args:
         tools: str | None: Comma-separated tool names, "all", or None.
-        action: str: "check" or "fmt".
+        action: str: "check", "fmt", or "test".
 
     Returns:
         list[ToolEnum]: List of ToolEnum instances to run.
@@ -38,19 +38,39 @@ def _get_tools_to_run(
     Raises:
         ValueError: If unknown tool names are provided.
     """
+    if action == "test":
+        # Test action only supports pytest
+        if tools and tools.lower() not in ("pt", "pytest"):
+            raise ValueError(
+                "The 'test' action only supports pytest. Use 'lintro test' instead.",
+            )
+        try:
+            return [ToolEnum["PT"]]
+        except KeyError:
+            raise ValueError(
+                "pytest tool is not available",
+            ) from None
+
     if tools == "all" or tools is None:
         # Get all available tools for the action
         if action == "fmt":
             available_tools = tool_manager.get_fix_tools()
         else:  # check
             available_tools = tool_manager.get_check_tools()
-        return list(available_tools.keys())
+        # Filter out pytest for check/fmt actions
+        return [t for t in available_tools if t.name.upper() != "PT"]
 
     # Parse specific tools
     tool_names: list[str] = [name.strip().upper() for name in tools.split(",")]
     tools_to_run: list[ToolEnum] = []
 
     for name in tool_names:
+        # Reject pytest for check/fmt actions (handle both "pt" and "pytest" aliases)
+        if name in ("PT", "PYTEST"):
+            raise ValueError(
+                "pytest tool is not available for check/fmt actions. "
+                "Use 'lintro test' instead.",
+            )
         try:
             tool_enum = ToolEnum[name]
             # Verify the tool supports the requested action
@@ -62,7 +82,9 @@ def _get_tools_to_run(
                     )
             tools_to_run.append(tool_enum)
         except KeyError:
-            available_names: list[str] = [e.name.lower() for e in ToolEnum]
+            available_names: list[str] = [
+                e.name.lower() for e in ToolEnum if e.name.upper() != "PT"
+            ]
             raise ValueError(
                 f"Unknown tool '{name.lower()}'. Available tools: {available_names}",
             ) from None
@@ -275,11 +297,11 @@ def run_lint_tools_simple(
 
         # Run each tool with rich formatting
         for tool_enum in tools_to_run:
-            tool_name: str = tool_enum.name.lower()
             # Resolve the tool instance; if unavailable, record failure and continue
             try:
                 tool = tool_manager.get_tool(tool_enum)
             except Exception as e:
+                tool_name: str = tool_enum.name.lower()
                 logger.warning(f"Tool '{tool_name}' unavailable: {e}")
                 from lintro.models.core.tool_result import ToolResult
 
@@ -293,6 +315,8 @@ def run_lint_tools_simple(
                 )
                 continue
 
+            # Use the tool's actual name (e.g., "pytest" not "pt")
+            tool_name: str = tool.name
             # Print rich tool header (skip for JSON mode)
             if not json_output_mode:
                 logger.print_tool_header(tool_name=tool_name, action=action)
@@ -440,10 +464,15 @@ def run_lint_tools_simple(
                 continue
 
         # Optionally run post-checks (explicit, after main tools)
-        post_cfg = post_cfg_early or load_post_checks_config()
-        post_enabled = bool(post_cfg.get("enabled", False))
-        post_tools: list[str] = list(post_cfg.get("tools", [])) if post_enabled else []
-        enforce_failure: bool = bool(post_cfg.get("enforce_failure", action == "check"))
+        # Skip post-checks for test action - test commands should only run tests
+        if action == "test":
+            post_tools = []
+            enforce_failure = False
+        else:
+            post_cfg = post_cfg_early or load_post_checks_config()
+            post_enabled = bool(post_cfg.get("enabled", False))
+            post_tools = list(post_cfg.get("tools", [])) if post_enabled else []
+            enforce_failure = bool(post_cfg.get("enforce_failure", action == "check"))
 
         # In JSON mode, we still need exit-code enforcement even if we skip
         # rendering post-check outputs. If a post-check tool is unavailable
@@ -489,7 +518,8 @@ def run_lint_tools_simple(
                         f"Post-check '{post_tool_name}' unavailable: {e}",
                     )
                     continue
-                tool_name = tool_enum.name.lower()
+                # Use the tool's actual name (e.g., "pytest" not "pt")
+                tool_name = tool.name
 
                 # Post-checks run with explicit headers (reuse standard header)
                 if not json_output_mode:

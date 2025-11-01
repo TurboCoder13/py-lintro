@@ -336,6 +336,10 @@ class BaseTool(ABC):
         # prettier, hadolint, actionlint)
         if shutil.which(tool_name):
             return [tool_name]
+        # Special handling for Node.js tools (prettier, etc.)
+        # that may only be available via npx
+        if tool_name in {"prettier"} and shutil.which("npx"):
+            return ["npx", tool_name]
         if shutil.which("uv"):
             return ["uv", "run", tool_name]
         return [tool_name]

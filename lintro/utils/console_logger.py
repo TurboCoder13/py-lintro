@@ -21,6 +21,8 @@ TOOL_EMOJIS: dict[str, str] = {
     "hadolint": "🐳",
     "yamllint": "📄",
     "black": "🖤",
+    "pt": "🧪",
+    "pytest": "🧪",
 }
 DEFAULT_EMOJI: str = "🔧"
 BORDER_LENGTH: int = 70
@@ -82,14 +84,11 @@ class SimpleLintroLogger:
         logger.remove()
 
         # Add console handler (for immediate display)
-        console_level: str = "DEBUG" if self.verbose else "INFO"
+        # Only capture WARNING and ERROR for console
         logger.add(
             sys.stderr,
-            level=console_level,
-            format=(
-                "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | "
-                "{message}"
-            ),
+            level="WARNING",  # Only show warnings and errors
+            format="{message}",  # Simple format without timestamps/log levels
             colorize=True,
         )
 
@@ -113,6 +112,18 @@ class SimpleLintroLogger:
             **kwargs: Additional keyword arguments for formatting.
         """
         self.console_messages.append(message)
+        logger.info(message, **kwargs)
+
+    def info_blue(self, message: str, **kwargs) -> None:
+        """Log an info message to the console in blue color.
+
+        Args:
+            message: str: The message to log.
+            **kwargs: Additional keyword arguments for formatting.
+        """
+        styled_message = click.style(message, fg="cyan", bold=True)
+        self.console_messages.append(message)
+        self.console_output(text=styled_message)
         logger.info(message, **kwargs)
 
     def debug(self, message: str, **kwargs) -> None:
@@ -270,6 +281,56 @@ class SimpleLintroLogger:
                 the result is treated as a failure even if no issues were
                 counted (e.g., parse or runtime errors).
         """
+        # Add section header for pytest/test results
+        if tool_name.lower() in ("pt", "pytest"):
+            self.console_output(text="")
+            self.console_output(text="🧪 Test Results")
+            self.console_output(text="-" * INFO_BORDER_LENGTH)
+
+            # Extract summary from raw_output_for_meta for later use in summary table
+            if raw_output_for_meta and raw_output_for_meta.strip():
+                try:
+                    import json
+
+                    # Try to parse pytest summary JSON from raw output
+                    lines = raw_output_for_meta.strip().split("\n")
+                    for line in lines:
+                        if line.startswith("{"):
+                            json.loads(line)
+                            break
+                except (json.JSONDecodeError, ValueError, KeyError):
+                    pass
+
+            # Display formatted test failures table if present
+            # Skip JSON lines but keep tables
+            if output and output.strip():
+                lines = output.split("\n")
+                display_lines = []
+                skip_json = False
+                for line in lines:
+                    if line.startswith("{"):
+                        # Skip JSON summary line
+                        skip_json = True
+                        continue
+                    if skip_json and line.strip() == "":
+                        # Skip blank line after JSON
+                        skip_json = False
+                        continue
+                    if skip_json:
+                        # Skip remaining JSON content
+                        continue
+                    # Keep everything else including table headers and content
+                    display_lines.append(line)
+
+                if display_lines:
+                    self.console_output(text="\n".join(display_lines))
+
+            # Don't show summary line here - it will be in the Execution Summary table
+            if issues_count == 0 and not output:
+                self.success(message="✓ No issues found.")
+
+            return
+
         if output and output.strip():
             # Display the output (either raw or formatted, depending on what was passed)
             self.console_output(text=output)
@@ -441,6 +502,9 @@ class SimpleLintroLogger:
             action: str: The action being performed ("check" or "fmt").
             tool_results: list[object]: The list of tool results.
         """
+        # Add separation before Execution Summary
+        self.console_output(text="")
+
         # Execution summary section
         summary_header: str = click.style("📋 EXECUTION SUMMARY", fg="cyan", bold=True)
         border_line: str = click.style("=" * 50, fg="cyan")
@@ -536,6 +600,48 @@ class SimpleLintroLogger:
 
                 emoji: str = get_tool_emoji(tool_name)
                 tool_display: str = f"{emoji} {tool_name}"
+
+                # Special handling for pytest/test action
+                if action == "test" and tool_name == "pytest":
+                    pytest_summary = getattr(result, "pytest_summary", None)
+                    if pytest_summary:
+                        # Use pytest summary data for more detailed display
+                        passed = pytest_summary.get("passed", 0)
+                        failed = pytest_summary.get("failed", 0)
+                        skipped = pytest_summary.get("skipped", 0)
+                        docker_skipped = pytest_summary.get("docker_skipped", 0)
+                        duration = pytest_summary.get("duration", 0.0)
+                        total = pytest_summary.get("total", 0)
+
+                        # Create detailed status display
+                        status_display = (
+                            click.style("✅ PASS", fg="green", bold=True)
+                            if failed == 0
+                            else click.style("❌ FAIL", fg="red", bold=True)
+                        )
+
+                        # Format duration with proper units
+                        duration_str = f"{duration:.2f}s"
+
+                        # Format skipped count to include docker skipped info
+                        if docker_skipped > 0:
+                            skipped_display = f"{skipped} ({docker_skipped} docker)"
+                        else:
+                            skipped_display = str(skipped)
+
+                        # Create row with separate columns for each metric
+                        summary_data.append(
+                            [
+                                tool_display,
+                                status_display,
+                                str(passed),
+                                str(failed),
+                                skipped_display,
+                                str(total),
+                                duration_str,
+                            ],
+                        )
+                        continue
 
                 # For format operations, success means tool ran
                 # (regardless of fixes made)
@@ -657,7 +763,18 @@ class SimpleLintroLogger:
             # Set headers based on action
             # Use plain headers to avoid ANSI/emojis width misalignment
             headers: list[str]
-            if action == "fmt":
+            if action == "test":
+                # Special table for test action with separate columns for test metrics
+                headers = [
+                    "Tool",
+                    "Status",
+                    "Passed",
+                    "Failed",
+                    "Skipped",
+                    "Total",
+                    "Duration",
+                ]
+            elif action == "fmt":
                 headers = ["Tool", "Status", "Fixed", "Remaining"]
             else:
                 headers = ["Tool", "Status", "Issues"]
