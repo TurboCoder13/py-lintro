@@ -133,7 +133,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Docker (Buildx + login)
-        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@448d8d96fea3374dd1e534f67afd8d61182c0de7
+        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@e0ca8c4d6876ebdeb57ee3b27ed992945b97bb04
         with:
           login: 'true'
           registry: ghcr.io

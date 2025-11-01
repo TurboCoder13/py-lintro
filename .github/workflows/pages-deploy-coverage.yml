@@ -63,6 +63,6 @@ jobs:
         run: ./scripts/ci/pages-deploy.sh --badge-path coverage-badge/coverage-badge.svg
       - name: Deploy coverage to Pages
         id: deployment
-        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@448d8d96fea3374dd1e534f67afd8d61182c0de7
+        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@e0ca8c4d6876ebdeb57ee3b27ed992945b97bb04
         with:
           path: _site
