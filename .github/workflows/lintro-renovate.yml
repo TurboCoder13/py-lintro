@@ -42,7 +42,7 @@ jobs:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Self-hosted Renovate
-        uses: renovatebot/github-action@53bdcc4ec92f28e5023ac92356ea8bb45f8b807d # v43.0.15
+        uses: renovatebot/github-action@4ebebabcd582dddea1692b05c3d5279f8e372b53 # v44.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           configurationFile: renovate.json
