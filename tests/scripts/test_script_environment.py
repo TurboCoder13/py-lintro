@@ -156,6 +156,7 @@ echo 0.0.0
         )
         assert_that(uv_check.returncode).is_equal_to(0)
 
+    @pytest.mark.docker_only
     def test_scripts_handle_docker_missing(self, scripts_dir, clean_env) -> None:
         """Test Docker scripts behavior when Docker is not available.
 

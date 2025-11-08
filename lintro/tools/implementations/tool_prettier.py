@@ -1,12 +1,14 @@
 """Prettier code formatter integration."""
 
 import os
+import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import Tool, ToolConfig, ToolResult
+from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
@@ -90,6 +92,47 @@ class PrettierTool(BaseTool):
         """
         return None
 
+    def _create_timeout_result(
+        self,
+        timeout_val: int,
+        initial_issues: list | None = None,
+        initial_count: int = 0,
+    ) -> ToolResult:
+        """Create a ToolResult for timeout scenarios.
+
+        Args:
+            timeout_val: The timeout value that was exceeded.
+            initial_issues: Optional list of issues found before timeout.
+            initial_count: Optional count of initial issues.
+
+        Returns:
+            ToolResult: ToolResult instance representing timeout failure.
+        """
+        timeout_msg = (
+            f"Prettier execution timed out ({timeout_val}s limit exceeded).\n\n"
+            "This may indicate:\n"
+            "  - Large codebase taking too long to process\n"
+            "  - Need to increase timeout via --tool-options prettier:timeout=N"
+        )
+        timeout_issue = PrettierIssue(
+            file="execution",
+            line=None,
+            code="TIMEOUT",
+            message=timeout_msg,
+            column=None,
+        )
+        combined_issues = (initial_issues or []) + [timeout_issue]
+        return ToolResult(
+            name=self.name,
+            success=False,
+            output=timeout_msg,
+            issues_count=len(combined_issues),
+            issues=combined_issues,
+            initial_issues_count=initial_count,
+            fixed_issues_count=0,
+            remaining_issues_count=len(combined_issues),
+        )
+
     def check(
         self,
         paths: list[str],
@@ -128,11 +171,15 @@ class PrettierTool(BaseTool):
         # Do not force config; rely on native discovery via cwd
         cmd.extend(rel_files)
         logger.debug(f"[PrettierTool] Running: {' '.join(cmd)} (cwd={cwd})")
-        result = self._run_subprocess(
-            cmd=cmd,
-            timeout=self.options.get("timeout", self._default_timeout),
-            cwd=cwd,
-        )
+        timeout_val: int = self.options.get("timeout", self._default_timeout)
+        try:
+            result = self._run_subprocess(
+                cmd=cmd,
+                timeout=timeout_val,
+                cwd=cwd,
+            )
+        except subprocess.TimeoutExpired:
+            return self._create_timeout_result(timeout_val=timeout_val)
         output: str = result[1]
         # Do not filter lines post-hoc; rely on discovery and ignore files
         issues: list = parse_prettier_output(output=output)
@@ -192,11 +239,15 @@ class PrettierTool(BaseTool):
         # Do not force config; rely on native discovery via cwd
         check_cmd.extend(rel_files)
         logger.debug(f"[PrettierTool] Checking: {' '.join(check_cmd)} (cwd={cwd})")
-        check_result = self._run_subprocess(
-            cmd=check_cmd,
-            timeout=self.options.get("timeout", self._default_timeout),
-            cwd=cwd,
-        )
+        timeout_val: int = self.options.get("timeout", self._default_timeout)
+        try:
+            check_result = self._run_subprocess(
+                cmd=check_cmd,
+                timeout=timeout_val,
+                cwd=cwd,
+            )
+        except subprocess.TimeoutExpired:
+            return self._create_timeout_result(timeout_val=timeout_val)
         check_output: str = check_result[1]
 
         # Parse initial issues
@@ -209,19 +260,33 @@ class PrettierTool(BaseTool):
         ]
         fix_cmd.extend(rel_files)
         logger.debug(f"[PrettierTool] Fixing: {' '.join(fix_cmd)} (cwd={cwd})")
-        fix_result = self._run_subprocess(
-            cmd=fix_cmd,
-            timeout=self.options.get("timeout", self._default_timeout),
-            cwd=cwd,
-        )
+        try:
+            fix_result = self._run_subprocess(
+                cmd=fix_cmd,
+                timeout=timeout_val,
+                cwd=cwd,
+            )
+        except subprocess.TimeoutExpired:
+            return self._create_timeout_result(
+                timeout_val=timeout_val,
+                initial_issues=initial_issues,
+                initial_count=initial_count,
+            )
         fix_output: str = fix_result[1]
 
         # Check for remaining issues after fixing
-        final_check_result = self._run_subprocess(
-            cmd=check_cmd,
-            timeout=self.options.get("timeout", self._default_timeout),
-            cwd=cwd,
-        )
+        try:
+            final_check_result = self._run_subprocess(
+                cmd=check_cmd,
+                timeout=timeout_val,
+                cwd=cwd,
+            )
+        except subprocess.TimeoutExpired:
+            return self._create_timeout_result(
+                timeout_val=timeout_val,
+                initial_issues=initial_issues,
+                initial_count=initial_count,
+            )
         final_check_output: str = final_check_result[1]
         remaining_issues: list = parse_prettier_output(output=final_check_output)
         remaining_count: int = len(remaining_issues)
@@ -261,15 +326,17 @@ class PrettierTool(BaseTool):
         # Success means no remaining issues
         success: bool = remaining_count == 0
 
+        # Combine initial and remaining issues so formatter can split them by fixability
+        all_issues = (initial_issues or []) + (remaining_issues or [])
+
         return ToolResult(
             name=self.name,
             success=success,
             output=final_output,
             # For fix operations, issues_count represents remaining for summaries
             issues_count=remaining_count,
-            # Provide issues so formatters can render tables. Use initial issues
-            # (auto-fixable set) for display; fall back to remaining when none.
-            issues=(initial_issues if initial_issues else remaining_issues),
+            # Provide both initial (fixed) and remaining issues for display
+            issues=all_issues,
             initial_issues_count=initial_count,
             fixed_issues_count=fixed_count,
             remaining_issues_count=remaining_count,

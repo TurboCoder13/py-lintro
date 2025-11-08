@@ -3,6 +3,7 @@
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 
+import click
 from loguru import logger
 
 from lintro.enums.hadolint_enums import (
@@ -240,38 +241,101 @@ class HadolintTool(BaseTool):
         all_issues: list = []
         all_success: bool = True
         skipped_files: list[str] = []
+        execution_failures: int = 0
         total_issues: int = 0
 
-        for file_path in dockerfile_files:
-            cmd: list[str] = self._build_command() + [str(file_path)]
-            try:
-                success: bool
-                output: str
-                success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
-                issues = parse_hadolint_output(output=output)
-                issues_count: int = len(issues)
-                # Tool is successful if subprocess succeeds, regardless of issues found
-                if not success:
+        # Show progress bar only when processing multiple files
+        if len(dockerfile_files) >= 2:
+            with click.progressbar(
+                dockerfile_files,
+                label="Processing files",
+                bar_template="%(label)s  %(info)s",
+            ) as bar:
+                for file_path in bar:
+                    cmd: list[str] = self._build_command() + [str(file_path)]
+                    try:
+                        success: bool
+                        output: str
+                        success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
+                        issues = parse_hadolint_output(output=output)
+                        issues_count: int = len(issues)
+                        # Tool is successful if subprocess succeeds,
+                        # regardless of issues found
+                        if not success:
+                            all_success = False
+                        total_issues += issues_count
+                        # Prefer parsed issues for formatted output;
+                        # keep raw for metadata
+                        # Preserve output when subprocess fails even if parsing
+                        # yields no issues
+                        if not success or issues:
+                            all_outputs.append(output)
+                        if issues:
+                            all_issues.extend(issues)
+                    except subprocess.TimeoutExpired:
+                        skipped_files.append(file_path)
+                        all_success = False
+                        # Count timeout as an execution failure
+                        execution_failures += 1
+                    except Exception as e:
+                        all_outputs.append(f"Error processing {file_path}: {str(e)}")
+                        all_success = False
+                        # Count execution errors as failures
+                        execution_failures += 1
+        else:
+            # Process without progress bar for single file or no files
+            for file_path in dockerfile_files:
+                cmd: list[str] = self._build_command() + [str(file_path)]
+                try:
+                    success: bool
+                    output: str
+                    success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
+                    issues = parse_hadolint_output(output=output)
+                    issues_count: int = len(issues)
+                    # Tool is successful if subprocess succeeds,
+                    # regardless of issues found
+                    if not success:
+                        all_success = False
+                    total_issues += issues_count
+                    # Prefer parsed issues for formatted output;
+                    # keep raw for metadata
+                    # Preserve output when subprocess fails even if parsing
+                    # yields no issues
+                    if not success or issues:
+                        all_outputs.append(output)
+                    if issues:
+                        all_issues.extend(issues)
+                except subprocess.TimeoutExpired:
+                    skipped_files.append(file_path)
                     all_success = False
-                total_issues += issues_count
-                # Prefer parsed issues for formatted output; keep raw for metadata
-                if issues:
-                    all_outputs.append(output)
-                    all_issues.extend(issues)
-            except subprocess.TimeoutExpired:
-                skipped_files.append(file_path)
-                all_success = False
-            except Exception as e:
-                all_outputs.append(f"Error processing {file_path}: {str(e)}")
-                all_success = False
+                    # Count timeout as an execution failure
+                    execution_failures += 1
+                except Exception as e:
+                    all_outputs.append(f"Error processing {file_path}: {str(e)}")
+                    all_success = False
+                    # Count execution errors as failures
+                    execution_failures += 1
 
         output: str = "\n".join(all_outputs) if all_outputs else ""
-        if skipped_files:
+        if execution_failures > 0:
             if output:
                 output += "\n\n"
-            output += f"Skipped {len(skipped_files)} files due to timeout:"
-            for file in skipped_files:
-                output += f"\n  - {file}"
+            if skipped_files:
+                output += (
+                    f"Skipped/failed {execution_failures} file(s) due to "
+                    f"execution failures (including timeouts)"
+                )
+                if timeout:
+                    output += f" (timeout: {timeout}s)"
+                output += ":"
+                for file in skipped_files:
+                    output += f"\n  - {file}"
+            else:
+                # Execution failures but no skipped files (all were exceptions)
+                output += (
+                    f"Failed to process {execution_failures} file(s) "
+                    "due to execution errors"
+                )
 
         if not output.strip():
             output = None
