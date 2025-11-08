@@ -35,8 +35,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     mv /root/.local/bin/uv /usr/local/bin/uv
 
-# Copy scripts directory and install tools
+# Copy scripts directory and package.json (needed for prettier version)
 COPY scripts/ /app/scripts/
+COPY package.json /app/package.json
 RUN find /app/scripts -type f -name "*.sh" -print -exec chmod +x {} \; && \
     /app/scripts/utils/install-tools.sh --docker
 
@@ -49,8 +50,8 @@ RUN chown -R lintro:lintro /app
 
 # Install dependencies as the non-root user so the venv is accessible
 USER lintro
-RUN uv sync --dev --no-progress && \
-    uv cache clean
+RUN uv sync --dev --no-progress
+RUN uv cache clean || true
 USER root
 
 # Copy the rest of the project

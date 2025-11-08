@@ -131,7 +131,7 @@ detect_previous_version() {
     
     # Use robust Python-based version extraction on the temporary file
     local extract_output
-    extract_output=$(python3 "${script_dir}/../utils/extract-version.py" --file "$temp_file" 2>&1)
+    extract_output=$(uv run python "${script_dir}/../utils/extract-version.py" --file "$temp_file" 2>&1)
     local exit_code=$?
     
     if [[ $exit_code -eq 0 ]] && [[ -n "$extract_output" ]]; then
@@ -163,7 +163,7 @@ read_version_from_pyproject() {
     
     # Use robust Python-based version extraction
     local extract_output
-    extract_output=$(python3 "${script_dir}/../utils/extract-version.py" 2>&1)
+    extract_output=$(uv run python "${script_dir}/../utils/extract-version.py" 2>&1)
     local exit_code=$?
     
     if [[ $exit_code -ne 0 ]]; then
