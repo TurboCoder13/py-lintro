@@ -32,7 +32,7 @@ log_info "Extracting coverage percentage from coverage.xml"
 # Extract coverage percentage from coverage.xml
 if [ -f coverage.xml ]; then
     # Run the Python script and capture only the percentage line
-    python3 scripts/utils/extract-coverage.py | grep "^percentage=" > coverage-env.txt
+    uv run python scripts/utils/extract-coverage.py | grep "^percentage=" > coverage-env.txt
     # shellcheck disable=SC1091
     source coverage-env.txt
     echo "COVERAGE_PERCENTAGE=$percentage" >> "$GITHUB_ENV"

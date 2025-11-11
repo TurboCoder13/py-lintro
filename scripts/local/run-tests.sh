@@ -97,37 +97,11 @@ ensure_python_cli_tools() {
     fi
 }
 
-# Function to run tests with coverage
-run_tests() {
-    echo -e "${BLUE}Running all tests in the tests directory...${NC}"
-    echo -e "${YELLOW}Using uv run pytest for consistent behavior${NC}"
-    # Avoid uv hardlink warnings/noise by defaulting to copy mode
-    export UV_LINK_MODE=${UV_LINK_MODE:-copy}
+# Helper function to run tests and report results
+run_and_report_tests() {
+    local test_cmd=("$@")
     
-    # Determine pytest worker count
-    local workers="${LINTRO_PYTEST_WORKERS:-auto}"
-    # In CI, default to serial to avoid xdist contention (docker/image builds,
-    # file system contention) unless explicitly overridden by LINTRO_PYTEST_WORKERS.
-    if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -z "${LINTRO_PYTEST_WORKERS:-}" ]; then
-        workers=0
-    fi
-
-    # Build pytest arguments
-    local pytest_args=("-n" "${workers}" "tests")
-    if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" != "1" ]; then
-        echo -e "${YELLOW}Docker-specific tests will be auto-skipped by pytest config${NC}"
-    else
-        echo -e "${YELLOW}Including Docker tests (LINTRO_RUN_DOCKER_TESTS=1)${NC}"
-    fi
-    
-    # Add verbose flag if requested
-    if [ "$VERBOSE" = "1" ] || [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
-        echo -e "${YELLOW}Running tests in verbose mode${NC}"
-        shift
-    fi
-    
-    echo -e "${BLUE}Executing: uv run pytest ${pytest_args[*]}${NC}"
-    if uv run pytest "${pytest_args[@]}"; then
+    if "${test_cmd[@]}"; then
         echo -e "${GREEN}✓ Tests completed successfully${NC}"
         echo ""
         echo -e "${GREEN}Coverage reports generated:${NC}"
@@ -154,6 +128,67 @@ run_tests() {
     else
         echo -e "${RED}✗ Tests failed${NC}"
         return 1
+    fi
+}
+
+# Function to run tests with coverage
+run_tests() {
+    echo -e "${BLUE}Running all tests in the tests directory...${NC}"
+    
+    # Clean up any existing coverage files to prevent corruption with parallel execution
+    echo -e "${YELLOW}Cleaning up existing coverage files...${NC}"
+    find . -type f -name ".coverage*" -not -path "./.venv/*" -not -path "./.git/*" -delete 2>/dev/null || true
+    
+    # In Docker, use the venv python directly since venv is already set up
+    if [ -n "${RUNNING_IN_DOCKER:-}" ]; then
+        echo -e "${YELLOW}Using venv python directly in Docker${NC}"
+        PYTHON_BIN="/app/.venv/bin/python"
+        PYTHON_CMD="$PYTHON_BIN -m pytest"
+    else
+        echo -e "${YELLOW}Using uv run pytest for consistent behavior${NC}"
+        PYTHON_BIN="uv"
+        PYTHON_CMD="uv run pytest"
+    fi
+    # Avoid uv hardlink warnings/noise by defaulting to copy mode
+    export UV_LINK_MODE=${UV_LINK_MODE:-copy}
+    
+    # Determine pytest worker count
+    local workers="${LINTRO_PYTEST_WORKERS:-auto}"
+    # In CI or Docker, default to serial to avoid xdist contention (docker/image builds,
+    # file system contention) unless explicitly overridden by LINTRO_PYTEST_WORKERS.
+    if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -z "${LINTRO_PYTEST_WORKERS:-}" ]; then
+        workers=0
+    fi
+    # Also disable parallel execution in Docker to avoid execnet issues
+    if [ -n "${RUNNING_IN_DOCKER:-}" ] && [ -z "${LINTRO_PYTEST_WORKERS:-}" ]; then
+        workers=0
+    fi
+
+    # Build pytest arguments
+    local pytest_args=("tests")
+    if [ "${workers}" != "0" ]; then
+        pytest_args=("-n" "${workers}" "tests")
+    fi
+    
+    # Add verbose flag if requested
+    if [ "$VERBOSE" = "1" ] || [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
+        echo -e "${YELLOW}Running tests in verbose mode${NC}"
+        pytest_args+=("-vv")
+    fi
+    
+    if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" != "1" ]; then
+        echo -e "${YELLOW}Docker-specific tests will be auto-skipped by pytest config${NC}"
+    else
+        echo -e "${YELLOW}Including Docker tests (LINTRO_RUN_DOCKER_TESTS=1)${NC}"
+    fi
+    
+    echo -e "${BLUE}Executing: ${PYTHON_CMD} ${pytest_args[*]}${NC}"
+    if [ -n "${RUNNING_IN_DOCKER:-}" ]; then
+        run_and_report_tests "$PYTHON_BIN" -m pytest "${pytest_args[@]}"
+        return $?
+    else
+        run_and_report_tests ${PYTHON_CMD} "${pytest_args[@]}"
+        return $?
     fi
 }
 

@@ -22,5 +22,3 @@ class SampleClass:
 
 
 CONSTANT_ok = 1  # not enforcing caps here; focus on N8xx basics
-
-

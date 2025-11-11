@@ -37,7 +37,7 @@ percentage() {
   elif [[ -n "${COVERAGE_PERCENTAGE:-}" ]]; then
     pct="$COVERAGE_PERCENTAGE"
   elif [[ -f coverage.xml ]]; then
-    pct=$(python3 scripts/utils/extract-coverage.py | awk -F= '/^percentage=/{print $2; exit}')
+    pct=$(uv run python scripts/utils/extract-coverage.py | awk -F= '/^percentage=/{print $2; exit}')
   else
     pct="0.0"
   fi

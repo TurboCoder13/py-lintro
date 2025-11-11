@@ -46,9 +46,9 @@ if ! uv pip install --python "$VENV_DIR" pip; then
   exit 1
 fi
 
-# Activate and upgrade pip
+# Upgrade pip
 log_info "Upgrading pip"
-if ! source "$VENV_DIR/bin/activate" && python -m pip install --upgrade pip; then
+if ! "$VENV_DIR/bin/python" -m pip install --upgrade pip; then
   # Continue even if this fails (it's a secondary concern)
   log_info "Warning: pip upgrade may have failed, continuing anyway"
 fi

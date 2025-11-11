@@ -23,6 +23,40 @@ def _load_pyproject() -> dict[str, Any]:
         return {}
 
 
+def _load_ruff_config() -> dict[str, Any]:
+    """Load Ruff configuration from pyproject.toml.
+
+    Returns:
+        dict[str, Any]: Ruff configuration dictionary from [tool.ruff] section.
+    """
+    pyproject_path = Path("pyproject.toml")
+    if not pyproject_path.exists():
+        return {}
+    try:
+        with pyproject_path.open("rb") as f:
+            data = tomllib.load(f)
+        return data.get("tool", {}).get("ruff", {})
+    except Exception:
+        return {}
+
+
+def _load_black_config() -> dict[str, Any]:
+    """Load Black configuration from pyproject.toml.
+
+    Returns:
+        dict[str, Any]: Black configuration dictionary from [tool.black] section.
+    """
+    pyproject_path = Path("pyproject.toml")
+    if not pyproject_path.exists():
+        return {}
+    try:
+        with pyproject_path.open("rb") as f:
+            data = tomllib.load(f)
+        return data.get("tool", {}).get("black", {})
+    except Exception:
+        return {}
+
+
 def load_lintro_tool_config(tool_name: str) -> dict[str, Any]:
     """Load tool-specific config from pyproject.
 
