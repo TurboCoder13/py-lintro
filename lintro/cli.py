@@ -67,7 +67,7 @@ class LintroGroup(click.Group):
 
         Raises:
             KeyboardInterrupt: If the user interrupts command execution.
-            Exception: If an error occurs during command execution.
+            SystemExit: If a command exits with a non-zero exit code.
         """
         all_args = ctx.protected_args + ctx.args
         if all_args:
