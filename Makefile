@@ -22,7 +22,7 @@ install:
 # Run all tests
 test:
 	@echo "Running tests with coverage..."
-	uv run pytest --cov=lintro --cov-report=term-missing --cov-report=html --cov-report=xml
+	uv run lintro tst tests/ --tool-options pytest:coverage_report=True,pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml,pytest:timeout=600
 	@echo "Coverage reports generated:"
 	@echo "  - Terminal: displayed above"
 	@echo "  - HTML: htmlcov/index.html"

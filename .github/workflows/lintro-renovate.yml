@@ -42,6 +42,7 @@ jobs:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Self-hosted Renovate
+        # yamllint disable-line rule:line-length
         uses: renovatebot/github-action@4ebebabcd582dddea1692b05c3d5279f8e372b53 # v44.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

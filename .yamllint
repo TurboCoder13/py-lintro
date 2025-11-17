@@ -11,9 +11,7 @@ rules:
     # Flag unquoted YAML 1.1 truthy/falsey scalars when used as keys.
     # Example: on/off should be quoted when used as keys.
     check-keys: true
-    # Be explicit to avoid environment-dependent defaults
-    quoted-strings: disable
-  
+
   # Avoid noise on CI YAML with long pinned SHAs and long with: blocks
   line-length:
     max: 88

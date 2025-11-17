@@ -324,6 +324,10 @@ class BaseTool(ABC):
 
         # Python-based tools where running inside env avoids PATH shim issues
         if tool_name in python_tools_prefer_uv:
+            # For yamllint, prefer uv run first to avoid bad shebang issues
+            # with system-installed binaries
+            if tool_name == "yamllint" and shutil.which("uv"):
+                return ["uv", "run", tool_name]
             if shutil.which(tool_name):
                 return [tool_name]
             if shutil.which("uvx"):
@@ -336,6 +340,10 @@ class BaseTool(ABC):
         # prettier, hadolint, actionlint)
         if shutil.which(tool_name):
             return [tool_name]
+        # Special handling for Node.js tools (prettier, etc.)
+        # that may only be available via npx
+        if tool_name in {"prettier"} and shutil.which("npx"):
+            return ["npx", "--yes", tool_name]
         if shutil.which("uv"):
             return ["uv", "run", tool_name]
         return [tool_name]
