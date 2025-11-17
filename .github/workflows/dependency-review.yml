@@ -36,6 +36,7 @@ jobs:
       # Avoid PR comment on forks (token is read-only); still run the check
       - name: Dependency review (forks - no PR comment)
         if: github.event.pull_request.head.repo.fork == true
+        # yamllint disable-line rule:line-length
         uses: actions/dependency-review-action@56339e523c0409420f6c2c9a2f4292bbb3c07dd3 # v4.8.0
         with:
           fail-on-severity: high
@@ -44,6 +45,7 @@ jobs:
 
       - name: Dependency review (with PR comment)
         if: github.event.pull_request.head.repo.fork == false
+        # yamllint disable-line rule:line-length
         uses: actions/dependency-review-action@56339e523c0409420f6c2c9a2f4292bbb3c07dd3 # v4.8.0
         with:
           fail-on-severity: high

@@ -10,6 +10,7 @@ from lintro.tools.implementations.tool_black import BlackTool
 from lintro.tools.implementations.tool_darglint import DarglintTool
 from lintro.tools.implementations.tool_hadolint import HadolintTool
 from lintro.tools.implementations.tool_prettier import PrettierTool
+from lintro.tools.implementations.tool_pytest import PytestTool
 from lintro.tools.implementations.tool_ruff import RuffTool
 from lintro.tools.implementations.tool_yamllint import YamllintTool
 from lintro.tools.tool_enum import ToolEnum
@@ -39,6 +40,7 @@ __all__ = [
     "DarglintTool",
     "HadolintTool",
     "PrettierTool",
+    "PytestTool",
     "RuffTool",
     "YamllintTool",
 ]

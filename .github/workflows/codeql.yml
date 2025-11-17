@@ -51,9 +51,11 @@ jobs:
           config-file: .github/codeql/codeql-config.yml
 
       - name: Autobuild
+        # yamllint disable-line rule:line-length
         uses: github/codeql-action/autobuild@e296a935590eb16afc0c0108289f68c87e2a89a5 # v4
 
       - name: Perform CodeQL Analysis
+        # yamllint disable-line rule:line-length
         uses: github/codeql-action/analyze@e296a935590eb16afc0c0108289f68c87e2a89a5 # v4
         with:
           category: '/language:all'

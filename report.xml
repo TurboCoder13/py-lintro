@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="0.052" timestamp="2025-11-17T20:49:50.346294+01:00" hostname="Eitels-MacBook-Pro.local"><testcase classname="test_samples.pytest_failures" name="test_simple_failure" time="0.001"><failure message="AssertionError: This test should fail&#10;assert 1 == 2">test_samples/pytest_failures.py:8: in test_simple_failure
+    assert 1 == 2, "This test should fail"
+E   AssertionError: This test should fail
+E   assert 1 == 2</failure></testcase><testcase classname="test_samples.pytest_failures" name="test_division_by_zero" time="0.000"><failure message="ZeroDivisionError: division by zero">test_samples/pytest_failures.py:13: in test_division_by_zero
+    result = 1 / 0
+             ^^^^^
+E   ZeroDivisionError: division by zero</failure></testcase><testcase classname="test_samples.pytest_failures" name="test_attribute_error" time="0.000"><failure message="AttributeError: 'NoneType' object has no attribute 'some_attribute'">test_samples/pytest_failures.py:20: in test_attribute_error
+    obj.some_attribute  # This will raise AttributeError
+    ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'some_attribute'
+        obj        = None</failure></testcase></testsuite></testsuites>

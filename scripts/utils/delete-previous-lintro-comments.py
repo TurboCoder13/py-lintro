@@ -12,7 +12,7 @@ Environment Variables:
     PR_NUMBER (str or int): Pull request number.
 
 Usage:
-    python3 scripts/delete-previous-lintro-comments.py
+    uv run python scripts/delete-previous-lintro-comments.py
 
 Intended for use in CI workflows to keep PRs clean of duplicate bot comments.
 """
