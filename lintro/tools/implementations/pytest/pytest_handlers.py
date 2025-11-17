@@ -9,7 +9,7 @@ import re
 import shlex
 
 from lintro.models.core.tool_result import ToolResult
-from lintro.tools.implementations.pytest_utils import (
+from lintro.tools.implementations.pytest.pytest_utils import (
     check_plugin_installed,
     get_pytest_version_info,
     list_installed_plugins,

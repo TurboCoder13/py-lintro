@@ -8,7 +8,7 @@ import os
 
 from loguru import logger
 
-from lintro.tools.implementations.pytest_utils import (
+from lintro.tools.implementations.pytest.pytest_utils import (
     get_parallel_workers_from_preset,
 )
 
