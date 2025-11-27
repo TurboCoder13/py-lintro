@@ -43,7 +43,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -57,10 +57,10 @@ jobs:
             files.pythonhosted.org:443
 
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Egress audit (allowlist verification)
-        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@448d8d96fea3374dd1e534f67afd8d61182c0de7
+        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@b3fb40d43cd5c2e343a7a875e283c421c59e47fd
         with:
           allowed-endpoints: >
             github.com:443
@@ -74,7 +74,7 @@ jobs:
           fail-on-missing: 'true'
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@448d8d96fea3374dd1e534f67afd8d61182c0de7
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@b3fb40d43cd5c2e343a7a875e283c421c59e47fd
         with:
           python-version: '3.13'
         env:
@@ -119,7 +119,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -133,10 +133,10 @@ jobs:
             files.pythonhosted.org:443
 
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Egress audit (allowlist verification)
-        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@448d8d96fea3374dd1e534f67afd8d61182c0de7
+        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@b3fb40d43cd5c2e343a7a875e283c421c59e47fd
         with:
           allowed-endpoints: >
             github.com:443
@@ -150,7 +150,7 @@ jobs:
           fail-on-missing: 'true'
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@448d8d96fea3374dd1e534f67afd8d61182c0de7
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@b3fb40d43cd5c2e343a7a875e283c421c59e47fd
         with:
           python-version: '3.13'
         env:
