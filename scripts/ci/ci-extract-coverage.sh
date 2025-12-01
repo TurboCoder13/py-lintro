@@ -3,7 +3,8 @@
 # CI Coverage Extraction Script
 # Handles extracting coverage percentage for CI pipeline
 
-set -e
+# Note: We don't use set -e here to handle edge cases gracefully
+# The script should always succeed but may report 0.0% coverage
 
 # Show help if requested
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
@@ -26,25 +27,68 @@ source "$(dirname "$0")/../utils/utils.sh"
 
 # Set up environment if not in GitHub Actions
 GITHUB_ENV="${GITHUB_ENV:-/dev/null}"
+GITHUB_OUTPUT="${GITHUB_OUTPUT:-/dev/null}"
+
+# Helper function to set coverage percentage
+set_coverage() {
+    local pct="$1"
+    echo "COVERAGE_PERCENTAGE=$pct" >> "$GITHUB_ENV"
+    echo "percentage=$pct" >> "$GITHUB_OUTPUT"
+}
 
 log_info "Extracting coverage percentage from coverage.xml"
 
-# Extract coverage percentage from coverage.xml
+# Debug: Show what files exist
+log_info "Checking for coverage files in $(pwd)..."
 if [ -f coverage.xml ]; then
-    # Run the Python script and capture only the percentage line
-    python3 scripts/utils/extract-coverage.py | grep "^percentage=" > coverage-env.txt
-    # shellcheck disable=SC1091
-    source coverage-env.txt
-    echo "COVERAGE_PERCENTAGE=$percentage" >> "$GITHUB_ENV"
-    # Also expose as step output if available
-    if [ -n "${GITHUB_OUTPUT:-}" ]; then
-        echo "percentage=$percentage" >> "$GITHUB_OUTPUT"
-    fi
-    log_success "Coverage extracted: $percentage%"
+    log_info "coverage.xml exists ($(wc -c < coverage.xml) bytes)"
 else
-    echo "COVERAGE_PERCENTAGE=0.0" >> "$GITHUB_ENV"
-    if [ -n "${GITHUB_OUTPUT:-}" ]; then
-        echo "percentage=0.0" >> "$GITHUB_OUTPUT"
+    log_warning "coverage.xml does not exist"
+fi
+if [ -f .coverage ]; then
+    log_info ".coverage exists ($(wc -c < .coverage) bytes)"
+else
+    log_warning ".coverage does not exist"
+fi
+
+# Extract coverage percentage from coverage.xml
+if [ -f coverage.xml ] && [ -s coverage.xml ]; then
+    # File exists and is not empty
+    log_info "Attempting to extract coverage from coverage.xml..."
+    
+    # Run the Python script and capture output
+    if output=$(uv run python scripts/utils/extract-coverage.py 2>&1); then
+        # Extract percentage from output
+        if percentage_line=$(echo "$output" | grep "^percentage="); then
+            percentage="${percentage_line#percentage=}"
+            set_coverage "$percentage"
+            log_success "Coverage extracted: $percentage%"
+            exit 0
+        else
+            log_warning "Python script ran but no percentage found in output"
+            log_warning "Output was: $output"
+        fi
+    else
+        log_warning "Failed to run coverage extraction script"
+        log_warning "Error: $output"
     fi
-    log_warning "No coverage.xml found, setting coverage to 0.0%"
-fi 
+    
+    # Fallback: try to extract directly from XML
+    log_info "Attempting fallback XML extraction..."
+    if line_rate=$(grep -o 'line-rate="[^"]*"' coverage.xml | head -1 | cut -d'"' -f2); then
+        if [ -n "$line_rate" ] && [ "$line_rate" != "0" ]; then
+            # Convert line rate (0.XX) to percentage
+            percentage=$(echo "$line_rate * 100" | bc -l 2>/dev/null | cut -d'.' -f1)
+            if [ -n "$percentage" ]; then
+                set_coverage "${percentage}.0"
+                log_success "Coverage extracted via fallback: ${percentage}%"
+                exit 0
+            fi
+        fi
+    fi
+fi
+
+# No coverage found - set to 0.0%
+set_coverage "0.0"
+log_warning "No valid coverage data found, setting coverage to 0.0%"
+exit 0 

@@ -2,8 +2,9 @@
 # For license details, see the repository root LICENSE file.
 ---
 name: Publish - PyPI Production
-# Publishes package to PyPI when version tags are pushed. Validates tag matches
-# pyproject.toml version, runs quality/build checks, generates SBOM, and uses OIDC for secure publishing.
+# Publishes package to PyPI when version tags are pushed.
+# Validates tag matches pyproject.toml version, runs quality/build checks,
+# generates SBOM, and uses OIDC for secure publishing.
 
 'on':
   push:
@@ -93,6 +94,7 @@ jobs:
         run: uv run python -m twine check dist/*
 
       - name: Publish to PyPI (Trusted Publishing)
+        # yamllint disable-line rule:line-length
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:
           skip-existing: true

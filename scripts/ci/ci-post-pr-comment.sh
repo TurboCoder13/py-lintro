@@ -67,25 +67,28 @@ if [ -n "$MARKER" ]; then
         log_info "Found existing comment with marker (id=$COMMENT_ID); preparing merged body"
         PREV_FILE=$(mktemp)
         NEW_FILE=$(mktemp)
+        MERGED_FILE=$(mktemp)
         # Dump previous body
         echo "$EXISTING_JSON" | uv run python scripts/utils/extract_comment_body.py "$COMMENT_ID" > "$PREV_FILE"
         # Read new body
         cat "$COMMENT_FILE" > "$NEW_FILE"
-        # Merge with Python utility
-        MERGED=$(uv run python scripts/utils/merge_pr_comment.py "$MARKER" "$NEW_FILE" --previous-file "$PREV_FILE")
+        # Merge with Python utility and write to file to avoid argument length limits
+        uv run python scripts/utils/merge_pr_comment.py "$MARKER" "$NEW_FILE" --previous-file "$PREV_FILE" > "$MERGED_FILE"
         # Post update via gh or curl
         if command -v gh &>/dev/null; then
-            gh api repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT_ID -X PATCH -f body="$MERGED" >/dev/null
+            gh api repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT_ID -X PATCH -F body=@"$MERGED_FILE" >/dev/null
+            rm -f "$PREV_FILE" "$NEW_FILE" "$MERGED_FILE"
             log_success "PR comment updated successfully via gh api"
             exit 0
         else
-            JSON_BODY=$(echo "$MERGED" | uv run python scripts/utils/json_encode_body.py)
+            JSON_BODY=$(uv run python scripts/utils/json_encode_body.py < "$MERGED_FILE")
             curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
                  -H "Accept: application/vnd.github+json" \
                  -H "X-GitHub-Api-Version: 2022-11-28" \
                  -X PATCH \
                  -d "$JSON_BODY" \
                  "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT_ID" >/dev/null
+            rm -f "$PREV_FILE" "$NEW_FILE" "$MERGED_FILE"
             log_success "PR comment updated successfully via curl"
             exit 0
         fi

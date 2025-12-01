@@ -45,6 +45,7 @@ jobs:
 
       - name: Create GitHub App installation token
         id: app-token
+        # yamllint disable-line rule:line-length
         uses: actions/create-github-app-token@bf559f85448f9380bcfa2899dbdc01eb5b37be3a # v3.0.0-beta.2
         with:
           app-id: ${{ secrets.RELEASE_APP_ID }}
@@ -60,6 +61,7 @@ jobs:
         run: echo "Not a release bump commit; skipping tag creation."
 
       - name: Environment setup
+        # yamllint disable-line rule:line-length
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@448d8d96fea3374dd1e534f67afd8d61182c0de7
         with:
           python-version: '3.13'

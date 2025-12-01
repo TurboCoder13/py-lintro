@@ -26,8 +26,25 @@ if [[ -z "${code}" ]]; then
   exit 2
 fi
 
-echo "❌ Linting checks failed"
-echo "Please fix the issues identified by lintro and try again."
-exit 1
+# Only fail if exit code is non-zero
+if [[ "${code}" != "0" ]]; then
+  echo "❌ Linting checks failed (exit code: ${code})"
+  echo ""
+  
+  # Display actual linting errors if available
+  if [[ -f chk-output.txt ]]; then
+    echo "=== Linting Output ==="
+    cat chk-output.txt
+    echo ""
+    echo "=== End of Linting Output ==="
+  else
+    echo "⚠️  No linting output file (chk-output.txt) found."
+    echo "Check the build logs above for details."
+  fi
+  
+  echo ""
+  echo "Please fix the issues identified by lintro and try again."
+  exit 1
+fi
 
 

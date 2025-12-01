@@ -441,10 +441,18 @@ main() {
         fi
     fi
     
+    # Read prettier version from package.json if it exists
+    # Check devDependencies first, then dependencies, then fall back to latest
+    if [ -f "package.json" ]; then
+        PRETTIER_VERSION=$(jq -r '.devDependencies.prettier // .dependencies.prettier // "latest"' package.json 2>/dev/null || echo "latest")
+    else
+        PRETTIER_VERSION="latest"
+    fi
+    
     if [ $DRY_RUN -eq 1 ]; then
-        log_info "[DRY-RUN] Would install prettier@3.6.0 globally via npm"
-    elif npm install -g prettier@3.6.0; then
-        echo -e "${GREEN}✓ prettier installed successfully${NC}"
+        log_info "[DRY-RUN] Would install prettier@${PRETTIER_VERSION} globally via npm"
+    elif npm install -g "prettier@${PRETTIER_VERSION}"; then
+        echo -e "${GREEN}✓ prettier@${PRETTIER_VERSION} installed successfully${NC}"
     else
         echo -e "${RED}✗ Failed to install prettier${NC}"
         exit 1

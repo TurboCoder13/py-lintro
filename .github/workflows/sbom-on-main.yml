@@ -3,7 +3,8 @@
 ---
 name: Security - SBOM Generation
 # Generates Software Bill of Materials (SBOM) in CycloneDX and SPDX formats.
-# Fetches dependency information and creates signed attestations for supply chain security.
+# Fetches dependency information and creates signed attestations for supply chain
+# security.
 
 'on':
   push:
