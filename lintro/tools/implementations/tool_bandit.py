@@ -319,9 +319,6 @@ class BanditTool(BaseTool):
 
         Returns:
             ToolResult: ToolResult instance.
-
-        Raises:
-            subprocess.TimeoutExpired: If the subprocess exceeds the timeout.
         """
         self._validate_paths(paths=paths)
         if not paths:
@@ -361,6 +358,7 @@ class BanditTool(BaseTool):
         cmd: list[str] = self._build_check_command(files=rel_files)
 
         output: str
+        execution_failure: bool = False
         # Run Bandit via the shared safe runner in BaseTool. This enforces
         # argument validation and consistent subprocess handling across tools.
         try:
@@ -372,10 +370,21 @@ class BanditTool(BaseTool):
             output = (combined or "").strip()
             rc: int = 0 if success else 1
         except subprocess.TimeoutExpired:
-            raise
+            # Handle timeout gracefully
+            execution_failure = True
+            timeout_msg = (
+                f"Bandit execution timed out ({timeout}s limit exceeded).\n\n"
+                "This may indicate:\n"
+                "  - Large codebase taking too long to process\n"
+                "  - Need to increase timeout via --tool-options bandit:timeout=N"
+            )
+            output = timeout_msg
+            rc = 1
         except Exception as e:
             logger.error(f"Failed to run Bandit: {e}")
-            output = ""
+            output = f"Bandit failed: {e}"
+            execution_failure = True
+            rc = 1
 
         # Parse the JSON output
         try:
@@ -398,12 +407,14 @@ class BanditTool(BaseTool):
             issues_count = len(issues)
 
             # Bandit returns 0 if no issues; 1 if issues found (still successful run)
-            execution_success = len(bandit_data.get("errors", [])) == 0
+            execution_success = (
+                len(bandit_data.get("errors", [])) == 0 and not execution_failure
+            )
 
             return ToolResult(
                 name=self.name,
                 success=execution_success,
-                output=None,
+                output=output if execution_failure else None,
                 issues_count=issues_count,
                 issues=issues,
             )
