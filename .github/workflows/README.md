@@ -28,6 +28,24 @@ Use for operations requiring elevated permissions or bypassing rate limits:
 The fallback ensures workflows function with standard token when RELEASE_TOKEN
 is unavailable, while benefiting from elevated permissions when available.
 
+## Concurrency Group Naming
+
+All workflows use concurrency groups to prevent duplicate runs. The standard
+pattern is:
+
+```
+<context>-${{ github.ref }}
+```
+
+Examples:
+- `tests-${{ github.ref }}` - Test workflows
+- `lintro-ci-${{ github.ref }}` - Lintro CI analysis
+- `docker-${{ github.ref }}` - Docker build/test
+- `pages-deploy-${{ github.ref }}` - GitHub Pages deployment
+
+For workflows that should be unique per commit (e.g., manual TestPyPI publish),
+use `${{ github.sha }}` instead of `${{ github.ref }}`.
+
 ## Quick Reference by File Name
 
 - ci-lintro-analysis.yml: Run Lintro on PRs/pushes; Docker build; PR comment.
