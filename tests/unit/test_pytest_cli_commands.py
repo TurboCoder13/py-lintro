@@ -27,7 +27,7 @@ def test_test_command_default_paths() -> None:
         assert_that(mock_run.called).is_true()
         call_args = mock_run.call_args
         assert_that(call_args.kwargs["paths"]).is_equal_to(["."])
-        assert_that(call_args.kwargs["tools"]).is_equal_to("pt")
+        assert_that(call_args.kwargs["tools"]).is_equal_to("pytest")
 
 
 def test_test_command_explicit_paths() -> None:
@@ -136,7 +136,7 @@ def test_test_command_check_plugins() -> None:
             [
                 "--check-plugins",
                 "--tool-options",
-                "pt:required_plugins=pytest-cov,pytest-xdist",
+                "pytest:required_plugins=pytest-cov,pytest-xdist",
             ],
         )
         call_args = mock_run.call_args
@@ -271,7 +271,7 @@ def test_test_command_tool_options_with_prefix() -> None:
         mock_run.return_value = 0
         runner.invoke(
             test_command,
-            ["--tool-options", "pt:verbose=true"],
+            ["--tool-options", "pytest:verbose=true"],
         )
         call_args = mock_run.call_args
         tool_opts = call_args.kwargs["tool_options"]
@@ -285,7 +285,7 @@ def test_test_command_tool_options_mixed() -> None:
         mock_run.return_value = 0
         runner.invoke(
             test_command,
-            ["--tool-options", "verbose=true,pt:tb=long"],
+            ["--tool-options", "verbose=true,pytest:tb=long"],
         )
         call_args = mock_run.call_args
         tool_opts = call_args.kwargs["tool_options"]

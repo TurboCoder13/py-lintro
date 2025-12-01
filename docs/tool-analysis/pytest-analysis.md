@@ -112,7 +112,7 @@ The following sections outline lintro's pytest support. **Baseline Features** re
 - ✅ **Plugin discovery** - List installed pytest plugins via `--list-plugins` flag
 - ✅ **Plugin checking** - Check if required plugins are installed via `--check-plugins` flag
 - ✅ **Plugin configuration** - Configure plugin-specific settings via `--tool-options`
-- **Usage:** `lintro test --list-plugins` or `lintro test --check-plugins --tool-options pt:required_plugins=pytest-cov,pytest-xdist`
+- **Usage:** `lintro test --list-plugins` or `lintro test --check-plugins --tool-options pytest:required_plugins=pytest-cov,pytest-xdist`
 
 **Advanced Pytest Features:**
 
@@ -128,12 +128,12 @@ The following sections outline lintro's pytest support. **Baseline Features** re
 - ✅ **Coverage HTML generation** - Generate HTML coverage reports via `coverage_html` option
 - ✅ **Coverage XML generation** - Generate XML coverage reports via `coverage_xml` option
 - ✅ **Combined coverage reports** - Generate both HTML and XML via `coverage_report` option
-- **Usage:** `lintro test --tool-options pt:coverage_html=htmlcov,pt:coverage_xml=coverage.xml` or `pt:coverage_report=True`
+- **Usage:** `lintro test --tool-options pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml` or `pytest:coverage_report=True`
 
 **Parallel Execution:**
 
-- ✅ **Basic support** - Workers option available (`pt:workers=auto|N`)
-- ✅ **Parallel execution presets** - Preset options available (`pt:parallel_preset=small|medium|large|auto`)
+- ✅ **Basic support** - Workers option available (`pytest:workers=auto|N`)
+- ✅ **Parallel execution presets** - Preset options available (`pytest:parallel_preset=small|medium|large|auto`)
 - **Note:** Uses pytest-xdist plugin (must be installed separately)
 - **Presets:**
   - `auto`: Uses all available CPU cores
@@ -151,7 +151,7 @@ The following sections outline lintro's pytest support. **Baseline Features** re
 **HTML Reports:**
 
 - ✅ **pytest-html integration** - HTML report generation via `html_report` option
-- **Usage:** `lintro test --tool-options pt:html_report=report.html`
+- **Usage:** `lintro test --tool-options pytest:html_report=report.html`
 - **Note:** Requires pytest-html plugin to be installed
 
 #### When to Use Lintro vs. Pytest Directly
@@ -245,7 +245,7 @@ lintro test --tool-options parallel_preset=medium
 lintro test --list-plugins
 
 # Check if required plugins are installed
-lintro test --check-plugins --tool-options pt:required_plugins=pytest-cov,pytest-xdist
+lintro test --check-plugins --tool-options pytest:required_plugins=pytest-cov,pytest-xdist
 ```
 
 ### Coverage Reports

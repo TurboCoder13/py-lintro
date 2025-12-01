@@ -64,8 +64,7 @@ def _get_tool_display_name(tool_enum: ToolEnum) -> str:
 def _get_tool_lookup_keys(tool_enum: ToolEnum, tool_name: str) -> set[str]:
     """Get all possible lookup keys for a tool in tool_option_dict.
 
-    This includes the tool's display name, enum name (both lowercased), and
-    known aliases (e.g., "pt" for pytest).
+    This includes the tool's display name and enum name (both lowercased).
 
     Args:
         tool_enum: The ToolEnum instance.
@@ -74,11 +73,7 @@ def _get_tool_lookup_keys(tool_enum: ToolEnum, tool_name: str) -> set[str]:
     Returns:
         set[str]: Set of lowercase keys to check in tool_option_dict.
     """
-    keys = {tool_name.lower(), tool_enum.name.lower()}
-    # Add known aliases
-    if tool_enum == ToolEnum.PYTEST:
-        keys.add("pt")
-    return keys
+    return {tool_name.lower(), tool_enum.name.lower()}
 
 
 def _get_tools_to_run(
@@ -99,7 +94,7 @@ def _get_tools_to_run(
     """
     if action == "test":
         # Test action only supports pytest
-        if tools and tools.lower() not in ("pt", "pytest"):
+        if tools and tools.lower() != "pytest":
             raise ValueError(
                 (
                     "Only 'pytest' is supported for the test action; "
@@ -128,8 +123,8 @@ def _get_tools_to_run(
     tools_to_run: list[ToolEnum] = []
 
     for name in tool_names:
-        # Reject pytest for check/fmt actions (handle both "pt" and "pytest" aliases)
-        if name in ("PT", "PYTEST"):
+        # Reject pytest for check/fmt actions
+        if name == "PYTEST":
             raise ValueError(
                 "pytest tool is not available for check/fmt actions. "
                 "Use 'lintro test' instead.",
@@ -579,7 +574,7 @@ def run_lint_tools_simple(
                     except Exception as e:
                         logger.debug(f"Ignoring invalid config for {tool_name}: {e}")
                 # 2) CLI --tool-options overrides config file
-                # Check both tool display name and enum alias (e.g., "pytest" and "pt")
+                # Check both tool display name and enum name
                 cli_overrides: dict[str, object] = {}
                 lookup_keys = _get_tool_lookup_keys(tool_enum, tool_name)
                 for option_key in lookup_keys:

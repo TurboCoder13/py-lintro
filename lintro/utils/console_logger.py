@@ -22,7 +22,6 @@ TOOL_EMOJIS: dict[str, str] = {
     "yamllint": "📄",
     "black": "🖤",
     "pytest": "🧪",
-    "pt": "🧪",
 }
 DEFAULT_EMOJI: str = "🔧"
 BORDER_LENGTH: int = 70
@@ -302,7 +301,7 @@ class SimpleLintroLogger:
                 counted (e.g., parse or runtime errors).
         """
         # Add section header for pytest/test results
-        if tool_name.lower() in ("pt", "pytest"):
+        if tool_name.lower() == "pytest":
             self.console_output(text="")
             self.console_output(text="🧪 Test Results")
             self.console_output(text="-" * INFO_BORDER_LENGTH)
@@ -608,7 +607,7 @@ class SimpleLintroLogger:
                 tool_display: str = f"{emoji} {tool_name}"
 
                 # Special handling for pytest/test action
-                if action == "test" and tool_name.lower() in ("pt", "pytest"):
+                if action == "test" and tool_name.lower() == "pytest":
                     pytest_summary = getattr(result, "pytest_summary", None)
                     if pytest_summary:
                         # Use pytest summary data for more detailed display

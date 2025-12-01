@@ -65,7 +65,7 @@ TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
     "hadolint": (HadolintTableDescriptor(), format_hadolint_issues),
     "black": (BlackTableDescriptor(), format_black_issues),
     "prettier": (PrettierTableDescriptor(), format_prettier_issues),
-    "pt": (PytestFailuresTableDescriptor(), format_pytest_issues),
+    "pytest": (PytestFailuresTableDescriptor(), format_pytest_issues),
     "ruff": (RuffTableDescriptor(), format_ruff_issues),
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
     "actionlint": (ActionlintTableDescriptor(), format_actionlint_issues),
@@ -386,7 +386,7 @@ def format_tool_output(
             )
         except Exception:
             parsed_issues = []
-    elif tool_name == "pt":
+    elif tool_name == "pytest":
         # Pytest emits text output; parse it
         parsed_issues = parse_pytest_text_output(output=output)
 

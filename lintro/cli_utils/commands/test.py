@@ -28,9 +28,6 @@ def _ensure_pytest_prefix(option_fragment: str) -> str:
     if lowered.startswith("pytest:"):
         _, rest = fragment.split(":", 1)
         return f"pytest:{rest}"
-    if lowered.startswith("pt:"):
-        _, rest = fragment.split(":", 1)
-        return f"pytest:{rest}"
     return f"pytest:{fragment}"
 
 
@@ -216,10 +213,8 @@ def test_command(
                 continue
 
             # Check if this part looks like a complete option (contains =)
-            # or starts with pytest/pt prefix (already namespaced)
-            if "=" in current_part or current_part.lower().startswith(
-                ("pytest:", "pt:"),
-            ):
+            # or starts with pytest prefix (already namespaced)
+            if "=" in current_part or current_part.lower().startswith("pytest:"):
                 normalized_part = _ensure_pytest_prefix(current_part)
                 prefixed_options.append(normalized_part)
                 i += 1
@@ -244,7 +239,7 @@ def test_command(
     exit_code: int = run_lint_tools_simple(
         action=DEFAULT_ACTION,
         paths=list(paths),
-        tools="pt",
+        tools="pytest",
         tool_options=combined_tool_options,
         exclude=exclude,
         include_venv=include_venv,

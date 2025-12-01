@@ -12,7 +12,7 @@ from lintro.utils.tool_executor import _get_tools_to_run, run_lint_tools_simple
 
 def test_get_tools_to_run_test_action_with_pytest() -> None:
     """Test _get_tools_to_run with test action returns pytest."""
-    result = _get_tools_to_run(tools="pt", action="test")
+    result = _get_tools_to_run(tools="pytest", action="test")
     assert_that(result).is_length(1)
     assert_that(result[0]).is_equal_to(ToolEnum.PYTEST)
 
@@ -40,19 +40,19 @@ def test_get_tools_to_run_test_action_with_invalid_tool() -> None:
 def test_get_tools_to_run_test_action_with_multiple_tools() -> None:
     """Test _get_tools_to_run raises error with multiple tools for test action."""
     with pytest.raises(ValueError, match="(?i)only.*pytest.*supported"):
-        _get_tools_to_run(tools="pt,ruff", action="test")
+        _get_tools_to_run(tools="pytest,ruff", action="test")
 
 
 def test_get_tools_to_run_check_action_rejects_pytest() -> None:
     """Test _get_tools_to_run rejects pytest for check action."""
     with pytest.raises(ValueError, match="not available for check"):
-        _get_tools_to_run(tools="pt", action="check")
+        _get_tools_to_run(tools="pytest", action="check")
 
 
 def test_get_tools_to_run_format_action_rejects_pytest() -> None:
     """Test _get_tools_to_run rejects pytest for format action."""
     with pytest.raises(ValueError, match="not available for check/fmt"):
-        _get_tools_to_run(tools="pt", action="fmt")
+        _get_tools_to_run(tools="pytest", action="fmt")
 
 
 def test_get_tools_to_run_test_action_unavailable() -> None:
@@ -104,7 +104,7 @@ def test_run_lint_tools_simple_test_action_basic() -> None:
         result = run_lint_tools_simple(
             action="test",
             paths=["."],
-            tools="pt",
+            tools="pytest",
             tool_options=None,
             exclude=None,
             include_venv=False,
@@ -144,7 +144,7 @@ def test_run_lint_tools_simple_test_action_with_failures() -> None:
         result = run_lint_tools_simple(
             action="test",
             paths=["."],
-            tools="pt",
+            tools="pytest",
             tool_options=None,
             exclude=None,
             include_venv=False,
@@ -214,7 +214,7 @@ def test_run_lint_tools_simple_test_action_with_tool_options() -> None:
             action="test",
             paths=["."],
             tools="pt",
-            tool_options="pt:maxfail=5,pt:tb=long",
+            tool_options="pytest:maxfail=5,pytest:tb=long",
             exclude=None,
             include_venv=False,
             group_by="file",

@@ -46,15 +46,11 @@ def test_console_logger_parsing_messages(tmp_path: Path, capsys) -> None:
 
 def test_get_tool_emoji_pytest() -> None:
     """Test that pytest tool has the test emoji."""
-    emoji_pt = get_tool_emoji("pt")
     emoji_pytest = get_tool_emoji("pytest")
-    # Both should return test emoji
-    assert_that(emoji_pt).is_not_empty()
+    # Should return test emoji
     assert_that(emoji_pytest).is_not_empty()
-    # Both should be the same emoji
-    assert_that(emoji_pt).is_equal_to(emoji_pytest)
     # Should be the test emoji
-    assert_that(emoji_pt).is_equal_to("🧪")
+    assert_that(emoji_pytest).is_equal_to("🧪")
 
 
 def test_console_logger_pytest_result_no_issues(
@@ -92,7 +88,7 @@ def test_console_logger_pytest_result_with_failures(
     """
     logger = create_logger(run_dir=tmp_path, verbose=False, raw_output=False)
     logger.print_tool_result(
-        tool_name="pt",
+        tool_name="pytest",
         output="2 tests failed",
         issues_count=2,
         action="test",

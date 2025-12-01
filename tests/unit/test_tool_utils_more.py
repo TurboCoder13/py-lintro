@@ -105,8 +105,8 @@ def test_tool_table_formatters_contains_pytest() -> None:
 
     This ensures pytest issues can be formatted for display.
     """
-    assert_that("pt" in TOOL_TABLE_FORMATTERS).is_true()
-    descriptor, formatter = TOOL_TABLE_FORMATTERS["pt"]
+    assert_that("pytest" in TOOL_TABLE_FORMATTERS).is_true()
+    descriptor, formatter = TOOL_TABLE_FORMATTERS["pytest"]
     assert_that(descriptor).is_not_none()
     assert_that(formatter).is_not_none()
 
@@ -147,7 +147,7 @@ def test_format_tool_output_with_pytest_issues(monkeypatch) -> None:
     ]
 
     txt = format_tool_output(
-        tool_name="pt",
+        tool_name="pytest",
         output="raw output",
         group_by="auto",
         output_format="grid",
@@ -173,7 +173,7 @@ def test_format_tool_output_pytest_raw_fallback(monkeypatch) -> None:
 
     # Temporarily remove pytest from TOOL_TABLE_FORMATTERS so formatter path
     # doesn't execute, forcing fallback to raw output parsing path
-    monkeypatch.delitem(TOOL_TABLE_FORMATTERS, "pt", raising=False)
+    monkeypatch.delitem(TOOL_TABLE_FORMATTERS, "pytest", raising=False)
 
     pytest_issues = [
         PytestIssue(
@@ -188,7 +188,7 @@ def test_format_tool_output_pytest_raw_fallback(monkeypatch) -> None:
     # Call with tabulate unavailable and formatter path disabled
     # This will go to parsing path, and if parsing fails, return raw output
     txt = format_tool_output(
-        tool_name="pt",
+        tool_name="pytest",
         output="raw pytest output",
         group_by="auto",
         output_format="grid",
