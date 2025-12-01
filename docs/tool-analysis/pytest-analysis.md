@@ -252,16 +252,16 @@ lintro test --check-plugins --tool-options pytest:required_plugins=pytest-cov,py
 
 ```bash
 # Generate HTML coverage report
-lintro test --tool-options pt:coverage_html=htmlcov
+lintro test --tool-options pytest:coverage_html=htmlcov
 
 # Generate XML coverage report
-lintro test --tool-options pt:coverage_xml=coverage.xml
+lintro test --tool-options pytest:coverage_xml=coverage.xml
 
 # Generate both HTML and XML reports
-lintro test --tool-options pt:coverage_report=True
+lintro test --tool-options pytest:coverage_report=True
 
 # Custom coverage report paths
-lintro test --tool-options pt:coverage_html=custom/htmlcov,pt:coverage_xml=custom/coverage.xml
+lintro test --tool-options pytest:coverage_html=custom/htmlcov,pytest:coverage_xml=custom/coverage.xml
 ```
 
 ### Test Discovery

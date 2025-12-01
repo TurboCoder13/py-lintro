@@ -213,7 +213,7 @@ def test_run_lint_tools_simple_test_action_with_tool_options() -> None:
         run_lint_tools_simple(
             action="test",
             paths=["."],
-            tools="pt",
+            tools="pytest",
             tool_options="pytest:maxfail=5,pytest:tb=long",
             exclude=None,
             include_venv=False,
@@ -253,7 +253,7 @@ def test_run_lint_tools_simple_test_action_exclude_patterns() -> None:
         run_lint_tools_simple(
             action="test",
             paths=["."],
-            tools="pt",
+            tools="pytest",
             tool_options=None,
             exclude="*.venv",
             include_venv=False,
@@ -293,7 +293,7 @@ def test_run_lint_tools_simple_test_action_verbose() -> None:
         run_lint_tools_simple(
             action="test",
             paths=["."],
-            tools="pt",
+            tools="pytest",
             tool_options=None,
             exclude=None,
             include_venv=False,

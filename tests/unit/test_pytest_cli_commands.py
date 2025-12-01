@@ -217,7 +217,7 @@ def test_test_command_coverage_options() -> None:
             test_command,
             [
                 "--tool-options",
-                "pt:coverage_html=htmlcov,pt:coverage_xml=coverage.xml",
+                "pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml",
             ],
         )
         call_args = mock_run.call_args
