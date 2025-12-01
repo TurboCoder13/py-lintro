@@ -138,6 +138,7 @@ def check_command(
         output_format=output_format,
         verbose=verbose,
         raw_output=raw_output,
+        output_file=output,
     )
 
     # Exit with code only; CLI uses this as process exit code and avoids any
