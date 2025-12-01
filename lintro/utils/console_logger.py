@@ -22,6 +22,7 @@ TOOL_EMOJIS: dict[str, str] = {
     "yamllint": "📄",
     "black": "🖤",
     "pytest": "🧪",
+    "pt": "🧪",
 }
 DEFAULT_EMOJI: str = "🔧"
 BORDER_LENGTH: int = 70
