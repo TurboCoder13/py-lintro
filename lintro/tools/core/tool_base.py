@@ -303,6 +303,24 @@ class BaseTool(ABC):
         # Tool-specific preferences to balance reliability vs. historical expectations
         python_tools_prefer_uv = {"black", "bandit", "yamllint", "darglint"}
 
+        # Pytest special handling: use python -m pytest for cross-platform compatibility
+        # This avoids issues with binary compatibility when mounting volumes in Docker
+        if tool_name == "pytest":
+            import sys
+
+            # Use python -m pytest for cross-platform compatibility
+            # This is most reliable across local/Docker/CI environments
+            python_exe = sys.executable
+            if python_exe:
+                return [python_exe, "-m", "pytest"]
+            # Fall back to uv run if python executable not found
+            if shutil.which("uv"):
+                return ["uv", "run", tool_name]
+            # Last resort: try direct pytest
+            if shutil.which(tool_name):
+                return [tool_name]
+            return [tool_name]
+
         # Ruff: keep historical expectation for tests (direct invocation first)
         if tool_name == "ruff":
             if shutil.which(tool_name):
@@ -324,6 +342,10 @@ class BaseTool(ABC):
 
         # Python-based tools where running inside env avoids PATH shim issues
         if tool_name in python_tools_prefer_uv:
+            # For yamllint, prefer uv run first to avoid bad shebang issues
+            # with system-installed binaries
+            if tool_name == "yamllint" and shutil.which("uv"):
+                return ["uv", "run", tool_name]
             if shutil.which(tool_name):
                 return [tool_name]
             if shutil.which("uvx"):
@@ -336,6 +358,10 @@ class BaseTool(ABC):
         # prettier, hadolint, actionlint)
         if shutil.which(tool_name):
             return [tool_name]
+        # Special handling for Node.js tools (prettier, etc.)
+        # that may only be available via npx
+        if tool_name in {"prettier"} and shutil.which("npx"):
+            return ["npx", "--yes", tool_name]
         if shutil.which("uv"):
             return ["uv", "run", tool_name]
         return [tool_name]

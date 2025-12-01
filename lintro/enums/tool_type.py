@@ -17,6 +17,7 @@ class ToolType(Flag):
         DOCUMENTATION = Tool that checks documentation
         SECURITY = Tool that checks for security issues
         INFRASTRUCTURE = Tool that checks infrastructure code
+        TEST_RUNNER = Tool that runs tests
     """
 
     LINTER = auto()
@@ -25,3 +26,4 @@ class ToolType(Flag):
     DOCUMENTATION = auto()
     SECURITY = auto()
     INFRASTRUCTURE = auto()
+    TEST_RUNNER = auto()
