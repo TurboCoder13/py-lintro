@@ -8,10 +8,20 @@ name: Reusable - SBOM Generation & Verification
 
 'on':
   workflow_call:
+    inputs:
+      use-release-token:
+        description: Use RELEASE_TOKEN with GITHUB_TOKEN fallback (for main branch)
+        type: boolean
+        required: false
+        default: false
     outputs:
       artifact-name:
         description: Name of uploaded SBOM artifact
         value: sbom-artifacts
+    secrets:
+      RELEASE_TOKEN:
+        description: Optional release token for elevated permissions
+        required: false
 
 permissions:
   contents: read
@@ -24,7 +34,8 @@ jobs:
     timeout-minutes: 20
     env:
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: >-
+        ${{ inputs.use-release-token && secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
@@ -45,6 +56,9 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
+          token: >-
+            ${{ inputs.use-release-token && secrets.RELEASE_TOKEN ||
+            secrets.GITHUB_TOKEN }}
       - name: Install bomctl from GitHub Releases (no registries)
         env:
           BOMCTL_VERSION: v0.4.3
@@ -61,7 +75,9 @@ jobs:
             bomctl-cache-
       - name: Generate SBOM from GitHub Dependency Graph
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: >-
+            ${{ inputs.use-release-token && secrets.RELEASE_TOKEN ||
+            secrets.GITHUB_TOKEN }}
         run: bash scripts/ci/sbom-fetch-github-api.sh
       - name: Rename SBOM artifacts with tag/sha for traceability
         run: bash scripts/ci/sbom-rename-artifacts.sh dist/sbom
