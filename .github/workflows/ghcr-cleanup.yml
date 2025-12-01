@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
 ---
 name: Maintenance - GHCR Registry Cleanup
 # Weekly cleanup of untagged container images from GitHub Container Registry.
