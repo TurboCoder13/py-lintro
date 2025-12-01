@@ -51,7 +51,7 @@ scripts/
 Scripts for GitHub Actions workflows and continuous integration.
 
 | Script                             | Purpose                                                | Usage                                                                                 |
-| ---------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------- |
+| ---------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
 | `coverage-manager.sh`              | Unified coverage ops (extract/badge/comment/threshold) | `./scripts/utils/coverage-manager.sh --help`                                          |
 | `ci-extract-coverage.sh`           | Extract coverage percentage                            | `./scripts/ci/ci-extract-coverage.sh`                                                 |
 | `ci-lintro.sh`                     | Run Lintro analysis in Docker for CI                   | `./scripts/ci/ci-lintro.sh`                                                           |
@@ -92,21 +92,20 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `security-audit.sh`                | Comprehensive security audit for workflows/scripts     | `./scripts/ci/security-audit.sh --help`                                               |
 | `bomctl-help-test.sh`              | Test bomctl binary installation                        | `./scripts/ci/bomctl-help-test.sh`                                                    |
 | `sbom-generate-safe.sh`            | Generate SBOMs with consolidated error handling        | `./scripts/ci/sbom-generate-safe.sh`                                                  |
-|                                    | `test-install-package.sh`                              | Install and verify built package in isolated venv                                     | `./scripts/ci/test-install-package.sh wheel` |
-|                                    | `test-venv-setup.sh`                                   | Create isolated Python 3.13 virtual environment                                       | `./scripts/ci/test-venv-setup.sh`            |
-|                                    | `test-verify-cli.sh`                                   | Verify lintro CLI entry points in installed package                                   | `./scripts/ci/test-verify-cli.sh`            |
-|                                    | `test-verify-imports.sh`                               | Verify critical package imports in installed lintro                                   | `./scripts/ci/test-verify-imports.sh wheel`  |
+| `test-install-package.sh`          | Install and verify built package in isolated venv      | `./scripts/ci/test-install-package.sh wheel`                                          |
+| `test-venv-setup.sh`               | Create isolated Python 3.13 virtual environment        | `./scripts/ci/test-venv-setup.sh`                                                     |
+| `test-verify-cli.sh`               | Verify lintro CLI entry points in installed package    | `./scripts/ci/test-verify-cli.sh`                                                     |
+| `test-verify-imports.sh`           | Verify critical package imports in installed lintro    | `./scripts/ci/test-verify-imports.sh wheel`                                           |
 
 ### 🐳 Docker Scripts (`docker/`)
 
 Scripts for containerized development and testing.
 
-| Script                   | Purpose                         | Usage                                     |
-| ------------------------ | ------------------------------- | ----------------------------------------- |
-| `docker-build-test.sh`   | Build and test Docker image     | `./scripts/docker/docker-build-test.sh`   |
-| `docker-lintro.sh`       | Run Lintro in Docker container  | `./scripts/docker/docker-lintro.sh check` |
-| `docker-simple-tests.sh` | Run simplified Docker tests     | `./scripts/docker/docker-test.sh`         |
-| `docker-test.sh`         | Run integration tests in Docker | `./scripts/docker/docker-test.sh`         |
+| Script                 | Purpose                         | Usage                                     |
+| ---------------------- | ------------------------------- | ----------------------------------------- |
+| `docker-build-test.sh` | Build and test Docker image     | `./scripts/docker/docker-build-test.sh`   |
+| `docker-lintro.sh`     | Run Lintro in Docker container  | `./scripts/docker/docker-lintro.sh check` |
+| `docker-test.sh`       | Run integration tests in Docker | `./scripts/docker/docker-test.sh`         |
 
 ### 💻 Local Development Scripts (`local/`)
 
@@ -117,43 +116,43 @@ Scripts for local development and testing.
 | `local-lintro.sh`           | Enhanced local Lintro runner                | `./scripts/local/local-lintro.sh check`     |
 | `sign-all-tags.sh`          | Re-sign annotated git tags (GPG/SSH) safely | `./scripts/local/sign-all-tags.sh --help`   |
 | `validate-docker-buildx.sh` | Validate Docker Buildx driver configuration | `./scripts/local/validate-docker-buildx.sh` |
+| `local-test.sh`             | Local test runner stub                      | `./scripts/local/local-test.sh --help`      |
+| `run-tests.sh`              | Universal test runner (local + Docker)      | `./scripts/local/run-tests.sh`              |
+| `normalize-ascii-art.sh`    | Normalize ASCII art to fixed size           | `./scripts/local/normalize-ascii-art.sh`    |
+| `update-coverage-badge.sh`  | Update coverage badge from coverage.xml     | `./scripts/local/update-coverage-badge.sh`  |
 
 Notes:
 
 - Most scripts support `--help` for usage.
 - `local-lintro.sh` supports `--install` to install missing tools and `--yes` for non-interactive acceptance.
 - Set `COVERAGE_DEBUG=1` to enable verbose output in `extract-coverage.py`.
-  | `local-test.sh` | Local test runner stub | `./scripts/local/local-test.sh --help` |
-  | `run-tests.sh` | Universal test runner (local + Docker) | `./scripts/local/run-tests.sh` |
-  | `normalize-ascii-art.sh` | Normalize ASCII art to fixed size | `./scripts/local/normalize-ascii-art.sh` |
-  | `update-coverage-badge.sh` | Update coverage badge from coverage.xml | `./scripts/local/update-coverage-badge.sh` |
 
 ### 🛠️ Utility Scripts (`utils/`)
 
 Shared utilities and helper scripts.
 
-| Script                               | Purpose                                             | Usage                                                              |
-| ------------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------ | ---------- |
-| `check-pypi-version.py`              | Check if version exists on PyPI                     | `python scripts/utils/check-pypi-version.py <version>`             |
-| `create-release.py`                  | Create GitHub release with assets                   | `python scripts/utils/create-release.py <version>`                 |
-| `delete-previous-lintro-comments.py` | Delete old PR comments                              | `python scripts/utils/delete-previous-lintro-comments.py`          |
-| `merge_pr_comment.py`                | Merge-update PR comment body, collapsing history    | `python scripts/utils/merge_pr_comment.py --help`                  |
-| `determine-release.py`               | Determine next release version from commits         | `python scripts/utils/determine-release.py`                        |
-| `extract-coverage.py`                | Extract coverage from XML files                     | `python scripts/utils/extract-coverage.py`                         |
-| `extract_comment_body.py`            | Extract comment body from GitHub API JSON by ID     | `python scripts/utils/extract_comment_body.py <json> <comment_id>` |
-| `extract-version.py`                 | Print `version=X.Y.Z` from TOML                     | `python scripts/utils/extract-version.py`                          |
-| `find_comment_with_marker.py`        | Find GitHub comment ID containing a specific marker | `python scripts/utils/find_comment_with_marker.py <json> <marker>` |
-| `install-tools.sh`                   | Install external tools (hadolint, prettier, etc.)   | `./scripts/utils/install-tools.sh [--dry-run] [--verbose] --local` |
-| `install.sh`                         | Install Lintro with dependencies                    | `./scripts/utils/install.sh`                                       |
-| `json_encode_body.py`                | JSON encode comment body for GitHub API requests    | `python scripts/utils/json_encode_body.py <file_or_stdin>`         |
-| `update-version.py`                  | Update version in pyproject.toml                    | `python scripts/utils/update-version.py <version>`                 |
-| `utils.sh`                           | Shared utilities for other scripts                  | Sourced by other scripts                                           |
-| `bootstrap-env.sh`                   | Bootstrap CI env with uv and tools                  | `./scripts/utils/bootstrap-env.sh [--dry-run] [--verbose] --help`  |
-| `install-uv.sh`                      | Install uv from GitHub Releases                     | `./scripts/utils/install-uv.sh [--dry-run] [--verbose]`            |
-| `setup-python.sh`                    | Install/configure specific Python via uv            | `./scripts/utils/setup-python.sh [--dry-run] [--verbose] [3.13]`   |
-| `sync-deps.sh`                       | Sync Python dependencies via uv                     | `./scripts/utils/sync-deps.sh [--dry-run] [--verbose] [--dev       | --no-dev]` |
-| `bump_deps.py`                       | Bump exact pinned versions in pyproject             | `uv run python scripts/utils/bump_deps.py --help`                  |
-| `convert_asserts_to_assertpy.py`     | Migrate bare asserts in tests to assertpy           | `uv run python scripts/utils/convert_asserts_to_assertpy.py`       |
+| Script                               | Purpose                                             | Usage                                                                   |
+| ------------------------------------ | --------------------------------------------------- | ----------------------------------------------------------------------- |
+| `check-pypi-version.py`              | Check if version exists on PyPI                     | `python scripts/utils/check-pypi-version.py <version>`                  |
+| `create-release.py`                  | Create GitHub release with assets                   | `python scripts/utils/create-release.py <version>`                      |
+| `delete-previous-lintro-comments.py` | Delete old PR comments                              | `python scripts/utils/delete-previous-lintro-comments.py`               |
+| `merge_pr_comment.py`                | Merge-update PR comment body, collapsing history    | `python scripts/utils/merge_pr_comment.py --help`                       |
+| `determine-release.py`               | Determine next release version from commits         | `python scripts/utils/determine-release.py`                             |
+| `extract-coverage.py`                | Extract coverage from XML files                     | `python scripts/utils/extract-coverage.py`                              |
+| `extract_comment_body.py`            | Extract comment body from GitHub API JSON by ID     | `python scripts/utils/extract_comment_body.py <json> <comment_id>`      |
+| `extract-version.py`                 | Print `version=X.Y.Z` from TOML                     | `python scripts/utils/extract-version.py`                               |
+| `find_comment_with_marker.py`        | Find GitHub comment ID containing a specific marker | `python scripts/utils/find_comment_with_marker.py <json> <marker>`      |
+| `install-tools.sh`                   | Install external tools (hadolint, prettier, etc.)   | `./scripts/utils/install-tools.sh [--dry-run] [--verbose] --local`      |
+| `install.sh`                         | Install Lintro with dependencies                    | `./scripts/utils/install.sh`                                            |
+| `json_encode_body.py`                | JSON encode comment body for GitHub API requests    | `python scripts/utils/json_encode_body.py <file_or_stdin>`              |
+| `update-version.py`                  | Update version in pyproject.toml                    | `python scripts/utils/update-version.py <version>`                      |
+| `utils.sh`                           | Shared utilities for other scripts                  | Sourced by other scripts                                                |
+| `bootstrap-env.sh`                   | Bootstrap CI env with uv and tools                  | `./scripts/utils/bootstrap-env.sh [--dry-run] [--verbose] --help`       |
+| `install-uv.sh`                      | Install uv from GitHub Releases                     | `./scripts/utils/install-uv.sh [--dry-run] [--verbose]`                 |
+| `setup-python.sh`                    | Install/configure specific Python via uv            | `./scripts/utils/setup-python.sh [--dry-run] [--verbose] [3.13]`        |
+| `sync-deps.sh`                       | Sync Python dependencies via uv                     | `./scripts/utils/sync-deps.sh [--dry-run] [--verbose] [--dev/--no-dev]` |
+| `bump_deps.py`                       | Bump exact pinned versions in pyproject             | `uv run python scripts/utils/bump_deps.py --help`                       |
+| `convert_asserts_to_assertpy.py`     | Migrate bare asserts in tests to assertpy           | `uv run python scripts/utils/convert_asserts_to_assertpy.py`            |
 
 ## 🔍 Detailed Script Documentation
 
