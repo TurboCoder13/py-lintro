@@ -58,7 +58,7 @@ jobs:
 
       - name: Skip if not a release bump commit
         if: steps.guard.outputs.ok != 'true'
-        run: echo "Not a release bump commit; skipping tag creation."
+        run: scripts/ci/ci-log.sh "Not a release bump commit; skipping tag creation."
 
       - name: Environment setup
         # yamllint disable-line rule:line-length
@@ -78,7 +78,7 @@ jobs:
 
       - name: Skip if version unchanged
         if: steps.prev.outputs.version == steps.version.outputs.version
-        run: echo "Version unchanged; skipping tag creation."
+        run: scripts/ci/ci-log.sh "Version unchanged; skipping tag creation."
 
       - name: Check if tag exists
         id: check

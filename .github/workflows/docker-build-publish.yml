@@ -111,7 +111,9 @@ jobs:
     steps:
       - name: Set job permissions
         shell: bash
-        run: echo "Scoped permissions to packages:write via job-level permissions"
+        run: >-
+          scripts/ci/ci-log.sh
+          "Scoped permissions to packages:write via job-level permissions"
       - name: Harden Runner
         uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
         with:
