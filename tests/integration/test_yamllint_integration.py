@@ -296,3 +296,36 @@ def test_yamllint_parser_validation(tmp_path) -> None:
     assert issues[1].rule == "indentation", "Second issue should be indentation rule"
     assert issues[2].level == "error", "Third issue should be error level"
     assert issues[2].rule == "line-length", "Third issue should be line-length rule"
+
+
+@pytest.mark.yamllint
+def test_yamllint_config_discovery(tmp_path) -> None:
+    """YamllintTool: Should discover .yamllint config file correctly.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+    """
+    test_yamllint_available()
+    sample_file = tmp_path / "test.yml"
+    sample_file.write_text("key: value\n")  # Valid YAML
+
+    # Create .yamllint config that disables document-start rule
+    yamllint_config = tmp_path / ".yamllint"
+    yamllint_config.write_text(
+        "extends: default\nrules:\n  document-start: disable\n",
+    )
+
+    logger.info("[TEST] Testing yamllint config discovery...")
+    tool = YamllintTool()
+    tool.set_options(format="parsable")
+    # Don't explicitly set config_file - should discover .yamllint automatically
+    result = tool.check([str(sample_file)])
+    logger.info(
+        f"[LOG] Yamllint found {result.issues_count} issues with "
+        f"auto-discovered config. Output:\n{result.output}",
+    )
+    # Should succeed with document-start rule disabled
+    assert result.success, "Should succeed with document-start rule disabled"
+    assert (
+        result.issues_count == 0
+    ), "Should have no issues with document-start disabled"

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from lintro.parsers.black.black_issue import BlackIssue
 from lintro.tools.implementations.tool_black import BlackTool
 
 
@@ -260,3 +261,84 @@ def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
     if calls and len(calls) >= 2:
         middle_cmd = calls[1]["cmd"]
         assert "--diff" in middle_cmd
+
+
+def test_black_check_detects_e501_violations(monkeypatch, tmp_path: Path) -> None:
+    """Verify Black's check method integrates line length violation detection.
+
+    Black's --check mode only reports files that would be reformatted, but
+    some long lines cannot be safely wrapped. This unit test verifies that
+    check() properly incorporates results from _check_line_length_violations
+    (which uses Ruff's E501 check) into the final result, even when Black
+    itself reports no formatting changes.
+
+    Args:
+        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
+        tmp_path: Temporary directory for creating files.
+    """
+    tool = BlackTool()
+    tool.set_options(line_length=88)
+
+    # Create a file with an unwrappable long line (long string literal)
+    f = tmp_path / "long_line.py"
+    # This line exceeds 88 chars but can't be safely wrapped by Black
+    long_line = (
+        'x = "This is a very long string literal that exceeds the line '
+        "length limit and cannot be safely wrapped by Black formatter "
+        'because it is a single string token"'
+    )
+    f.write_text(f"{long_line}\n")
+
+    # Stub file discovery to return our file
+    monkeypatch.setattr(
+        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
+        raising=True,
+    )
+
+    # Stub Black's subprocess to return success (no formatting changes)
+    # This simulates Black not detecting the long line because it can't wrap it
+    def fake_black_run(cmd, timeout=None, cwd=None):
+        if "--check" in cmd:
+            return (True, "All done! 1 file left unchanged.")
+        return (True, "")
+
+    monkeypatch.setattr(
+        tool,
+        "_run_subprocess",
+        lambda cmd, timeout, cwd=None: fake_black_run(cmd, timeout, cwd),
+    )
+
+    # Mock _check_line_length_violations to return E501 violations directly
+    def fake_check_line_length_violations(self, files, cwd):
+        # Calculate actual line length for accurate test
+        line_length = len(long_line)
+        return [
+            BlackIssue(
+                file=str(f),
+                message=(
+                    f"Line 1 exceeds line length limit "
+                    f"(Line too long ({line_length} > 88 characters))"
+                ),
+                fixable=False,
+            ),
+        ]
+
+    monkeypatch.setattr(
+        BlackTool,
+        "_check_line_length_violations",
+        fake_check_line_length_violations,
+    )
+
+    res = tool.check([str(tmp_path)])
+    # Black should detect the E501 violation even though Black itself
+    # didn't report any formatting changes
+    assert res.issues_count == 1
+    assert not res.success
+    assert res.issues
+    # Verify the issue is a line length violation
+    issue = res.issues[0]
+    assert isinstance(issue, BlackIssue)
+    assert "exceeds line length limit" in issue.message.lower()
+    assert "line" in issue.message.lower()
+    assert issue.fixable is False
