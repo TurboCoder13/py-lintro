@@ -294,8 +294,9 @@ class RuffTool(BaseTool):
             cmd.extend(["--ignore", ",".join(sorted(ignored_rules))])
         if extend_selected_rules:
             cmd.extend(["--extend-select", ",".join(extend_selected_rules)])
-        if self.options.get("extend_ignore"):
-            cmd.extend(["--extend-ignore", ",".join(self.options["extend_ignore"])])
+        extend_ignored_rules = list(self.options.get("extend_ignore") or [])
+        if extend_ignored_rules:
+            cmd.extend(["--extend-ignore", ",".join(extend_ignored_rules)])
         if self.options.get("line_length"):
             cmd.extend(["--line-length", str(self.options["line_length"])])
         if self.options.get("target_version"):
