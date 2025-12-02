@@ -376,14 +376,28 @@ class BaseTool(ABC):
                 return ["uv", "run", tool_name]
             return [tool_name]
 
-        # Default: prefer direct system executable (node/binary tools like
-        # prettier, hadolint, actionlint)
+        # Node.js tools: prefer local project version via npx when in a Node.js
+        # project to ensure consistent formatting with the project's pinned version
+        nodejs_tools = {"prettier"}
+        if tool_name in nodejs_tools:
+            # Check if we're in a Node.js project (has node_modules or package.json)
+            is_nodejs_project = os.path.exists("node_modules") or os.path.exists(
+                "package.json",
+            )
+            if is_nodejs_project and shutil.which("npx"):
+                return ["npx", "--yes", tool_name]
+            # Fall back to system executable if not in a Node.js project
+            if shutil.which(tool_name):
+                return [tool_name]
+            # Last resort: try npx anyway
+            if shutil.which("npx"):
+                return ["npx", "--yes", tool_name]
+            return [tool_name]
+
+        # Default: prefer direct system executable (binary tools like
+        # hadolint, actionlint)
         if shutil.which(tool_name):
             return [tool_name]
-        # Special handling for Node.js tools (prettier, etc.)
-        # that may only be available via npx
-        if tool_name in {"prettier"} and shutil.which("npx"):
-            return ["npx", "--yes", tool_name]
         if shutil.which("uv"):
             return ["uv", "run", tool_name]
         return [tool_name]
