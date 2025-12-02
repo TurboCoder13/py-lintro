@@ -500,6 +500,7 @@ When adding new scripts:
       fail_ci_if_error: true
       # token: ${{ secrets.CODECOV_TOKEN }} # for private repos only
   ```
+
   - Notes:
     - Requires `gh` (GitHub CLI) available on the runner.
     - In GitHub Actions, `gh` expects `GH_TOKEN`. The script will automatically set `GH_TOKEN` from `GITHUB_TOKEN`.
