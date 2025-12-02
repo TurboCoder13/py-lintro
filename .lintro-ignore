@@ -1,4 +1,11 @@
-# Ignore test_samples directory from all linting/formatting
+# Ignore test_samples directory and build artifacts from all linting/formatting
 
 test_samples/*
+build
+dist
+node_modules
+.venv
+venv
+env
+__pycache__
 .lintro/*

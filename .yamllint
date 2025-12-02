@@ -16,6 +16,3 @@ rules:
   line-length:
     max: 88
     allow-non-breakable-inline-mappings: true
-    ignore: |
-      .github/workflows/
-      .github/actions/
