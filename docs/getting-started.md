@@ -39,6 +39,42 @@ uv sync
 pip install -e .
 ```
 
+## Requirements
+
+### Python Version
+
+Lintro requires **Python 3.13+**. This is a strict requirement - Lintro will not run on older Python versions.
+
+### Tool Dependencies
+
+Lintro bundles several Python tools as direct dependencies for consistent behavior. These tools are automatically installed when you install Lintro and their minimum versions are centrally managed in `pyproject.toml`:
+
+**Bundled Python Tools:**
+
+- `ruff` - Fast Python linter and formatter
+- `black` - Python code formatter
+- `bandit` - Python security linter
+- `yamllint` - YAML linter
+- `darglint` - Python docstring linter
+
+### Optional External Tools
+
+Some tools require separate installation. Their minimum versions are also managed in `pyproject.toml`:
+
+- `prettier` - JavaScript/TypeScript formatter (install via npm)
+- `hadolint` - Dockerfile linter (download from GitHub releases)
+- `actionlint` - GitHub Actions linter (download from GitHub releases)
+
+### Checking Versions
+
+You can verify all tool versions with:
+
+```bash
+lintro versions
+```
+
+This command will show the current installed version of each tool alongside the minimum required version, helping you identify any version mismatches.
+
 ### Docker Installation
 
 For containerized environments or if you prefer not to install dependencies locally:

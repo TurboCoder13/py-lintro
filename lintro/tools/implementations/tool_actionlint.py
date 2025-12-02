@@ -127,6 +127,11 @@ class ActionlintTool(BaseTool):
             A `ToolResult` containing success status, aggregated output (if any),
             issue count, and parsed issues.
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
+
         self._validate_paths(paths=paths)
         if not paths:
             return ToolResult(

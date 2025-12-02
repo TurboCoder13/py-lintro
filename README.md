@@ -89,6 +89,40 @@ grype sbom:main-*-py-lintro-sbom.spdx-2.3.json
 | [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                         | 🐍 Python           | ✅       |
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                 | 🧾 YAML             | -        |
 
+## Requirements
+
+### Python Version
+
+**Python 3.13+** is required. Lintro uses modern Python features and syntax that are not available in older versions.
+
+### Tool Dependencies
+
+Lintro automatically installs and manages several Python tools to ensure consistent behavior. These tools are bundled as dependencies with versions centrally managed in `pyproject.toml`:
+
+- **Ruff** - Fast Python linter and formatter
+- **Black** - Python code formatter
+- **Bandit** - Python security linter
+- **Yamllint** - YAML linter
+- **Darglint** - Python docstring linter
+
+### Optional External Tools
+
+For full functionality, you may want to install additional tools with versions managed in `pyproject.toml`:
+
+- **Prettier** - JavaScript/TypeScript formatter (`npm install --save-dev prettier`)
+- **Hadolint** - Dockerfile linter ([GitHub Releases](https://github.com/hadolint/hadolint/releases))
+- **Actionlint** - GitHub Actions linter ([GitHub Releases](https://github.com/rhysd/actionlint/releases))
+
+### Version Verification
+
+Check all tool versions with:
+
+```bash
+lintro versions
+```
+
+This command reads version requirements directly from `pyproject.toml` and verifies your installed tools.
+
 ## Quick Start
 
 ### Installation

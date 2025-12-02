@@ -217,6 +217,11 @@ class HadolintTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
+
         self._validate_paths(paths=paths)
         if not paths:
             return ToolResult(

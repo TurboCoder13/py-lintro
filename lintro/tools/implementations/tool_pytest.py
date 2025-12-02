@@ -213,6 +213,10 @@ class PytestTool(BaseTool):
         Returns:
             ToolResult: Results from pytest execution.
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
         # For pytest, when no specific files are provided, use directories to let
         # pytest discover all tests. This allows running all tests by default.
         target_files = paths or files

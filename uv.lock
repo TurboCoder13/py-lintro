@@ -570,12 +570,15 @@ name = "lintro"
 version = "0.14.1"
 source = { editable = "." }
 dependencies = [
+    { name = "bandit" },
+    { name = "black" },
     { name = "click" },
     { name = "coverage-badge" },
     { name = "darglint" },
     { name = "defusedxml" },
     { name = "httpx" },
     { name = "loguru" },
+    { name = "ruff" },
     { name = "tabulate" },
     { name = "toml" },
     { name = "yamllint" },
@@ -629,6 +632,8 @@ requires-dist = [
     { name = "allure-pytest", marker = "extra == 'dev'", specifier = "==2.15.0" },
     { name = "assertpy", marker = "extra == 'dev'", specifier = "==1.1" },
     { name = "assertpy", marker = "extra == 'test'", specifier = "==1.1" },
+    { name = "bandit", specifier = ">=1.8.0" },
+    { name = "black", specifier = ">=25.0.0" },
     { name = "click", specifier = "==8.1.8" },
     { name = "coverage-badge", specifier = "==1.1.2" },
     { name = "coverage-badge", marker = "extra == 'dev'", specifier = "==1.1.2" },
@@ -647,6 +652,7 @@ requires-dist = [
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = "==3.8.0" },
     { name = "pytest-xdist", marker = "extra == 'test'", specifier = "==3.8.0" },
     { name = "python-semantic-release", marker = "extra == 'dev'", specifier = "==10.4.1" },
+    { name = "ruff", specifier = ">=0.14.0" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "tabulate", specifier = "==0.9.0" },
     { name = "toml", specifier = "==0.10.2" },

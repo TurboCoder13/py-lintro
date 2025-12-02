@@ -247,6 +247,11 @@ class BlackTool(BaseTool):
         Returns:
             ToolResult: Result containing success flag, issue count, and issues.
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
+
         self._validate_paths(paths=paths)
 
         py_files: list[str] = walk_files_with_excludes(
@@ -315,6 +320,11 @@ class BlackTool(BaseTool):
         Returns:
             ToolResult: Result containing counts and any remaining issues.
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
+
         self._validate_paths(paths=paths)
 
         py_files: list[str] = walk_files_with_excludes(

@@ -256,6 +256,11 @@ class PrettierTool(BaseTool):
         Returns:
             ToolResult instance
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
+
         self._validate_paths(paths=paths)
         prettier_files: list[str] = walk_files_with_excludes(
             paths=paths,
@@ -355,6 +360,11 @@ class PrettierTool(BaseTool):
         Returns:
             ToolResult: Result object with counts and messages.
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
+
         self._validate_paths(paths=paths)
         prettier_files: list[str] = walk_files_with_excludes(
             paths=paths,

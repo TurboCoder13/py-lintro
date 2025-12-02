@@ -295,112 +295,77 @@ class BaseTool(ABC):
     ) -> list[str]:
         """Get the command prefix to execute a tool.
 
-        Prefer running via ``uv run`` when available to ensure the tool executes
-        within the active Python environment, avoiding PATH collisions with
-        user-level shims. Fall back to a direct executable when ``uv`` is not
-        present, and finally to the bare tool name.
+        Uses a unified approach based on tool category:
+        - Python bundled tools: Use python -m (guaranteed to use lintro's environment)
+        - Node.js tools: Use npx (respects project's package.json)
+        - Binary tools: Use system executable
 
         Args:
             tool_name: str: Name of the tool executable to find.
 
         Returns:
             list[str]: Command prefix to execute the tool.
-
-        Examples:
-            >>> self._get_executable_command("ruff")
-            ["uv", "run", "ruff"]  # preferred when uv is available
-
-            >>> self._get_executable_command("ruff")
-            ["ruff"]  # if uv is not available but the tool is on PATH
         """
-        # Tool-specific preferences to balance reliability vs. historical expectations
-        python_tools_prefer_uv = {"black", "bandit", "yamllint", "darglint"}
+        import sys
 
-        # Pytest special handling: use python -m pytest for cross-platform compatibility
-        # This avoids issues with binary compatibility when mounting volumes in Docker
+        # Python tools bundled with lintro (guaranteed in our environment)
+        python_bundled_tools = {"ruff", "black", "bandit", "yamllint", "darglint"}
+        if tool_name in python_bundled_tools:
+            # Use python -m to ensure we use the tool from lintro's environment
+            python_exe = sys.executable
+            if python_exe:
+                return [python_exe, "-m", tool_name]
+            # Fallback to direct executable if python path not found
+            return [tool_name]
+
+        # Pytest: user environment tool (not bundled)
         if tool_name == "pytest":
-            import sys
-
             # Use python -m pytest for cross-platform compatibility
-            # This is most reliable across local/Docker/CI environments
             python_exe = sys.executable
             if python_exe:
                 return [python_exe, "-m", "pytest"]
-            # Fall back to uv run if python executable not found
-            if shutil.which("uv"):
-                return ["uv", "run", tool_name]
-            # Last resort: try direct pytest
-            if shutil.which(tool_name):
-                return [tool_name]
+            # Fall back to direct executable
             return [tool_name]
 
-        # Ruff: keep historical expectation for tests (direct invocation first)
-        if tool_name == "ruff":
-            if shutil.which(tool_name):
-                return [tool_name]
-            if shutil.which("uv"):
-                return ["uv", "run", tool_name]
-            return [tool_name]
-
-        # Black: prefer system binary first, then project env via uv run,
-        # and finally uvx as a last resort.
-        if tool_name == "black":
-            if shutil.which(tool_name):
-                return [tool_name]
-            if shutil.which("uv"):
-                return ["uv", "run", tool_name]
-            if shutil.which("uvx"):
-                return ["uvx", tool_name]
-            return [tool_name]
-
-        # Python-based tools where running inside an environment avoids PATH shim
-        # issues. For yamllint specifically, prefer the direct binary first so
-        # Docker images that install yamllint system-wide behave consistently
-        # between local and CI runs. Fall back to uv/uvx only when no binary is
-        # available on PATH.
-        if tool_name in python_tools_prefer_uv:
-            if tool_name == "yamllint":
-                if shutil.which(tool_name):
-                    return [tool_name]
-                if shutil.which("uvx"):
-                    return ["uvx", tool_name]
-                if shutil.which("uv"):
-                    return ["uv", "run", tool_name]
-                return [tool_name]
-
-            if shutil.which(tool_name):
-                return [tool_name]
-            if shutil.which("uvx"):
-                return ["uvx", tool_name]
-            if shutil.which("uv"):
-                return ["uv", "run", tool_name]
-            return [tool_name]
-
-        # Node.js tools: prefer local project version via npx when in a Node.js
-        # project to ensure consistent formatting with the project's pinned version
+        # Node.js tools: use npx to respect project's package.json
         nodejs_tools = {"prettier"}
         if tool_name in nodejs_tools:
-            # Check if we're in a Node.js project (has node_modules or package.json)
-            is_nodejs_project = os.path.exists("node_modules") or os.path.exists(
-                "package.json",
-            )
-            if is_nodejs_project and shutil.which("npx"):
-                return ["npx", "--yes", tool_name]
-            # Fall back to system executable if not in a Node.js project
-            if shutil.which(tool_name):
-                return [tool_name]
-            # Last resort: try npx anyway
             if shutil.which("npx"):
                 return ["npx", "--yes", tool_name]
+            # Fall back to direct executable
             return [tool_name]
 
-        # Default: prefer direct system executable (binary tools like
-        # hadolint, actionlint)
-        if shutil.which(tool_name):
-            return [tool_name]
-        if shutil.which("uv"):
-            return ["uv", "run", tool_name]
+        # Binary tools: use system executable
         return [tool_name]
+
+    def _verify_tool_version(self) -> ToolResult | None:
+        """Verify that the tool meets minimum version requirements.
+
+        Returns:
+            Optional[ToolResult]: None if version check passes, or a skip result
+                if it fails
+        """
+        from lintro.tools.core.version_requirements import check_tool_version
+
+        command = self._get_executable_command(self.name)
+        version_info = check_tool_version(self.name, command)
+
+        if version_info.version_check_passed:
+            return None  # Version check passed
+
+        # Version check failed - return skip result with warning
+        skip_message = (
+            f"Skipping {self.name}: {version_info.error_message}. "
+            f"Minimum required: {version_info.min_version}. "
+            f"{version_info.install_hint}"
+        )
+
+        return ToolResult(
+            name=self.name,
+            success=True,  # Not an error, just skipping
+            output=skip_message,
+            issues_count=0,
+        )
 
     @abstractmethod
     def check(

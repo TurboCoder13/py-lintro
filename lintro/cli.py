@@ -8,6 +8,7 @@ from lintro.cli_utils.commands.check import check_command
 from lintro.cli_utils.commands.format import format_code
 from lintro.cli_utils.commands.list_tools import list_tools_command
 from lintro.cli_utils.commands.test import test_command
+from lintro.cli_utils.commands.versions import versions_command
 
 
 class LintroGroup(click.Group):
@@ -195,17 +196,20 @@ check_command._canonical_name = "check"
 format_code._canonical_name = "format"
 test_command._canonical_name = "test"
 list_tools_command._canonical_name = "list-tools"
+versions_command._canonical_name = "versions"
 
 cli.add_command(check_command, name="check")
 cli.add_command(format_code, name="format")
 cli.add_command(test_command, name="test")
 cli.add_command(list_tools_command, name="list-tools")
+cli.add_command(versions_command, name="versions")
 
 # Register aliases
 cli.add_command(check_command, name="chk")
 cli.add_command(format_code, name="fmt")
 cli.add_command(test_command, name="tst")
 cli.add_command(list_tools_command, name="ls")
+cli.add_command(versions_command, name="ver")
 
 
 def main() -> None:
