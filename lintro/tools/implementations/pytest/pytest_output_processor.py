@@ -51,22 +51,25 @@ def parse_pytest_output_with_fallback(
     Returns:
         list[PytestIssue]: Parsed test failures, errors, and skips.
     """
-    if not output:
-        return []
-
     issues = []
 
     # Try to parse JUnit XML file if it exists and was explicitly requested
     # This captures all test results including skips when using JUnit XML format
     # But only if the output we're parsing is not already JUnit XML
     # AND we're not in JSON mode (prioritize JSON over JUnit XML)
+    # Check this BEFORE early return to ensure JUnit XML parsing happens even
+    # when output is empty (e.g., quiet mode or redirected output)
     junitxml_path = None
     if (
         options.get("junitxml")
-        and not output.strip().startswith("<?xml")
+        and (not output or not output.strip().startswith("<?xml"))
         and not options.get("json_report", False)
     ):
         junitxml_path = options.get("junitxml")
+
+    # Early return only if output is empty AND no JUnit XML file to parse
+    if not output and not (junitxml_path and Path(junitxml_path).exists()):
+        return []
 
     if junitxml_path and Path(junitxml_path).exists():
         # Only read the file if it was modified after subprocess started
@@ -204,7 +207,14 @@ def process_test_summary(
     # Calculate actual skipped tests (tests that exist but weren't run)
     # This includes deselected tests that pytest doesn't report in summary
     # Note: summary.error is already counted in actual_failures, so don't double-count
-    collected_tests = summary.passed + actual_failures + summary.skipped
+    # Include xfailed and xpassed in collected count as they are tests that ran
+    collected_tests = (
+        summary.passed
+        + actual_failures
+        + summary.skipped
+        + summary.xfailed
+        + summary.xpassed
+    )
     actual_skipped = max(0, total_available_tests - collected_tests)
 
     logger.debug(f"Total available tests: {total_available_tests}")
