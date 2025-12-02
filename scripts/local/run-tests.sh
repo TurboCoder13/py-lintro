@@ -163,14 +163,15 @@ run_tests() {
     fi
     
     # Add verbose flag if requested
+    local tool_opts="pytest:coverage_report=True,pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml,pytest:timeout=600"
     if [ "$VERBOSE" = "1" ] || [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
         echo -e "${YELLOW}Running tests in verbose mode${NC}"
         tst_args+=("--verbose")
+        tool_opts="${tool_opts},pytest:verbose=True"
     fi
     
     # Add Docker test enablement and coverage options
     # Set a longer timeout (600s = 10 minutes) since tests are more comprehensive
-    local tool_opts="pytest:coverage_report=True,pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml,pytest:timeout=600"
     if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" = "1" ]; then
         echo -e "${YELLOW}Including Docker tests (LINTRO_RUN_DOCKER_TESTS=1)${NC}"
         tool_opts="${tool_opts},pytest:run_docker_tests=True"
