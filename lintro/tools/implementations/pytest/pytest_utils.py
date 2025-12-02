@@ -568,9 +568,9 @@ def collect_tests_once(
                 return (0, 0)
 
             # Extract the total count from collection output
-            # Format: "XXXX tests collected in Y.YYs"
+            # Format: "XXXX tests collected in Y.YYs" or "1 test collected"
             total_count = 0
-            match = re.search(r"(\d+)\s+tests\s+collected", output)
+            match = re.search(r"(\d+)\s+tests?\s+collected", output)
             if match:
                 total_count = int(match.group(1))
 
