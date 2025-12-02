@@ -48,6 +48,10 @@ def test_yamllint_prefers_direct_binary_when_available(
 
     This matches the Docker image setup where yamllint is installed
     system-wide, avoiding uv environment discrepancies between CI and local.
+
+    Args:
+        monkeypatch: Pytest fixture for patching attributes.
+        yamllint_tool: YamllintTool instance for testing.
     """
     from lintro.tools import core as core_pkg
 
@@ -68,7 +72,12 @@ def test_yamllint_uses_uv_when_binary_missing_but_uv_available(
     monkeypatch: pytest.MonkeyPatch,
     yamllint_tool: YamllintTool,
 ) -> None:
-    """Fall back to ``uv run yamllint`` when only uv is available on PATH."""
+    """Fall back to ``uv run yamllint`` when only uv is available on PATH.
+
+    Args:
+        monkeypatch: Pytest fixture for patching attributes.
+        yamllint_tool: YamllintTool instance for testing.
+    """
     from lintro.tools import core as core_pkg
 
     fake_shutil = _make_fake_shutil(
@@ -88,7 +97,12 @@ def test_yamllint_falls_back_to_plain_name_when_no_helpers(
     monkeypatch: pytest.MonkeyPatch,
     yamllint_tool: YamllintTool,
 ) -> None:
-    """Fall back gracefully to ``yamllint`` when nothing is on PATH."""
+    """Fall back gracefully to ``yamllint`` when nothing is on PATH.
+
+    Args:
+        monkeypatch: Pytest fixture for patching attributes.
+        yamllint_tool: YamllintTool instance for testing.
+    """
     from lintro.tools import core as core_pkg
 
     fake_shutil = _make_fake_shutil({"yamllint": None, "uv": None, "uvx": None})
