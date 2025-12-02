@@ -358,10 +358,12 @@ def load_lintro_ignore() -> list[str]:
     Returns:
         list[str]: List of ignore patterns.
     """
-    ignore_patterns: list[str] = []
-    ignore_file = Path(".lintro-ignore")
+    from lintro.utils.path_utils import find_lintro_ignore
 
-    if ignore_file.exists():
+    ignore_patterns: list[str] = []
+    ignore_file = find_lintro_ignore()
+
+    if ignore_file and ignore_file.exists():
         try:
             with open(ignore_file, encoding="utf-8") as f:
                 for line in f:

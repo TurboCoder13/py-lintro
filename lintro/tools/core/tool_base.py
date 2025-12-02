@@ -10,6 +10,7 @@ from loguru import logger
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.utils.path_utils import find_lintro_ignore
 
 # Constants for default values
 DEFAULT_TIMEOUT: int = 30
@@ -91,6 +92,17 @@ class BaseTool(ABC):
         if not isinstance(self.config.tool_type, ToolType):
             raise ValueError("Tool tool_type must be a ToolType instance")
 
+    def _find_lintro_ignore(self) -> str | None:
+        """Find .lintro-ignore file by searching upward from current directory.
+
+        Uses the shared utility function to ensure consistent behavior.
+
+        Returns:
+            str | None: Path to .lintro-ignore file if found, None otherwise.
+        """
+        lintro_ignore_path = find_lintro_ignore()
+        return str(lintro_ignore_path) if lintro_ignore_path else None
+
     def _setup_defaults(self) -> None:
         """Set up default core options and patterns."""
         # Add default exclude patterns if not already present
@@ -99,9 +111,10 @@ class BaseTool(ABC):
                 self.exclude_patterns.append(pattern)
 
         # Add .lintro-ignore patterns (project-wide) if present
+        # Search upward from current directory to find project root
         try:
-            lintro_ignore_path = os.path.abspath(".lintro-ignore")
-            if os.path.exists(lintro_ignore_path):
+            lintro_ignore_path = self._find_lintro_ignore()
+            if lintro_ignore_path and os.path.exists(lintro_ignore_path):
                 with open(lintro_ignore_path, encoding="utf-8") as f:
                     for line in f:
                         line_stripped = line.strip()
