@@ -104,10 +104,23 @@ class PytestTool(BaseTool):
             **kwargs: Option key-value pairs to set.
 
         Delegates to PytestConfiguration for option management and validation.
+        Forwards unrecognized options (like timeout) to the base class.
         """
-        self.pytest_config.set_options(**kwargs)
+        # Extract pytest-specific options
+        config_fields = {
+            field.name for field in self.pytest_config.__dataclass_fields__.values()
+        }
+        pytest_options = {k: v for k, v in kwargs.items() if k in config_fields}
+        base_options = {k: v for k, v in kwargs.items() if k not in config_fields}
 
-        # Set options on the parent class (for backward compatibility)
+        # Set pytest-specific options
+        self.pytest_config.set_options(**pytest_options)
+
+        # Forward unrecognized options (like timeout) to base class
+        if base_options:
+            super().set_options(**base_options)
+
+        # Set pytest options on the parent class (for backward compatibility)
         options_dict = self.pytest_config.get_options_dict()
         super().set_options(**options_dict)
 
