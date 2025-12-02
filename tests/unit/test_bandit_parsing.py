@@ -139,7 +139,7 @@ def test_bandit_check_parses_mixed_output_json(monkeypatch, tmp_path) -> None:
     mixed_stdout = "Working... 100%\n" + json.dumps(sample) + "\n"
     mixed_stderr = "[main] INFO done\n"
 
-    def fake_run(cmd, capture_output, text, timeout, cwd):
+    def fake_run(cmd, capture_output, text, timeout, **kwargs):
         return SimpleNamespace(stdout=mixed_stdout, stderr=mixed_stderr, returncode=0)
 
     monkeypatch.setattr("subprocess.run", fake_run)

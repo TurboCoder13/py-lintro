@@ -118,7 +118,7 @@ For full functionality, you may want to install additional tools with versions m
 Check all tool versions with:
 
 ```bash
-lintro versions
+lintro list-tools
 ```
 
 This command reads version requirements directly from `pyproject.toml` and verifies your installed tools.

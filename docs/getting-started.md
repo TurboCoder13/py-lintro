@@ -70,7 +70,7 @@ Some tools require separate installation. Their minimum versions are also manage
 You can verify all tool versions with:
 
 ```bash
-lintro versions
+lintro list-tools
 ```
 
 This command will show the current installed version of each tool alongside the minimum required version, helping you identify any version mismatches.
