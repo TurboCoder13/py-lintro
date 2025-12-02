@@ -111,11 +111,6 @@ jobs:
       group: docker-publish-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - name: Set job permissions
-        shell: bash
-        run: >-
-          scripts/ci/ci-log.sh
-          "Scoped permissions to packages:write via job-level permissions"
       - name: Harden Runner
         uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
         with:
@@ -137,6 +132,11 @@ jobs:
           fetch-tags: true
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set job permissions
+        shell: bash
+        run: >-
+          scripts/ci/ci-log.sh
+          "Scoped permissions to packages:write via job-level permissions"
 
       - name: Setup Docker (Buildx + login)
         uses: TurboCoder13/py-lintro/.github/actions/setup-docker@448d8d96fea3374dd1e534f67afd8d61182c0de7
