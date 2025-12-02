@@ -295,10 +295,10 @@ class PrettierTool(BaseTool):
         # This ensures they're found even when cwd is a subdirectory
         found_config = self._find_prettier_config(search_dir=cwd)
         if found_config:
-            # Use absolute path for config to ensure prettier finds it
-            cmd.extend(["--config", found_config])
+            # Let prettier auto-detect config for consistent behavior
+            # cmd.extend(["--config", found_config])
             logger.debug(
-                f"[PrettierTool] Using config file: {found_config}",
+                f"[PrettierTool] Found config file: {found_config} (auto-detecting)",
             )
         else:
             logger.debug(
@@ -307,10 +307,11 @@ class PrettierTool(BaseTool):
         # Find .prettierignore by walking up from cwd
         prettierignore_path = self._find_prettierignore(search_dir=cwd)
         if prettierignore_path:
-            # Use absolute path for ignore file to ensure prettier finds it
-            cmd.extend(["--ignore-path", prettierignore_path])
+            # Let prettier auto-detect ignore file for consistent behavior
+            # cmd.extend(["--ignore-path", prettierignore_path])
             logger.debug(
-                f"[PrettierTool] Using .prettierignore: {prettierignore_path}",
+                f"[PrettierTool] Found .prettierignore: {prettierignore_path} "
+                "(auto-detecting)",
             )
         cmd.extend(rel_files)
         logger.debug(f"[PrettierTool] Running: {' '.join(cmd)} (cwd={cwd})")
@@ -376,17 +377,18 @@ class PrettierTool(BaseTool):
         ]
 
         # Find config and ignore files by walking up from cwd to repo root
-        found_config = self._find_prettier_config(search_dir=cwd)
-        prettierignore_path = self._find_prettierignore(search_dir=cwd)
+        self._find_prettier_config(search_dir=cwd)
+        self._find_prettierignore(search_dir=cwd)
 
         # Check for issues first
         check_cmd: list[str] = self._get_executable_command(tool_name="prettier") + [
             "--check",
         ]
-        if found_config:
-            check_cmd.extend(["--config", found_config])
-        if prettierignore_path:
-            check_cmd.extend(["--ignore-path", prettierignore_path])
+        # Let prettier auto-detect config and ignore files for consistent behavior
+        # if found_config:
+        #     check_cmd.extend(["--config", found_config])
+        # if prettierignore_path:
+        #     check_cmd.extend(["--ignore-path", prettierignore_path])
         check_cmd.extend(rel_files)
         logger.debug(f"[PrettierTool] Checking: {' '.join(check_cmd)} (cwd={cwd})")
         timeout_val: int = self.options.get("timeout", self._default_timeout)
@@ -408,10 +410,11 @@ class PrettierTool(BaseTool):
         fix_cmd: list[str] = self._get_executable_command(tool_name="prettier") + [
             "--write",
         ]
-        if found_config:
-            fix_cmd.extend(["--config", found_config])
-        if prettierignore_path:
-            fix_cmd.extend(["--ignore-path", prettierignore_path])
+        # Let prettier auto-detect config and ignore files for consistent behavior
+        # if found_config:
+        #     fix_cmd.extend(["--config", found_config])
+        # if prettierignore_path:
+        #     fix_cmd.extend(["--ignore-path", prettierignore_path])
         fix_cmd.extend(rel_files)
         logger.debug(f"[PrettierTool] Fixing: {' '.join(fix_cmd)} (cwd={cwd})")
         try:
