@@ -353,12 +353,21 @@ class BaseTool(ABC):
                 return ["uvx", tool_name]
             return [tool_name]
 
-        # Python-based tools where running inside env avoids PATH shim issues
+        # Python-based tools where running inside an environment avoids PATH shim
+        # issues. For yamllint specifically, prefer the direct binary first so
+        # Docker images that install yamllint system-wide behave consistently
+        # between local and CI runs. Fall back to uv/uvx only when no binary is
+        # available on PATH.
         if tool_name in python_tools_prefer_uv:
-            # For yamllint, prefer uv run first to avoid bad shebang issues
-            # with system-installed binaries
-            if tool_name == "yamllint" and shutil.which("uv"):
-                return ["uv", "run", tool_name]
+            if tool_name == "yamllint":
+                if shutil.which(tool_name):
+                    return [tool_name]
+                if shutil.which("uvx"):
+                    return ["uvx", tool_name]
+                if shutil.which("uv"):
+                    return ["uv", "run", tool_name]
+                return [tool_name]
+
             if shutil.which(tool_name):
                 return [tool_name]
             if shutil.which("uvx"):
