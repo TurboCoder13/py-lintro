@@ -55,6 +55,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `coverage-manager.sh`              | Unified coverage ops (extract/badge/comment/threshold) | `./scripts/utils/coverage-manager.sh --help`                                          |
 | `ci-extract-coverage.sh`           | Extract coverage percentage                            | `./scripts/ci/ci-extract-coverage.sh`                                                 |
 | `ci-lintro.sh`                     | Run Lintro analysis in Docker for CI                   | `./scripts/ci/ci-lintro.sh`                                                           |
+| `ci-log.sh`                        | Generic CI logging utility for workflow status messages | `./scripts/ci/ci-log.sh <message>`                                                    |
 | `ci-post-pr-comment.sh`            | Post comments to PRs using GitHub API                  | `./scripts/ci/ci-post-pr-comment.sh [file]`                                           |
 | `ci-pr-comment.sh`                 | Generate PR comments with Lintro results               | `./scripts/ci/ci-pr-comment.sh`                                                       |
 | `fail-on-lint.sh`                  | Fail CI job when lint checks fail                      | `CHK_EXIT_CODE=1 ./scripts/ci/fail-on-lint.sh`                                        |
@@ -93,6 +94,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `bomctl-help-test.sh`              | Test bomctl binary installation                        | `./scripts/ci/bomctl-help-test.sh`                                                    |
 | `sbom-generate-safe.sh`            | Generate SBOMs with consolidated error handling        | `./scripts/ci/sbom-generate-safe.sh`                                                  |
 | `test-install-package.sh`          | Install and verify built package in isolated venv      | `./scripts/ci/test-install-package.sh wheel`                                          |
+| `test-built-package-integration.sh` | Run integration tests for built package in isolated venv | `./scripts/ci/test-built-package-integration.sh`                                     |
 | `test-venv-setup.sh`               | Create isolated Python 3.13 virtual environment        | `./scripts/ci/test-venv-setup.sh`                                                     |
 | `test-verify-cli.sh`               | Verify lintro CLI entry points in installed package    | `./scripts/ci/test-verify-cli.sh`                                                     |
 | `test-verify-imports.sh`           | Verify critical package imports in installed lintro    | `./scripts/ci/test-verify-imports.sh wheel`                                           |
