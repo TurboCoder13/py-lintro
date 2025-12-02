@@ -189,7 +189,11 @@ def test_bandit_check_handles_nonzero_rc_with_errors_array(
             self.stderr = stderr
             self.returncode = returncode
 
-    def fake_run(cmd, capture_output, text, timeout, cwd):
+    def fake_run(cmd, capture_output, text, timeout, **kwargs):
+        # Handle version check calls
+        if "--version" in cmd:
+            return NS(stdout="bandit 1.8.0", stderr="", returncode=0)
+        # Handle actual check calls
         return NS(stdout=json.dumps(sample), stderr="", returncode=1)
 
     monkeypatch.setattr("subprocess.run", fake_run)
@@ -209,7 +213,11 @@ def test_bandit_check_handles_unparseable_output(monkeypatch, tmp_path) -> None:
     p = tmp_path / "b.py"
     p.write_text("x=1\n")
 
-    def fake_run(cmd, capture_output, text, timeout, cwd):
+    def fake_run(cmd, capture_output, text, timeout, **kwargs):
+        # Handle version check calls
+        if "--version" in cmd:
+            return SimpleNamespace(stdout="bandit 1.8.0", stderr="", returncode=0)
+        # Handle actual check calls
         return SimpleNamespace(stdout="nonsense", stderr="also nonsense", returncode=1)
 
     monkeypatch.setattr("subprocess.run", fake_run)
