@@ -157,7 +157,9 @@ def add_coverage_options(cmd: list[str], options: dict) -> None:
     # Add coverage HTML report
     if coverage_html:
         # pytest-cov uses --cov-report=html or --cov-report=html:dir
-        if coverage_html == "htmlcov" or coverage_html.endswith("htmlcov"):
+        # Only use default --cov-report=html for exact "htmlcov" match
+        # Custom paths ending in "htmlcov" should use the custom directory format
+        if coverage_html == "htmlcov":
             cmd.append("--cov-report=html")
         else:
             # Custom directory (remove trailing /index.html if present)
