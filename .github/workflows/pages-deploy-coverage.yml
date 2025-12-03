@@ -35,7 +35,7 @@ jobs:
           github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -46,7 +46,7 @@ jobs:
             release-assets.githubusercontent.com:443
             objects.githubusercontent.com:443
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Download coverage artifact
         # yamllint disable-line rule:line-length
         uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
@@ -67,6 +67,6 @@ jobs:
         run: ./scripts/ci/pages-deploy.sh --badge-path coverage-badge/coverage-badge.svg
       - name: Deploy coverage to Pages
         id: deployment
-        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@448d8d96fea3374dd1e534f67afd8d61182c0de7
+        uses: TurboCoder13/py-lintro/.github/actions/pages-deploy@4935c2f2f61c047d851bebae6629d20ed97292d6
         with:
           path: _site
