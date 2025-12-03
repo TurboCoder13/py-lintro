@@ -15,6 +15,11 @@ from lintro.parsers.ruff.ruff_parser import (
     parse_ruff_format_check_output,
     parse_ruff_output,
 )
+from lintro.tools.core.timeout_utils import (
+    create_timeout_result,
+    get_timeout_value,
+    run_subprocess_with_timeout,
+)
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
 
@@ -402,30 +407,30 @@ class RuffTool(BaseTool):
             os.path.relpath(f, cwd) if cwd else f for f in python_files
         ]
 
-        timeout: int = self.options.get("timeout", RUFF_DEFAULT_TIMEOUT)
+        timeout: int = get_timeout_value(self, RUFF_DEFAULT_TIMEOUT)
         # Lint check
         cmd: list[str] = self._build_check_command(files=rel_files, fix=False)
         success_lint: bool
         output_lint: str
         try:
-            success_lint, output_lint = self._run_subprocess(
+            success_lint, output_lint = run_subprocess_with_timeout(
+                tool=self,
                 cmd=cmd,
                 timeout=timeout,
                 cwd=cwd,
             )
         except subprocess.TimeoutExpired:
-            timeout_msg = (
-                f"Ruff execution timed out ({timeout}s limit exceeded).\n\n"
-                "This may indicate:\n"
-                "  - Large codebase taking too long to process\n"
-                "  - Need to increase timeout via --tool-options ruff:timeout=N"
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=timeout,
+                cmd=cmd,
             )
             return ToolResult(
                 name=self.name,
-                success=False,
-                output=timeout_msg,
-                issues_count=1,  # Count timeout as execution failure
-                issues=[],
+                success=timeout_result["success"],
+                output=timeout_result["output"],
+                issues_count=timeout_result["issues_count"],
+                issues=timeout_result["issues"],
             )
         lint_issues = parse_ruff_output(output=output_lint)
         lint_issues_count: int = len(lint_issues)
@@ -535,7 +540,7 @@ class RuffTool(BaseTool):
             )
 
         logger.debug(f"Files to fix: {python_files}")
-        timeout: int = self.options.get("timeout", RUFF_DEFAULT_TIMEOUT)
+        timeout: int = get_timeout_value(self, RUFF_DEFAULT_TIMEOUT)
         all_outputs: list[str] = []
         overall_success: bool = True
 
@@ -547,23 +552,23 @@ class RuffTool(BaseTool):
         success_check: bool
         output_check: str
         try:
-            success_check, output_check = self._run_subprocess(
+            success_check, output_check = run_subprocess_with_timeout(
+                tool=self,
                 cmd=cmd_check,
                 timeout=timeout,
             )
         except subprocess.TimeoutExpired:
-            timeout_msg = (
-                f"Ruff execution timed out ({timeout}s limit exceeded).\n\n"
-                "This may indicate:\n"
-                "  - Large codebase taking too long to process\n"
-                "  - Need to increase timeout via --tool-options ruff:timeout=N"
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=timeout,
+                cmd=cmd_check,
             )
             return ToolResult(
                 name=self.name,
-                success=False,
-                output=timeout_msg,
-                issues_count=1,  # Count timeout as execution failure
-                issues=[],
+                success=timeout_result["success"],
+                output=timeout_result["output"],
+                issues_count=timeout_result["issues_count"],
+                issues=timeout_result["issues"],
                 initial_issues_count=0,
                 fixed_issues_count=0,
                 remaining_issues_count=1,

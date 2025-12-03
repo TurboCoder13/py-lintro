@@ -236,7 +236,8 @@ class TestRuffTool:
         """
         files = ["test.py"]
         cmd = ruff_tool._build_check_command(files)
-        # Ruff is run via python -m ruff, so cmd[0] is python exe, cmd[1] is "-m", cmd[2] is "ruff"
+        # Ruff is run via python -m ruff, so cmd[0] is python exe,
+        # cmd[1] is "-m", cmd[2] is "ruff"
         assert_that(cmd).contains("ruff")
         assert_that(cmd).contains("check")
         assert_that(cmd).contains("--output-format")
@@ -277,7 +278,8 @@ class TestRuffTool:
         """
         files = ["test.py"]
         cmd = ruff_tool._build_format_command(files)
-        # Ruff is run via python -m ruff, so cmd[0] is python exe, cmd[1] is "-m", cmd[2] is "ruff"
+        # Ruff is run via python -m ruff, so cmd[0] is python exe,
+        # cmd[1] is "-m", cmd[2] is "ruff"
         assert_that(cmd).contains("ruff")
         assert_that(cmd).contains("format")
         assert_that(cmd).contains("test.py")

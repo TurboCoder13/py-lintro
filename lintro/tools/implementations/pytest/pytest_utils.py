@@ -299,6 +299,19 @@ def detect_flaky_tests(
     return flaky_tests
 
 
+# Module-level cache for pytest config to avoid repeated file parsing
+_PYTEST_CONFIG_CACHE: dict[tuple[str, float, float], dict] = {}
+
+
+def clear_pytest_config_cache() -> None:
+    """Clear the pytest config cache.
+
+    This function is primarily intended for testing to ensure
+    config files are re-read when needed.
+    """
+    _PYTEST_CONFIG_CACHE.clear()
+
+
 def load_pytest_config() -> dict:
     """Load pytest configuration from pyproject.toml or pytest.ini.
 
@@ -307,9 +320,28 @@ def load_pytest_config() -> dict:
     2. pyproject.toml [tool.pytest] (backward compatibility)
     3. pytest.ini [pytest]
 
+    This function uses caching to avoid repeatedly parsing config files
+    during the same process run. Cache is keyed by working directory and
+    file modification times to ensure freshness.
+
     Returns:
         dict: Pytest configuration dictionary.
     """
+    cwd = os.getcwd()
+    pyproject_path = Path("pyproject.toml")
+    pytest_ini_path = Path("pytest.ini")
+
+    # Create cache key from working directory and file modification times
+    cache_key = (
+        cwd,
+        pyproject_path.stat().st_mtime if pyproject_path.exists() else 0.0,
+        pytest_ini_path.stat().st_mtime if pytest_ini_path.exists() else 0.0,
+    )
+
+    # Return cached result if available
+    if cache_key in _PYTEST_CONFIG_CACHE:
+        return _PYTEST_CONFIG_CACHE[cache_key].copy()
+
     config: dict = {}
 
     # Check pyproject.toml first
@@ -349,6 +381,8 @@ def load_pytest_config() -> dict:
         except Exception as e:
             logger.warning(f"Failed to load pytest configuration from pytest.ini: {e}")
 
+    # Cache the result
+    _PYTEST_CONFIG_CACHE[cache_key] = config.copy()
     return config
 
 

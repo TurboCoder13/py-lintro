@@ -9,6 +9,7 @@ import os
 from loguru import logger
 
 from lintro.tools.implementations.pytest.pytest_utils import (
+    check_plugin_installed,
     get_parallel_workers_from_preset,
 )
 
@@ -205,6 +206,42 @@ def add_test_mode_options(cmd: list[str]) -> None:
         cmd.append("--strict-config")
 
 
+def add_plugin_options(cmd: list[str], options: dict) -> None:
+    """Add plugin-specific options to command.
+
+    Args:
+        cmd: Command list to modify.
+        options: Options dictionary.
+    """
+    # Add pytest-timeout options if timeout is specified
+    # Only add timeout arguments if pytest-timeout plugin is installed
+    timeout = options.get("timeout")
+    if timeout is not None:
+        if check_plugin_installed("pytest-timeout"):
+            cmd.extend(["--timeout", str(timeout)])
+            # Default timeout method to 'signal' if not specified
+            timeout_method = options.get("timeout_method", "signal")
+            cmd.extend(["--timeout-method", timeout_method])
+            logger.debug(f"Timeout enabled: {timeout}s (method: {timeout_method})")
+        else:
+            logger.warning(
+                "pytest-timeout plugin not installed; timeout option ignored. "
+                "Install with: pip install pytest-timeout",
+            )
+
+    # Add pytest-rerunfailures options
+    reruns = options.get("reruns")
+    if reruns is not None and reruns > 0:
+        cmd.extend(["--reruns", str(reruns)])
+
+        reruns_delay = options.get("reruns_delay")
+        if reruns_delay is not None and reruns_delay > 0:
+            cmd.extend(["--reruns-delay", str(reruns_delay)])
+            logger.debug(f"Reruns enabled: {reruns} times with {reruns_delay}s delay")
+        else:
+            logger.debug(f"Reruns enabled: {reruns} times")
+
+
 def add_ignore_options(cmd: list[str], tool) -> None:
     """Add ignore options to command for exclude patterns.
 
@@ -258,6 +295,9 @@ def build_check_command(
 
     # Add coverage options
     add_coverage_options(cmd, tool.options)
+
+    # Add plugin options (timeout, reruns, etc.)
+    add_plugin_options(cmd, tool.options)
 
     # Add test mode options
     add_test_mode_options(cmd)

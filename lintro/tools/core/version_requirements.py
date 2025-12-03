@@ -58,7 +58,11 @@ from loguru import logger
 
 
 def _load_pyproject_config() -> dict:
-    """Load pyproject.toml configuration."""
+    """Load pyproject.toml configuration.
+
+    Returns:
+        dict: Configuration dictionary from pyproject.toml, or empty dict if not found.
+    """
     pyproject_path = Path("pyproject.toml")
     if not pyproject_path.exists():
         logger.warning("pyproject.toml not found, using default version requirements")
@@ -75,6 +79,12 @@ def _load_pyproject_config() -> dict:
 def _parse_version_specifier(specifier: str) -> str:
     """Extract minimum version from a PEP 508 version specifier.
 
+    Args:
+        specifier: PEP 508 version specifier string.
+
+    Returns:
+        str: Minimum version string extracted from specifier.
+
     Examples:
         ">=0.14.0" -> "0.14.0"
         "==1.8.1" -> "1.8.1"
@@ -90,7 +100,11 @@ def _parse_version_specifier(specifier: str) -> str:
 
 
 def _get_minimum_versions() -> dict[str, str]:
-    """Get minimum version requirements for all tools from pyproject.toml."""
+    """Get minimum version requirements for all tools from pyproject.toml.
+
+    Returns:
+        dict[str, str]: Dictionary mapping tool names to minimum version strings.
+    """
     config = _load_pyproject_config()
 
     versions = {}
@@ -126,7 +140,11 @@ def _get_minimum_versions() -> dict[str, str]:
 
 
 def _get_install_hints() -> dict[str, str]:
-    """Generate installation hints based on tool type and version requirements."""
+    """Generate installation hints based on tool type and version requirements.
+
+    Returns:
+        dict[str, str]: Dictionary mapping tool names to installation hint strings.
+    """
     versions = _get_minimum_versions()
     hints = {}
 
@@ -170,7 +188,11 @@ _INSTALL_HINTS_CACHE: dict[str, str] | None = None
 
 
 def get_minimum_versions() -> dict[str, str]:
-    """Get minimum version requirements for all tools."""
+    """Get minimum version requirements for all tools.
+
+    Returns:
+        dict[str, str]: Dictionary mapping tool names to minimum version strings.
+    """
     global _MINIMUM_VERSIONS_CACHE
     if _MINIMUM_VERSIONS_CACHE is None:
         _MINIMUM_VERSIONS_CACHE = _get_minimum_versions()
@@ -178,7 +200,11 @@ def get_minimum_versions() -> dict[str, str]:
 
 
 def get_install_hints() -> dict[str, str]:
-    """Get installation hints for tools that don't meet requirements."""
+    """Get installation hints for tools that don't meet requirements.
+
+    Returns:
+        dict[str, str]: Dictionary mapping tool names to installation hint strings.
+    """
     global _INSTALL_HINTS_CACHE
     if _INSTALL_HINTS_CACHE is None:
         _INSTALL_HINTS_CACHE = _get_install_hints()

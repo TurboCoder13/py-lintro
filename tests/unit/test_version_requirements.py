@@ -29,7 +29,12 @@ from lintro.tools.core.version_requirements import (
     ],
 )
 def test_parse_version(version_str, expected):
-    """Test version string parsing."""
+    """Test version string parsing.
+
+    Args:
+        version_str: Version string to parse.
+        expected: Expected parsed version tuple.
+    """
     assert _parse_version(version_str) == expected
 
 
@@ -44,7 +49,13 @@ def test_parse_version(version_str, expected):
     ],
 )
 def test_compare_versions(version1, version2, expected):
-    """Test version comparison."""
+    """Test version comparison.
+
+    Args:
+        version1: First version string to compare.
+        version2: Second version string to compare.
+        expected: Expected comparison result (-1, 0, or 1).
+    """
     assert _compare_versions(version1, version2) == expected
 
 
@@ -62,7 +73,13 @@ def test_compare_versions(version1, version2, expected):
     ],
 )
 def test_extract_version_from_output(tool_name, output, expected):
-    """Test version extraction from various tool outputs."""
+    """Test version extraction from various tool outputs.
+
+    Args:
+        tool_name: Name of the tool.
+        output: Raw version output string from tool.
+        expected: Expected extracted version string.
+    """
     assert _extract_version_from_output(output, tool_name) == expected
 
 
@@ -114,7 +131,11 @@ def test_version_caching():
 
 @patch("subprocess.run")
 def test_check_tool_version_success(mock_run):
-    """Test successful version check."""
+    """Test successful version check.
+
+    Args:
+        mock_run: Mocked subprocess.run function.
+    """
     mock_run.return_value = type(
         "MockResult",
         (),
@@ -136,7 +157,11 @@ def test_check_tool_version_success(mock_run):
 
 @patch("subprocess.run")
 def test_check_tool_version_failure(mock_run):
-    """Test version check that fails due to old version."""
+    """Test version check that fails due to old version.
+
+    Args:
+        mock_run: Mocked subprocess.run function.
+    """
     mock_run.return_value = type(
         "MockResult",
         (),
@@ -158,7 +183,11 @@ def test_check_tool_version_failure(mock_run):
 
 @patch("subprocess.run")
 def test_check_tool_version_command_failure(mock_run):
-    """Test version check when command fails."""
+    """Test version check when command fails.
+
+    Args:
+        mock_run: Mocked subprocess.run function.
+    """
     mock_run.side_effect = FileNotFoundError("Command not found")
 
     result = check_tool_version("nonexistent", ["nonexistent"])
@@ -188,7 +217,11 @@ def test_tool_version_info_creation():
 
 @patch("subprocess.run")
 def test_get_all_tool_versions(mock_run):
-    """Test getting versions for all tools."""
+    """Test getting versions for all tools.
+
+    Args:
+        mock_run: Mocked subprocess.run function.
+    """
     # Mock successful version checks for all tools
     mock_run.return_value = type(
         "MockResult",
@@ -233,7 +266,12 @@ def test_get_all_tool_versions(mock_run):
     ],
 )
 def test_parse_version_specifier(specifier, expected):
-    """Test parsing PEP 508 version specifiers."""
+    """Test parsing PEP 508 version specifiers.
+
+    Args:
+        specifier: PEP 508 version specifier string.
+        expected: Expected parsed version string.
+    """
     from lintro.tools.core.version_requirements import _parse_version_specifier
 
     assert _parse_version_specifier(specifier) == expected

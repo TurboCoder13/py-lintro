@@ -19,6 +19,9 @@ def versions_command(verbose: bool) -> None:
 
     Shows each tool's current version, minimum required version, and status.
     Use --verbose to see installation hints for tools that don't meet requirements.
+
+    Args:
+        verbose: Show detailed version information including install hints.
     """
     console = Console()
     tool_versions = get_all_tool_versions()

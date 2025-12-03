@@ -40,6 +40,9 @@ def validate_pytest_options(
     list_markers: bool | None = None,
     parametrize_help: bool | None = None,
     show_progress: bool | None = None,
+    timeout: int | None = None,
+    reruns: int | None = None,
+    reruns_delay: int | None = None,
 ) -> None:
     """Validate pytest-specific options.
 
@@ -76,6 +79,9 @@ def validate_pytest_options(
         list_markers: List all available markers.
         parametrize_help: Show help for parametrized tests.
         show_progress: Show progress during test execution.
+        timeout: Timeout in seconds for individual tests (pytest-timeout plugin).
+        reruns: Number of times to retry failed tests (pytest-rerunfailures plugin).
+        reruns_delay: Delay in seconds between retries (pytest-rerunfailures plugin).
 
     Raises:
         ValueError: If an option value is invalid.
@@ -192,3 +198,15 @@ def validate_pytest_options(
 
     if show_progress is not None and not isinstance(show_progress, bool):
         raise ValueError("show_progress must be a boolean")
+
+    # Validate plugin-specific options
+    if timeout is not None and (not isinstance(timeout, int) or timeout <= 0):
+        raise ValueError("timeout must be a positive integer (seconds)")
+
+    if reruns is not None and (not isinstance(reruns, int) or reruns < 0):
+        raise ValueError("reruns must be a non-negative integer")
+
+    if reruns_delay is not None and (
+        not isinstance(reruns_delay, int) or reruns_delay < 0
+    ):
+        raise ValueError("reruns_delay must be a non-negative integer (seconds)")

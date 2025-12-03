@@ -53,6 +53,9 @@ class PytestConfiguration:
         list_markers: List all available markers.
         parametrize_help: Show help for parametrized tests.
         show_progress: Show progress during test execution (default: True).
+        timeout: Timeout in seconds for individual tests (pytest-timeout plugin).
+        reruns: Number of times to retry failed tests (pytest-rerunfailures plugin).
+        reruns_delay: Delay in seconds between retries (pytest-rerunfailures plugin).
     """
 
     verbose: bool | None = None
@@ -85,6 +88,9 @@ class PytestConfiguration:
     list_markers: bool | None = None
     parametrize_help: bool | None = None
     show_progress: bool | None = None
+    timeout: int | None = None
+    reruns: int | None = None
+    reruns_delay: int | None = None
 
     def set_options(self, **kwargs: Any) -> None:
         """Set pytest-specific options with validation.

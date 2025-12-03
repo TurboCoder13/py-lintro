@@ -154,6 +154,17 @@ The following sections outline lintro's pytest support. **Baseline Features** re
 - **Usage:** `lintro test --tool-options pytest:html_report=report.html`
 - **Note:** Requires pytest-html plugin to be installed
 
+**pytest-timeout integration** - Individual test timeouts via `timeout` option
+
+- **Usage:** `lintro test --tool-options pytest:timeout=300`
+- **Note:** Requires pytest-timeout plugin to be installed
+- **Options:** `timeout_method` (signal/thread, default: signal)
+
+**pytest-rerunfailures integration** - Automatic retry of failed tests
+
+- **Usage:** `lintro test --tool-options pytest:reruns=2,pytest:reruns_delay=1`
+- **Note:** Requires pytest-rerunfailures plugin to be installed
+
 #### When to Use Lintro vs. Pytest Directly
 
 **Use Lintro when:**
@@ -236,6 +247,12 @@ lintro test --tool-options html_report=report.html
 
 # Use parallel execution preset
 lintro test --tool-options parallel_preset=medium
+
+# Set test timeouts
+lintro test --tool-options timeout=300
+
+# Retry failed tests
+lintro test --tool-options reruns=2,reruns_delay=1
 ```
 
 ### Plugin Management
@@ -498,6 +515,7 @@ The following features have been implemented:
 8. ✅ **Performance Metrics**: Test execution time tracking and slow test detection
 9. ✅ **Test Results**: Test result summary and statistics with flaky test detection
 10. ✅ **CI Integration**: CI-specific configurations with auto-junitxml and docker test support
+11. ✅ **Plugin Integrations**: Support for pytest-html, pytest-timeout, and pytest-rerunfailures
 
 ## Future Enhancements
 

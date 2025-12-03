@@ -178,7 +178,15 @@ run_tests() {
     else
         echo -e "${YELLOW}Docker-specific tests will be auto-skipped by pytest config${NC}"
     fi
-    
+
+    # Add pytest-sugar for enhanced CI output (if available)
+    if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+        if python -c "import pytest_sugar" 2>/dev/null; then
+            echo -e "${YELLOW}Using pytest-sugar for enhanced CI output${NC}"
+            tool_opts="${tool_opts},pytest:show_progress=False"
+        fi
+    fi
+
     tst_args+=("--tool-options" "${tool_opts}")
     
     # Determine which command to use based on environment

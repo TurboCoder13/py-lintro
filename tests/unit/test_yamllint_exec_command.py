@@ -3,11 +3,14 @@
 These tests ensure that BaseTool._get_executable_command chooses the
 correct invocation strategy for yamllint so that Docker and local runs
 behave consistently.
+
+Note: Python bundled tools (yamllint, ruff, black, bandit) now use
+``python -m <tool>`` to ensure they run in lintro's environment.
 """
 
 from __future__ import annotations
 
-import types
+import sys
 
 import pytest
 
@@ -24,89 +27,35 @@ def yamllint_tool() -> YamllintTool:
     return YamllintTool()
 
 
-def _make_fake_shutil(which_map: dict[str, str | None]) -> types.SimpleNamespace:
-    """Create a fake shutil module with a configurable which() map.
-
-    Args:
-        which_map: Mapping from executable name to fake path or None.
-
-    Returns:
-        SimpleNamespace with a which() function.
-    """
-
-    def _which(name: str) -> str | None:
-        return which_map.get(name)
-
-    return types.SimpleNamespace(which=_which)
-
-
-def test_yamllint_prefers_direct_binary_when_available(
-    monkeypatch: pytest.MonkeyPatch,
+def test_yamllint_uses_python_module_invocation(
     yamllint_tool: YamllintTool,
 ) -> None:
-    """Prefer direct ``yamllint`` binary over ``uv run yamllint`` when present.
+    """Verify yamllint uses ``python -m yamllint`` for consistent execution.
 
-    This matches the Docker image setup where yamllint is installed
-    system-wide, avoiding uv environment discrepancies between CI and local.
+    Python bundled tools use python -m invocation to ensure they run
+    in lintro's environment, avoiding version conflicts with system tools.
 
     Args:
-        monkeypatch: Pytest fixture for patching attributes.
         yamllint_tool: YamllintTool instance for testing.
     """
-    from lintro.tools import core as core_pkg
-
-    fake_shutil = _make_fake_shutil(
-        {
-            "yamllint": "/usr/local/bin/yamllint",
-            "uv": "/usr/local/bin/uv",
-            "uvx": None,
-        },
-    )
-    monkeypatch.setattr(core_pkg.tool_base, "shutil", fake_shutil)
-
     cmd = yamllint_tool._get_executable_command(tool_name="yamllint")
-    assert cmd == ["yamllint"]
+    assert cmd == [sys.executable, "-m", "yamllint"]
 
 
-def test_yamllint_uses_uv_when_binary_missing_but_uv_available(
+def test_yamllint_falls_back_to_plain_name_when_no_python(
     monkeypatch: pytest.MonkeyPatch,
     yamllint_tool: YamllintTool,
 ) -> None:
-    """Fall back to ``uv run yamllint`` when only uv is available on PATH.
+    """Fall back to plain ``yamllint`` when Python executable is unavailable.
+
+    This edge case handles environments where sys.executable is empty.
 
     Args:
         monkeypatch: Pytest fixture for patching attributes.
         yamllint_tool: YamllintTool instance for testing.
     """
-    from lintro.tools import core as core_pkg
-
-    fake_shutil = _make_fake_shutil(
-        {
-            "yamllint": None,
-            "uv": "/usr/local/bin/uv",
-            "uvx": None,
-        },
-    )
-    monkeypatch.setattr(core_pkg.tool_base, "shutil", fake_shutil)
-
-    cmd = yamllint_tool._get_executable_command(tool_name="yamllint")
-    assert cmd == ["uv", "run", "yamllint"]
-
-
-def test_yamllint_falls_back_to_plain_name_when_no_helpers(
-    monkeypatch: pytest.MonkeyPatch,
-    yamllint_tool: YamllintTool,
-) -> None:
-    """Fall back gracefully to ``yamllint`` when nothing is on PATH.
-
-    Args:
-        monkeypatch: Pytest fixture for patching attributes.
-        yamllint_tool: YamllintTool instance for testing.
-    """
-    from lintro.tools import core as core_pkg
-
-    fake_shutil = _make_fake_shutil({"yamllint": None, "uv": None, "uvx": None})
-    monkeypatch.setattr(core_pkg.tool_base, "shutil", fake_shutil)
+    # Temporarily set sys.executable to empty string
+    monkeypatch.setattr(sys, "executable", "")
 
     cmd = yamllint_tool._get_executable_command(tool_name="yamllint")
     assert cmd == ["yamllint"]

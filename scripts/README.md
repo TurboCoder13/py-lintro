@@ -144,7 +144,7 @@ Shared utilities and helper scripts.
 | `extract_comment_body.py`            | Extract comment body from GitHub API JSON by ID     | `python scripts/utils/extract_comment_body.py <json> <comment_id>`      |
 | `extract-version.py`                 | Print `version=X.Y.Z` from TOML                     | `python scripts/utils/extract-version.py`                               |
 | `find_comment_with_marker.py`        | Find GitHub comment ID containing a specific marker | `python scripts/utils/find_comment_with_marker.py <json> <marker>`      |
-| `generate_docs.py`                   | Generate documentation from docstrings               | `python scripts/utils/generate_docs.py`                                  |
+| `generate_docs.py`                   | Generate documentation from docstrings              | `python scripts/utils/generate_docs.py`                                 |
 | `install-tools.sh`                   | Install external tools (hadolint, prettier, etc.)   | `./scripts/utils/install-tools.sh [--dry-run] [--verbose] --local`      |
 | `install.sh`                         | Install Lintro with dependencies                    | `./scripts/utils/install.sh`                                            |
 | `json_encode_body.py`                | JSON encode comment body for GitHub API requests    | `python scripts/utils/json_encode_body.py <file_or_stdin>`              |

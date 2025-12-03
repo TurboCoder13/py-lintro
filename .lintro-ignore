@@ -9,3 +9,8 @@ venv
 env
 __pycache__
 .lintro/*
+
+# Exclude pytest_option_validators.py from darglint due to timeout issues
+# The file has a function with 33 parameters causing darglint to timeout
+# This is a known limitation with complex docstrings
+lintro/tools/implementations/pytest/pytest_option_validators.py

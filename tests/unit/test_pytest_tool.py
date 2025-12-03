@@ -1,7 +1,8 @@
 """Unit tests for pytest tool implementation."""
 
 import os
-from unittest.mock import Mock, patch
+import time
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -174,6 +175,53 @@ def test_pytest_tool_build_check_command_test_mode() -> None:
         assert "--strict-config" in cmd
 
 
+def test_pytest_tool_build_check_command_with_timeout() -> None:
+    """Test building check command with timeout options."""
+    tool = PytestTool()
+    tool.set_options(timeout=300)
+
+    with (
+        patch.object(tool, "_get_executable_command", return_value=["pytest"]),
+        patch(
+            "lintro.tools.implementations.pytest.pytest_command_builder.check_plugin_installed",
+            return_value=True,
+        ),
+    ):
+        cmd = tool._build_check_command(["test_file.py"])
+
+        assert "--timeout" in cmd
+        assert "300" in cmd
+        assert "--timeout-method" in cmd
+        assert "signal" in cmd  # default method
+
+
+def test_pytest_tool_build_check_command_with_reruns() -> None:
+    """Test building check command with reruns options."""
+    tool = PytestTool()
+    tool.set_options(reruns=2, reruns_delay=1)
+
+    with patch.object(tool, "_get_executable_command", return_value=["pytest"]):
+        cmd = tool._build_check_command(["test_file.py"])
+
+        assert "--reruns" in cmd
+        assert "2" in cmd
+        assert "--reruns-delay" in cmd
+        assert "1" in cmd
+
+
+def test_pytest_tool_build_check_command_with_reruns_no_delay() -> None:
+    """Test building check command with reruns but no delay."""
+    tool = PytestTool()
+    tool.set_options(reruns=3)
+
+    with patch.object(tool, "_get_executable_command", return_value=["pytest"]):
+        cmd = tool._build_check_command(["test_file.py"])
+
+        assert "--reruns" in cmd
+        assert "3" in cmd
+        assert "--reruns-delay" not in cmd
+
+
 def test_pytest_tool_parse_output_json_format() -> None:
     """Test parsing JSON format output."""
     tool = PytestTool()
@@ -263,10 +311,13 @@ def test_pytest_tool_parse_output_fallback_to_text() -> None:
 
 def test_pytest_tool_check_no_files() -> None:
     """Test check method with no files."""
+    from lintro.models.core.tool_result import ToolResult
+
     tool = PytestTool()
 
     # Mock subprocess to simulate no tests found
     with (
+        patch.object(tool, "_verify_tool_version", return_value=None),
         patch.object(tool, "_get_executable_command", return_value=["pytest"]),
         patch.object(
             tool,
@@ -279,6 +330,40 @@ def test_pytest_tool_check_no_files() -> None:
             "prepare_test_execution",
             return_value=(0, 0, None),
         ),
+        patch.object(
+            tool.executor,
+            "execute_tests",
+            return_value=(True, "no tests ran", 0),
+        ),
+        patch.object(
+            tool.result_processor,
+            "process_test_results",
+            return_value=(
+                {
+                    "passed": 0,
+                    "failed": 0,
+                    "skipped": 0,
+                    "error": 0,
+                    "total": 0,
+                    "duration": 0.0,
+                },
+                [],
+            ),
+        ),
+        patch.object(
+            tool.result_processor,
+            "build_result",
+            return_value=ToolResult(
+                name="pytest",
+                success=True,
+                issues=[],
+                output=(
+                    '{"passed": 0, "failed": 0, "skipped": 0, '
+                    '"error": 0, "total": 0, "duration": 0.0}'
+                ),
+                issues_count=0,
+            ),
+        ),
     ):
         result = tool.check()
 
@@ -289,6 +374,8 @@ def test_pytest_tool_check_no_files() -> None:
 
 def test_pytest_tool_check_success() -> None:
     """Test successful check method."""
+    from lintro.models.core.tool_result import ToolResult
+
     tool = PytestTool()
 
     mock_result = Mock()
@@ -297,13 +384,48 @@ def test_pytest_tool_check_success() -> None:
     mock_result.stderr = ""
 
     with (
+        patch.object(tool, "_verify_tool_version", return_value=None),
         patch.object(tool, "_get_executable_command", return_value=["pytest"]),
         patch.object(
-            tool,
-            "_run_subprocess",
-            return_value=(True, "All tests passed\n511 passed in 18.53s"),
+            tool.executor,
+            "prepare_test_execution",
+            return_value=(511, 0, None),
+        ),
+        patch.object(
+            tool.executor,
+            "execute_tests",
+            return_value=(True, "All tests passed\n511 passed in 18.53s", 0),
         ),
         patch.object(tool, "_parse_output", return_value=[]),
+        patch.object(
+            tool.result_processor,
+            "process_test_results",
+            return_value=(
+                {
+                    "passed": 511,
+                    "failed": 0,
+                    "skipped": 0,
+                    "error": 0,
+                    "total": 511,
+                    "duration": 18.53,
+                },
+                [],
+            ),
+        ),
+        patch.object(
+            tool.result_processor,
+            "build_result",
+            return_value=ToolResult(
+                name="pytest",
+                success=True,
+                issues=[],
+                output=(
+                    '{"passed": 511, "failed": 0, "skipped": 0, '
+                    '"error": 0, "total": 511, "duration": 18.53}'
+                ),
+                issues_count=0,
+            ),
+        ),
     ):
         result = tool.check(["test_file.py"])
 
@@ -318,17 +440,50 @@ def test_pytest_tool_check_success() -> None:
 
 def test_pytest_tool_check_failure() -> None:
     """Test failed check method."""
+    from lintro.parsers.pytest.pytest_issue import PytestIssue
+
     tool = PytestTool()
 
+    mock_issue = PytestIssue(
+        file="test_file.py",
+        line=0,
+        test_name="test_failure",
+        message="AssertionError",
+        test_status="FAILED",
+    )
+
     with (
+        patch.object(tool, "_verify_tool_version", return_value=None),
         patch.object(tool, "_get_executable_command", return_value=["pytest"]),
         patch.object(
-            tool,
-            "_run_subprocess",
+            tool.executor,
+            "prepare_test_execution",
+            return_value=(511, 0, None),
+        ),
+        patch.object(
+            tool.executor,
+            "execute_tests",
             return_value=(
                 False,
                 "FAILED test_file.py::test_failure - AssertionError\n"
                 "510 passed, 1 failed in 18.53s",
+                1,
+            ),
+        ),
+        patch.object(tool, "_parse_output", return_value=[mock_issue]),
+        patch.object(
+            tool.result_processor,
+            "process_test_results",
+            return_value=(
+                {
+                    "passed": 510,
+                    "failed": 1,
+                    "skipped": 0,
+                    "error": 0,
+                    "total": 511,
+                    "duration": 18.53,
+                },
+                [mock_issue],
             ),
         ),
     ):
@@ -351,10 +506,16 @@ def test_pytest_tool_check_exception() -> None:
     tool = PytestTool()
 
     with (
+        patch.object(tool, "_verify_tool_version", return_value=None),
         patch.object(tool, "_get_executable_command", return_value=["pytest"]),
         patch.object(
-            tool,
-            "_run_subprocess",
+            tool.executor,
+            "prepare_test_execution",
+            return_value=(511, 0, None),
+        ),
+        patch.object(
+            tool.executor,
+            "execute_tests",
             side_effect=Exception("Test error"),
         ),
     ):
@@ -390,27 +551,61 @@ def test_pytest_tool_fix_with_can_fix_true() -> None:
 
 def test_pytest_tool_check_paths_vs_files_precedence() -> None:
     """Test that paths parameter takes precedence over files."""
+    from lintro.models.core.tool_result import ToolResult
+
     tool = PytestTool()
 
-    # Create a mock to capture the command passed to _run_subprocess
-    mock_run_subprocess = Mock(return_value=(True, "All tests passed"))
+    # Create a mock to capture the command passed to execute_tests
+    mock_execute_tests = Mock(return_value=(True, "All tests passed", 0))
 
     with (
+        patch.object(tool, "_verify_tool_version", return_value=None),
         patch.object(tool, "_get_executable_command", return_value=["pytest"]),
         patch.object(
-            tool,
-            "_run_subprocess",
-            mock_run_subprocess,
+            tool.executor,
+            "prepare_test_execution",
+            return_value=(0, 0, None),
+        ),
+        patch.object(
+            tool.executor,
+            "execute_tests",
+            mock_execute_tests,
         ),
         patch.object(tool, "_parse_output", return_value=[]),
+        patch.object(
+            tool.result_processor,
+            "process_test_results",
+            return_value=(
+                {
+                    "passed": 0,
+                    "failed": 0,
+                    "skipped": 0,
+                    "error": 0,
+                    "total": 0,
+                    "duration": 0.0,
+                },
+                [],
+            ),
+        ),
+        patch.object(
+            tool.result_processor,
+            "build_result",
+            return_value=ToolResult(
+                name="pytest",
+                success=True,
+                issues=[],
+                output='{"passed": 0}',
+                issues_count=0,
+            ),
+        ),
     ):
         # Both paths and files provided; paths should be used
         tool.check(files=["file.py"], paths=["path/"])
 
-        # Verify _run_subprocess was called
-        assert mock_run_subprocess.called
-        # Get the command that was passed to _run_subprocess
-        call_args = mock_run_subprocess.call_args
+        # Verify execute_tests was called
+        assert mock_execute_tests.called
+        # Get the command that was passed to execute_tests
+        call_args = mock_execute_tests.call_args
         cmd = call_args[0][0]  # First positional argument is the command list
 
         # Assert that paths argument ("path/") is in the command
@@ -537,11 +732,22 @@ def test_pytest_tool_parse_output_mixed_formats() -> None:
 
 def test_pytest_tool_load_config_error_handling() -> None:
     """Test loading pytest config with error handling."""
-    from lintro.tools.implementations.pytest.pytest_utils import load_pytest_config
+    from lintro.tools.implementations.pytest.pytest_utils import (
+        clear_pytest_config_cache,
+        load_pytest_config,
+    )
 
-    # Test with invalid config files
+    # Clear cache to ensure fresh read
+    clear_pytest_config_cache()
+
+    # Mock stat to return a fake stat result, exists to return True,
+    # and open to raise an exception
+    fake_stat_result = MagicMock()
+    fake_stat_result.st_mtime = 12345.0
+
     with (
         patch("pathlib.Path.exists", return_value=True),
+        patch("pathlib.Path.stat", return_value=fake_stat_result),
         patch("builtins.open", side_effect=Exception("Read error")),
     ):
         result = load_pytest_config()
@@ -1174,3 +1380,272 @@ def test_pytest_tool_check_with_parametrize_help() -> None:
 
     assert result.success is True
     assert "Parametrization" in result.output
+
+
+def test_pytest_config_caching() -> None:
+    """Test that pytest config loading uses caching."""
+    from lintro.tools.implementations.pytest.pytest_utils import (
+        clear_pytest_config_cache,
+        load_pytest_config,
+    )
+
+    # Clear cache to start fresh
+    clear_pytest_config_cache()
+
+    # First call should populate cache
+    config1 = load_pytest_config()
+
+    # Second call should use cached result
+    config2 = load_pytest_config()
+
+    # Results should be identical (same object if cached properly)
+    assert config1 == config2
+
+    # Clear cache and verify different result possible
+    clear_pytest_config_cache()
+    config3 = load_pytest_config()
+    # Config should still be the same content, but cache should be cleared
+    assert config3 == config1
+
+
+def test_pytest_config_caching_with_file_changes(tmp_path) -> None:
+    """Test that config cache invalidates when files change.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+    """
+    from lintro.tools.implementations.pytest.pytest_utils import (
+        clear_pytest_config_cache,
+        load_pytest_config,
+    )
+
+    # Change to temp directory
+    original_cwd = os.getcwd()
+    os.chdir(tmp_path)
+
+    try:
+        clear_pytest_config_cache()
+
+        # Create a pyproject.toml
+        pyproject_content = """
+[tool.pytest.ini_options]
+addopts = "-v"
+"""
+        (tmp_path / "pyproject.toml").write_text(pyproject_content)
+
+        # First load should cache the config
+        config1 = load_pytest_config()
+        assert config1.get("addopts") == "-v"
+
+        # Small delay to ensure file modification time changes
+        # Some filesystems have 1-second mtime resolution
+        time.sleep(1.1)
+
+        # Clear cache to ensure we re-read from file
+        clear_pytest_config_cache()
+
+        # Modify the file
+        pyproject_content_modified = """
+[tool.pytest.ini_options]
+addopts = "-v --tb=short"
+"""
+        (tmp_path / "pyproject.toml").write_text(pyproject_content_modified)
+
+        # Second load should pick up changes (cache invalidation)
+        config2 = load_pytest_config()
+        assert config2.get("addopts") == "-v --tb=short"
+
+    finally:
+        os.chdir(original_cwd)
+
+
+def test_collect_tests_once_single_pass(tmp_path) -> None:
+    """Test that collect_tests_once performs only a single pytest --collect-only call.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+    """
+    from lintro.tools.implementations.pytest.pytest_utils import collect_tests_once
+
+    # Create test files
+    (tmp_path / "test_example.py").write_text(
+        """
+def test_one():
+    pass
+
+def test_two():
+    pass
+""",
+    )
+
+    (tmp_path / "docker").mkdir()
+    (tmp_path / "docker" / "test_docker.py").write_text(
+        """
+def test_docker_one():
+    pass
+""",
+    )
+
+    original_cwd = os.getcwd()
+    os.chdir(tmp_path)
+
+    try:
+        tool = PytestTool()
+
+        # Mock the subprocess call to count how many times it's called
+        call_count = 0
+
+        def mock_run_subprocess(cmd):
+            nonlocal call_count
+            call_count += 1
+            # Simulate successful collection output in pytest --collect-only format
+            output = """<Module test_example.py>
+  <Function test_one>
+  <Function test_two>
+<Dir docker>
+  <Function test_docker_one>
+
+3 tests collected in 0.01s"""
+            return True, output
+
+        tool._run_subprocess = mock_run_subprocess
+
+        # Call collect_tests_once
+        total_count, docker_count = collect_tests_once(tool, ["."])
+
+        # Verify only one subprocess call was made
+        assert call_count == 1
+
+        # Verify correct counts were extracted
+        assert total_count == 3
+        assert docker_count == 1
+
+    finally:
+        os.chdir(original_cwd)
+
+
+def test_collect_tests_once_no_tests(tmp_path) -> None:
+    """Test collect_tests_once with no tests found.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+    """
+    from lintro.tools.implementations.pytest.pytest_utils import collect_tests_once
+
+    original_cwd = os.getcwd()
+    os.chdir(tmp_path)
+
+    try:
+        tool = PytestTool()
+
+        # Mock subprocess for no tests
+        def mock_run_subprocess(cmd):
+            output = "no tests collected in 0.01s"
+            return True, output
+
+        tool._run_subprocess = mock_run_subprocess
+
+        total_count, docker_count = collect_tests_once(tool, ["."])
+
+        assert total_count == 0
+        assert docker_count == 0
+
+    finally:
+        os.chdir(original_cwd)
+
+
+def test_collect_tests_once_only_docker_tests(tmp_path) -> None:
+    """Test collect_tests_once with only docker tests.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+    """
+    from lintro.tools.implementations.pytest.pytest_utils import collect_tests_once
+
+    # Create only docker tests
+    (tmp_path / "docker").mkdir()
+    (tmp_path / "docker" / "test_docker.py").write_text(
+        """
+def test_docker_one():
+    pass
+
+def test_docker_two():
+    pass
+""",
+    )
+
+    original_cwd = os.getcwd()
+    os.chdir(tmp_path)
+
+    try:
+        tool = PytestTool()
+
+        # Mock subprocess for docker tests only
+        def mock_run_subprocess(cmd):
+            output = """<Dir docker>
+  <Function test_docker_one>
+  <Function test_docker_two>
+
+2 tests collected in 0.01s"""
+            return True, output
+
+        tool._run_subprocess = mock_run_subprocess
+
+        total_count, docker_count = collect_tests_once(tool, ["."])
+
+        assert total_count == 2
+        assert docker_count == 2
+
+    finally:
+        os.chdir(original_cwd)
+
+
+def test_collect_tests_once_mixed_tests(tmp_path) -> None:
+    """Test collect_tests_once with mixed regular and docker tests.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+    """
+    from lintro.tools.implementations.pytest.pytest_utils import collect_tests_once
+
+    # Create mixed tests
+    (tmp_path / "test_regular.py").write_text(
+        """
+def test_regular():
+    pass
+""",
+    )
+
+    (tmp_path / "docker").mkdir()
+    (tmp_path / "docker" / "test_docker.py").write_text(
+        """
+def test_docker():
+    pass
+""",
+    )
+
+    original_cwd = os.getcwd()
+    os.chdir(tmp_path)
+
+    try:
+        tool = PytestTool()
+
+        # Mock subprocess for mixed tests
+        def mock_run_subprocess(cmd):
+            output = """<Module test_regular.py>
+  <Function test_regular>
+<Dir docker>
+  <Function test_docker>
+
+2 tests collected in 0.01s"""
+            return True, output
+
+        tool._run_subprocess = mock_run_subprocess
+
+        total_count, docker_count = collect_tests_once(tool, ["."])
+
+        assert total_count == 2
+        assert docker_count == 1
+
+    finally:
+        os.chdir(original_cwd)

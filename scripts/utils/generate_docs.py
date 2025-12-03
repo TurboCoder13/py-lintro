@@ -14,7 +14,11 @@ from lintro.tools.core.version_requirements import (
 
 
 def generate_version_table() -> str:
-    """Generate a Markdown table of tool versions."""
+    """Generate a Markdown table of tool versions.
+
+    Returns:
+        str: Markdown-formatted table string with tool version information.
+    """
     versions = get_minimum_versions()
 
     # Separate bundled Python tools from external tools
