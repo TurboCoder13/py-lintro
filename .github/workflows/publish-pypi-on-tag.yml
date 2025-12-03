@@ -24,20 +24,20 @@ permissions:
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@448d8d96fea3374dd1e534f67afd8d61182c0de7
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@4935c2f2f61c047d851bebae6629d20ed97292d6
     permissions:
       contents: read
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@448d8d96fea3374dd1e534f67afd8d61182c0de7
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@4935c2f2f61c047d851bebae6629d20ed97292d6
     permissions:
       contents: read
 
   sbom:
     name: Generate and verify SBOM
     needs: [build, quality]
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@448d8d96fea3374dd1e534f67afd8d61182c0de7
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@4935c2f2f61c047d851bebae6629d20ed97292d6
     permissions:
       contents: read
       actions: read
@@ -59,7 +59,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@92c522aaa6f53af082553dedc1596c80b71aba33
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -72,12 +72,12 @@ jobs:
             pypi.org:443
             files.pythonhosted.org:443
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@448d8d96fea3374dd1e534f67afd8d61182c0de7
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@4935c2f2f61c047d851bebae6629d20ed97292d6
         with:
           python-version: '3.13'
       - name: Ensure tag points to a commit on main
@@ -100,7 +100,7 @@ jobs:
           verify-metadata: false
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836 # v2
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
