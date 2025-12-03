@@ -29,6 +29,10 @@ source "$(dirname "$0")/../utils/utils.sh"
 GITHUB_STEP_SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
 GITHUB_ENV="${GITHUB_ENV:-/dev/null}"
 
+# Ensure CHK_EXIT_CODE is always set, even on early exit
+# This prevents the "Fail on Linting Issues" step from triggering on empty value
+trap 'echo "CHK_EXIT_CODE=${CHK_EXIT_CODE:-1}" >> "$GITHUB_ENV"' EXIT
+
 echo "## 🔧 Lintro Code Quality & Analysis" >> $GITHUB_STEP_SUMMARY
 echo "" >> $GITHUB_STEP_SUMMARY
 
@@ -36,16 +40,18 @@ echo "### 🛠️ Step 1: Running Lintro Checks" >> $GITHUB_STEP_SUMMARY
 echo "Running \`lintro check\` in Docker container against the entire project..." >> $GITHUB_STEP_SUMMARY
 echo "" >> $GITHUB_STEP_SUMMARY
 
-# Always build a fresh Docker image to ensure tools and configs are current
-echo "Building fresh Docker image py-lintro:latest..." >> $GITHUB_STEP_SUMMARY
-docker build -t py-lintro:latest . > /dev/null 2>&1
+# NOTE: Docker image is pre-built by the workflow step "Build Docker image"
+# Do NOT rebuild here - it can fail silently and exit before setting CHK_EXIT_CODE
 
 # Run lintro check in Docker container against the entire project
 # The .lintro-ignore file will automatically exclude test_samples/
+# Note: darglint timeout increased for CI (Docker is slower than local)
 set +e  # Don't exit on error
 # Use the image entrypoint to invoke lintro directly; avoid shell passthrough
-docker run --rm -v "$PWD:/code" -w /code py-lintro:latest lintro check . > chk-output.txt 2>&1
-CHK_EXIT_CODE=$?
+# Use tee to write output to both stdout (build logs) and chk-output.txt (step summary/PR comments)
+docker run --rm -v "$PWD:/code" -w /code py-lintro:latest lintro check . \
+    --tool-options darglint:timeout=120 2>&1 | tee chk-output.txt
+CHK_EXIT_CODE=${PIPESTATUS[0]}
 set -e  # Exit on error again
 
 echo "### 📊 Linting Results:" >> $GITHUB_STEP_SUMMARY

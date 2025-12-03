@@ -22,6 +22,17 @@ set -euo pipefail
 # Source utilities
 source "$(dirname "${BASH_SOURCE[0]}")/../utils/utils.sh"
 
+# Determine Python command to use (uv run python if available, else python3/python)
+get_python_cmd() {
+    if command -v uv >/dev/null 2>&1; then
+        echo "uv run python"
+    elif command -v python3 >/dev/null 2>&1; then
+        echo "python3"
+    else
+        echo "python"
+    fi
+}
+
 show_help() {
     cat <<'EOF'
 Unified auto-tagging script for GitHub Actions workflows.
@@ -131,7 +142,9 @@ detect_previous_version() {
     
     # Use robust Python-based version extraction on the temporary file
     local extract_output
-    extract_output=$(python3 "${script_dir}/../utils/extract-version.py" --file "$temp_file" 2>&1)
+    local python_cmd
+    python_cmd=$(get_python_cmd)
+    extract_output=$($python_cmd "${script_dir}/../utils/extract-version.py" --file "$temp_file" 2>&1)
     local exit_code=$?
     
     if [[ $exit_code -eq 0 ]] && [[ -n "$extract_output" ]]; then
@@ -163,7 +176,9 @@ read_version_from_pyproject() {
     
     # Use robust Python-based version extraction
     local extract_output
-    extract_output=$(python3 "${script_dir}/../utils/extract-version.py" 2>&1)
+    local python_cmd
+    python_cmd=$(get_python_cmd)
+    extract_output=$($python_cmd "${script_dir}/../utils/extract-version.py" 2>&1)
     local exit_code=$?
     
     if [[ $exit_code -ne 0 ]]; then

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
 ---
 name: Publish - TestPyPI Staging
 # Manual publish to TestPyPI for testing package distribution before production release.
@@ -45,11 +47,13 @@ jobs:
             files.pythonhosted.org:443
             test.pypi.org:443
       - name: Download artifacts
+        # yamllint disable-line rule:line-length
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: dist
           path: dist/
       - name: Publish to TestPyPI (Trusted Publishing)
+        # yamllint disable-line rule:line-length
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:
           repository-url: https://test.pypi.org/legacy/

@@ -62,6 +62,14 @@ lintro format
 
 → [Main README → Advanced Usage](../README.md#advanced-usage)
 
+**🧪 Running Tests:**
+
+```bash
+lintro test
+```
+
+→ [Pytest Analysis](tool-analysis/pytest-analysis.md)
+
 **🐳 Containerized Development:**
 
 ```bash
@@ -110,6 +118,7 @@ lintro format
 | **Black**      | Python           | Formatting (Post-check) | [Config Guide](configuration.md#post-checks-configuration) |
 | **Darglint**   | Python           | Docstring Validation    | [Analysis](tool-analysis/darglint-analysis.md)             |
 | **Bandit**     | Python           | Security Linting        | [Analysis](tool-analysis/bandit-analysis.md)               |
+| **Pytest**     | Python           | Test Runner             | [Analysis](tool-analysis/pytest-analysis.md)               |
 | **Prettier**   | JS/TS/JSON/CSS   | Code Formatting         | [Analysis](tool-analysis/prettier-analysis.md)             |
 | **Yamllint**   | YAML             | Syntax & Style          | [Config Guide](configuration.md#yamllint-configuration)    |
 | **Actionlint** | GitHub Workflows | Workflow Linting        | [Analysis](tool-analysis/actionlint-analysis.md)           |
@@ -126,8 +135,24 @@ lintro check
 # Auto-fix issues where possible
 lintro format
 
+# Run tests
+lintro test
+
 # List available tools
 lintro list-tools [OPTIONS]
+```
+
+### Command Chaining
+
+```bash
+# Run multiple commands in sequence
+lintro format, check, test
+
+# With specific tools
+lintro format --tools black, check --tools ruff, test
+
+# Using aliases
+lintro fmt, chk, tst
 ```
 
 ### Common Options

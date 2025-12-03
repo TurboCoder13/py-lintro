@@ -4,6 +4,48 @@ Small helpers to normalize paths for display consistency.
 """
 
 import os
+from pathlib import Path
+
+
+def find_lintro_ignore() -> Path | None:
+    """Find .lintro-ignore file by searching upward from current directory.
+
+    Searches upward from the current working directory to find the project root
+    by looking for .lintro-ignore or pyproject.toml files.
+
+    Returns:
+        Path | None: Path to .lintro-ignore file if found, None otherwise.
+    """
+    current_dir = Path.cwd()
+    # Limit search to prevent infinite loops (e.g., if we're in /)
+    max_depth = 20
+    depth = 0
+
+    while depth < max_depth:
+        lintro_ignore_path = current_dir / ".lintro-ignore"
+        if lintro_ignore_path.exists():
+            return lintro_ignore_path
+
+        # Also check for pyproject.toml as project root indicator
+        pyproject_path = current_dir / "pyproject.toml"
+        if pyproject_path.exists():
+            # If pyproject.toml exists, check for .lintro-ignore in same directory
+            lintro_ignore_path = current_dir / ".lintro-ignore"
+            if lintro_ignore_path.exists():
+                return lintro_ignore_path
+            # Even if .lintro-ignore doesn't exist, we found project root
+            # Return None to indicate no .lintro-ignore found
+            return None
+
+        # Move up one directory
+        parent_dir = current_dir.parent
+        if parent_dir == current_dir:
+            # Reached filesystem root
+            break
+        current_dir = parent_dir
+        depth += 1
+
+    return None
 
 
 def normalize_file_path_for_display(file_path: str) -> str:

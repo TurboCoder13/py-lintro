@@ -26,7 +26,8 @@ runs:
     - name: Pre Setup Docker (Buildx)
       shell: bash
       run: |
-        echo "[setup-docker] Configuring Docker Buildx with driver: ${{ inputs.driver }}"
+        echo "[setup-docker] Configuring Docker Buildx with driver: " \
+          "${{ inputs.driver }}"
         echo "[setup-docker] Login: ${{ inputs.login }}"
         echo "[setup-docker] Registry: ${{ inputs.registry }}"
     - name: Set up Docker Buildx

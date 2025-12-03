@@ -3,6 +3,7 @@
 import subprocess  # nosec B404 - vetted use via BaseTool._run_subprocess
 from dataclasses import dataclass, field
 
+import click
 from loguru import logger
 
 from lintro.enums.darglint_strictness import (
@@ -11,12 +12,14 @@ from lintro.enums.darglint_strictness import (
 )
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.parsers.darglint.darglint_issue import DarglintIssue
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
 
 # Constants for Darglint configuration
-DARGLINT_DEFAULT_TIMEOUT: int = 30
+# Increased from 30 to handle large files with complex docstrings
+DARGLINT_DEFAULT_TIMEOUT: int = 60
 DARGLINT_DEFAULT_PRIORITY: int = 45
 DARGLINT_FILE_PATTERNS: list[str] = ["*.py"]
 DARGLINT_STRICTNESS_LEVELS: tuple[str, ...] = tuple(
@@ -26,6 +29,25 @@ DARGLINT_MIN_VERBOSITY: int = 1
 DARGLINT_MAX_VERBOSITY: int = 3
 DARGLINT_DEFAULT_VERBOSITY: int = 2
 DARGLINT_DEFAULT_STRICTNESS: str = "full"
+
+
+@dataclass
+class FileProcessResult:
+    """Result of processing a single file with Darglint.
+
+    Attributes:
+        success: Whether the file was processed successfully.
+        issues_count: Number of issues found.
+        issues: List of parsed issues.
+        output: Raw output from the tool, or None if no output.
+        timeout_issue: Timeout issue if a timeout occurred, or None.
+    """
+
+    success: bool
+    issues_count: int
+    issues: list[DarglintIssue]
+    output: str | None
+    timeout_issue: DarglintIssue | None
 
 
 @dataclass
@@ -157,6 +179,66 @@ class DarglintTool(BaseTool):
 
         return cmd
 
+    def _process_file(
+        self,
+        file_path: str,
+        timeout: int,
+    ) -> FileProcessResult:
+        """Process a single file with Darglint.
+
+        Args:
+            file_path: Path to the file to process.
+            timeout: Timeout in seconds for the subprocess execution.
+
+        Returns:
+            FileProcessResult: Result containing success status, issues, and output.
+        """
+        cmd: list[str] = self._build_command() + [str(file_path)]
+        try:
+            success: bool
+            output: str
+            success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
+            issues = parse_darglint_output(output=output)
+            issues_count: int = len(issues)
+            return FileProcessResult(
+                success=success and issues_count == 0,
+                issues_count=issues_count,
+                issues=issues,
+                output=output,
+                timeout_issue=None,
+            )
+        except subprocess.TimeoutExpired:
+            # Create a timeout issue object to display in the table
+            timeout_issue = DarglintIssue(
+                file=str(file_path),
+                line=0,
+                code="TIMEOUT",
+                message=(
+                    f"Darglint execution timed out "
+                    f"({timeout}s limit exceeded). "
+                    "This may indicate:\n"
+                    "  - Large file taking too long to analyze\n"
+                    "  - Complex docstrings requiring extensive parsing\n"
+                    "  - Need to increase timeout via "
+                    "--tool-options darglint:timeout=N"
+                ),
+            )
+            return FileProcessResult(
+                success=False,
+                issues_count=0,
+                issues=[],
+                output=None,
+                timeout_issue=timeout_issue,
+            )
+        except Exception as e:
+            return FileProcessResult(
+                success=False,
+                issues_count=0,
+                issues=[],
+                output=f"Error processing {file_path}: {str(e)}",
+                timeout_issue=None,
+            )
+
     def check(
         self,
         paths: list[str],
@@ -169,6 +251,11 @@ class DarglintTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
+
         self._validate_paths(paths=paths)
         if not paths:
             return ToolResult(
@@ -189,44 +276,116 @@ class DarglintTool(BaseTool):
 
         timeout: int = self.options.get("timeout", DARGLINT_DEFAULT_TIMEOUT)
         all_outputs: list[str] = []
+        all_issues: list[DarglintIssue] = []
         all_success: bool = True
         skipped_files: list[str] = []
+        execution_failures: int = 0
         total_issues: int = 0
 
-        for file_path in python_files:
-            cmd: list[str] = self._build_command() + [str(file_path)]
-            try:
-                success: bool
-                output: str
-                success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
-                issues = parse_darglint_output(output=output)
-                issues_count: int = len(issues)
-                if not (success and issues_count == 0):
+        # Show progress bar only when processing multiple files
+        if len(python_files) >= 2:
+            with click.progressbar(
+                python_files,
+                label="Processing files",
+                bar_template="%(label)s  %(info)s",
+            ) as bar:
+                for file_path in bar:
+                    result = self._process_file(file_path=file_path, timeout=timeout)
+                    if not result.success:
+                        all_success = False
+                    total_issues += result.issues_count
+                    if result.issues:
+                        all_issues.extend(result.issues)
+                    if result.output:
+                        all_outputs.append(result.output)
+                    if result.timeout_issue:
+                        skipped_files.append(file_path)
+                        execution_failures += 1
+                        all_issues.append(result.timeout_issue)
+                    elif (
+                        not result.success
+                        and not result.timeout_issue
+                        and result.issues_count == 0
+                        and result.output
+                        and "Error" in result.output
+                    ):
+                        # Only count as execution failure if no lint issues were found
+                        # and there's an actual error (not just lint findings)
+                        execution_failures += 1
+                        # Create an execution error issue to keep issues consistent
+                        # with issues_count
+                        error_issue = DarglintIssue(
+                            file=str(file_path),
+                            line=0,
+                            code="EXEC_ERROR",
+                            message=(
+                                f"Execution error: {result.output.strip()}"
+                                if result.output
+                                else "Execution error during darglint processing"
+                            ),
+                        )
+                        all_issues.append(error_issue)
+        else:
+            # Process without progress bar for single file or no files
+            for file_path in python_files:
+                result = self._process_file(file_path=file_path, timeout=timeout)
+                if not result.success:
                     all_success = False
-                total_issues += issues_count
-                # Store parsed issues on the aggregate result later via ToolResult
-                all_outputs.append(output)
-            except subprocess.TimeoutExpired:
-                skipped_files.append(file_path)
-                all_success = False
-            except Exception as e:
-                all_outputs.append(f"Error processing {file_path}: {str(e)}")
-                all_success = False
+                total_issues += result.issues_count
+                if result.issues:
+                    all_issues.extend(result.issues)
+                if result.output:
+                    all_outputs.append(result.output)
+                if result.timeout_issue:
+                    skipped_files.append(file_path)
+                    execution_failures += 1
+                    all_issues.append(result.timeout_issue)
+                elif (
+                    not result.success
+                    and not result.timeout_issue
+                    and result.issues_count == 0
+                    and result.output
+                    and "Error" in result.output
+                ):
+                    # Only count as execution failure if no lint issues were found
+                    # and there's an actual error (not just lint findings)
+                    execution_failures += 1
+                    # Create an execution error issue to keep issues consistent
+                    # with issues_count
+                    error_issue = DarglintIssue(
+                        file=str(file_path),
+                        line=0,
+                        code="EXEC_ERROR",
+                        message=(
+                            f"Execution error: {result.output.strip()}"
+                            if result.output
+                            else "Execution error during darglint processing"
+                        ),
+                    )
+                    all_issues.append(error_issue)
 
         output: str = "\n".join(all_outputs)
         if skipped_files:
-            output += f"\n\nSkipped {len(skipped_files)} files due to timeout:"
+            output += (
+                f"\n\nSkipped {len(skipped_files)} file(s) due to timeout "
+                f"({timeout}s limit exceeded):"
+            )
             for file in skipped_files:
                 output += f"\n  - {file}"
 
         if not output:
             output = None
 
+        # Include execution failures (timeouts/errors) in issues_count
+        # to properly reflect tool failure status
+        total_issues_with_failures = total_issues + execution_failures
+
         return ToolResult(
             name=self.name,
             success=all_success,
             output=output,
-            issues_count=total_issues,
+            issues_count=total_issues_with_failures,
+            issues=all_issues,
         )
 
     def fix(

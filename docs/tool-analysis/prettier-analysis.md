@@ -23,6 +23,7 @@ Prettier provides extensive CLI options including:
 - ✅ **Formatting capability**: Full preservation through `--write` flag
 - ✅ **Check mode**: Preserved through `--check` flag
 - ✅ **File targeting**: Supports file patterns and paths
+- ✅ **YAML formatting**: Formats `*.yml` / `*.yaml` files while yamllint handles linting
 - ✅ **Configuration files**: Respects `.prettierrc` and `prettier.config.js`
 - ✅ **Error detection**: Captures formatting violations as issues
 - ✅ **Auto-fixing**: Can automatically format files when `fix()` is called

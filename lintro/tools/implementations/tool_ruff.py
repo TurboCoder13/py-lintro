@@ -1,6 +1,7 @@
 """Ruff Python linter and formatter integration."""
 
 import os
+import subprocess  # nosec B404 - used safely with shell disabled
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -13,6 +14,11 @@ from lintro.parsers.ruff.ruff_issue import RuffFormatIssue
 from lintro.parsers.ruff.ruff_parser import (
     parse_ruff_format_check_output,
     parse_ruff_output,
+)
+from lintro.tools.core.timeout_utils import (
+    create_timeout_result,
+    get_timeout_value,
+    run_subprocess_with_timeout,
 )
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
@@ -54,10 +60,12 @@ def _load_lintro_ignore() -> list[str]:
     Returns:
         list[str]: List of ignore patterns.
     """
-    ignore_patterns: list[str] = []
-    lintro_ignore_path = Path(".lintro-ignore")
+    from lintro.utils.path_utils import find_lintro_ignore
 
-    if lintro_ignore_path.exists():
+    ignore_patterns: list[str] = []
+    lintro_ignore_path = find_lintro_ignore()
+
+    if lintro_ignore_path and lintro_ignore_path.exists():
         try:
             with open(lintro_ignore_path, encoding="utf-8") as f:
                 for line in f:
@@ -291,8 +299,9 @@ class RuffTool(BaseTool):
             cmd.extend(["--ignore", ",".join(sorted(ignored_rules))])
         if extend_selected_rules:
             cmd.extend(["--extend-select", ",".join(extend_selected_rules)])
-        if self.options.get("extend_ignore"):
-            cmd.extend(["--extend-ignore", ",".join(self.options["extend_ignore"])])
+        extend_ignored_rules = list(self.options.get("extend_ignore") or [])
+        if extend_ignored_rules:
+            cmd.extend(["--extend-ignore", ",".join(extend_ignored_rules)])
         if self.options.get("line_length"):
             cmd.extend(["--line-length", str(self.options["line_length"])])
         if self.options.get("target_version"):
@@ -358,6 +367,11 @@ class RuffTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
+
         self._validate_paths(paths=paths)
         if not paths:
             return ToolResult(
@@ -393,16 +407,31 @@ class RuffTool(BaseTool):
             os.path.relpath(f, cwd) if cwd else f for f in python_files
         ]
 
-        timeout: int = self.options.get("timeout", RUFF_DEFAULT_TIMEOUT)
+        timeout: int = get_timeout_value(self, RUFF_DEFAULT_TIMEOUT)
         # Lint check
         cmd: list[str] = self._build_check_command(files=rel_files, fix=False)
         success_lint: bool
         output_lint: str
-        success_lint, output_lint = self._run_subprocess(
-            cmd=cmd,
-            timeout=timeout,
-            cwd=cwd,
-        )
+        try:
+            success_lint, output_lint = run_subprocess_with_timeout(
+                tool=self,
+                cmd=cmd,
+                timeout=timeout,
+                cwd=cwd,
+            )
+        except subprocess.TimeoutExpired:
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=timeout,
+                cmd=cmd,
+            )
+            return ToolResult(
+                name=self.name,
+                success=timeout_result["success"],
+                output=timeout_result["output"],
+                issues_count=timeout_result["issues_count"],
+                issues=timeout_result["issues"],
+            )
         lint_issues = parse_ruff_output(output=output_lint)
         lint_issues_count: int = len(lint_issues)
 
@@ -417,11 +446,26 @@ class RuffTool(BaseTool):
             )
             success_format: bool
             output_format: str
-            success_format, output_format = self._run_subprocess(
-                cmd=format_cmd,
-                timeout=timeout,
-                cwd=cwd,
-            )
+            try:
+                success_format, output_format = self._run_subprocess(
+                    cmd=format_cmd,
+                    timeout=timeout,
+                    cwd=cwd,
+                )
+            except subprocess.TimeoutExpired:
+                timeout_msg = (
+                    f"Ruff execution timed out ({timeout}s limit exceeded).\n\n"
+                    "This may indicate:\n"
+                    "  - Large codebase taking too long to process\n"
+                    "  - Need to increase timeout via --tool-options ruff:timeout=N"
+                )
+                return ToolResult(
+                    name=self.name,
+                    success=False,
+                    output=timeout_msg,
+                    issues_count=1,  # Count timeout as execution failure
+                    issues=lint_issues,  # Include any lint issues found before timeout
+                )
             format_files = parse_ruff_format_check_output(output=output_format)
             # Normalize files to absolute paths to keep behavior consistent with
             # direct CLI calls and stabilize tests that compare exact paths.
@@ -465,6 +509,11 @@ class RuffTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
+
         self._validate_paths(paths=paths)
         if not paths:
             return ToolResult(
@@ -491,7 +540,7 @@ class RuffTool(BaseTool):
             )
 
         logger.debug(f"Files to fix: {python_files}")
-        timeout: int = self.options.get("timeout", RUFF_DEFAULT_TIMEOUT)
+        timeout: int = get_timeout_value(self, RUFF_DEFAULT_TIMEOUT)
         all_outputs: list[str] = []
         overall_success: bool = True
 
@@ -502,10 +551,28 @@ class RuffTool(BaseTool):
         cmd_check: list[str] = self._build_check_command(files=python_files, fix=False)
         success_check: bool
         output_check: str
-        success_check, output_check = self._run_subprocess(
-            cmd=cmd_check,
-            timeout=timeout,
-        )
+        try:
+            success_check, output_check = run_subprocess_with_timeout(
+                tool=self,
+                cmd=cmd_check,
+                timeout=timeout,
+            )
+        except subprocess.TimeoutExpired:
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=timeout,
+                cmd=cmd_check,
+            )
+            return ToolResult(
+                name=self.name,
+                success=timeout_result["success"],
+                output=timeout_result["output"],
+                issues_count=timeout_result["issues_count"],
+                issues=timeout_result["issues"],
+                initial_issues_count=0,
+                fixed_issues_count=0,
+                remaining_issues_count=1,
+            )
         initial_issues = parse_ruff_output(output=output_check)
         initial_count: int = len(initial_issues)
 
@@ -519,10 +586,29 @@ class RuffTool(BaseTool):
             )
             success_format_check: bool
             output_format_check: str
-            success_format_check, output_format_check = self._run_subprocess(
-                cmd=format_cmd_check,
-                timeout=timeout,
-            )
+            try:
+                success_format_check, output_format_check = self._run_subprocess(
+                    cmd=format_cmd_check,
+                    timeout=timeout,
+                )
+            except subprocess.TimeoutExpired:
+                timeout_msg = (
+                    f"Ruff execution timed out ({timeout}s limit exceeded).\n\n"
+                    "This may indicate:\n"
+                    "  - Large codebase taking too long to process\n"
+                    "  - Need to increase timeout via --tool-options ruff:timeout=N"
+                )
+                return ToolResult(
+                    name=self.name,
+                    success=False,
+                    output=timeout_msg,
+                    issues_count=1,  # Count timeout as execution failure
+                    # Include any lint issues found before timeout
+                    issues=initial_issues,
+                    initial_issues_count=initial_count,
+                    fixed_issues_count=0,
+                    remaining_issues_count=1,
+                )
             format_files = parse_ruff_format_check_output(output=output_format_check)
             initial_format_count = len(format_files)
 
@@ -536,7 +622,25 @@ class RuffTool(BaseTool):
         if self.options.get("lint_fix", True):
             cmd: list[str] = self._build_check_command(files=python_files, fix=True)
             output: str
-            success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
+            try:
+                success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
+            except subprocess.TimeoutExpired:
+                timeout_msg = (
+                    f"Ruff execution timed out ({timeout}s limit exceeded).\n\n"
+                    "This may indicate:\n"
+                    "  - Large codebase taking too long to process\n"
+                    "  - Need to increase timeout via --tool-options ruff:timeout=N"
+                )
+                return ToolResult(
+                    name=self.name,
+                    success=False,
+                    output=timeout_msg,
+                    issues_count=1,  # Count timeout as execution failure
+                    issues=initial_issues,  # Include initial issues found
+                    initial_issues_count=total_initial_count,
+                    fixed_issues_count=0,
+                    remaining_issues_count=1,
+                )
             remaining_issues = parse_ruff_output(output=output)
             remaining_count = len(remaining_issues)
 
@@ -567,11 +671,18 @@ class RuffTool(BaseTool):
                 # Only run if not already run with unsafe fixes
                 success_unsafe: bool
                 output_unsafe: str
-                success_unsafe, output_unsafe = self._run_subprocess(
-                    cmd=cmd_unsafe,
-                    timeout=timeout,
-                )
-                remaining_unsafe = parse_ruff_output(output=output_unsafe)
+                try:
+                    success_unsafe, output_unsafe = self._run_subprocess(
+                        cmd=cmd_unsafe,
+                        timeout=timeout,
+                    )
+                except subprocess.TimeoutExpired:
+                    # If unsafe check times out, just continue with current results
+                    # Don't fail the entire operation for this optional check
+                    logger.debug("Unsafe fixes check timed out, skipping")
+                    remaining_unsafe = remaining_issues
+                else:
+                    remaining_unsafe = parse_ruff_output(output=output_unsafe)
                 if len(remaining_unsafe) < remaining_count:
                     all_outputs.append(
                         "Some remaining issues could be fixed by enabling unsafe "
@@ -613,10 +724,28 @@ class RuffTool(BaseTool):
             )
             format_success: bool
             format_output: str
-            format_success, format_output = self._run_subprocess(
-                cmd=format_cmd,
-                timeout=timeout,
-            )
+            try:
+                format_success, format_output = self._run_subprocess(
+                    cmd=format_cmd,
+                    timeout=timeout,
+                )
+            except subprocess.TimeoutExpired:
+                timeout_msg = (
+                    f"Ruff execution timed out ({timeout}s limit exceeded).\n\n"
+                    "This may indicate:\n"
+                    "  - Large codebase taking too long to process\n"
+                    "  - Need to increase timeout via --tool-options ruff:timeout=N"
+                )
+                return ToolResult(
+                    name=self.name,
+                    success=False,
+                    output=timeout_msg,
+                    issues_count=1,  # Count timeout as execution failure
+                    issues=remaining_issues,  # Include any issues found before timeout
+                    initial_issues_count=total_initial_count,
+                    fixed_issues_count=fixed_lint_count,
+                    remaining_issues_count=1,
+                )
             # Formatting fixes are counted separately from lint fixes
             if initial_format_count > 0:
                 fixed_count = fixed_lint_count + initial_format_count
@@ -643,14 +772,30 @@ class RuffTool(BaseTool):
         # If there are no initial issues, success should be True
         overall_success = True if total_initial_count == 0 else remaining_count == 0
 
+        # Convert initial format files to RuffFormatIssue objects (these were fixed)
+        # and combine with remaining issues so formatter can split them by fixability
+        fixed_format_issues: list[RuffFormatIssue] = []
+        if format_files:
+            # Normalize files to absolute paths to keep behavior consistent
+            cwd: str | None = self.get_cwd(paths=python_files)
+            for file_path in format_files:
+                if cwd and not os.path.isabs(file_path):
+                    absolute_path = os.path.abspath(os.path.join(cwd, file_path))
+                    fixed_format_issues.append(RuffFormatIssue(file=absolute_path))
+                else:
+                    fixed_format_issues.append(RuffFormatIssue(file=file_path))
+
+        # Combine fixed format issues with remaining lint issues
+        all_issues = fixed_format_issues + remaining_issues
+
         return ToolResult(
             name=self.name,
             success=overall_success,
             output=final_output,
             # For fix operations, issues_count represents remaining for summaries
             issues_count=remaining_count,
-            # Display remaining issues only to align tables with summary counts
-            issues=remaining_issues,
+            # Display both fixed format issues and remaining lint issues
+            issues=all_issues,
             initial_issues_count=total_initial_count,
             fixed_issues_count=fixed_count,
             remaining_issues_count=remaining_count,

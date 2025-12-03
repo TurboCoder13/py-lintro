@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
 ---
 name: Release - Automated PR Creation
 # Computes next semantic version using conventional commits and opens release PR.
@@ -54,7 +56,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Use python-semantic-release via uvx (tool isolation)
-        run: echo "python-semantic-release will be invoked via uvx; not installed into project env"
+        run: >
+          echo "python-semantic-release will be invoked via uvx;
+          not installed into project env"
 
       - name: Compute next version (semantic-release dry run)
         id: semrel
@@ -73,28 +77,46 @@ jobs:
         # yamllint enable
 
       - name: Skip if no new version
-        if: ${{ steps.semrel.outputs.next_version == '' || steps.semrel.outputs.next_version == steps.current.outputs.current_version }}
-        run: scripts/ci/semantic-release-helpers.sh skip_no_new_version "${{ steps.semrel.outputs.next_version }}" "${{ steps.current.outputs.current_version }}"
+        if: >-
+          ${{ steps.semrel.outputs.next_version == '' ||
+          steps.semrel.outputs.next_version == steps.current.outputs.current_version }}
+        run: >
+          scripts/ci/semantic-release-helpers.sh skip_no_new_version
+          "${{ steps.semrel.outputs.next_version }}"
+          "${{ steps.current.outputs.current_version }}"
 
       - name: Update version files
-        if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
-        run: scripts/ci/semantic-release-helpers.sh update_version_files "${{ steps.semrel.outputs.next_version }}"
+        if: >-
+          ${{ steps.semrel.outputs.next_version != '' &&
+          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        run: >
+          scripts/ci/semantic-release-helpers.sh update_version_files
+          "${{ steps.semrel.outputs.next_version }}"
 
       - name: Install external tools for Lintro (formatting)
-        if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        if: >-
+          ${{ steps.semrel.outputs.next_version != '' &&
+          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
         run: scripts/ci/semantic-release-helpers.sh install_external_tools
 
       - name: Run Lintro format
-        if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        if: >-
+          ${{ steps.semrel.outputs.next_version != '' &&
+          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
         run: uv run lintro format . --output-format grid
 
       - name: Run Lintro check
-        if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        if: >-
+          ${{ steps.semrel.outputs.next_version != '' &&
+          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
         run: uv run lintro check . --output-format grid
 
       - name: Create Release PR
-        if: ${{ steps.semrel.outputs.next_version != '' && steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        if: >-
+          ${{ steps.semrel.outputs.next_version != '' &&
+          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
         id: cpr
+        # yamllint disable-line rule:line-length
         uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -116,4 +138,6 @@ jobs:
         if: ${{ steps.cpr.outputs.pull-request-number != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: scripts/ci/semantic-release-helpers.sh merge_release_pr "${{ steps.cpr.outputs.pull-request-number }}"
+        run: >
+          scripts/ci/semantic-release-helpers.sh merge_release_pr
+          "${{ steps.cpr.outputs.pull-request-number }}"

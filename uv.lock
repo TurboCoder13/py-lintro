@@ -570,12 +570,15 @@ name = "lintro"
 version = "0.14.1"
 source = { editable = "." }
 dependencies = [
+    { name = "bandit" },
+    { name = "black" },
     { name = "click" },
     { name = "coverage-badge" },
     { name = "darglint" },
     { name = "defusedxml" },
     { name = "httpx" },
     { name = "loguru" },
+    { name = "ruff" },
     { name = "tabulate" },
     { name = "toml" },
     { name = "yamllint" },
@@ -591,6 +594,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
+    { name = "pytest-sugar" },
     { name = "pytest-xdist" },
     { name = "python-semantic-release" },
     { name = "ruff" },
@@ -629,6 +633,8 @@ requires-dist = [
     { name = "allure-pytest", marker = "extra == 'dev'", specifier = "==2.15.0" },
     { name = "assertpy", marker = "extra == 'dev'", specifier = "==1.1" },
     { name = "assertpy", marker = "extra == 'test'", specifier = "==1.1" },
+    { name = "bandit", specifier = ">=1.8.0" },
+    { name = "black", specifier = ">=25.0.0" },
     { name = "click", specifier = "==8.1.8" },
     { name = "coverage-badge", specifier = "==1.1.2" },
     { name = "coverage-badge", marker = "extra == 'dev'", specifier = "==1.1.2" },
@@ -644,9 +650,11 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'test'", specifier = "==7.0.0" },
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = "==3.15.1" },
     { name = "pytest-mock", marker = "extra == 'test'", specifier = "==3.15.1" },
+    { name = "pytest-sugar", marker = "extra == 'dev'", specifier = "==1.0.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = "==3.8.0" },
     { name = "pytest-xdist", marker = "extra == 'test'", specifier = "==3.8.0" },
     { name = "python-semantic-release", marker = "extra == 'dev'", specifier = "==10.4.1" },
+    { name = "ruff", specifier = ">=0.14.0" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "tabulate", specifier = "==0.9.0" },
     { name = "toml", specifier = "==0.10.2" },
@@ -973,6 +981,20 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-sugar"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+    { name = "pytest" },
+    { name = "termcolor" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f5/ac/5754f5edd6d508bc6493bc37d74b928f102a5fff82d9a80347e180998f08/pytest-sugar-1.0.0.tar.gz", hash = "sha256:6422e83258f5b0c04ce7c632176c7732cab5fdb909cb39cca5c9139f81276c0a", size = 14992, upload-time = "2024-02-01T18:30:36.735Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/92/fb/889f1b69da2f13691de09a111c16c4766a433382d44aa0ecf221deded44a/pytest_sugar-1.0.0-py3-none-any.whl", hash = "sha256:70ebcd8fc5795dc457ff8b69d266a4e2e8a74ae0c3edc749381c64b5246c8dfd", size = 10171, upload-time = "2024-02-01T18:30:29.395Z" },
+]
+
+[[package]]
 name = "pytest-xdist"
 version = "3.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1211,6 +1233,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ec/fe/802052aecb21e3797b8f7902564ab6ea0d60ff8ca23952079064155d1ae1/tabulate-0.9.0.tar.gz", hash = "sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c", size = 81090, upload-time = "2022-10-06T17:21:48.54Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/40/44/4a5f08c96eb108af5cb50b41f76142f0afa346dfa99d5296fe7202a11854/tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f", size = 35252, upload-time = "2022-10-06T17:21:44.262Z" },
+]
+
+[[package]]
+name = "termcolor"
+version = "3.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/87/56/ab275c2b56a5e2342568838f0d5e3e66a32354adcc159b495e374cda43f5/termcolor-3.2.0.tar.gz", hash = "sha256:610e6456feec42c4bcd28934a8c87a06c3fa28b01561d46aa09a9881b8622c58", size = 14423, upload-time = "2025-10-25T19:11:42.586Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f9/d5/141f53d7c1eb2a80e6d3e9a390228c3222c27705cbe7f048d3623053f3ca/termcolor-3.2.0-py3-none-any.whl", hash = "sha256:a10343879eba4da819353c55cb8049b0933890c2ebf9ad5d3ecd2bb32ea96ea6", size = 7698, upload-time = "2025-10-25T19:11:41.536Z" },
 ]
 
 [[package]]

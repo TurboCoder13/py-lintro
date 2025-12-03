@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
 ---
 name: Reusable - Quality Gate & Version Export
 # Reusable workflow for quality checks and version extraction.

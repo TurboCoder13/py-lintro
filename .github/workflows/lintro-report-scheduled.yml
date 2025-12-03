@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
 ---
 name: Reporting - Scheduled Lintro Analysis
 # Runs comprehensive lintro analysis weekly on schedule or manual dispatch.
@@ -72,5 +74,7 @@ jobs:
     if: success()
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Report status
-        run: echo "Lintro report generated successfully"
+        run: scripts/ci/ci-log.sh "Lintro report generated successfully"

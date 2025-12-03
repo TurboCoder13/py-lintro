@@ -139,7 +139,7 @@ def test_bandit_check_parses_mixed_output_json(monkeypatch, tmp_path) -> None:
     mixed_stdout = "Working... 100%\n" + json.dumps(sample) + "\n"
     mixed_stderr = "[main] INFO done\n"
 
-    def fake_run(cmd, capture_output, text, timeout, cwd):
+    def fake_run(cmd, capture_output, text, timeout, **kwargs):
         return SimpleNamespace(stdout=mixed_stdout, stderr=mixed_stderr, returncode=0)
 
     monkeypatch.setattr("subprocess.run", fake_run)
@@ -189,7 +189,11 @@ def test_bandit_check_handles_nonzero_rc_with_errors_array(
             self.stderr = stderr
             self.returncode = returncode
 
-    def fake_run(cmd, capture_output, text, timeout, cwd):
+    def fake_run(cmd, capture_output, text, timeout, **kwargs):
+        # Handle version check calls
+        if "--version" in cmd:
+            return NS(stdout="bandit 1.8.0", stderr="", returncode=0)
+        # Handle actual check calls
         return NS(stdout=json.dumps(sample), stderr="", returncode=1)
 
     monkeypatch.setattr("subprocess.run", fake_run)
@@ -209,7 +213,11 @@ def test_bandit_check_handles_unparseable_output(monkeypatch, tmp_path) -> None:
     p = tmp_path / "b.py"
     p.write_text("x=1\n")
 
-    def fake_run(cmd, capture_output, text, timeout, cwd):
+    def fake_run(cmd, capture_output, text, timeout, **kwargs):
+        # Handle version check calls
+        if "--version" in cmd:
+            return SimpleNamespace(stdout="bandit 1.8.0", stderr="", returncode=0)
+        # Handle actual check calls
         return SimpleNamespace(stdout="nonsense", stderr="also nonsense", returncode=1)
 
     monkeypatch.setattr("subprocess.run", fake_run)

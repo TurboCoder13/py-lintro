@@ -7,9 +7,11 @@ structured issues, and returns a normalized `ToolResult`.
 
 from __future__ import annotations
 
+import contextlib
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 
+import click
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
@@ -66,6 +68,55 @@ class ActionlintTool(BaseTool):
         """
         return ["actionlint"]
 
+    def _process_file(
+        self,
+        file_path: str,
+        base_cmd: list[str],
+        timeout: int,
+        all_outputs: list[str],
+        all_issues: list,
+        skipped_files: list[str],
+        all_success: bool,
+        execution_failures: int,
+    ) -> tuple[bool, int]:
+        """Process a single file with actionlint.
+
+        Args:
+            file_path: Path to the file to process.
+            base_cmd: Base command list for actionlint.
+            timeout: Timeout in seconds.
+            all_outputs: List to append raw output to.
+            all_issues: List to extend with parsed issues.
+            skipped_files: List to append skipped file paths to.
+            all_success: Current success flag.
+            execution_failures: Current execution failures count.
+
+        Returns:
+            Tuple of (updated_all_success, updated_execution_failures).
+        """
+        cmd = base_cmd + [file_path]
+        try:
+            success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
+            issues = parse_actionlint_output(output)
+            if not success:
+                all_success = False
+            # Preserve output when subprocess fails even if parsing yields no issues
+            if output and (issues or not success):
+                all_outputs.append(output)
+            if issues:
+                all_issues.extend(issues)
+        except subprocess.TimeoutExpired:
+            skipped_files.append(file_path)
+            all_success = False
+            # Count timeout as an execution failure
+            execution_failures += 1
+        except Exception as e:  # pragma: no cover
+            all_success = False
+            all_outputs.append(f"Error checking {file_path}: {e}")
+            # Count execution errors as failures
+            execution_failures += 1
+        return all_success, execution_failures
+
     def check(self, paths: list[str]) -> ToolResult:
         """Check GitHub Actions workflow files with actionlint.
 
@@ -76,6 +127,11 @@ class ActionlintTool(BaseTool):
             A `ToolResult` containing success status, aggregated output (if any),
             issue count, and parsed issues.
         """
+        # Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return version_result
+
         self._validate_paths(paths=paths)
         if not paths:
             return ToolResult(
@@ -111,26 +167,60 @@ class ActionlintTool(BaseTool):
         all_outputs: list[str] = []
         all_issues = []
         all_success = True
+        execution_failures: int = 0
 
+        skipped_files: list[str] = []
         base_cmd = self._build_command()
-        for file_path in workflow_files:
-            cmd = base_cmd + [file_path]
-            try:
-                success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
-                issues = parse_actionlint_output(output)
-                if not success:
-                    all_success = False
-                if issues:
-                    all_outputs.append(output)
-                    all_issues.extend(issues)
-            except subprocess.TimeoutExpired:
-                all_success = False
-                all_outputs.append(f"Timeout while checking {file_path}")
-            except Exception as e:  # pragma: no cover
-                all_success = False
-                all_outputs.append(f"Error checking {file_path}: {e}")
+
+        # Show progress bar only when processing multiple files
+        if len(workflow_files) >= 2:
+            files_to_iterate = click.progressbar(
+                workflow_files,
+                label="Processing files",
+                bar_template="%(label)s  %(info)s",
+            )
+            context_mgr = files_to_iterate
+        else:
+            files_to_iterate = workflow_files
+            context_mgr = contextlib.nullcontext()
+
+        with context_mgr:
+            for file_path in files_to_iterate:
+                all_success, execution_failures = self._process_file(
+                    file_path=file_path,
+                    base_cmd=base_cmd,
+                    timeout=timeout,
+                    all_outputs=all_outputs,
+                    all_issues=all_issues,
+                    skipped_files=skipped_files,
+                    all_success=all_success,
+                    execution_failures=execution_failures,
+                )
 
         combined_output = "\n".join(all_outputs) if all_outputs else None
+        if skipped_files:
+            timeout_msg = (
+                f"Skipped {len(skipped_files)} file(s) due to timeout "
+                f"({timeout}s limit exceeded):"
+            )
+            for file in skipped_files:
+                timeout_msg += f"\n  - {file}"
+            if combined_output:
+                combined_output = f"{combined_output}\n\n{timeout_msg}"
+            else:
+                combined_output = timeout_msg
+        # Add summary of execution failures (non-timeout errors) if any
+        non_timeout_failures = execution_failures - len(skipped_files)
+        if non_timeout_failures > 0:
+            failure_msg = (
+                f"Failed to process {non_timeout_failures} file(s) "
+                "due to execution errors"
+            )
+            if combined_output:
+                combined_output = f"{combined_output}\n\n{failure_msg}"
+            else:
+                combined_output = failure_msg
+        # issues_count reflects only linting issues, not execution failures
         return ToolResult(
             name=self.name,
             success=all_success,

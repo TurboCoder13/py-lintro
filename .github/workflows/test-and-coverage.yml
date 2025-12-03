@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
 ---
 name: Testing - Full Suite & Coverage
 # Executes comprehensive test suite in Docker, generates coverage reports,
@@ -132,7 +134,10 @@ jobs:
     defaults:
       run:
         shell: bash
-    if: always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    if: >
+      always() &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
@@ -158,10 +163,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
       - name: Environment setup
+        # yamllint disable-line rule:line-length
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@448d8d96fea3374dd1e534f67afd8d61182c0de7
       - name: Download coverage XML artifact (fallback for comment generation)
         if: always()
         continue-on-error: true
+        # yamllint disable-line rule:line-length
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: coverage-xml

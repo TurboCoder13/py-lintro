@@ -179,7 +179,7 @@ class TestCLIDocumentation:
             return True
 
         # Check for valid commands
-        valid_commands = ["check", "format", "list-tools", "--help", "-h"]
+        valid_commands = ["check", "format", "list-tools", "test", "--help", "-h"]
         parts = command.split()
 
         if len(parts) < 2 or parts[0] != "lintro":

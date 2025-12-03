@@ -1,3 +1,4 @@
+---
 optConfig:
   optOutStrategy: true
 action: fix
@@ -30,6 +31,3 @@ enforceOnAdmins: true
 
 # Require signed commits on protected branches
 requireSignedCommits: true
-optConfig:
-  optIn: true
-action: issue

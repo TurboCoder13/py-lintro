@@ -10,6 +10,7 @@ from loguru import logger
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.utils.path_utils import find_lintro_ignore
 
 # Constants for default values
 DEFAULT_TIMEOUT: int = 30
@@ -91,6 +92,17 @@ class BaseTool(ABC):
         if not isinstance(self.config.tool_type, ToolType):
             raise ValueError("Tool tool_type must be a ToolType instance")
 
+    def _find_lintro_ignore(self) -> str | None:
+        """Find .lintro-ignore file by searching upward from current directory.
+
+        Uses the shared utility function to ensure consistent behavior.
+
+        Returns:
+            str | None: Path to .lintro-ignore file if found, None otherwise.
+        """
+        lintro_ignore_path = find_lintro_ignore()
+        return str(lintro_ignore_path) if lintro_ignore_path else None
+
     def _setup_defaults(self) -> None:
         """Set up default core options and patterns."""
         # Add default exclude patterns if not already present
@@ -99,9 +111,10 @@ class BaseTool(ABC):
                 self.exclude_patterns.append(pattern)
 
         # Add .lintro-ignore patterns (project-wide) if present
+        # Search upward from current directory to find project root
         try:
-            lintro_ignore_path = os.path.abspath(".lintro-ignore")
-            if os.path.exists(lintro_ignore_path):
+            lintro_ignore_path = self._find_lintro_ignore()
+            if lintro_ignore_path and os.path.exists(lintro_ignore_path):
                 with open(lintro_ignore_path, encoding="utf-8") as f:
                     for line in f:
                         line_stripped = line.strip()
@@ -282,63 +295,79 @@ class BaseTool(ABC):
     ) -> list[str]:
         """Get the command prefix to execute a tool.
 
-        Prefer running via ``uv run`` when available to ensure the tool executes
-        within the active Python environment, avoiding PATH collisions with
-        user-level shims. Fall back to a direct executable when ``uv`` is not
-        present, and finally to the bare tool name.
+        Uses a unified approach based on tool category:
+        - Python bundled tools: Use python -m (guaranteed to use lintro's environment)
+        - Node.js tools: Use npx (respects project's package.json)
+        - Binary tools: Use system executable
 
         Args:
             tool_name: str: Name of the tool executable to find.
 
         Returns:
             list[str]: Command prefix to execute the tool.
-
-        Examples:
-            >>> self._get_executable_command("ruff")
-            ["uv", "run", "ruff"]  # preferred when uv is available
-
-            >>> self._get_executable_command("ruff")
-            ["ruff"]  # if uv is not available but the tool is on PATH
         """
-        # Tool-specific preferences to balance reliability vs. historical expectations
-        python_tools_prefer_uv = {"black", "bandit", "yamllint", "darglint"}
+        import sys
 
-        # Ruff: keep historical expectation for tests (direct invocation first)
-        if tool_name == "ruff":
-            if shutil.which(tool_name):
-                return [tool_name]
-            if shutil.which("uv"):
-                return ["uv", "run", tool_name]
+        # Python tools bundled with lintro (guaranteed in our environment)
+        # Note: darglint cannot be run as a module (python -m darglint),
+        # so it's excluded
+        python_bundled_tools = {"ruff", "black", "bandit", "yamllint"}
+        if tool_name in python_bundled_tools:
+            # Use python -m to ensure we use the tool from lintro's environment
+            python_exe = sys.executable
+            if python_exe:
+                return [python_exe, "-m", tool_name]
+            # Fallback to direct executable if python path not found
             return [tool_name]
 
-        # Black: prefer system binary first, then project env via uv run,
-        # and finally uvx as a last resort.
-        if tool_name == "black":
-            if shutil.which(tool_name):
-                return [tool_name]
-            if shutil.which("uv"):
-                return ["uv", "run", tool_name]
-            if shutil.which("uvx"):
-                return ["uvx", tool_name]
+        # Pytest: user environment tool (not bundled)
+        if tool_name == "pytest":
+            # Use python -m pytest for cross-platform compatibility
+            python_exe = sys.executable
+            if python_exe:
+                return [python_exe, "-m", "pytest"]
+            # Fall back to direct executable
             return [tool_name]
 
-        # Python-based tools where running inside env avoids PATH shim issues
-        if tool_name in python_tools_prefer_uv:
-            if shutil.which(tool_name):
-                return [tool_name]
-            if shutil.which("uvx"):
-                return ["uvx", tool_name]
-            if shutil.which("uv"):
-                return ["uv", "run", tool_name]
+        # Node.js tools: use npx to respect project's package.json
+        nodejs_tools = {"prettier"}
+        if tool_name in nodejs_tools:
+            if shutil.which("npx"):
+                return ["npx", "--yes", tool_name]
+            # Fall back to direct executable
             return [tool_name]
 
-        # Default: prefer direct system executable (node/binary tools like
-        # prettier, hadolint, actionlint)
-        if shutil.which(tool_name):
-            return [tool_name]
-        if shutil.which("uv"):
-            return ["uv", "run", tool_name]
+        # Binary tools: use system executable
         return [tool_name]
+
+    def _verify_tool_version(self) -> ToolResult | None:
+        """Verify that the tool meets minimum version requirements.
+
+        Returns:
+            Optional[ToolResult]: None if version check passes, or a skip result
+                if it fails
+        """
+        from lintro.tools.core.version_requirements import check_tool_version
+
+        command = self._get_executable_command(self.name)
+        version_info = check_tool_version(self.name, command)
+
+        if version_info.version_check_passed:
+            return None  # Version check passed
+
+        # Version check failed - return skip result with warning
+        skip_message = (
+            f"Skipping {self.name}: {version_info.error_message}. "
+            f"Minimum required: {version_info.min_version}. "
+            f"{version_info.install_hint}"
+        )
+
+        return ToolResult(
+            name=self.name,
+            success=True,  # Not an error, just skipping
+            output=skip_message,
+            issues_count=0,
+        )
 
     @abstractmethod
     def check(

@@ -89,6 +89,40 @@ grype sbom:main-*-py-lintro-sbom.spdx-2.3.json
 | [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                         | 🐍 Python           | ✅       |
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                 | 🧾 YAML             | -        |
 
+## Requirements
+
+### Python Version
+
+**Python 3.13+** is required. Lintro uses modern Python features and syntax that are not available in older versions.
+
+### Tool Dependencies
+
+Lintro automatically installs and manages several Python tools to ensure consistent behavior. These tools are bundled as dependencies with versions centrally managed in `pyproject.toml`:
+
+- **Ruff** - Fast Python linter and formatter
+- **Black** - Python code formatter
+- **Bandit** - Python security linter
+- **Yamllint** - YAML linter
+- **Darglint** - Python docstring linter
+
+### Optional External Tools
+
+For full functionality, you may want to install additional tools with versions managed in `pyproject.toml`:
+
+- **Prettier** - JavaScript/TypeScript formatter (`npm install --save-dev prettier`)
+- **Hadolint** - Dockerfile linter ([GitHub Releases](https://github.com/hadolint/hadolint/releases))
+- **Actionlint** - GitHub Actions linter ([GitHub Releases](https://github.com/rhysd/actionlint/releases))
+
+### Version Verification
+
+Check all tool versions with:
+
+```bash
+lintro list-tools
+```
+
+This command reads version requirements directly from `pyproject.toml` and verifies your installed tools.
+
 ## Quick Start
 
 ### Installation
@@ -189,7 +223,34 @@ lintro check --tool-options "ruff:line_length=88,prettier:print_width=80"
 # default to avoid double-formatting. Override if needed:
 lintro format --tool-options ruff:format=True        # force Ruff to format
 lintro check  --tool-options ruff:format_check=True  # force Ruff format check
+
+# Pytest examples:
+lintro test --tool-options "pytest:verbose=True,tb=short,maxfail=5"  # Basic options
+lintro test --tool-options "pytest:workers=4"                        # Parallel execution
+lintro test --tool-options "pytest:parallel_preset=medium"           # Preset workers
+lintro test --tool-options "pytest:coverage_threshold=85"            # Coverage threshold
+lintro test --tool-options "pytest:html_report=report.html"          # HTML report
+lintro test --tool-options "pytest:timeout=300"                      # Test timeout
+lintro test --tool-options "pytest:reruns=2,reruns_delay=1"          # Retry failed tests
 ```
+
+#### Parallel Execution Presets
+
+Lintro provides convenient presets for parallel test execution that automatically scale based on your system's CPU count:
+
+| Preset   | Workers         | Best For                             | Example                                        |
+| -------- | --------------- | ------------------------------------ | ---------------------------------------------- |
+| `auto`   | All CPU cores   | Large CI environments                | `--tool-options pytest:parallel_preset=auto`   |
+| `small`  | 2 workers       | Small test suites, local development | `--tool-options pytest:parallel_preset=small`  |
+| `medium` | 4 workers       | Medium test suites                   | `--tool-options pytest:parallel_preset=medium` |
+| `large`  | Up to 8 workers | Large test suites                    | `--tool-options pytest:parallel_preset=large`  |
+
+**Best Practices:**
+
+- Use `small` for local development to avoid overwhelming your machine
+- Use `medium` for typical project test suites
+- Use `large` or `auto` in CI environments with plenty of resources
+- Requires `pytest-xdist` plugin to be installed
 
 ### CI/CD Integration
 
@@ -210,6 +271,7 @@ For comprehensive documentation, see our **[Documentation Hub](docs/README.md)**
 - **[GitHub Integration](docs/github-integration.md)** - CI/CD setup
 - **[Configuration](docs/configuration.md)** - Tool configuration options
 - **[Contributing](docs/contributing.md)** - Developer guide
+- **[Pytest Integration Guide](docs/tool-analysis/pytest-analysis.md)** - Complete pytest usage and troubleshooting
 - **[Tool Analysis](docs/tool-analysis/)** - Detailed tool comparisons
 
 ## Development

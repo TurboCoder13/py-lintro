@@ -35,6 +35,10 @@ from lintro.formatters.tools.prettier_formatter import (
     PrettierTableDescriptor,
     format_prettier_issues,
 )
+from lintro.formatters.tools.pytest_formatter import (
+    PytestFailuresTableDescriptor,
+    format_pytest_issues,
+)
 from lintro.formatters.tools.ruff_formatter import (
     RuffTableDescriptor,
     format_ruff_issues,
@@ -50,6 +54,7 @@ from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
+from lintro.parsers.pytest.pytest_parser import parse_pytest_text_output
 from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 from lintro.parsers.ruff.ruff_parser import parse_ruff_output
 from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
@@ -60,6 +65,7 @@ TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
     "hadolint": (HadolintTableDescriptor(), format_hadolint_issues),
     "black": (BlackTableDescriptor(), format_black_issues),
     "prettier": (PrettierTableDescriptor(), format_prettier_issues),
+    "pytest": (PytestFailuresTableDescriptor(), format_pytest_issues),
     "ruff": (RuffTableDescriptor(), format_ruff_issues),
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
     "actionlint": (ActionlintTableDescriptor(), format_actionlint_issues),
@@ -304,9 +310,13 @@ def format_tool_output(
                     isinstance(i, RuffIssue) and getattr(i, "fixable", False)
                 )
             if tool == "prettier":
-                return lambda i: isinstance(i, PrettierIssue) or True
+                return lambda i: isinstance(i, PrettierIssue)
             if tool == "black":
-                return lambda i: isinstance(i, BlackIssue) or True
+                return lambda i: isinstance(i, BlackIssue) and getattr(
+                    i,
+                    "fixable",
+                    True,
+                )
             return None
 
         is_fixable = _is_fixable_predicate(tool_name)
@@ -376,6 +386,9 @@ def format_tool_output(
             )
         except Exception:
             parsed_issues = []
+    elif tool_name == "pytest":
+        # Pytest emits text output; parse it
+        parsed_issues = parse_pytest_text_output(output=output)
 
     if parsed_issues and tool_name in TOOL_TABLE_FORMATTERS:
         _, formatter_func = TOOL_TABLE_FORMATTERS[tool_name]

@@ -236,8 +236,10 @@ class TestRuffTool:
         """
         files = ["test.py"]
         cmd = ruff_tool._build_check_command(files)
-        assert_that(cmd[0]).is_equal_to("ruff")
-        assert_that(cmd[1]).is_equal_to("check")
+        # Ruff is run via python -m ruff, so cmd[0] is python exe,
+        # cmd[1] is "-m", cmd[2] is "ruff"
+        assert_that(cmd).contains("ruff")
+        assert_that(cmd).contains("check")
         assert_that(cmd).contains("--output-format")
         assert_that(cmd).contains("json")
         assert_that(cmd).contains("test.py")
@@ -276,8 +278,10 @@ class TestRuffTool:
         """
         files = ["test.py"]
         cmd = ruff_tool._build_format_command(files)
-        assert_that(cmd[0]).is_equal_to("ruff")
-        assert_that(cmd[1]).is_equal_to("format")
+        # Ruff is run via python -m ruff, so cmd[0] is python exe,
+        # cmd[1] is "-m", cmd[2] is "ruff"
+        assert_that(cmd).contains("ruff")
+        assert_that(cmd).contains("format")
         assert_that(cmd).contains("test.py")
 
     def test_build_format_command_check_only(self, ruff_tool) -> None:

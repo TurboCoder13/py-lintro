@@ -12,9 +12,8 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo ""
     echo "Features:"
     echo "  - Builds Docker image if not exists"
-    echo "  - Mounts current directory to container"
-    echo "  - Handles permission issues"
-    echo "  - Delegates to local-lintro.sh inside container"
+    echo "  - Mounts current directory to /code in container"
+    echo "  - Uses Docker entrypoint directly for consistent execution"
     echo ""
     echo "Examples:"
     echo "  $0 check"
@@ -27,11 +26,11 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 # 
 # This script allows running lintro without installing all the dependencies locally.
-# It delegates all the heavy lifting to local-lintro.sh inside the Docker container.
+# It uses the Docker entrypoint directly for consistent execution across all workflows.
 #
 # Usage:
 #   ./docker-lintro.sh check --tools hadolint,prettier [PATH]
-#   ./docker-lintro.sh fmt --tools prettier [PATH]
+#   ./docker-lintro.sh format --tools ruff [PATH]
 #   ./docker-lintro.sh list-tools
 
 # Color output for better readability
@@ -62,25 +61,28 @@ else
     echo -e "${GREEN}✓ Using existing Docker image${NC}"
 fi
 
-# Run lintro in Docker using the local-lintro.sh script
-# We mount the current directory to /code and set UV_CACHE_DIR to avoid permission issues
+# Run lintro in Docker using the Docker entrypoint directly
+# We mount the current directory to /code to match ci-lintro.sh
+# Note: darglint timeout increased for Docker (Docker is slower than local)
 echo -e "${BLUE}Running lintro in Docker container...${NC}"
 echo -e "${YELLOW}Arguments: $*${NC}"
 
-docker run --rm \
-    --log-driver=local \
-    -v "$(pwd):/app" \
-    -w /app \
-    -e UV_CACHE_DIR=/tmp/uv-cache \
-    -e UV_VENV_CACHE_DIR=/tmp/uv-venv-cache \
-    -e RUNNING_IN_DOCKER=1 \
-    -e UV_PROJECT_ENVIRONMENT=/tmp/venv \
-    -e UV_BUILD_CACHE_DIR=/tmp/uv-build-cache \
-    -e UV_PROJECT_DIR=/app \
-    --entrypoint="" \
-    --user root \
-    "$IMAGE_NAME" \
-    /usr/local/bin/fix-permissions.sh /app/scripts/local/local-lintro.sh "$@"
+# Check if the command is 'check' and add darglint timeout if not already specified
+if [[ "$1" == "check" ]] && [[ "$*" != *"--tool-options"*"darglint"* ]]; then
+    docker run --rm \
+        --log-driver=local \
+        -v "$(pwd):/code" \
+        -w /code \
+        "$IMAGE_NAME" \
+        lintro "$@" --tool-options darglint:timeout=120
+else
+    docker run --rm \
+        --log-driver=local \
+        -v "$(pwd):/code" \
+        -w /code \
+        "$IMAGE_NAME" \
+        lintro "$@"
+fi
 
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then

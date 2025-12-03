@@ -156,6 +156,7 @@ echo 0.0.0
         )
         assert_that(uv_check.returncode).is_equal_to(0)
 
+    @pytest.mark.docker_only
     def test_scripts_handle_docker_missing(self, scripts_dir, clean_env) -> None:
         """Test Docker scripts behavior when Docker is not available.
 
@@ -254,7 +255,16 @@ if [[ "$1" == "api" && "$2" == repos/*/issues/*/comments ]]; then
 fi
 if [[ "$1" == "api" && "$2" == repos/*/issues/comments/* && "$3" == "-X" \
     && "$4" == "PATCH" ]]; then
-  # capture body arg
+  # capture body from -F body=@filepath format
+  while [[ $# -gt 0 ]]; do
+    if [[ "$1" == "-F" && "$2" == body=@* ]]; then
+      filepath="${{2#body=@}}"
+      cat "$filepath" > "{(work / "patch_out.txt").as_posix()}"
+      exit 0
+    fi
+    shift
+  done
+  # Fallback for inline body=value format
   for i in "$@"; do
     if [[ "$i" == body=* ]]; then echo "$i"; fi
   done > "{(work / "patch_out.txt").as_posix()}"

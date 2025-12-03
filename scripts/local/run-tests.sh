@@ -97,37 +97,11 @@ ensure_python_cli_tools() {
     fi
 }
 
-# Function to run tests with coverage
-run_tests() {
-    echo -e "${BLUE}Running all tests in the tests directory...${NC}"
-    echo -e "${YELLOW}Using uv run pytest for consistent behavior${NC}"
-    # Avoid uv hardlink warnings/noise by defaulting to copy mode
-    export UV_LINK_MODE=${UV_LINK_MODE:-copy}
+# Helper function to run tests and report results
+run_and_report_tests() {
+    local test_cmd=("$@")
     
-    # Determine pytest worker count
-    local workers="${LINTRO_PYTEST_WORKERS:-auto}"
-    # In CI, default to serial to avoid xdist contention (docker/image builds,
-    # file system contention) unless explicitly overridden by LINTRO_PYTEST_WORKERS.
-    if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -z "${LINTRO_PYTEST_WORKERS:-}" ]; then
-        workers=0
-    fi
-
-    # Build pytest arguments
-    local pytest_args=("-n" "${workers}" "tests")
-    if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" != "1" ]; then
-        echo -e "${YELLOW}Docker-specific tests will be auto-skipped by pytest config${NC}"
-    else
-        echo -e "${YELLOW}Including Docker tests (LINTRO_RUN_DOCKER_TESTS=1)${NC}"
-    fi
-    
-    # Add verbose flag if requested
-    if [ "$VERBOSE" = "1" ] || [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
-        echo -e "${YELLOW}Running tests in verbose mode${NC}"
-        shift
-    fi
-    
-    echo -e "${BLUE}Executing: uv run pytest ${pytest_args[*]}${NC}"
-    if uv run pytest "${pytest_args[@]}"; then
+    if "${test_cmd[@]}"; then
         echo -e "${GREEN}✓ Tests completed successfully${NC}"
         echo ""
         echo -e "${GREEN}Coverage reports generated:${NC}"
@@ -157,13 +131,85 @@ run_tests() {
     fi
 }
 
+# Function to run tests with coverage
+run_tests() {
+    echo -e "${BLUE}Running all tests in the tests directory...${NC}"
+    
+    # Clean up any existing coverage files to prevent corruption with parallel execution
+    echo -e "${YELLOW}Cleaning up existing coverage files...${NC}"
+    find . -type f -name ".coverage*" -not -path "./.venv/*" -not -path "./.git/*" -delete 2>/dev/null || true
+    
+    # Avoid uv hardlink warnings/noise by defaulting to copy mode
+    export UV_LINK_MODE=${UV_LINK_MODE:-copy}
+    
+    # Determine pytest worker count
+    local workers="${LINTRO_PYTEST_WORKERS:-auto}"
+    # In CI or Docker, default to serial to avoid xdist contention (docker/image builds,
+    # file system contention) unless explicitly overridden by LINTRO_PYTEST_WORKERS.
+    if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -z "${LINTRO_PYTEST_WORKERS:-}" ]; then
+        workers=0
+    fi
+    # Also disable parallel execution in Docker to avoid execnet issues
+    if [ -n "${RUNNING_IN_DOCKER:-}" ] && [ -z "${LINTRO_PYTEST_WORKERS:-}" ]; then
+        workers=0
+    fi
+
+    # Build lintro tst arguments
+    local tst_args=("tests")
+    
+    # Add parallel workers if not disabled
+    if [ "${workers}" != "0" ]; then
+        tst_args+=("--tool-options" "pytest:workers=${workers}")
+    fi
+    
+    # Add verbose flag if requested
+    local tool_opts="pytest:coverage_report=True,pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml,pytest:timeout=600"
+    if [ "$VERBOSE" = "1" ] || [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
+        echo -e "${YELLOW}Running tests in verbose mode${NC}"
+        tst_args+=("--verbose")
+        tool_opts="${tool_opts},pytest:verbose=True"
+    fi
+    
+    # Add Docker test enablement and coverage options
+    # Set a longer timeout (600s = 10 minutes) since tests are more comprehensive
+    if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" = "1" ]; then
+        echo -e "${YELLOW}Including Docker tests (LINTRO_RUN_DOCKER_TESTS=1)${NC}"
+        tool_opts="${tool_opts},pytest:run_docker_tests=True"
+    else
+        echo -e "${YELLOW}Docker-specific tests will be auto-skipped by pytest config${NC}"
+    fi
+
+    # Add pytest-sugar for enhanced CI output (if available)
+    if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+        if python -c "import pytest_sugar" 2>/dev/null; then
+            echo -e "${YELLOW}Using pytest-sugar for enhanced CI output${NC}"
+            tool_opts="${tool_opts},pytest:show_progress=False"
+        fi
+    fi
+
+    tst_args+=("--tool-options" "${tool_opts}")
+    
+    # Determine which command to use based on environment
+    if [ -n "${RUNNING_IN_DOCKER:-}" ]; then
+        echo -e "${YELLOW}Using lintro tst in Docker environment${NC}"
+        local cmd_prefix="/app/.venv/bin/python -m lintro tst"
+    else
+        echo -e "${YELLOW}Using lintro tst via uv${NC}"
+        local cmd_prefix="uv run lintro tst"
+    fi
+    
+    echo -e "${BLUE}Executing: ${cmd_prefix} ${tst_args[*]}${NC}"
+    run_and_report_tests ${cmd_prefix} "${tst_args[@]}"
+    return $?
+}
+
 # Function to provide helpful tips
 show_tips() {
     echo ""
     echo -e "${YELLOW}=== Helpful Tips ===${NC}"
     echo -e "${BLUE}• Install missing tools: ./scripts/local/local-lintro.sh --install${NC}"
-    echo -e "${BLUE}• Run specific tests: uv run pytest -n auto -k 'not docker' tests/test_ruff_integration.py${NC}"
-    echo -e "${BLUE}• Include Docker tests: LINTRO_RUN_DOCKER_TESTS=1 uv run pytest -n auto${NC}"
+    echo -e "${BLUE}• Run specific tests: uv run lintro tst tests/ --tool-options pytest:workers=auto${NC}"
+    echo -e "${BLUE}• Include Docker tests: LINTRO_RUN_DOCKER_TESTS=1 $0${NC}"
     echo -e "${BLUE}• Run with verbose output: $0 --verbose${NC}"
     echo -e "${BLUE}• Check tool installation: ./scripts/utils/install-tools.sh --local${NC}"
     echo ""

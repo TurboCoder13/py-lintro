@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
 ---
 name: Security - Dependency Review
 # Reviews dependency changes in PRs for known security vulnerabilities.
@@ -33,19 +35,13 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      # Avoid PR comment on forks (token is read-only); still run the check
-      - name: Dependency review (forks - no PR comment)
-        if: github.event.pull_request.head.repo.fork == true
+      # Run dependency review; disable PR comment on forks (token is read-only)
+      - name: Dependency review
+        # yamllint disable-line rule:line-length
         uses: actions/dependency-review-action@56339e523c0409420f6c2c9a2f4292bbb3c07dd3 # v4.8.0
         with:
           fail-on-severity: high
-          comment-summary-in-pr: false
-          allow-ghsas: true
-
-      - name: Dependency review (with PR comment)
-        if: github.event.pull_request.head.repo.fork == false
-        uses: actions/dependency-review-action@56339e523c0409420f6c2c9a2f4292bbb3c07dd3 # v4.8.0
-        with:
-          fail-on-severity: high
-          comment-summary-in-pr: true
+          # Disable PR comments on forks where token is read-only
+          # yamllint disable-line rule:line-length
+          comment-summary-in-pr: ${{ github.event.pull_request.head.repo.fork == false }}
           allow-ghsas: true

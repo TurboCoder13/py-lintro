@@ -9,7 +9,7 @@ description = "A unified CLI tool for code formatting, linting, and quality assu
 keywords = [ "linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker",]
 classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
 requires-python = ">=3.13"
-dependencies = [ "click==8.1.8", "coverage-badge==1.1.2", "darglint==1.8.1", "loguru==0.7.3", "tabulate==0.9.0", "yamllint==1.37.1", "httpx==0.28.1", "toml==0.10.2", "defusedxml==0.7.1",]
+dependencies = [ "click==8.1.8", "coverage-badge==1.1.2", "darglint==1.8.1", "loguru==0.7.3", "tabulate==0.9.0", "yamllint==1.37.1", "httpx==0.28.1", "toml==0.10.2", "defusedxml==0.7.1", "ruff>=0.14.0", "black>=25.0.0", "bandit>=1.8.0",]
 [[project.authors]]
 name = "TurboCoder13"
 email = "turbocoder13@gmail.com"
@@ -25,7 +25,7 @@ file = "README.md"
 content-type = "text/markdown"
 
 [project.optional-dependencies]
-dev = [ "pytest==8.4.2", "pytest-cov==7.0.0", "pytest-mock==3.15.1", "pytest-xdist==3.8.0", "tox==4.32.0", "allure-pytest==2.15.0", "ruff", "mypy", "coverage-badge==1.1.2", "python-semantic-release==10.4.1", "assertpy==1.1", "httpx==0.28.1",]
+dev = [ "pytest==8.4.2", "pytest-cov==7.0.0", "pytest-mock==3.15.1", "pytest-xdist==3.8.0", "pytest-sugar==1.0.0", "tox==4.32.0", "allure-pytest==2.15.0", "ruff", "mypy", "coverage-badge==1.1.2", "python-semantic-release==10.4.1", "assertpy==1.1", "httpx==0.28.1",]
 test = [ "pytest==8.4.2", "pytest-cov==7.0.0", "pytest-mock==3.15.1", "pytest-xdist==3.8.0", "assertpy==1.1",]
 typing = [ "types-setuptools==80.9.0.20250822", "types-tabulate==0.9.0.20241207",]
 
@@ -74,6 +74,14 @@ tools = [ "black",]
 enforce_failure = true
 
 [tool.lintro.ruff]
+
+[tool.lintro.versions]
+# Minimum version requirements for all supported tools
+# Python tools bundled with lintro are auto-detected from dependencies above
+pytest = "8.0.0"
+prettier = "3.7.0"
+hadolint = "2.12.0"
+actionlint = "1.7.0"
 
 [tool.pytest.ini_options]
 testpaths = [ "tests",]

@@ -207,3 +207,43 @@ def test_prettier_fix_sets_issues_for_table(temp_prettier_file) -> None:
         issues=fix_result.issues,
     )
     assert "Auto-fixable issues" in formatted or formatted
+
+
+def test_prettier_respects_prettierignore(tmp_path) -> None:
+    """PrettierTool: Should respect .prettierignore file.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+    """
+    # Create a file that should be ignored
+    ignored_file = tmp_path / "ignored.js"
+    ignored_file.write_text("const x=1+2;")  # Unformatted, should trigger prettier
+
+    # Create a file that should be checked
+    checked_file = tmp_path / "checked.js"
+    checked_file.write_text("const x=1+2;")  # Unformatted, should trigger prettier
+
+    # Create .prettierignore
+    prettierignore = tmp_path / ".prettierignore"
+    prettierignore.write_text("ignored.js\n")
+
+    logger.info("[TEST] Testing prettier with .prettierignore...")
+    tool = PrettierTool()
+    tool.set_options()
+
+    # Check both files - ignored.js should be ignored, checked.js should be checked
+    result = tool.check([str(tmp_path)])
+    logger.info(
+        f"[LOG] Prettier found {result.issues_count} issues. "
+        f"Output:\n{result.output}",
+    )
+
+    # Should find issues in checked.js but not ignored.js
+    # Since we're checking the directory, prettier should respect .prettierignore
+    # and only report issues for checked.js
+    assert result.issues_count > 0, "Should find issues in checked.js"
+    # Verify ignored.js is not in the issues
+    issue_files = [issue.file for issue in result.issues]
+    assert "ignored.js" not in " ".join(
+        issue_files,
+    ), "ignored.js should not appear in issues when .prettierignore excludes it"

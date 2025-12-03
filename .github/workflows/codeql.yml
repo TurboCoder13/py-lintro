@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
 ---
 name: Security - CodeQL Code Scanning
-# GitHub CodeQL static analysis for security vulnerabilities and code quality issues.
-# Scans Python code and uploads results to GitHub Security tab.
+# GitHub CodeQL static analysis for security vulnerabilities and code quality.
+# Scans Python code only, uploads results to GitHub Security tab.
+# JS not scanned - only prettier in node_modules (dev dependency).
 
 'on':
   push:
@@ -47,13 +50,15 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@e296a935590eb16afc0c0108289f68c87e2a89a5 # v4
         with:
-          languages: python,javascript
+          languages: python
           config-file: .github/codeql/codeql-config.yml
 
       - name: Autobuild
+        # yamllint disable-line rule:line-length
         uses: github/codeql-action/autobuild@e296a935590eb16afc0c0108289f68c87e2a89a5 # v4
 
       - name: Perform CodeQL Analysis
+        # yamllint disable-line rule:line-length
         uses: github/codeql-action/analyze@e296a935590eb16afc0c0108289f68c87e2a89a5 # v4
         with:
           category: '/language:all'
