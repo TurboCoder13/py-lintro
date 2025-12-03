@@ -176,12 +176,12 @@ The following sections outline lintro's pytest support. **Baseline Features** re
 
 **Use pytest directly when:**
 
-- You need advanced plugin features
-- You want custom marker definitions
-- You need fixture management
-- You want test collection without execution
-- You need plugin-specific configurations
-- You want HTML reports or advanced coverage features
+- You need advanced plugin internals or complex plugin development
+- You require test impact analysis based on code changes
+- You need mutation testing integration
+- You want features not yet exposed through lintro's CLI
+
+> **Note:** Many pytest features are supported through lintro—see the [Enhanced Features](#enhanced-features) section (lines 108-166) for supported capabilities including custom marker listing (`--markers`), fixture management (`--fixtures`, `--fixture-info`), test collection (`--collect-only`), HTML reports (`html_report`), and coverage integration.
 
 #### Configuration Priority
 

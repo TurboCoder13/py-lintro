@@ -53,11 +53,7 @@ def versions_command(verbose: bool) -> None:
 
         if verbose:
             hint = version_info.install_hint
-            if (
-                version_info.error_message
-                and "Version" in version_info.error_message
-                or version_info.error_message
-            ):
+            if version_info.error_message:
                 hint = f"{version_info.error_message}. {hint}"
             row.append(hint)
 
