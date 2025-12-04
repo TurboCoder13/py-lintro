@@ -283,10 +283,8 @@ class TestGetEffectiveLineLength:
     @patch("lintro.utils.unified_config.load_lintro_tool_config")
     @patch("lintro.utils.unified_config.load_lintro_global_config")
     @patch("lintro.utils.unified_config._load_pyproject")
-    @patch("lintro.utils.unified_config._load_native_tool_config")
     def test_tool_specific_config_wins(
         self,
-        mock_native: MagicMock,
         mock_pyproject: MagicMock,
         mock_global: MagicMock,
         mock_tool: MagicMock,
@@ -294,7 +292,6 @@ class TestGetEffectiveLineLength:
         """Tool-specific lintro config has highest priority.
 
         Args:
-            mock_native: Mock for _load_native_tool_config function.
             mock_pyproject: Mock for _load_pyproject function.
             mock_global: Mock for load_lintro_global_config function.
             mock_tool: Mock for load_lintro_tool_config function.

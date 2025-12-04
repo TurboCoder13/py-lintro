@@ -201,8 +201,10 @@ def _generate_plain_text_output(
         if tool_enum in fix_tools:
             capabilities.append(Action.FIX.value)
 
+        capabilities_display = ", ".join(capabilities) if capabilities else "-"
+
         output_lines.append(f"{emoji} {tool_name}: {tool_description}")
-        output_lines.append(f"  Capabilities: {', '.join(capabilities)}")
+        output_lines.append(f"  Capabilities: {capabilities_display}")
 
         if show_conflicts:
             conflict_names = []
