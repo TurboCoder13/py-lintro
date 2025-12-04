@@ -569,18 +569,21 @@ main() {
     echo -e "${GREEN}=== Installation Complete! ===${NC}"
     echo ""
     echo -e "${YELLOW}Installed tools:${NC}"
+    echo "  - actionlint (GitHub Actions linting)"
+    echo "  - bandit (Python security checks)"
+    echo "  - black (Python formatting)"
+    echo "  - darglint (Python docstring validation)"
     echo "  - hadolint (Docker linting)"
-    echo "  - prettier (JavaScript/JSON formatting)"
     echo "  - markdownlint-cli2 (Markdown linting)"
+    echo "  - prettier (JavaScript/JSON formatting)"
     echo "  - ruff (Python linting and formatting)"
     echo "  - yamllint (YAML linting)"
-    echo "  - darglint (Python docstring validation)"
     echo ""
     
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("hadolint" "actionlint" "prettier" "markdownlint-cli2" "ruff" "bandit" "yamllint" "darglint")
+    tools_to_verify=("actionlint" "bandit" "black" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint")
     for tool in "${tools_to_verify[@]}"; do
         if command -v "$tool" &> /dev/null; then
             version=$("$tool" --version 2>/dev/null || echo "installed")

@@ -15,6 +15,19 @@ logger.add(lambda msg: print(msg, end=""), level="INFO")
 SAMPLE_FILE = "test_samples/markdownlint_violations.md"
 
 
+def find_markdownlint_cmd() -> list[str] | None:
+    """Find markdownlint-cli2 command.
+
+    Returns:
+        Command list if found, None otherwise
+    """
+    if shutil.which("npx"):
+        return ["npx", "--yes", "markdownlint-cli2"]
+    if shutil.which("markdownlint-cli2"):
+        return ["markdownlint-cli2"]
+    return None
+
+
 def run_markdownlint_directly(file_path: Path) -> tuple[bool, str, int]:
     """Run markdownlint-cli2 directly on a file and return result tuple.
 
@@ -24,14 +37,10 @@ def run_markdownlint_directly(file_path: Path) -> tuple[bool, str, int]:
     Returns:
         tuple[bool, str, int]: Success status, output text, and issue count.
     """
-    # Try npx first, then direct executable
-    cmd = None
-    if shutil.which("npx"):
-        cmd = ["npx", "--yes", "markdownlint-cli2", str(file_path)]
-    elif shutil.which("markdownlint-cli2"):
-        cmd = ["markdownlint-cli2", str(file_path)]
-    else:
+    cmd_base = find_markdownlint_cmd()
+    if cmd_base is None:
         pytest.skip("markdownlint-cli2 not found in PATH")
+    cmd = [*cmd_base, str(file_path)]
 
     result = subprocess.run(
         cmd,
@@ -55,25 +64,18 @@ def run_markdownlint_directly(file_path: Path) -> tuple[bool, str, int]:
 @pytest.mark.markdownlint
 def test_markdownlint_available() -> None:
     """Check if markdownlint-cli2 is available in PATH."""
+    cmd_base = find_markdownlint_cmd()
+    if cmd_base is None:
+        pytest.skip("markdownlint-cli2 not found in PATH")
     try:
-        if shutil.which("npx"):
-            result = subprocess.run(
-                ["npx", "--yes", "markdownlint-cli2", "--version"],
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=10,
-            )
-        elif shutil.which("markdownlint-cli2"):
-            result = subprocess.run(
-                ["markdownlint-cli2", "--version"],
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=10,
-            )
-        else:
-            pytest.skip("markdownlint-cli2 not found in PATH")
+        cmd = [*cmd_base, "--version"]
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+        )
         assert_that(result.returncode).is_equal_to(0)
     except (subprocess.TimeoutExpired, FileNotFoundError):
         pytest.skip("markdownlint-cli2 not available")
@@ -102,6 +104,7 @@ def test_markdownlint_direct_vs_lintro_parity() -> None:
     # Compare issue counts (allow some variance due to parsing differences)
     # Direct count may include lines we don't parse, so lintro count <= direct
     assert_that(lintro_result.issues_count).is_greater_than_or_equal_to(0)
+    assert_that(lintro_result.issues_count).is_less_than_or_equal_to(direct_count)
     # If direct found issues, lintro should also find some
     if direct_count > 0:
         assert_that(lintro_result.issues_count).is_greater_than(0)
