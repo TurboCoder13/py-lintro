@@ -11,6 +11,7 @@ from pathlib import Path
 
 from loguru import logger
 
+from lintro.config import LintroConfig
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.utils.path_utils import find_lintro_ignore
@@ -447,8 +448,6 @@ class BaseTool(ABC):
         Returns:
             bool: True if Lintro config should be injected.
         """
-        import os
-
         # Allow tests to disable config injection
         if os.environ.get("LINTRO_SKIP_CONFIG_INJECTION"):
             return False
