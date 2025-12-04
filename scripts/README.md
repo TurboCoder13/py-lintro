@@ -1,10 +1,12 @@
 # Scripts Directory
 
-This directory contains utility scripts for development, CI/CD, Docker operations, and local testing. All scripts are organized into logical subdirectories for easy navigation.
+This directory contains utility scripts for development, CI/CD, Docker operations, and
+local testing. All scripts are organized into logical subdirectories for easy
+navigation.
 
 ## 📁 Directory Structure
 
-```
+```text
 scripts/
 ├── ci/           # CI/CD and GitHub Actions scripts
 ├── docker/       # Docker-related scripts
@@ -15,6 +17,8 @@ scripts/
 ## 🚀 Quick Start
 
 ### For New Contributors
+
+<!-- markdownlint-disable MD029 -->
 
 1. **Install dependencies:**
 
@@ -126,7 +130,8 @@ Scripts for local development and testing.
 Notes:
 
 - Most scripts support `--help` for usage.
-- `local-lintro.sh` supports `--install` to install missing tools and `--yes` for non-interactive acceptance.
+- `local-lintro.sh` supports `--install` to install missing tools and `--yes` for
+  non-interactive acceptance.
 - Set `COVERAGE_DEBUG=1` to enable verbose output in `extract-coverage.py`.
 
 ### 🛠️ Utility Scripts (`utils/`)
@@ -197,9 +202,9 @@ Generates and updates the coverage badge with color coding.
 
 #### `sbom-generate.sh`
 
-Generate and export SBOMs using `bomctl` with optional merge and multiple output
-formats (CycloneDX/SPDX). Supports dry-run planning. The script requires the
-`bomctl` binary to be installed (no container fallback).
+Generate and export SBOMs using `bomctl` with optional merge and multiple output formats
+(CycloneDX/SPDX). Supports dry-run planning. The script requires the `bomctl` binary to
+be installed (no container fallback).
 
 Features:
 
@@ -440,6 +445,8 @@ source "$(dirname "$0")/utils.sh"
 
 ### Common Issues
 
+<!-- markdownlint-disable MD029 -->
+
 1. **Permission Denied**
 
 ```bash
@@ -491,7 +498,9 @@ When adding new scripts:
 
 ## CI Scripts
 
-- `ci/codecov-upload.sh`: Legacy helper to download and run the Codecov uploader via GitHub CLI with checksum verification. Prefer using the official GitHub Action in the workflow:
+- `ci/codecov-upload.sh`: Legacy helper to download and run the Codecov uploader via
+  GitHub CLI with checksum verification. Prefer using the official GitHub Action in the
+  workflow:
 
   ```yaml
   - name: Upload coverage to Codecov
@@ -506,5 +515,7 @@ When adding new scripts:
 
   - Notes:
     - Requires `gh` (GitHub CLI) available on the runner.
-    - In GitHub Actions, `gh` expects `GH_TOKEN`. The script will automatically set `GH_TOKEN` from `GITHUB_TOKEN`.
-    - Set `CODECOV_VERSION` (and optionally `CODECOV_SHA256`) via organization or repo vars.
+    - In GitHub Actions, `gh` expects `GH_TOKEN`. The script will automatically set
+      `GH_TOKEN` from `GITHUB_TOKEN`.
+    - Set `CODECOV_VERSION` (and optionally `CODECOV_SHA256`) via organization or repo
+      vars.

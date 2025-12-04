@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD041 -->
+
 ## 🔄 Dependency Updates
 
 This PR updates dependencies to keep the project secure, stable, and fast. ✨
@@ -12,17 +14,19 @@ This PR updates dependencies to keep the project secure, stable, and fast. ✨
 | {{#each packageFile.deps as | dep         | }}   |
 
 {{#if dep.updates.length}}
-| {{#if dep.packageName}}`{{dep.packageName}}`{{else}}`{{dep.depName}}`{{/if}} | `{{dep.currentValue}}` → `{{dep.newValue}}` | {{#if dep.isDevDependency}}dev{{else}}prod{{/if}} |
-{{/if}}
-{{/each}}
-{{/each}}
-{{/if}}
+
+<!-- markdownlint-disable-next-line MD013 -->
+
+| {{#if dep.packageName}}`{{dep.packageName}}`{{else}}`{{dep.depName}}`{{/if}} |
+`{{dep.currentValue}}` → `{{dep.newValue}}` |
+{{#if dep.isDevDependency}}dev{{else}}prod{{/if}} | {{/if}} {{/each}} {{/each}} {{/if}}
 
 ## Renovate Configuration
 
 📅 **Schedule**: At night between 10 PM and 11 PM UTC.
 
-🚦 **Automerge**: Enabled for patch and minor updates only. Major updates require manual merging.
+🚦 **Automerge**: Enabled for patch and minor updates only. Major updates require manual
+merging.
 
 ♻️ **Rebasing**: Whenever PR becomes conflicted, or you tick the rebase/retry checkbox.
 

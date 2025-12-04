@@ -1,8 +1,33 @@
 # Configuration Guide
 
-This guide covers all configuration options for Lintro and the underlying tools it integrates. Learn how to customize behavior, set tool-specific options, and optimize Lintro for your project.
+This guide covers all configuration options for Lintro and the underlying tools it
+integrates. Learn how to customize behavior, set tool-specific options, and optimize
+Lintro for your project.
 
 ## Lintro Configuration
+
+### Configuration Report Command
+
+Use `lintro config` to view the current configuration status for all tools:
+
+```bash
+# View configuration report
+lintro config
+
+# Show detailed output including native configs
+lintro config --verbose
+
+# Output as JSON for scripting
+lintro config --json
+```
+
+The config command shows:
+
+- **Global settings**: Central `line_length`, tool ordering strategy
+- **Tool execution order**: Based on configured strategy (priority, alphabetical, or
+  custom)
+- **Per-tool configuration**: Effective settings for each tool
+- **Configuration warnings**: Inconsistencies between tools
 
 ### Command-Line Options
 
@@ -53,28 +78,134 @@ export LINTRO_DEFAULT_FORMAT="grid"
 
 ## Tool Configuration
 
-Lintro respects each tool's native configuration files, allowing you to leverage existing setups.
+Lintro respects each tool's native configuration files, allowing you to leverage
+existing setups.
 
 ### Lintro Project Config
 
-You can set Lintro-level defaults in `pyproject.toml` under `[tool.lintro]`.
-CLI `--tool-options` override file-based config.
+You can set Lintro-level defaults in `pyproject.toml` under `[tool.lintro]`. CLI
+`--tool-options` override file-based config.
 
-Example enabling Ruff formatter by default and controlling fix stages during
-`lintro format`:
+#### Central Line Length Configuration
+
+Lintro supports a central `line_length` configuration to ensure consistency across
+tools. Without this, you might have Ruff using 88, Black using 88, but Markdownlint
+using 80—causing confusing results on Markdown files.
 
 ```toml
+[tool.lintro]
+line_length = 88  # Single source of truth for line length
+```
+
+**How it works:**
+
+The central `line_length` value is determined by (in order):
+
+1. `[tool.lintro]` `line_length` if set
+2. Falls back to `[tool.ruff]` `line-length` if not set
+
+**Which tools are synced:**
+
+<!-- markdownlint-disable MD060 -->
+
+| Tool                  | Synced?   | How                                                 |
+| --------------------- | --------- | --------------------------------------------------- |
+| **Ruff**              | ✅ Source | Reads from `[tool.ruff]` or central config          |
+| **Black**             | ✅ Yes    | Lintro injects via `--line-length` CLI arg          |
+| **Markdownlint-cli2** | ✅ Yes    | Lintro creates `.markdownlint.json` with MD013 rule |
+| **Prettier**          | ❌ No     | Uses `.prettierrc` only (no CLI override available) |
+| **Yamllint**          | ❌ No     | Uses `.yamllint` only (no CLI override available)   |
+
+<!-- markdownlint-enable MD060 -->
+
+**Priority order for synced tools:**
+
+1. CLI `--tool-options` (highest)
+2. `[tool.lintro.<tool>]` config
+3. Central `[tool.lintro]` config
+4. Tool's native config (lowest for synced tools)
+
+**For non-synced tools (Prettier, Yamllint):** These tools only read their native config
+files. If you use these tools, manually ensure their line length settings match your
+central config:
+
+```json
+// .prettierrc - must manually match [tool.lintro] line_length
+{
+  "printWidth": 88
+}
+```
+
+```yaml
+# .yamllint - must manually match [tool.lintro] line_length
+rules:
+  line-length:
+    max: 88
+```
+
+**Example configuration:**
+
+```toml
+[tool.lintro]
+line_length = 88  # Central line length for all tools
+
 [tool.lintro.ruff]
 format = true      # run `ruff format` during fmt (default true)
 lint_fix = true    # run `ruff check --fix` during fmt (default true)
+
+# Override line_length for a specific tool if needed
+[tool.lintro.markdownlint-cli2]
+line_length = 120  # Markdown files can be longer
 ```
+
+### Tool Ordering Configuration
+
+Lintro supports configurable tool execution order. By default, tools run in priority
+order (formatters before linters), but you can change this behavior.
+
+```toml
+[tool.lintro]
+# Tool order strategy: "priority" (default), "alphabetical", or "custom"
+tool_order = "priority"
+
+# For "custom" strategy, specify the order explicitly
+tool_order_custom = ["prettier", "black", "ruff", "markdownlint", "yamllint"]
+
+# Override individual tool priorities (lower = runs first)
+tool_priorities = { ruff = 5, black = 10, prettier = 1 }
+```
+
+**Tool Order Strategies:**
+
+| Strategy       | Description                                                      |
+| -------------- | ---------------------------------------------------------------- |
+| `priority`     | Formatters run before linters based on priority values (default) |
+| `alphabetical` | Tools run in alphabetical order by name                          |
+| `custom`       | Tools run in order specified by `tool_order_custom`              |
+
+**Default Tool Priorities:**
+
+| Tool         | Priority | Type             |
+| ------------ | -------- | ---------------- |
+| prettier     | 10       | Formatter        |
+| black        | 15       | Formatter        |
+| ruff         | 20       | Linter/Formatter |
+| markdownlint | 30       | Linter           |
+| yamllint     | 35       | Linter           |
+| darglint     | 40       | Linter           |
+| bandit       | 45       | Security         |
+| hadolint     | 50       | Infrastructure   |
+| actionlint   | 55       | Infrastructure   |
+| pytest       | 100      | Test Runner      |
+
+Lower priority values run first. This ensures formatters run before linters, avoiding
+false positives from linters detecting issues that formatters would fix.
 
 ### Post-checks Configuration
 
-Black is integrated as a post-check tool by default. Post-checks run after the
-main tools complete and can be configured to enforce failure if issues are
-found. This avoids double-formatting with Ruff and keeps formatting decisions
-explicit.
+Black is integrated as a post-check tool by default. Post-checks run after the main
+tools complete and can be configured to enforce failure if issues are found. This avoids
+double-formatting with Ruff and keeps formatting decisions explicit.
 
 ```toml
 [tool.lintro.post_checks]
@@ -85,16 +216,16 @@ enforce_failure = true   # Fail the run if Black finds issues in check mode
 
 Notes:
 
-- With post-checks enabled for Black, Ruff’s `format`/`format_check` stages can
-  be disabled or overridden via CLI when desired.
+- With post-checks enabled for Black, Ruff’s `format`/`format_check` stages can be
+  disabled or overridden via CLI when desired.
 - In `lintro check`, Black runs with `--check` and contributes to failure when
-  `enforce_failure` is true. In `lintro format`, Black formats files in the
-  post-check phase.
+  `enforce_failure` is true. In `lintro format`, Black formats files in the post-check
+  phase.
 
 #### Black Options via `--tool-options`
 
-You can override Black behavior on the CLI. Supported options include
-`line_length`, `target_version`, `fast`, `preview`, and `diff`.
+You can override Black behavior on the CLI. Supported options include `line_length`,
+`target_version`, `fast`, `preview`, and `diff`.
 
 ```bash
 # Increase line length and target a specific Python version
@@ -120,24 +251,22 @@ diff = false
 
 ### Ruff vs Black Policy (Python)
 
-Lintro enforces Ruff-first linting and Black-first formatting when Black is
-configured as a post-check.
+Lintro enforces Ruff-first linting and Black-first formatting when Black is configured
+as a post-check.
 
-- Ruff: primary linter (keep strict rules like `COM812` trailing commas and
-  `E501` line length enabled for checks)
-- Black: primary formatter (applies formatting during post-checks; performs
-  safe line breaking where Ruff’s auto-format may be limited)
+- Ruff: primary linter (keep strict rules like `COM812` trailing commas and `E501` line
+  length enabled for checks)
+- Black: primary formatter (applies formatting during post-checks; performs safe line
+  breaking where Ruff’s auto-format may be limited)
 
 Runtime behavior with Black as post-check:
 
 - lintro format
-  - Ruff fixes lint issues only (Ruff `format=False`) unless explicitly
-    overridden
+  - Ruff fixes lint issues only (Ruff `format=False`) unless explicitly overridden
   - Black performs formatting in the post-check phase
 
 - lintro check
-  - Ruff runs lint checks (Ruff `format_check=False`) unless explicitly
-    overridden
+  - Ruff runs lint checks (Ruff `format_check=False`) unless explicitly overridden
   - Black runs `--check` as a post-check to enforce formatting
 
 Overrides when needed:
@@ -152,10 +281,10 @@ lintro check --tool-options ruff:format_check=True
 
 Rationale:
 
-- Avoids double-formatting churn (Ruff format followed by Black format) while
-  preserving Ruff’s stricter lint rules (e.g., `COM812`, `E501`).
-- Black’s safe wrapping is preferred for long lines; Ruff continues to enforce
-  lint limits during checks.
+- Avoids double-formatting churn (Ruff format followed by Black format) while preserving
+  Ruff’s stricter lint rules (e.g., `COM812`, `E501`).
+- Black’s safe wrapping is preferred for long lines; Ruff continues to enforce lint
+  limits during checks.
 
 ### Python Tools
 
@@ -369,7 +498,7 @@ module.exports = {
 
 **Ignore Files:** `.prettierignore`
 
-```
+```text
 node_modules/
 dist/
 build/
@@ -426,6 +555,54 @@ max = 120
 spaces = 2
 ```
 
+### Markdown Tools
+
+#### Markdownlint-cli2 Configuration {#markdownlint-cli2-configuration}
+
+Markdownlint-cli2 supports configuration via JSON, JSONC, YAML, or TOML files. Lintro
+defers to markdownlint-cli2's native configuration discovery, which searches upward from
+the file being checked.
+
+**File:** `.markdownlint.json`
+
+```json
+{
+  "default": true,
+  "MD013": {
+    "line_length": 120
+  },
+  "MD041": false
+}
+```
+
+**File:** `.markdownlint.yaml`
+
+```yaml
+default: true
+MD013:
+  line_length: 120
+MD041: false
+```
+
+**File:** `.markdownlint-cli2.jsonc`
+
+```jsonc
+{
+  "config": {
+    "default": true,
+    "MD013": { "line_length": 120 },
+  },
+}
+```
+
+**Available Options:**
+
+- Configuration files are discovered automatically by markdownlint-cli2
+- Rules can be enabled/disabled via configuration files
+- Lintro respects markdownlint-cli2's native configuration discovery
+- Future versions may expose additional options via `[tool.lintro.markdownlint-cli2]` in
+  `pyproject.toml`
+
 ### Infrastructure Tools
 
 #### Hadolint Configuration
@@ -459,13 +636,13 @@ RUN apt-get update && apt-get install -y \
 
 #### Actionlint Configuration
 
-Actionlint validates GitHub Actions workflows. Lintro discovers workflow files
-under `/.github/workflows/` when you run `lintro check .` and invokes the
-`actionlint` binary.
+Actionlint validates GitHub Actions workflows. Lintro discovers workflow files under
+`/.github/workflows/` when you run `lintro check .` and invokes the `actionlint` binary.
 
 - Discovery: YAML files filtered to those in `/.github/workflows/`
 - Defaults: Lintro does not pass special flags; native actionlint defaults are used
-- Local install: use `scripts/utils/install-tools.sh --local` to place `actionlint` on PATH
+- Local install: use `scripts/utils/install-tools.sh --local` to place `actionlint` on
+  PATH
 - Docker/CI: the Docker image installs `actionlint` during build, so CI tests run it
 
 ```bash
@@ -482,7 +659,7 @@ lintro check --tools ruff,actionlint
 
 For projects with multiple languages, organize configuration by component:
 
-```
+```text
 project/
 ├── .lintro.toml              # Lintro-specific config
 ├── pyproject.toml            # Python tools
@@ -525,7 +702,8 @@ file_prefix = "lintro-report"
 
 ### Output System: Auto-Generated Reports
 
-Lintro now generates all output formats for every run in a timestamped directory under `.lintro/` (e.g., `.lintro/run-20240722-153000/`).
+Lintro now generates all output formats for every run in a timestamped directory under
+`.lintro/` (e.g., `.lintro/run-20240722-153000/`).
 
 You do not need to specify output format or file options. Each run produces:
 
@@ -535,7 +713,8 @@ You do not need to specify output format or file options. Each run produces:
 - `report.html`: Web-viewable HTML report
 - `summary.csv`: Spreadsheet-friendly summary
 
-This ensures you always have every format available for your workflow, CI, or reporting needs.
+This ensures you always have every format available for your workflow, CI, or reporting
+needs.
 
 ## Advanced Configuration
 
@@ -643,6 +822,8 @@ repos:
 
 ### Makefile Integration
 
+<!-- markdownlint-disable MD010 -->
+
 ```makefile
 .PHONY: lint fix check quality install-tools
 
@@ -666,6 +847,8 @@ install-tools:
 	pip install ruff darglint
 	npm install -g prettier
 ```
+
+<!-- markdownlint-enable MD010 -->
 
 ### IDE Integration
 
@@ -765,4 +948,5 @@ darglint src/main.py
 prettier --check package.json
 ```
 
-This comprehensive configuration guide should help you customize Lintro to fit your project's specific needs and integrate seamlessly into your development workflow!
+This comprehensive configuration guide should help you customize Lintro to fit your
+project's specific needs and integrate seamlessly into your development workflow!

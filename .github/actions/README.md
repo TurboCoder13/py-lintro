@@ -1,11 +1,13 @@
 # Composite Actions
 
-Centralized, reusable steps to keep workflows small and DRY. Each action exposes clear inputs in its action.yml.
+Centralized, reusable steps to keep workflows small and DRY. Each action exposes clear
+inputs in its action.yml.
 
 ## .github/actions/setup-docker
 
 - Purpose: Set up Docker Buildx; optionally log in to a registry (e.g., GHCR)
-- **Note**: This action does NOT include hardened runner - use in workflows that already have hardening
+- **Note**: This action does NOT include hardened runner - use in workflows that already
+  have hardening
 - Inputs:
   - login (string, default 'false'): set to 'true' to enable login
   - registry (string, default ghcr.io)
@@ -27,15 +29,18 @@ Example:
 
 ## .github/actions/post-pr-comment
 
-- Purpose: Delete previous PR comments by marker (optional) and post a prepared comment file
+- Purpose: Delete previous PR comments by marker (optional) and post a prepared comment
+  file
 - Inputs:
   - file (string, required): path to the comment file
   - marker (string, optional): marker used to delete previous comments
 
 Prerequisites:
 
-- The workflow must set up Python and `uv` and sync project dependencies (the composite invokes repo scripts that use `uv` and Python deps like `httpx`).
-- Required env vars are provided by GitHub Actions: `GITHUB_TOKEN`, `GITHUB_REPOSITORY`, and `github.event.pull_request.number`.
+- The workflow must set up Python and `uv` and sync project dependencies (the composite
+  invokes repo scripts that use `uv` and Python deps like `httpx`).
+- Required env vars are provided by GitHub Actions: `GITHUB_TOKEN`, `GITHUB_REPOSITORY`,
+  and `github.event.pull_request.number`.
 
 Example:
 
@@ -55,7 +60,8 @@ Example:
 
 Usage note:
 
-- Ensure the directory specified by `path` exists before calling the composite (e.g., generate `_site` first).
+- Ensure the directory specified by `path` exists before calling the composite (e.g.,
+  generate `_site` first).
 
 Example:
 

@@ -1,14 +1,18 @@
 # Tool Analysis Documentation
 
-This directory contains comprehensive analyses comparing Lintro's wrapper implementations with the core tools themselves.
+This directory contains comprehensive analyses comparing Lintro's wrapper
+implementations with the core tools themselves.
 
 ## Available Analyses
 
 ### [Ruff Analysis](./ruff-analysis.md)
 
+<!-- markdownlint-disable MD036 -->
+
 **Comprehensive Python Static Code Analyzer**
 
-- ✅ **Preserved**: Linting, formatting, auto-fixing, rule selection, configuration files
+- ✅ **Preserved**: Linting, formatting, auto-fixing, rule selection, configuration
+  files
 - ⚠️ **Limited**: Runtime rule customization, watch mode, cache control, statistics
 - 🚀 **Enhanced**: Combined linting/formatting, smart fix handling, unified API
 
@@ -56,11 +60,15 @@ This directory contains comprehensive analyses comparing Lintro's wrapper implem
 
 **Dockerfile Linter for Best Practices**
 
-- ✅ **Preserved**: Dockerfile analysis, shell script linting, best practices, security scanning
+- ✅ **Preserved**: Dockerfile analysis, shell script linting, best practices, security
+  scanning
 - ⚠️ **Limited**: Runtime rule customization, Docker Compose support, auto-fixing
 - 🚀 **Enhanced**: Issue normalization, Python integration, error parsing
+<!-- markdownlint-enable MD036 -->
 
 ### [Black Analysis](./black-analysis.md)
+
+<!-- markdownlint-disable-next-line MD036 -->
 
 **Python Code Formatter**
 
@@ -118,6 +126,8 @@ Each analysis follows a consistent structure:
 | **Output**      | Various formats               | Standardized objects                |
 
 ## Use Case Recommendations
+
+<!-- markdownlint-disable MD026 -->
 
 ### Use Core Tools When:
 

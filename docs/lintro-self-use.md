@@ -1,6 +1,8 @@
 # Lintro Self-Use: Eating Our Own Dog Food 🐕
 
-This document explains how the Lintro project uses Lintro itself for code quality assurance. This demonstrates the tool's capabilities and ensures we maintain high code standards.
+This document explains how the Lintro project uses Lintro itself for code quality
+assurance. This demonstrates the tool's capabilities and ensures we maintain high code
+standards.
 
 ## 🎯 Philosophy
 

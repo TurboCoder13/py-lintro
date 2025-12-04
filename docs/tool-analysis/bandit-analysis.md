@@ -3,8 +3,8 @@
 ## Overview
 
 Bandit is a security linter for Python code that inspects AST nodes and reports
-potential vulnerabilities. This analysis compares Lintro's wrapper with the core
-Bandit tool.
+potential vulnerabilities. This analysis compares Lintro's wrapper with the core Bandit
+tool.
 
 ## Core Tool Capabilities
 
@@ -59,8 +59,8 @@ result = tool.check(["src/"])
 
 ## ⚠️ Limited/Missing Features
 
-- ⚠️ Bandit-specific excludes (`-x/--exclude`) not wired through (Lintro has its
-  own exclude mechanism)
+- ⚠️ Bandit-specific excludes (`-x/--exclude`) not wired through (Lintro has its own
+  exclude mechanism)
 - ⚠️ `--exit-zero` not exposed (can be useful in CI)
 - ⚠️ Disable recursion (always `-r`) not exposed
 
@@ -72,5 +72,5 @@ result = tool.check(["src/"])
 
 ## Recommendations
 
-- Use Lintro defaults for stable CI JSON; add proposed pass-throughs where needed
-  for selective scanning and CI gating behavior.
+- Use Lintro defaults for stable CI JSON; add proposed pass-throughs where needed for
+  selective scanning and CI gating behavior.

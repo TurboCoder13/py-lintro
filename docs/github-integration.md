@@ -1,6 +1,7 @@
 # GitHub Integration Guide
 
-This guide explains how to set up Lintro with GitHub Actions for automated code quality checks, coverage reporting, and CI/CD integration.
+This guide explains how to set up Lintro with GitHub Actions for automated code quality
+checks, coverage reporting, and CI/CD integration.
 
 ## Quick Setup
 
@@ -68,7 +69,8 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 - 📦 **Artifact upload** for report retention
 - 🌐 **Optional GitHub Pages deployment** for report hosting
 
-If you want to publish the weekly report to Pages, prefer using the dedicated `pages-deploy-coverage.yml` pattern as shown above.
+If you want to publish the weekly report to Pages, prefer using the dedicated
+`pages-deploy-coverage.yml` pattern as shown above.
 
 ### 5. Complete CI Pipeline
 
@@ -93,8 +95,8 @@ If you want to publish the weekly report to Pages, prefer using the dedicated `p
 
 ### 7. OpenSSF Allstar (Repository Security Enforcement)
 
-Allstar is an OpenSSF GitHub App that enforces repository security policies
-org-wide or per-repo. To enable at the repo level:
+Allstar is an OpenSSF GitHub App that enforces repository security policies org-wide or
+per-repo. To enable at the repo level:
 
 - Create `.allstar/` with:
   - `allstar.yaml` → enable opt-in at repo level
@@ -161,7 +163,8 @@ Edit the workflow files to match your project structure:
 
 1. Go to repository **Settings** → **Pages**
 2. Select **Source:** "GitHub Actions"
-3. Your coverage badge will be available at: `https://TurboCoder13.github.io/py-lintro/badges/coverage.svg`
+3. Your coverage badge will be available at:
+   `https://TurboCoder13.github.io/py-lintro/badges/coverage.svg`
 
 ## Release Automation (Single Release Train)
 
@@ -170,34 +173,39 @@ The repository ships with fully automated semantic releases and PyPI publishing.
 - **Automated Release PR** (`.github/workflows/semantic-release.yml`)
   - On push to `main`, computes the next version from Conventional Commits
   - Updates `pyproject.toml` and `lintro/__init__.py`
-  - Opens a Release PR (no direct push to main) and enables auto-merge; once checks pass, it merges
+  - Opens a Release PR (no direct push to main) and enables auto-merge; once checks
+    pass, it merges
 
 - **Auto Tag on Main** (`.github/workflows/auto-tag-on-main.yml`)
-  - After the Release PR is merged, a guard step ensures the last commit matches `chore(release):` pattern
-  - Detects the new version in `pyproject.toml`, and creates/pushes the tag if it does not already exist
+  - After the Release PR is merged, a guard step ensures the last commit matches
+    `chore(release):` pattern
+  - Detects the new version in `pyproject.toml`, and creates/pushes the tag if it does
+    not already exist
 
 - **Publish to PyPI on Tag** (`.github/workflows/publish-pypi-on-tag.yml`)
   - On tag push (e.g., `1.2.3`), verifies tag equals `pyproject.toml` version
   - Uses Trusted Publishing (OIDC) to upload to PyPI
   - Also creates a GitHub Release and attaches built artifacts
 
-> End-to-end: Conventional commits → Release PR (auto-merged) → Tag created → PyPI publish.
+> End-to-end: Conventional commits → Release PR (auto-merged) → Tag created → PyPI
+> publish.
 
 ### Permissions Model (least privilege)
 
 - Default each workflow to `permissions: { contents: read }`.
 - Grant elevated permissions only where required:
   - Tag creation job: `contents: write`.
-  - PyPI publish job: `id-token: write` (for OIDC) and `contents: write` only if creating a GH Release.
+  - PyPI publish job: `id-token: write` (for OIDC) and `contents: write` only if
+    creating a GH Release.
   - PR comment jobs: `pull-requests: write`.
 
 ### Why we do not allow `astral-sh/setup-uv`
 
 Our Actions policy requires that all actions (including transitive actions used by
-composites) are allowlisted and pinned to a full commit SHA. The
-`astral-sh/setup-uv` action invokes `actions/setup-python@v5` internally, which
-is both not on our allowlist and referenced by tag (not a 40-char SHA). This
-causes policy enforcement to block any job that uses `setup-uv`.
+composites) are allowlisted and pinned to a full commit SHA. The `astral-sh/setup-uv`
+action invokes `actions/setup-python@v5` internally, which is both not on our allowlist
+and referenced by tag (not a 40-char SHA). This causes policy enforcement to block any
+job that uses `setup-uv`.
 
 To comply, we replaced it with an internal composite `setup-env` that:
 
@@ -205,18 +213,22 @@ To comply, we replaced it with an internal composite `setup-env` that:
 - provisions the requested Python version via `uv python install`, and
 - syncs dependencies, keeping our pipeline policy-compliant.
 
-Deprecated/manual flows (e.g., direct Release creation workflows) are removed to avoid parallel release paths.
+Deprecated/manual flows (e.g., direct Release creation workflows) are removed to avoid
+parallel release paths.
 
 ### Labels & guards
 
 - Release PRs are labeled `release-bump` to make them easy to target in policies.
-- Tagging is guarded in `auto-tag-on-main.yml` by checking the last commit title starts with `chore(release):` to ensure tags are only created after Release PR merges.
+- Tagging is guarded in `auto-tag-on-main.yml` by checking the last commit title starts
+  with `chore(release):` to ensure tags are only created after Release PR merges.
 
 ### Security & Pinning
 
-- Third-party actions are pinned to commit SHAs for reproducibility and supply-chain safety.
+- Third-party actions are pinned to commit SHAs for reproducibility and supply-chain
+  safety.
 - Official GitHub actions can also be pinned; we’ve pinned most for consistency.
-- `pypa/gh-action-pypi-publish` remains on `release/v1` by policy (Trusted Publishing updates). If desired, pinning to a SHA is possible.
+- `pypa/gh-action-pypi-publish` remains on `release/v1` by policy (Trusted Publishing
+  updates). If desired, pinning to a SHA is possible.
 
 ## Example Workflows
 
@@ -382,7 +394,8 @@ Add to your README.md:
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/TurboCoder13/py-lintro)
 ```
 
-Reference installation docs: `https://github.com/ossf/scorecard?tab=readme-ov-file#installation`.
+Reference installation docs:
+`https://github.com/ossf/scorecard?tab=readme-ov-file#installation`.
 
 ## Advanced Configuration
 
@@ -503,4 +516,5 @@ Using Lintro in GitHub Actions provides:
 6. **Set up quality gates** to maintain code standards
 7. **Monitor coverage trends** over time
 
-This integration transforms your repository into a high-quality, maintainable codebase with automated quality assurance! 🚀
+This integration transforms your repository into a high-quality, maintainable codebase
+with automated quality assurance! 🚀

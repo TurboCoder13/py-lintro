@@ -2,15 +2,20 @@
 
 ## Overview
 
-Prettier is a code formatter that supports JavaScript, TypeScript, CSS, HTML, and many other languages. This analysis compares Lintro's wrapper implementation with the core Prettier tool.
+Prettier is a code formatter that supports JavaScript, TypeScript, CSS, HTML, and many
+other languages. This analysis compares Lintro's wrapper implementation with the core
+Prettier tool.
 
 ## Core Tool Capabilities
 
 Prettier provides extensive CLI options including:
 
-- **Formatting options**: `--tab-width`, `--use-tabs`, `--semi`, `--single-quote`, `--quote-props`, `--trailing-comma`
-- **File handling**: `--write`, `--check`, `--config`, `--ignore-path`, `--stdin-filepath`
-- **Parser options**: `--parser` (auto-detect or specify: babel, typescript, css, html, etc.)
+- **Formatting options**: `--tab-width`, `--use-tabs`, `--semi`, `--single-quote`,
+  `--quote-props`, `--trailing-comma`
+- **File handling**: `--write`, `--check`, `--config`, `--ignore-path`,
+  `--stdin-filepath`
+- **Parser options**: `--parser` (auto-detect or specify: babel, typescript, css, html,
+  etc.)
 - **Output control**: `--list-different`, `--require-pragma`, `--insert-pragma`
 - **Debug options**: `--debug-check`, `--debug-print-doc`
 
@@ -23,7 +28,8 @@ Prettier provides extensive CLI options including:
 - ✅ **Formatting capability**: Full preservation through `--write` flag
 - ✅ **Check mode**: Preserved through `--check` flag
 - ✅ **File targeting**: Supports file patterns and paths
-- ✅ **YAML formatting**: Formats `*.yml` / `*.yaml` files while yamllint handles linting
+- ✅ **YAML formatting**: Formats `*.yml` / `*.yaml` files while yamllint handles
+  linting
 - ✅ **Configuration files**: Respects `.prettierrc` and `prettier.config.js`
 - ✅ **Error detection**: Captures formatting violations as issues
 - ✅ **Auto-fixing**: Can automatically format files when `fix()` is called
@@ -41,11 +47,15 @@ cmd = ["prettier", "--write"] + self.files
 
 **Granular Configuration:**
 
-- ⚠️ **Runtime formatting options**: Prefer config files; proposed pass-throughs include `tab_width`, `single_quote`, `trailing_comma`, `end_of_line`, etc.
+- ⚠️ **Runtime formatting options**: Prefer config files; proposed pass-throughs include
+  `tab_width`, `single_quote`, `trailing_comma`, `end_of_line`, etc.
 - ⚠️ **Parser specification**: Proposed `prettier:parser=typescript` when needed.
-- ⚠️ **Discovery controls**: Proposed `prettier:config=...`, `prettier:no_config=True`, `prettier:ignore_path=.prettierignore`.
-- ⚠️ **Debug capabilities**: Optional `prettier:debug_check=True`, `prettier:debug_print_doc=True`.
-- ⚠️ **Pragma handling**: Optional `prettier:require_pragma=True`, `prettier:insert_pragma=True`.
+- ⚠️ **Discovery controls**: Proposed `prettier:config=...`, `prettier:no_config=True`,
+  `prettier:ignore_path=.prettierignore`.
+- ⚠️ **Debug capabilities**: Optional `prettier:debug_check=True`,
+  `prettier:debug_print_doc=True`.
+- ⚠️ **Pragma handling**: Optional `prettier:require_pragma=True`,
+  `prettier:insert_pragma=True`.
 
 **Advanced Features:**
 
@@ -55,14 +65,16 @@ cmd = ["prettier", "--write"] + self.files
 
 **Error Handling:**
 
-- ⚠️ **Limited error context**: Basic error reporting without detailed formatting suggestions
+- ⚠️ **Limited error context**: Basic error reporting without detailed formatting
+  suggestions
 - ⚠️ **No syntax validation**: Doesn't expose Prettier's syntax error detection
 
 ### 🚀 Enhancements
 
 **Unified Interface:**
 
-- ✅ **Consistent API**: Same interface as other linting tools (`check()`, `fix()`, `set_options()`)
+- ✅ **Consistent API**: Same interface as other linting tools (`check()`, `fix()`,
+  `set_options()`)
 - ✅ **Structured output**: Issues formatted as standardized `Issue` objects
 - ✅ **File filtering**: Built-in file extension filtering and ignore patterns
 - ✅ **Integration ready**: Seamless integration with other tools in linting pipeline
@@ -70,6 +82,7 @@ cmd = ["prettier", "--write"] + self.files
 **Error Processing:**
 
 - ✅ **Issue normalization**: Converts Prettier output to standard Issue format:
+
   ```python
   Issue(
       file_path=file_path,
@@ -146,4 +159,5 @@ The Lintro wrapper relies entirely on Prettier's configuration files:
 - `prettier.config.js`
 - `package.json` "prettier" field
 
-For runtime customization, users should modify these config files rather than passing CLI options.
+For runtime customization, users should modify these config files rather than passing
+CLI options.

@@ -4,10 +4,14 @@
 
 Currently supporting the latest stable version:
 
+<!-- markdownlint-disable MD060 -->
+
 | Version | Supported |
 | ------- | --------- |
 | 0.1.x   | ✅        |
 | < 0.1   | ❌        |
+
+<!-- markdownlint-enable MD060 -->
 
 ## Reporting Security Issues
 
@@ -15,7 +19,8 @@ Found a security vulnerability? Here's how to report it:
 
 ### **Private Reporting Only**
 
-Please **do not** create public GitHub issues for security vulnerabilities. This helps prevent potential exploitation while we work on a fix.
+Please **do not** create public GitHub issues for security vulnerabilities. This helps
+prevent potential exploitation while we work on a fix.
 
 ### **How to Report**
 
@@ -46,7 +51,8 @@ Please **do not** create public GitHub issues for security vulnerabilities. This
 
 ## Security Updates
 
-Security fixes will be released as patch versions and documented in [CHANGELOG.md](CHANGELOG.md).
+Security fixes will be released as patch versions and documented in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Contact
 

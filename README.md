@@ -1,12 +1,18 @@
 # Lintro
 
+<!-- markdownlint-disable MD033 MD013 -->
 <img src="https://raw.githubusercontent.com/TurboCoder13/py-lintro/main/assets/images/lintro.png" alt="Lintro Logo" style="width:100%;max-width:800px;height:auto;display:block;margin:0 auto 24px auto;">
+<!-- markdownlint-enable MD033 MD013 -->
 
-A comprehensive CLI tool that unifies various code formatting, linting, and quality assurance tools under a single command-line interface.
+A comprehensive CLI tool that unifies various code formatting, linting, and quality
+assurance tools under a single command-line interface.
 
 ## What is Lintro?
 
-Lintro is a unified command-line interface that brings together multiple code quality tools into a single, easy-to-use package. Instead of managing separate tools like Ruff, Prettier, Yamllint, and others individually, Lintro provides a consistent interface for all your code quality needs.
+Lintro is a unified command-line interface that brings together multiple code quality
+tools into a single, easy-to-use package. Instead of managing separate tools like Ruff,
+Prettier, Yamllint, and others individually, Lintro provides a consistent interface for
+all your code quality needs.
 
 [![Python](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/downloads/)
 [![Coverage](https://codecov.io/gh/TurboCoder13/py-lintro/branch/main/graph/badge.svg)](https://codecov.io/gh/TurboCoder13/py-lintro)
@@ -19,7 +25,13 @@ Lintro is a unified command-line interface that brings together multiple code qu
 [![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
 
 [![CodeQL](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/TurboCoder13/py-lintro) [![SBOM](https://img.shields.io/badge/SBOM-enabled-brightgreen)](docs/security/assurance.md) [![Download SBOM](https://img.shields.io/badge/SBOM-download_latest-blue?logo=github)](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11142/badge)](https://www.bestpractices.dev/projects/11142)
+
+<!-- markdownlint-disable-next-line MD013 -->
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/TurboCoder13/py-lintro)
+[![SBOM](https://img.shields.io/badge/SBOM-enabled-brightgreen)](docs/security/assurance.md)
+[![Download SBOM](https://img.shields.io/badge/SBOM-download_latest-blue?logo=github)](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11142/badge)](https://www.bestpractices.dev/projects/11142)
 
 ### Why Lintro?
 
@@ -42,12 +54,14 @@ Lintro is a unified command-line interface that brings together multiple code qu
 
 ## Security & Compliance
 
-Lintro follows modern security best practices and provides comprehensive supply chain transparency:
+Lintro follows modern security best practices and provides comprehensive supply chain
+transparency:
 
 - **SBOM Generation**: Automated Software Bill of Materials on every push to main
 - **Formats**: CycloneDX 1.6 and SPDX 2.3 (industry standards)
 - **Compliance**: Meets Executive Order 14028 requirements for federal software
-- **Download**: [Latest SBOM artifacts](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml)
+- **Download**:
+  [Latest SBOM artifacts](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml)
 - **Documentation**: See [Security Assurance](docs/security/assurance.md) for details
 
 ### What's in the SBOM?
@@ -78,26 +92,45 @@ grype sbom:main-*-py-lintro-sbom.spdx-2.3.json
 
 ## Supported Tools
 
-| Tool                                                                                                                                                | Language            | Auto-fix |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | -------- |
-| [![Actionlint](https://img.shields.io/badge/Actionlint-GitHub%20Workflows-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint) | ⚙️ GitHub Workflows | -        |
-| [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)                       | 🐍 Python           | -        |
-| [![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint)     | 🐍 Python           | -        |
-| [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)                  | 🐳 Dockerfile       | -        |
-| [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                              | 🟨 JS/TS · 🧾 JSON  | ✅       |
-| [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                              | 🐍 Python           | ✅       |
-| [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                         | 🐍 Python           | ✅       |
-| [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                 | 🧾 YAML             | -        |
+| Tool | Language | Auto-fix |
+| ---- | -------- | -------- |
+
+<!-- markdownlint-disable MD060 MD013 -->
+
+|
+[![Actionlint](https://img.shields.io/badge/Actionlint-GitHub%20Workflows-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)
+| ⚙️ GitHub Workflows | - | |
+[![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)
+| 🐍 Python | - | |
+[![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint)
+| 🐍 Python | - | |
+[![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)
+| 🐳 Dockerfile | - | |
+[![Markdownlint-cli2](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2)
+| 📝 Markdown | - | |
+[![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)
+| 🟨 JS/TS · 🧾 JSON | ✅ | |
+[![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)
+| 🐍 Python | ✅ | |
+[![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
+| 🐍 Python | ✅ | |
+[![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)
+| 🧾 YAML | - |
+
+<!-- markdownlint-enable MD060 MD013 -->
 
 ## Requirements
 
 ### Python Version
 
-**Python 3.13+** is required. Lintro uses modern Python features and syntax that are not available in older versions.
+**Python 3.13+** is required. Lintro uses modern Python features and syntax that are not
+available in older versions.
 
 ### Tool Dependencies
 
-Lintro automatically installs and manages several Python tools to ensure consistent behavior. These tools are bundled as dependencies with versions centrally managed in `pyproject.toml`:
+Lintro automatically installs and manages several Python tools to ensure consistent
+behavior. These tools are bundled as dependencies with versions centrally managed in
+`pyproject.toml`:
 
 - **Ruff** - Fast Python linter and formatter
 - **Black** - Python code formatter
@@ -107,11 +140,15 @@ Lintro automatically installs and manages several Python tools to ensure consist
 
 ### Optional External Tools
 
-For full functionality, you may want to install additional tools with versions managed in `pyproject.toml`:
+For full functionality, you may want to install additional tools with versions managed
+in `pyproject.toml`:
 
 - **Prettier** - JavaScript/TypeScript formatter (`npm install --save-dev prettier`)
-- **Hadolint** - Dockerfile linter ([GitHub Releases](https://github.com/hadolint/hadolint/releases))
-- **Actionlint** - GitHub Actions linter ([GitHub Releases](https://github.com/rhysd/actionlint/releases))
+- **Markdownlint-cli2** - Markdown linter (`npm install --save-dev markdownlint-cli2`)
+- **Hadolint** - Dockerfile linter
+  ([GitHub Releases](https://github.com/hadolint/hadolint/releases))
+- **Actionlint** - GitHub Actions linter
+  ([GitHub Releases](https://github.com/rhysd/actionlint/releases))
 
 ### Version Verification
 
@@ -121,7 +158,8 @@ Check all tool versions with:
 lintro list-tools
 ```
 
-This command reads version requirements directly from `pyproject.toml` and verifies your installed tools.
+This command reads version requirements directly from `pyproject.toml` and verifies your
+installed tools.
 
 ## Quick Start
 
@@ -129,7 +167,8 @@ This command reads version requirements directly from `pyproject.toml` and verif
 
 #### From PyPI (Recommended)
 
-⚠️ **Important**: Versions prior to 0.13.2 contain a circular import bug that prevents installation as a dependency. Please use version 0.13.2 or later.
+⚠️ **Important**: Versions prior to 0.13.2 contain a circular import bug that prevents
+installation as a dependency. Please use version 0.13.2 or later.
 
 ```bash
 pip install lintro>=0.13.2
@@ -230,13 +269,15 @@ lintro test --tool-options "pytest:workers=4"                        # Parallel 
 lintro test --tool-options "pytest:parallel_preset=medium"           # Preset workers
 lintro test --tool-options "pytest:coverage_threshold=85"            # Coverage threshold
 lintro test --tool-options "pytest:html_report=report.html"          # HTML report
-lintro test --tool-options "pytest:timeout=300"                      # Test timeout
+lintro test --tool-options "pytest:timeout=300"                      # Test
+timeout
 lintro test --tool-options "pytest:reruns=2,reruns_delay=1"          # Retry failed tests
 ```
 
 #### Parallel Execution Presets
 
-Lintro provides convenient presets for parallel test execution that automatically scale based on your system's CPU count:
+Lintro provides convenient presets for parallel test execution that automatically scale
+based on your system's CPU count:
 
 | Preset   | Workers         | Best For                             | Example                                        |
 | -------- | --------------- | ------------------------------------ | ---------------------------------------------- |
@@ -264,14 +305,16 @@ See [GitHub Integration Guide](docs/github-integration.md) for setup instruction
 
 ## Documentation
 
-For comprehensive documentation, see our **[Documentation Hub](docs/README.md)** which includes:
+For comprehensive documentation, see our **[Documentation Hub](docs/README.md)** which
+includes:
 
 - **[Getting Started](docs/getting-started.md)** - Installation and basic usage
 - **[Docker Usage](docs/docker.md)** - Containerized development
 - **[GitHub Integration](docs/github-integration.md)** - CI/CD setup
 - **[Configuration](docs/configuration.md)** - Tool configuration options
 - **[Contributing](docs/contributing.md)** - Developer guide
-- **[Pytest Integration Guide](docs/tool-analysis/pytest-analysis.md)** - Complete pytest usage and troubleshooting
+- **[Pytest Integration Guide](docs/tool-analysis/pytest-analysis.md)** - Complete
+  pytest usage and troubleshooting
 - **[Tool Analysis](docs/tool-analysis/)** - Detailed tool comparisons
 
 ## Development
@@ -288,7 +331,8 @@ For comprehensive documentation, see our **[Documentation Hub](docs/README.md)**
 ./scripts/docker/docker-lintro.sh check --output-format grid
 ```
 
-For detailed information about all available scripts, see [Scripts Documentation](scripts/README.md).
+For detailed information about all available scripts, see
+[Scripts Documentation](scripts/README.md).
 
 ## Dependencies
 
@@ -298,7 +342,8 @@ For detailed information about all available scripts, see [Scripts Documentation
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for
+details.
 
 ## Troubleshooting
 
@@ -361,13 +406,16 @@ lintro check --tools ruff,prettier
 ### Getting Help
 
 - 📖 **Documentation**: Check the [docs/](docs/) directory
-- 🐛 **Bug Reports**: Use the [bug report template](.github/ISSUE_TEMPLATE/bug_report.md)
+- 🐛 **Bug Reports**: Use the
+  [bug report template](.github/ISSUE_TEMPLATE/bug_report.md)
 - 💡 **Questions**: Use the [question template](.github/ISSUE_TEMPLATE/question.md)
-- 🚀 **Feature Requests**: Use the [feature request template](.github/ISSUE_TEMPLATE/feature_request.md)
+- 🚀 **Feature Requests**: Use the
+  [feature request template](.github/ISSUE_TEMPLATE/feature_request.md)
 
 ## Contributing
 
-We welcome contributions! See our [Contributing Guide](docs/contributing.md) for details on:
+We welcome contributions! See our [Contributing Guide](docs/contributing.md) for details
+on:
 
 - Adding new tools
 - Reporting bugs

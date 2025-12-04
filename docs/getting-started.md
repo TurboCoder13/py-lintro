@@ -1,10 +1,14 @@
 # Getting Started with Lintro
 
-This guide will help you get up and running with Lintro quickly. Whether you're a new user or looking to integrate Lintro into your project, this guide covers everything you need to know.
+This guide will help you get up and running with Lintro quickly. Whether you're a new
+user or looking to integrate Lintro into your project, this guide covers everything you
+need to know.
 
 ## What is Lintro?
 
-Lintro is a unified CLI tool that brings together multiple code quality tools under a single interface. Instead of learning and configuring dozens of different linting and formatting tools, Lintro provides:
+Lintro is a unified CLI tool that brings together multiple code quality tools under a
+single interface. Instead of learning and configuring dozens of different linting and
+formatting tools, Lintro provides:
 
 - **One command** to rule them all
 - **Consistent interface** across all tools
@@ -43,11 +47,14 @@ pip install -e .
 
 ### Python Version
 
-Lintro requires **Python 3.13+**. This is a strict requirement - Lintro will not run on older Python versions.
+Lintro requires **Python 3.13+**. This is a strict requirement - Lintro will not run on
+older Python versions.
 
 ### Tool Dependencies
 
-Lintro bundles several Python tools as direct dependencies for consistent behavior. These tools are automatically installed when you install Lintro and their minimum versions are centrally managed in `pyproject.toml`:
+Lintro bundles several Python tools as direct dependencies for consistent behavior.
+These tools are automatically installed when you install Lintro and their minimum
+versions are centrally managed in `pyproject.toml`:
 
 **Bundled Python Tools:**
 
@@ -59,7 +66,8 @@ Lintro bundles several Python tools as direct dependencies for consistent behavi
 
 ### Optional External Tools
 
-Some tools require separate installation. Their minimum versions are also managed in `pyproject.toml`:
+Some tools require separate installation. Their minimum versions are also managed in
+`pyproject.toml`:
 
 - `prettier` - JavaScript/TypeScript formatter (install via npm)
 - `hadolint` - Dockerfile linter (download from GitHub releases)
@@ -73,7 +81,8 @@ You can verify all tool versions with:
 lintro list-tools
 ```
 
-This command will show the current installed version of each tool alongside the minimum required version, helping you identify any version mismatches.
+This command will show the current installed version of each tool alongside the minimum
+required version, helping you identify any version mismatches.
 
 ### Docker Installation
 
@@ -120,7 +129,7 @@ lintro check
 
 Lintro provides clear, structured output:
 
-```
+```text
 ┌─────────────────────┬──────┬───────┬─────────────────────────────────────┐
 │ File                │ Line │ Code  │ Message                             │
 ├─────────────────────┼──────┼───────┼─────────────────────────────────────┤
@@ -132,7 +141,9 @@ Lintro provides clear, structured output:
 
 ## Output System: Auto-Generated Reports
 
-Every time you run a Lintro command (check or fmt), Lintro automatically generates all output formats for you in a timestamped directory under `.lintro/` (e.g., `.lintro/run-20240722-153000/`).
+Every time you run a Lintro command (check or fmt), Lintro automatically generates all
+output formats for you in a timestamped directory under `.lintro/` (e.g.,
+`.lintro/run-20240722-153000/`).
 
 **You do not need to specify output format or file options.**
 
@@ -144,7 +155,8 @@ Each run produces:
 - `report.html`: Web-viewable HTML report (open in your browser)
 - `summary.csv`: Spreadsheet-friendly summary of all issues
 
-This means you always have every format available for your workflow, CI, or reporting needs.
+This means you always have every format available for your workflow, CI, or reporting
+needs.
 
 ## Supported Languages and Tools
 
@@ -380,6 +392,8 @@ repos:
 
 ### Makefile Integration
 
+<!-- markdownlint-disable MD010 -->
+
 ```makefile
 .PHONY: lint fix check
 
@@ -392,6 +406,8 @@ fix:
 check: lint
 	@echo "Quality check completed"
 ```
+
+<!-- markdownlint-enable MD010 -->
 
 ### VS Code Integration
 
@@ -477,6 +493,7 @@ Now that you're familiar with the basics:
 2. **Set up CI/CD** - See the [GitHub Integration Guide](github-integration.md)
 3. **Use Docker** - Read the [Docker Usage Guide](docker.md)
 4. **Contribute** - Check the [Contributing Guide](contributing.md)
-5. **Analyze tools** - Dive into [Tool Analysis](tool-analysis/) for detailed comparisons
+5. **Analyze tools** - Dive into [Tool Analysis](tool-analysis/) for detailed
+   comparisons
 
 Welcome to the Lintro community! 🚀

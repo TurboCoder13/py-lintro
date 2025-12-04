@@ -2,7 +2,9 @@
 
 ## Overview
 
-Darglint is a Python docstring linter that checks docstring style and completeness against function signatures. This analysis compares Lintro's wrapper implementation with the core Darglint tool.
+Darglint is a Python docstring linter that checks docstring style and completeness
+against function signatures. This analysis compares Lintro's wrapper implementation with
+the core Darglint tool.
 
 ## Core Tool Capabilities
 
@@ -46,9 +48,12 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 
 **Configuration Control:**
 
-- ⚠️ **Runtime docstring style**: Prefer config; proposed pass-through `darglint:docstring_style=google`.
-- ⚠️ **Strictness levels**: Already exposed (default `full`); can be overridden; document CLI mapping.
-- ⚠️ **Ignore patterns**: `ignore_regex` is exposed; emphasize usage via `--tool-options`.
+- ⚠️ **Runtime docstring style**: Prefer config; proposed pass-through
+  `darglint:docstring_style=google`.
+- ⚠️ **Strictness levels**: Already exposed (default `full`); can be overridden;
+  document CLI mapping.
+- ⚠️ **Ignore patterns**: `ignore_regex` is exposed; emphasize usage via
+  `--tool-options`.
 - ❌ **Custom error selection**: No runtime control over which errors to check
 
 **Output Customization:**
@@ -72,7 +77,8 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 
 **Unified Interface:**
 
-- ✅ **Consistent API**: Same interface as other linting tools (`check()`, `set_options()`)
+- ✅ **Consistent API**: Same interface as other linting tools (`check()`,
+  `set_options()`)
 - ✅ **Structured output**: Issues formatted as standardized `Issue` objects
 - ✅ **Python integration**: Native Python object handling vs CLI parsing
 - ✅ **Pipeline integration**: Seamless integration with other tools
@@ -80,6 +86,7 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 **Enhanced Error Processing:**
 
 - ✅ **Issue normalization**: Converts Darglint output to standard Issue format:
+
   ```python
   Issue(
       file_path=match.group(1),
@@ -192,18 +199,18 @@ Lintro preserves all Darglint error codes:
 
 ### Missing Runtime Configuration
 
-**Problem**: Cannot change docstring style at runtime
-**Workaround**: Use configuration files (`.darglint`, `setup.cfg`, `pyproject.toml`)
+**Problem**: Cannot change docstring style at runtime **Workaround**: Use configuration
+files (`.darglint`, `setup.cfg`, `pyproject.toml`)
 
 ### No JSON Output
 
-**Problem**: Cannot get structured output from core tool
-**Workaround**: Lintro provides structured `Issue` objects
+**Problem**: Cannot get structured output from core tool **Workaround**: Lintro provides
+structured `Issue` objects
 
 ### Limited Ignore Capabilities
 
-**Problem**: Cannot use runtime ignore patterns
-**Workaround**: Configure ignore patterns in Darglint config files
+**Problem**: Cannot use runtime ignore patterns **Workaround**: Configure ignore
+patterns in Darglint config files
 
 ## Future Enhancement Opportunities
 

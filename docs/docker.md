@@ -1,12 +1,14 @@
 # Docker Usage Guide
 
-This guide explains how to use Lintro with Docker for containerized development and CI environments.
+This guide explains how to use Lintro with Docker for containerized development and CI
+environments.
 
 ## Quick Start
 
 ### Using Published Image (Recommended)
 
-The easiest way to use Lintro is with the pre-built image from GitHub Container Registry:
+The easiest way to use Lintro is with the pre-built image from GitHub Container
+Registry:
 
 ```bash
 # Basic usage
@@ -109,7 +111,8 @@ docker compose build
 
 ### Using the Shell Script (Recommended)
 
-The `scripts/docker/docker-lintro.sh` script provides the easiest way to run Lintro in Docker:
+The `scripts/docker/docker-lintro.sh` script provides the easiest way to run Lintro in
+Docker:
 
 ```bash
 # Basic usage
@@ -237,7 +240,7 @@ When using the `--output` option, files are created in your current directory:
 ./scripts/docker/docker-lintro.sh fmt src/ --tools ruff
 ```
 
-### CI/CD Integration
+### Docker CI/CD Integration
 
 ```bash
 # CI-friendly output (no grid formatting)
@@ -351,6 +354,8 @@ For large codebases:
 
 ### Makefile Integration
 
+<!-- markdownlint-disable MD010 -->
+
 ```makefile
 lint:
 	./scripts/docker/docker-lintro.sh check --output-format grid
@@ -361,6 +366,8 @@ fix:
 lint-ci:
 	./scripts/docker/docker-lintro.sh check --output lint-results.txt
 ```
+
+<!-- markdownlint-enable MD010 -->
 
 ### GitHub Actions
 

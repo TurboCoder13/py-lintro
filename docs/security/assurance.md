@@ -1,6 +1,7 @@
 # Security Assurance (Overview)
 
-This assurance note explains how `py-lintro` meets its documented security requirements and provides pointers to evidence.
+This assurance note explains how `py-lintro` meets its documented security requirements
+and provides pointers to evidence.
 
 ## Requirements Coverage
 
@@ -11,7 +12,8 @@ This assurance note explains how `py-lintro` meets its documented security requi
 - Dependency Hygiene — Renovate, Dependency Review CI, `uv.lock`
 - Static/SAST — Ruff, Bandit, CodeQL; policy checks for workflows (Actionlint)
 - Container and Dockerfile — Hadolint
-- SBOM (Software Bill of Materials) — Automated generation in CycloneDX 1.6 and SPDX 2.3 formats
+- SBOM (Software Bill of Materials) — Automated generation in CycloneDX 1.6 and SPDX 2.3
+  formats
   - Workflow: `.github/workflows/sbom-on-main.yml`
   - Generated on every push to main branch
   - Includes all Python, npm, and GitHub Actions dependencies
@@ -28,7 +30,8 @@ This assurance note explains how `py-lintro` meets its documented security requi
 
 ## SBOM (Supply Chain Transparency)
 
-py-lintro automatically generates Software Bill of Materials (SBOM) for supply chain security:
+py-lintro automatically generates Software Bill of Materials (SBOM) for supply chain
+security:
 
 ### What is Generated
 
@@ -40,7 +43,8 @@ py-lintro automatically generates Software Bill of Materials (SBOM) for supply c
 ### How to Access
 
 1. **Via GitHub Actions UI**:
-   - Navigate to [SBOM workflow runs](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml)
+   - Navigate to
+     [SBOM workflow runs](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml)
    - Select the latest successful run
    - Download "sbom-artifacts" from the Artifacts section
 
@@ -51,6 +55,7 @@ py-lintro automatically generates Software Bill of Materials (SBOM) for supply c
    ```
 
 3. **Via API**:
+
    ```bash
    gh api repos/TurboCoder13/py-lintro/actions/artifacts \
      --jq '.artifacts[] | select(.name=="sbom-artifacts") | .archive_download_url'

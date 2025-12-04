@@ -7,7 +7,8 @@ This document outlines the coding standards and best practices for the Lintro pr
 ### General Guidelines
 
 - Follow [PEP 8](https://peps.python.org/pep-0008/) for code style
-- Use [Darglint](https://github.com/terrencepreilly/darglint) for docstring argument checking
+- Use [Darglint](https://github.com/terrencepreilly/darglint) for docstring argument
+  checking
 - Use [Prettier](https://prettier.io/) for frontend code formatting
 
 ### Type Hints
@@ -55,8 +56,8 @@ def calculate_total(items: list[dict[str, float]]) -> float:
 
 ### Function and Method Definitions
 
-- For function/method declarations with more than 1 parameter, use trailing commas and format with
-  Ruff
+- For function/method declarations with more than 1 parameter, use trailing commas and
+  format with Ruff
 - Same applies to function/method calls with multiple arguments
 
 ```python
@@ -157,7 +158,7 @@ class FileProcessor:
 - Use meaningful directory names
 - Separate code, tests, and documentation
 
-```
+```text
 lintro/
 ├── __init__.py
 ├── cli.py
@@ -204,7 +205,7 @@ Prefixes:
 - `build`: Changes to build system or dependencies
 - `ci`: Changes to CI configuration
 
-```
+```text
 feat: add support for mypy integration
 
 - Add MyPyTool class
@@ -308,13 +309,14 @@ We use the Lintro tool for code formatting and linting:
    ```
 
 4. Format with custom options:
+
    ```bash
    lintro format --tools ruff --core-options "ruff:--line-length=100" [PATH]
    ```
 
-### Project Structure
+### Style Guide Project Structure
 
-```
+```text
 lintro/
 ├── lintro/
 │   ├── __init__.py
@@ -338,12 +340,14 @@ lintro/
     └── test_cli_output.py
 ```
 
+<!-- markdownlint-disable MD025 -->
+
 # Formatter and Output Style Architecture
 
 ## Overview
 
-Lintro supports flexible, extensible output formatting for all tools. This is achieved by
-separating:
+Lintro supports flexible, extensible output formatting for all tools. This is achieved
+by separating:
 
 - **Table structure** (columns, extraction) per tool
 - **Output style** (plain, markdown, etc.)
@@ -429,9 +433,10 @@ def format_darglint_issues(issues, style="plain"):
 
 ## CLI Integration
 
-- The CLI can expose a `--output-style` flag to let users select the output style (e.g., `plain`,
-  `markdown`).
-- The selected style is passed to the tool formatter, which uses the appropriate OutputStyle.
+- The CLI can expose a `--output-style` flag to let users select the output style (e.g.,
+  `plain`, `markdown`).
+- The selected style is passed to the tool formatter, which uses the appropriate
+  OutputStyle.
 
 ---
 

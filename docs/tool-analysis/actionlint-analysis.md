@@ -64,5 +64,5 @@ result = tool.check(["."])
 
 ## Recommendations
 
-- Keep defaults minimal; add pass-throughs where CI or local workflows need
-  parity with upstream CLI settings.
+- Keep defaults minimal; add pass-throughs where CI or local workflows need parity with
+  upstream CLI settings.
