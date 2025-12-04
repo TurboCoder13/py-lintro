@@ -4,6 +4,7 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from typing import Any
 
 from lintro.utils.unified_config import (
     UnifiedConfigManager,

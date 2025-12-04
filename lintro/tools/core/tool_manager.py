@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from loguru import logger
+
 from lintro.models.core.tool import Tool
 from lintro.tools.tool_enum import ToolEnum
 from lintro.utils.unified_config import get_ordered_tools

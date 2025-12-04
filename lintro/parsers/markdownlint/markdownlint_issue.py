@@ -17,6 +17,6 @@ class MarkdownlintIssue:
 
     file: str
     line: int
-    column: int | None
+    column: int | None = None
     code: str
     message: str
