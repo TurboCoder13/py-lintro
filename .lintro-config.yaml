@@ -1,0 +1,130 @@
+# Lintro Configuration
+# https://github.com/TurboCoder13/py-lintro
+#
+# Lintro is the master configuration source for all tools.
+# Native tool configs (.prettierrc, .yamllint, etc.) are ignored.
+
+global:
+  line_length: 88
+  target_python: "py313"
+
+execution:
+  enabled_tools: []
+  tool_order: "priority"
+  fail_fast: false
+
+tools:
+  # Ruff - Python linter and formatter
+  ruff:
+    enabled: true
+    line-length: 88
+    target-version: "py313"
+    unsafe-fixes: false
+    exclude:
+      - ".venv"
+      - "venv"
+      - "env"
+      - "build"
+      - "dist"
+      - "__pycache__"
+      - "test_samples"
+    format:
+      quote-style: "double"
+      indent-style: "space"
+      skip-magic-trailing-comma: false
+    lint:
+      select:
+        - "E"
+        - "F"
+        - "W"
+        - "I"
+        - "COM"
+        - "N"
+        - "D"
+        - "UP"
+        - "ANN"
+        - "B"
+        - "C4"
+        - "SIM"
+      ignore:
+        - "ANN"
+      pydocstyle:
+        convention: "google"
+    # Lintro-specific options (passed to tool at runtime)
+    overrides:
+      format_check: true
+      format: true
+      lint_fix: true
+
+  # Black - Python formatter
+  black:
+    enabled: true
+    # Uses global line_length (88)
+
+  # Prettier - Multi-language formatter
+  prettier:
+    enabled: true
+    semi: true
+    singleQuote: true
+    tabWidth: 2
+    printWidth: 100
+    trailingComma: "es5"
+    overrides:
+      printWidth: 88  # Override to match global for markdown
+
+  # Markdownlint - Markdown linter
+  markdownlint:
+    enabled: true
+    MD013:
+      line_length: 88
+      code_blocks: false
+      tables: false
+
+  # Yamllint - YAML linter
+  yamllint:
+    enabled: true
+    extends: "default"
+    rules:
+      comments-indentation: "disable"
+      comments:
+        min-spaces-from-content: 1
+      truthy:
+        check-keys: true
+      line-length:
+        max: 88
+        allow-non-breakable-inline-mappings: true
+
+  # Bandit - Security linter for Python
+  bandit:
+    enabled: true
+    exclude_dirs:
+      - "tests"
+      - "test_samples"
+
+  # Hadolint - Dockerfile linter
+  hadolint:
+    enabled: true
+    ignored: []
+    trustedRegistries:
+      - "docker.io"
+      - "gcr.io"
+      - "ghcr.io"
+      - "quay.io"
+      - "registry.hub.docker.com"
+
+  # Actionlint - GitHub Actions linter
+  actionlint:
+    enabled: true
+
+  # Darglint - Docstring linter
+  darglint:
+    enabled: true
+
+  # Pytest - Test runner
+  pytest:
+    enabled: true
+    testpaths:
+      - "tests"
+    python_files: "test_*.py"
+    python_classes: "Test*"
+    python_functions: "test_*"
