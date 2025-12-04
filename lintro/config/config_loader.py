@@ -89,20 +89,33 @@ def _load_yaml_file(path: Path) -> dict[str, Any]:
 def _load_pyproject_fallback() -> dict[str, Any]:
     """Load [tool.lintro] from pyproject.toml as fallback.
 
+    Searches upward from current directory for pyproject.toml, consistent
+    with _find_config_file's search behavior.
+
     Returns:
         dict[str, Any]: Lintro configuration from pyproject.toml.
     """
-    pyproject_path = Path("pyproject.toml")
-    if not pyproject_path.exists():
-        return {}
+    current = Path.cwd().resolve()
 
-    try:
-        with pyproject_path.open("rb") as f:
-            data = tomllib.load(f)
-        return data.get("tool", {}).get("lintro", {})
-    except (OSError, tomllib.TOMLDecodeError) as e:
-        logger.debug(f"Failed to load pyproject.toml: {e}")
-        return {}
+    while True:
+        pyproject_path = current / "pyproject.toml"
+        if pyproject_path.exists():
+            try:
+                with pyproject_path.open("rb") as f:
+                    data = tomllib.load(f)
+                return data.get("tool", {}).get("lintro", {})
+            except (OSError, tomllib.TOMLDecodeError) as e:
+                logger.debug(f"Failed to load pyproject.toml: {e}")
+                return {}
+
+        # Move up one directory
+        parent = current.parent
+        if parent == current:
+            # Reached filesystem root
+            break
+        current = parent
+
+    return {}
 
 
 def _parse_global_config(data: dict[str, Any]) -> GlobalConfig:
