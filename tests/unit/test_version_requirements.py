@@ -246,6 +246,7 @@ def test_get_all_tool_versions(mock_run):
         "prettier",
         "hadolint",
         "actionlint",
+        "markdownlint",
     }
 
     assert set(results.keys()) == expected_tools

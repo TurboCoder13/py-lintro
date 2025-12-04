@@ -89,9 +89,9 @@ class TestGlobalSettings:
         assert "ruff" in injectable
         assert "black" in injectable
         assert "markdownlint" in injectable
-        # Prettier and yamllint should NOT be injectable
-        assert "prettier" not in injectable
-        assert "yamllint" not in injectable
+        # Prettier and yamllint are now injectable via Lintro config generation
+        assert "prettier" in injectable
+        assert "yamllint" in injectable
 
 
 class TestDefaultToolPriorities:
@@ -127,13 +127,13 @@ class TestIsToolInjectable:
         """Markdownlint supports config injection."""
         assert is_tool_injectable("markdownlint") is True
 
-    def test_prettier_is_not_injectable(self) -> None:
-        """Prettier does not support config injection."""
-        assert is_tool_injectable("prettier") is False
+    def test_prettier_is_injectable(self) -> None:
+        """Prettier supports config injection via Lintro config generation."""
+        assert is_tool_injectable("prettier") is True
 
-    def test_yamllint_is_not_injectable(self) -> None:
-        """Yamllint does not support config injection."""
-        assert is_tool_injectable("yamllint") is False
+    def test_yamllint_is_injectable(self) -> None:
+        """Yamllint supports config injection via Lintro config generation."""
+        assert is_tool_injectable("yamllint") is True
 
     def test_case_insensitive(self) -> None:
         """Injectable check should be case insensitive."""

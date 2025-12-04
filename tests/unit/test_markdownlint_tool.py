@@ -1,5 +1,6 @@
 """Unit tests for MarkdownlintTool."""
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -76,7 +77,7 @@ def test_markdownlint_check_no_files(markdownlint_tool: MarkdownlintTool) -> Non
 
 def test_markdownlint_check_with_issues(
     markdownlint_tool: MarkdownlintTool,
-    tmp_path: pytest.TempPathFactory,
+    tmp_path: Path,
 ) -> None:
     """Parse markdownlint output and return issues.
 

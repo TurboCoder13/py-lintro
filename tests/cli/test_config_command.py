@@ -162,23 +162,57 @@ class TestConfigCommand:
 
         assert "prettier" in result.output.lower() or "warning" in result.output.lower()
 
+    @patch("lintro.cli_utils.commands.config.UnifiedConfigManager")
+    @patch("lintro.cli_utils.commands.config.validate_config_consistency")
+    @patch("lintro.cli_utils.commands.config.get_tool_order_config")
+    @patch("lintro.cli_utils.commands.config.get_effective_line_length")
+    @patch("lintro.cli_utils.commands.config.get_ordered_tools")
+    @patch("lintro.cli_utils.commands.config.get_tool_priority")
+    @patch("lintro.cli_utils.commands.config.is_tool_injectable")
     def test_config_alias_works(
         self,
+        mock_injectable: MagicMock,
+        mock_priority: MagicMock,
+        mock_ordered: MagicMock,
+        mock_line_length: MagicMock,
+        mock_order_config: MagicMock,
+        mock_validate: MagicMock,
+        mock_manager: MagicMock,
         cli_runner: CliRunner,
     ) -> None:
-        """Config command alias 'cfg' works.
+        """Config command alias 'cfg' works and executes the command.
 
         Args:
+            mock_injectable: Mock for is_tool_injectable function.
+            mock_priority: Mock for get_tool_priority function.
+            mock_ordered: Mock for get_ordered_tools function.
+            mock_line_length: Mock for get_effective_line_length function.
+            mock_order_config: Mock for get_tool_order_config function.
+            mock_validate: Mock for validate_config_consistency function.
+            mock_manager: Mock for UnifiedConfigManager class.
             cli_runner: Click test runner instance.
         """
-        # Just check the command is recognized
-        result = cli_runner.invoke(cli, ["cfg", "--help"])
+        mock_manager_instance = MagicMock()
+        mock_manager_instance.tool_configs = {}
+        mock_manager.return_value = mock_manager_instance
+        mock_validate.return_value = []
+        mock_order_config.return_value = {"strategy": "priority"}
+        mock_line_length.return_value = 88
+        mock_ordered.return_value = []
+
+        # Test alias without --help to verify actual execution
+        result = cli_runner.invoke(cli, ["cfg"])
 
         assert result.exit_code == 0
-        assert (
-            "configuration" in result.output.lower()
-            or "config" in result.output.lower()
-        )
+        # Verify it produces the same output as the non-aliased command
+        assert "88" in result.output or "line_length" in result.output.lower()
+
+        # Also verify the non-aliased command for comparison
+        result_normal = cli_runner.invoke(cli, ["config"])
+        assert result_normal.exit_code == 0
+        # Both should produce similar output structure
+        assert len(result.output) > 0
+        assert len(result_normal.output) > 0
 
 
 class TestConfigCommandJsonOutput:

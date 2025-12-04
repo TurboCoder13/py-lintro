@@ -96,10 +96,18 @@ def test_black_options_build_line_length_and_target(
 ) -> None:
     """Verify line-length and target version flags are passed in check mode.
 
+    When no Lintro config is found, Black should use CLI flags.
+    When Lintro config is found, Black should use --config flag.
+
     Args:
         monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
         tmp_path: Temporary directory for creating files.
     """
+    # Clear Lintro config cache to ensure no config file influences this test
+    from lintro.config import clear_config_cache
+
+    clear_config_cache()
+
     tool = BlackTool()
 
     f = tmp_path / "opt.py"
@@ -124,10 +132,13 @@ def test_black_options_build_line_length_and_target(
         lambda cmd, timeout, cwd=None: fake_run(cmd, timeout, cwd),
     )
 
+    # Mock _should_use_lintro_config to return False (no lintro config found)
+    monkeypatch.setattr(tool, "_should_use_lintro_config", lambda: False)
+
     tool.set_options(line_length=100, target_version="py313")
     _ = tool.check([str(tmp_path)])
     cmd = captured["cmd"]
-    # Ensure flags are present
+    # Ensure flags are present (CLI mode when no lintro config)
     assert "--check" in cmd
     assert "--line-length" in cmd and "100" in cmd
     assert "--target-version" in cmd and "py313" in cmd
@@ -214,6 +225,11 @@ def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
         monkeypatch: Fixture for patching subprocess execution.
         tmp_path: Temporary directory.
     """
+    # Clear Lintro config cache to ensure no config file influences this test
+    from lintro.config import clear_config_cache
+
+    clear_config_cache()
+
     # Create a sample Python file to include in discovery
     sample = tmp_path / "a.py"
     sample.write_text("x=1\n")
@@ -237,6 +253,10 @@ def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
     )
 
     tool = BlackTool()
+
+    # Mock _should_use_lintro_config to return False (no lintro config found)
+    monkeypatch.setattr(tool, "_should_use_lintro_config", lambda: False)
+
     tool.set_options(
         line_length=88,
         target_version="py313",
@@ -250,7 +270,7 @@ def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
 
     res_fix = tool.fix([str(tmp_path)])
     assert res_fix.fixed_issues_count >= 0
-    # Ensure options propagated into commands
+    # Ensure options propagated into commands (CLI mode when no lintro config)
     flattened = [" ".join(c["cmd"]) for c in calls]
     assert any("--line-length 88" in s for s in flattened)
     assert any("--target-version py313" in s for s in flattened)

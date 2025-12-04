@@ -60,4 +60,5 @@ def test_list_tools_outputs(monkeypatch) -> None:
     result = runner.invoke(list_tools_command, [])
     assert_that(result.exit_code).is_equal_to(0)
     assert_that(result.output).contains("Available Tools")
-    assert_that(result.output).contains("Total tools:")
+    # Rich table format uses "📊 Total tools" without trailing colon
+    assert_that(result.output).contains("Total tools")
