@@ -107,6 +107,20 @@ class ToolManager:
         # Get core instances
         tools = {name: self.get_tool(name) for name in tool_list}
 
+        # Validate for duplicate tools
+        seen_names: set[str] = set()
+        duplicates: list[str] = []
+        for tool in tool_list:
+            tool_name_lower = tool.name.lower()
+            if tool_name_lower in seen_names:
+                duplicates.append(tool.name)
+            else:
+                seen_names.add(tool_name_lower)
+        if duplicates:
+            raise ValueError(
+                f"Duplicate tools found in tool_list: {', '.join(duplicates)}",
+            )
+
         # Convert ToolEnum to tool names for unified config ordering
         tool_names = [t.name.lower() for t in tool_list]
         ordered_names = get_ordered_tools(tool_names)

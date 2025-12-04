@@ -421,13 +421,18 @@ def get_tool_priority(tool_name: str) -> int:
     """
     order_config = get_tool_order_config()
     priority_overrides = order_config.get("priority_overrides", {})
+    # Normalize priority_overrides keys to lowercase for consistent lookup
+    priority_overrides_normalized = {
+        k.lower(): v for k, v in priority_overrides.items()
+    }
+    tool_name_lower = tool_name.lower()
 
     # Check for override first
-    if tool_name in priority_overrides:
-        return priority_overrides[tool_name]
+    if tool_name_lower in priority_overrides_normalized:
+        return priority_overrides_normalized[tool_name_lower]
 
     # Use default priority
-    return DEFAULT_TOOL_PRIORITIES.get(tool_name.lower(), 50)
+    return DEFAULT_TOOL_PRIORITIES.get(tool_name_lower, 50)
 
 
 def get_ordered_tools(tool_names: list[str]) -> list[str]:
