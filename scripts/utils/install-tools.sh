@@ -28,6 +28,7 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
     echo "  - Darglint (docstring linter)"
     echo "  - Black (Python formatter; runs as a post-check in Lintro)"
     echo "  - Prettier (code formatter)"
+    echo "  - Markdownlint-cli2 (Markdown linter)"
     echo "  - Yamllint (YAML linter)"
     echo "  - Hadolint (Dockerfile linter)"
     echo "  - Actionlint (GitHub Actions workflow linter)"
@@ -458,6 +459,60 @@ main() {
         exit 1
     fi
     
+    # Install markdownlint-cli2 via npm (Markdown linting)
+    echo -e "${BLUE}Installing markdownlint-cli2...${NC}"
+    
+    # Check if npm is available (should already be installed for prettier)
+    if ! command -v npm &> /dev/null; then
+        echo -e "${YELLOW}npm not found, trying to install Node.js...${NC}"
+        
+        # Try to install Node.js based on platform
+        if command -v apt-get &> /dev/null && [ "$(id -u)" = "0" ]; then
+            # Debian/Ubuntu with root privileges (no curl|bash installers)
+            if [ $DRY_RUN -eq 1 ]; then
+                log_info "[DRY-RUN] Would install nodejs/npm via apt-get"
+            else
+                apt-get update
+                apt-get install -y --no-install-recommends nodejs npm || \
+                apt-get install -y --no-install-recommends nodejs
+            fi
+        elif command -v brew &> /dev/null; then
+            # macOS with Homebrew
+            if [ $DRY_RUN -eq 1 ]; then
+                log_info "[DRY-RUN] Would install node via brew"
+            else
+                brew install node
+            fi
+        elif command -v yum &> /dev/null && [ "$(id -u)" = "0" ]; then
+            # RHEL/CentOS with root privileges (no curl|bash installers)
+            if [ $DRY_RUN -eq 1 ]; then
+                log_info "[DRY-RUN] Would install nodejs/npm via yum"
+            else
+                yum install -y nodejs npm || yum install -y nodejs
+            fi
+        else
+            echo -e "${RED}✗ Cannot install Node.js automatically. Please install Node.js manually.${NC}"
+            exit 1
+        fi
+    fi
+    
+    # Read markdownlint-cli2 version from package.json if it exists
+    # Check devDependencies first, then dependencies, then fall back to latest
+    if [ -f "package.json" ]; then
+        MARKDOWNLINT_VERSION=$(jq -r '.devDependencies."markdownlint-cli2" // .dependencies."markdownlint-cli2" // "latest"' package.json 2>/dev/null || echo "latest")
+    else
+        MARKDOWNLINT_VERSION="latest"
+    fi
+    
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install markdownlint-cli2@${MARKDOWNLINT_VERSION} globally via npm"
+    elif npm install -g "markdownlint-cli2@${MARKDOWNLINT_VERSION}"; then
+        echo -e "${GREEN}✓ markdownlint-cli2@${MARKDOWNLINT_VERSION} installed successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to install markdownlint-cli2${NC}"
+        exit 1
+    fi
+    
     # Install yamllint (Python package)
     echo -e "${BLUE}Installing yamllint...${NC}"
     
@@ -529,6 +584,7 @@ main() {
     echo -e "${YELLOW}Installed tools:${NC}"
     echo "  - hadolint (Docker linting)"
     echo "  - prettier (JavaScript/JSON formatting)"
+    echo "  - markdownlint-cli2 (Markdown linting)"
     echo "  - ruff (Python linting and formatting)"
     echo "  - yamllint (YAML linting)"
     echo "  - darglint (Python docstring validation)"
@@ -537,7 +593,7 @@ main() {
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("hadolint" "actionlint" "prettier" "ruff" "bandit" "yamllint" "darglint")
+    tools_to_verify=("hadolint" "actionlint" "prettier" "markdownlint-cli2" "ruff" "bandit" "yamllint" "darglint")
     for tool in "${tools_to_verify[@]}"; do
         if command -v "$tool" &> /dev/null; then
             version=$("$tool" --version 2>/dev/null || echo "installed")

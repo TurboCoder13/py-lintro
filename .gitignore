@@ -335,3 +335,5 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .lintro/
+.markdownlint.json
+.markdownlint-cli2.jsonc
