@@ -43,7 +43,6 @@ tools:
         - 'N'
         - 'D'
         - 'UP'
-        - 'ANN'
         - 'B'
         - 'C4'
         - 'SIM'
