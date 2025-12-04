@@ -340,9 +340,7 @@ lintro/
     └── test_cli_output.py
 ```
 
-<!-- markdownlint-disable MD025 -->
-
-# Formatter and Output Style Architecture
+## Formatter and Output Style Architecture
 
 ## Overview
 

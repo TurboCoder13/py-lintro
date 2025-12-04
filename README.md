@@ -269,8 +269,7 @@ lintro test --tool-options "pytest:workers=4"                        # Parallel 
 lintro test --tool-options "pytest:parallel_preset=medium"           # Preset workers
 lintro test --tool-options "pytest:coverage_threshold=85"            # Coverage threshold
 lintro test --tool-options "pytest:html_report=report.html"          # HTML report
-lintro test --tool-options "pytest:timeout=300"                      # Test
-timeout
+lintro test --tool-options "pytest:timeout=300"                      # Test timeout
 lintro test --tool-options "pytest:reruns=2,reruns_delay=1"          # Retry failed tests
 ```
 
