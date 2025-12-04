@@ -27,6 +27,11 @@ from typing import Any
 
 from loguru import logger
 
+try:
+    import yaml
+except ImportError:
+    yaml = None  # type: ignore[assignment]
+
 
 def _strip_jsonc_comments(content: str) -> str:
     """Strip JSONC comments from content, preserving strings.
@@ -152,16 +157,45 @@ class ToolConfigInfo:
 
 
 # Global settings that Lintro can manage across tools
+# Each setting maps to tool-specific config keys and indicates which tools
+# support injection via Lintro config (vs requiring native config files)
 GLOBAL_SETTINGS: dict[str, dict[str, Any]] = {
     "line_length": {
         "tools": {
             "ruff": "line-length",
             "black": "line-length",
             "markdownlint": "line_length",  # MD013 rule
-            "prettier": "printWidth",  # Cannot inject, native only
-            "yamllint": "line-length.max",  # Cannot inject, native only
+            "prettier": "printWidth",
+            "yamllint": "line-length.max",  # Nested under rules.line-length.max
         },
-        "injectable": {"ruff", "black", "markdownlint"},  # Can inject via CLI/config
+        "injectable": {
+            "ruff",
+            "black",
+            "markdownlint",
+            "prettier",
+            "yamllint",
+        },
+    },
+    "target_python": {
+        "tools": {
+            "ruff": "target-version",
+            "black": "target-version",
+        },
+        "injectable": {"ruff", "black"},
+    },
+    "indent_size": {
+        "tools": {
+            "prettier": "tabWidth",
+            "ruff": "indent-width",
+        },
+        "injectable": {"prettier", "ruff"},
+    },
+    "quote_style": {
+        "tools": {
+            "ruff": "quote-style",  # Under [tool.ruff.format]
+            "prettier": "singleQuote",  # Boolean: true for single quotes
+        },
+        "injectable": {"ruff", "prettier"},
     },
 }
 
@@ -247,10 +281,15 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
         for config_file in [
             ".markdownlint.json",
             ".markdownlint.yaml",
+            ".markdownlint.yml",
             ".markdownlint.jsonc",
         ]:
             config_path = Path(config_file)
-            if config_path.exists() and "json" in config_file:
+            if not config_path.exists():
+                continue
+
+            # Handle JSON/JSONC files
+            if config_file.endswith((".json", ".jsonc")):
                 try:
                     with config_path.open(encoding="utf-8") as f:
                         content = f.read()
@@ -258,6 +297,30 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                         content = _strip_jsonc_comments(content)
                         return json.loads(content)
                 except (json.JSONDecodeError, FileNotFoundError):
+                    pass
+
+            # Handle YAML files
+            elif config_file.endswith((".yaml", ".yml")):
+                if yaml is None:
+                    logger.warning(
+                        "PyYAML not available; cannot parse .markdownlint.yaml",
+                    )
+                    continue
+                try:
+                    with config_path.open(encoding="utf-8") as f:
+                        content = yaml.safe_load(f)
+                        # Handle multi-document YAML (coerce to dict)
+                        if isinstance(content, list) and len(content) > 0:
+                            content = content[0]
+                        if isinstance(content, dict):
+                            return content
+                except Exception as e:  # noqa: BLE001
+                    # Catch yaml.YAMLError and other exceptions
+                    # (file I/O, parsing errors)
+                    # Continue to next config file if this one fails to parse
+                    logger.debug(
+                        f"Failed to parse {config_path}: {type(e).__name__}",
+                    )
                     pass
         return {}
 

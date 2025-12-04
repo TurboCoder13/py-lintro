@@ -35,31 +35,38 @@ def parse_markdownlint_output(output: str) -> list[MarkdownlintIssue]:
 
     lines: list[str] = output.splitlines()
 
-    for line in lines:
-        line = line.strip()
-        if not line:
+    # Pattern for markdownlint-cli2 default formatter:
+    # file:line[:column] [error] MD###/rule-name Message [Context: "..."]
+    # Column is optional, "error" keyword is optional, and Context is optional
+    # Also handles variations like: file:line MD### Message
+    # [Expected: ...; Actual: ...]
+    pattern: re.Pattern[str] = re.compile(
+        r"^([^:]+):(\d+)(?::(\d+))?\s+(?:error\s+)?(MD\d+)(?:/[^:\s]+)?(?::\s*)?"
+        r"(.+?)(?:\s+\[(?:Context|Expected|Actual):.*?\])?$",
+    )
+
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+
+        # Skip empty lines
+        if not line.strip():
+            i += 1
             continue
 
         # Skip metadata lines (version, Finding, Linting, Summary)
+        stripped_line = line.strip()
         if (
-            line.startswith("markdownlint-cli2")
-            or line.startswith("Finding:")
-            or line.startswith("Linting:")
-            or line.startswith("Summary:")
+            stripped_line.startswith("markdownlint-cli2")
+            or stripped_line.startswith("Finding:")
+            or stripped_line.startswith("Linting:")
+            or stripped_line.startswith("Summary:")
         ):
+            i += 1
             continue
 
-        # Pattern for markdownlint-cli2 default formatter:
-        # file:line[:column] [error] MD###/rule-name Message [Context: "..."]
-        # Column is optional, "error" keyword is optional, and Context is optional
-        # Also handles variations like: file:line MD### Message
-        # [Expected: ...; Actual: ...]
-        pattern: re.Pattern[str] = re.compile(
-            r"^([^:]+):(\d+)(?::(\d+))?\s+(?:error\s+)?(MD\d+)(?:/[^:\s]+)?(?::\s*)?"
-            r"(.+?)(?:\s+\[(?:Context|Expected|Actual):.*?\])?$",
-        )
-
-        match: re.Match[str] | None = pattern.match(line)
+        # Try to match the pattern on the current line
+        match: re.Match[str] | None = pattern.match(stripped_line)
         if match:
             filename: str
             line_num: str
@@ -68,14 +75,39 @@ def parse_markdownlint_output(output: str) -> list[MarkdownlintIssue]:
             message: str
             filename, line_num, column, code, message = match.groups()
 
+            # Collect continuation lines (lines that start with whitespace)
+            # These are part of the multi-line message
+            i += 1
+            continuation_lines: list[str] = []
+            while i < len(lines):
+                next_line = lines[i]
+                # Continuation lines start with whitespace (indentation)
+                # Empty lines break the continuation
+                if not next_line.strip():
+                    break
+                if next_line[0].isspace():
+                    continuation_lines.append(next_line.strip())
+                    i += 1
+                else:
+                    # Next line doesn't start with whitespace, stop collecting
+                    break
+
+            # Combine main message with continuation lines
+            full_message = message.strip()
+            if continuation_lines:
+                full_message = " ".join([full_message] + continuation_lines)
+
             issues.append(
                 MarkdownlintIssue(
                     file=filename,
                     line=int(line_num),
                     column=int(column) if column else None,
                     code=code,
-                    message=message.strip(),
+                    message=full_message,
                 ),
             )
+        else:
+            # Line doesn't match pattern, skip it
+            i += 1
 
     return issues
