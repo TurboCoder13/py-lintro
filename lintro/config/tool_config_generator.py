@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import atexit
 import json
+import os
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -256,6 +257,8 @@ def _write_config_file(
             prefix=f"lintro-{tool_name}-",
             suffix=suffix,
         )
+    # Close the file descriptor immediately - we'll write via Path.write_text
+    os.close(temp_fd)
     temp_path = Path(temp_path_str)
     _temp_files.append(temp_path)
 
