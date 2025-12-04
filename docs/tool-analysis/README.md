@@ -143,6 +143,8 @@ Each analysis follows a consistent structure:
 - Prefer simplified configuration
 - Require aggregated results
 
+<!-- markdownlint-enable MD026 -->
+
 ## Future Enhancement Opportunities
 
 1. **Configuration Pass-through**: Runtime option support for all tools

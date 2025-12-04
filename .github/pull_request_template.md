@@ -49,7 +49,9 @@ Describe the changes and why.
 
 ## Related Issues
 
-Closes # Fixes # Related #
+<!-- Replace # with actual issue numbers, e.g., Closes #123, Fixes #456, Related #789 -->
+
+Closes # | Fixes # | Related #
 
 ## Details
 

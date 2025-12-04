@@ -202,10 +202,10 @@ Features** are recently added capabilities that extend the baseline functionalit
 - You want features not yet exposed through lintro's CLI
 
 > **Note:** Many pytest features are supported through lintro—see the
-> [Enhanced Features](#enhanced-features) section (lines 108-166) for supported
-> capabilities including custom marker listing (`--markers`), fixture management
-> (`--fixtures`, `--fixture-info`), test collection (`--collect-only`), HTML reports
-> (`html_report`), and coverage integration.
+> [Enhanced Features](#enhanced-features) section for supported capabilities including
+> custom marker listing (`--markers`), fixture management (`--fixtures`,
+> `--fixture-info`), test collection (`--collect-only`), HTML reports (`html_report`),
+> and coverage integration.
 
 #### Configuration Priority
 
