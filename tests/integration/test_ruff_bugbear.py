@@ -9,7 +9,11 @@ from lintro.tools.implementations.tool_ruff import RuffTool
 
 @pytest.fixture(autouse=True)
 def skip_config_injection():
-    """Disable Lintro config injection for all tests in this module."""
+    """Disable Lintro config injection for all tests in this module.
+
+    Yields:
+        None: This fixture is used for its side effect only.
+    """
     os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
     yield
     del os.environ["LINTRO_SKIP_CONFIG_INJECTION"]

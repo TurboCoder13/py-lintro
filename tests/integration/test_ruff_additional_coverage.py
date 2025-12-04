@@ -30,7 +30,7 @@ def set_lintro_test_mode_env():
 def ruff_tool():
     """Create a RuffTool instance for testing.
 
-    Returns:
+    Yields:
         RuffTool: A configured RuffTool instance.
     """
     # Disable Lintro config injection for these unit tests

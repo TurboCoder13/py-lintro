@@ -224,7 +224,11 @@ class TestLoadConfig:
     """Tests for load_config."""
 
     def test_load_yaml_config(self, tmp_path: Path) -> None:
-        """Should load .lintro-config.yaml file."""
+        """Should load .lintro-config.yaml file.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_content = """\
 global:
   line_length: 100
@@ -253,7 +257,11 @@ tools:
             os.chdir(original_cwd)
 
     def test_load_explicit_path(self, tmp_path: Path) -> None:
-        """Should load from explicit path."""
+        """Should load from explicit path.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_content = """\
 global:
   line_length: 120
@@ -266,7 +274,11 @@ global:
         assert config.global_config.line_length == 120
 
     def test_returns_default_when_no_config(self, tmp_path: Path) -> None:
-        """Should return default config when no file found."""
+        """Should return default config when no file found.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         import os
 
         original_cwd = os.getcwd()
@@ -298,7 +310,11 @@ class TestGetConfig:
     """Tests for get_config singleton."""
 
     def test_caches_config(self, tmp_path: Path) -> None:
-        """Should cache loaded config."""
+        """Should cache loaded config.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_content = """\
 global:
   line_length: 88
@@ -322,7 +338,11 @@ global:
             clear_config_cache()
 
     def test_reload_clears_cache(self, tmp_path: Path) -> None:
-        """Should reload when reload=True."""
+        """Should reload when reload=True.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_content = """\
 global:
   line_length: 88
@@ -363,7 +383,11 @@ class TestFindConfigFile:
     """Tests for _find_config_file."""
 
     def test_finds_in_current_dir(self, tmp_path: Path) -> None:
-        """Should find config in current directory."""
+        """Should find config in current directory.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_file = tmp_path / ".lintro-config.yaml"
         config_file.write_text("global: {}")
 
@@ -372,7 +396,11 @@ class TestFindConfigFile:
         assert result == config_file
 
     def test_finds_in_parent_dir(self, tmp_path: Path) -> None:
-        """Should find config in parent directory."""
+        """Should find config in parent directory.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_file = tmp_path / ".lintro-config.yaml"
         config_file.write_text("global: {}")
 
@@ -384,13 +412,21 @@ class TestFindConfigFile:
         assert result == config_file
 
     def test_returns_none_when_not_found(self, tmp_path: Path) -> None:
-        """Should return None when no config found."""
+        """Should return None when no config found.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         result = _find_config_file(start_dir=tmp_path)
 
         assert result is None
 
     def test_supports_alternate_names(self, tmp_path: Path) -> None:
-        """Should find alternate config file names."""
+        """Should find alternate config file names.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         # Try .yml extension
         config_file = tmp_path / ".lintro-config.yml"
         config_file.write_text("global: {}")

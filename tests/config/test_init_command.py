@@ -14,7 +14,11 @@ from lintro.cli_utils.commands.init import (
 
 @pytest.fixture
 def runner() -> CliRunner:
-    """Create a Click test runner."""
+    """Create a Click test runner.
+
+    Returns:
+        CliRunner: A Click test runner instance.
+    """
     return CliRunner()
 
 
@@ -26,7 +30,12 @@ class TestInitCommand:
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Should create .lintro-config.yaml file."""
+        """Should create .lintro-config.yaml file.
+
+        Args:
+            runner: Click test runner instance.
+            tmp_path: Temporary directory path for test files.
+        """
         with runner.isolated_filesystem(temp_dir=tmp_path):
             result = runner.invoke(init_command)
 
@@ -41,7 +50,12 @@ class TestInitCommand:
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Should use default template by default."""
+        """Should use default template by default.
+
+        Args:
+            runner: Click test runner instance.
+            tmp_path: Temporary directory path for test files.
+        """
         with runner.isolated_filesystem(temp_dir=tmp_path):
             result = runner.invoke(init_command)
 
@@ -62,7 +76,12 @@ class TestInitCommand:
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Should use minimal template with --minimal flag."""
+        """Should use minimal template with --minimal flag.
+
+        Args:
+            runner: Click test runner instance.
+            tmp_path: Temporary directory path for test files.
+        """
         with runner.isolated_filesystem(temp_dir=tmp_path):
             result = runner.invoke(init_command, ["--minimal"])
 
@@ -82,7 +101,12 @@ class TestInitCommand:
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Should refuse to overwrite existing file without --force."""
+        """Should refuse to overwrite existing file without --force.
+
+        Args:
+            runner: Click test runner instance.
+            tmp_path: Temporary directory path for test files.
+        """
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create existing file
             Path(".lintro-config.yaml").write_text("existing content")
@@ -102,7 +126,12 @@ class TestInitCommand:
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Should overwrite existing file with --force."""
+        """Should overwrite existing file with --force.
+
+        Args:
+            runner: Click test runner instance.
+            tmp_path: Temporary directory path for test files.
+        """
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create existing file
             Path(".lintro-config.yaml").write_text("existing content")
@@ -121,7 +150,12 @@ class TestInitCommand:
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Should create file at custom path with --output."""
+        """Should create file at custom path with --output.
+
+        Args:
+            runner: Click test runner instance.
+            tmp_path: Temporary directory path for test files.
+        """
         with runner.isolated_filesystem(temp_dir=tmp_path):
             result = runner.invoke(
                 init_command,
@@ -139,7 +173,12 @@ class TestInitCommand:
         runner: CliRunner,
         tmp_path: Path,
     ) -> None:
-        """Should show helpful next steps."""
+        """Should show helpful next steps.
+
+        Args:
+            runner: Click test runner instance.
+            tmp_path: Temporary directory path for test files.
+        """
         with runner.isolated_filesystem(temp_dir=tmp_path):
             result = runner.invoke(init_command)
 

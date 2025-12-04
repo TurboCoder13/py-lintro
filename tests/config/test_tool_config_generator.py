@@ -183,7 +183,11 @@ class TestGetConfigInjectionArgs:
         assert args == []
 
     def test_ruff_args(self, tmp_path: Path) -> None:
-        """Should return --config for Ruff."""
+        """Should return --config for Ruff.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_path = tmp_path / "config.toml"
 
         args = get_config_injection_args(
@@ -194,7 +198,11 @@ class TestGetConfigInjectionArgs:
         assert args == ["--config", str(config_path)]
 
     def test_black_args(self, tmp_path: Path) -> None:
-        """Should return --config for Black."""
+        """Should return --config for Black.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_path = tmp_path / "config.toml"
 
         args = get_config_injection_args(
@@ -205,7 +213,11 @@ class TestGetConfigInjectionArgs:
         assert args == ["--config", str(config_path)]
 
     def test_prettier_args(self, tmp_path: Path) -> None:
-        """Should return --config for Prettier."""
+        """Should return --config for Prettier.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_path = tmp_path / "config.json"
 
         args = get_config_injection_args(
@@ -216,7 +228,11 @@ class TestGetConfigInjectionArgs:
         assert args == ["--config", str(config_path)]
 
     def test_yamllint_args(self, tmp_path: Path) -> None:
-        """Should return -c for yamllint."""
+        """Should return -c for yamllint.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_path = tmp_path / "config.yaml"
 
         args = get_config_injection_args(
@@ -227,7 +243,11 @@ class TestGetConfigInjectionArgs:
         assert args == ["-c", str(config_path)]
 
     def test_bandit_args(self, tmp_path: Path) -> None:
-        """Should return -c for Bandit."""
+        """Should return -c for Bandit.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_path = tmp_path / "config.yaml"
 
         args = get_config_injection_args(
@@ -310,7 +330,11 @@ class TestGenerateToolConfig:
         assert config_path is None
 
     def test_loads_config_source(self, tmp_path: Path) -> None:
-        """Should load config_source as base."""
+        """Should load config_source as base.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         # Create a native config file
         native_config = tmp_path / ".prettierrc"
         native_config.write_text('{"singleQuote": true, "tabWidth": 4}')
@@ -347,7 +371,11 @@ class TestCleanupTempConfig:
     """Tests for cleanup_temp_config."""
 
     def test_removes_file(self, tmp_path: Path) -> None:
-        """Should remove the temp file."""
+        """Should remove the temp file.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_file = tmp_path / "test-config.json"
         config_file.write_text("{}")
 
@@ -356,7 +384,11 @@ class TestCleanupTempConfig:
         assert not config_file.exists()
 
     def test_handles_missing_file(self, tmp_path: Path) -> None:
-        """Should not raise for missing file."""
+        """Should not raise for missing file.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
         config_file = tmp_path / "nonexistent.json"
 
         # Should not raise
