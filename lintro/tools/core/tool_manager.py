@@ -5,6 +5,7 @@ from typing import Any
 
 from lintro.models.core.tool import Tool
 from lintro.tools.tool_enum import ToolEnum
+from lintro.utils.unified_config import get_ordered_tools
 
 
 @dataclass
@@ -14,8 +15,13 @@ class ToolManager:
     This class is responsible for:
     - Tool registration
     - Tool conflict resolution
-    - Tool execution order
+    - Tool execution order (priority-based, alphabetical, or custom)
     - Tool configuration management
+
+    Tool ordering is controlled by [tool.lintro].tool_order in pyproject.toml:
+    - "priority" (default): Formatters run before linters based on priority values
+    - "alphabetical": Tools run in alphabetical order by name
+    - "custom": Tools run in order specified by [tool.lintro].tool_order_custom
 
     Attributes:
         _tools: Dictionary mapping core names to core classes
@@ -77,9 +83,13 @@ class ToolManager:
     ) -> list[ToolEnum]:
         """Get the order in which tools should be executed.
 
-        This method takes into account:
-        - Tool conflicts
-        - Alphabetical ordering
+        Tool ordering is controlled by [tool.lintro].tool_order in pyproject.toml:
+        - "priority" (default): Formatters run before linters based on priority
+        - "alphabetical": Tools run in alphabetical order by name
+        - "custom": Tools run in order specified by [tool.lintro].tool_order_custom
+
+        This method also handles:
+        - Tool conflicts (unless ignore_conflicts is True)
         - Tool dependencies
 
         Args:
@@ -87,7 +97,7 @@ class ToolManager:
             ignore_conflicts: Whether to ignore core conflicts
 
         Returns:
-            List of core names in alphabetical execution order
+            List of core names in execution order based on configured strategy
         """
         if not tool_list:
             return []
@@ -95,12 +105,18 @@ class ToolManager:
         # Get core instances
         tools = {name: self.get_tool(name) for name in tool_list}
 
-        # Sort tools alphabetically by name
+        # Convert ToolEnum to tool names for unified config ordering
+        tool_names = [t.name.lower() for t in tool_list]
+        ordered_names = get_ordered_tools(tool_names)
+
+        # Map back to ToolEnum in the ordered sequence
+        name_to_enum = {t.name.lower(): t for t in tool_list}
+        sorted_tools = [
+            name_to_enum[name] for name in ordered_names if name in name_to_enum
+        ]
+
         if ignore_conflicts:
-            return sorted(
-                tool_list,
-                key=lambda name: name.name,
-            )
+            return sorted_tools
 
         # Build conflict graph
         conflict_graph: dict[ToolEnum, set[ToolEnum]] = {
@@ -112,13 +128,7 @@ class ToolManager:
                     conflict_graph[name].add(conflict)
                     conflict_graph[conflict].add(name)
 
-        # Sort tools alphabetically by name
-        sorted_tools = sorted(
-            tool_list,
-            key=lambda name: name.name,
-        )
-
-        # Resolve conflicts by keeping the first alphabetical tool
+        # Resolve conflicts by keeping the first tool in ordered sequence
         result = []
         for tool_name in sorted_tools:
             # Check if this core conflicts with any already selected tools
