@@ -77,6 +77,51 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Helper function to ensure npm is installed
+# Returns 0 on success, non-zero on failure (does not call exit)
+ensure_npm_installed() {
+    if command -v npm &> /dev/null; then
+        return 0
+    fi
+    
+    echo -e "${YELLOW}npm not found, trying to install Node.js...${NC}"
+    
+    # Try to install Node.js based on platform
+    if command -v apt-get &> /dev/null && [ "$(id -u)" = "0" ]; then
+        # Debian/Ubuntu with root privileges (no curl|bash installers)
+        if [ $DRY_RUN -eq 1 ]; then
+            log_info "[DRY-RUN] Would install nodejs/npm via apt-get"
+            return 0
+        else
+            apt-get update
+            apt-get install -y --no-install-recommends nodejs npm || \
+            apt-get install -y --no-install-recommends nodejs
+            return $?
+        fi
+    elif command -v brew &> /dev/null; then
+        # macOS with Homebrew
+        if [ $DRY_RUN -eq 1 ]; then
+            log_info "[DRY-RUN] Would install node via brew"
+            return 0
+        else
+            brew install node
+            return $?
+        fi
+    elif command -v yum &> /dev/null && [ "$(id -u)" = "0" ]; then
+        # RHEL/CentOS with root privileges (no curl|bash installers)
+        if [ $DRY_RUN -eq 1 ]; then
+            log_info "[DRY-RUN] Would install nodejs/npm via yum"
+            return 0
+        else
+            yum install -y nodejs npm || yum install -y nodejs
+            return $?
+        fi
+    else
+        echo -e "${RED}✗ Cannot install Node.js automatically. Please install Node.js manually.${NC}"
+        return 1
+    fi
+}
+
 # Simple downloader with retries/backoff
 download_with_retries() {
     local url="$1"; shift
@@ -408,38 +453,9 @@ main() {
     # Install prettier via npm (JavaScript/JSON formatting)
     echo -e "${BLUE}Installing prettier...${NC}"
     
-    # Check if npm is available
-    if ! command -v npm &> /dev/null; then
-        echo -e "${YELLOW}npm not found, trying to install Node.js...${NC}"
-        
-        # Try to install Node.js based on platform
-        if command -v apt-get &> /dev/null && [ "$(id -u)" = "0" ]; then
-            # Debian/Ubuntu with root privileges (no curl|bash installers)
-            if [ $DRY_RUN -eq 1 ]; then
-                log_info "[DRY-RUN] Would install nodejs/npm via apt-get"
-            else
-                apt-get update
-                apt-get install -y --no-install-recommends nodejs npm || \
-                apt-get install -y --no-install-recommends nodejs
-            fi
-        elif command -v brew &> /dev/null; then
-            # macOS with Homebrew
-            if [ $DRY_RUN -eq 1 ]; then
-                log_info "[DRY-RUN] Would install node via brew"
-            else
-                brew install node
-            fi
-        elif command -v yum &> /dev/null && [ "$(id -u)" = "0" ]; then
-            # RHEL/CentOS with root privileges (no curl|bash installers)
-            if [ $DRY_RUN -eq 1 ]; then
-                log_info "[DRY-RUN] Would install nodejs/npm via yum"
-            else
-                yum install -y nodejs npm || yum install -y nodejs
-            fi
-        else
-            echo -e "${RED}✗ Cannot install Node.js automatically. Please install Node.js manually.${NC}"
-            exit 1
-        fi
+    # Ensure npm is available
+    if ! ensure_npm_installed; then
+        exit 1
     fi
     
     # Read prettier version from package.json if it exists
@@ -462,38 +478,9 @@ main() {
     # Install markdownlint-cli2 via npm (Markdown linting)
     echo -e "${BLUE}Installing markdownlint-cli2...${NC}"
     
-    # Check if npm is available (should already be installed for prettier)
-    if ! command -v npm &> /dev/null; then
-        echo -e "${YELLOW}npm not found, trying to install Node.js...${NC}"
-        
-        # Try to install Node.js based on platform
-        if command -v apt-get &> /dev/null && [ "$(id -u)" = "0" ]; then
-            # Debian/Ubuntu with root privileges (no curl|bash installers)
-            if [ $DRY_RUN -eq 1 ]; then
-                log_info "[DRY-RUN] Would install nodejs/npm via apt-get"
-            else
-                apt-get update
-                apt-get install -y --no-install-recommends nodejs npm || \
-                apt-get install -y --no-install-recommends nodejs
-            fi
-        elif command -v brew &> /dev/null; then
-            # macOS with Homebrew
-            if [ $DRY_RUN -eq 1 ]; then
-                log_info "[DRY-RUN] Would install node via brew"
-            else
-                brew install node
-            fi
-        elif command -v yum &> /dev/null && [ "$(id -u)" = "0" ]; then
-            # RHEL/CentOS with root privileges (no curl|bash installers)
-            if [ $DRY_RUN -eq 1 ]; then
-                log_info "[DRY-RUN] Would install nodejs/npm via yum"
-            else
-                yum install -y nodejs npm || yum install -y nodejs
-            fi
-        else
-            echo -e "${RED}✗ Cannot install Node.js automatically. Please install Node.js manually.${NC}"
-            exit 1
-        fi
+    # Ensure npm is available (should already be installed for prettier)
+    if ! ensure_npm_installed; then
+        exit 1
     fi
     
     # Read markdownlint-cli2 version from package.json if it exists

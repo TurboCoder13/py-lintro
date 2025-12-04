@@ -115,6 +115,21 @@ class ToolManager:
             name_to_enum[name] for name in ordered_names if name in name_to_enum
         ]
 
+        # Validate that all requested tools are preserved
+        original_names = {t.name.lower() for t in tool_list}
+        sorted_names = {t.name.lower() for t in sorted_tools}
+        missing_tools = original_names - sorted_names
+        if missing_tools:
+            # Append missing tools in their original order
+            missing_enums = [
+                t for t in tool_list if t.name.lower() in missing_tools
+            ]
+            sorted_tools.extend(missing_enums)
+            logger.warning(
+                f"Some tools were not found in ordered list and appended: "
+                f"{[t.name for t in missing_enums]}",
+            )
+
         if ignore_conflicts:
             return sorted_tools
 

@@ -49,7 +49,7 @@ def config_command(
     config_manager = UnifiedConfigManager()
 
     if json_output:
-        _output_json(config_manager=config_manager)
+        _output_json(config_manager=config_manager, verbose=verbose)
         return
 
     _output_rich(
@@ -59,11 +59,15 @@ def config_command(
     )
 
 
-def _output_json(config_manager: UnifiedConfigManager) -> None:
+def _output_json(
+    config_manager: UnifiedConfigManager,
+    verbose: bool = False,
+) -> None:
     """Output configuration as JSON.
 
     Args:
         config_manager: UnifiedConfigManager instance
+        verbose: Include native configs in output when True
     """
     import json
 
@@ -86,13 +90,17 @@ def _output_json(config_manager: UnifiedConfigManager) -> None:
     }
 
     for tool_name, info in config_manager.tool_configs.items():
-        output["tool_configs"][tool_name] = {
+        tool_output: dict[str, Any] = {
             "is_injectable": info.is_injectable,
             "effective_line_length": info.effective_config.get("line_length"),
             "lintro_config": info.lintro_tool_config,
-            "native_config": info.native_config if info.native_config else None,
             "warnings": info.warnings,
         }
+        if verbose:
+            tool_output["native_config"] = (
+                info.native_config if info.native_config else None
+            )
+        output["tool_configs"][tool_name] = tool_output
 
     print(json.dumps(output, indent=2))
 

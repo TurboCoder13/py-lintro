@@ -19,6 +19,7 @@ Priority order (highest to lowest):
 from __future__ import annotations
 
 import json
+import re
 import tomllib
 from dataclasses import dataclass, field
 from enum import StrEnum, auto
@@ -26,6 +27,100 @@ from pathlib import Path
 from typing import Any
 
 from loguru import logger
+
+
+def _strip_jsonc_comments(content: str) -> str:
+    """Strip JSONC comments from content, preserving strings.
+
+    This function safely removes // and /* */ comments from JSONC content
+    while preserving comment-like sequences inside string values.
+
+    Args:
+        content: JSONC content as string
+
+    Returns:
+        Content with comments stripped
+
+    Note:
+        This is a simple implementation that handles most common cases.
+        For complex JSONC with nested comments or edge cases, consider
+        using a proper JSONC parser library (e.g., json5 or commentjson).
+    """
+    result: list[str] = []
+    i = 0
+    content_len = len(content)
+    in_string = False
+    escape_next = False
+    in_block_comment = False
+
+    while i < content_len:
+        char = content[i]
+
+        if escape_next:
+            escape_next = False
+            if not in_block_comment:
+                result.append(char)
+            i += 1
+            continue
+
+        if char == "\\" and in_string:
+            escape_next = True
+            if not in_block_comment:
+                result.append(char)
+            i += 1
+            continue
+
+        if char == '"' and not in_block_comment:
+            in_string = not in_string
+            result.append(char)
+            i += 1
+            continue
+
+        if in_string:
+            result.append(char)
+            i += 1
+            continue
+
+        # Check for block comment start /* ... */
+        if i < content_len - 1 and char == "/" and content[i + 1] == "*":
+            in_block_comment = True
+            i += 2
+            continue
+
+        # Check for block comment end */
+        if (
+            i > 0
+            and i < content_len
+            and char == "/"
+            and content[i - 1] == "*"
+            and in_block_comment
+        ):
+            in_block_comment = False
+            i += 1
+            continue
+
+        # Check for line comment //
+        if (
+            i < content_len - 1
+            and char == "/"
+            and content[i + 1] == "/"
+            and not in_block_comment
+        ):
+            # Skip to end of line
+            while i < content_len and content[i] != "\n":
+                i += 1
+            # Include the newline if present
+            if i < content_len:
+                result.append("\n")
+                i += 1
+            continue
+
+        if not in_block_comment:
+            result.append(char)
+
+        i += 1
+
+    return "".join(result)
 
 
 class ToolOrderStrategy(StrEnum):
@@ -99,7 +194,7 @@ def _load_pyproject() -> dict[str, Any]:
     try:
         with pyproject_path.open("rb") as f:
             return tomllib.load(f)
-    except Exception:
+    except (OSError, tomllib.TOMLDecodeError):
         return {}
 
 
@@ -160,11 +255,8 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                 try:
                     with config_path.open(encoding="utf-8") as f:
                         content = f.read()
-                        # Strip JSONC comments (simple approach)
-                        import re
-
-                        content = re.sub(r"//.*$", "", content, flags=re.MULTILINE)
-                        content = re.sub(r"/\*.*?\*/", "", content, flags=re.DOTALL)
+                        # Strip JSONC comments safely (preserves strings)
+                        content = _strip_jsonc_comments(content)
                         return json.loads(content)
                 except (json.JSONDecodeError, FileNotFoundError):
                     pass

@@ -5,10 +5,12 @@ import os
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
+from lintro.utils.unified_config import _strip_jsonc_comments
 from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
 from lintro.tools.core.tool_base import BaseTool
@@ -170,11 +172,8 @@ class MarkdownlintTool(BaseTool):
             try:
                 with config_path.open(encoding="utf-8") as f:
                     content = f.read()
-                    # Strip JSONC comments (simple approach)
-                    import re
-
-                    content = re.sub(r"//.*$", "", content, flags=re.MULTILINE)
-                    content = re.sub(r"/\*.*?\*/", "", content, flags=re.DOTALL)
+                    # Strip JSONC comments safely (preserves strings)
+                    content = _strip_jsonc_comments(content)
                     config_wrapper = json.loads(content)
             except (json.JSONDecodeError, FileNotFoundError, PermissionError) as e:
                 logger.debug(
