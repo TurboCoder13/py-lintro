@@ -140,6 +140,14 @@ def init_command(
     Creates a scaffold configuration file with sensible defaults.
     Lintro will use this file as the master configuration source,
     ignoring native tool configs unless explicitly referenced.
+
+    Args:
+        minimal: Use minimal template with fewer comments.
+        force: Overwrite existing config file if it exists.
+        output: Output file path for the config file.
+
+    Raises:
+        SystemExit: If file exists and --force not provided, or write fails.
     """
     console = Console()
     output_path = Path(output)

@@ -73,8 +73,6 @@ def _load_yaml_file(path: Path) -> dict[str, Any]:
 
     Raises:
         ImportError: If PyYAML is not installed.
-        FileNotFoundError: If file doesn't exist.
-        yaml.YAMLError: If YAML parsing fails.
     """
     if yaml is None:
         raise ImportError(

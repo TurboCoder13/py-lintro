@@ -233,6 +233,9 @@ def _write_config_file(
 
     Returns:
         Path: Path to temporary config file.
+
+    Raises:
+        ImportError: If required package (toml/PyYAML) is not installed.
     """
     fmt = config_format or TOOL_CONFIG_FORMATS.get(tool_name.lower(), "json")
 
@@ -240,11 +243,19 @@ def _write_config_file(
     suffix_map = {"toml": ".toml", "json": ".json", "yaml": ".yaml"}
     suffix = suffix_map.get(fmt, ".json")
 
-    # Create temporary file
-    temp_fd, temp_path_str = tempfile.mkstemp(
-        prefix=f"lintro-{tool_name}-",
-        suffix=suffix,
-    )
+    # Special handling for markdownlint-cli2 which requires specific filename
+    if tool_name.lower() == "markdownlint":
+        # markdownlint-cli2 requires files named like .markdownlint-cli2.jsonc
+        temp_fd, temp_path_str = tempfile.mkstemp(
+            prefix="lintro-",
+            suffix=".markdownlint-cli2.jsonc",
+        )
+    else:
+        # Create temporary file with standard naming
+        temp_fd, temp_path_str = tempfile.mkstemp(
+            prefix=f"lintro-{tool_name}-",
+            suffix=suffix,
+        )
     temp_path = Path(temp_path_str)
     _temp_files.append(temp_path)
 
