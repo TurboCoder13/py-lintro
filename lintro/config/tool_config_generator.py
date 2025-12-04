@@ -187,11 +187,36 @@ def _apply_global_settings(
     return result
 
 
+def _deep_merge_dicts(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    """Recursively merge two dictionaries.
+
+    Values from override take precedence. Nested dictionaries are merged
+    recursively rather than replaced.
+
+    Args:
+        base: Base dictionary to merge into.
+        override: Dictionary with values to override base.
+
+    Returns:
+        dict[str, Any]: Deeply merged dictionary.
+    """
+    result = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = _deep_merge_dicts(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
 def _merge_tool_settings(
     base_config: dict[str, Any],
     tool_config: ToolConfig,
 ) -> dict[str, Any]:
     """Merge tool-specific settings and overrides into base config.
+
+    Performs a recursive deep merge for nested dictionaries, preserving
+    keys from both sides and overriding scalars from the override dict.
 
     Args:
         base_config: Base configuration (from config_source or empty).
@@ -205,15 +230,16 @@ def _merge_tool_settings(
     # Apply settings (lower priority)
     for key, value in tool_config.settings.items():
         if isinstance(value, dict) and isinstance(result.get(key), dict):
-            # Deep merge for nested dicts
-            result[key] = {**result[key], **value}
+            # Recursive deep merge for nested dicts
+            result[key] = _deep_merge_dicts(result[key], value)
         else:
             result[key] = value
 
     # Apply overrides (highest priority)
     for key, value in tool_config.overrides.items():
         if isinstance(value, dict) and isinstance(result.get(key), dict):
-            result[key] = {**result[key], **value}
+            # Recursive deep merge for nested dicts
+            result[key] = _deep_merge_dicts(result[key], value)
         else:
             result[key] = value
 
