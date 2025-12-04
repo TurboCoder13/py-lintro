@@ -14,6 +14,7 @@ from lintro.tools.implementations.tool_ruff import RuffTool
 def test_annotations_rules_detected() -> None:
     """Ensure Ruff reports ANN-family violations on a known sample file."""
     # Disable Lintro config injection so we can test specific rule selection
+    original = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
     os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
     try:
         sample = os.path.abspath("test_samples/ruff_annotations_violations.py")
@@ -36,12 +37,16 @@ def test_annotations_rules_detected() -> None:
                 ),
             ).is_true()
     finally:
-        del os.environ["LINTRO_SKIP_CONFIG_INJECTION"]
+        if original is None:
+            os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
+        else:
+            os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = original
 
 
 def test_annotations_rules_with_other_rules() -> None:
     """Ensure ANN rules work alongside other rule families."""
     # Disable Lintro config injection so we can test specific rule selection
+    original = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
     os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
     try:
         sample = os.path.abspath("test_samples/ruff_annotations_violations.py")
@@ -58,12 +63,16 @@ def test_annotations_rules_with_other_rules() -> None:
             # Should have ANN codes (F codes may not be present in this sample)
             assert_that(any(code.startswith("ANN") for code in codes)).is_true()
     finally:
-        del os.environ["LINTRO_SKIP_CONFIG_INJECTION"]
+        if original is None:
+            os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
+        else:
+            os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = original
 
 
 def test_annotations_rules_fix_capability() -> None:
     """Test that ANN rules can be fixed automatically where possible."""
     # Disable Lintro config injection so we can test specific rule selection
+    original = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
     os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
     try:
         sample = os.path.abspath("test_samples/ruff_annotations_violations.py")
@@ -90,4 +99,7 @@ def test_annotations_rules_fix_capability() -> None:
             assert_that(initial_count).is_greater_than_or_equal_to(final_count)
             # Fix result may be False if issues remain, which is expected for ANN rules
     finally:
-        del os.environ["LINTRO_SKIP_CONFIG_INJECTION"]
+        if original is None:
+            os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
+        else:
+            os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = original

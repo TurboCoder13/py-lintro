@@ -14,6 +14,7 @@ from lintro.tools.implementations.tool_ruff import RuffTool
 def test_pep8_naming_rules_detected() -> None:
     """Ensure Ruff reports N-family violations on a known sample file."""
     # Disable Lintro config injection so we can test specific rule selection
+    original = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
     os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
     try:
         sample = os.path.abspath("test_samples/ruff_naming_violations.py")
@@ -33,4 +34,7 @@ def test_pep8_naming_rules_detected() -> None:
                 any(code in {"N802", "N803", "N806", "N815"} for code in codes),
             ).is_true()
     finally:
-        del os.environ["LINTRO_SKIP_CONFIG_INJECTION"]
+        if original is None:
+            os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
+        else:
+            os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = original

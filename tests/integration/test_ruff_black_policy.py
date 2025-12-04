@@ -25,6 +25,7 @@ def test_com812_reported_by_ruff_with_black_present() -> None:
     while Black can still be used for formatting in post-checks.
     """
     # Disable Lintro config injection so we can test specific rule selection
+    original = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
     os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
     try:
         content = (
@@ -48,7 +49,10 @@ def test_com812_reported_by_ruff_with_black_present() -> None:
             codes = [getattr(i, "code", "") for i in (result.issues or [])]
             assert_that("COM812" in codes).is_true()
     finally:
-        del os.environ["LINTRO_SKIP_CONFIG_INJECTION"]
+        if original is None:
+            os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
+        else:
+            os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = original
 
 
 def test_e501_wrapped_by_black_then_clean_under_ruff() -> None:
@@ -58,6 +62,7 @@ def test_e501_wrapped_by_black_then_clean_under_ruff() -> None:
     let Black apply formatting, then verify Ruff no longer reports E501.
     """
     # Disable Lintro config injection so we can test specific line_length behavior
+    original = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
     os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
     try:
         with tempfile.TemporaryDirectory() as tmp:
@@ -91,4 +96,7 @@ def test_e501_wrapped_by_black_then_clean_under_ruff() -> None:
                 ),
             ).is_false()
     finally:
-        del os.environ["LINTRO_SKIP_CONFIG_INJECTION"]
+        if original is None:
+            os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
+        else:
+            os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = original

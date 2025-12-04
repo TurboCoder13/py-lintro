@@ -14,9 +14,13 @@ def skip_config_injection():
     Yields:
         None: This fixture is used for its side effect only.
     """
+    original = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
     os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
     yield
-    del os.environ["LINTRO_SKIP_CONFIG_INJECTION"]
+    if original is None:
+        os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
+    else:
+        os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = original
 
 
 class TestRuffBugbearIntegration:
