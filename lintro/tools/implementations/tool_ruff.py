@@ -275,8 +275,13 @@ class RuffTool(BaseTool):
         """
         cmd: list[str] = self._get_executable_command(tool_name="ruff") + ["check"]
 
-        # Add --isolated if in test mode
-        if os.environ.get(RUFF_TEST_MODE_ENV) == RUFF_TEST_MODE_VALUE:
+        # Add Lintro config injection args (--isolated, --config)
+        # This takes precedence over native config
+        config_args = self._build_config_args()
+        if config_args:
+            cmd.extend(config_args)
+        # Add --isolated if in test mode (fallback when no Lintro config)
+        elif os.environ.get(RUFF_TEST_MODE_ENV) == RUFF_TEST_MODE_VALUE:
             cmd.append("--isolated")
 
         # Add configuration options
@@ -344,11 +349,16 @@ class RuffTool(BaseTool):
         if check_only:
             cmd.append("--check")
 
-        # Add configuration options
-        if self.options.get("line_length"):
-            cmd.extend(["--line-length", str(self.options["line_length"])])
-        if self.options.get("target_version"):
-            cmd.extend(["--target-version", self.options["target_version"]])
+        # Add Lintro config injection args (--isolated, --config)
+        config_args = self._build_config_args()
+        if config_args:
+            cmd.extend(config_args)
+        else:
+            # Fallback to options-based configuration
+            if self.options.get("line_length"):
+                cmd.extend(["--line-length", str(self.options["line_length"])])
+            if self.options.get("target_version"):
+                cmd.extend(["--target-version", self.options["target_version"]])
 
         # Add files
         cmd.extend(files)

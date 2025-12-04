@@ -275,13 +275,20 @@ class MarkdownlintTool(BaseTool):
             os.path.relpath(f, cwd) if cwd else f for f in markdown_files
         ]
 
-        # Apply line_length configuration if set
-        line_length = self.options.get("line_length")
-        if line_length:
-            self._ensure_markdownlint_config(cwd=cwd, line_length=line_length)
-
         # Build command
         cmd: list[str] = self._get_markdownlint_command()
+
+        # Try Lintro config injection first
+        config_args = self._build_config_args()
+        if config_args:
+            cmd.extend(config_args)
+            logger.debug("[MarkdownlintTool] Using Lintro config injection")
+        else:
+            # Fallback: Apply line_length configuration if set
+            line_length = self.options.get("line_length")
+            if line_length:
+                self._ensure_markdownlint_config(cwd=cwd, line_length=line_length)
+
         cmd.extend(rel_files)
 
         logger.debug(f"[MarkdownlintTool] Running: {' '.join(cmd)} (cwd={cwd})")
