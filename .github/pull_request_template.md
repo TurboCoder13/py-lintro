@@ -49,9 +49,7 @@ Describe the changes and why.
 
 ## Related Issues
 
-Closes #
-Fixes #
-Related #
+Closes # Fixes # Related #
 
 ## Details
 

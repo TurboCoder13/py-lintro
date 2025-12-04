@@ -123,9 +123,7 @@ class ToolManager:
         missing_tools = original_names - sorted_names
         if missing_tools:
             # Append missing tools in their original order
-            missing_enums = [
-                t for t in tool_list if t.name.lower() in missing_tools
-            ]
+            missing_enums = [t for t in tool_list if t.name.lower() in missing_tools]
             sorted_tools.extend(missing_enums)
             logger.warning(
                 f"Some tools were not found in ordered list and appended: "

@@ -19,7 +19,6 @@ Priority order (highest to lowest):
 from __future__ import annotations
 
 import json
-import re
 import tomllib
 from dataclasses import dataclass, field
 from enum import StrEnum, auto

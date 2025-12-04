@@ -68,9 +68,7 @@ implementations with the core tools themselves.
 
 ### [Black Analysis](./black-analysis.md)
 
-<!-- markdownlint-disable-next-line MD036 -->
-
-**Python Code Formatter**
+### Python Code Formatter
 
 - ✅ **Preserved**: Core formatting, pyproject config, check and write flows
 - ⚙️ **Pass-throughs**: `line_length`, `target_version`, `fast`, `preview`, `diff`

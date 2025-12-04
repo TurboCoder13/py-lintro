@@ -10,13 +10,13 @@ class MarkdownlintIssue:
     Attributes:
         file: File path where the issue was found
         line: Line number where the issue occurs
-        column: Column number where the issue occurs (if available)
         code: Rule code that was violated (e.g., MD013, MD041)
         message: Description of the issue
+        column: Column number where the issue occurs (if available)
     """
 
     file: str
     line: int
-    column: int | None = None
     code: str
     message: str
+    column: int | None = None

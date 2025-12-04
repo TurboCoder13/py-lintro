@@ -40,14 +40,19 @@ def run_markdownlint_directly(file_path: Path) -> tuple[bool, str, int]:
     cmd_base = find_markdownlint_cmd()
     if cmd_base is None:
         pytest.skip("markdownlint-cli2 not found in PATH")
-    cmd = [*cmd_base, str(file_path)]
+    # Use relative path from repo root to match lintro's behavior
+    repo_root = Path(__file__).parent.parent.parent
+    # Resolve to absolute path first if it's relative
+    abs_file_path = file_path.resolve() if not file_path.is_absolute() else file_path
+    relative_path = abs_file_path.relative_to(repo_root)
+    cmd = [*cmd_base, str(relative_path)]
 
     result = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
         check=False,
-        cwd=file_path.parent,
+        cwd=repo_root,
     )
 
     # Count issues from output (non-empty lines are typically issues)
@@ -104,12 +109,13 @@ def test_markdownlint_direct_vs_lintro_parity() -> None:
     # Compare issue counts (allow some variance due to parsing differences)
     # Direct count may include lines we don't parse, so lintro count <= direct
     assert_that(lintro_result.issues_count).is_greater_than_or_equal_to(0)
-    assert_that(lintro_result.issues_count).is_less_than_or_equal_to(direct_count)
-    # If direct found issues, lintro should also find some
+    # If direct found issues, lintro should find <= direct count (parsing may miss some)
     if direct_count > 0:
+        assert_that(lintro_result.issues_count).is_less_than_or_equal_to(direct_count)
         assert_that(lintro_result.issues_count).is_greater_than(0)
 
     # Both should agree on success/failure
+    # Success is True when no issues found, False when issues are found
     assert_that(lintro_result.success).is_equal_to(direct_success)
 
 

@@ -194,9 +194,7 @@ Lintro preserves all Hadolint error codes:
 | **Performance Rules** | DL     | Performance optimization suggestions   |
 | **Style Rules**       | DL     | Dockerfile style and formatting issues |
 
-<!-- markdownlint-disable-next-line MD026 -->
-
-### Common Rule Examples:
+### Common Rule Examples
 
 - **DL3006**: Always tag the version in `FROM`
 - **DL3008**: Pin versions in `apt-get`

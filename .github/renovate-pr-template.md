@@ -19,11 +19,7 @@ This PR updates dependencies to keep the project secure, stable, and fast. ✨
 
 | {{#if dep.packageName}}`{{dep.packageName}}`{{else}}`{{dep.depName}}`{{/if}} |
 `{{dep.currentValue}}` → `{{dep.newValue}}` |
-{{#if dep.isDevDependency}}dev{{else}}prod{{/if}} |
-{{/if}}
-{{/each}}
-{{/each}}
-{{/if}}
+{{#if dep.isDevDependency}}dev{{else}}prod{{/if}} | {{/if}} {{/each}} {{/each}} {{/if}}
 
 ## Renovate Configuration
 

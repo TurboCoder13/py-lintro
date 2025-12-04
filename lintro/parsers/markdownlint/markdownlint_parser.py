@@ -50,12 +50,12 @@ def parse_markdownlint_output(output: str) -> list[MarkdownlintIssue]:
             continue
 
         # Pattern for markdownlint-cli2 default formatter:
-        # file:line[:column] error MD###/rule-name Message [Context: "..."]
-        # Column is optional, and Context is optional
-        # Also handles variations like: file:line error MD### Message
+        # file:line[:column] [error] MD###/rule-name Message [Context: "..."]
+        # Column is optional, "error" keyword is optional, and Context is optional
+        # Also handles variations like: file:line MD### Message
         # [Expected: ...; Actual: ...]
         pattern: re.Pattern[str] = re.compile(
-            r"^([^:]+):(\d+)(?::(\d+))?\s+error\s+(MD\d+)(?:/[^:\s]+)?(?::\s*)?"
+            r"^([^:]+):(\d+)(?::(\d+))?\s+(?:error\s+)?(MD\d+)(?:/[^:\s]+)?(?::\s*)?"
             r"(.+?)(?:\s+\[(?:Context|Expected|Actual):.*?\])?$",
         )
 

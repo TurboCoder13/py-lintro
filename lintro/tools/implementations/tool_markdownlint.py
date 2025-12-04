@@ -5,17 +5,16 @@ import os
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
-from lintro.utils.unified_config import _strip_jsonc_comments
 from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.config import get_central_line_length
 from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.unified_config import _strip_jsonc_comments
 
 # Constants
 MARKDOWNLINT_DEFAULT_TIMEOUT: int = 30
