@@ -1,8 +1,18 @@
 """Integration tests for Ruff flake8-bugbear (B) rule support."""
 
+import os
+
 import pytest
 
 from lintro.tools.implementations.tool_ruff import RuffTool
+
+
+@pytest.fixture(autouse=True)
+def skip_config_injection():
+    """Disable Lintro config injection for all tests in this module."""
+    os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
+    yield
+    del os.environ["LINTRO_SKIP_CONFIG_INJECTION"]
 
 
 class TestRuffBugbearIntegration:

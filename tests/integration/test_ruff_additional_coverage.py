@@ -33,7 +33,11 @@ def ruff_tool():
     Returns:
         RuffTool: A configured RuffTool instance.
     """
-    return RuffTool()
+    # Disable Lintro config injection for these unit tests
+    # so we can verify CLI argument building behavior
+    os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
+    yield RuffTool()
+    del os.environ["LINTRO_SKIP_CONFIG_INJECTION"]
 
 
 @pytest.fixture

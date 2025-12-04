@@ -44,7 +44,13 @@ def run_markdownlint_directly(file_path: Path) -> tuple[bool, str, int]:
     repo_root = Path(__file__).parent.parent.parent
     # Resolve to absolute path first if it's relative
     abs_file_path = file_path.resolve() if not file_path.is_absolute() else file_path
-    relative_path = abs_file_path.relative_to(repo_root)
+    try:
+        relative_path = abs_file_path.relative_to(repo_root)
+    except ValueError:
+        # Fallback: use relative path calculation if not under repo root
+        import os
+
+        relative_path = Path(os.path.relpath(abs_file_path, repo_root))
     cmd = [*cmd_base, str(relative_path)]
 
     result = subprocess.run(
