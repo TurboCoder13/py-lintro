@@ -137,11 +137,23 @@ class ToolManager:
         conflict_graph: dict[ToolEnum, set[ToolEnum]] = {
             name: set() for name in tool_list
         }
+        # Create mapping from tool name strings to ToolEnum members
+        # Handle both lowercase strings and ToolEnum members in conflicts_with
+        name_to_enum_map = {t.name.lower(): t for t in ToolEnum}
         for name, tool in tools.items():
             for conflict in tool.config.conflicts_with:
-                if conflict in tool_list:
-                    conflict_graph[name].add(conflict)
-                    conflict_graph[conflict].add(name)
+                # Convert conflict string to ToolEnum if needed
+                conflict_enum: ToolEnum | None = None
+                if isinstance(conflict, str):
+                    # Look up by lowercase name
+                    conflict_enum = name_to_enum_map.get(conflict.lower())
+                elif isinstance(conflict, ToolEnum):
+                    # Already a ToolEnum member
+                    conflict_enum = conflict
+                # Only add to conflict graph if conflict_enum is in tool_list
+                if conflict_enum is not None and conflict_enum in tool_list:
+                    conflict_graph[name].add(conflict_enum)
+                    conflict_graph[conflict_enum].add(name)
 
         # Resolve conflicts by keeping the first tool in ordered sequence
         result = []

@@ -1,10 +1,13 @@
 """Base core implementation for Lintro."""
 
+from __future__ import annotations
+
 import os
 import shutil
 import subprocess  # nosec B404 - subprocess used safely with shell=False
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from loguru import logger
 
@@ -368,6 +371,112 @@ class BaseTool(ABC):
             output=skip_message,
             issues_count=0,
         )
+
+    # -------------------------------------------------------------------------
+    # Lintro Config Injection Support
+    # -------------------------------------------------------------------------
+
+    def _get_lintro_config(self) -> LintroConfig:
+        """Get the current Lintro configuration.
+
+        Returns:
+            LintroConfig: The loaded Lintro configuration.
+        """
+        from lintro.config import get_config
+
+        return get_config()
+
+    def _generate_tool_config(self) -> Path | None:
+        """Generate a temporary config file for this tool.
+
+        Uses the Lintro configuration to generate a tool-specific config
+        file that will be passed to the tool via --config flag.
+
+        Returns:
+            Path | None: Path to generated config file, or None if not needed.
+        """
+        from lintro.config import generate_tool_config
+
+        lintro_config = self._get_lintro_config()
+        return generate_tool_config(
+            tool_name=self.name,
+            lintro_config=lintro_config,
+        )
+
+    def _get_config_injection_args(self) -> list[str]:
+        """Get CLI arguments to inject Lintro config into this tool.
+
+        Generates a temporary config file and returns the CLI args
+        to pass it to the tool (e.g., ["--config", "/tmp/lintro-ruff-xxx.toml"]).
+
+        Returns:
+            list[str]: CLI arguments for config injection.
+        """
+        from lintro.config import get_config_injection_args
+
+        config_path = self._generate_tool_config()
+        if config_path is None:
+            return []
+
+        return get_config_injection_args(
+            tool_name=self.name,
+            config_path=config_path,
+        )
+
+    def _get_no_auto_config_args(self) -> list[str]:
+        """Get CLI arguments to disable native config auto-discovery.
+
+        For tools that support it (e.g., Ruff --isolated, Prettier --no-config),
+        returns the appropriate flags to prevent the tool from reading its
+        native config files.
+
+        Returns:
+            list[str]: CLI arguments to disable auto-config discovery.
+        """
+        from lintro.config import get_no_auto_config_args
+
+        return get_no_auto_config_args(tool_name=self.name)
+
+    def _should_use_lintro_config(self) -> bool:
+        """Check if Lintro config injection should be used.
+
+        Returns True if:
+        1. LINTRO_SKIP_CONFIG_INJECTION env var is NOT set, AND
+        2. A .lintro-config.yaml exists, OR [tool.lintro] is in pyproject.toml
+
+        Returns:
+            bool: True if Lintro config should be injected.
+        """
+        import os
+
+        # Allow tests to disable config injection
+        if os.environ.get("LINTRO_SKIP_CONFIG_INJECTION"):
+            return False
+
+        lintro_config = self._get_lintro_config()
+        return lintro_config.config_path is not None
+
+    def _build_config_args(self) -> list[str]:
+        """Build complete config-related CLI arguments for this tool.
+
+        Combines config injection args and no-auto-config args.
+        Only applies if Lintro config is available.
+
+        Returns:
+            list[str]: Combined CLI arguments for configuration.
+        """
+        if not self._should_use_lintro_config():
+            return []
+
+        args: list[str] = []
+
+        # Add no-auto-config flags first (e.g., --isolated, --no-config)
+        args.extend(self._get_no_auto_config_args())
+
+        # Add config injection args (e.g., --config /tmp/lintro-xxx.toml)
+        args.extend(self._get_config_injection_args())
+
+        return args
 
     @abstractmethod
     def check(
