@@ -92,6 +92,16 @@ class ToolManager:
 
         This method also handles:
         - Tool conflicts (unless ignore_conflicts is True)
+
+        Args:
+            tool_list: List of tools to order.
+            ignore_conflicts: If True, skip conflict checking.
+
+        Returns:
+            List of core names in execution order based on configured strategy
+
+        Raises:
+            ValueError: If duplicate tools are found in tool_list.
         - Tool dependencies
 
         Args:
