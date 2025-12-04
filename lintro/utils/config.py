@@ -1,5 +1,8 @@
 """Project configuration helpers for Lintro.
 
+This module provides backward-compatible access to configuration functions.
+The canonical implementation is in unified_config.py.
+
 Reads configuration from `pyproject.toml` under the `[tool.lintro]` table.
 Allows tool-specific defaults via `[tool.lintro.<tool>]` (e.g., `[tool.lintro.ruff]`).
 """
@@ -10,8 +13,47 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+# Re-export from unified_config for backward compatibility
+from lintro.utils.unified_config import (
+    get_effective_line_length,
+    load_lintro_global_config,
+    load_lintro_tool_config,
+)
+from lintro.utils.unified_config import (
+    validate_config_consistency as validate_line_length_consistency,
+)
+
+
+def get_central_line_length() -> int | None:
+    """Get the central line length configuration.
+
+    Backward-compatible wrapper that returns the effective line length
+    for Ruff (which serves as the source of truth).
+
+    Returns:
+        Line length value if configured, None otherwise.
+    """
+    return get_effective_line_length("ruff")
+
+
+__all__ = [
+    "_load_black_config",
+    "_load_pyproject",
+    "_load_ruff_config",
+    "get_central_line_length",
+    "load_lintro_global_config",
+    "load_lintro_tool_config",
+    "load_post_checks_config",
+    "validate_line_length_consistency",
+]
+
 
 def _load_pyproject() -> dict[str, Any]:
+    """Load Lintro configuration from pyproject.toml.
+
+    Returns:
+        Dict containing [tool.lintro] section or empty dict.
+    """
     pyproject_path = Path("pyproject.toml")
     if not pyproject_path.exists():
         return {}
@@ -55,22 +97,6 @@ def _load_black_config() -> dict[str, Any]:
         return data.get("tool", {}).get("black", {})
     except Exception:
         return {}
-
-
-def load_lintro_tool_config(tool_name: str) -> dict[str, Any]:
-    """Load tool-specific config from pyproject.
-
-    Args:
-        tool_name: Tool name (e.g., "ruff").
-
-    Returns:
-        A dict of options for the given tool, or an empty dict if none.
-    """
-    cfg = _load_pyproject()
-    section = cfg.get(tool_name, {})
-    if isinstance(section, dict):
-        return section
-    return {}
 
 
 def load_post_checks_config() -> dict[str, Any]:

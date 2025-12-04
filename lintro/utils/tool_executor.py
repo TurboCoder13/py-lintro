@@ -11,14 +11,11 @@ from lintro.enums.group_by import GroupBy, normalize_group_by
 from lintro.enums.output_format import OutputFormat, normalize_output_format
 from lintro.tools import tool_manager
 from lintro.tools.tool_enum import ToolEnum
-from lintro.utils.config import (
-    _load_ruff_config,
-    load_lintro_tool_config,
-    load_post_checks_config,
-)
+from lintro.utils.config import load_post_checks_config
 from lintro.utils.console_logger import create_logger
 from lintro.utils.output_manager import OutputManager
 from lintro.utils.tool_utils import format_tool_output
+from lintro.utils.unified_config import UnifiedConfigManager
 
 # Constants
 DEFAULT_EXIT_CODE_SUCCESS: int = 0
@@ -565,16 +562,11 @@ def run_lint_tools_simple(
                 logger.print_tool_header(tool_name=tool_name, action=action)
 
             try:
-                # Configure tool options
-                # 1) Load config from pyproject.toml / lintro.toml
-                cfg: dict = load_lintro_tool_config(tool_name)
-                if cfg:
-                    try:
-                        tool.set_options(**cfg)
-                    except Exception as e:
-                        logger.debug(f"Ignoring invalid config for {tool_name}: {e}")
-                # 2) CLI --tool-options overrides config file
-                # Check both tool display name and enum name
+                # Configure tool options using UnifiedConfigManager
+                # Priority: CLI --tool-options > [tool.lintro.<tool>] > global settings
+                config_manager = UnifiedConfigManager()
+
+                # Build CLI overrides from --tool-options
                 cli_overrides: dict[str, object] = {}
                 lookup_keys = _get_tool_lookup_keys(tool_enum, tool_name)
                 for option_key in lookup_keys:
@@ -582,8 +574,11 @@ def run_lint_tools_simple(
                     if overrides:
                         cli_overrides.update(overrides)
 
-                if cli_overrides:
-                    tool.set_options(**cli_overrides)
+                # Apply unified config with CLI overrides
+                config_manager.apply_config_to_tool(
+                    tool=tool,
+                    cli_overrides=cli_overrides if cli_overrides else None,
+                )
 
                 # Set common options
                 if exclude:
@@ -599,18 +594,19 @@ def run_lint_tools_simple(
                 # CLI or config. This keeps Ruff focused on lint fixes while Black
                 # handles formatting.
                 if "black" in post_tools_early and tool_name == "ruff":
-                    # Respect explicit overrides from CLI or config
-                    cfg_overrides = cfg or {}
+                    # Get tool config from manager to check for explicit overrides
+                    tool_config = config_manager.get_tool_config(tool_name)
+                    lintro_tool_cfg = tool_config.lintro_tool_config or {}
                     if action == "fmt":
                         if (
                             "format" not in cli_overrides
-                            and "format" not in cfg_overrides
+                            and "format" not in lintro_tool_cfg
                         ):
                             tool.set_options(format=False)
                     else:  # check
                         if (
                             "format_check" not in cli_overrides
-                            and "format_check" not in cfg_overrides
+                            and "format_check" not in lintro_tool_cfg
                         ):
                             tool.set_options(format_check=False)
 
@@ -776,54 +772,10 @@ def run_lint_tools_simple(
                     logger.print_tool_header(tool_name=tool_name, action=action)
 
                 try:
-                    # Load tool-specific config and common options
-                    cfg: dict = load_lintro_tool_config(tool_name)
-                    if cfg:
-                        try:
-                            tool.set_options(**cfg)
-                        except Exception as e:
-                            logger.debug(
-                                f"Ignoring invalid config for {tool_name}: {e}",
-                            )
-
-                    # Sync Ruff's line_length to Black when Black is a post-check
-                    # This ensures Black uses the same line length as Ruff
-                    # for consistency
-                    # Note: Black may not be able to wrap all lines that Ruff
-                    # flags (Black is conservative and only wraps when safe),
-                    # but we ensure they use the same line length setting so
-                    # Black can attempt to fix what it can.
-                    if (
-                        tool_name == "black"
-                        and "black" in post_tools_early
-                        and "line_length" not in cfg
-                        and "line-length" not in cfg
-                    ):
-                        # Sync Ruff's line_length to Black if not explicitly
-                        # configured in Black's lintro config
-                        # Priority: [tool.lintro.black] > Ruff sync >
-                        # Black native config
-                        # (CLI args override config file, so this ensures
-                        # Black uses Ruff's value when Black has no explicit
-                        # line_length in its lintro config)
-                        ruff_config = _load_ruff_config()
-                        ruff_line_length = ruff_config.get(
-                            "line-length",
-                        ) or ruff_config.get("line_length")
-                        if ruff_line_length is not None:
-                            try:
-                                tool.set_options(line_length=ruff_line_length)
-                                logger.debug(
-                                    (
-                                        f"Synced Ruff line_length "
-                                        f"({ruff_line_length}) to Black"
-                                    ),
-                                )
-                            except Exception as e:
-                                logger.debug(
-                                    f"Failed to sync Ruff line_length "
-                                    f"to Black: {e}",
-                                )
+                    # Configure post-check tool using UnifiedConfigManager
+                    # This replaces manual sync logic with unified config management
+                    post_config_manager = UnifiedConfigManager()
+                    post_config_manager.apply_config_to_tool(tool=tool)
 
                     tool.set_options(include_venv=include_venv)
                     if exclude:
