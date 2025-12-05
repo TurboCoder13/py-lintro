@@ -171,9 +171,13 @@ def _write_file(
         console.print(f"  [yellow]⏭️  Skipped {path} (already exists)[/yellow]")
         return False
 
-    path.write_text(content, encoding="utf-8")
-    console.print(f"  [green]✅ Created {path}[/green]")
-    return True
+    try:
+        path.write_text(content, encoding="utf-8")
+        console.print(f"  [green]✅ Created {path}[/green]")
+        return True
+    except (OSError, Exception) as e:
+        console.print(f"  [red]❌ Failed to write {path}: {e}[/red]")
+        return False
 
 
 def _write_json_file(
