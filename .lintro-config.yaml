@@ -5,7 +5,7 @@
 # Lintro is the master configuration source for all tools.
 # Native tool configs (.prettierrc, .yamllint, etc.) are ignored.
 
-global:
+enforce:
   line_length: 88
   target_python: 'py313'
 

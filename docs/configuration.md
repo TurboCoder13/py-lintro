@@ -4,7 +4,62 @@ This guide covers all configuration options for Lintro and the underlying tools 
 integrates. Learn how to customize behavior, set tool-specific options, and optimize
 Lintro for your project.
 
+## Configuration Model: 4-Tier System
+
+Lintro uses a clear 4-tier configuration model that separates concerns:
+
+| Tier          | Purpose                                             | When Applied               |
+| ------------- | --------------------------------------------------- | -------------------------- |
+| **execution** | What tools run and how                              | Always                     |
+| **enforce**   | Cross-cutting settings (line_length, target_python) | Always (via CLI flags)     |
+| **defaults**  | Fallback config when no native config exists        | Only when no native config |
+| **tools**     | Per-tool enable/disable and config source           | Always                     |
+
+### Key Principles
+
+1. **Native configs are respected by default** - Tools use their own `.prettierrc`,
+   `pyproject.toml [tool.ruff]`, etc.
+2. **`enforce` settings override via CLI flags** - Line length and target Python are
+   injected as CLI arguments to ensure consistency
+3. **`defaults` provide fallbacks** - Only used when a tool has no native config file
+4. **Simple and transparent** - Users know exactly which config is used
+
 ## Lintro Configuration
+
+### Configuration File: `.lintro-config.yaml`
+
+Create a `.lintro-config.yaml` in your project root:
+
+```yaml
+# Tier 1: EXECUTION - What tools run and how
+execution:
+  enabled_tools: [] # Empty = all enabled tools run
+  tool_order: priority # priority | alphabetical | [custom list]
+  fail_fast: false
+
+# Tier 2: ENFORCE - Cross-cutting settings injected via CLI flags
+# These OVERRIDE native configs for consistency
+enforce:
+  line_length: 88 # Injected as --line-length, --print-width, etc.
+  target_python: py313 # Injected as --target-version
+
+# Tier 3: DEFAULTS - Fallback config when NO native config exists
+# Only used if tool's native config file is not found
+defaults:
+  prettier:
+    semi: true
+    singleQuote: true
+  yamllint:
+    extends: default
+
+# Tier 4: TOOLS - Per-tool enable/disable and config source
+tools:
+  ruff:
+    enabled: true
+  prettier:
+    enabled: true
+    config_source: '.prettierrc' # Optional: explicit native config path
+```
 
 ### Configuration Report Command
 
@@ -23,11 +78,11 @@ lintro config --json
 
 The config command shows:
 
-- **Global settings**: Central `line_length`, tool ordering strategy
+- **Enforce settings**: Central `line_length`, `target_python`
 - **Tool execution order**: Based on configured strategy (priority, alphabetical, or
   custom)
-- **Per-tool configuration**: Effective settings for each tool
-- **Configuration warnings**: Inconsistencies between tools
+- **Per-tool configuration**: Whether enabled, native config found
+- **Defaults applied**: Which tools are using fallback defaults
 
 ### Command-Line Options
 
@@ -81,81 +136,75 @@ export LINTRO_DEFAULT_FORMAT="grid"
 Lintro respects each tool's native configuration files, allowing you to leverage
 existing setups.
 
-### Lintro Project Config
+### Enforce Settings (Cross-Cutting Concerns)
 
-You can set Lintro-level defaults in `pyproject.toml` under `[tool.lintro]`. CLI
-`--tool-options` override file-based config.
-
-#### Central Line Length Configuration
-
-Lintro supports a central `line_length` configuration to ensure consistency across
-tools. Without this, you might have Ruff using 88, Black using 88, but Markdownlint
-using 80—causing confusing results on Markdown files.
-
-```toml
-[tool.lintro]
-line_length = 88  # Single source of truth for line length
-```
-
-**How it works:**
-
-The central `line_length` value is determined by (in order):
-
-1. `[tool.lintro]` `line_length` if set
-2. Falls back to `[tool.ruff]` `line-length` if not set
-
-**Which tools are synced:**
-
-<!-- markdownlint-disable MD060 -->
-
-| Tool                  | Synced?   | How                                                 |
-| --------------------- | --------- | --------------------------------------------------- |
-| **Ruff**              | ✅ Source | Reads from `[tool.ruff]` or central config          |
-| **Black**             | ✅ Yes    | Lintro injects via `--line-length` CLI arg          |
-| **Markdownlint-cli2** | ✅ Yes    | Lintro creates `.markdownlint.json` with MD013 rule |
-| **Prettier**          | ❌ No     | Uses `.prettierrc` only (no CLI override available) |
-| **Yamllint**          | ❌ No     | Uses `.yamllint` only (no CLI override available)   |
-
-<!-- markdownlint-enable MD060 -->
-
-**Priority order for synced tools:**
-
-1. CLI `--tool-options` (highest)
-2. `[tool.lintro.<tool>]` config
-3. Central `[tool.lintro]` config
-4. Tool's native config (lowest for synced tools)
-
-**For non-synced tools (Prettier, Yamllint):** These tools only read their native config
-files. If you use these tools, manually ensure their line length settings match your
-central config:
-
-```json
-// .prettierrc - must manually match [tool.lintro] line_length
-{
-  "printWidth": 88
-}
-```
+The `enforce` tier contains settings that MUST be consistent across tools. These are
+injected directly as CLI flags to each tool, overriding their native configs.
 
 ```yaml
-# .yamllint - must manually match [tool.lintro] line_length
-rules:
-  line-length:
-    max: 88
+enforce:
+  line_length: 88 # Injected as --line-length (ruff, black) or --print-width (prettier)
+  target_python: py313 # Injected as --target-version (ruff, black)
 ```
 
-**Example configuration:**
+**How CLI injection works:**
+
+| Tool     | CLI Flag for `line_length` | CLI Flag for `target_python` |
+| -------- | -------------------------- | ---------------------------- |
+| Ruff     | `--line-length 88`         | `--target-version py313`     |
+| Black    | `--line-length 88`         | `--target-version py313`     |
+| Prettier | `--print-width 88`         | N/A                          |
+
+**Tools without CLI support:**
+
+Some tools (Yamllint, Markdownlint) don't have CLI flags for line length. For these:
+
+- Use the `defaults` tier to provide fallback config
+- Or configure their native config files manually
+
+### Defaults Tier (Fallback Config)
+
+The `defaults` tier provides fallback configuration for tools that have no native config
+file. This is useful for ensuring consistent settings without creating multiple config
+files.
+
+```yaml
+defaults:
+  prettier:
+    semi: true
+    singleQuote: true
+    tabWidth: 2
+    trailingComma: es5
+
+  yamllint:
+    extends: default
+    rules:
+      line-length:
+        max: 88
+
+  markdownlint:
+    MD013:
+      line_length: 88
+      code_blocks: false
+      tables: false
+```
+
+**When defaults are applied:**
+
+1. Lintro checks if the tool has a native config file (e.g., `.prettierrc`)
+2. If NO native config exists, Lintro generates a temp file from `defaults`
+3. If native config EXISTS, `defaults` are ignored (native config is used)
+
+### Legacy `pyproject.toml` Support
+
+You can still use `pyproject.toml` under `[tool.lintro]`, but `.lintro-config.yaml` is
+preferred. The `global:` section is deprecated in favor of `enforce:`.
 
 ```toml
+# DEPRECATED - use .lintro-config.yaml instead
 [tool.lintro]
-line_length = 88  # Central line length for all tools
-
-[tool.lintro.ruff]
-format = true      # run `ruff format` during fmt (default true)
-lint_fix = true    # run `ruff check --fix` during fmt (default true)
-
-# Override line_length for a specific tool if needed
-[tool.lintro.markdownlint-cli2]
-line_length = 120  # Markdown files can be longer
+line_length = 88
+target_python = "py313"
 ```
 
 ### Tool Ordering Configuration
