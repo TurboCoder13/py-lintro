@@ -45,8 +45,8 @@ __all__ = [
 ]
 
 
-def _load_pyproject() -> dict[str, Any]:
-    """Load Lintro configuration from pyproject.toml.
+def _load_lintro_section() -> dict[str, Any]:
+    """Load Lintro configuration section from pyproject.toml.
 
     Returns:
         Dict containing [tool.lintro] section or empty dict.
@@ -62,40 +62,6 @@ def _load_pyproject() -> dict[str, Any]:
         return {}
 
 
-def _load_ruff_config() -> dict[str, Any]:
-    """Load Ruff configuration from pyproject.toml.
-
-    Returns:
-        dict[str, Any]: Ruff configuration dictionary from [tool.ruff] section.
-    """
-    pyproject_path = Path("pyproject.toml")
-    if not pyproject_path.exists():
-        return {}
-    try:
-        with pyproject_path.open("rb") as f:
-            data = tomllib.load(f)
-        return data.get("tool", {}).get("ruff", {})
-    except Exception:
-        return {}
-
-
-def _load_black_config() -> dict[str, Any]:
-    """Load Black configuration from pyproject.toml.
-
-    Returns:
-        dict[str, Any]: Black configuration dictionary from [tool.black] section.
-    """
-    pyproject_path = Path("pyproject.toml")
-    if not pyproject_path.exists():
-        return {}
-    try:
-        with pyproject_path.open("rb") as f:
-            data = tomllib.load(f)
-        return data.get("tool", {}).get("black", {})
-    except Exception:
-        return {}
-
-
 def load_post_checks_config() -> dict[str, Any]:
     """Load post-checks configuration from pyproject.
 
@@ -105,7 +71,7 @@ def load_post_checks_config() -> dict[str, Any]:
             - tools: list[str]
             - enforce_failure: bool
     """
-    cfg = _load_pyproject()
+    cfg = _load_lintro_section()
     section = cfg.get("post_checks", {})
     if isinstance(section, dict):
         return section
