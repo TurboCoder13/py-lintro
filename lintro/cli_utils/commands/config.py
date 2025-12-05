@@ -32,6 +32,7 @@ def _get_all_tool_names() -> list[str]:
         "bandit",
         "hadolint",
         "actionlint",
+        "pytest",
     ]
 
 
@@ -157,7 +158,7 @@ def _output_json(
         order_strategy = "custom"
         custom_order = tool_order
     else:
-        order_strategy = tool_order
+        order_strategy = tool_order or "priority"
         custom_order = []
 
     # Get list of all known tools
@@ -272,7 +273,7 @@ def _output_rich(
         exec_table.add_row("tool_order", order_strategy)
         exec_table.add_row("custom_order", ", ".join(tool_order))
     else:
-        exec_table.add_row("tool_order", tool_order)
+        exec_table.add_row("tool_order", tool_order or "priority")
 
     enabled_tools = config.execution.enabled_tools
     exec_table.add_row(
@@ -280,6 +281,7 @@ def _output_rich(
         ", ".join(enabled_tools) if enabled_tools else "[dim]all[/dim]",
     )
     exec_table.add_row("fail_fast", str(config.execution.fail_fast))
+    exec_table.add_row("parallel", str(config.execution.parallel))
 
     console.print(exec_table)
     console.print()
