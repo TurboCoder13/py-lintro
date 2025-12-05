@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         darglint,
         hadolint,
         prettier,
+        pytest,
         ruff,
         yamllint,
     )
@@ -23,6 +24,7 @@ __all__ = [
     "darglint",
     "hadolint",
     "prettier",
+    "pytest",
     "ruff",
     "yamllint",
 ]
@@ -34,6 +36,7 @@ _SUBMODULES = {
     "darglint",
     "hadolint",
     "prettier",
+    "pytest",
     "ruff",
     "yamllint",
 }

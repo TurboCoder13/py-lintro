@@ -38,7 +38,7 @@ Documentation = "https://github.com/TurboCoder13/py-lintro/docs"
 Source = "https://github.com/TurboCoder13/py-lintro"
 
 [tool.setuptools]
-packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.formatters.tools", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.actionlint", "lintro.parsers.bandit", "lintro.parsers.black", "lintro.parsers.darglint", "lintro.parsers.hadolint", "lintro.parsers.prettier", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.tools", "lintro.tools.core", "lintro.tools.implementations", "lintro.utils",]
+packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.formatters.tools", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.actionlint", "lintro.parsers.bandit", "lintro.parsers.black", "lintro.parsers.darglint", "lintro.parsers.hadolint", "lintro.parsers.prettier", "lintro.parsers.pytest", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.tools", "lintro.tools.core", "lintro.tools.implementations", "lintro.utils",]
 
 [tool.semantic_release]
 branch = "main"
