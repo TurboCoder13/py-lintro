@@ -792,6 +792,10 @@ class UnifiedConfigManager:
         Args:
             tool: Tool instance with set_options method
             cli_overrides: Optional CLI override options
+
+        Raises:
+            TypeError: If tool configuration has type mismatches.
+            ValueError: If tool configuration has invalid values.
         """
         tool_name = getattr(tool, "name", "").lower()
         if not tool_name:
