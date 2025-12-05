@@ -214,9 +214,8 @@ class TestHasNativeConfig:
         monkeypatch.chdir(tmp_path)
         # Create empty directory, no config files
         result = has_native_config("prettier")
-        # Result depends on whether running in repo root or tmp_path
-        # Just verify it doesn't crash
-        assert isinstance(result, bool)
+        # Should return False since no config exists in empty tmp_path
+        assert result is False
 
 
 class TestGenerateDefaultsConfig:
