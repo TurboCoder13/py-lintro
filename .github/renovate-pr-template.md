@@ -13,11 +13,8 @@ This PR updates dependencies to keep the project secure, stable, and fast. ✨
 | {{#each packageFiles as     | packageFile | }}   |
 | {{#each packageFile.deps as | dep         | }}   |
 
-{{#if dep.updates.length}}
-
-<!-- markdownlint-disable-next-line MD013 -->
-
-| {{#if dep.packageName}}`{{dep.packageName}}`{{else}}`{{dep.depName}}`{{/if}} |
+{{#if dep.updates.length}} |
+{{#if dep.packageName}}`{{dep.packageName}}`{{else}}`{{dep.depName}}`{{/if}} |
 `{{dep.currentValue}}` → `{{dep.newValue}}` |
 {{#if dep.isDevDependency}}dev{{else}}prod{{/if}} | {{/if}} {{/each}} {{/each}} {{/if}}
 
