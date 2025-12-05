@@ -14,10 +14,12 @@ from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_o
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.config import get_central_line_length
 from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.unified_config import DEFAULT_TOOL_PRIORITIES
 
 # Constants
 MARKDOWNLINT_DEFAULT_TIMEOUT: int = 30
-MARKDOWNLINT_DEFAULT_PRIORITY: int = 45
+# Use centralized priority from unified_config.py for consistency
+MARKDOWNLINT_DEFAULT_PRIORITY: int = DEFAULT_TOOL_PRIORITIES.get("markdownlint", 30)
 MARKDOWNLINT_FILE_PATTERNS: list[str] = [
     "*.md",
     "*.markdown",
