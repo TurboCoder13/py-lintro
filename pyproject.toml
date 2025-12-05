@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lintro"
-version = "0.15.3"
+version = "0.16.0"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
 keywords = [ "linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker",]
 classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
@@ -15,21 +15,7 @@ name = "TurboCoder13"
 email = "turbocoder13@gmail.com"
 
 [dependency-groups]
-dev = [
- "build==1.3.0",
- "pytest==9.0.1",
- "pytest-cov==7.0.0",
- "pytest-xdist==3.8.0",
- "twine==6.2.0",
- "assertpy==1.1",
- "pytest-mock==3.15.1",
- "darglint==1.8.1",
- "bandit==1.9.2",
- "black==25.11.0",
- "ruff==0.14.4",
- "yamllint==1.37.1",
- "pytest-timeout>=2.4.0",
-]
+dev = [ "build==1.3.0", "pytest==9.0.1", "pytest-cov==7.0.0", "pytest-xdist==3.8.0", "twine==6.2.0", "assertpy==1.1", "pytest-mock==3.15.1", "darglint==1.8.1", "bandit==1.9.2", "black==25.11.0", "ruff==0.14.4", "yamllint==1.37.1", "pytest-timeout>=2.4.0",]
 
 [project.license]
 file = "LICENSE"
@@ -73,6 +59,10 @@ exclude = [ ".venv", "venv", "env", "build", "dist", "__pycache__", "test_sample
 [tool.bandit]
 exclude_dirs = [ "tests", "test_samples",]
 
+[tool.lintro]
+line_length = 88
+tool_order = "priority"
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
@@ -81,13 +71,6 @@ skip-magic-trailing-comma = false
 [tool.ruff.lint]
 select = [ "E", "F", "W", "I", "COM", "N", "D", "UP", "ANN", "B", "C4", "SIM",]
 ignore = [ "ANN",]
-
-# Global Lintro settings
-# line_length applies to all syncable tools (ruff, black, markdownlint)
-# tool_order: "priority" (default), "alphabetical", or "custom"
-[tool.lintro]
-line_length = 88
-tool_order = "priority"
 
 [tool.lintro.post_checks]
 enabled = true
