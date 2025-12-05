@@ -70,9 +70,9 @@ tools:
     printWidth: 100
     trailingComma: 'es5'
     overrides:
-      - files: "*.md"
+      - files: '*.md'
         options:
-          printWidth: 88  # Match global for markdown
+          printWidth: 88 # Match global for markdown
 
   # Markdownlint - Markdown linter
   markdownlint:
