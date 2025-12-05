@@ -374,6 +374,10 @@ def get_config_injection_args(
     Returns:
         list[str]: CLI arguments to pass to the tool.
     """
+    logger.warning(
+        f"get_config_injection_args() is deprecated for {tool_name}. "
+        "Use get_defaults_injection_args() instead.",
+    )
     return get_defaults_injection_args(
         tool_name=tool_name,
         config_path=config_path,
@@ -392,4 +396,8 @@ def get_no_auto_config_args(tool_name: str) -> list[str]:
     Returns:
         list[str]: Empty list (no longer used).
     """
+    logger.warning(
+        f"get_no_auto_config_args() is deprecated for {tool_name}. "
+        "No longer needed with the tiered config model.",
+    )
     return []
