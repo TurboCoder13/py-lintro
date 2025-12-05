@@ -51,6 +51,7 @@ class TestParseExecutionConfig:
         assert config.tool_order == "priority"
         assert config.fail_fast is False
         assert config.parallel is False
+
     def test_with_values(self) -> None:
         """Should parse all execution values."""
         data = {
