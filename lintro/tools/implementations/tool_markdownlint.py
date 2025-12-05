@@ -172,10 +172,13 @@ class MarkdownlintTool(BaseTool):
         try:
             # Create a temp file that persists until explicitly deleted
             # Using delete=False so it survives the subprocess call
+            # markdownlint-cli2 requires config files to follow specific naming
+            # conventions - the file must end with ".markdownlint-cli2.jsonc"
+            # or be named ".markdownlint-cli2.jsonc"
             with tempfile.NamedTemporaryFile(
                 mode="w",
-                suffix=".jsonc",
-                prefix="lintro-markdownlint-",
+                suffix=".markdownlint-cli2.jsonc",
+                prefix="lintro-",
                 delete=False,
                 encoding="utf-8",
             ) as f:
