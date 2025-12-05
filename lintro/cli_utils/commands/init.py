@@ -351,7 +351,10 @@ def init_command(
     # Next steps
     console.print("[bold cyan]Next steps:[/bold cyan]")
     console.print("  [dim]1.[/dim] Review and customize the configuration")
-    console.print("  [dim]2.[/dim] Run [cyan]lintro check .[/cyan] to lint")
+    console.print(
+        "  [dim]2.[/dim] Run [cyan]lintro config[/cyan] to view config",
+    )
+    console.print("  [dim]3.[/dim] Run [cyan]lintro check .[/cyan] to lint")
     if with_native_configs:
         console.print(
             "  [dim]3.[/dim] Commit the config files to your repository",
