@@ -1,12 +1,16 @@
 """Lintro configuration module.
 
-This module provides a centralized configuration system where Lintro
-acts as the master configuration source for all tools.
+This module provides a tiered configuration system:
+1. EXECUTION: What tools run and how
+2. ENFORCE: Cross-cutting settings injected via CLI flags
+3. DEFAULTS: Fallback config when no native config exists
+4. TOOLS: Per-tool enable/disable and config source
 
 Key components:
 - LintroConfig: Main configuration dataclass
+- EnforceConfig: Cross-cutting settings enforced via CLI
 - ConfigLoader: Loads .lintro-config.yaml
-- ToolConfigGenerator: Generates tool-specific temp configs
+- ToolConfigGenerator: CLI injection and defaults generation
 """
 
 from lintro.config.config_loader import (
@@ -16,6 +20,7 @@ from lintro.config.config_loader import (
     load_config,
 )
 from lintro.config.lintro_config import (
+    EnforceConfig,
     ExecutionConfig,
     GlobalConfig,
     LintroConfig,
@@ -23,22 +28,35 @@ from lintro.config.lintro_config import (
 )
 from lintro.config.tool_config_generator import (
     cleanup_temp_config,
+    generate_defaults_config,
     generate_tool_config,
     get_config_injection_args,
+    get_defaults_injection_args,
+    get_enforce_cli_args,
     get_no_auto_config_args,
+    has_native_config,
 )
 
 __all__ = [
+    # Config dataclasses
+    "EnforceConfig",
     "ExecutionConfig",
-    "GlobalConfig",
+    "GlobalConfig",  # Deprecated alias for EnforceConfig
     "LintroConfig",
     "ToolConfig",
-    "cleanup_temp_config",
+    # Config loading
     "clear_config_cache",
-    "generate_tool_config",
     "get_config",
-    "get_config_injection_args",
     "get_default_config",
-    "get_no_auto_config_args",
     "load_config",
+    # New tiered model functions
+    "get_enforce_cli_args",
+    "has_native_config",
+    "generate_defaults_config",
+    "get_defaults_injection_args",
+    # Deprecated functions (kept for backward compatibility)
+    "cleanup_temp_config",
+    "generate_tool_config",
+    "get_config_injection_args",
+    "get_no_auto_config_args",
 ]

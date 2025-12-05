@@ -1,8 +1,12 @@
 """Lintro configuration dataclasses.
 
 This module defines the configuration structure for .lintro-config.yaml.
-Lintro acts as the master configuration source, and native tool configs
-are ignored unless explicitly referenced via config_source.
+The configuration follows a 4-tier model:
+
+1. EXECUTION: What tools run and how (Lintro's core responsibility)
+2. ENFORCE: Cross-cutting settings injected via CLI flags (overrides native configs)
+3. DEFAULTS: Fallback config when no native config exists for a tool
+4. TOOLS: Per-tool enable/disable and config source
 """
 
 from dataclasses import dataclass, field
@@ -10,23 +14,25 @@ from typing import Any
 
 
 @dataclass
-class GlobalConfig:
-    """Global settings that cascade to all supporting tools.
+class EnforceConfig:
+    """Cross-cutting settings enforced across all tools via CLI flags.
+
+    These settings override native tool configs to ensure consistency
+    across different tools for shared concerns.
 
     Attributes:
-        line_length: Line length limit applied to all tools that support it.
-            Maps to: ruff line-length, black line-length, prettier printWidth,
-            markdownlint MD013.line_length, yamllint line-length.max
+        line_length: Line length limit injected via CLI flags.
+            Injected as: --line-length (ruff, black), --print-width (prettier)
         target_python: Python version target (e.g., "py313").
-            Maps to: ruff target-version, black target-version
-        indent_size: Indentation size in spaces (future).
-        quote_style: Quote style preference (future).
+            Injected as: --target-version (ruff, black)
     """
 
     line_length: int | None = None
     target_python: str | None = None
-    indent_size: int | None = None
-    quote_style: str | None = None
+
+
+# Backward compatibility alias
+GlobalConfig = EnforceConfig
 
 
 @dataclass
@@ -53,29 +59,18 @@ class ExecutionConfig:
 class ToolConfig:
     """Configuration for a single tool.
 
+    In the tiered model, tools use their native configs by default.
+    Lintro only controls whether tools run and optionally specifies
+    an explicit config source path.
+
     Attributes:
         enabled: Whether the tool is enabled.
-        config_source: Path to native config file to inherit from.
-            If not set, tool receives only Lintro-managed config.
-        overrides: Settings that override config_source values.
-            Always applied on top of inherited config.
-        settings: Direct tool settings (merged with overrides).
+        config_source: Optional explicit path to native config file.
+            If not set, tool uses its own config discovery.
     """
 
     enabled: bool = True
     config_source: str | None = None
-    overrides: dict[str, Any] = field(default_factory=dict)
-    settings: dict[str, Any] = field(default_factory=dict)
-
-    def get_effective_settings(self) -> dict[str, Any]:
-        """Get merged settings with overrides applied.
-
-        Returns:
-            dict[str, Any]: Merged settings dictionary.
-        """
-        result = dict(self.settings)
-        result.update(self.overrides)
-        return result
 
 
 @dataclass
@@ -83,19 +78,36 @@ class LintroConfig:
     """Main Lintro configuration container.
 
     This is the root configuration object loaded from .lintro-config.yaml.
-    Lintro is the master - all tool execution is controlled by this config.
+    Follows the 4-tier model:
+
+    1. execution: What tools run and how
+    2. enforce: Cross-cutting settings that override native configs
+    3. defaults: Fallback config when no native config exists
+    4. tools: Per-tool enable/disable and config source
 
     Attributes:
-        global_config: Global settings that cascade to tools.
         execution: Execution control settings.
+        enforce: Cross-cutting settings enforced via CLI flags.
+        defaults: Fallback configs for tools without native configs.
         tools: Per-tool configuration, keyed by tool name.
         config_path: Path to the config file (set by loader).
     """
 
-    global_config: GlobalConfig = field(default_factory=GlobalConfig)
     execution: ExecutionConfig = field(default_factory=ExecutionConfig)
+    enforce: EnforceConfig = field(default_factory=EnforceConfig)
+    defaults: dict[str, dict[str, Any]] = field(default_factory=dict)
     tools: dict[str, ToolConfig] = field(default_factory=dict)
     config_path: str | None = None
+
+    # Backward compatibility property
+    @property
+    def global_config(self) -> EnforceConfig:
+        """Get enforce config (deprecated alias for backward compatibility).
+
+        Returns:
+            EnforceConfig: The enforce configuration.
+        """
+        return self.enforce
 
     def get_tool_config(self, tool_name: str) -> ToolConfig:
         """Get configuration for a specific tool.
@@ -135,64 +147,43 @@ class LintroConfig:
         tool_config = self.get_tool_config(tool_lower)
         return tool_config.enabled
 
-    def get_effective_line_length(self, tool_name: str) -> int | None:
-        """Get effective line length for a specific tool.
+    def get_tool_defaults(self, tool_name: str) -> dict[str, Any]:
+        """Get default configuration for a tool.
 
-        Priority:
-        1. Tool-specific override
-        2. Tool-specific setting
-        3. Global line_length
+        Used when the tool has no native config file.
 
         Args:
             tool_name: Name of the tool.
 
         Returns:
-            int | None: Effective line length or None.
+            dict[str, Any]: Default configuration or empty dict.
         """
-        tool_config = self.get_tool_config(tool_name)
+        return self.defaults.get(tool_name.lower(), {})
 
-        # Check tool overrides first
-        if "line_length" in tool_config.overrides:
-            return tool_config.overrides["line_length"]
-        if "line-length" in tool_config.overrides:
-            return tool_config.overrides["line-length"]
+    def get_effective_line_length(self, tool_name: str) -> int | None:
+        """Get effective line length for a specific tool.
 
-        # Check tool settings
-        if "line_length" in tool_config.settings:
-            return tool_config.settings["line_length"]
-        if "line-length" in tool_config.settings:
-            return tool_config.settings["line-length"]
+        In the tiered model, this simply returns the enforce.line_length
+        value, which will be injected via CLI flags.
 
-        # Fall back to global
-        return self.global_config.line_length
+        Args:
+            tool_name: Name of the tool (unused, kept for compatibility).
+
+        Returns:
+            int | None: Enforced line length or None.
+        """
+        return self.enforce.line_length
 
     def get_effective_target_python(self, tool_name: str) -> str | None:
         """Get effective Python target version for a specific tool.
 
-        Priority:
-        1. Tool-specific override
-        2. Tool-specific setting
-        3. Global target_python
+        In the tiered model, this simply returns the enforce.target_python
+        value, which will be injected via CLI flags.
 
         Args:
-            tool_name: Name of the tool.
+            tool_name: Name of the tool (unused, kept for compatibility).
 
         Returns:
-            str | None: Effective target version or None.
+            str | None: Enforced target version or None.
         """
-        tool_config = self.get_tool_config(tool_name)
-
-        # Check tool overrides first
-        if "target_python" in tool_config.overrides:
-            return tool_config.overrides["target_python"]
-        if "target-version" in tool_config.overrides:
-            return tool_config.overrides["target-version"]
-
-        # Check tool settings
-        if "target_python" in tool_config.settings:
-            return tool_config.settings["target_python"]
-        if "target-version" in tool_config.settings:
-            return tool_config.settings["target-version"]
-
-        # Fall back to global
-        return self.global_config.target_python
+        return self.enforce.target_python

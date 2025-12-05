@@ -1,8 +1,13 @@
 """Tool configuration generator for Lintro.
 
-Generates temporary configuration files for each tool based on
-the unified Lintro configuration. This ensures tools receive
-only Lintro-managed configuration, ignoring native config files.
+This module provides CLI argument injection for enforced settings and
+default config generation for tools without native configs.
+
+The tiered configuration model:
+1. EXECUTION: What tools run and how
+2. ENFORCE: Cross-cutting settings injected via CLI flags
+3. DEFAULTS: Fallback config when no native config exists
+4. TOOLS: Per-tool enable/disable and config source
 """
 
 from __future__ import annotations
@@ -16,44 +21,75 @@ from typing import Any
 
 from loguru import logger
 
-from lintro.config.lintro_config import LintroConfig, ToolConfig
+from lintro.config.lintro_config import LintroConfig
 
 try:
     import yaml
 except ImportError:
     yaml = None  # type: ignore[assignment]
 
-try:
-    import toml
-except ImportError:
-    toml = None  # type: ignore[assignment]
 
-
-# Global setting mappings: lintro key -> {tool: tool_key}
-GLOBAL_SETTING_MAPPINGS: dict[str, dict[str, str]] = {
+# CLI flags for enforced settings: setting -> {tool: flag}
+ENFORCE_CLI_FLAGS: dict[str, dict[str, str]] = {
     "line_length": {
-        "ruff": "line-length",
-        "black": "line-length",
-        "prettier": "printWidth",
-        "yamllint": "line-length",  # nested under rules.line-length.max
-        "markdownlint": "line_length",  # MD013 rule
+        "ruff": "--line-length",
+        "black": "--line-length",
+        "prettier": "--print-width",
     },
     "target_python": {
-        "ruff": "target-version",
-        "black": "target-version",
+        "ruff": "--target-version",
+        "black": "--target-version",
     },
 }
 
-# Tool config format: what format does each tool expect?
+# Tool config format for defaults generation
 TOOL_CONFIG_FORMATS: dict[str, str] = {
-    "ruff": "toml",
-    "black": "toml",
     "prettier": "json",
     "yamllint": "yaml",
     "markdownlint": "json",
     "hadolint": "yaml",
     "bandit": "yaml",
-    "actionlint": "yaml",
+}
+
+# Native config file patterns for checking if tool has native config
+NATIVE_CONFIG_PATTERNS: dict[str, list[str]] = {
+    "prettier": [
+        ".prettierrc",
+        ".prettierrc.json",
+        ".prettierrc.yaml",
+        ".prettierrc.yml",
+        ".prettierrc.js",
+        ".prettierrc.cjs",
+        ".prettierrc.toml",
+        "prettier.config.js",
+        "prettier.config.cjs",
+    ],
+    "markdownlint": [
+        ".markdownlint-cli2.jsonc",
+        ".markdownlint-cli2.yaml",
+        ".markdownlint-cli2.cjs",
+        ".markdownlint.jsonc",
+        ".markdownlint.json",
+        ".markdownlint.yaml",
+        ".markdownlint.yml",
+        ".markdownlint.cjs",
+    ],
+    "yamllint": [
+        ".yamllint",
+        ".yamllint.yaml",
+        ".yamllint.yml",
+    ],
+    "hadolint": [
+        ".hadolint.yaml",
+        ".hadolint.yml",
+    ],
+    "bandit": [
+        ".bandit",
+        ".bandit.yaml",
+        ".bandit.yml",
+        "bandit.yaml",
+        "bandit.yml",
+    ],
 }
 
 # Track temporary files for cleanup
@@ -75,315 +111,184 @@ def _cleanup_temp_files() -> None:
 atexit.register(_cleanup_temp_files)
 
 
-def _load_config_source(
-    config_source: str,
-    tool_name: str,
-) -> dict[str, Any]:
-    """Load a native config file as base configuration.
-
-    Args:
-        config_source: Path to native config file.
-        tool_name: Name of the tool (for format detection).
-
-    Returns:
-        dict[str, Any]: Parsed configuration.
-    """
-    path = Path(config_source)
-    if not path.exists():
-        logger.warning(f"Config source not found: {config_source}")
-        return {}
-
-    suffix = path.suffix.lower()
-    content = path.read_text(encoding="utf-8")
-
-    try:
-        if suffix in (".json", ".jsonc"):
-            # Handle JSONC (JSON with comments)
-            from lintro.utils.unified_config import _strip_jsonc_comments
-
-            content = _strip_jsonc_comments(content)
-            return json.loads(content)
-
-        elif suffix in (".yaml", ".yml"):
-            if yaml is None:
-                logger.warning("PyYAML not installed, cannot load YAML config")
-                return {}
-            result = yaml.safe_load(content)
-            return result if isinstance(result, dict) else {}
-
-        elif suffix == ".toml":
-            if toml is None:
-                logger.warning("toml package not installed, cannot load TOML config")
-                return {}
-            return toml.loads(content)
-
-        else:
-            # Try JSON first, then YAML
-            try:
-                return json.loads(content)
-            except json.JSONDecodeError:
-                if yaml:
-                    result = yaml.safe_load(content)
-                    return result if isinstance(result, dict) else {}
-                return {}
-
-    except Exception as e:
-        logger.warning(f"Failed to parse {config_source}: {e}")
-        return {}
-
-
-def _apply_global_settings(
-    config: dict[str, Any],
-    lintro_config: LintroConfig,
-    tool_name: str,
-) -> dict[str, Any]:
-    """Apply global Lintro settings to tool config.
-
-    Maps global settings like line_length to tool-specific keys.
-
-    Args:
-        config: Current tool configuration.
-        lintro_config: Lintro configuration.
-        tool_name: Name of the tool.
-
-    Returns:
-        dict[str, Any]: Updated configuration.
-    """
-    result = dict(config)
-    tool_lower = tool_name.lower()
-
-    # Apply line_length mapping
-    if tool_lower in GLOBAL_SETTING_MAPPINGS.get("line_length", {}):
-        line_length = lintro_config.get_effective_line_length(tool_name)
-        if line_length is not None:
-            tool_key = GLOBAL_SETTING_MAPPINGS["line_length"][tool_lower]
-
-            # Special handling for yamllint (nested structure)
-            if tool_lower == "yamllint":
-                if "rules" not in result:
-                    result["rules"] = {}
-                if "line-length" not in result["rules"]:
-                    result["rules"]["line-length"] = {}
-                result["rules"]["line-length"]["max"] = line_length
-
-            # Special handling for markdownlint (MD013 rule)
-            elif tool_lower == "markdownlint":
-                if "MD013" not in result:
-                    result["MD013"] = {}
-                result["MD013"]["line_length"] = line_length
-                result["MD013"]["code_blocks"] = False
-                result["MD013"]["tables"] = False
-
-            else:
-                result[tool_key] = line_length
-
-    # Apply target_python mapping
-    if tool_lower in GLOBAL_SETTING_MAPPINGS.get("target_python", {}):
-        target_python = lintro_config.get_effective_target_python(tool_name)
-        if target_python is not None:
-            tool_key = GLOBAL_SETTING_MAPPINGS["target_python"][tool_lower]
-            result[tool_key] = target_python
-
-    return result
-
-
-def _deep_merge_dicts(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
-    """Recursively merge two dictionaries.
-
-    Values from override take precedence. Nested dictionaries are merged
-    recursively rather than replaced.
-
-    Args:
-        base: Base dictionary to merge into.
-        override: Dictionary with values to override base.
-
-    Returns:
-        dict[str, Any]: Deeply merged dictionary.
-    """
-    result = dict(base)
-    for key, value in override.items():
-        if isinstance(value, dict) and isinstance(result.get(key), dict):
-            result[key] = _deep_merge_dicts(result[key], value)
-        else:
-            result[key] = value
-    return result
-
-
-def _merge_tool_settings(
-    base_config: dict[str, Any],
-    tool_config: ToolConfig,
-) -> dict[str, Any]:
-    """Merge tool-specific settings and overrides into base config.
-
-    Performs a recursive deep merge for nested dictionaries, preserving
-    keys from both sides and overriding scalars from the override dict.
-
-    Args:
-        base_config: Base configuration (from config_source or empty).
-        tool_config: Lintro tool configuration.
-
-    Returns:
-        dict[str, Any]: Merged configuration.
-    """
-    result = dict(base_config)
-
-    # Apply settings (lower priority)
-    for key, value in tool_config.settings.items():
-        if isinstance(value, dict) and isinstance(result.get(key), dict):
-            # Recursive deep merge for nested dicts
-            result[key] = _deep_merge_dicts(result[key], value)
-        else:
-            result[key] = value
-
-    # Apply overrides (highest priority)
-    for key, value in tool_config.overrides.items():
-        if isinstance(value, dict) and isinstance(result.get(key), dict):
-            # Recursive deep merge for nested dicts
-            result[key] = _deep_merge_dicts(result[key], value)
-        else:
-            result[key] = value
-
-    return result
-
-
-def _write_config_file(
-    config: dict[str, Any],
-    tool_name: str,
-    config_format: str | None = None,
-) -> Path:
-    """Write configuration to a temporary file.
-
-    Args:
-        config: Configuration dictionary.
-        tool_name: Name of the tool.
-        config_format: Output format (toml, json, yaml). Auto-detected if None.
-
-    Returns:
-        Path: Path to temporary config file.
-
-    Raises:
-        ImportError: If required package (toml/PyYAML) is not installed.
-    """
-    fmt = config_format or TOOL_CONFIG_FORMATS.get(tool_name.lower(), "json")
-
-    # Determine file suffix
-    suffix_map = {"toml": ".toml", "json": ".json", "yaml": ".yaml"}
-    suffix = suffix_map.get(fmt, ".json")
-
-    # Special handling for markdownlint-cli2 which requires specific filename
-    if tool_name.lower() == "markdownlint":
-        # markdownlint-cli2 requires files named like .markdownlint-cli2.jsonc
-        temp_fd, temp_path_str = tempfile.mkstemp(
-            prefix="lintro-",
-            suffix=".markdownlint-cli2.jsonc",
-        )
-    else:
-        # Create temporary file with standard naming
-        temp_fd, temp_path_str = tempfile.mkstemp(
-            prefix=f"lintro-{tool_name}-",
-            suffix=suffix,
-        )
-    # Close the file descriptor immediately - we'll write via Path.write_text
-    os.close(temp_fd)
-    temp_path = Path(temp_path_str)
-    _temp_files.append(temp_path)
-
-    # Write content
-    try:
-        if fmt == "toml":
-            if toml is None:
-                raise ImportError("toml package required for TOML output")
-            content = toml.dumps(config)
-
-        elif fmt == "yaml":
-            if yaml is None:
-                raise ImportError("PyYAML required for YAML output")
-            content = yaml.dump(config, default_flow_style=False)
-
-        else:  # json
-            content = json.dumps(config, indent=2)
-
-        temp_path.write_text(content, encoding="utf-8")
-        logger.debug(f"Generated temp config for {tool_name}: {temp_path}")
-
-        return temp_path
-
-    except Exception as e:
-        logger.error(f"Failed to write config for {tool_name}: {e}")
-        raise
-
-
-def generate_tool_config(
+def get_enforce_cli_args(
     tool_name: str,
     lintro_config: LintroConfig,
-) -> Path | None:
-    """Generate a temporary configuration file for a tool.
+) -> list[str]:
+    """Get CLI arguments for enforced settings.
 
-    This is the main entry point for generating tool configs.
-    It:
-    1. Loads config_source if specified
-    2. Merges with tool settings from Lintro config
-    3. Applies overrides
-    4. Maps global settings
-    5. Writes to a temp file
+    These settings override native tool configs to ensure consistency
+    across different tools for shared concerns like line length.
 
     Args:
         tool_name: Name of the tool (e.g., "ruff", "prettier").
         lintro_config: Lintro configuration.
 
     Returns:
-        Path | None: Path to generated config file, or None if generation fails.
+        list[str]: CLI arguments to inject (e.g., ["--line-length", "88"]).
+    """
+    args: list[str] = []
+    tool_lower = tool_name.lower()
+    enforce = lintro_config.enforce
+
+    # Inject line_length if set
+    if enforce.line_length is not None:
+        flag = ENFORCE_CLI_FLAGS.get("line_length", {}).get(tool_lower)
+        if flag:
+            args.extend([flag, str(enforce.line_length)])
+            logger.debug(
+                f"Injecting enforce.line_length={enforce.line_length} "
+                f"to {tool_name} as {flag}",
+            )
+
+    # Inject target_python if set
+    if enforce.target_python is not None:
+        flag = ENFORCE_CLI_FLAGS.get("target_python", {}).get(tool_lower)
+        if flag:
+            args.extend([flag, enforce.target_python])
+            logger.debug(
+                f"Injecting enforce.target_python={enforce.target_python} "
+                f"to {tool_name} as {flag}",
+            )
+
+    return args
+
+
+def has_native_config(tool_name: str) -> bool:
+    """Check if a tool has a native config file in the project.
+
+    Searches for known native config file patterns starting from the
+    current working directory and moving upward to find the project root.
+
+    Args:
+        tool_name: Name of the tool (e.g., "prettier", "markdownlint").
+
+    Returns:
+        bool: True if a native config file exists.
     """
     tool_lower = tool_name.lower()
-    tool_config = lintro_config.get_tool_config(tool_lower)
+    patterns = NATIVE_CONFIG_PATTERNS.get(tool_lower, [])
 
-    # Start with config_source or empty dict
-    base_config: dict[str, Any] = {}
-    if tool_config.config_source:
-        base_config = _load_config_source(
-            config_source=tool_config.config_source,
-            tool_name=tool_lower,
-        )
-        logger.debug(
-            f"Loaded config_source for {tool_name}: {tool_config.config_source}",
-        )
+    if not patterns:
+        return False
 
-    # Merge tool settings
-    merged_config = _merge_tool_settings(
-        base_config=base_config,
-        tool_config=tool_config,
-    )
+    # Search from current directory upward
+    current = Path.cwd().resolve()
 
-    # Apply global settings mappings
-    final_config = _apply_global_settings(
-        config=merged_config,
-        lintro_config=lintro_config,
-        tool_name=tool_lower,
-    )
+    while True:
+        for pattern in patterns:
+            config_path = current / pattern
+            if config_path.exists():
+                logger.debug(
+                    f"Found native config for {tool_name}: {config_path}",
+                )
+                return True
 
-    # If config is empty, don't generate a file
-    if not final_config:
-        return None
+        # Move up one directory
+        parent = current.parent
+        if parent == current:
+            # Reached filesystem root
+            break
+        current = parent
 
-    try:
-        return _write_config_file(
-            config=final_config,
-            tool_name=tool_lower,
-        )
-    except Exception as e:
-        logger.error(f"Failed to generate config for {tool_name}: {e}")
-        return None
+    return False
 
 
-def get_config_injection_args(
+def generate_defaults_config(
     tool_name: str,
-    config_path: Path | None,
-) -> list[str]:
-    """Get CLI arguments to inject config file into a tool.
+    lintro_config: LintroConfig,
+) -> Path | None:
+    """Generate a temporary config file from defaults.
+
+    Only used when a tool has no native config file and defaults
+    are specified in the Lintro config.
 
     Args:
         tool_name: Name of the tool.
-        config_path: Path to config file (or None).
+        lintro_config: Lintro configuration.
+
+    Returns:
+        Path | None: Path to generated config file, or None if not needed.
+    """
+    tool_lower = tool_name.lower()
+
+    # Check if tool has native config - if so, don't generate defaults
+    if has_native_config(tool_lower):
+        logger.debug(
+            f"Tool {tool_name} has native config, skipping defaults generation",
+        )
+        return None
+
+    # Get defaults for this tool
+    defaults = lintro_config.get_tool_defaults(tool_lower)
+    if not defaults:
+        return None
+
+    # Get config format for this tool
+    config_format = TOOL_CONFIG_FORMATS.get(tool_lower, "json")
+
+    try:
+        return _write_defaults_config(
+            defaults=defaults,
+            tool_name=tool_lower,
+            config_format=config_format,
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate defaults config for {tool_name}: {e}")
+        return None
+
+
+def _write_defaults_config(
+    defaults: dict[str, Any],
+    tool_name: str,
+    config_format: str,
+) -> Path:
+    """Write defaults configuration to a temporary file.
+
+    Args:
+        defaults: Default configuration dictionary.
+        tool_name: Name of the tool.
+        config_format: Output format (json, yaml).
+
+    Returns:
+        Path: Path to temporary config file.
+
+    Raises:
+        ImportError: If PyYAML is not installed and YAML format is requested.
+    """
+    suffix_map = {"json": ".json", "yaml": ".yaml"}
+    suffix = suffix_map.get(config_format, ".json")
+
+    temp_fd, temp_path_str = tempfile.mkstemp(
+        prefix=f"lintro-{tool_name}-defaults-",
+        suffix=suffix,
+    )
+    os.close(temp_fd)
+    temp_path = Path(temp_path_str)
+    _temp_files.append(temp_path)
+
+    if config_format == "yaml":
+        if yaml is None:
+            raise ImportError("PyYAML required for YAML output")
+        content = yaml.dump(defaults, default_flow_style=False)
+    else:
+        content = json.dumps(defaults, indent=2)
+
+    temp_path.write_text(content, encoding="utf-8")
+    logger.debug(f"Generated defaults config for {tool_name}: {temp_path}")
+
+    return temp_path
+
+
+def get_defaults_injection_args(
+    tool_name: str,
+    config_path: Path | None,
+) -> list[str]:
+    """Get CLI arguments to inject defaults config file into a tool.
+
+    Args:
+        tool_name: Name of the tool.
+        config_path: Path to defaults config file (or None).
 
     Returns:
         list[str]: CLI arguments to pass to the tool.
@@ -396,40 +301,14 @@ def get_config_injection_args(
 
     # Tool-specific config flags
     config_flags: dict[str, list[str]] = {
-        "ruff": ["--config", config_str],
-        "black": ["--config", config_str],
         "prettier": ["--config", config_str],
         "yamllint": ["-c", config_str],
         "markdownlint": ["--config", config_str],
         "hadolint": ["--config", config_str],
         "bandit": ["-c", config_str],
-        "actionlint": ["-config-file", config_str],
     }
 
     return config_flags.get(tool_lower, [])
-
-
-def get_no_auto_config_args(tool_name: str) -> list[str]:
-    """Get CLI arguments to disable auto-config discovery.
-
-    Some tools support flags to prevent auto-discovery of native configs.
-
-    Args:
-        tool_name: Name of the tool.
-
-    Returns:
-        list[str]: CLI arguments to disable auto-config.
-    """
-    tool_lower = tool_name.lower()
-
-    # Tool-specific no-auto-config flags
-    # Note: Prettier doesn't need --no-config when --config is passed
-    # (and actually errors if both are used together)
-    no_auto_flags: dict[str, list[str]] = {
-        "ruff": ["--isolated"],
-    }
-
-    return no_auto_flags.get(tool_lower, [])
 
 
 def cleanup_temp_config(config_path: Path) -> None:
@@ -446,3 +325,71 @@ def cleanup_temp_config(config_path: Path) -> None:
             logger.debug(f"Cleaned up temp config: {config_path}")
     except Exception as e:
         logger.debug(f"Failed to clean up {config_path}: {e}")
+
+
+# =============================================================================
+# DEPRECATED: Legacy functions for backward compatibility
+# These will be removed in a future version.
+# =============================================================================
+
+
+def generate_tool_config(
+    tool_name: str,
+    lintro_config: LintroConfig,
+) -> Path | None:
+    """Generate a temporary configuration file for a tool.
+
+    DEPRECATED: This function is deprecated. Use get_enforce_cli_args() for
+    CLI flag injection and generate_defaults_config() for defaults.
+
+    Args:
+        tool_name: Name of the tool.
+        lintro_config: Lintro configuration.
+
+    Returns:
+        Path | None: Path to generated config file, or None.
+    """
+    logger.warning(
+        f"generate_tool_config() is deprecated for {tool_name}. "
+        "Use get_enforce_cli_args() instead.",
+    )
+    return generate_defaults_config(
+        tool_name=tool_name,
+        lintro_config=lintro_config,
+    )
+
+
+def get_config_injection_args(
+    tool_name: str,
+    config_path: Path | None,
+) -> list[str]:
+    """Get CLI arguments to inject config file into a tool.
+
+    DEPRECATED: Use get_defaults_injection_args() instead.
+
+    Args:
+        tool_name: Name of the tool.
+        config_path: Path to config file (or None).
+
+    Returns:
+        list[str]: CLI arguments to pass to the tool.
+    """
+    return get_defaults_injection_args(
+        tool_name=tool_name,
+        config_path=config_path,
+    )
+
+
+def get_no_auto_config_args(tool_name: str) -> list[str]:
+    """Get CLI arguments to disable auto-config discovery.
+
+    DEPRECATED: No longer needed with the tiered model.
+    Tools use their native configs by default.
+
+    Args:
+        tool_name: Name of the tool.
+
+    Returns:
+        list[str]: Empty list (no longer used).
+    """
+    return []
