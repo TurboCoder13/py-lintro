@@ -56,7 +56,17 @@ if [ -f coverage.xml ] && [ -s coverage.xml ]; then
     # File exists and is not empty
     log_info "Attempting to extract coverage from coverage.xml..."
     
-    # Run the Python script and capture output
+    # Clean up .venv if it exists and might have permission issues from Docker
+    # Docker may create .venv as root, causing uv run to fail
+    # Try to remove it (will fail silently if we don't have permissions)
+    if [ -d .venv ]; then
+        log_info "Cleaning up .venv directory (may have permission issues from Docker)..."
+        rm -rf .venv 2>/dev/null || true
+    fi
+    
+    # Try to run the Python script with uv run first
+    # If that fails due to venv issues, fall back to python3 directly
+    output=""
     if output=$(uv run python scripts/utils/extract-coverage.py 2>&1); then
         # Extract percentage from output
         if percentage_line=$(echo "$output" | grep "^percentage="); then
@@ -69,8 +79,18 @@ if [ -f coverage.xml ] && [ -s coverage.xml ]; then
             log_warning "Output was: $output"
         fi
     else
-        log_warning "Failed to run coverage extraction script"
+        log_warning "Failed to run coverage extraction script with uv run"
         log_warning "Error: $output"
+        log_info "Attempting fallback with python3 directly..."
+        # Fallback: use python3 directly (script has stdlib fallback if defusedxml unavailable)
+        if output=$(python3 scripts/utils/extract-coverage.py 2>&1); then
+            if percentage_line=$(echo "$output" | grep "^percentage="); then
+                percentage="${percentage_line#percentage=}"
+                set_coverage "$percentage"
+                log_success "Coverage extracted via python3 fallback: $percentage%"
+                exit 0
+            fi
+        fi
     fi
     
     # Fallback: try to extract directly from XML
