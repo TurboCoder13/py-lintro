@@ -124,6 +124,9 @@ def _strip_jsonc_comments(content: str) -> str:
 
         i += 1
 
+    if in_block_comment:
+        logger.warning("Unclosed block comment in JSONC content")
+
     return "".join(result)
 
 
@@ -454,35 +457,57 @@ def get_tool_priority(tool_name: str) -> int:
     return DEFAULT_TOOL_PRIORITIES.get(tool_name_lower, 50)
 
 
-def get_ordered_tools(tool_names: list[str]) -> list[str]:
+def get_ordered_tools(
+    tool_names: list[str],
+    tool_order: str | list[str] | None = None,
+) -> list[str]:
     """Get tool names in execution order based on configured strategy.
 
     Args:
         tool_names: List of tool names to order
+        tool_order: Optional override for tool order strategy. Can be:
+            - "priority": Sort by tool priority (default)
+            - "alphabetical": Sort alphabetically
+            - list[str]: Custom order (tools in list come first)
+            - None: Read strategy from config
 
     Returns:
         List of tool names in execution order
     """
-    order_config = get_tool_order_config()
-    strategy = order_config.get("strategy", "priority")
+    # Determine strategy and custom order
+    if tool_order is None:
+        order_config = get_tool_order_config()
+        strategy = order_config.get("strategy", "priority")
+        custom_order = order_config.get("custom_order", [])
+    elif isinstance(tool_order, list):
+        strategy = "custom"
+        custom_order = tool_order
+    else:
+        strategy = tool_order
+        custom_order = []
 
     if strategy == "alphabetical":
         return sorted(tool_names, key=str.lower)
 
     if strategy == "custom":
-        custom_order = order_config.get("custom_order", [])
         # Tools in custom_order come first (in that order), then remaining
-        # alphabetically
-        ordered = []
+        # by priority
+        ordered: list[str] = []
         remaining = list(tool_names)
 
         for tool in custom_order:
-            if tool in remaining:
-                ordered.append(tool)
-                remaining.remove(tool)
+            # Case-insensitive matching for custom order
+            tool_lower = tool.lower()
+            for t in remaining:
+                if t.lower() == tool_lower:
+                    ordered.append(t)
+                    remaining.remove(t)
+                    break
 
-        # Add remaining tools alphabetically
-        ordered.extend(sorted(remaining, key=str.lower))
+        # Add remaining tools by priority (consistent with default strategy)
+        ordered.extend(
+            sorted(remaining, key=lambda t: (get_tool_priority(t), t.lower())),
+        )
         return ordered
 
     # Default: priority-based ordering
