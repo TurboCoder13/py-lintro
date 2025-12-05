@@ -382,7 +382,7 @@ def get_default_config() -> LintroConfig:
     return LintroConfig(
         enforce=EnforceConfig(
             line_length=88,
-            target_python="py313",
+            # target_python omitted - let tools infer from requires-python
         ),
         execution=ExecutionConfig(
             tool_order="priority",

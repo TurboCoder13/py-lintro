@@ -376,7 +376,8 @@ class TestGetDefaultConfig:
         config = get_default_config()
 
         assert config.enforce.line_length == 88
-        assert config.enforce.target_python == "py313"
+        # target_python is None to let tools infer from requires-python
+        assert config.enforce.target_python is None
         assert config.execution.tool_order == "priority"
 
 
