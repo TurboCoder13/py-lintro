@@ -3,6 +3,8 @@
 This module provides the core logic for the 'list_tools' command.
 """
 
+from typing import Any
+
 import click
 from rich.console import Console
 from rich.panel import Panel
@@ -13,6 +15,34 @@ from lintro.tools import tool_manager
 from lintro.tools.tool_enum import ToolEnum
 from lintro.utils.console_logger import get_tool_emoji
 from lintro.utils.unified_config import get_tool_priority, is_tool_injectable
+
+
+def _resolve_conflicts(
+    tool_config: Any,
+    name_to_enum_map: dict[str, ToolEnum],
+    available_tools: dict[ToolEnum, Any],
+) -> list[str]:
+    """Resolve conflict names for a tool.
+
+    Args:
+        tool_config: Tool configuration object.
+        name_to_enum_map: Mapping of tool names to ToolEnum.
+        available_tools: Dictionary of available tools.
+
+    Returns:
+        List of conflict tool names.
+    """
+    conflict_names: list[str] = []
+    if hasattr(tool_config, "conflicts_with") and tool_config.conflicts_with:
+        for conflict in tool_config.conflicts_with:
+            conflict_enum: ToolEnum | None = None
+            if isinstance(conflict, str):
+                conflict_enum = name_to_enum_map.get(conflict.lower())
+            elif isinstance(conflict, ToolEnum):
+                conflict_enum = conflict
+            if conflict_enum is not None and conflict_enum in available_tools:
+                conflict_names.append(conflict_enum.name.lower())
+    return conflict_names
 
 
 @click.command("list-tools")
@@ -109,16 +139,11 @@ def list_tools(
 
         # Conflicts
         if show_conflicts:
-            conflict_names = []
-            if hasattr(tool.config, "conflicts_with") and tool.config.conflicts_with:
-                for conflict in tool.config.conflicts_with:
-                    conflict_enum: ToolEnum | None = None
-                    if isinstance(conflict, str):
-                        conflict_enum = name_to_enum_map.get(conflict.lower())
-                    elif isinstance(conflict, ToolEnum):
-                        conflict_enum = conflict
-                    if conflict_enum is not None and conflict_enum in available_tools:
-                        conflict_names.append(conflict_enum.name.lower())
+            conflict_names = _resolve_conflicts(
+                tool_config=tool.config,
+                name_to_enum_map=name_to_enum_map,
+                available_tools=available_tools,
+            )
             row.append(", ".join(conflict_names) if conflict_names else "-")
 
         table.add_row(*row)
@@ -160,9 +185,9 @@ def list_tools(
 
 
 def _generate_plain_text_output(
-    available_tools: dict,
-    check_tools: dict,
-    fix_tools: dict,
+    available_tools: dict[ToolEnum, Any],
+    check_tools: dict[ToolEnum, Any],
+    fix_tools: dict[ToolEnum, Any],
     show_conflicts: bool,
 ) -> list[str]:
     """Generate plain text output for file writing.
@@ -176,7 +201,7 @@ def _generate_plain_text_output(
     Returns:
         List of output lines.
     """
-    output_lines = []
+    output_lines: list[str] = []
     border = "=" * 70
 
     output_lines.append(border)
@@ -207,16 +232,11 @@ def _generate_plain_text_output(
         output_lines.append(f"  Capabilities: {capabilities_display}")
 
         if show_conflicts:
-            conflict_names = []
-            if hasattr(tool.config, "conflicts_with") and tool.config.conflicts_with:
-                for conflict in tool.config.conflicts_with:
-                    conflict_enum: ToolEnum | None = None
-                    if isinstance(conflict, str):
-                        conflict_enum = name_to_enum_map.get(conflict.lower())
-                    elif isinstance(conflict, ToolEnum):
-                        conflict_enum = conflict
-                    if conflict_enum is not None and conflict_enum in available_tools:
-                        conflict_names.append(conflict_enum.name.lower())
+            conflict_names = _resolve_conflicts(
+                tool_config=tool.config,
+                name_to_enum_map=name_to_enum_map,
+                available_tools=available_tools,
+            )
             if conflict_names:
                 output_lines.append(f"  Conflicts with: {', '.join(conflict_names)}")
 
