@@ -9,8 +9,9 @@ from rich.table import Table
 
 from lintro.config import LintroConfig, get_config
 from lintro.utils.unified_config import (
-    DEFAULT_TOOL_PRIORITIES,
     _load_native_tool_config,
+    get_ordered_tools,
+    get_tool_priority,
     is_tool_injectable,
     validate_config_consistency,
 )
@@ -34,66 +35,6 @@ def _get_all_tool_names() -> list[str]:
         "actionlint",
         "pytest",
     ]
-
-
-def _get_tool_priority(tool_name: str) -> int:
-    """Get the execution priority for a tool.
-
-    Lower values run first. Formatters have lower priorities than linters.
-
-    Args:
-        tool_name: Name of the tool.
-
-    Returns:
-        int: Priority value (lower = runs first).
-    """
-    return DEFAULT_TOOL_PRIORITIES.get(tool_name.lower(), 50)
-
-
-def _get_ordered_tools(
-    tool_names: list[str],
-    tool_order: str | list[str],
-) -> list[str]:
-    """Get tools in execution order based on configured strategy.
-
-    Args:
-        tool_names: List of tool names to order.
-        tool_order: Strategy ("priority", "alphabetical") or custom list.
-
-    Returns:
-        list[str]: List of tool names in execution order.
-    """
-    if isinstance(tool_order, list):
-        # Custom order: tools in list come first (in that order), then remaining
-        ordered = []
-        remaining = list(tool_names)
-
-        for tool in tool_order:
-            if tool.lower() in [t.lower() for t in remaining]:
-                # Find the actual name (case may differ)
-                for t in remaining:
-                    if t.lower() == tool.lower():
-                        ordered.append(t)
-                        remaining.remove(t)
-                        break
-
-        # Add remaining tools by priority
-        ordered.extend(
-            sorted(
-                remaining,
-                key=lambda t: (_get_tool_priority(t), t.lower()),
-            ),
-        )
-        return ordered
-
-    if tool_order == "alphabetical":
-        return sorted(tool_names, key=str.lower)
-
-    # Default: priority-based ordering
-    return sorted(
-        tool_names,
-        key=lambda t: (_get_tool_priority(t), t.lower()),
-    )
 
 
 @click.command()
@@ -163,7 +104,7 @@ def _output_json(
 
     # Get list of all known tools
     tool_names = _get_all_tool_names()
-    ordered_tools = _get_ordered_tools(
+    ordered_tools = get_ordered_tools(
         tool_names=tool_names,
         tool_order=config.execution.tool_order,
     )
@@ -182,7 +123,7 @@ def _output_json(
             "parallel": config.execution.parallel,
         },
         "tool_execution_order": [
-            {"tool": t, "priority": _get_tool_priority(t)} for t in ordered_tools
+            {"tool": t, "priority": get_tool_priority(t)} for t in ordered_tools
         ],
         "tool_configs": {},
         "warnings": validate_config_consistency(),
@@ -288,7 +229,7 @@ def _output_rich(
 
     # Tool Execution Order Section
     tool_names = _get_all_tool_names()
-    ordered_tools = _get_ordered_tools(
+    ordered_tools = get_ordered_tools(
         tool_names=tool_names,
         tool_order=config.execution.tool_order,
     )
@@ -301,7 +242,7 @@ def _output_rich(
     order_table.add_column("Enabled", justify="center")
 
     for idx, tool_name in enumerate(ordered_tools, 1):
-        priority = _get_tool_priority(tool_name)
+        priority = get_tool_priority(tool_name)
         injectable = is_tool_injectable(tool_name)
         tool_type = "Syncable" if injectable else "Native only"
         enabled = config.is_tool_enabled(tool_name)
