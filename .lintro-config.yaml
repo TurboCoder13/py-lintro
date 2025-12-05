@@ -3,67 +3,21 @@
 # https://github.com/TurboCoder13/py-lintro
 #
 # Lintro is the master configuration source for all tools.
-# Native tool configs (.prettierrc, .yamllint, etc.) are ignored.
+# Native tool configs (.prettierrc, .yamllint, etc.) are used when available.
 
 enforce:
   line_length: 88
-  target_python: 'py313'
+  # target_python omitted - let ruff infer from requires-python in pyproject.toml
 
 execution:
   enabled_tools: []
   tool_order: 'priority'
   fail_fast: false
 
-tools:
-  # Ruff - Python linter and formatter
-  ruff:
-    enabled: true
-    line-length: 88
-    target-version: 'py313'
-    unsafe-fixes: false
-    exclude:
-      - '.venv'
-      - 'venv'
-      - 'env'
-      - 'build'
-      - 'dist'
-      - '__pycache__'
-      - 'test_samples'
-    format:
-      quote-style: 'double'
-      indent-style: 'space'
-      skip-magic-trailing-comma: false
-    lint:
-      select:
-        - 'E'
-        - 'F'
-        - 'W'
-        - 'I'
-        - 'COM'
-        - 'N'
-        - 'D'
-        - 'UP'
-        - 'B'
-        - 'C4'
-        - 'SIM'
-      ignore:
-        - 'ANN'
-      pydocstyle:
-        convention: 'google'
-    # Lintro-specific options (passed to tool at runtime)
-    overrides:
-      format_check: true
-      format: true
-      lint_fix: true
-
-  # Black - Python formatter
-  black:
-    enabled: true
-    # Uses global line_length (88)
-
-  # Prettier - Multi-language formatter
+# Fallback configurations for tools without native config files.
+# These are used when no native config (e.g., .prettierrc, .yamllint) is found.
+defaults:
   prettier:
-    enabled: true
     semi: true
     singleQuote: true
     tabWidth: 2
@@ -72,19 +26,15 @@ tools:
     overrides:
       - files: '*.md'
         options:
-          printWidth: 88 # Match global for markdown
+          printWidth: 88
 
-  # Markdownlint - Markdown linter
   markdownlint:
-    enabled: true
     MD013:
       line_length: 88
       code_blocks: false
       tables: false
 
-  # Yamllint - YAML linter
   yamllint:
-    enabled: true
     extends: 'default'
     rules:
       comments-indentation: 'disable'
@@ -96,37 +46,55 @@ tools:
         max: 88
         allow-non-breakable-inline-mappings: true
 
-  # Bandit - Security linter for Python
-  bandit:
-    enabled: true
-    exclude_dirs:
-      - 'tests'
-      - 'test_samples'
-
-  # Hadolint - Dockerfile linter
   hadolint:
-    enabled: true
     ignored: []
-    trustedRegistries:
+    trusted_registries:
       - 'docker.io'
       - 'gcr.io'
       - 'ghcr.io'
       - 'quay.io'
       - 'registry.hub.docker.com'
 
+# Tool enable/disable settings.
+# Full tool configs are in native files (pyproject.toml, .darglint, etc.)
+# or in the defaults section above.
+tools:
+  # Ruff - Python linter and formatter (config in pyproject.toml [tool.ruff])
+  ruff:
+    enabled: true
+
+  # Black - Python formatter (uses enforce.line_length)
+  black:
+    enabled: true
+
+  # Prettier - Multi-language formatter (defaults above or .prettierrc)
+  prettier:
+    enabled: true
+
+  # Markdownlint - Markdown linter (defaults above or .markdownlint.yaml)
+  markdownlint:
+    enabled: true
+
+  # Yamllint - YAML linter (defaults above or .yamllint)
+  yamllint:
+    enabled: true
+
+  # Bandit - Security linter (config in pyproject.toml [tool.bandit])
+  bandit:
+    enabled: true
+
+  # Hadolint - Dockerfile linter (defaults above or .hadolint.yaml)
+  hadolint:
+    enabled: true
+
   # Actionlint - GitHub Actions linter
   actionlint:
     enabled: true
 
-  # Darglint - Docstring linter
+  # Darglint - Docstring linter (config in .darglint)
   darglint:
     enabled: true
 
-  # Pytest - Test runner
+  # Pytest - Test runner (config in pyproject.toml [tool.pytest.ini_options])
   pytest:
     enabled: true
-    testpaths:
-      - 'tests'
-    python_files: 'test_*.py'
-    python_classes: 'Test*'
-    python_functions: 'test_*'
