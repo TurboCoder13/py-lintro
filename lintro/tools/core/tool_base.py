@@ -374,7 +374,7 @@ class BaseTool(ABC):
         )
 
     # -------------------------------------------------------------------------
-    # Lintro Config Injection Support
+    # Lintro Config Support - Tiered Model
     # -------------------------------------------------------------------------
 
     def _get_lintro_config(self) -> LintroConfig:
@@ -387,66 +387,15 @@ class BaseTool(ABC):
 
         return get_config()
 
-    def _generate_tool_config(self) -> Path | None:
-        """Generate a temporary config file for this tool.
-
-        Uses the Lintro configuration to generate a tool-specific config
-        file that will be passed to the tool via --config flag.
-
-        Returns:
-            Path | None: Path to generated config file, or None if not needed.
-        """
-        from lintro.config import generate_tool_config
-
-        lintro_config = self._get_lintro_config()
-        return generate_tool_config(
-            tool_name=self.name,
-            lintro_config=lintro_config,
-        )
-
-    def _get_config_injection_args(self) -> list[str]:
-        """Get CLI arguments to inject Lintro config into this tool.
-
-        Generates a temporary config file and returns the CLI args
-        to pass it to the tool (e.g., ["--config", "/tmp/lintro-ruff-xxx.toml"]).
-
-        Returns:
-            list[str]: CLI arguments for config injection.
-        """
-        from lintro.config import get_config_injection_args
-
-        config_path = self._generate_tool_config()
-        if config_path is None:
-            return []
-
-        return get_config_injection_args(
-            tool_name=self.name,
-            config_path=config_path,
-        )
-
-    def _get_no_auto_config_args(self) -> list[str]:
-        """Get CLI arguments to disable native config auto-discovery.
-
-        For tools that support it (e.g., Ruff --isolated, Prettier --no-config),
-        returns the appropriate flags to prevent the tool from reading its
-        native config files.
-
-        Returns:
-            list[str]: CLI arguments to disable auto-config discovery.
-        """
-        from lintro.config import get_no_auto_config_args
-
-        return get_no_auto_config_args(tool_name=self.name)
-
     def _should_use_lintro_config(self) -> bool:
-        """Check if Lintro config injection should be used.
+        """Check if Lintro config should be used.
 
         Returns True if:
         1. LINTRO_SKIP_CONFIG_INJECTION env var is NOT set, AND
         2. A .lintro-config.yaml exists, OR [tool.lintro] is in pyproject.toml
 
         Returns:
-            bool: True if Lintro config should be injected.
+            bool: True if Lintro config should be used.
         """
         # Allow tests to disable config injection
         if os.environ.get("LINTRO_SKIP_CONFIG_INJECTION"):
@@ -455,27 +404,151 @@ class BaseTool(ABC):
         lintro_config = self._get_lintro_config()
         return lintro_config.config_path is not None
 
+    def _get_enforced_settings(self) -> set[str]:
+        """Get the set of settings that are enforced by Lintro config.
+
+        This allows tools to check whether a setting is already being
+        injected via CLI args from the enforce tier, so they can avoid
+        adding duplicate arguments from their own options.
+
+        Returns:
+            set[str]: Set of setting names like 'line_length', 'target_python'.
+        """
+        if not self._should_use_lintro_config():
+            return set()
+
+        lintro_config = self._get_lintro_config()
+        enforced: set[str] = set()
+
+        if lintro_config.enforce.line_length is not None:
+            enforced.add("line_length")
+        if lintro_config.enforce.target_python is not None:
+            enforced.add("target_python")
+
+        return enforced
+
+    def _get_enforce_cli_args(self) -> list[str]:
+        """Get CLI arguments for enforced settings.
+
+        Returns CLI args that inject enforce settings (like line_length)
+        directly into the tool command line.
+
+        Returns:
+            list[str]: CLI arguments for enforced settings.
+        """
+        from lintro.config import get_enforce_cli_args
+
+        if not self._should_use_lintro_config():
+            return []
+
+        lintro_config = self._get_lintro_config()
+        return get_enforce_cli_args(
+            tool_name=self.name,
+            lintro_config=lintro_config,
+        )
+
+    def _get_defaults_config_args(self) -> list[str]:
+        """Get CLI arguments for defaults config injection.
+
+        If the tool has no native config and defaults are defined in
+        the Lintro config, generates a temp config file and returns
+        the CLI args to pass it to the tool.
+
+        Returns:
+            list[str]: CLI arguments for defaults config injection.
+        """
+        from lintro.config import (
+            generate_defaults_config,
+            get_defaults_injection_args,
+        )
+
+        if not self._should_use_lintro_config():
+            return []
+
+        lintro_config = self._get_lintro_config()
+        config_path = generate_defaults_config(
+            tool_name=self.name,
+            lintro_config=lintro_config,
+        )
+
+        if config_path is None:
+            return []
+
+        return get_defaults_injection_args(
+            tool_name=self.name,
+            config_path=config_path,
+        )
+
     def _build_config_args(self) -> list[str]:
         """Build complete config-related CLI arguments for this tool.
 
-        Combines config injection args and no-auto-config args.
-        Only applies if Lintro config is available.
+        Uses the tiered model:
+        1. Enforced settings are injected via CLI flags
+        2. Defaults config is used only if no native config exists
 
         Returns:
             list[str]: Combined CLI arguments for configuration.
         """
-        if not self._should_use_lintro_config():
-            return []
-
         args: list[str] = []
 
-        # Add no-auto-config flags first (e.g., --isolated, --no-config)
-        args.extend(self._get_no_auto_config_args())
+        # Add enforce CLI args (e.g., --line-length 88)
+        args.extend(self._get_enforce_cli_args())
 
-        # Add config injection args (e.g., --config /tmp/lintro-xxx.toml)
-        args.extend(self._get_config_injection_args())
+        # Add defaults config args if applicable
+        args.extend(self._get_defaults_config_args())
 
         return args
+
+    # -------------------------------------------------------------------------
+    # Deprecated methods for backward compatibility
+    # -------------------------------------------------------------------------
+
+    def _generate_tool_config(self) -> Path | None:
+        """Generate a temporary config file for this tool.
+
+        DEPRECATED: Use _get_enforce_cli_args() and _get_defaults_config_args()
+        instead.
+
+        Returns:
+            Path | None: Path to generated config file, or None if not needed.
+        """
+        from lintro.config import generate_defaults_config
+
+        logger.debug(
+            f"_generate_tool_config() is deprecated for {self.name}. "
+            "Use _build_config_args() or call _get_enforce_cli_args() and "
+            "_get_defaults_config_args() directly.",
+        )
+        lintro_config = self._get_lintro_config()
+        return generate_defaults_config(
+            tool_name=self.name,
+            lintro_config=lintro_config,
+        )
+
+    def _get_config_injection_args(self) -> list[str]:
+        """Get CLI arguments to inject Lintro config into this tool.
+
+        DEPRECATED: Use _get_enforce_cli_args() and _get_defaults_config_args()
+        instead, or use _build_config_args() which combines both.
+
+        Returns:
+            list[str]: CLI arguments for config injection (enforce + defaults).
+        """
+        args: list[str] = []
+        args.extend(self._get_enforce_cli_args())
+        args.extend(self._get_defaults_config_args())
+        return args
+
+    def _get_no_auto_config_args(self) -> list[str]:
+        """Get CLI arguments to disable native config auto-discovery.
+
+        DEPRECATED: No longer needed with the tiered model.
+        Tools use their native configs by default.
+
+        Returns:
+            list[str]: Empty list (no longer used).
+        """
+        return []
 
     @abstractmethod
     def check(
