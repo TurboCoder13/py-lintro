@@ -2,7 +2,9 @@
 
 ## Overview
 
-Yamllint is a linter for YAML files that checks for syntax errors, formatting issues, and other YAML best practices. This analysis compares Lintro's wrapper implementation with the core Yamllint tool.
+Yamllint is a linter for YAML files that checks for syntax errors, formatting issues,
+and other YAML best practices. This analysis compares Lintro's wrapper implementation
+with the core Yamllint tool.
 
 ## Core Tool Capabilities
 
@@ -76,7 +78,8 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 
 **Unified Interface:**
 
-- ✅ **Consistent API**: Same interface as other linting tools (`check()`, `set_options()`)
+- ✅ **Consistent API**: Same interface as other linting tools (`check()`,
+  `set_options()`)
 - ✅ **Structured output**: Issues formatted as standardized `Issue` objects
 - ✅ **Python integration**: Native Python object handling vs CLI parsing
 - ✅ **Pipeline integration**: Seamless integration with other tools
@@ -84,6 +87,7 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 **Enhanced Error Processing:**
 
 - ✅ **Issue normalization**: Converts Yamllint output to standard Issue format:
+
   ```python
   Issue(
       file_path=match.group(1),
@@ -205,18 +209,18 @@ Lintro preserves all Yamllint error codes:
 
 ### Missing Runtime Configuration
 
-**Problem**: Cannot modify individual rules at runtime
-**Workaround**: Use configuration files (`.yamllint`, `setup.cfg`, `pyproject.toml`)
+**Problem**: Cannot modify individual rules at runtime **Workaround**: Use configuration
+files (`.yamllint`, `setup.cfg`, `pyproject.toml`)
 
 ### Limited Schema Validation
 
-**Problem**: No built-in schema validation
-**Workaround**: Use external tools like `jsonschema` for schema validation
+**Problem**: No built-in schema validation **Workaround**: Use external tools like
+`jsonschema` for schema validation
 
 ### No Auto-fixing
 
-**Problem**: Yamllint cannot automatically fix issues
-**Workaround**: Use external formatters like Prettier for YAML formatting
+**Problem**: Yamllint cannot automatically fix issues **Workaround**: Use external
+formatters like Prettier for YAML formatting
 
 ## Future Enhancement Opportunities
 

@@ -62,3 +62,37 @@ def test_tool_manager_get_tool_missing() -> None:
     tm = ToolManager()
     with pytest.raises(ValueError):
         tm.get_tool(ToolEnum.RUFF)
+
+
+def test_tool_manager_conflicts_with_strings(monkeypatch) -> None:
+    """Verify that conflicts_with with string values are properly detected.
+
+    This test verifies the fix for the bug where string-to-enum comparisons
+    in conflicts_with were failing, preventing conflict detection.
+
+    Args:
+        monkeypatch: Pytest fixture to adjust tool resolver behavior.
+    """
+    tm = ToolManager()
+    for enum_member in ToolEnum:
+        tm.register_tool(enum_member.value)
+    t1 = tm.get_tool(ToolEnum.RUFF)
+    t2 = tm.get_tool(ToolEnum.PRETTIER)
+    # Set conflicts_with using strings (as per type annotation)
+    t1.config.conflicts_with = ["prettier"]  # lowercase string
+    t2.config.conflicts_with = ["ruff"]  # lowercase string
+    monkeypatch.setattr(
+        tm,
+        "get_tool",
+        lambda e: (
+            t1
+            if e == ToolEnum.RUFF
+            else t2 if e == ToolEnum.PRETTIER else tm.get_available_tools()[e]
+        ),
+    )
+    # With conflicts, only one tool should be returned
+    order = tm.get_tool_execution_order([ToolEnum.RUFF, ToolEnum.PRETTIER])
+    assert_that(len(order)).is_equal_to(1)
+    # Verify that conflicts are detected regardless of order
+    order2 = tm.get_tool_execution_order([ToolEnum.PRETTIER, ToolEnum.RUFF])
+    assert_that(len(order2)).is_equal_to(1)

@@ -2,7 +2,9 @@
 
 ## Overview
 
-Ruff is an extremely fast Python linter and code formatter written in Rust that can replace multiple Python tools like flake8, black, isort, and more. This analysis compares Lintro's wrapper implementation with the core Ruff tool.
+Ruff is an extremely fast Python linter and code formatter written in Rust that can
+replace multiple Python tools like flake8, black, isort, and more. This analysis
+compares Lintro's wrapper implementation with the core Ruff tool.
 
 ## Core Tool Capabilities
 
@@ -13,7 +15,8 @@ Ruff provides extensive linting and formatting capabilities including:
 - **Performance**: Extremely fast execution due to Rust implementation
 - **Configuration**: `pyproject.toml`, `ruff.toml`, or command-line options
 - **Rule selection**: `--select`, `--ignore`, `--extend-select`, `--extend-ignore`
-- **Formatting options**: `--line-length`, `--target-version`, `--skip-magic-trailing-comma`
+- **Formatting options**: `--line-length`, `--target-version`,
+  `--skip-magic-trailing-comma`
 - **Fix capabilities**: `--fix`, `--unsafe-fixes`, `--fix-only`, `--show-fixes`
 - **Output formats**: Default, JSON, SARIF, JUnit XML
 
@@ -26,7 +29,8 @@ Ruff provides extensive linting and formatting capabilities including:
 - ✅ **Linting capability**: Full preservation through `ruff check` command
 - ✅ **Formatting capability**: Full preservation through `ruff format` command
 - ✅ **Auto-fixing**: Supports `--fix` with safe and unsafe fix options
-- ✅ **Rule selection**: Supports `--select`, `--ignore`, `--extend-select`, `--extend-ignore`
+- ✅ **Rule selection**: Supports `--select`, `--ignore`, `--extend-select`,
+  `--extend-ignore`
 - ✅ **Configuration files**: Respects `pyproject.toml` and `ruff.toml`
 - ✅ **File targeting**: Supports Python file patterns (`*.py`, `*.pyi`)
 - ✅ **Error detection**: Captures both linting and formatting violations
@@ -52,16 +56,15 @@ cmd = self._get_executable_command("ruff") + ["format"]
 
 ### Cooperation with Black (Policy)
 
-When Black is configured as a post-check in Lintro, Ruff focuses on linting by
-default:
+When Black is configured as a post-check in Lintro, Ruff focuses on linting by default:
 
-- In `lintro format`, Ruff fixes lint issues while `format=False` unless
-  explicitly overridden via `--tool-options ruff:format=True`.
-- In `lintro check`, Ruff runs lint checks with `format_check=False` unless
-  explicitly overridden via `--tool-options ruff:format_check=True`.
+- In `lintro format`, Ruff fixes lint issues while `format=False` unless explicitly
+  overridden via `--tool-options ruff:format=True`.
+- In `lintro check`, Ruff runs lint checks with `format_check=False` unless explicitly
+  overridden via `--tool-options ruff:format_check=True`.
 
-This avoids double-formatting and lets Black handle final formatting. You can
-override either side via CLI or `[tool.lintro.ruff]` and `[tool.lintro.post_checks]`.
+This avoids double-formatting and lets Black handle final formatting. You can override
+either side via CLI or `[tool.lintro.ruff]` and `[tool.lintro.post_checks]`.
 
 ```bash
 # Force Ruff to format even with Black post-checks enabled
@@ -75,14 +78,20 @@ lintro check --tool-options "ruff:format_check=True"
 
 **Advanced Configuration:**
 
-- ⚠️ **Per-file ignores and excludes at runtime**: Prefer config files; proposed CLI pass-throughs include `per_file_ignores`, `extend_exclude`, `force_exclude`, `respect_gitignore`.
-- ❌ **Custom rule definitions**: Not supported by Lintro wrappers (upstream feature set only).
-- ⚠️ **Config path/isolated**: Proposed `ruff:config=...`, `ruff:isolated=True` for ad-hoc runs.
-- ⚠️ **Output controls**: `quiet`, `statistics`, `preview` useful for UX; propose pass-throughs.
+- ⚠️ **Per-file ignores and excludes at runtime**: Prefer config files; proposed CLI
+  pass-throughs include `per_file_ignores`, `extend_exclude`, `force_exclude`,
+  `respect_gitignore`.
+- ❌ **Custom rule definitions**: Not supported by Lintro wrappers (upstream feature set
+  only).
+- ⚠️ **Config path/isolated**: Proposed `ruff:config=...`, `ruff:isolated=True` for
+  ad-hoc runs.
+- ⚠️ **Output controls**: `quiet`, `statistics`, `preview` useful for UX; propose
+  pass-throughs.
 
 **Formatting Options:**
 
-- ❌ **Detailed formatting options**: No access to `--skip-magic-trailing-comma`, `--preview`
+- ❌ **Detailed formatting options**: No access to `--skip-magic-trailing-comma`,
+  `--preview`
 - ❌ **Formatting configuration**: Limited line length and target version control
 - ❌ **Format-only mode**: Cannot run formatter without linter
 
@@ -102,7 +111,8 @@ lintro check --tool-options "ruff:format_check=True"
 
 **Unified Interface:**
 
-- ✅ **Consistent API**: Same interface as other linting tools (`check()`, `fix()`, `set_options()`)
+- ✅ **Consistent API**: Same interface as other linting tools (`check()`, `fix()`,
+  `set_options()`)
 - ✅ **Structured output**: Issues formatted as standardized `Issue` objects
 - ✅ **Combined operations**: Runs both linting and formatting in single operation
 
@@ -118,6 +128,7 @@ lintro check --tool-options "ruff:format_check=True"
 **Enhanced Error Processing:**
 
 - ✅ **Issue normalization**: Converts Ruff output to standard Issue format:
+
   ```python
   Issue(
       file_path=issue.file,
@@ -239,18 +250,18 @@ Lintro preserves all Ruff rule categories:
 
 ### Limited Runtime Configuration
 
-**Problem**: Cannot customize all Ruff options at runtime
-**Workaround**: Use configuration files for complex setups, runtime options for overrides
+**Problem**: Cannot customize all Ruff options at runtime **Workaround**: Use
+configuration files for complex setups, runtime options for overrides
 
 ### No Custom Rules
 
-**Problem**: Cannot define custom linting rules
-**Workaround**: Use Ruff's extensive built-in rule set (700+ rules)
+**Problem**: Cannot define custom linting rules **Workaround**: Use Ruff's extensive
+built-in rule set (700+ rules)
 
 ### Limited Output Formats
 
-**Problem**: Limited to JSON output for parsing
-**Workaround**: Lintro provides structured `Issue` objects and multiple output formats
+**Problem**: Limited to JSON output for parsing **Workaround**: Lintro provides
+structured `Issue` objects and multiple output formats
 
 ## Future Enhancement Opportunities
 

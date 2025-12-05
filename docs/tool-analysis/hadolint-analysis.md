@@ -2,7 +2,10 @@
 
 ## Overview
 
-Hadolint is a Dockerfile linter that helps you build best practice Docker images. It parses the Dockerfile into an AST and performs rules on top of the AST. It also uses ShellCheck to lint the Bash code inside RUN instructions. This analysis compares Lintro's wrapper implementation with the core Hadolint tool.
+Hadolint is a Dockerfile linter that helps you build best-practice Docker images. It
+parses the Dockerfile into an AST and performs rules on top of the AST. It also uses
+ShellCheck to lint the Bash code inside RUN instructions. This analysis compares
+Lintro's wrapper implementation with the core Hadolint tool.
 
 ## Core Tool Capabilities
 
@@ -11,8 +14,10 @@ Hadolint provides comprehensive Dockerfile analysis including:
 - **Dockerfile parsing**: AST-based analysis of Dockerfile structure
 - **Shell script linting**: Integration with ShellCheck for RUN instruction analysis
 - **Best practices**: Enforces Docker best practices and security guidelines
-- **Configuration options**: `--format`, `--failure-threshold`, `--ignore`, `--trusted-registries`
-- **Output formats**: tty, json, checkstyle, codeclimate, gitlab_codeclimate, gnu, codacy, sonarqube, sarif
+- **Configuration options**: `--format`, `--failure-threshold`, `--ignore`,
+  `--trusted-registries`
+- **Output formats**: tty, json, checkstyle, codeclimate, gitlab_codeclimate, gnu,
+  codacy, sonarqube, sarif
 - **Rule customization**: Extensive rule configuration and ignoring
 - **Security scanning**: Identifies security vulnerabilities and anti-patterns
 
@@ -27,7 +32,8 @@ Hadolint provides comprehensive Dockerfile analysis including:
 - ✅ **Best practice enforcement**: Supports all Hadolint rules and guidelines
 - ✅ **Configuration files**: Respects `.hadolint.yaml` and other config files
 - ✅ **Error categorization**: Preserves Hadolint's error code system
-- ✅ **File targeting**: Supports Dockerfile patterns (`Dockerfile`, `Dockerfile.*`, `*.dockerfile`)
+- ✅ **File targeting**: Supports Dockerfile patterns (`Dockerfile`, `Dockerfile.*`,
+  `*.dockerfile`)
 - ✅ **Error detection**: Captures syntax, style, and security violations
 
 **Command Execution:**
@@ -43,7 +49,8 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 - ✅ **Output format**: `format` parameter (tty, json, checkstyle, etc.)
 - ✅ **Failure threshold**: `failure_threshold` parameter (error, warning, info, style)
 - ✅ **Ignore rules**: `ignore` parameter for specific rule codes
-- ✅ **Trusted registries**: `trusted_registries` parameter for trusted Docker registries
+- ✅ **Trusted registries**: `trusted_registries` parameter for trusted Docker
+  registries
 - ✅ **Required labels**: `require_labels` parameter for required label schemas
 - ✅ **Strict labels**: `strict_labels` parameter for strict label checking
 - ✅ **No fail**: `no_fail` parameter to suppress exit codes
@@ -53,7 +60,8 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 
 **Advanced Configuration:**
 
-- ⚠️ **Runtime rule customization**: Prefer config; propose `hadolint:only=DL3006|SC2086` for targeted checks.
+- ⚠️ **Runtime rule customization**: Prefer config; propose
+  `hadolint:only=DL3006|SC2086` for targeted checks.
 - ❌ **Per-file configuration**: No support for file-specific rule overrides
 - ❌ **Custom rule definitions**: No support for custom rule creation
 - ❌ **Rule severity control**: Limited control over rule severity levels
@@ -79,7 +87,8 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 
 **Unified Interface:**
 
-- ✅ **Consistent API**: Same interface as other linting tools (`check()`, `set_options()`)
+- ✅ **Consistent API**: Same interface as other linting tools (`check()`,
+  `set_options()`)
 - ✅ **Structured output**: Issues formatted as standardized `Issue` objects
 - ✅ **Python integration**: Native Python object handling vs CLI parsing
 - ✅ **Pipeline integration**: Seamless integration with other tools
@@ -87,6 +96,7 @@ result = subprocess.run(cmd, capture_output=True, text=True)
 **Enhanced Error Processing:**
 
 - ✅ **Issue normalization**: Converts Hadolint output to standard Issue format:
+
   ```python
   Issue(
       file_path=match.group(1),
@@ -184,7 +194,7 @@ Lintro preserves all Hadolint error codes:
 | **Performance Rules** | DL     | Performance optimization suggestions   |
 | **Style Rules**       | DL     | Dockerfile style and formatting issues |
 
-### Common Rule Examples:
+### Common Rule Examples
 
 - **DL3006**: Always tag the version in `FROM`
 - **DL3008**: Pin versions in `apt-get`
@@ -214,18 +224,18 @@ Lintro preserves all Hadolint error codes:
 
 ### Missing Runtime Configuration
 
-**Problem**: Cannot modify individual rules at runtime
-**Workaround**: Use configuration files (`.hadolint.yaml`) for complex setups
+**Problem**: Cannot modify individual rules at runtime **Workaround**: Use configuration
+files (`.hadolint.yaml`) for complex setups
 
 ### No Auto-fixing
 
-**Problem**: Hadolint cannot automatically fix issues
-**Workaround**: Manual fixes based on Hadolint recommendations
+**Problem**: Hadolint cannot automatically fix issues **Workaround**: Manual fixes based
+on Hadolint recommendations
 
 ### Limited Docker Compose Support
 
-**Problem**: No direct support for docker-compose.yml files
-**Workaround**: Use separate tools for Docker Compose validation
+**Problem**: No direct support for docker-compose.yml files **Workaround**: Use separate
+tools for Docker Compose validation
 
 ## Future Enhancement Opportunities
 

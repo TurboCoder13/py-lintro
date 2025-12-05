@@ -2,9 +2,8 @@
 
 ## Overview
 
-Black is the Python code formatter that provides opinionated, deterministic
-formatting. This analysis compares Lintro's wrapper implementation with the
-core Black tool.
+Black is the Python code formatter that provides opinionated, deterministic formatting.
+This analysis compares Lintro's wrapper implementation with the core Black tool.
 
 ## Core Tool Capabilities
 
@@ -13,8 +12,8 @@ Black provides a stable set of formatting capabilities:
 - Code formatting with stable, minimal-diff output
 - Check mode (`--check`) and write mode (default)
 - Configuration via `pyproject.toml`
-- Options such as `--line-length`, `--target-version`, `--fast`, `--preview`,
-  and `--diff`
+- Options such as `--line-length`, `--target-version`, `--fast`, `--preview`, and
+  `--diff`
 
 ## Lintro Implementation Analysis
 
@@ -34,8 +33,8 @@ Lintro exposes a subset of Black's CLI options for controlled pass-through:
 - `preview` → `--preview`
 - `diff` → `--diff` (when formatting during fix)
 
-These can be provided via `--tool-options` or through
-`[tool.lintro.black]` in `pyproject.toml`.
+These can be provided via `--tool-options` or through `[tool.lintro.black]` in
+`pyproject.toml`.
 
 ```bash
 # CLI overrides
@@ -55,9 +54,9 @@ diff = false
 
 ### 🧩 Cooperation with Ruff
 
-When Black is configured as a post-check in Lintro, Ruff focuses on linting by
-default to avoid double-formatting. See the Ruff analysis for details on the
-Ruff↔Black policy and how to override with `--tool-options`.
+When Black is configured as a post-check in Lintro, Ruff focuses on linting by default
+to avoid double-formatting. See the Ruff analysis for details on the Ruff↔Black policy
+and how to override with `--tool-options`.
 
 ## Usage Comparison
 
@@ -106,6 +105,6 @@ lintro check src/ --tool-options "black:line_length=100,black:target_version=py3
 
 ## Recommendations
 
-- Use Black post-checks to ensure final formatting consistency when combining
-  tools (Ruff for lint; Black for formatting)
+- Use Black post-checks to ensure final formatting consistency when combining tools
+  (Ruff for lint; Black for formatting)
 - Prefer `pyproject.toml` for defaults; use `--tool-options` for ad-hoc runs

@@ -1,14 +1,21 @@
 # Script Organization Guide
 
+<!-- markdownlint-disable MD036 -->
+
 **For Contributors & Maintainers**
 
-This document defines clear responsibility boundaries for script organization following SOLID principles. Use this as a reference when adding, modifying, or reviewing scripts in the project.
+<!-- markdownlint-enable MD036 -->
+
+This document defines clear responsibility boundaries for script organization following
+SOLID principles. Use this as a reference when adding, modifying, or reviewing scripts
+in the project.
 
 ## 📁 Directory Structure & Responsibilities
 
 ### `scripts/ci/` - Continuous Integration Scripts
 
-**Purpose**: Scripts specifically designed for GitHub Actions workflows and CI/CD pipelines.
+**Purpose**: Scripts specifically designed for GitHub Actions workflows and CI/CD
+pipelines.
 
 **Responsibilities**:
 
@@ -21,7 +28,8 @@ This document defines clear responsibility boundaries for script organization fo
 
 **Characteristics**:
 
-- Expect GitHub Actions environment variables (`GITHUB_TOKEN`, `GITHUB_REPOSITORY`, etc.)
+- Expect GitHub Actions environment variables (`GITHUB_TOKEN`, `GITHUB_REPOSITORY`,
+  etc.)
 - Handle CI-specific error reporting and logging
 - Designed for headless execution
 - Integration with GitHub APIs and services
@@ -60,7 +68,8 @@ This document defines clear responsibility boundaries for script organization fo
 
 ### `scripts/utils/` - Reusable Utility Components
 
-**Purpose**: Single-responsibility, reusable components that can be used by both CI and local scripts.
+**Purpose**: Single-responsibility, reusable components that can be used by both CI and
+local scripts.
 
 **Responsibilities**:
 
@@ -100,14 +109,15 @@ This document defines clear responsibility boundaries for script organization fo
 
 ### Cross-Boundary Violations
 
-❌ **CI scripts with local assumptions** (e.g., assuming interactive terminals)
-❌ **Local scripts with CI-only dependencies** (e.g., requiring GITHUB_TOKEN)
-❌ **Utils scripts with environment assumptions** (e.g., hardcoded paths)
-❌ **Mixed responsibilities** (e.g., a single script doing installation + execution + reporting)
+❌ **CI scripts with local assumptions** (e.g., assuming interactive terminals) ❌
+**Local scripts with CI-only dependencies** (e.g., requiring GITHUB_TOKEN) ❌ **Utils
+scripts with environment assumptions** (e.g., hardcoded paths) ❌ **Mixed
+responsibilities** (e.g., a single script doing installation + execution + reporting)
 
 ### Examples of Boundary Violations to Fix
 
-- `scripts/local/update-coverage-badge.sh` - Should use `scripts/utils/coverage-manager.sh badge`
+- `scripts/local/update-coverage-badge.sh` - Should use
+  `scripts/utils/coverage-manager.sh badge`
 - Mixed coverage scripts - Consolidated into `scripts/utils/coverage-manager.sh`
 - `bootstrap-env.sh` - Split into focused utils components
 
@@ -142,13 +152,15 @@ When reviewing or contributing scripts, use this checklist:
 1. **Determine correct directory** based on primary purpose and dependencies
 2. **Check for existing functionality** in `utils/` to avoid duplication
 3. **Follow naming conventions**: `kebab-case.sh` for shell, `snake_case.py` for Python
-4. **Implement standard interface** (`--help` minimum, `--dry-run`/`--verbose` preferred)
+4. **Implement standard interface** (`--help` minimum, `--dry-run`/`--verbose`
+   preferred)
 
 ### When Modifying Existing Scripts
 
 1. **Verify directory placement** - does current location match responsibility?
 2. **Extract reusable parts** to `utils/` if they could benefit other scripts
-3. **Check environment assumptions** - does script match its directory's characteristics?
+3. **Check environment assumptions** - does script match its directory's
+   characteristics?
 4. **Update documentation** if changing interfaces or moving files
 
 ### Code Review Focus Areas

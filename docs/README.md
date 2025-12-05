@@ -1,8 +1,10 @@
 # Lintro Documentation Hub
 
-Welcome to the Lintro documentation! This hub provides comprehensive guides for using, configuring, and contributing to Lintro.
+Welcome to the Lintro documentation! This hub provides comprehensive guides for using,
+configuring, and contributing to Lintro.
 
-> **Quick Start**: If you're new to Lintro, start with the [main README](../README.md) for installation and basic usage, then return here for detailed guides.
+> **Quick Start**: If you're new to Lintro, start with the [main README](../README.md)
+> for installation and basic usage, then return here for detailed guides.
 
 ## 📚 Documentation Structure
 
@@ -23,7 +25,8 @@ Welcome to the Lintro documentation! This hub provides comprehensive guides for 
 
 **Contributing to Lintro:**
 
-- **[Contributing Guide](contributing.md)** - Development setup and contribution guidelines
+- **[Contributing Guide](contributing.md)** - Development setup and contribution
+  guidelines
 
 **Reference Documentation:**
 
@@ -78,12 +81,13 @@ lintro test
 
 → [Docker Usage Guide](docker.md)
 
-**⚙️ CI/CD Integration:**
-→ [GitHub Integration Guide](github-integration.md)
+**⚙️ CI/CD Integration:** → [GitHub Integration Guide](github-integration.md)
 
 ## 📖 Documentation by Audience
 
 ### End Users
+
+<!-- markdownlint-disable MD036 -->
 
 **Goal: Use Lintro effectively in projects**
 
@@ -92,8 +96,6 @@ lintro test
 3. [Docker Usage](docker.md) - Containerized workflows (optional)
 4. [GitHub Integration](github-integration.md) - CI/CD automation (optional)
 
-### Project Maintainers
-
 **Goal: Integrate Lintro into team workflows**
 
 1. [GitHub Integration](github-integration.md) - Set up automated quality checks
@@ -101,9 +103,9 @@ lintro test
 3. [Tool Analysis](tool-analysis/) - Understand tool capabilities
 4. [Docker Usage](docker.md) - Standardized environments
 
-### Contributors & Developers
-
 **Goal: Contribute to or extend Lintro**
+
+<!-- markdownlint-enable MD036 -->
 
 1. [Contributing Guide](contributing.md) - Development setup and guidelines
 2. [Style Guide](style-guide.md) - Code quality standards
@@ -112,17 +114,18 @@ lintro test
 
 ## 🛠️ Supported Tools
 
-| Tool           | Language/Format  | Purpose                 | Documentation                                              |
-| -------------- | ---------------- | ----------------------- | ---------------------------------------------------------- |
-| **Ruff**       | Python           | Linting & Formatting    | [Config Guide](configuration.md#ruff-configuration)        |
-| **Black**      | Python           | Formatting (Post-check) | [Config Guide](configuration.md#post-checks-configuration) |
-| **Darglint**   | Python           | Docstring Validation    | [Analysis](tool-analysis/darglint-analysis.md)             |
-| **Bandit**     | Python           | Security Linting        | [Analysis](tool-analysis/bandit-analysis.md)               |
-| **Pytest**     | Python           | Test Runner             | [Analysis](tool-analysis/pytest-analysis.md)               |
-| **Prettier**   | JS/TS/JSON/CSS   | Code Formatting         | [Analysis](tool-analysis/prettier-analysis.md)             |
-| **Yamllint**   | YAML             | Syntax & Style          | [Config Guide](configuration.md#yamllint-configuration)    |
-| **Actionlint** | GitHub Workflows | Workflow Linting        | [Analysis](tool-analysis/actionlint-analysis.md)           |
-| **Hadolint**   | Dockerfile       | Best Practices          | [Config Guide](configuration.md#hadolint-configuration)    |
+| Tool                  | Language/Format  | Purpose                 | Documentation                                                    |
+| --------------------- | ---------------- | ----------------------- | ---------------------------------------------------------------- |
+| **Ruff**              | Python           | Linting & Formatting    | [Config Guide](configuration.md#ruff-configuration)              |
+| **Black**             | Python           | Formatting (Post-check) | [Config Guide](configuration.md#post-checks-configuration)       |
+| **Darglint**          | Python           | Docstring Validation    | [Analysis](tool-analysis/darglint-analysis.md)                   |
+| **Bandit**            | Python           | Security Linting        | [Analysis](tool-analysis/bandit-analysis.md)                     |
+| **Pytest**            | Python           | Test Runner             | [Analysis](tool-analysis/pytest-analysis.md)                     |
+| **Prettier**          | JS/TS/JSON/CSS   | Code Formatting         | [Analysis](tool-analysis/prettier-analysis.md)                   |
+| **Yamllint**          | YAML             | Syntax & Style          | [Config Guide](configuration.md#yamllint-configuration)          |
+| **Markdownlint-cli2** | Markdown         | Style Checking          | [Config Guide](configuration.md#markdownlint-cli2-configuration) |
+| **Actionlint**        | GitHub Workflows | Workflow Linting        | [Analysis](tool-analysis/actionlint-analysis.md)                 |
+| **Hadolint**          | Dockerfile       | Best Practices          | [Config Guide](configuration.md#hadolint-configuration)          |
 
 ## 📋 Command Reference
 
@@ -188,14 +191,18 @@ docker run --rm -v "$(pwd):/code" lintro:latest check
 
 ### Search by Error/Issue
 
-- **"Tool not found":** [Getting Started → Troubleshooting](getting-started.md#troubleshooting)
+- **"Tool not found":**
+  [Getting Started → Troubleshooting](getting-started.md#troubleshooting)
 - **"Permission denied":** [Docker Usage → Troubleshooting](docker.md#troubleshooting)
-- **"Configuration not working":** [Configuration → Troubleshooting](configuration.md#troubleshooting-configuration)
-- **"Workflow not triggering":** [GitHub Integration → Troubleshooting](github-integration.md#troubleshooting)
+- **"Configuration not working":**
+  [Configuration → Troubleshooting](configuration.md#troubleshooting-configuration)
+- **"Workflow not triggering":**
+  [GitHub Integration → Troubleshooting](github-integration.md#troubleshooting)
 
 ## 🆕 Recent Updates
 
-- **Security audit framework** - Comprehensive security verification for workflows and scripts
+- **Security audit framework** - Comprehensive security verification for workflows and
+  scripts
 - **DRY consolidation** - Reduced duplicate patterns across workflows and actions
 - **Shell-free design** - Moved inline shell commands to dedicated scripts
 - **Environment standardization** - Consistent variable usage across all workflows
@@ -219,4 +226,5 @@ Found an issue with the documentation? Want to improve it?
 
 ---
 
-**Need help?** Check the specific guide for your use case, or open an issue on GitHub if you can't find what you're looking for! 🚀
+**Need help?** Check the specific guide for your use case, or open an issue on GitHub if
+you can't find what you're looking for! 🚀

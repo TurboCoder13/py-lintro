@@ -1,12 +1,15 @@
+<!-- markdownlint-disable MD041 -->
+
 ## Commit Summary (Conventional Commits)
 
 - Title (required, present tense):
 
-  ```
+  ```text
   <type>(optional-scope)!: concise summary
   ```
 
-  Examples: `feat(cli): add --group-by`, `fix(parser): handle empty config`, `refactor(core)!: rewrite engine`
+  Examples: `feat(cli): add --group-by`, `fix(parser): handle empty config`,
+  `refactor(core)!: rewrite engine`
 
 - Type:
   - [ ] feat (minor)
@@ -46,9 +49,9 @@ Describe the changes and why.
 
 ## Related Issues
 
-Closes #
-Fixes #
-Related #
+<!-- Replace # with actual issue numbers, e.g., Closes #123, Fixes #456, Related #789 -->
+
+Closes # | Fixes # | Related #
 
 ## Details
 

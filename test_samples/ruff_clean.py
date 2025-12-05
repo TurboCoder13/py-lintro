@@ -6,6 +6,7 @@ def hello(name: str = "World") -> None:
 
     Args:
         name: The name to greet.
+
     """
     print(f"Hello, {name}!")
 

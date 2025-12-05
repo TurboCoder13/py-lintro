@@ -2,7 +2,9 @@
 
 ## Overview
 
-Pytest is a mature full-featured Python testing tool that helps you write better programs. This analysis compares Lintro's wrapper implementation with the core pytest tool.
+Pytest is a mature full-featured Python testing tool that helps you write better
+programs. This analysis compares Lintro's wrapper implementation with the core pytest
+tool.
 
 ## Core Tool Capabilities
 
@@ -15,7 +17,8 @@ Pytest provides extensive testing capabilities including:
 - **Markers**: Categorize and selectively run tests
 - **Plugins**: Extensive plugin ecosystem for additional functionality
 - **Output Formats**: Multiple output formats including JSON, JUnit XML, and plain text
-- **Configuration**: Support for `pyproject.toml`, `pytest.ini`, and command-line options
+- **Configuration**: Support for `pyproject.toml`, `pytest.ini`, and command-line
+  options
 - **Coverage Integration**: Works with coverage.py for test coverage reporting
 - **Parallel Execution**: Support for parallel test execution with pytest-xdist
 
@@ -67,11 +70,14 @@ cmd = self._get_executable_command("pytest") + ["--junitxml", "report.xml"]
 
 ### ❌ Limitations & Supported Features
 
-**Important:** Lintro's pytest integration focuses on core test execution and reporting. Advanced pytest features require using pytest directly.
+**Important:** Lintro's pytest integration focuses on core test execution and reporting.
+Advanced pytest features require using pytest directly.
 
 #### ✅ What IS Supported
 
-The following sections outline lintro's pytest support. **Baseline Features** represent core functionality available from the initial implementation, while **Enhanced Features** are recently added capabilities that extend the baseline functionality.
+The following sections outline lintro's pytest support. **Baseline Features** represent
+core functionality available from the initial implementation, while **Enhanced
+Features** are recently added capabilities that extend the baseline functionality.
 
 ##### Baseline Features
 
@@ -110,30 +116,43 @@ The following sections outline lintro's pytest support. **Baseline Features** re
 **Plugin Management:**
 
 - ✅ **Plugin discovery** - List installed pytest plugins via `--list-plugins` flag
-- ✅ **Plugin checking** - Check if required plugins are installed via `--check-plugins` flag
+- ✅ **Plugin checking** - Check if required plugins are installed via `--check-plugins`
+  flag
 - ✅ **Plugin configuration** - Configure plugin-specific settings via `--tool-options`
-- **Usage:** `lintro test --list-plugins` or `lintro test --check-plugins --tool-options pytest:required_plugins=pytest-cov,pytest-xdist`
+- **Usage:** `lintro test --list-plugins` or
+  `lintro test --check-plugins --tool-options pytest:required_plugins=pytest-cov,pytest-xdist`
 
 **Advanced Pytest Features:**
 
 - ✅ **Custom marker listing** - List all available markers via `--markers` flag
-- ✅ **Fixture management** - List fixtures and get fixture information via `--fixtures` and `--fixture-info` flags
-- ✅ **Parametrization help** - Show parametrization examples via `--parametrize-help` flag
-- ✅ **Test collection without execution** - List tests without running them via `--collect-only` flag
-- **Usage:** `lintro test --markers`, `lintro test --fixtures`, `lintro test --collect-only`
+- ✅ **Fixture management** - List fixtures and get fixture information via `--fixtures`
+  and `--fixture-info` flags
+- ✅ **Parametrization help** - Show parametrization examples via `--parametrize-help`
+  flag
+- ✅ **Test collection without execution** - List tests without running them via
+  `--collect-only` flag
+- **Usage:** `lintro test --markers`, `lintro test --fixtures`,
+  `lintro test --collect-only`
 
 **Coverage Integration:**
 
-- ✅ **Coverage threshold enforcement** - Enforce minimum coverage via `coverage_threshold` option
-- ✅ **Coverage HTML generation** - Generate HTML coverage reports via `coverage_html` option
-- ✅ **Coverage XML generation** - Generate XML coverage reports via `coverage_xml` option
-- ✅ **Combined coverage reports** - Generate both HTML and XML via `coverage_report` option
-- **Usage:** `lintro test --tool-options pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml` or `pytest:coverage_report=True`
+- ✅ **Coverage threshold enforcement** - Enforce minimum coverage via
+  `coverage_threshold` option
+- ✅ **Coverage HTML generation** - Generate HTML coverage reports via `coverage_html`
+  option
+- ✅ **Coverage XML generation** - Generate XML coverage reports via `coverage_xml`
+  option
+- ✅ **Combined coverage reports** - Generate both HTML and XML via `coverage_report`
+  option
+- **Usage:**
+  `lintro test --tool-options pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml`
+  or `pytest:coverage_report=True`
 
 **Parallel Execution:**
 
 - ✅ **Basic support** - Workers option available (`pytest:workers=auto|N`)
-- ✅ **Parallel execution presets** - Preset options available (`pytest:parallel_preset=small|medium|large|auto`)
+- ✅ **Parallel execution presets** - Preset options available
+  (`pytest:parallel_preset=small|medium|large|auto`)
 - **Note:** Uses pytest-xdist plugin (must be installed separately)
 - **Presets:**
   - `auto`: Uses all available CPU cores
@@ -145,7 +164,8 @@ The following sections outline lintro's pytest support. **Baseline Features** re
 
 - ❌ **No test result trending** - Cannot track test results over time
 - ✅ **Flaky test detection** - Automatically detects intermittent failures
-- ❌ **No test impact analysis** - Cannot determine which tests to run based on code changes
+- ❌ **No test impact analysis** - Cannot determine which tests to run based on code
+  changes
 - ❌ **No mutation testing** - No mutation testing integration
 
 **HTML Reports:**
@@ -181,7 +201,11 @@ The following sections outline lintro's pytest support. **Baseline Features** re
 - You need mutation testing integration
 - You want features not yet exposed through lintro's CLI
 
-> **Note:** Many pytest features are supported through lintro—see the [Enhanced Features](#enhanced-features) section (lines 108-166) for supported capabilities including custom marker listing (`--markers`), fixture management (`--fixtures`, `--fixture-info`), test collection (`--collect-only`), HTML reports (`html_report`), and coverage integration.
+> **Note:** Many pytest features are supported through lintro—see the
+> [Enhanced Features](#enhanced-features) section for supported capabilities including
+> custom marker listing (`--markers`), fixture management (`--fixtures`,
+> `--fixture-info`), test collection (`--collect-only`), HTML reports (`html_report`),
+> and coverage integration.
 
 #### Configuration Priority
 
@@ -387,11 +411,13 @@ lintro fmt, chk, tst
 
 ## Docker Test Support
 
-Lintro's pytest integration includes built-in support for Docker-only tests through environment variable control and pytest markers.
+Lintro's pytest integration includes built-in support for Docker-only tests through
+environment variable control and pytest markers.
 
 ### Docker Test Markers
 
-Tests that require Docker or Docker-specific dependencies should be marked with the `@pytest.mark.docker_only` marker:
+Tests that require Docker or Docker-specific dependencies should be marked with the
+`@pytest.mark.docker_only` marker:
 
 ```python
 import pytest
@@ -439,7 +465,8 @@ markers =
 
 ### How It Works
 
-1. **Test Collection**: When collecting tests, lintro identifies tests marked with `@pytest.mark.docker_only`
+1. **Test Collection**: When collecting tests, lintro identifies tests marked with
+   `@pytest.mark.docker_only`
 2. **Environment Control**: Based on `LINTRO_RUN_DOCKER_TESTS`:
    - If set to `"1"`: All tests (including Docker tests) are collected and run
    - If not set or set to other value: Docker tests are skipped during collection
@@ -499,23 +526,31 @@ Or use the Docker test script which automatically enables Docker tests:
 3. **Output Format**: Choose appropriate output format for your CI/CD pipeline
 4. **Timeout**: Set appropriate timeout for your test suite
 5. **Max Failures**: Use `maxfail=1` for fast feedback in development
-6. **Docker Tests**: Mark Docker-requiring tests with `@pytest.mark.docker_only` and use `--enable-docker` when needed
+6. **Docker Tests**: Mark Docker-requiring tests with `@pytest.mark.docker_only` and use
+   `--enable-docker` when needed
 
 ## Implemented Features
 
 The following features have been implemented:
 
-1. ✅ **Plugin Support**: List and check pytest plugins via `--list-plugins` and `--check-plugins`
-2. ✅ **Coverage Integration**: HTML/XML report generation via `coverage_html`, `coverage_xml`, and `coverage_report` options
-3. ✅ **Parallel Execution**: Support for parallel test execution via `workers` and `parallel_preset` options
+1. ✅ **Plugin Support**: List and check pytest plugins via `--list-plugins` and
+   `--check-plugins`
+2. ✅ **Coverage Integration**: HTML/XML report generation via `coverage_html`,
+   `coverage_xml`, and `coverage_report` options
+3. ✅ **Parallel Execution**: Support for parallel test execution via `workers` and
+   `parallel_preset` options
 4. ✅ **Test Discovery**: Test collection without execution via `--collect-only` flag
-5. ✅ **Fixture Management**: List fixtures and get fixture info via `--fixtures` and `--fixture-info` flags
-6. ✅ **Parametrization Help**: Show parametrization examples via `--parametrize-help` flag
+5. ✅ **Fixture Management**: List fixtures and get fixture info via `--fixtures` and
+   `--fixture-info` flags
+6. ✅ **Parametrization Help**: Show parametrization examples via `--parametrize-help`
+   flag
 7. ✅ **Custom Markers**: List all markers via `--markers` flag
 8. ✅ **Performance Metrics**: Test execution time tracking and slow test detection
 9. ✅ **Test Results**: Test result summary and statistics with flaky test detection
-10. ✅ **CI Integration**: CI-specific configurations with auto-junitxml and docker test support
-11. ✅ **Plugin Integrations**: Support for pytest-html, pytest-timeout, and pytest-rerunfailures
+10. ✅ **CI Integration**: CI-specific configurations with auto-junitxml and docker test
+    support
+11. ✅ **Plugin Integrations**: Support for pytest-html, pytest-timeout, and
+    pytest-rerunfailures
 
 ## Future Enhancements
 

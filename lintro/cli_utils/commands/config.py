@@ -1,0 +1,324 @@
+"""Config command for displaying Lintro configuration status."""
+
+from typing import Any
+
+import click
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
+from lintro.config import LintroConfig, get_config
+from lintro.utils.unified_config import (
+    _load_native_tool_config,
+    get_ordered_tools,
+    get_tool_priority,
+    is_tool_injectable,
+    validate_config_consistency,
+)
+
+
+def _get_all_tool_names() -> list[str]:
+    """Get list of all known tool names.
+
+    Returns:
+        list[str]: Sorted list of tool names.
+    """
+    return [
+        "ruff",
+        "black",
+        "prettier",
+        "yamllint",
+        "markdownlint",
+        "darglint",
+        "bandit",
+        "hadolint",
+        "actionlint",
+        "pytest",
+    ]
+
+
+@click.command()
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed configuration including native tool configs.",
+)
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    help="Output configuration as JSON.",
+)
+def config_command(
+    verbose: bool,
+    json_output: bool,
+) -> None:
+    """Display Lintro configuration status.
+
+    Shows the unified configuration for all tools including:
+    - Config source (.lintro-config.yaml or pyproject.toml)
+    - Global settings (line_length, tool ordering strategy)
+    - Tool execution order based on configured strategy
+    - Per-tool effective configuration
+    - Configuration warnings and inconsistencies
+
+    Args:
+        verbose: Show detailed configuration including native tool configs.
+        json_output: Output configuration as JSON.
+    """
+    console = Console()
+    config = get_config(reload=True)
+
+    if json_output:
+        _output_json(config=config, verbose=verbose)
+        return
+
+    _output_rich(
+        console=console,
+        config=config,
+        verbose=verbose,
+    )
+
+
+def _output_json(
+    config: LintroConfig,
+    verbose: bool = False,
+) -> None:
+    """Output configuration as JSON.
+
+    Args:
+        config: LintroConfig instance from get_config()
+        verbose: Include native configs in output when True
+    """
+    import json
+
+    # Get tool order settings
+    tool_order = config.execution.tool_order
+    if isinstance(tool_order, list):
+        order_strategy = "custom"
+        custom_order = tool_order
+    else:
+        order_strategy = tool_order or "priority"
+        custom_order = []
+
+    # Get list of all known tools
+    tool_names = _get_all_tool_names()
+    ordered_tools = get_ordered_tools(
+        tool_names=tool_names,
+        tool_order=config.execution.tool_order,
+    )
+
+    output = {
+        "config_source": config.config_path or "defaults",
+        "global_settings": {
+            "line_length": config.enforce.line_length,
+            "target_python": config.enforce.target_python,
+            "tool_order": order_strategy,
+            "custom_order": custom_order,
+        },
+        "execution": {
+            "enabled_tools": config.execution.enabled_tools or "all",
+            "fail_fast": config.execution.fail_fast,
+            "parallel": config.execution.parallel,
+        },
+        "tool_execution_order": [
+            {"tool": t, "priority": get_tool_priority(t)} for t in ordered_tools
+        ],
+        "tool_configs": {},
+        "warnings": validate_config_consistency(),
+    }
+
+    for tool_name in tool_names:
+        tool_config = config.get_tool_config(tool_name)
+        effective_ll = config.get_effective_line_length(tool_name)
+
+        tool_output: dict[str, Any] = {
+            "enabled": tool_config.enabled,
+            "is_injectable": is_tool_injectable(tool_name),
+            "effective_line_length": effective_ll,
+            "config_source": tool_config.config_source,
+        }
+        if verbose:
+            native = _load_native_tool_config(tool_name)
+            tool_output["native_config"] = native if native else None
+            tool_output["defaults"] = config.get_tool_defaults(tool_name) or None
+
+        output["tool_configs"][tool_name] = tool_output
+
+    print(json.dumps(output, indent=2))
+
+
+def _output_rich(
+    console: Console,
+    config: LintroConfig,
+    verbose: bool,
+) -> None:
+    """Output configuration using Rich formatting.
+
+    Args:
+        console: Rich Console instance
+        config: LintroConfig instance from get_config()
+        verbose: Whether to show verbose output
+    """
+    # Header panel
+    console.print(
+        Panel.fit(
+            "[bold cyan]Lintro Configuration Report[/bold cyan]",
+            border_style="cyan",
+        ),
+    )
+    console.print()
+
+    # Config Source Section
+    config_source = config.config_path or "[dim]No config file (using defaults)[/dim]"
+    console.print(f"[bold]Config Source:[/bold] {config_source}")
+    console.print()
+
+    # Global Settings Section
+    global_table = Table(
+        title="Enforce Settings",
+        show_header=False,
+        box=None,
+    )
+    global_table.add_column("Setting", style="cyan", width=25)
+    global_table.add_column("Value", style="yellow")
+
+    line_length = config.enforce.line_length
+    global_table.add_row(
+        "line_length",
+        str(line_length) if line_length else "[dim]Not configured[/dim]",
+    )
+
+    target_python = config.enforce.target_python
+    global_table.add_row(
+        "target_python",
+        target_python if target_python else "[dim]Not configured[/dim]",
+    )
+
+    console.print(global_table)
+    console.print()
+
+    # Execution Settings Section
+    exec_table = Table(
+        title="Execution Settings",
+        show_header=False,
+        box=None,
+    )
+    exec_table.add_column("Setting", style="cyan", width=25)
+    exec_table.add_column("Value", style="yellow")
+
+    tool_order = config.execution.tool_order
+    if isinstance(tool_order, list):
+        order_strategy = "custom"
+        exec_table.add_row("tool_order", order_strategy)
+        exec_table.add_row("custom_order", ", ".join(tool_order))
+    else:
+        exec_table.add_row("tool_order", tool_order or "priority")
+
+    enabled_tools = config.execution.enabled_tools
+    exec_table.add_row(
+        "enabled_tools",
+        ", ".join(enabled_tools) if enabled_tools else "[dim]all[/dim]",
+    )
+    exec_table.add_row("fail_fast", str(config.execution.fail_fast))
+    exec_table.add_row("parallel", str(config.execution.parallel))
+
+    console.print(exec_table)
+    console.print()
+
+    # Tool Execution Order Section
+    tool_names = _get_all_tool_names()
+    ordered_tools = get_ordered_tools(
+        tool_names=tool_names,
+        tool_order=config.execution.tool_order,
+    )
+
+    order_table = Table(title="Tool Execution Order")
+    order_table.add_column("#", style="dim", justify="right", width=3)
+    order_table.add_column("Tool", style="cyan")
+    order_table.add_column("Priority", justify="center", style="yellow")
+    order_table.add_column("Type", style="green")
+    order_table.add_column("Enabled", justify="center")
+
+    for idx, tool_name in enumerate(ordered_tools, 1):
+        priority = get_tool_priority(tool_name)
+        injectable = is_tool_injectable(tool_name)
+        tool_type = "Syncable" if injectable else "Native only"
+        enabled = config.is_tool_enabled(tool_name)
+        enabled_display = "[green]✓[/green]" if enabled else "[red]✗[/red]"
+
+        order_table.add_row(
+            str(idx),
+            tool_name,
+            str(priority),
+            tool_type,
+            enabled_display,
+        )
+
+    console.print(order_table)
+    console.print()
+
+    # Per-Tool Configuration Section
+    config_table = Table(title="Per-Tool Configuration")
+    config_table.add_column("Tool", style="cyan")
+    config_table.add_column("Sync Status", justify="center")
+    config_table.add_column("Line Length", justify="center", style="yellow")
+    config_table.add_column("Config Source", style="dim")
+
+    if verbose:
+        config_table.add_column("Native Config", style="dim")
+
+    for tool_name in tool_names:
+        tool_config = config.get_tool_config(tool_name)
+        injectable = is_tool_injectable(tool_name)
+        status = (
+            "[green]✓ Syncable[/green]"
+            if injectable
+            else "[yellow]⚠ Native only[/yellow]"
+        )
+        effective_ll = config.get_effective_line_length(tool_name)
+        ll_display = str(effective_ll) if effective_ll else "[dim]default[/dim]"
+
+        cfg_source = tool_config.config_source or "[dim]auto[/dim]"
+
+        row = [tool_name, status, ll_display, cfg_source]
+
+        if verbose:
+            native = _load_native_tool_config(tool_name)
+            native_cfg = str(native) if native else "[dim]None[/dim]"
+            row.append(native_cfg)
+
+        config_table.add_row(*row)
+
+    console.print(config_table)
+    console.print()
+
+    # Warnings Section
+    warnings = validate_config_consistency()
+    if warnings:
+        console.print("[bold red]Configuration Warnings[/bold red]")
+        for warning in warnings:
+            console.print(f"  [yellow]⚠️[/yellow]  {warning}")
+        console.print()
+        console.print(
+            "[dim]Tools marked 'Native only' cannot be configured by Lintro. "
+            "Update their config files manually for consistency.[/dim]",
+        )
+    else:
+        console.print(
+            "[green]✅ All configurations are consistent![/green]",
+        )
+
+    console.print()
+
+    # Help text
+    console.print(
+        "[dim]Configure Lintro in .lintro-config.yaml:[/dim]",
+    )
+    console.print(
+        "[dim]  Run 'lintro init' to create a config file[/dim]",
+    )
+    console.print(
+        '[dim]  tool_order: "priority" | "alphabetical" | ["tool1", "tool2"][/dim]',
+    )

@@ -1,31 +1,39 @@
+<!-- markdownlint-disable MD024 -->
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and
+this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased] - 2025-01-15
 
 ### Fixed
 
 - **Critical**: Fixed circular import bug in `lintro.parsers` module
-  - Issue: `ImportError: cannot import name 'bandit' from partially initialized module 'lintro.parsers'` when running lintro as a dependency
+  - Issue:
+    `ImportError: cannot import name 'bandit' from partially initialized module 'lintro.parsers'`
+    when running lintro as a dependency
   - Root causes:
     1. Eager imports in `parsers/__init__.py` causing circular dependencies
     2. Missing `lintro.parsers.bandit` package in setuptools configuration
   - Impact: Prevents lintro CLI from working when installed as a wheel distribution
   - Fix:
-    1. Replaced eager imports with lazy loading via `__getattr__` in `lintro/parsers/__init__.py`
+    1. Replaced eager imports with lazy loading via `__getattr__` in
+       `lintro/parsers/__init__.py`
     2. Added `lintro.parsers.bandit` to setuptools packages list
   - Tests: Added comprehensive import tests for direct imports and lazy loading patterns
   - Verified: Works in both editable install (development) and built wheel (production)
-- **PyPI Publication Workflow**: Fixed test failures in PyPI publish workflow by adding missing tool installation step
-  - Added tool installation step (`./scripts/utils/install-tools.sh --local`) to PyPI workflow
+- **PyPI Publication Workflow**: Fixed test failures in PyPI publish workflow by adding
+  missing tool installation step
+  - Added tool installation step (`./scripts/utils/install-tools.sh --local`) to PyPI
+    workflow
   - Added PATH setup to ensure tools are available during test execution
   - Now matches the tool setup used in the main CI workflow
 - **Tool Installation Script**: Improved compatibility with uv-based Python environments
-  - Updated `install-tools.sh` to use `uv pip install` for Python packages when uv is available
+  - Updated `install-tools.sh` to use `uv pip install` for Python packages when uv is
+    available
   - Added detection for GitHub Actions environment and uv availability
   - Maintains fallback to pip for environments without uv
 - **Package Distribution**: Fixed MANIFEST.in file patterns to eliminate build warnings
@@ -37,11 +45,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Files Modified**:
   - `.github/workflows/publish-pypi.yml` - Added tool installation and PATH setup
-  - `scripts/utils/install-tools.sh` - Improved uv compatibility for Python package installation
+  - `scripts/utils/install-tools.sh` - Improved uv compatibility for Python package
+    installation
   - `MANIFEST.in` - Fixed file inclusion patterns
 
-- **Root Cause**: PyPI publish workflow was missing external tool dependencies (ruff, darglint, prettier, yamllint, hadolint) that integration tests require
-- **Impact**: All tests now pass in PyPI publication workflow, enabling successful package distribution
+- **Root Cause**: PyPI publish workflow was missing external tool dependencies (ruff,
+  darglint, prettier, yamllint, hadolint) that integration tests require
+- **Impact**: All tests now pass in PyPI publication workflow, enabling successful
+  package distribution
 
 ## [Unreleased]
 

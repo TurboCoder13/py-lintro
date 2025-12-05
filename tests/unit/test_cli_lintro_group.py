@@ -25,8 +25,9 @@ def test_format_commands_with_aliases() -> None:
     result = runner.invoke(cli, ["--help"])
     # The output should contain commands with or without aliases
     assert_that(result.exit_code).is_equal_to(0)
-    # Check that each canonical name appears
-    assert_that(result.output).contains("Commands:")
+    # Check that the Commands table is displayed (Rich table format)
+    assert_that(result.output).contains("Commands")
+    assert_that(result.output).contains("Alias")
 
 
 def test_check_command_help_displays() -> None:

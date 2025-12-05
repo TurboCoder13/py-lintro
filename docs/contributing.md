@@ -1,6 +1,7 @@
 # Contributing to Lintro
 
-Thank you for your interest in contributing to Lintro! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Lintro! This document provides guidelines
+and information for contributors.
 
 ## Conventional Commits (required)
 
@@ -12,7 +13,7 @@ We use Conventional Commits (Angular style) to drive automated versioning and re
 
 Examples:
 
-```
+```text
 feat: add new configuration option
 
 - support for custom tool paths
@@ -20,17 +21,19 @@ feat: add new configuration option
 - add integration tests
 ```
 
-PR titles must also follow Conventional Commits. A PR check enforces this and
-will comment with guidance if invalid.
+PR titles must also follow Conventional Commits. A PR check enforces this and will
+comment with guidance if invalid.
 
 ### PR titles and version bumps
 
-Semantic versioning is determined from the PR title (we squash-merge so the PR title becomes the merge commit):
+Semantic versioning is determined from the PR title (we squash-merge so the PR title
+becomes the merge commit):
 
 - **minor**: `feat(...)`
 - **patch**: `fix(...)`, `perf(...)`
 - **major**: add `!` after type or include a `BREAKING CHANGE:` footer
-- **no bump**: `docs`, `chore`, `refactor`, `style`, `test`, `ci`, `build` (unless marked breaking)
+- **no bump**: `docs`, `chore`, `refactor`, `style`, `test`, `ci`, `build` (unless
+  marked breaking)
 
 Examples:
 
@@ -50,38 +53,46 @@ BREAKING CHANGE: plugins must implement run() and report()
 Notes:
 
 - Use imperative mood (e.g., "add", not "added").
-- If work is ambiguous (e.g., a large refactor), explicitly signal with `!` or a `BREAKING CHANGE:` footer.
-- The PR title validator (`.github/workflows/semantic-pr-title.yml`) enforces the format before merge.
+- If work is ambiguous (e.g., a large refactor), explicitly signal with `!` or a
+  `BREAKING CHANGE:` footer.
+- The PR title validator (`.github/workflows/semantic-pr-title.yml`) enforces the format
+  before merge.
 
 ## Developer Certificate of Origin (required)
 
-All contributions must be signed off under the Developer Certificate of
-Origin (DCO). Use `git commit -s` (or `--signoff`) so your commit message
-contains a line like:
+All contributions must be signed off under the Developer Certificate of Origin (DCO).
+Use `git commit -s` (or `--signoff`) so your commit message contains a line like:
 
-```
+```text
 Signed-off-by: Your Name <your.email@example.com>
 ```
 
-See `DCO.md` for details. Pull requests without DCO sign-offs will be asked
-to amend commits before merge.
+See `DCO.md` for details. Pull requests without DCO sign-offs will be asked to amend
+commits before merge.
 
 ## Quick Start
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/TurboCoder13/py-lintro.git
    cd py-lintro
    ```
+
 2. Install dependencies:
+
    ```bash
    uv sync --dev
    ```
+
 3. Run tests:
+
    ```bash
    ./scripts/local/run-tests.sh
    ```
+
 4. Run Lintro on the codebase:
+
    ```bash
    ./scripts/local/local-lintro.sh check --output-format grid
    ```
@@ -90,10 +101,12 @@ to amend commits before merge.
 
 Release automation:
 
-- Merges to `main` run semantic-release to determine the next version from commits and tag the repo.
+- Merges to `main` run semantic-release to determine the next version from commits and
+  tag the repo.
 - Tag push publishes to PyPI (OIDC) and creates a GitHub Release with artifacts.
 
-For detailed contribution guidelines, see the project documentation or contact a maintainer.
+For detailed contribution guidelines, see the project documentation or contact a
+maintainer.
 
 ---
 
@@ -105,12 +118,14 @@ consistent UX and maintainable implementation.
 ### Principles
 
 - Minimal defaults: invoke the native CLI without forcing special formats.
-- Predictable discovery: put file-discovery rules into the tool implementation
-  (e.g., Actionlint filters to `/.github/workflows/`).
-- Wrapper, not replacement: rely on tool defaults and parse its standard
-  output; only add switches when strictly necessary for parsing.
+- Predictable discovery: put file-discovery rules into the tool implementation (e.g.,
+  Actionlint filters to `/.github/workflows/`).
+- Wrapper, not replacement: rely on tool defaults and parse its standard output; only
+  add switches when strictly necessary for parsing.
 
 ### Implementation Steps
+
+<!-- markdownlint-disable MD029 -->
 
 1. Core code
 
@@ -135,8 +150,8 @@ consistent UX and maintainable implementation.
 3. Installer support
 
 - Update `scripts/utils/install-tools.sh` to install the binary.
-- Prefer upstream installers when available (uv/pip, npm, official script,
-  Homebrew). For OS/arch tarballs, encapsulate download/extract in a helper.
+- Prefer upstream installers when available (uv/pip, npm, official script, Homebrew).
+  For OS/arch tarballs, encapsulate download/extract in a helper.
 - Verify checksums when possible.
 
 4. Docs checklist
@@ -147,11 +162,11 @@ consistent UX and maintainable implementation.
 
 5. CI and Docker
 
-- The Docker image installs all supported tools; integration tests should run
-  without skipping inside Docker/CI.
+- The Docker image installs all supported tools; integration tests should run without
+  skipping inside Docker/CI.
 
 ### Pass-through Options (optional)
 
-Expose native flags via `--tool-options tool:key=value` only after the core
-behavior is stable. Keep defaults minimal to avoid surprising users and to
-maintain parity with direct CLI behavior.
+Expose native flags via `--tool-options tool:key=value` only after the core behavior is
+stable. Keep defaults minimal to avoid surprising users and to maintain parity with
+direct CLI behavior.

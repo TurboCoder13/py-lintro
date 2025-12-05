@@ -1,0 +1,100 @@
+---
+# Lintro Configuration
+# https://github.com/TurboCoder13/py-lintro
+#
+# Lintro is the master configuration source for all tools.
+# Native tool configs (.prettierrc, .yamllint, etc.) are used when available.
+
+enforce:
+  line_length: 88
+  # target_python omitted - let ruff infer from requires-python in pyproject.toml
+
+execution:
+  enabled_tools: []
+  tool_order: 'priority'
+  fail_fast: false
+
+# Fallback configurations for tools without native config files.
+# These are used when no native config (e.g., .prettierrc, .yamllint) is found.
+defaults:
+  prettier:
+    semi: true
+    singleQuote: true
+    tabWidth: 2
+    printWidth: 100
+    trailingComma: 'es5'
+    overrides:
+      - files: '*.md'
+        options:
+          printWidth: 88
+
+  markdownlint:
+    MD013:
+      line_length: 88
+      code_blocks: false
+      tables: false
+
+  yamllint:
+    extends: 'default'
+    rules:
+      comments-indentation: 'disable'
+      comments:
+        min-spaces-from-content: 1
+      truthy:
+        check-keys: true
+      line-length:
+        max: 88
+        allow-non-breakable-inline-mappings: true
+
+  hadolint:
+    ignored: []
+    trusted_registries:
+      - 'docker.io'
+      - 'gcr.io'
+      - 'ghcr.io'
+      - 'quay.io'
+      - 'registry.hub.docker.com'
+
+# Tool enable/disable settings.
+# Full tool configs are in native files (pyproject.toml, .darglint, etc.)
+# or in the defaults section above.
+tools:
+  # Ruff - Python linter and formatter (config in pyproject.toml [tool.ruff])
+  ruff:
+    enabled: true
+
+  # Black - Python formatter (uses enforce.line_length)
+  black:
+    enabled: true
+
+  # Prettier - Multi-language formatter (defaults above or .prettierrc)
+  prettier:
+    enabled: true
+
+  # Markdownlint - Markdown linter (defaults above or .markdownlint.yaml)
+  markdownlint:
+    enabled: true
+
+  # Yamllint - YAML linter (defaults above or .yamllint)
+  yamllint:
+    enabled: true
+
+  # Bandit - Security linter (config in pyproject.toml [tool.bandit])
+  bandit:
+    enabled: true
+
+  # Hadolint - Dockerfile linter (defaults above or .hadolint.yaml)
+  hadolint:
+    enabled: true
+
+  # Actionlint - GitHub Actions linter
+  actionlint:
+    enabled: true
+
+  # Darglint - Docstring linter (config in .darglint)
+  darglint:
+    enabled: true
+
+  # Pytest - Test runner (config in pyproject.toml [tool.pytest.ini_options])
+  pytest:
+    enabled: true

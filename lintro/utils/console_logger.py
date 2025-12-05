@@ -529,6 +529,8 @@ class SimpleLintroLogger:
             for result in tool_results:
                 fixed_std = getattr(result, "fixed_issues_count", None)
                 remaining_std = getattr(result, "remaining_issues_count", None)
+                success = getattr(result, "success", True)
+
                 if fixed_std is not None:
                     total_fixed += fixed_std
                 else:
@@ -536,6 +538,10 @@ class SimpleLintroLogger:
 
                 if remaining_std is not None:
                     total_remaining += remaining_std
+                elif not success:
+                    # Tool failed - treat as having remaining issues
+                    # This covers execution errors, config errors, timeouts, etc.
+                    total_remaining += DEFAULT_REMAINING_COUNT
                 else:
                     # Fallback to parsing when standardized remaining isn't provided
                     output = getattr(result, "output", "")
@@ -550,8 +556,6 @@ class SimpleLintroLogger:
                             )
                         if remaining_match:
                             total_remaining += int(remaining_match.group(1))
-                        elif not getattr(result, "success", True):
-                            total_remaining += DEFAULT_REMAINING_COUNT
 
             # Show totals line then ASCII art
             totals_line: str = (
@@ -747,52 +751,70 @@ class SimpleLintroLogger:
                     # Check if this is an execution failure (timeout/error)
                     # vs linting issues
                     result_output = getattr(result, "output", "")
+
+                    # Check if tool was skipped (version check failure, etc.)
+                    is_skipped = result_output and "skipping" in result_output.lower()
+
                     has_execution_failure = result_output and (
                         "timeout" in result_output.lower()
                         or "error processing" in result_output.lower()
                         or "tool execution failed" in result_output.lower()
                     )
 
-                    # If there are execution failures but no parsed issues,
-                    # show special status
-                    if has_execution_failure and issues_count == 0:
-                        # This shouldn't happen with our fix, but handle gracefully
-                        status_display = click.style("❌ FAIL", fg="red", bold=True)
-                    elif not success and issues_count == 0:
-                        # Execution failure with no issues parsed - show as failure
-                        status_display = click.style("❌ FAIL", fg="red", bold=True)
-                    else:
-                        status_display = (
-                            click.style("✅ PASS", fg="green", bold=True)
-                            if (success and issues_count == 0)
-                            else click.style("❌ FAIL", fg="red", bold=True)
+                    # If tool was skipped, show SKIPPED status
+                    if is_skipped:
+                        status_display = click.style(
+                            "⏭️  SKIPPED",
+                            fg="yellow",
+                            bold=True,
                         )
-                    # Check if files were excluded
-                    if result_output and any(
-                        (
-                            msg in result_output
-                            for msg in ["No files to", "No Python files found to"]
-                        ),
-                    ):
-                        issues_display: str = click.style(
+                        issues_display = click.style(
                             "SKIPPED",
                             fg="yellow",
                             bold=True,
                         )
+                    # If there are execution failures but no parsed issues,
+                    # show special status
+                    elif has_execution_failure and issues_count == 0:
+                        # This shouldn't happen with our fix, but handle gracefully
+                        status_display = click.style("❌ FAIL", fg="red", bold=True)
+                        issues_display = click.style(
+                            "ERROR",
+                            fg="red",
+                            bold=True,
+                        )
                     elif not success and issues_count == 0:
-                        # Tool failed to execute properly - show ERROR indicator
-                        # instead of misleading 0 count
+                        # Execution failure with no issues parsed - show as failure
+                        status_display = click.style("❌ FAIL", fg="red", bold=True)
                         issues_display = click.style(
                             "ERROR",
                             fg="red",
                             bold=True,
                         )
                     else:
-                        issues_display = click.style(
-                            str(issues_count),
-                            fg="green" if issues_count == 0 else "red",
-                            bold=True,
+                        status_display = (
+                            click.style("✅ PASS", fg="green", bold=True)
+                            if (success and issues_count == 0)
+                            else click.style("❌ FAIL", fg="red", bold=True)
                         )
+                        # Check if files were excluded
+                        if result_output and any(
+                            (
+                                msg in result_output
+                                for msg in ["No files to", "No Python files found to"]
+                            ),
+                        ):
+                            issues_display = click.style(
+                                "SKIPPED",
+                                fg="yellow",
+                                bold=True,
+                            )
+                        else:
+                            issues_display = click.style(
+                                str(issues_count),
+                                fg="green" if issues_count == 0 else "red",
+                                bold=True,
+                            )
 
                 if action == "fmt":
                     summary_data.append(

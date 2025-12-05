@@ -31,6 +31,10 @@ from lintro.formatters.tools.hadolint_formatter import (
     HadolintTableDescriptor,
     format_hadolint_issues,
 )
+from lintro.formatters.tools.markdownlint_formatter import (
+    MarkdownlintTableDescriptor,
+    format_markdownlint_issues,
+)
 from lintro.formatters.tools.prettier_formatter import (
     PrettierTableDescriptor,
     format_prettier_issues,
@@ -52,6 +56,7 @@ from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
+from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.parsers.pytest.pytest_parser import parse_pytest_text_output
@@ -70,6 +75,7 @@ TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
     "actionlint": (ActionlintTableDescriptor(), format_actionlint_issues),
     "bandit": (BanditTableDescriptor(), format_bandit_issues),
+    "markdownlint": (MarkdownlintTableDescriptor(), format_markdownlint_issues),
 }
 VENV_PATTERNS: list[str] = [
     "venv",
@@ -378,6 +384,8 @@ def format_tool_output(
         parsed_issues = parse_hadolint_output(output=output)
     elif tool_name == "yamllint":
         parsed_issues = parse_yamllint_output(output=output)
+    elif tool_name == "markdownlint":
+        parsed_issues = parse_markdownlint_output(output=output)
     elif tool_name == "bandit":
         # Bandit emits JSON; try parsing when raw output is provided
         try:

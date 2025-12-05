@@ -37,7 +37,7 @@ def _load_ruff_config() -> dict:
     """Load ruff configuration from pyproject.toml.
 
     Returns:
-        dict: Ruff configuration dictionary.
+        dict: Ruff configuration dictionary with flattened lint settings.
     """
     config: dict = {}
     pyproject_path = Path("pyproject.toml")
@@ -47,7 +47,20 @@ def _load_ruff_config() -> dict:
             with open(pyproject_path, "rb") as f:
                 pyproject_data = tomllib.load(f)
                 if "tool" in pyproject_data and "ruff" in pyproject_data["tool"]:
-                    config = pyproject_data["tool"]["ruff"]
+                    ruff_config = pyproject_data["tool"]["ruff"]
+                    # Copy top-level settings
+                    config = dict(ruff_config)
+                    # Flatten nested lint section to top level for easy access
+                    if "lint" in ruff_config:
+                        lint_config = ruff_config["lint"]
+                        if "select" in lint_config:
+                            config["select"] = lint_config["select"]
+                        if "ignore" in lint_config:
+                            config["ignore"] = lint_config["ignore"]
+                        if "extend-select" in lint_config:
+                            config["extend_select"] = lint_config["extend-select"]
+                        if "extend-ignore" in lint_config:
+                            config["extend_ignore"] = lint_config["extend-ignore"]
         except Exception as e:
             logger.warning(f"Failed to load ruff configuration: {e}")
 
@@ -136,29 +149,32 @@ class RuffTool(BaseTool):
         """Initialize the tool with default configuration."""
         super().__post_init__()
 
-        # Load ruff configuration from pyproject.toml
-        ruff_config = _load_ruff_config()
+        # Skip config loading in test mode to allow tests to set specific options
+        # without interference from pyproject.toml settings
+        if os.environ.get(RUFF_TEST_MODE_ENV) != RUFF_TEST_MODE_VALUE:
+            # Load ruff configuration from pyproject.toml
+            ruff_config = _load_ruff_config()
 
-        # Load .lintro-ignore patterns
-        lintro_ignore_patterns = _load_lintro_ignore()
+            # Load .lintro-ignore patterns
+            lintro_ignore_patterns = _load_lintro_ignore()
 
-        # Update exclude patterns from configuration and .lintro-ignore
-        if "exclude" in ruff_config:
-            self.exclude_patterns.extend(ruff_config["exclude"])
-        if lintro_ignore_patterns:
-            self.exclude_patterns.extend(lintro_ignore_patterns)
+            # Update exclude patterns from configuration and .lintro-ignore
+            if "exclude" in ruff_config:
+                self.exclude_patterns.extend(ruff_config["exclude"])
+            if lintro_ignore_patterns:
+                self.exclude_patterns.extend(lintro_ignore_patterns)
 
-        # Update other options from configuration
-        if "line_length" in ruff_config:
-            self.options["line_length"] = ruff_config["line_length"]
-        if "target_version" in ruff_config:
-            self.options["target_version"] = ruff_config["target_version"]
-        if "select" in ruff_config:
-            self.options["select"] = ruff_config["select"]
-        if "ignore" in ruff_config:
-            self.options["ignore"] = ruff_config["ignore"]
-        if "unsafe_fixes" in ruff_config:
-            self.options["unsafe_fixes"] = ruff_config["unsafe_fixes"]
+            # Update other options from configuration
+            if "line_length" in ruff_config:
+                self.options["line_length"] = ruff_config["line_length"]
+            if "target_version" in ruff_config:
+                self.options["target_version"] = ruff_config["target_version"]
+            if "select" in ruff_config:
+                self.options["select"] = ruff_config["select"]
+            if "ignore" in ruff_config:
+                self.options["ignore"] = ruff_config["ignore"]
+            if "unsafe_fixes" in ruff_config:
+                self.options["unsafe_fixes"] = ruff_config["unsafe_fixes"]
 
         # Allow environment variable override for unsafe fixes
         # Useful for development and CI environments
@@ -275,8 +291,16 @@ class RuffTool(BaseTool):
         """
         cmd: list[str] = self._get_executable_command(tool_name="ruff") + ["check"]
 
-        # Add --isolated if in test mode
-        if os.environ.get(RUFF_TEST_MODE_ENV) == RUFF_TEST_MODE_VALUE:
+        # Get enforced settings to avoid duplicate CLI args
+        enforced = self._get_enforced_settings()
+
+        # Add Lintro config injection args (--line-length, --target-version)
+        # from enforce tier. This takes precedence over native config and options
+        config_args = self._build_config_args()
+        if config_args:
+            cmd.extend(config_args)
+        # Add --isolated if in test mode (fallback when no Lintro config)
+        elif os.environ.get(RUFF_TEST_MODE_ENV) == RUFF_TEST_MODE_VALUE:
             cmd.append("--isolated")
 
         # Add configuration options
@@ -302,9 +326,12 @@ class RuffTool(BaseTool):
         extend_ignored_rules = list(self.options.get("extend_ignore") or [])
         if extend_ignored_rules:
             cmd.extend(["--extend-ignore", ",".join(extend_ignored_rules)])
-        if self.options.get("line_length"):
+        # Only add line_length/target_version from options if not enforced.
+        # Note: enforced uses Lintro's generic names (line_length, target_python)
+        # while options use tool-specific names (line_length, target_version).
+        if self.options.get("line_length") and "line_length" not in enforced:
             cmd.extend(["--line-length", str(self.options["line_length"])])
-        if self.options.get("target_version"):
+        if self.options.get("target_version") and "target_python" not in enforced:
             cmd.extend(["--target-version", self.options["target_version"]])
 
         # Fix options
@@ -344,11 +371,16 @@ class RuffTool(BaseTool):
         if check_only:
             cmd.append("--check")
 
-        # Add configuration options
-        if self.options.get("line_length"):
-            cmd.extend(["--line-length", str(self.options["line_length"])])
-        if self.options.get("target_version"):
-            cmd.extend(["--target-version", self.options["target_version"]])
+        # Add Lintro config injection args (--isolated, --config)
+        config_args = self._build_config_args()
+        if config_args:
+            cmd.extend(config_args)
+        else:
+            # Fallback to options-based configuration
+            if self.options.get("line_length"):
+                cmd.extend(["--line-length", str(self.options["line_length"])])
+            if self.options.get("target_version"):
+                cmd.extend(["--target-version", self.options["target_version"]])
 
         # Add files
         cmd.extend(files)

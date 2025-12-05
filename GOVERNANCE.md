@@ -1,6 +1,7 @@
 # Project Governance
 
-This document defines the decision-making and roles for the `py-lintro` project. It aims to provide clarity, continuity, and accountability to contributors and users.
+This document defines the decision-making and roles for the `py-lintro` project. It aims
+to provide clarity, continuity, and accountability to contributors and users.
 
 ## Roles
 
@@ -23,7 +24,8 @@ This document defines the decision-making and roles for the `py-lintro` project.
   - Squash merges are required; PR title becomes the merge commit
 - Consensus Seeking
   - Maintainers seek rough consensus in PR discussions
-  - In case of disagreement, a maintainer proposes a path forward; if needed, a simple majority of maintainers decides
+  - In case of disagreement, a maintainer proposes a path forward; if needed, a simple
+    majority of maintainers decides
 
 ## Membership
 
@@ -32,7 +34,8 @@ This document defines the decision-making and roles for the `py-lintro` project.
   - Consistent adherence to project standards and quality
   - Nominated by a maintainer; confirmed by simple majority of maintainers
 - Removing Inactive Maintainers
-  - If a maintainer is inactive for > 6 months, remaining maintainers may propose moving them to emeritus status by simple majority
+  - If a maintainer is inactive for > 6 months, remaining maintainers may propose moving
+    them to emeritus status by simple majority
 
 ## Release Management
 

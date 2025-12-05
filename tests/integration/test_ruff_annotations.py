@@ -6,9 +6,26 @@ import os
 import shutil
 import tempfile
 
+import pytest
 from assertpy import assert_that
 
 from lintro.tools.implementations.tool_ruff import RuffTool
+
+
+@pytest.fixture(autouse=True)
+def set_lintro_test_mode_env(lintro_test_mode):
+    """Set LINTRO_TEST_MODE=1 and skip config injection for all tests.
+
+    Uses the shared lintro_test_mode fixture from conftest.py which
+    sets both LINTRO_TEST_MODE=1 and LINTRO_SKIP_CONFIG_INJECTION=1.
+
+    Args:
+        lintro_test_mode: Shared fixture that manages env vars.
+
+    Yields:
+        None: This fixture is used for its side effect only.
+    """
+    yield
 
 
 def test_annotations_rules_detected() -> None:

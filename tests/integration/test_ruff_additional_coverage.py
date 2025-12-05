@@ -11,29 +11,30 @@ from lintro.tools.implementations.tool_ruff import RuffTool
 
 
 @pytest.fixture(autouse=True)
-def set_lintro_test_mode_env():
-    """Set LINTRO_TEST_MODE=1 for all tests in this module.
+def set_lintro_test_mode_env(lintro_test_mode):
+    """Set LINTRO_TEST_MODE=1 and skip config injection for all tests.
+
+    Uses the shared lintro_test_mode fixture from conftest.py.
+
+    Args:
+        lintro_test_mode: Shared fixture that manages env vars.
 
     Yields:
         None: This fixture is used for its side effect only.
     """
-    old = os.environ.get("LINTRO_TEST_MODE")
-    os.environ["LINTRO_TEST_MODE"] = "1"
     yield
-    if old is not None:
-        os.environ["LINTRO_TEST_MODE"] = old
-    else:
-        del os.environ["LINTRO_TEST_MODE"]
 
 
 @pytest.fixture
 def ruff_tool():
     """Create a RuffTool instance for testing.
 
-    Returns:
+    Config injection is already disabled by set_lintro_test_mode_env fixture.
+
+    Yields:
         RuffTool: A configured RuffTool instance.
     """
-    return RuffTool()
+    yield RuffTool()
 
 
 @pytest.fixture

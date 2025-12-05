@@ -3,10 +3,61 @@
 This module provides shared fixtures for integration testing in Lintro.
 """
 
+import os
 import tempfile
 from pathlib import Path
 
 import pytest
+
+
+@pytest.fixture
+def skip_config_injection():
+    """Disable Lintro config injection for isolated test execution.
+
+    This fixture sets LINTRO_SKIP_CONFIG_INJECTION=1 to prevent Lintro
+    from injecting configuration during tests, allowing tests to verify
+    specific CLI argument building behavior.
+
+    Yields:
+        None: This fixture is used for its side effect only.
+    """
+    original = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
+    os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
+    try:
+        yield
+    finally:
+        if original is None:
+            os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
+        else:
+            os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = original
+
+
+@pytest.fixture
+def lintro_test_mode():
+    """Set LINTRO_TEST_MODE=1 and disable config injection for all tests.
+
+    This combined fixture sets both LINTRO_TEST_MODE=1 and disables
+    config injection, which is commonly needed for ruff integration tests.
+
+    Yields:
+        None: This fixture is used for its side effect only.
+    """
+    old_test_mode = os.environ.get("LINTRO_TEST_MODE")
+    old_skip_injection = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
+    os.environ["LINTRO_TEST_MODE"] = "1"
+    os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
+    try:
+        yield
+    finally:
+        if old_test_mode is not None:
+            os.environ["LINTRO_TEST_MODE"] = old_test_mode
+        else:
+            os.environ.pop("LINTRO_TEST_MODE", None)
+
+        if old_skip_injection is not None:
+            os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = old_skip_injection
+        else:
+            os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
 
 
 @pytest.fixture

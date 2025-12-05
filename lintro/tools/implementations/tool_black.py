@@ -96,11 +96,28 @@ class BlackTool(BaseTool):
         super().set_options(**options, **kwargs)
 
     def _build_common_args(self) -> list[str]:
+        """Build common CLI arguments for Black.
+
+        Uses Lintro config injection when available, otherwise falls back
+        to options-based configuration.
+
+        Returns:
+            list[str]: CLI arguments for Black.
+        """
         args: list[str] = []
-        if self.options.get("line_length"):
-            args.extend(["--line-length", str(self.options["line_length"])])
-        if self.options.get("target_version"):
-            args.extend(["--target-version", str(self.options["target_version"])])
+
+        # Try Lintro config injection first (--config flag)
+        config_args = self._build_config_args()
+        if config_args:
+            args.extend(config_args)
+        else:
+            # Fallback to options-based configuration
+            if self.options.get("line_length"):
+                args.extend(["--line-length", str(self.options["line_length"])])
+            if self.options.get("target_version"):
+                args.extend(["--target-version", str(self.options["target_version"])])
+
+        # These flags are always passed via CLI (not in config file)
         if self.options.get("fast"):
             args.append("--fast")
         if self.options.get("preview"):

@@ -1,6 +1,7 @@
 # Security Requirements
 
-This document summarizes security requirements adopted by `py-lintro` to support OpenSSF Best Practices (Silver).
+This document summarizes security requirements adopted by `py-lintro` to support OpenSSF
+Best Practices (Silver).
 
 ## Project and Process
 
@@ -12,7 +13,8 @@ This document summarizes security requirements adopted by `py-lintro` to support
 ## Source Integrity and Branch Protection
 
 - All changes land via PR with maintainer review
-- Branch protection enforced on `main` (no force pushes; required reviews; admins included)
+- Branch protection enforced on `main` (no force pushes; required reviews; admins
+  included)
 
 ## Dependencies and Supply Chain
 

@@ -15,7 +15,21 @@ name = "TurboCoder13"
 email = "turbocoder13@gmail.com"
 
 [dependency-groups]
-dev = [ "build==1.3.0", "pytest==9.0.1", "pytest-cov==7.0.0", "pytest-xdist==3.8.0", "twine==6.2.0", "assertpy==1.1", "pytest-mock==3.15.1", "darglint==1.8.1", "bandit==1.9.2", "black==25.11.0", "ruff==0.14.4", "yamllint==1.37.1",]
+dev = [
+ "build==1.3.0",
+ "pytest==9.0.1",
+ "pytest-cov==7.0.0",
+ "pytest-xdist==3.8.0",
+ "twine==6.2.0",
+ "assertpy==1.1",
+ "pytest-mock==3.15.1",
+ "darglint==1.8.1",
+ "bandit==1.9.2",
+ "black==25.11.0",
+ "ruff==0.14.4",
+ "yamllint==1.37.1",
+ "pytest-timeout>=2.4.0",
+]
 
 [project.license]
 file = "LICENSE"
@@ -38,7 +52,7 @@ Documentation = "https://github.com/TurboCoder13/py-lintro/docs"
 Source = "https://github.com/TurboCoder13/py-lintro"
 
 [tool.setuptools]
-packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.formatters.tools", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.actionlint", "lintro.parsers.bandit", "lintro.parsers.black", "lintro.parsers.darglint", "lintro.parsers.hadolint", "lintro.parsers.prettier", "lintro.parsers.pytest", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.tools", "lintro.tools.core", "lintro.tools.implementations", "lintro.utils",]
+packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.config", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.formatters.tools", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.actionlint", "lintro.parsers.bandit", "lintro.parsers.black", "lintro.parsers.darglint", "lintro.parsers.hadolint", "lintro.parsers.markdownlint", "lintro.parsers.prettier", "lintro.parsers.pytest", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.tools", "lintro.tools.core", "lintro.tools.implementations", "lintro.utils",]
 
 [tool.semantic_release]
 branch = "main"
@@ -68,6 +82,13 @@ skip-magic-trailing-comma = false
 select = [ "E", "F", "W", "I", "COM", "N", "D", "UP", "ANN", "B", "C4", "SIM",]
 ignore = [ "ANN",]
 
+# Global Lintro settings
+# line_length applies to all syncable tools (ruff, black, markdownlint)
+# tool_order: "priority" (default), "alphabetical", or "custom"
+[tool.lintro]
+line_length = 88
+tool_order = "priority"
+
 [tool.lintro.post_checks]
 enabled = true
 tools = [ "black",]
@@ -80,6 +101,7 @@ pytest = "8.0.0"
 prettier = "3.7.0"
 hadolint = "2.12.0"
 actionlint = "1.7.0"
+markdownlint = "0.16.0"
 
 [tool.pytest.ini_options]
 testpaths = [ "tests",]

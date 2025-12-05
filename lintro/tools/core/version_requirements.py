@@ -130,6 +130,7 @@ def _get_minimum_versions() -> dict[str, str]:
         "prettier": "3.7.0",
         "hadolint": "2.12.0",
         "actionlint": "1.7.0",
+        "markdownlint": "0.16.0",
     }
 
     for tool, default_version in defaults.items():
@@ -167,6 +168,10 @@ def _get_install_hints() -> dict[str, str]:
             "prettier": (
                 f"Install via: npm install --save-dev "
                 f"prettier>={versions.get('prettier', '3.7.0')}"
+            ),
+            "markdownlint": (
+                f"Install via: npm install --save-dev "
+                f"markdownlint-cli2>={versions.get('markdownlint', '0.16.0')}"
             ),
             "hadolint": (
                 f"Install via: https://github.com/hadolint/hadolint/releases "
@@ -397,6 +402,21 @@ def _extract_version_from_output(output: str, tool_name: str) -> str | None:
         if match:
             return match.group(1)
 
+    elif tool_name == "markdownlint":
+        # markdownlint-cli2: "markdownlint-cli2 v0.19.1 (markdownlint v0.39.0)"
+        # Extract the cli2 version (first version number after "v")
+        match = re.search(
+            r"markdownlint-cli2\s+v(\d+(?:\.\d+)*)",
+            output,
+            re.IGNORECASE,
+        )
+        if match:
+            return match.group(1)
+        # Fallback: look for any version pattern
+        match = re.search(r"v(\d+(?:\.\d+)+)", output)
+        if match:
+            return match.group(1)
+
     # Fallback: look for any version-like pattern
     match = re.search(r"(\d+(?:\.\d+)+)", output)
     if match:
@@ -423,6 +443,7 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "pytest": ["python", "-m", "pytest"],
         # Node.js tools
         "prettier": ["npx", "--yes", "prettier"],
+        "markdownlint": ["npx", "--yes", "markdownlint-cli2"],
         # Binary tools
         "hadolint": ["hadolint"],
         "actionlint": ["actionlint"],
