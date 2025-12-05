@@ -396,8 +396,21 @@ class PrettierTool(BaseTool):
         config_args = self._build_config_args()
         if not config_args:
             # Fallback: Find config and ignore files by walking up from cwd
-            self._find_prettier_config(search_dir=cwd)
-            self._find_prettierignore(search_dir=cwd)
+            found_config = self._find_prettier_config(search_dir=cwd)
+            if found_config:
+                logger.debug(
+                    f"[PrettierTool] Found config: {found_config} (auto-detecting)",
+                )
+            else:
+                logger.debug(
+                    "[PrettierTool] No prettier config file found (using defaults)",
+                )
+            prettierignore_path = self._find_prettierignore(search_dir=cwd)
+            if prettierignore_path:
+                logger.debug(
+                    f"[PrettierTool] Found .prettierignore: {prettierignore_path} "
+                    "(auto-detecting)",
+                )
 
         # Check for issues first
         check_cmd: list[str] = self._get_executable_command(tool_name="prettier") + [

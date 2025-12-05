@@ -31,12 +31,18 @@ def test_markdownlint_tool_initialization(markdownlint_tool: MarkdownlintTool) -
     assert "*.markdown" in markdownlint_tool.config.file_patterns
 
 
-def test_markdownlint_uses_npx_command(markdownlint_tool: MarkdownlintTool) -> None:
+@patch("shutil.which")
+def test_markdownlint_uses_npx_command(
+    mock_which: MagicMock,
+    markdownlint_tool: MarkdownlintTool,
+) -> None:
     """Verify markdownlint uses npx markdownlint-cli2 command.
 
     Args:
+        mock_which: Mock for shutil.which to simulate npx being available.
         markdownlint_tool: MarkdownlintTool instance for testing.
     """
+    mock_which.return_value = "/usr/bin/npx"
     cmd = markdownlint_tool._get_markdownlint_command()
     assert "npx" in cmd
     assert "markdownlint-cli2" in cmd
@@ -111,12 +117,10 @@ def test_markdownlint_check_with_issues(
 
 
 def test_markdownlint_fix_not_supported(markdownlint_tool: MarkdownlintTool) -> None:
-    """Return error message when fix is called.
+    """Raise NotImplementedError when fix is called.
 
     Args:
         markdownlint_tool: MarkdownlintTool instance for testing.
     """
-    result = markdownlint_tool.fix(paths=["test.md"])
-    assert result.success is False
-    assert "cannot fix" in result.output.lower()
-    assert result.issues_count == 0
+    with pytest.raises(NotImplementedError, match="cannot fix"):
+        markdownlint_tool.fix(paths=["test.md"])

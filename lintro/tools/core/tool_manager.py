@@ -98,17 +98,10 @@ class ToolManager:
             ignore_conflicts: If True, skip conflict checking.
 
         Returns:
-            List of core names in execution order based on configured strategy.
+            List of ToolEnum members in execution order based on configured strategy.
 
         Raises:
             ValueError: If duplicate tools are found in tool_list.
-
-        Args:
-            tool_list: List of core names to execute
-            ignore_conflicts: Whether to ignore core conflicts
-
-        Returns:
-            List of core names in execution order based on configured strategy
         """
         if not tool_list:
             return []

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Hadolint is a Dockerfile linter that helps you build best practice Docker images. It
+Hadolint is a Dockerfile linter that helps you build best-practice Docker images. It
 parses the Dockerfile into an AST and performs rules on top of the AST. It also uses
 ShellCheck to lint the Bash code inside RUN instructions. This analysis compares
 Lintro's wrapper implementation with the core Hadolint tool.

@@ -26,6 +26,7 @@ global:
 
   # Python version target (e.g., "py313", "py312")
   # Maps to: ruff target-version, black target-version
+  # Update this to match your project's Python target
   target_python: "py313"
 
 execution:
@@ -95,7 +96,7 @@ MINIMAL_CONFIG_TEMPLATE = """\
 
 global:
   line_length: 88
-  target_python: "py313"
+  target_python: "py313"  # Update to match your project's Python target
 
 execution:
   tool_order: "priority"

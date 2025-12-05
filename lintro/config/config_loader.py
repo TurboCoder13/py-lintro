@@ -92,14 +92,15 @@ def _load_yaml_file(path: Path) -> dict[str, Any]:
     return content if isinstance(content, dict) else {}
 
 
-def _load_pyproject_fallback() -> dict[str, Any]:
+def _load_pyproject_fallback() -> tuple[dict[str, Any], Path | None]:
     """Load [tool.lintro] from pyproject.toml as fallback.
 
     Searches upward from current directory for pyproject.toml, consistent
     with _find_config_file's search behavior.
 
     Returns:
-        dict[str, Any]: Lintro configuration from pyproject.toml.
+        tuple[dict[str, Any], Path | None]: Tuple of (config data, path to
+            pyproject.toml). Path is None if no pyproject.toml was found.
     """
     current = Path.cwd().resolve()
 
@@ -109,10 +110,10 @@ def _load_pyproject_fallback() -> dict[str, Any]:
             try:
                 with pyproject_path.open("rb") as f:
                     data = tomllib.load(f)
-                return data.get("tool", {}).get("lintro", {})
+                return data.get("tool", {}).get("lintro", {}), pyproject_path
             except (OSError, tomllib.TOMLDecodeError) as e:
                 logger.debug(f"Failed to load pyproject.toml: {e}")
-                return {}
+                return {}, None
 
         # Move up one directory
         parent = current.parent
@@ -121,7 +122,7 @@ def _load_pyproject_fallback() -> dict[str, Any]:
             break
         current = parent
 
-    return {}
+    return {}, None
 
 
 def _parse_enforce_config(data: dict[str, Any]) -> EnforceConfig:
@@ -241,19 +242,14 @@ def _convert_pyproject_to_config(data: dict[str, Any]) -> dict[str, Any]:
     }
 
     # Known tool names to separate from enforce settings
-    known_tools = {
-        "ruff",
-        "black",
-        "prettier",
-        "yamllint",
-        "markdownlint",
-        "markdownlint-cli2",
-        "bandit",
-        "darglint",
-        "hadolint",
-        "actionlint",
-        "pytest",
-    }
+    # Lazy import to avoid circular dependency
+    from lintro.tools.tool_enum import ToolEnum
+
+    # Derived from ToolEnum to stay synchronized with implementations
+    known_tools = {t.name.lower() for t in ToolEnum}
+    # Add common aliases for tools
+    tool_aliases = {"markdownlint-cli2": "markdownlint"}
+    known_tools.update(tool_aliases.keys())
 
     # Known execution settings
     execution_keys = {"enabled_tools", "tool_order", "fail_fast", "parallel"}
@@ -265,8 +261,9 @@ def _convert_pyproject_to_config(data: dict[str, Any]) -> dict[str, Any]:
         key_lower = key.lower()
 
         if key_lower in known_tools:
-            # Tool-specific config
-            result["tools"][key_lower] = value
+            # Tool-specific config - normalize aliases to canonical names
+            canonical_name = tool_aliases.get(key_lower, key_lower)
+            result["tools"][canonical_name] = value
         elif key in execution_keys or key.replace("-", "_") in execution_keys:
             # Execution config
             result["execution"][key.replace("-", "_")] = value
@@ -332,10 +329,10 @@ def load_config(
 
     # Fall back to pyproject.toml
     if not data and allow_pyproject_fallback:
-        pyproject_data = _load_pyproject_fallback()
+        pyproject_data, pyproject_path = _load_pyproject_fallback()
         if pyproject_data:
             data = _convert_pyproject_to_config(pyproject_data)
-            resolved_path = str(Path("pyproject.toml").resolve())
+            resolved_path = str(pyproject_path.resolve()) if pyproject_path else None
             logger.debug(
                 "Using [tool.lintro] from pyproject.toml (deprecated). "
                 "Consider migrating to .lintro-config.yaml",

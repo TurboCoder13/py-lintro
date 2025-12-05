@@ -183,6 +183,7 @@ class TestCLIDocumentation:
             "check",
             "config",
             "format",
+            "init",
             "list-tools",
             "test",
             "--help",

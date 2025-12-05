@@ -10,7 +10,7 @@ The repository includes pre-configured GitHub Actions for coverage badges:
 1. **Enable GitHub Pages** in repository settings
 2. **Push to main branch** to trigger workflows
 3. **Add badge** to README:
-   `![Coverage](https://TurboCoder13.github.com/py-lintro/badges/coverage.svg)`
+   `![Coverage](https://TurboCoder13.github.io/py-lintro/badges/coverage.svg)`
 
 ## Coverage Options
 
@@ -37,7 +37,7 @@ uv run pytest --cov=lintro --cov-fail-under=80
 ## Badge Examples
 
 ```markdown
-![Coverage](https://TurboCoder13.github.com/py-lintro/badges/coverage.svg)
+![Coverage](https://TurboCoder13.github.io/py-lintro/badges/coverage.svg)
 [![codecov](https://codecov.io/gh/TurboCoder13/py-lintro/branch/main/graph/badge.svg)](https://codecov.io/gh/TurboCoder13/py-lintro)
 ```
 

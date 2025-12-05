@@ -92,32 +92,21 @@ grype sbom:main-*-py-lintro-sbom.spdx-2.3.json
 
 ## Supported Tools
 
+<!-- markdownlint-disable MD013 -->
+
 | Tool | Language | Auto-fix |
 | ---- | -------- | -------- |
+| [![Actionlint](https://img.shields.io/badge/Actionlint-GitHub%20Workflows-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint) | ⚙️ GitHub Workflows | - |
+| [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit) | 🐍 Python | - |
+| [![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint) | 🐍 Python | - |
+| [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint) | 🐳 Dockerfile | - |
+| [![Markdownlint-cli2](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2) | 📝 Markdown | - |
+| [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/) | 🟨 JS/TS · 🧾 JSON | ✅ |
+| [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black) | 🐍 Python | ✅ |
+| [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff) | 🐍 Python | ✅ |
+| [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint) | 🧾 YAML | - |
 
-<!-- markdownlint-disable MD060 MD013 -->
-
-|
-[![Actionlint](https://img.shields.io/badge/Actionlint-GitHub%20Workflows-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)
-| ⚙️ GitHub Workflows | - | |
-[![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)
-| 🐍 Python | - | |
-[![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint)
-| 🐍 Python | - | |
-[![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)
-| 🐳 Dockerfile | - | |
-[![Markdownlint-cli2](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2)
-| 📝 Markdown | - | |
-[![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)
-| 🟨 JS/TS · 🧾 JSON | ✅ | |
-[![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)
-| 🐍 Python | ✅ | |
-[![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
-| 🐍 Python | ✅ | |
-[![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)
-| 🧾 YAML | - |
-
-<!-- markdownlint-enable MD060 MD013 -->
+<!-- markdownlint-enable MD013 -->
 
 ## Requirements
 

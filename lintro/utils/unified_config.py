@@ -244,8 +244,27 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
     tool_section = pyproject.get("tool", {})
 
     # Tools with pyproject.toml config
-    if tool_name in ("ruff", "black", "bandit", "yamllint"):
+    if tool_name in ("ruff", "black", "bandit"):
         return tool_section.get(tool_name, {})
+
+    # Yamllint: check native config files (not pyproject.toml)
+    if tool_name == "yamllint":
+        yamllint_config_files = [".yamllint", ".yamllint.yaml", ".yamllint.yml"]
+        for config_file in yamllint_config_files:
+            config_path = Path(config_file)
+            if config_path.exists():
+                if yaml is None:
+                    logger.debug(
+                        f"[UnifiedConfig] Found {config_file} but yaml not installed",
+                    )
+                    return {}
+                try:
+                    with config_path.open(encoding="utf-8") as f:
+                        content = yaml.safe_load(f)
+                        return content if isinstance(content, dict) else {}
+                except (yaml.YAMLError, OSError) as e:
+                    logger.debug(f"[UnifiedConfig] Failed to parse {config_file}: {e}")
+        return {}
 
     # Prettier: check multiple config file formats
     if tool_name == "prettier":
@@ -800,8 +819,19 @@ class UnifiedConfigManager:
             try:
                 tool.set_options(**effective_opts)
                 logger.debug(f"Applied config to {tool_name}: {effective_opts}")
+            except (ValueError, TypeError) as e:
+                # Configuration errors should be visible and re-raised
+                logger.warning(
+                    f"Configuration error for {tool_name}: {e}",
+                    exc_info=True,
+                )
+                raise
             except Exception as e:
-                logger.debug(f"Failed to apply config to {tool_name}: {e}")
+                # Other unexpected errors - log at warning but allow execution
+                logger.warning(
+                    f"Failed to apply config to {tool_name}: {e}",
+                    exc_info=True,
+                )
 
     def get_report(self) -> str:
         """Get configuration report.

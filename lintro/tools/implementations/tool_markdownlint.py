@@ -3,8 +3,8 @@
 import json
 import os
 import subprocess  # nosec B404 - used safely with shell disabled
+import tempfile
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from loguru import logger
 
@@ -14,7 +14,6 @@ from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_o
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.config import get_central_line_length
 from lintro.utils.tool_utils import walk_files_with_excludes
-from lintro.utils.unified_config import _strip_jsonc_comments
 
 # Constants
 MARKDOWNLINT_DEFAULT_TIMEOUT: int = 30
@@ -145,74 +144,55 @@ class MarkdownlintTool(BaseTool):
         # Fallback to direct executable if npx not found
         return ["markdownlint-cli2"]
 
-    def _ensure_markdownlint_config(
+    def _create_temp_markdownlint_config(
         self,
-        cwd: str | None,
         line_length: int,
-    ) -> None:
-        """Ensure markdownlint-cli2 config file has the correct line length.
+    ) -> str | None:
+        """Create a temporary markdownlint-cli2 config with the specified line length.
 
-        Creates or updates .markdownlint-cli2.jsonc in the working directory with
-        MD013 rule configured to use the central line_length setting.
+        Creates a temp file with MD013 rule configured. This avoids modifying
+        the user's project files.
 
         Args:
-            cwd: Working directory where config should be created/updated
-            line_length: Line length to configure for MD013 rule
+            line_length: Line length to configure for MD013 rule.
+
+        Returns:
+            Path to the temporary config file, or None if creation failed.
         """
-        if not cwd:
-            return
+        config_wrapper: dict[str, object] = {
+            "config": {
+                "MD013": {
+                    "line_length": line_length,
+                    "code_blocks": False,
+                    "tables": False,
+                },
+            },
+        }
 
-        # markdownlint-cli2 uses .markdownlint-cli2.jsonc format
-        config_path = Path(cwd) / ".markdownlint-cli2.jsonc"
-        config_wrapper: dict[str, object] = {}
-
-        # Load existing config if it exists
-        if config_path.exists():
-            try:
-                with config_path.open(encoding="utf-8") as f:
-                    content = f.read()
-                    # Strip JSONC comments safely (preserves strings)
-                    content = _strip_jsonc_comments(content)
-                    config_wrapper = json.loads(content)
-            except (json.JSONDecodeError, FileNotFoundError, PermissionError) as e:
-                logger.debug(
-                    f"[MarkdownlintTool] Could not read existing config: {e}",
-                )
-                config_wrapper = {}
-
-        # markdownlint-cli2 wraps config in a "config" key
-        if "config" not in config_wrapper:
-            config_wrapper["config"] = {}
-        config = config_wrapper["config"]
-
-        # Ensure config is a dict
-        if not isinstance(config, dict):
-            config = {}
-            config_wrapper["config"] = config
-
-        # Update MD013 rule with line_length
-        # Ignore code blocks and tables as they often have long lines
-        if "MD013" not in config:
-            config["MD013"] = {}
-        if not isinstance(config["MD013"], dict):
-            config["MD013"] = {}
-        config["MD013"]["line_length"] = line_length
-        config["MD013"]["code_blocks"] = False
-        config["MD013"]["tables"] = False
-
-        # Write config file as JSONC (JSON with comments)
         try:
-            with config_path.open("w", encoding="utf-8") as f:
-                # Write as JSON (markdownlint-cli2 accepts JSON in .jsonc files)
+            # Create a temp file that persists until explicitly deleted
+            # Using delete=False so it survives the subprocess call
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                suffix=".jsonc",
+                prefix="lintro-markdownlint-",
+                delete=False,
+                encoding="utf-8",
+            ) as f:
                 json.dump(config_wrapper, f, indent=2)
+                temp_path = f.name
+
             logger.debug(
-                f"[MarkdownlintTool] Updated {config_path} "
+                f"[MarkdownlintTool] Created temp config at {temp_path} "
                 f"with line_length={line_length}",
             )
+            return temp_path
+
         except (PermissionError, OSError) as e:
             logger.warning(
-                f"[MarkdownlintTool] Could not write config file {config_path}: {e}",
+                f"[MarkdownlintTool] Could not create temp config file: {e}",
             )
+            return None
 
     def check(
         self,
@@ -278,6 +258,9 @@ class MarkdownlintTool(BaseTool):
         # Build command
         cmd: list[str] = self._get_markdownlint_command()
 
+        # Track temp config for cleanup
+        temp_config_path: str | None = None
+
         # Try Lintro config injection first
         config_args = self._build_config_args()
         if config_args:
@@ -287,7 +270,11 @@ class MarkdownlintTool(BaseTool):
             # Fallback: Apply line_length configuration if set
             line_length = self.options.get("line_length")
             if line_length:
-                self._ensure_markdownlint_config(cwd=cwd, line_length=line_length)
+                temp_config_path = self._create_temp_markdownlint_config(
+                    line_length=line_length,
+                )
+                if temp_config_path:
+                    cmd.extend(["--config", temp_config_path])
 
         cmd.extend(rel_files)
 
@@ -313,6 +300,19 @@ class MarkdownlintTool(BaseTool):
                 output=timeout_msg,
                 issues_count=1,
             )
+        finally:
+            # Clean up temp config file if created
+            if temp_config_path:
+                try:
+                    os.unlink(temp_config_path)
+                    logger.debug(
+                        "[MarkdownlintTool] Cleaned up temp config: "
+                        f"{temp_config_path}",
+                    )
+                except OSError as e:
+                    logger.debug(
+                        f"[MarkdownlintTool] Failed to clean up temp config: {e}",
+                    )
 
         # Parse output
         issues = parse_markdownlint_output(output=output)
@@ -340,15 +340,10 @@ class MarkdownlintTool(BaseTool):
         Args:
             paths: List of file or directory paths to fix.
 
-        Returns:
-            ToolResult: Result indicating that fixing is not supported.
+        Raises:
+            NotImplementedError: Markdownlint is a linter only and cannot fix issues.
         """
-        return ToolResult(
-            name=self.name,
-            success=False,
-            output=(
-                "Markdownlint is a linter only and cannot fix issues. Use a Markdown "
-                "formatter like Prettier for formatting."
-            ),
-            issues_count=0,
+        raise NotImplementedError(
+            "Markdownlint cannot fix issues; use a Markdown formatter like Prettier "
+            "for formatting.",
         )
