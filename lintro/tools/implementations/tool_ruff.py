@@ -149,29 +149,32 @@ class RuffTool(BaseTool):
         """Initialize the tool with default configuration."""
         super().__post_init__()
 
-        # Load ruff configuration from pyproject.toml
-        ruff_config = _load_ruff_config()
+        # Skip config loading in test mode to allow tests to set specific options
+        # without interference from pyproject.toml settings
+        if os.environ.get(RUFF_TEST_MODE_ENV) != RUFF_TEST_MODE_VALUE:
+            # Load ruff configuration from pyproject.toml
+            ruff_config = _load_ruff_config()
 
-        # Load .lintro-ignore patterns
-        lintro_ignore_patterns = _load_lintro_ignore()
+            # Load .lintro-ignore patterns
+            lintro_ignore_patterns = _load_lintro_ignore()
 
-        # Update exclude patterns from configuration and .lintro-ignore
-        if "exclude" in ruff_config:
-            self.exclude_patterns.extend(ruff_config["exclude"])
-        if lintro_ignore_patterns:
-            self.exclude_patterns.extend(lintro_ignore_patterns)
+            # Update exclude patterns from configuration and .lintro-ignore
+            if "exclude" in ruff_config:
+                self.exclude_patterns.extend(ruff_config["exclude"])
+            if lintro_ignore_patterns:
+                self.exclude_patterns.extend(lintro_ignore_patterns)
 
-        # Update other options from configuration
-        if "line_length" in ruff_config:
-            self.options["line_length"] = ruff_config["line_length"]
-        if "target_version" in ruff_config:
-            self.options["target_version"] = ruff_config["target_version"]
-        if "select" in ruff_config:
-            self.options["select"] = ruff_config["select"]
-        if "ignore" in ruff_config:
-            self.options["ignore"] = ruff_config["ignore"]
-        if "unsafe_fixes" in ruff_config:
-            self.options["unsafe_fixes"] = ruff_config["unsafe_fixes"]
+            # Update other options from configuration
+            if "line_length" in ruff_config:
+                self.options["line_length"] = ruff_config["line_length"]
+            if "target_version" in ruff_config:
+                self.options["target_version"] = ruff_config["target_version"]
+            if "select" in ruff_config:
+                self.options["select"] = ruff_config["select"]
+            if "ignore" in ruff_config:
+                self.options["ignore"] = ruff_config["ignore"]
+            if "unsafe_fixes" in ruff_config:
+                self.options["unsafe_fixes"] = ruff_config["unsafe_fixes"]
 
         # Allow environment variable override for unsafe fixes
         # Useful for development and CI environments

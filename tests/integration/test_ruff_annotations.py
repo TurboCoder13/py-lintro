@@ -6,9 +6,29 @@ import os
 import shutil
 import tempfile
 
+import pytest
 from assertpy import assert_that
 
 from lintro.tools.implementations.tool_ruff import RuffTool
+
+
+@pytest.fixture(autouse=True)
+def set_lintro_test_mode_env():
+    """Set LINTRO_TEST_MODE=1 for all tests in this module.
+
+    This ensures ruff uses --isolated flag when config injection is skipped,
+    preventing local pyproject.toml from interfering with test-specific rules.
+
+    Yields:
+        None: This fixture is used for its side effect only.
+    """
+    old = os.environ.get("LINTRO_TEST_MODE")
+    os.environ["LINTRO_TEST_MODE"] = "1"
+    yield
+    if old is not None:
+        os.environ["LINTRO_TEST_MODE"] = old
+    else:
+        os.environ.pop("LINTRO_TEST_MODE", None)
 
 
 def test_annotations_rules_detected() -> None:
