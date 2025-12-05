@@ -5,8 +5,9 @@ from pathlib import Path
 from lintro.config.config_loader import (
     _convert_pyproject_to_config,
     _find_config_file,
+    _parse_defaults,
+    _parse_enforce_config,
     _parse_execution_config,
-    _parse_global_config,
     _parse_tool_config,
     _parse_tools_config,
     clear_config_cache,
@@ -16,31 +17,27 @@ from lintro.config.config_loader import (
 )
 
 
-class TestParseGlobalConfig:
-    """Tests for _parse_global_config."""
+class TestParseEnforceConfig:
+    """Tests for _parse_enforce_config."""
 
     def test_empty_data(self) -> None:
-        """Should return GlobalConfig with None values."""
-        config = _parse_global_config({})
+        """Should return EnforceConfig with None values."""
+        config = _parse_enforce_config({})
 
         assert config.line_length is None
         assert config.target_python is None
 
     def test_with_values(self) -> None:
-        """Should parse all global values."""
+        """Should parse all enforce values."""
         data = {
             "line_length": 88,
             "target_python": "py313",
-            "indent_size": 4,
-            "quote_style": "double",
         }
 
-        config = _parse_global_config(data)
+        config = _parse_enforce_config(data)
 
         assert config.line_length == 88
         assert config.target_python == "py313"
-        assert config.indent_size == 4
-        assert config.quote_style == "double"
 
 
 class TestParseExecutionConfig:
@@ -88,8 +85,6 @@ class TestParseToolConfig:
 
         assert config.enabled is True
         assert config.config_source is None
-        assert config.overrides == {}
-        assert config.settings == {}
 
     def test_with_config_source(self) -> None:
         """Should parse config_source."""
@@ -102,28 +97,13 @@ class TestParseToolConfig:
 
         assert config.config_source == ".prettierrc"
 
-    def test_with_overrides(self) -> None:
-        """Should parse overrides dict."""
-        data = {
-            "overrides": {"printWidth": 88},
-        }
+    def test_disabled_tool(self) -> None:
+        """Should parse enabled=False."""
+        data = {"enabled": False}
 
         config = _parse_tool_config(data)
 
-        assert config.overrides == {"printWidth": 88}
-
-    def test_unknown_keys_become_settings(self) -> None:
-        """Unknown keys should become settings."""
-        data = {
-            "enabled": True,
-            "select": ["E", "F"],
-            "ignore": ["E501"],
-        }
-
-        config = _parse_tool_config(data)
-
-        assert config.settings["select"] == ["E", "F"]
-        assert config.settings["ignore"] == ["E501"]
+        assert config.enabled is False
 
 
 class TestParseToolsConfig:
@@ -138,7 +118,7 @@ class TestParseToolsConfig:
     def test_with_tool_dicts(self) -> None:
         """Should parse tool configurations."""
         data = {
-            "ruff": {"enabled": True, "select": ["E", "F"]},
+            "ruff": {"enabled": True},
             "prettier": {"enabled": False},
         }
 
@@ -147,7 +127,6 @@ class TestParseToolsConfig:
         assert "ruff" in config
         assert "prettier" in config
         assert config["ruff"].enabled is True
-        assert config["ruff"].settings["select"] == ["E", "F"]
         assert config["prettier"].enabled is False
 
     def test_with_bool_values(self) -> None:
@@ -172,6 +151,40 @@ class TestParseToolsConfig:
         assert "RUFF" not in config
 
 
+class TestParseDefaults:
+    """Tests for _parse_defaults."""
+
+    def test_empty_data(self) -> None:
+        """Should return empty dict."""
+        defaults = _parse_defaults({})
+
+        assert defaults == {}
+
+    def test_with_tool_defaults(self) -> None:
+        """Should parse tool defaults."""
+        data = {
+            "prettier": {"singleQuote": True, "tabWidth": 2},
+            "yamllint": {"extends": "default"},
+        }
+
+        defaults = _parse_defaults(data)
+
+        assert "prettier" in defaults
+        assert defaults["prettier"]["singleQuote"] is True
+        assert defaults["prettier"]["tabWidth"] == 2
+        assert "yamllint" in defaults
+        assert defaults["yamllint"]["extends"] == "default"
+
+    def test_case_normalization(self) -> None:
+        """Tool names should be lowercased."""
+        data = {"PRETTIER": {"singleQuote": True}}
+
+        defaults = _parse_defaults(data)
+
+        assert "prettier" in defaults
+        assert "PRETTIER" not in defaults
+
+
 class TestConvertPyprojectToConfig:
     """Tests for _convert_pyproject_to_config."""
 
@@ -179,12 +192,13 @@ class TestConvertPyprojectToConfig:
         """Should return structure with empty sections."""
         result = _convert_pyproject_to_config({})
 
-        assert "global" in result
+        assert "enforce" in result
         assert "execution" in result
+        assert "defaults" in result
         assert "tools" in result
 
-    def test_global_settings(self) -> None:
-        """Should extract global settings."""
+    def test_enforce_settings(self) -> None:
+        """Should extract enforce settings."""
         data = {
             "line_length": 88,
             "target_python": "py313",
@@ -192,20 +206,20 @@ class TestConvertPyprojectToConfig:
 
         result = _convert_pyproject_to_config(data)
 
-        assert result["global"]["line_length"] == 88
-        assert result["global"]["target_python"] == "py313"
+        assert result["enforce"]["line_length"] == 88
+        assert result["enforce"]["target_python"] == "py313"
 
     def test_tool_sections(self) -> None:
         """Should extract tool-specific sections."""
         data = {
-            "ruff": {"select": ["E", "F"]},
-            "prettier": {"printWidth": 88},
+            "ruff": {"enabled": True},
+            "prettier": {"enabled": False},
         }
 
         result = _convert_pyproject_to_config(data)
 
-        assert result["tools"]["ruff"] == {"select": ["E", "F"]}
-        assert result["tools"]["prettier"] == {"printWidth": 88}
+        assert result["tools"]["ruff"] == {"enabled": True}
+        assert result["tools"]["prettier"] == {"enabled": False}
 
     def test_execution_settings(self) -> None:
         """Should extract execution settings."""
@@ -223,8 +237,69 @@ class TestConvertPyprojectToConfig:
 class TestLoadConfig:
     """Tests for load_config."""
 
-    def test_load_yaml_config(self, tmp_path: Path) -> None:
-        """Should load .lintro-config.yaml file.
+    def test_load_yaml_config_with_enforce(self, tmp_path: Path) -> None:
+        """Should load .lintro-config.yaml file with enforce section.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
+        config_content = """\
+enforce:
+  line_length: 100
+
+tools:
+  ruff:
+    enabled: true
+"""
+        config_file = tmp_path / ".lintro-config.yaml"
+        config_file.write_text(config_content)
+
+        import os
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+            clear_config_cache()
+
+            config = load_config()
+
+            assert config.enforce.line_length == 100
+            assert config.get_tool_config("ruff").enabled is True
+            assert config.config_path is not None
+        finally:
+            os.chdir(original_cwd)
+
+    def test_load_yaml_config_with_defaults(self, tmp_path: Path) -> None:
+        """Should load .lintro-config.yaml file with defaults section.
+
+        Args:
+            tmp_path: Temporary directory path for test files.
+        """
+        config_content = """\
+defaults:
+  prettier:
+    singleQuote: true
+    tabWidth: 2
+"""
+        config_file = tmp_path / ".lintro-config.yaml"
+        config_file.write_text(config_content)
+
+        import os
+
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_path)
+            clear_config_cache()
+
+            config = load_config()
+
+            assert config.get_tool_defaults("prettier")["singleQuote"] is True
+            assert config.get_tool_defaults("prettier")["tabWidth"] == 2
+        finally:
+            os.chdir(original_cwd)
+
+    def test_load_yaml_config_with_global_deprecated(self, tmp_path: Path) -> None:
+        """Should load .lintro-config.yaml file with deprecated global section.
 
         Args:
             tmp_path: Temporary directory path for test files.
@@ -240,7 +315,6 @@ tools:
         config_file = tmp_path / ".lintro-config.yaml"
         config_file.write_text(config_content)
 
-        # Change to temp directory to find config
         import os
 
         original_cwd = os.getcwd()
@@ -250,9 +324,9 @@ tools:
 
             config = load_config()
 
+            # Should still work with deprecated 'global' section
+            assert config.enforce.line_length == 100
             assert config.global_config.line_length == 100
-            assert config.get_tool_config("ruff").enabled is True
-            assert config.config_path is not None
         finally:
             os.chdir(original_cwd)
 
@@ -263,7 +337,7 @@ tools:
             tmp_path: Temporary directory path for test files.
         """
         config_content = """\
-global:
+enforce:
   line_length: 120
 """
         config_file = tmp_path / "custom-config.yaml"
@@ -271,7 +345,7 @@ global:
 
         config = load_config(config_path=str(config_file))
 
-        assert config.global_config.line_length == 120
+        assert config.enforce.line_length == 120
 
     def test_returns_default_when_no_config(self, tmp_path: Path) -> None:
         """Should return default config when no file found.
@@ -289,7 +363,7 @@ global:
             config = load_config(allow_pyproject_fallback=False)
 
             # Should get default empty config
-            assert config.global_config.line_length is None
+            assert config.enforce.line_length is None
         finally:
             os.chdir(original_cwd)
 
@@ -301,8 +375,8 @@ class TestGetDefaultConfig:
         """Should return config with sensible defaults."""
         config = get_default_config()
 
-        assert config.global_config.line_length == 88
-        assert config.global_config.target_python == "py313"
+        assert config.enforce.line_length == 88
+        assert config.enforce.target_python == "py313"
         assert config.execution.tool_order == "priority"
 
 
@@ -316,7 +390,7 @@ class TestGetConfig:
             tmp_path: Temporary directory path for test files.
         """
         config_content = """\
-global:
+enforce:
   line_length: 88
 """
         config_file = tmp_path / ".lintro-config.yaml"
@@ -344,7 +418,7 @@ global:
             tmp_path: Temporary directory path for test files.
         """
         config_content = """\
-global:
+enforce:
   line_length: 88
 """
         config_file = tmp_path / ".lintro-config.yaml"
@@ -357,23 +431,23 @@ global:
             os.chdir(tmp_path)
             clear_config_cache()
 
-            config1 = get_config()
+            get_config()
 
             # Modify config file
             config_file.write_text(
                 """\
-global:
+enforce:
   line_length: 120
-"""
+""",
             )
 
             # Without reload, should get cached value
             config2 = get_config()
-            assert config2.global_config.line_length == 88
+            assert config2.enforce.line_length == 88
 
             # With reload, should get new value
             config3 = get_config(reload=True)
-            assert config3.global_config.line_length == 120
+            assert config3.enforce.line_length == 120
         finally:
             os.chdir(original_cwd)
             clear_config_cache()
@@ -389,7 +463,7 @@ class TestFindConfigFile:
             tmp_path: Temporary directory path for test files.
         """
         config_file = tmp_path / ".lintro-config.yaml"
-        config_file.write_text("global: {}")
+        config_file.write_text("enforce: {}")
 
         result = _find_config_file(start_dir=tmp_path)
 
@@ -402,7 +476,7 @@ class TestFindConfigFile:
             tmp_path: Temporary directory path for test files.
         """
         config_file = tmp_path / ".lintro-config.yaml"
-        config_file.write_text("global: {}")
+        config_file.write_text("enforce: {}")
 
         subdir = tmp_path / "subdir"
         subdir.mkdir()
@@ -429,7 +503,7 @@ class TestFindConfigFile:
         """
         # Try .yml extension
         config_file = tmp_path / ".lintro-config.yml"
-        config_file.write_text("global: {}")
+        config_file.write_text("enforce: {}")
 
         result = _find_config_file(start_dir=tmp_path)
 

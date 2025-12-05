@@ -1,6 +1,7 @@
 """Tests for LintroConfig dataclasses."""
 
 from lintro.config.lintro_config import (
+    EnforceConfig,
     ExecutionConfig,
     GlobalConfig,
     LintroConfig,
@@ -8,31 +9,40 @@ from lintro.config.lintro_config import (
 )
 
 
-class TestGlobalConfig:
-    """Tests for GlobalConfig dataclass."""
+class TestEnforceConfig:
+    """Tests for EnforceConfig dataclass."""
 
     def test_default_values(self) -> None:
+        """EnforceConfig should have None defaults."""
+        config = EnforceConfig()
+
+        assert config.line_length is None
+        assert config.target_python is None
+
+    def test_with_values(self) -> None:
+        """EnforceConfig should accept all values."""
+        config = EnforceConfig(
+            line_length=88,
+            target_python="py313",
+        )
+
+        assert config.line_length == 88
+        assert config.target_python == "py313"
+
+
+class TestGlobalConfigAlias:
+    """Tests for GlobalConfig alias (backward compatibility)."""
+
+    def test_global_config_is_enforce_config(self) -> None:
+        """GlobalConfig should be an alias for EnforceConfig."""
+        assert GlobalConfig is EnforceConfig
+
+    def test_global_config_default_values(self) -> None:
         """GlobalConfig should have None defaults."""
         config = GlobalConfig()
 
         assert config.line_length is None
         assert config.target_python is None
-        assert config.indent_size is None
-        assert config.quote_style is None
-
-    def test_with_values(self) -> None:
-        """GlobalConfig should accept all values."""
-        config = GlobalConfig(
-            line_length=88,
-            target_python="py313",
-            indent_size=4,
-            quote_style="double",
-        )
-
-        assert config.line_length == 88
-        assert config.target_python == "py313"
-        assert config.indent_size == 4
-        assert config.quote_style == "double"
 
 
 class TestExecutionConfig:
@@ -69,30 +79,15 @@ class TestToolConfig:
 
         assert config.enabled is True
         assert config.config_source is None
-        assert config.overrides == {}
-        assert config.settings == {}
 
     def test_with_config_source(self) -> None:
         """ToolConfig should accept config_source."""
         config = ToolConfig(
             enabled=True,
             config_source=".prettierrc",
-            overrides={"printWidth": 88},
         )
 
         assert config.config_source == ".prettierrc"
-        assert config.overrides["printWidth"] == 88
-
-    def test_get_effective_settings(self) -> None:
-        """get_effective_settings should merge settings and overrides."""
-        config = ToolConfig(
-            settings={"a": 1, "b": 2},
-            overrides={"b": 3, "c": 4},
-        )
-
-        effective = config.get_effective_settings()
-
-        assert effective == {"a": 1, "b": 3, "c": 4}
 
 
 class TestLintroConfig:
@@ -102,10 +97,20 @@ class TestLintroConfig:
         """LintroConfig should have sensible defaults."""
         config = LintroConfig()
 
-        assert config.global_config is not None
+        assert config.enforce is not None
         assert config.execution is not None
+        assert config.defaults == {}
         assert config.tools == {}
         assert config.config_path is None
+
+    def test_global_config_property(self) -> None:
+        """global_config property should return enforce config."""
+        config = LintroConfig(
+            enforce=EnforceConfig(line_length=88),
+        )
+
+        assert config.global_config is config.enforce
+        assert config.global_config.line_length == 88
 
     def test_get_tool_config_returns_default(self) -> None:
         """get_tool_config should return default for unknown tools."""
@@ -120,17 +125,13 @@ class TestLintroConfig:
         """get_tool_config should return configured tool config."""
         config = LintroConfig(
             tools={
-                "ruff": ToolConfig(
-                    enabled=False,
-                    settings={"select": ["E", "F"]},
-                ),
+                "ruff": ToolConfig(enabled=False),
             },
         )
 
         tool_config = config.get_tool_config("ruff")
 
         assert tool_config.enabled is False
-        assert tool_config.settings["select"] == ["E", "F"]
 
     def test_get_tool_config_case_insensitive(self) -> None:
         """get_tool_config should be case insensitive."""
@@ -169,47 +170,54 @@ class TestLintroConfig:
 
         assert config.is_tool_enabled("ruff") is False
 
-    def test_get_effective_line_length_from_global(self) -> None:
-        """get_effective_line_length should use global setting."""
+    def test_get_tool_defaults(self) -> None:
+        """get_tool_defaults should return defaults for a tool."""
         config = LintroConfig(
-            global_config=GlobalConfig(line_length=120),
+            defaults={
+                "prettier": {"singleQuote": True, "tabWidth": 2},
+            },
+        )
+
+        defaults = config.get_tool_defaults("prettier")
+
+        assert defaults["singleQuote"] is True
+        assert defaults["tabWidth"] == 2
+
+    def test_get_tool_defaults_empty(self) -> None:
+        """get_tool_defaults should return empty dict for unknown tools."""
+        config = LintroConfig()
+
+        defaults = config.get_tool_defaults("unknown")
+
+        assert defaults == {}
+
+    def test_get_effective_line_length_from_enforce(self) -> None:
+        """get_effective_line_length should use enforce setting."""
+        config = LintroConfig(
+            enforce=EnforceConfig(line_length=120),
         )
 
         assert config.get_effective_line_length("ruff") == 120
+        assert config.get_effective_line_length("prettier") == 120
 
-    def test_get_effective_line_length_from_tool_settings(self) -> None:
-        """get_effective_line_length should prefer tool settings."""
-        config = LintroConfig(
-            global_config=GlobalConfig(line_length=120),
-            tools={
-                "ruff": ToolConfig(settings={"line_length": 88}),
-            },
-        )
+    def test_get_effective_line_length_returns_none(self) -> None:
+        """get_effective_line_length should return None when not set."""
+        config = LintroConfig()
 
-        assert config.get_effective_line_length("ruff") == 88
-
-    def test_get_effective_line_length_from_tool_overrides(self) -> None:
-        """get_effective_line_length should prefer tool overrides."""
-        config = LintroConfig(
-            global_config=GlobalConfig(line_length=120),
-            tools={
-                "ruff": ToolConfig(
-                    settings={"line_length": 88},
-                    overrides={"line_length": 100},
-                ),
-            },
-        )
-
-        assert config.get_effective_line_length("ruff") == 100
+        assert config.get_effective_line_length("ruff") is None
 
     def test_get_effective_target_python(self) -> None:
-        """get_effective_target_python should cascade properly."""
+        """get_effective_target_python should use enforce setting."""
         config = LintroConfig(
-            global_config=GlobalConfig(target_python="py312"),
+            enforce=EnforceConfig(target_python="py312"),
         )
 
         assert config.get_effective_target_python("ruff") == "py312"
+        assert config.get_effective_target_python("black") == "py312"
 
-        # Tool override should win
-        config.tools["ruff"] = ToolConfig(overrides={"target_python": "py313"})
-        assert config.get_effective_target_python("ruff") == "py313"
+    def test_get_effective_target_python_returns_none(self) -> None:
+        """get_effective_target_python should return None when not set."""
+        config = LintroConfig()
+
+        assert config.get_effective_target_python("ruff") is None
+        assert config.get_effective_target_python("black") is None

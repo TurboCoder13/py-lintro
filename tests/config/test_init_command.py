@@ -57,7 +57,7 @@ class TestInitCommand:
             tmp_path: Temporary directory path for test files.
         """
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            result = runner.invoke(init_command)
+            runner.invoke(init_command)
 
             config_file = Path(".lintro-config.yaml")
             content = config_file.read_text()
@@ -83,7 +83,7 @@ class TestInitCommand:
             tmp_path: Temporary directory path for test files.
         """
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            result = runner.invoke(init_command, ["--minimal"])
+            runner.invoke(init_command, ["--minimal"])
 
             config_file = Path(".lintro-config.yaml")
             content = config_file.read_text()
