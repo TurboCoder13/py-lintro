@@ -19,15 +19,15 @@ DEFAULT_CONFIG_TEMPLATE = """\
 # Native tool configs (e.g., .prettierrc) are ignored by default unless
 # explicitly referenced via config_source.
 
-global:
+enforce:
   # Line length limit applied to all supporting tools
   # Maps to: ruff line-length, black line-length, prettier printWidth, etc.
   line_length: 88
 
-  # Python version target (e.g., "py313", "py312")
+  # Python version target (e.g., "py313", "py312", "py310")
   # Maps to: ruff target-version, black target-version
-  # Update this to match your project's Python target
-  target_python: "py313"
+  # Omit to let tools infer from requires-python in pyproject.toml
+  # target_python: "py310"
 
 execution:
   # List of tools to run (empty = all available tools)
@@ -62,12 +62,12 @@ tools:
     enabled: true
     # config_source: ".prettierrc"  # Optional: inherit from native config
     # overrides:
-    #   printWidth: 88  # Override to match global line_length
+    #   printWidth: 88  # Override to match enforce line_length
 
   # Markdownlint - Markdown linter
   markdownlint:
     enabled: true
-    # MD013 line_length is automatically synced from global.line_length
+    # MD013 line_length is automatically synced from enforce.line_length
 
   # Yamllint - YAML linter
   yamllint:
@@ -94,9 +94,9 @@ MINIMAL_CONFIG_TEMPLATE = """\
 # Lintro Configuration (Minimal)
 # https://github.com/TurboCoder13/py-lintro
 
-global:
+enforce:
   line_length: 88
-  target_python: "py313"  # Update to match your project's Python target
+  # target_python: "py310"  # Omit to infer from requires-python
 
 execution:
   tool_order: "priority"

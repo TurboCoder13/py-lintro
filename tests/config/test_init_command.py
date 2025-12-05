@@ -64,7 +64,7 @@ class TestInitCommand:
 
             # Should have full template with comments
             assert "# Lintro Configuration" in content
-            assert "global:" in content
+            assert "enforce:" in content
             assert "execution:" in content
             assert "tools:" in content
             # Default template has more tools configured
@@ -91,7 +91,7 @@ class TestInitCommand:
             # Minimal template should be shorter
             assert "# Lintro Configuration (Minimal)" in content
             # But still have core sections
-            assert "global:" in content
+            assert "enforce:" in content
             assert "tools:" in content
             # Minimal doesn't have all tools
             assert "bandit:" not in content
@@ -143,7 +143,7 @@ class TestInitCommand:
 
             # Should have new template content
             content = Path(".lintro-config.yaml").read_text()
-            assert "global:" in content
+            assert "enforce:" in content
 
     def test_custom_output_path(
         self,
@@ -196,7 +196,7 @@ class TestConfigTemplates:
 
         parsed = yaml.safe_load(DEFAULT_CONFIG_TEMPLATE)
 
-        assert "global" in parsed
+        assert "enforce" in parsed
         assert "execution" in parsed
         assert "tools" in parsed
 
@@ -206,7 +206,7 @@ class TestConfigTemplates:
 
         parsed = yaml.safe_load(MINIMAL_CONFIG_TEMPLATE)
 
-        assert "global" in parsed
+        assert "enforce" in parsed
         assert "tools" in parsed
 
     def test_default_template_has_sensible_defaults(self) -> None:
@@ -215,7 +215,8 @@ class TestConfigTemplates:
 
         parsed = yaml.safe_load(DEFAULT_CONFIG_TEMPLATE)
 
-        assert parsed["global"]["line_length"] == 88
-        assert parsed["global"]["target_python"] == "py313"
+        assert parsed["enforce"]["line_length"] == 88
+        # target_python is commented out to let tools infer from requires-python
+        assert "target_python" not in parsed["enforce"]
         assert parsed["execution"]["tool_order"] == "priority"
         assert parsed["tools"]["ruff"]["enabled"] is True
