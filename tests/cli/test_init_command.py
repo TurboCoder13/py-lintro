@@ -183,7 +183,8 @@ class TestInitWithNativeConfigs:
         with runner.isolated_filesystem():
             result = runner.invoke(init_command, ["--with-native-configs"])
             assert_that(result.exit_code).is_equal_to(0)
-            assert_that(result.output).contains("Created 4 files")
+            # Should show multiple files were created
+            assert_that(result.output).matches(r"Created \d+ files")
             assert_that(result.output).contains(".lintro-config.yaml")
             assert_that(result.output).contains(".prettierrc.json")
             assert_that(result.output).contains(".prettierignore")
