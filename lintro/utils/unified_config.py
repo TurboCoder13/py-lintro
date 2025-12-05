@@ -167,9 +167,9 @@ GLOBAL_SETTINGS: dict[str, dict[str, Any]] = {
         "tools": {
             "ruff": "line-length",
             "black": "line-length",
-            "markdownlint": "line_length",  # MD013 rule
+            "markdownlint": "config.MD013.line_length",  # Nested in config object
             "prettier": "printWidth",
-            "yamllint": "line-length.max",  # Nested under rules.line-length.max
+            "yamllint": "rules.line-length.max",  # Nested under rules.line-length.max
         },
         "injectable": {
             "ruff",
