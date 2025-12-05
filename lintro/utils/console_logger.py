@@ -529,6 +529,8 @@ class SimpleLintroLogger:
             for result in tool_results:
                 fixed_std = getattr(result, "fixed_issues_count", None)
                 remaining_std = getattr(result, "remaining_issues_count", None)
+                success = getattr(result, "success", True)
+
                 if fixed_std is not None:
                     total_fixed += fixed_std
                 else:
@@ -536,6 +538,10 @@ class SimpleLintroLogger:
 
                 if remaining_std is not None:
                     total_remaining += remaining_std
+                elif not success:
+                    # Tool failed - treat as having remaining issues
+                    # This covers execution errors, config errors, timeouts, etc.
+                    total_remaining += DEFAULT_REMAINING_COUNT
                 else:
                     # Fallback to parsing when standardized remaining isn't provided
                     output = getattr(result, "output", "")
@@ -550,8 +556,6 @@ class SimpleLintroLogger:
                             )
                         if remaining_match:
                             total_remaining += int(remaining_match.group(1))
-                        elif not getattr(result, "success", True):
-                            total_remaining += DEFAULT_REMAINING_COUNT
 
             # Show totals line then ASCII art
             totals_line: str = (
