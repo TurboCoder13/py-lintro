@@ -37,7 +37,7 @@ def _load_ruff_config() -> dict:
     """Load ruff configuration from pyproject.toml.
 
     Returns:
-        dict: Ruff configuration dictionary.
+        dict: Ruff configuration dictionary with flattened lint settings.
     """
     config: dict = {}
     pyproject_path = Path("pyproject.toml")
@@ -47,7 +47,20 @@ def _load_ruff_config() -> dict:
             with open(pyproject_path, "rb") as f:
                 pyproject_data = tomllib.load(f)
                 if "tool" in pyproject_data and "ruff" in pyproject_data["tool"]:
-                    config = pyproject_data["tool"]["ruff"]
+                    ruff_config = pyproject_data["tool"]["ruff"]
+                    # Copy top-level settings
+                    config = dict(ruff_config)
+                    # Flatten nested lint section to top level for easy access
+                    if "lint" in ruff_config:
+                        lint_config = ruff_config["lint"]
+                        if "select" in lint_config:
+                            config["select"] = lint_config["select"]
+                        if "ignore" in lint_config:
+                            config["ignore"] = lint_config["ignore"]
+                        if "extend-select" in lint_config:
+                            config["extend_select"] = lint_config["extend-select"]
+                        if "extend-ignore" in lint_config:
+                            config["extend_ignore"] = lint_config["extend-ignore"]
         except Exception as e:
             logger.warning(f"Failed to load ruff configuration: {e}")
 
@@ -275,8 +288,11 @@ class RuffTool(BaseTool):
         """
         cmd: list[str] = self._get_executable_command(tool_name="ruff") + ["check"]
 
-        # Add Lintro config injection args (--isolated, --config)
-        # This takes precedence over native config
+        # Get enforced settings to avoid duplicate CLI args
+        enforced = self._get_enforced_settings()
+
+        # Add Lintro config injection args (--line-length, --target-version)
+        # from enforce tier. This takes precedence over native config and options
         config_args = self._build_config_args()
         if config_args:
             cmd.extend(config_args)
@@ -307,9 +323,12 @@ class RuffTool(BaseTool):
         extend_ignored_rules = list(self.options.get("extend_ignore") or [])
         if extend_ignored_rules:
             cmd.extend(["--extend-ignore", ",".join(extend_ignored_rules)])
-        if self.options.get("line_length"):
+        # Only add line_length/target_version from options if not enforced.
+        # Note: enforced uses Lintro's generic names (line_length, target_python)
+        # while options use tool-specific names (line_length, target_version).
+        if self.options.get("line_length") and "line_length" not in enforced:
             cmd.extend(["--line-length", str(self.options["line_length"])])
-        if self.options.get("target_version"):
+        if self.options.get("target_version") and "target_python" not in enforced:
             cmd.extend(["--target-version", self.options["target_version"]])
 
         # Fix options

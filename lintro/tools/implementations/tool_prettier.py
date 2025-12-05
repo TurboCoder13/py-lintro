@@ -310,7 +310,7 @@ class PrettierTool(BaseTool):
             found_config = self._find_prettier_config(search_dir=cwd)
             if found_config:
                 logger.debug(
-                    f"[PrettierTool] Found config file: {found_config} (auto-detecting)",
+                    f"[PrettierTool] Found config: {found_config} (auto-detecting)",
                 )
             else:
                 logger.debug(
