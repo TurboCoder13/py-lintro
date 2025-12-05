@@ -49,7 +49,7 @@ jobs:
           token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@4935c2f2f61c047d851bebae6629d20ed97292d6
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@3369d4b1485ffebf1bad0ceff95476435d292dc9
         with:
           python-version: '3.13'
         env:
@@ -117,7 +117,7 @@ jobs:
           steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
         id: cpr
         # yamllint disable-line rule:line-length
-        uses: peter-evans/create-pull-request@84ae59a2cdc2258d6fa0732dd66352dddae2a412 # v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'chore(release): cut ${{ steps.semrel.outputs.next_version }}'
