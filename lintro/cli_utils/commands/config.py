@@ -7,15 +7,92 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from lintro.config import LintroConfig, get_config
 from lintro.utils.unified_config import (
-    UnifiedConfigManager,
-    get_effective_line_length,
-    get_ordered_tools,
-    get_tool_order_config,
-    get_tool_priority,
+    DEFAULT_TOOL_PRIORITIES,
+    _load_native_tool_config,
     is_tool_injectable,
     validate_config_consistency,
 )
+
+
+def _get_all_tool_names() -> list[str]:
+    """Get list of all known tool names.
+
+    Returns:
+        list[str]: Sorted list of tool names.
+    """
+    return [
+        "ruff",
+        "black",
+        "prettier",
+        "yamllint",
+        "markdownlint",
+        "darglint",
+        "bandit",
+        "hadolint",
+        "actionlint",
+    ]
+
+
+def _get_tool_priority(tool_name: str) -> int:
+    """Get the execution priority for a tool.
+
+    Lower values run first. Formatters have lower priorities than linters.
+
+    Args:
+        tool_name: Name of the tool.
+
+    Returns:
+        int: Priority value (lower = runs first).
+    """
+    return DEFAULT_TOOL_PRIORITIES.get(tool_name.lower(), 50)
+
+
+def _get_ordered_tools(
+    tool_names: list[str],
+    tool_order: str | list[str],
+) -> list[str]:
+    """Get tools in execution order based on configured strategy.
+
+    Args:
+        tool_names: List of tool names to order.
+        tool_order: Strategy ("priority", "alphabetical") or custom list.
+
+    Returns:
+        list[str]: List of tool names in execution order.
+    """
+    if isinstance(tool_order, list):
+        # Custom order: tools in list come first (in that order), then remaining
+        ordered = []
+        remaining = list(tool_names)
+
+        for tool in tool_order:
+            if tool.lower() in [t.lower() for t in remaining]:
+                # Find the actual name (case may differ)
+                for t in remaining:
+                    if t.lower() == tool.lower():
+                        ordered.append(t)
+                        remaining.remove(t)
+                        break
+
+        # Add remaining tools by priority
+        ordered.extend(
+            sorted(
+                remaining,
+                key=lambda t: (_get_tool_priority(t), t.lower()),
+            ),
+        )
+        return ordered
+
+    if tool_order == "alphabetical":
+        return sorted(tool_names, key=str.lower)
+
+    # Default: priority-based ordering
+    return sorted(
+        tool_names,
+        key=lambda t: (_get_tool_priority(t), t.lower()),
+    )
 
 
 @click.command()
@@ -38,6 +115,7 @@ def config_command(
     """Display Lintro configuration status.
 
     Shows the unified configuration for all tools including:
+    - Config source (.lintro-config.yaml or pyproject.toml)
     - Global settings (line_length, tool ordering strategy)
     - Tool execution order based on configured strategy
     - Per-tool effective configuration
@@ -48,60 +126,82 @@ def config_command(
         json_output: Output configuration as JSON.
     """
     console = Console()
-    config_manager = UnifiedConfigManager()
+    config = get_config(reload=True)
 
     if json_output:
-        _output_json(config_manager=config_manager, verbose=verbose)
+        _output_json(config=config, verbose=verbose)
         return
 
     _output_rich(
         console=console,
-        config_manager=config_manager,
+        config=config,
         verbose=verbose,
     )
 
 
 def _output_json(
-    config_manager: UnifiedConfigManager,
+    config: LintroConfig,
     verbose: bool = False,
 ) -> None:
     """Output configuration as JSON.
 
     Args:
-        config_manager: UnifiedConfigManager instance
+        config: LintroConfig instance from get_config()
         verbose: Include native configs in output when True
     """
     import json
 
-    order_config = get_tool_order_config()
-    tool_names = list(config_manager.tool_configs.keys())
-    ordered_tools = get_ordered_tools(tool_names)
+    # Get tool order settings
+    tool_order = config.execution.tool_order
+    if isinstance(tool_order, list):
+        order_strategy = "custom"
+        custom_order = tool_order
+    else:
+        order_strategy = tool_order
+        custom_order = []
+
+    # Get list of all known tools
+    tool_names = _get_all_tool_names()
+    ordered_tools = _get_ordered_tools(
+        tool_names=tool_names,
+        tool_order=config.execution.tool_order,
+    )
 
     output = {
+        "config_source": config.config_path or "defaults",
         "global_settings": {
-            "line_length": get_effective_line_length("ruff"),
-            "tool_order": order_config.get("strategy", "priority"),
-            "custom_order": order_config.get("custom_order", []),
-            "priority_overrides": order_config.get("priority_overrides", {}),
+            "line_length": config.enforce.line_length,
+            "target_python": config.enforce.target_python,
+            "tool_order": order_strategy,
+            "custom_order": custom_order,
+        },
+        "execution": {
+            "enabled_tools": config.execution.enabled_tools or "all",
+            "fail_fast": config.execution.fail_fast,
+            "parallel": config.execution.parallel,
         },
         "tool_execution_order": [
-            {"tool": t, "priority": get_tool_priority(t)} for t in ordered_tools
+            {"tool": t, "priority": _get_tool_priority(t)} for t in ordered_tools
         ],
         "tool_configs": {},
         "warnings": validate_config_consistency(),
     }
 
-    for tool_name, info in config_manager.tool_configs.items():
+    for tool_name in tool_names:
+        tool_config = config.get_tool_config(tool_name)
+        effective_ll = config.get_effective_line_length(tool_name)
+
         tool_output: dict[str, Any] = {
-            "is_injectable": info.is_injectable,
-            "effective_line_length": info.effective_config.get("line_length"),
-            "lintro_config": info.lintro_tool_config,
-            "warnings": info.warnings,
+            "enabled": tool_config.enabled,
+            "is_injectable": is_tool_injectable(tool_name),
+            "effective_line_length": effective_ll,
+            "config_source": tool_config.config_source,
         }
         if verbose:
-            tool_output["native_config"] = (
-                info.native_config if info.native_config else None
-            )
+            native = _load_native_tool_config(tool_name)
+            tool_output["native_config"] = native if native else None
+            tool_output["defaults"] = config.get_tool_defaults(tool_name) or None
+
         output["tool_configs"][tool_name] = tool_output
 
     print(json.dumps(output, indent=2))
@@ -109,19 +209,16 @@ def _output_json(
 
 def _output_rich(
     console: Console,
-    config_manager: UnifiedConfigManager,
+    config: LintroConfig,
     verbose: bool,
 ) -> None:
     """Output configuration using Rich formatting.
 
     Args:
         console: Rich Console instance
-        config_manager: UnifiedConfigManager instance
+        config: LintroConfig instance from get_config()
         verbose: Whether to show verbose output
     """
-    order_config = get_tool_order_config()
-    central_line_length = get_effective_line_length("ruff")
-
     # Header panel
     console.print(
         Panel.fit(
@@ -131,63 +228,89 @@ def _output_rich(
     )
     console.print()
 
+    # Config Source Section
+    config_source = config.config_path or "[dim]No config file (using defaults)[/dim]"
+    console.print(f"[bold]Config Source:[/bold] {config_source}")
+    console.print()
+
     # Global Settings Section
     global_table = Table(
-        title="Global Settings",
+        title="Enforce Settings",
         show_header=False,
         box=None,
     )
     global_table.add_column("Setting", style="cyan", width=25)
     global_table.add_column("Value", style="yellow")
 
+    line_length = config.enforce.line_length
     global_table.add_row(
-        "Central line_length",
-        (
-            str(central_line_length)
-            if central_line_length
-            else "[dim]Not configured[/dim]"
-        ),
-    )
-    global_table.add_row(
-        "Tool order strategy",
-        order_config.get("strategy", "priority"),
+        "line_length",
+        str(line_length) if line_length else "[dim]Not configured[/dim]",
     )
 
-    if order_config.get("custom_order"):
-        global_table.add_row(
-            "Custom order",
-            ", ".join(order_config["custom_order"]),
-        )
-
-    if order_config.get("priority_overrides"):
-        overrides_str = ", ".join(
-            f"{k}={v}" for k, v in order_config["priority_overrides"].items()
-        )
-        global_table.add_row("Priority overrides", overrides_str)
+    target_python = config.enforce.target_python
+    global_table.add_row(
+        "target_python",
+        target_python if target_python else "[dim]Not configured[/dim]",
+    )
 
     console.print(global_table)
     console.print()
 
+    # Execution Settings Section
+    exec_table = Table(
+        title="Execution Settings",
+        show_header=False,
+        box=None,
+    )
+    exec_table.add_column("Setting", style="cyan", width=25)
+    exec_table.add_column("Value", style="yellow")
+
+    tool_order = config.execution.tool_order
+    if isinstance(tool_order, list):
+        order_strategy = "custom"
+        exec_table.add_row("tool_order", order_strategy)
+        exec_table.add_row("custom_order", ", ".join(tool_order))
+    else:
+        exec_table.add_row("tool_order", tool_order)
+
+    enabled_tools = config.execution.enabled_tools
+    exec_table.add_row(
+        "enabled_tools",
+        ", ".join(enabled_tools) if enabled_tools else "[dim]all[/dim]",
+    )
+    exec_table.add_row("fail_fast", str(config.execution.fail_fast))
+
+    console.print(exec_table)
+    console.print()
+
     # Tool Execution Order Section
-    tool_names = list(config_manager.tool_configs.keys())
-    ordered_tools = get_ordered_tools(tool_names)
+    tool_names = _get_all_tool_names()
+    ordered_tools = _get_ordered_tools(
+        tool_names=tool_names,
+        tool_order=config.execution.tool_order,
+    )
 
     order_table = Table(title="Tool Execution Order")
     order_table.add_column("#", style="dim", justify="right", width=3)
     order_table.add_column("Tool", style="cyan")
     order_table.add_column("Priority", justify="center", style="yellow")
     order_table.add_column("Type", style="green")
+    order_table.add_column("Enabled", justify="center")
 
     for idx, tool_name in enumerate(ordered_tools, 1):
-        priority = get_tool_priority(tool_name)
+        priority = _get_tool_priority(tool_name)
         injectable = is_tool_injectable(tool_name)
         tool_type = "Syncable" if injectable else "Native only"
+        enabled = config.is_tool_enabled(tool_name)
+        enabled_display = "[green]✓[/green]" if enabled else "[red]✗[/red]"
 
         order_table.add_row(
             str(idx),
             tool_name,
             str(priority),
             tool_type,
+            enabled_display,
         )
 
     console.print(order_table)
@@ -198,32 +321,29 @@ def _output_rich(
     config_table.add_column("Tool", style="cyan")
     config_table.add_column("Sync Status", justify="center")
     config_table.add_column("Line Length", justify="center", style="yellow")
-    config_table.add_column("Lintro Config", style="dim")
+    config_table.add_column("Config Source", style="dim")
 
     if verbose:
         config_table.add_column("Native Config", style="dim")
 
-    for tool_name, info in config_manager.tool_configs.items():
+    for tool_name in tool_names:
+        tool_config = config.get_tool_config(tool_name)
+        injectable = is_tool_injectable(tool_name)
         status = (
             "[green]✓ Syncable[/green]"
-            if info.is_injectable
+            if injectable
             else "[yellow]⚠ Native only[/yellow]"
         )
-        effective_ll = info.effective_config.get("line_length")
+        effective_ll = config.get_effective_line_length(tool_name)
         ll_display = str(effective_ll) if effective_ll else "[dim]default[/dim]"
 
-        lintro_cfg = (
-            str(info.lintro_tool_config)
-            if info.lintro_tool_config
-            else "[dim]None[/dim]"
-        )
+        cfg_source = tool_config.config_source or "[dim]auto[/dim]"
 
-        row = [tool_name, status, ll_display, lintro_cfg]
+        row = [tool_name, status, ll_display, cfg_source]
 
         if verbose:
-            native_cfg = (
-                str(info.native_config) if info.native_config else "[dim]None[/dim]"
-            )
+            native = _load_native_tool_config(tool_name)
+            native_cfg = str(native) if native else "[dim]None[/dim]"
             row.append(native_cfg)
 
         config_table.add_row(*row)
@@ -251,14 +371,11 @@ def _output_rich(
 
     # Help text
     console.print(
-        "[dim]Configure tool ordering in pyproject.toml under [tool.lintro]:[/dim]",
+        "[dim]Configure Lintro in .lintro-config.yaml:[/dim]",
     )
     console.print(
-        '[dim]  tool_order = "priority" | "alphabetical" | "custom"[/dim]',
+        "[dim]  Run 'lintro init' to create a config file[/dim]",
     )
     console.print(
-        '[dim]  tool_order_custom = ["prettier", "black", "ruff", ...][/dim]',
-    )
-    console.print(
-        "[dim]  tool_priorities = { ruff = 5, black = 10 }[/dim]",
+        '[dim]  tool_order: "priority" | "alphabetical" | ["tool1", "tool2"][/dim]',
     )
