@@ -1,0 +1,112 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+name: Maintenance - Auto-version Internal Actions
+# Automatically creates semantic version tags when internal actions or reusable
+# workflows are modified. Increments patch version for each change.
+
+'on':
+  push:
+    branches: [main]
+    paths:
+      - .github/actions/**
+      - .github/workflows/reusable-*.yml
+
+permissions:
+  contents: read
+
+jobs:
+  auto-version:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    # Skip if commit is from this workflow or other automated processes
+    if: >-
+      !contains(github.event.head_commit.message, 'auto-version internal actions') &&
+      !contains(github.event.head_commit.message, 'bump internal refs')
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+
+      - name: Checkout with full history
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get latest v1.x.x tag
+        id: latest
+        run: |
+          # Get all v1.x.x tags, sort them, and get the latest
+          LATEST=$(git tag -l 'v1.*.*' | sort -V | tail -n1)
+
+          if [ -z "$LATEST" ]; then
+            # No v1.x.x tags exist yet, start with v1.0.0
+            echo "No existing v1.x.x tags found, will create v1.0.1"
+            echo "tag=v1.0.0" >> "$GITHUB_OUTPUT"
+          else
+            echo "Latest tag: $LATEST"
+            echo "tag=$LATEST" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Increment patch version
+        id: next
+        run: |
+          LATEST="${{ steps.latest.outputs.tag }}"
+
+          # Remove 'v' prefix, split into parts, increment patch
+          VERSION="${LATEST#v}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+
+          # Increment patch version
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_TAG="v${MAJOR}.${MINOR}.${NEXT_PATCH}"
+
+          echo "Next tag: $NEXT_TAG"
+          echo "tag=$NEXT_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: check
+        run: |
+          NEXT_TAG="${{ steps.next.outputs.tag }}"
+
+          if git rev-parse "$NEXT_TAG" >/dev/null 2>&1; then
+            echo "Tag $NEXT_TAG already exists, skipping"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag $NEXT_TAG does not exist, will create"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create and push tag
+        if: steps.check.outputs.exists == 'false'
+        env:
+          NEXT_TAG: ${{ steps.next.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "$NEXT_TAG" -m "chore: auto-version internal actions to $NEXT_TAG"
+          git push origin "$NEXT_TAG"
+
+          echo "✅ Created and pushed tag: $NEXT_TAG"
+
+      - name: Log completion
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          TAG="${{ steps.next.outputs.tag }}"
+          echo "Internal actions automatically versioned to $TAG"
+          echo "Workflows using @v1 will automatically use this version"
