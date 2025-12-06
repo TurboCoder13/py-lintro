@@ -179,9 +179,13 @@ CLI options. The wrapper also respects `.eslintignore` files natively.
 
 ESLint is configured with:
 
-- **Priority**: 50 (lower than formatters like Prettier, which have priority 80)
+- **Priority**: 50 (lower numeric priority values run first)
 - **Tool Type**: LINTER
 - **Conflicts**: None (can run alongside formatters)
-- **Execution Order**: Runs after formatters due to lower priority
+- **Execution Order**: Runs after formatters like Prettier (priority 10) due to higher
+  priority value
 
-This ensures that formatting happens before linting, which is the recommended workflow.
+Prettier has priority 10 and ESLint has priority 50, meaning Prettier runs before ESLint
+since lower numeric priority values execute first. Hadolint also uses priority 50, so it
+runs alongside ESLint. This ensures that formatting happens before linting, which is the
+recommended workflow.
