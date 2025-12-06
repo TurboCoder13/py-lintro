@@ -3,6 +3,40 @@
 Centralized, reusable steps to keep workflows small and DRY. Each action exposes clear
 inputs in its action.yml.
 
+## Versioning Strategy
+
+Internal actions use **semantic version tags** (e.g., `@v1.0.0`) instead of commit SHAs.
+This approach:
+
+- Eliminates dependency update loops
+- Provides clear versioning for action stability
+- Follows industry best practices (used by GitHub and major organizations)
+
+### Creating New Versions
+
+When updating an internal action:
+
+1. **Make your changes** to the action files
+2. **Decide on version bump**:
+   - **Major** (`v2.0.0`): Breaking changes (input/output changes, behavior changes)
+   - **Minor** (`v1.1.0`): New features (new inputs, new functionality)
+   - **Patch** (`v1.0.1`): Bug fixes (fixes without changing behavior)
+3. **Create and push the tag**:
+
+   ```bash
+   git tag v1.1.0
+   git push origin v1.1.0
+   ```
+
+4. **Update workflow references** if it's a breaking change (major version), otherwise
+   workflows can continue using the major version tag (e.g., `@v1` will auto-update to
+   latest `v1.x.x`)
+
+### Current Action Versions
+
+All actions are currently at `v1.0.0`. When you update an action, create a new tag
+following semantic versioning principles.
+
 ## .github/actions/setup-docker
 
 - Purpose: Set up Docker Buildx; optionally log in to a registry (e.g., GHCR)
