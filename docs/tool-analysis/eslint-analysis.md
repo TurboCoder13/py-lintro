@@ -2,8 +2,9 @@
 
 ## Overview
 
-ESLint is a linter for JavaScript and TypeScript that identifies and reports on patterns in code.
-This analysis compares Lintro's wrapper implementation with the core ESLint tool.
+ESLint is a linter for JavaScript and TypeScript that identifies and reports on patterns
+in code. This analysis compares Lintro's wrapper implementation with the core ESLint
+tool.
 
 ## Core Tool Capabilities
 
@@ -24,10 +25,14 @@ ESLint provides extensive CLI options including:
 
 - ✅ **Linting capability**: Full preservation through standard ESLint execution
 - ✅ **Check mode**: Preserved through standard ESLint check (no --fix flag)
-- ✅ **File targeting**: Supports file patterns (`*.js`, `*.jsx`, `*.ts`, `*.tsx`, `*.mjs`, `*.cjs`)
-- ✅ **Auto-fixing**: Can automatically fix issues when `fix()` is called with `--fix` flag
-- ✅ **Configuration files**: Respects `.eslintrc.*`, `eslint.config.*`, and `package.json` configs
-- ✅ **Error detection**: Captures linting violations as issues with rule IDs, severity, and messages
+- ✅ **File targeting**: Supports file patterns (`*.js`, `*.jsx`, `*.ts`, `*.tsx`,
+  `*.mjs`, `*.cjs`)
+- ✅ **Auto-fixing**: Can automatically fix issues when `fix()` is called with `--fix`
+  flag
+- ✅ **Configuration files**: Respects `.eslintrc.*`, `eslint.config.*`, and
+  `package.json` configs
+- ✅ **Error detection**: Captures linting violations as issues with rule IDs, severity,
+  and messages
 - ✅ **JSON output**: Uses `--format json` for reliable parsing
 
 **Command Execution:**
@@ -61,9 +66,10 @@ cmd = ["eslint", "--fix"] + self.files
 
 **Error Handling:**
 
-- ⚠️ **Limited error context**: Basic error reporting without detailed rule documentation links
-- ⚠️ **Severity handling**: Distinguishes warnings (severity 1) from errors (severity 2) but
-  treats both as issues
+- ⚠️ **Limited error context**: Basic error reporting without detailed rule
+  documentation links
+- ⚠️ **Severity handling**: Distinguishes warnings (severity 1) from errors (severity 2)
+  but treats both as issues
 
 ### 🚀 Enhancements
 
@@ -172,10 +178,10 @@ CLI options. The wrapper also respects `.eslintignore` files natively.
 ## Priority and Conflicts
 
 ESLint is configured with:
+
 - **Priority**: 50 (lower than formatters like Prettier, which have priority 80)
 - **Tool Type**: LINTER
 - **Conflicts**: None (can run alongside formatters)
 - **Execution Order**: Runs after formatters due to lower priority
 
 This ensures that formatting happens before linting, which is the recommended workflow.
-

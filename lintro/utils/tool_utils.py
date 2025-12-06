@@ -59,11 +59,10 @@ from lintro.parsers.bandit.bandit_parser import parse_bandit_output
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
+from lintro.parsers.eslint.eslint_issue import EslintIssue
 from lintro.parsers.eslint.eslint_parser import parse_eslint_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
-from lintro.parsers.eslint.eslint_issue import EslintIssue
-from lintro.parsers.eslint.eslint_parser import parse_eslint_output
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.parsers.pytest.pytest_parser import parse_pytest_text_output

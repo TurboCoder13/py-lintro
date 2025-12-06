@@ -61,4 +61,3 @@ def parse_eslint_output(output: str) -> list[EslintIssue]:
             )
 
     return issues
-

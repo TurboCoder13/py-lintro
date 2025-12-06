@@ -24,4 +24,3 @@ class EslintIssue:
     message: str
     severity: int
     fixable: bool = False
-

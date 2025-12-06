@@ -1,6 +1,5 @@
 """Integration tests for ESLint core."""
 
-import json
 import subprocess
 from pathlib import Path
 
@@ -82,7 +81,9 @@ def test_eslint_reports_violations_direct(temp_eslint_file) -> None:
     success, output, issues = run_eslint_directly(temp_eslint_file, check_only=True)
     logger.info(f"[LOG] ESLint found {issues} issues. Output:\n{output}")
     # ESLint may return 0 exit code even with warnings, so check issues count
-    assert issues > 0 or not success, "ESLint should report issues or fail when violations are present."
+    assert (
+        issues > 0 or not success
+    ), "ESLint should report issues or fail when violations are present."
 
 
 def test_eslint_reports_violations_through_lintro(temp_eslint_file) -> None:
@@ -104,9 +105,7 @@ def test_eslint_reports_violations_through_lintro(temp_eslint_file) -> None:
         assert (
             not result.success
         ), "Lintro EslintTool should fail when violations are present."
-    assert (
-        result.issues_count >= 0
-    ), "Lintro EslintTool should report issues count."
+    assert result.issues_count >= 0, "Lintro EslintTool should report issues count."
 
 
 def test_eslint_fix_method(temp_eslint_file) -> None:
@@ -242,8 +241,7 @@ def test_eslint_respects_eslintignore(tmp_path) -> None:
     # Since we're checking the directory, eslint should respect .eslintignore
     # and only report issues for checked.js
     issue_files = [issue.file for issue in result.issues]
-    ignored_in_issues = any("ignored.js" in f for f in issue_files)
+    any("ignored.js" in f for f in issue_files)
     # Note: ESLint may still report issues if the file path matches differently
     # This test verifies that .eslintignore is being used by ESLint
     assert result.issues_count >= 0, "Should process files"
-
