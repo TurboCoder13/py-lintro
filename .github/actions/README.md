@@ -6,7 +6,9 @@ inputs in its action.yml.
 ## Versioning Strategy
 
 Internal actions use **semantic version tags** with the `actions-` prefix (e.g.,
-`@actions-v1.0.0`) instead of commit SHAs. This approach:
+`actions-v1.0.0`, `actions-v1.0.1`) instead of commit SHAs. Workflows reference actions
+using the major version pointer `@actions-v1`, which automatically resolves to the
+latest patch version tag. This approach:
 
 - Eliminates dependency update loops
 - Provides clear versioning for action stability
@@ -22,7 +24,8 @@ when actions or reusable workflows are modified. You don't need to manually crea
 
 1. Modify an action file (e.g., `.github/actions/setup-env/action.yml`)
 2. Commit and push to main
-3. Workflow automatically creates `actions-v1.0.1` (or next patch version)
+3. Workflow automatically creates `actions-v1.0.0` (first run) or the next patch version
+   (e.g., `actions-v1.0.1`)
 4. All workflows using `@actions-v1` automatically use the new version
 
 ### Manual Versioning (Breaking Changes Only)

@@ -87,9 +87,9 @@ get_latest_tag() {
   latest=$(git tag -l 'actions-v1.*.*' | sort -V | tail -n1)
   
   if [[ -z "$latest" ]]; then
-    # No actions-v1.x.x tags exist yet, start with actions-v1.0.0
-    log_info "No existing actions-v1.x.x tags found, will create actions-v1.0.1"
-    echo "actions-v1.0.0"
+    # No actions-v1.x.x tags exist yet, return sentinel value
+    log_info "No existing actions-v1.x.x tags found, will create actions-v1.0.0"
+    echo "NONE"
   else
     log_info "Latest tag: $latest"
     echo "$latest"
@@ -99,6 +99,13 @@ get_latest_tag() {
 # Increment patch version
 increment_version() {
   local latest="$1"
+  
+  # If no tags exist (sentinel value), return v1.0.0 directly
+  if [[ "$latest" == "NONE" ]]; then
+    log_info "Next tag: actions-v1.0.0"
+    echo "actions-v1.0.0"
+    return 0
+  fi
   
   # Remove 'actions-v' prefix, split into parts, increment patch
   local version="${latest#actions-v}"
