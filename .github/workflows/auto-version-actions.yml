@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+name: Maintenance - Auto-version Internal Actions
+# Automatically creates semantic version tags when internal actions or reusable
+# workflows are modified. Increments patch version for each change.
+
+'on':
+  push:
+    branches: [main]
+    paths:
+      - .github/actions/**
+      - .github/workflows/reusable-*.yml
+
+permissions:
+  contents: read
+
+jobs:
+  auto-version:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    # Skip if commit is from this workflow or other automated processes
+    if: >-
+      !contains(github.event.head_commit.message, 'auto-version internal actions') &&
+      !contains(github.event.head_commit.message, 'bump internal refs')
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            downloads.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+
+      - name: Checkout with full history
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-version internal actions
+        id: version
+        run: scripts/ci/auto-version-actions.sh

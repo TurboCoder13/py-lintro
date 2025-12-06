@@ -139,7 +139,7 @@ jobs:
           "Scoped permissions to packages:write via job-level permissions"
 
       - name: Setup Docker (Buildx + login)
-        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@c8c76cb03c55123708439e033a16bbfb1a281773
+        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@actions-v1
         with:
           login: 'true'
           registry: ghcr.io

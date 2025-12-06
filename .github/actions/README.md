@@ -3,6 +3,50 @@
 Centralized, reusable steps to keep workflows small and DRY. Each action exposes clear
 inputs in its action.yml.
 
+## Versioning Strategy
+
+Internal actions use **semantic version tags** with the `actions-` prefix (e.g.,
+`actions-v1.0.0`, `actions-v1.0.1`) instead of commit SHAs. Workflows reference actions
+using the major version pointer `@actions-v1`, which automatically resolves to the
+latest patch version tag. This approach:
+
+- Eliminates dependency update loops
+- Provides clear versioning for action stability
+- Separates action versions from lintro PyPI release versions
+- Follows industry best practices for monorepos
+
+### Automatic Versioning
+
+The `auto-version-actions.yml` workflow automatically creates new patch version tags
+when actions or reusable workflows are modified. You don't need to manually create tags.
+
+**How it works:**
+
+1. Modify an action file (e.g., `.github/actions/setup-env/action.yml`)
+2. Commit and push to main
+3. Workflow automatically creates `actions-v1.0.0` (first run) or the next patch version
+   (e.g., `actions-v1.0.1`)
+4. All workflows using `@actions-v1` automatically use the new version
+
+### Manual Versioning (Breaking Changes Only)
+
+For major version changes (breaking changes), manually create a new major version tag:
+
+1. **Make your breaking changes** to the action files
+2. **Create and push the tag**:
+
+   ```bash
+   git tag actions-v2.0.0 -m "Major version: breaking changes"
+   git push origin actions-v2.0.0
+   ```
+
+3. **Update workflow references** from `@actions-v1` to `@actions-v2`
+
+### Current Action Versions
+
+All actions are currently at `actions-v1.0.0`. Patch versions are automatically managed
+by the `auto-version-actions` workflow.
+
 ## .github/actions/setup-docker
 
 - Purpose: Set up Docker Buildx; optionally log in to a registry (e.g., GHCR)
