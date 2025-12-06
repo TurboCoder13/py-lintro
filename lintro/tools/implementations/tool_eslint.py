@@ -52,7 +52,8 @@ class EslintTool(BaseTool):
         """Initialize eslint tool."""
         super().__post_init__()
         # Note: .eslintignore is handled natively by ESLint
-        # ESLint config files (.eslintrc.*, eslint.config.*) are also discovered natively
+        # ESLint config files (.eslintrc.*, eslint.config.*) are also
+        # discovered natively
 
     def set_options(
         self,
@@ -369,4 +370,3 @@ class EslintTool(BaseTool):
             fixed_issues_count=fixed_count,
             remaining_issues_count=remaining_count,
         )
-

@@ -74,7 +74,8 @@ def format_eslint_issues(
 
     Notes:
         ESLint issues can be auto-fixable if the fixable flag is True.
-        For non-JSON formats, issues are split into auto-fixable and not auto-fixable sections.
+        For non-JSON formats, issues are split into auto-fixable and
+        not auto-fixable sections.
         JSON returns the combined table for compatibility.
     """
     descriptor = EslintTableDescriptor()
@@ -105,4 +106,3 @@ def format_eslint_issues(
         return "No issues found."
 
     return "\n\n".join(sections)
-
