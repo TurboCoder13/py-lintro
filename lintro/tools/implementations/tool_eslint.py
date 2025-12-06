@@ -76,7 +76,7 @@ class EslintTool(BaseTool):
             self.exclude_patterns = exclude_patterns.copy()
         self.include_venv = include_venv
         if timeout is not None:
-            self.timeout = timeout
+            self.options["timeout"] = timeout
         if verbose_fix_output is not None:
             self.options["verbose_fix_output"] = verbose_fix_output
 
@@ -355,8 +355,10 @@ class EslintTool(BaseTool):
         # Success means no remaining issues
         success: bool = remaining_count == 0
 
-        # Combine initial and remaining issues so formatter can split them by fixability
-        all_issues = (initial_issues or []) + (remaining_issues or [])
+        # Use only remaining issues (post-fix list) to avoid duplicates
+        # The formatter relies on metadata counters (initial_issues_count,
+        # fixed_issues_count, remaining_issues_count) for summaries
+        all_issues = remaining_issues or []
 
         return ToolResult(
             name=self.name,
