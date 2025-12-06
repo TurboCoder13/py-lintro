@@ -24,6 +24,8 @@ permissions:
 
 jobs:
   quality:
+    # Skip workflow if triggered by internal action version tags
+    if: ${{ !startsWith(github.ref_name, 'actions-v') }}
     uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@actions-v1
     permissions:
       contents: read
