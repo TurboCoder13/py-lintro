@@ -8,8 +8,8 @@ version = "0.16.1"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
 keywords = [ "linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker",]
 classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
-requires-python = ">=3.13"
-dependencies = [ "click==8.1.8", "coverage-badge==1.1.2", "darglint==1.8.1", "loguru==0.7.3", "tabulate==0.9.0", "yamllint==1.37.1", "httpx==0.28.1", "toml==0.10.2", "defusedxml==0.7.1", "ruff>=0.14.0", "black>=25.0.0", "bandit>=1.8.0",]
+requires-python = "==3.14.1"
+dependencies = [ "click==8.1.8", "coverage-badge==1.1.2", "darglint==1.8.1", "loguru==0.7.3", "tabulate==0.9.0", "yamllint==1.37.1", "httpx==0.28.1", "toml==0.10.2", "defusedxml==0.7.1", "ruff==0.14.4", "black==25.11.0", "bandit==1.9.2",]
 [[project.authors]]
 name = "TurboCoder13"
 email = "turbocoder13@gmail.com"
