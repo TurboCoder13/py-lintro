@@ -84,16 +84,6 @@
     "enabled": true,
     "pinDigests": true
   },
-  "ignoreCommits": [
-    {
-      "messagePattern": "bump internal refs to latest SHA",
-      "caseSensitive": false
-    },
-    {
-      "messagePattern": "chore: bump internal",
-      "caseSensitive": false
-    }
-  ],
   "customManagers": [
     {
       "customType": "regex",

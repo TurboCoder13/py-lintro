@@ -27,26 +27,13 @@ jobs:
       ${{ github.event_name == 'workflow_dispatch' || (
           github.ref == 'refs/heads/main' &&
           github.actor != 'github-actions[bot]' &&
-          github.event.head_commit.author.name != 'renovate[bot]' &&
           !contains(
             github.event.head_commit.message,
             'bump internal refs to latest SHA'
           ) &&
           !contains(
             github.event.head_commit.message,
-            'bump internal refs to latest sha'
-          ) &&
-          !contains(
-            github.event.head_commit.message,
             'Update TurboCoder13/py-lintro digest'
-          ) &&
-          !contains(
-            github.event.head_commit.message,
-            'update TurboCoder13/py-lintro digest'
-          ) &&
-          !contains(
-            github.event.head_commit.message,
-            'chore(deps): update TurboCoder13/py-lintro digest'
           ) &&
           !startsWith(github.event.head_commit.message, 'chore(release):')
       ) }}
