@@ -12,6 +12,10 @@ from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
 )
+from lintro.formatters.tools.eslint_formatter import (
+    EslintTableDescriptor,
+    format_eslint_issues,
+)
 from lintro.formatters.tools.hadolint_formatter import (
     HadolintTableDescriptor,
     format_hadolint_issues,
@@ -40,6 +44,8 @@ __all__ = [
     "format_bandit_issues",
     "DarglintTableDescriptor",
     "format_darglint_issues",
+    "EslintTableDescriptor",
+    "format_eslint_issues",
     "HadolintTableDescriptor",
     "format_hadolint_issues",
     "MarkdownlintTableDescriptor",

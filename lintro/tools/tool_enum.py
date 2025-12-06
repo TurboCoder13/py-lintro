@@ -6,6 +6,7 @@ from lintro.tools.implementations.tool_actionlint import ActionlintTool
 from lintro.tools.implementations.tool_bandit import BanditTool
 from lintro.tools.implementations.tool_black import BlackTool
 from lintro.tools.implementations.tool_darglint import DarglintTool
+from lintro.tools.implementations.tool_eslint import EslintTool
 from lintro.tools.implementations.tool_hadolint import HadolintTool
 from lintro.tools.implementations.tool_markdownlint import MarkdownlintTool
 from lintro.tools.implementations.tool_prettier import PrettierTool
@@ -19,6 +20,7 @@ class ToolEnum(Enum):
 
     BLACK = BlackTool
     DARGLINT = DarglintTool
+    ESLINT = EslintTool
     HADOLINT = HadolintTool
     MARKDOWNLINT = MarkdownlintTool
     PRETTIER = PrettierTool

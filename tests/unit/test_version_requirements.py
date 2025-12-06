@@ -244,6 +244,7 @@ def test_get_all_tool_versions(mock_run):
         "darglint",
         "pytest",
         "prettier",
+        "eslint",
         "hadolint",
         "actionlint",
         "markdownlint",

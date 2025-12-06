@@ -27,6 +27,10 @@ from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
 )
+from lintro.formatters.tools.eslint_formatter import (
+    EslintTableDescriptor,
+    format_eslint_issues,
+)
 from lintro.formatters.tools.hadolint_formatter import (
     HadolintTableDescriptor,
     format_hadolint_issues,
@@ -55,6 +59,8 @@ from lintro.parsers.bandit.bandit_parser import parse_bandit_output
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
+from lintro.parsers.eslint.eslint_issue import EslintIssue
+from lintro.parsers.eslint.eslint_parser import parse_eslint_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
@@ -67,6 +73,7 @@ from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 # Constants
 TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
     "darglint": (DarglintTableDescriptor(), format_darglint_issues),
+    "eslint": (EslintTableDescriptor(), format_eslint_issues),
     "hadolint": (HadolintTableDescriptor(), format_hadolint_issues),
     "black": (BlackTableDescriptor(), format_black_issues),
     "prettier": (PrettierTableDescriptor(), format_prettier_issues),
@@ -323,6 +330,12 @@ def format_tool_output(
                     "fixable",
                     True,
                 )
+            if tool == "eslint":
+                return lambda i: isinstance(i, EslintIssue) and getattr(
+                    i,
+                    "fixable",
+                    False,
+                )
             return None
 
         is_fixable = _is_fixable_predicate(tool_name)
@@ -380,6 +393,8 @@ def format_tool_output(
         parsed_issues = parse_black_output(output=output)
     elif tool_name == "darglint":
         parsed_issues = parse_darglint_output(output=output)
+    elif tool_name == "eslint":
+        parsed_issues = parse_eslint_output(output=output)
     elif tool_name == "hadolint":
         parsed_issues = parse_hadolint_output(output=output)
     elif tool_name == "yamllint":

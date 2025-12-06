@@ -27,6 +27,7 @@ def _get_all_tool_names() -> list[str]:
         "ruff",
         "black",
         "prettier",
+        "eslint",
         "yamllint",
         "markdownlint",
         "darglint",
