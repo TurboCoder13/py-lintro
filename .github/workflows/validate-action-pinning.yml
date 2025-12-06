@@ -2,8 +2,9 @@
 # For license details, see the repository root LICENSE file.
 ---
 name: Quality Check - Action Pinning Validation
-# Validates that all GitHub Actions in workflows are pinned to specific SHA commits
-# for security compliance. Prevents use of mutable tag references.
+# Validates that external GitHub Actions are pinned to specific SHA commits for
+# security compliance. Internal actions (TurboCoder13/py-lintro) use semantic
+# version tags instead for easier maintenance.
 
 'on':
   pull_request:
