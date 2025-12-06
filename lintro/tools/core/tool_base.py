@@ -334,7 +334,7 @@ class BaseTool(ABC):
             return [tool_name]
 
         # Node.js tools: use npx to respect project's package.json
-        nodejs_tools = {"prettier"}
+        nodejs_tools = {"eslint", "prettier"}
         if tool_name in nodejs_tools:
             if shutil.which("npx"):
                 return ["npx", "--yes", tool_name]
