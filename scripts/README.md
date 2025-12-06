@@ -79,6 +79,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `pre-release-quality.sh`            | Run Lintro format and check                              | `./scripts/ci/pre-release-quality.sh --help`                                          |
 | `semantic_release_compute_next.py`  | Compute next version (tag-only baseline)                 | `uv run python scripts/ci/semantic_release_compute_next.py --print-only`              |
 | `validate-action-pinning.sh`        | Scan for unpinned GitHub Actions                         | `./scripts/ci/validate-action-pinning.sh --help`                                      |
+| `auto-version-actions.sh`           | Auto-create semantic version tags for internal actions   | `./scripts/ci/auto-version-actions.sh --help`                                         |
 | `semantic-pr-title-check.sh`        | Validate PR title against Conventional Commits           | `./scripts/ci/semantic-pr-title-check.sh --help`                                      |
 | `verify-tag-matches-pyproject.sh`   | Verify tag matches `pyproject.toml` version              | `./scripts/ci/verify-tag-matches-pyproject.sh --help`                                 |
 | `sbom-generate.sh`                  | Generate and export SBOMs via bomctl                     | `./scripts/ci/sbom-generate.sh --help`                                                |
