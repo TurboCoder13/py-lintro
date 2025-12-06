@@ -51,13 +51,19 @@ def run_eslint_directly(
     if not check_only:
         cmd.append("--fix")
     cmd.append(file_path.name)
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        check=False,
-        cwd=file_path.parent,
-    )
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=file_path.parent,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        pytest.fail(
+            f"ESLint subprocess timed out after 30s. Command: {' '.join(cmd)}",
+        )
     # Combine stdout and stderr for full output
     full_output = result.stdout + result.stderr
     # Count issues using the eslint parser
@@ -195,7 +201,8 @@ def test_eslint_fix_sets_issues_for_table(temp_eslint_file) -> None:
     # Run fix and assert issues are provided for table formatting
     fix_result = tool.fix([str(temp_eslint_file)])
     assert fix_result.issues is not None
-    assert len(fix_result.issues) >= 0
+    assert isinstance(fix_result.issues, list)
+    assert len(fix_result.issues) == fix_result.remaining_issues_count
 
     # Verify that formatted output renders correctly
     formatted = format_tool_output(
@@ -241,7 +248,9 @@ def test_eslint_respects_eslintignore(tmp_path) -> None:
     # Since we're checking the directory, eslint should respect .eslintignore
     # and only report issues for checked.js
     issue_files = [issue.file for issue in result.issues]
-    any("ignored.js" in f for f in issue_files)
+    assert not any(
+        "ignored.js" in f for f in issue_files
+    ), "ignored.js should be excluded from issue files when .eslintignore is present"
     # Note: ESLint may still report issues if the file path matches differently
     # This test verifies that .eslintignore is being used by ESLint
     assert result.issues_count >= 0, "Should process files"
