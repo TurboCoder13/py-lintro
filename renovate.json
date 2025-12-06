@@ -62,6 +62,19 @@
       "pinDigests": true,
       "groupName": "github-actions",
       "separateMinorPatch": false
+    },
+    {
+      "matchManagers": [
+        "pip_requirements",
+        "pip_setup",
+        "pipenv",
+        "poetry",
+        "setup-cfg",
+        "setup-py",
+        "uv"
+      ],
+      "matchPackageNames": ["python"],
+      "rangeStrategy": "update-lockfile"
     }
   ],
   "pip_requirements": {
