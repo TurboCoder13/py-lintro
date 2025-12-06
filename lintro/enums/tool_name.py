@@ -12,6 +12,7 @@ class ToolName(StrEnum):
     """Supported tool identifiers in lower-case values."""
 
     DARGLINT = auto()
+    ESLINT = auto()
     HADOLINT = auto()
     MARKDOWNLINT = auto()
     PRETTIER = auto()
