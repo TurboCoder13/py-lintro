@@ -55,7 +55,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@3369d4b1485ffebf1bad0ceff95476435d292dc9
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@c8c76cb03c55123708439e033a16bbfb1a281773
 
       - name: Run Lintro on codebase
         run: ./scripts/ci/lintro-report-generate.sh
