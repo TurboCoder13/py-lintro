@@ -79,7 +79,6 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `pre-release-quality.sh`            | Run Lintro format and check                              | `./scripts/ci/pre-release-quality.sh --help`                                          |
 | `semantic_release_compute_next.py`  | Compute next version (tag-only baseline)                 | `uv run python scripts/ci/semantic_release_compute_next.py --print-only`              |
 | `validate-action-pinning.sh`        | Scan for unpinned GitHub Actions                         | `./scripts/ci/validate-action-pinning.sh --help`                                      |
-| `bump-internal-refs.sh`             | Pin internal action/workflow refs to latest SHA          | `./scripts/ci/bump-internal-refs.sh --help`                                           |
 | `semantic-pr-title-check.sh`        | Validate PR title against Conventional Commits           | `./scripts/ci/semantic-pr-title-check.sh --help`                                      |
 | `verify-tag-matches-pyproject.sh`   | Verify tag matches `pyproject.toml` version              | `./scripts/ci/verify-tag-matches-pyproject.sh --help`                                 |
 | `sbom-generate.sh`                  | Generate and export SBOMs via bomctl                     | `./scripts/ci/sbom-generate.sh --help`                                                |
@@ -89,7 +88,6 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `semantic-release-helpers.sh`       | Helpers for semantic-release workflow steps              | `./scripts/ci/semantic-release-helpers.sh --help`                                     |
 | `reusable-quality-entry.sh`         | Quality gate wrapper for reusable workflow               | `./scripts/ci/reusable-quality-entry.sh --help`                                       |
 | `configure-git-user.sh`             | Configure git user/email and safe.directory              | `./scripts/ci/configure-git-user.sh --help`                                           |
-| `bump-internal-refs-entry.sh`       | Wrapper to bump internal refs with SHA selection         | `./scripts/ci/bump-internal-refs-entry.sh --help`                                     |
 | `egress-audit-lite.sh`              | Audit reachability of allowed endpoints                  | `./scripts/ci/egress-audit-lite.sh --help`                                            |
 | `sbom-install-binary-gh.sh`         | Install bomctl from GitHub Releases via gh               | `./scripts/ci/sbom-install-binary-gh.sh --help`                                       |
 | `fail-if-semantic-invalid.sh`       | Fail step if semantic title validation failed            | `OK=true ./scripts/ci/fail-if-semantic-invalid.sh`                                    |
