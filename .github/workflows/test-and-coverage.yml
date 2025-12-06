@@ -71,7 +71,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@3369d4b1485ffebf1bad0ceff95476435d292dc9
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@v1
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
@@ -164,7 +164,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Environment setup
         # yamllint disable-line rule:line-length
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@3369d4b1485ffebf1bad0ceff95476435d292dc9
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@v1
       - name: Download coverage XML artifact (fallback for comment generation)
         if: always()
         continue-on-error: true
@@ -184,7 +184,7 @@ jobs:
           ./scripts/ci/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@3369d4b1485ffebf1bad0ceff95476435d292dc9
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@v1
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'
