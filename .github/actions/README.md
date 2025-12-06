@@ -5,37 +5,44 @@ inputs in its action.yml.
 
 ## Versioning Strategy
 
-Internal actions use **semantic version tags** (e.g., `@v1.0.0`) instead of commit SHAs.
-This approach:
+Internal actions use **semantic version tags** with the `actions-` prefix (e.g.,
+`@actions-v1.0.0`) instead of commit SHAs. This approach:
 
 - Eliminates dependency update loops
 - Provides clear versioning for action stability
-- Follows industry best practices (used by GitHub and major organizations)
+- Separates action versions from lintro PyPI release versions
+- Follows industry best practices for monorepos
 
-### Creating New Versions
+### Automatic Versioning
 
-When updating an internal action:
+The `auto-version-actions.yml` workflow automatically creates new patch version tags
+when actions or reusable workflows are modified. You don't need to manually create tags.
 
-1. **Make your changes** to the action files
-2. **Decide on version bump**:
-   - **Major** (`v2.0.0`): Breaking changes (input/output changes, behavior changes)
-   - **Minor** (`v1.1.0`): New features (new inputs, new functionality)
-   - **Patch** (`v1.0.1`): Bug fixes (fixes without changing behavior)
-3. **Create and push the tag**:
+**How it works:**
+
+1. Modify an action file (e.g., `.github/actions/setup-env/action.yml`)
+2. Commit and push to main
+3. Workflow automatically creates `actions-v1.0.1` (or next patch version)
+4. All workflows using `@actions-v1` automatically use the new version
+
+### Manual Versioning (Breaking Changes Only)
+
+For major version changes (breaking changes), manually create a new major version tag:
+
+1. **Make your breaking changes** to the action files
+2. **Create and push the tag**:
 
    ```bash
-   git tag v1.1.0
-   git push origin v1.1.0
+   git tag actions-v2.0.0 -m "Major version: breaking changes"
+   git push origin actions-v2.0.0
    ```
 
-4. **Update workflow references** if it's a breaking change (major version), otherwise
-   workflows can continue using the major version tag (e.g., `@v1` will auto-update to
-   latest `v1.x.x`)
+3. **Update workflow references** from `@actions-v1` to `@actions-v2`
 
 ### Current Action Versions
 
-All actions are currently at `v1.0.0`. When you update an action, create a new tag
-following semantic versioning principles.
+All actions are currently at `actions-v1.0.0`. Patch versions are automatically managed
+by the `auto-version-actions` workflow.
 
 ## .github/actions/setup-docker
 
