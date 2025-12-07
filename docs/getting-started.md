@@ -61,7 +61,8 @@ versions are centrally managed in `pyproject.toml`:
 - `ruff` - Fast Python linter and formatter
 - `black` - Python code formatter
 - `bandit` - Python security linter
-- `mypy` - Python static type checker (opt-in strict mode, reports missing imports by default)
+- `mypy` - Python static type checker (opt-in strict mode, reports missing imports by
+  default)
 - `yamllint` - YAML linter
 - `darglint` - Python docstring linter
 

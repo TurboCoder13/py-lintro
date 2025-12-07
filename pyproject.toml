@@ -79,6 +79,29 @@ enforce_failure = true
 
 [tool.lintro.ruff]
 
+[tool.mypy]
+python_version = "3.13"
+strict = false
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_unused_configs = true
+explicit_package_bases = true
+namespace_packages = true
+files = [ "lintro", "scripts",]
+exclude = [ "^tests/", "^test_samples/", "^node_modules/", "^dist/", "^build/",]
+
+[[tool.mypy.overrides]]
+module = "lintro.tools.implementations.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "lintro.formatters.tools.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "lintro.utils.tool_executor"
+ignore_errors = true
+
 [tool.lintro.versions]
 pytest = "8.0.0"
 prettier = "3.7.0"

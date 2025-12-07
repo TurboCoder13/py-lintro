@@ -1,6 +1,6 @@
 """Config command for displaying Lintro configuration status."""
 
-from typing import Any
+from typing import Any, cast
 
 import click
 from rich.console import Console
@@ -110,7 +110,7 @@ def _output_json(
         tool_order=config.execution.tool_order,
     )
 
-    output = {
+    output: dict[str, Any] = {
         "config_source": config.config_path or "defaults",
         "global_settings": {
             "line_length": config.enforce.line_length,
@@ -130,6 +130,8 @@ def _output_json(
         "warnings": validate_config_consistency(),
     }
 
+    tool_configs = cast(dict[str, Any], output["tool_configs"])
+
     for tool_name in tool_names:
         tool_config = config.get_tool_config(tool_name)
         effective_ll = config.get_effective_line_length(tool_name)
@@ -145,7 +147,7 @@ def _output_json(
             tool_output["native_config"] = native if native else None
             tool_output["defaults"] = config.get_tool_defaults(tool_name) or None
 
-        output["tool_configs"][tool_name] = tool_output
+        tool_configs[tool_name] = tool_output
 
     print(json.dumps(output, indent=2))
 

@@ -112,11 +112,14 @@ class MarkdownlintTool(BaseTool):
             ValueError: If timeout is not an integer or is not positive, or
                 if line_length is not an integer or is not positive
         """
+        set_kwargs = dict(kwargs)
+
         if timeout is not None:
             if not isinstance(timeout, int):
                 raise ValueError("timeout must be an integer")
             if timeout <= 0:
                 raise ValueError("timeout must be positive")
+            set_kwargs["timeout"] = timeout
 
         # Use provided line_length, or get from central config
         if line_length is None:
@@ -130,7 +133,7 @@ class MarkdownlintTool(BaseTool):
             # Store for use in check() method
             self.options["line_length"] = line_length
 
-        super().set_options(timeout=timeout, **kwargs)
+        super().set_options(**set_kwargs)
 
     def _get_markdownlint_command(self) -> list[str]:
         """Get the command to run markdownlint-cli2.
@@ -210,6 +213,9 @@ class MarkdownlintTool(BaseTool):
 
         Returns:
             ToolResult: Result of the check operation.
+
+        Raises:
+            ValueError: If configured timeout is invalid.
         """
         # Check version requirements
         version_result = self._verify_tool_version()
@@ -285,7 +291,11 @@ class MarkdownlintTool(BaseTool):
 
         logger.debug(f"[MarkdownlintTool] Running: {' '.join(cmd)} (cwd={cwd})")
 
-        timeout_val: int = self.options.get("timeout", MARKDOWNLINT_DEFAULT_TIMEOUT)
+        timeout_raw = self.options.get("timeout", MARKDOWNLINT_DEFAULT_TIMEOUT)
+        try:
+            timeout_val = float(timeout_raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Timeout must be a number") from exc
         try:
             success, output = self._run_subprocess(
                 cmd=cmd,

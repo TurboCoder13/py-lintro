@@ -5,6 +5,7 @@ supports both check and fix flows and includes standardized fields to report
 fixed vs remaining counts for fix-capable tools.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 
@@ -31,7 +32,7 @@ class ToolResult:
     output: str | None = None
     issues_count: int = 0
     formatted_output: str | None = None
-    issues: list[object] | None = None
+    issues: Sequence[object] | None = None
 
     # Optional standardized counts for fix-capable tools
     initial_issues_count: int | None = None

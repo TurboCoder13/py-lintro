@@ -163,31 +163,36 @@ class BaseTool(ABC):
             CalledProcessError: If command fails.
             TimeoutExpired: If command times out.
             FileNotFoundError: If command executable is not found.
+            ValueError: If timeout is not numeric.
         """
         # Validate command arguments for safety prior to execution
         self._validate_subprocess_command(cmd=cmd)
+
+        raw_timeout = (
+            timeout
+            if timeout is not None
+            else self.options.get(
+                "timeout",
+                self._default_timeout,
+            )
+        )
+        if not isinstance(raw_timeout, (int, float)):
+            raise ValueError("Timeout must be a number")
+        effective_timeout: float = float(raw_timeout)
 
         try:
             result = subprocess.run(  # nosec B603 - args list, shell=False
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=timeout
-                or self.options.get(
-                    "timeout",
-                    self._default_timeout,
-                ),
+                timeout=effective_timeout,
                 cwd=cwd,
             )
             return result.returncode == 0, result.stdout + result.stderr
         except subprocess.TimeoutExpired as e:
             raise subprocess.TimeoutExpired(
                 cmd=cmd,
-                timeout=timeout
-                or self.options.get(
-                    "timeout",
-                    self._default_timeout,
-                ),
+                timeout=effective_timeout,
                 output=str(e),
             ) from e
         except subprocess.CalledProcessError as e:
@@ -585,4 +590,4 @@ class BaseTool(ABC):
         """
         if not self.can_fix:
             raise NotImplementedError(f"{self.name} does not support fixing issues")
-        ...
+        raise NotImplementedError("Subclasses must implement fix()")

@@ -7,6 +7,7 @@ No tee, no stream redirection, clean and simple with rich formatting.
 import re
 import sys
 from pathlib import Path
+from typing import cast
 
 import click
 from loguru import logger
@@ -389,18 +390,21 @@ class SimpleLintroLogger:
             if output and ("Fixed" in output or "issue(s)" in output):
                 # This is a format operation - parse for better messaging
                 # Prefer standardized counters if present in the output object
-                fixed_count: int = (
-                    getattr(output, "fixed_issues_count", None)
+                fixed_count: int | None = (
+                    cast(int | None, getattr(output, "fixed_issues_count", None))
                     if hasattr(output, "fixed_issues_count")
                     else None
                 )
-                remaining_count: int = (
-                    getattr(output, "remaining_issues_count", None)
+                remaining_count: int | None = (
+                    cast(
+                        int | None,
+                        getattr(output, "remaining_issues_count", None),
+                    )
                     if hasattr(output, "remaining_issues_count")
                     else None
                 )
-                initial_count: int = (
-                    getattr(output, "initial_issues_count", None)
+                initial_count: int | None = (
+                    cast(int | None, getattr(output, "initial_issues_count", None))
                     if hasattr(output, "initial_issues_count")
                     else None
                 )
@@ -446,12 +450,12 @@ class SimpleLintroLogger:
                     )
                 else:
                     # Fallback to original behavior
-                    error_msg: str = f"✗ Found {issues_count} issues"
+                    error_msg = f"✗ Found {issues_count} issues"
                     self.console_output(text=error_msg, color="red")
             else:
                 # Show issue count with action-aware phrasing
                 if action == "fmt":
-                    error_msg: str = f"✗ {issues_count} issue(s) cannot be auto-fixed"
+                    error_msg = f"✗ {issues_count} issue(s) cannot be auto-fixed"
                 else:
                     error_msg = f"✗ Found {issues_count} issues"
                 self.console_output(text=error_msg, color="red")
@@ -675,7 +679,7 @@ class SimpleLintroLogger:
                 if action == "fmt":
                     # Format operations: show fixed count and remaining status
                     if success:
-                        status_display: str = click.style(
+                        status_display = click.style(
                             "✅ PASS",
                             fg="green",
                             bold=True,

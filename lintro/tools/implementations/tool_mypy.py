@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import os
 import subprocess  # nosec B404 - subprocess used safely with shell=False
+import tomllib
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import ToolConfig, ToolResult
@@ -20,6 +23,57 @@ from lintro.utils.tool_utils import walk_files_with_excludes
 MYPY_DEFAULT_TIMEOUT = 60
 MYPY_DEFAULT_PRIORITY = 82
 MYPY_FILE_PATTERNS = ["*.py", "*.pyi"]
+
+MYPY_DEFAULT_EXCLUDE_PATTERNS = [
+    "tests/*",
+    "tests/**",
+    "*/tests/*",
+    "*/tests/**",
+    "test_samples/*",
+    "test_samples/**",
+    "*/test_samples/*",
+    "*/test_samples/**",
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+]
+
+
+def _load_mypy_pyproject_config() -> dict[str, Any]:
+    """Return the [tool.mypy] config from pyproject.toml if present.
+
+    Returns:
+        dict[str, Any]: Parsed [tool.mypy] table, or empty dict if missing.
+    """
+    pyproject = Path("pyproject.toml")
+    if not pyproject.exists():
+        return {}
+    try:
+        with pyproject.open("rb") as handle:
+            data = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError):
+        return {}
+    return data.get("tool", {}).get("mypy", {}) or {}
+
+
+def _regex_to_glob(pattern: str) -> str:
+    """Coerce a simple regex pattern to a fnmatch glob.
+
+    Args:
+        pattern: Regex-style pattern to coerce.
+
+    Returns:
+        str: A best-effort fnmatch-style glob pattern.
+    """
+    cleaned = pattern.strip()
+    if cleaned.startswith("^"):
+        cleaned = cleaned[1:]
+    if cleaned.endswith("$"):
+        cleaned = cleaned[:-1]
+    cleaned = cleaned.replace(".*", "*")
+    if cleaned.endswith("/"):
+        cleaned = f"{cleaned}**"
+    return cleaned
 
 
 @dataclass
@@ -37,7 +91,7 @@ class MypyTool(BaseTool):
             tool_type=ToolType.LINTER | ToolType.TYPE_CHECKER,
             options={
                 "timeout": MYPY_DEFAULT_TIMEOUT,
-                "strict": True,
+                "strict": False,
                 "ignore_missing_imports": True,
                 "python_version": None,
                 "config_file": None,
@@ -114,7 +168,7 @@ class MypyTool(BaseTool):
             ],
         )
 
-        if self.options.get("strict", True):
+        if self.options.get("strict") is True:
             cmd.append("--strict")
         if self.options.get("ignore_missing_imports", True):
             cmd.append("--ignore-missing-imports")
@@ -145,8 +199,20 @@ class MypyTool(BaseTool):
         if version_result is not None:
             return version_result
 
-        self._validate_paths(paths=paths)
-        if not paths:
+        config_data = _load_mypy_pyproject_config()
+        configured_files = config_data.get("files")
+        configured_excludes = config_data.get("exclude")
+
+        target_paths: list[str] = list(paths) if paths else []
+        if (not target_paths or target_paths == ["."]) and configured_files:
+            if isinstance(configured_files, str):
+                target_paths = [configured_files]
+            elif isinstance(configured_files, list):
+                target_paths = [
+                    str(path) for path in configured_files if str(path).strip()
+                ]
+
+        if not target_paths:
             return ToolResult(
                 name=self.name,
                 success=True,
@@ -154,10 +220,28 @@ class MypyTool(BaseTool):
                 issues_count=0,
             )
 
+        self._validate_paths(paths=target_paths)
+
+        effective_excludes: list[str] = list(self.exclude_patterns)
+        if configured_excludes:
+            raw_excludes = (
+                [configured_excludes]
+                if isinstance(configured_excludes, str)
+                else list(configured_excludes)
+            )
+            for pattern in raw_excludes:
+                glob_pattern = _regex_to_glob(str(pattern))
+                if glob_pattern and glob_pattern not in effective_excludes:
+                    effective_excludes.append(glob_pattern)
+
+        for default_pattern in MYPY_DEFAULT_EXCLUDE_PATTERNS:
+            if default_pattern not in effective_excludes:
+                effective_excludes.append(default_pattern)
+
         python_files = walk_files_with_excludes(
-            paths=paths,
+            paths=target_paths,
             file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
+            exclude_patterns=effective_excludes,
             include_venv=self.include_venv,
         )
 
@@ -171,6 +255,9 @@ class MypyTool(BaseTool):
 
         cwd = self.get_cwd(paths=python_files)
         rel_files = [os.path.relpath(f, cwd) if cwd else f for f in python_files]
+
+        if not self.options.get("config_file") and Path("pyproject.toml").exists():
+            self.options["config_file"] = str(Path("pyproject.toml").resolve())
 
         timeout = get_timeout_value(self, MYPY_DEFAULT_TIMEOUT)
         cmd = self._build_command(files=rel_files)

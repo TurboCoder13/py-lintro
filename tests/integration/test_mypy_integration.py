@@ -77,13 +77,13 @@ class TestMypyTool:
     """Test cases for MypyTool."""
 
     def test_tool_initialization_defaults(self, mypy_tool) -> None:
-        """Ensure defaults are strict + ignore missing imports.
+        """Ensure defaults align with pyproject and ignore missing imports.
 
         Args:
             mypy_tool: Tool instance under test.
         """
         assert_that(mypy_tool.name).is_equal_to("mypy")
-        assert_that(mypy_tool.options["strict"]).is_true()
+        assert_that(mypy_tool.options["strict"]).is_false()
         assert_that(mypy_tool.options["ignore_missing_imports"]).is_true()
 
     def test_lint_check_clean_file(self, mypy_tool, mypy_clean_file) -> None:

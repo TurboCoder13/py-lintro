@@ -1,5 +1,7 @@
 """Command-line interface for Lintro."""
 
+from typing import Any, cast
+
 import click
 from loguru import logger
 from rich.console import Console
@@ -65,9 +67,10 @@ class LintroGroup(click.Group):
             cmd = self.get_command(ctx, name)
             if cmd is None:
                 continue
-            if not hasattr(cmd, "_canonical_name"):
-                cmd._canonical_name = name
-            canonical = cmd._canonical_name
+            cmd_any = cast(Any, cmd)
+            if not hasattr(cmd_any, "_canonical_name"):
+                cmd_any._canonical_name = name
+            canonical = cast(str, getattr(cmd_any, "_canonical_name", name))
             if canonical not in canonical_map:
                 canonical_map[canonical] = (cmd, [])
             if name != canonical:
@@ -256,13 +259,13 @@ def cli() -> None:
 
 
 # Register canonical commands and set _canonical_name for help
-check_command._canonical_name = "check"
-config_command._canonical_name = "config"
-format_code._canonical_name = "format"
-init_command._canonical_name = "init"
-test_command._canonical_name = "test"
-list_tools_command._canonical_name = "list-tools"
-versions_command._canonical_name = "versions"
+cast(Any, check_command)._canonical_name = "check"
+cast(Any, config_command)._canonical_name = "config"
+cast(Any, format_code)._canonical_name = "format"
+cast(Any, init_command)._canonical_name = "init"
+cast(Any, test_command)._canonical_name = "test"
+cast(Any, list_tools_command)._canonical_name = "list-tools"
+cast(Any, versions_command)._canonical_name = "versions"
 
 cli.add_command(check_command, name="check")
 cli.add_command(config_command, name="config")
