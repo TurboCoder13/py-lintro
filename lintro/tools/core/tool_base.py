@@ -315,7 +315,7 @@ class BaseTool(ABC):
         # Python tools bundled with lintro (guaranteed in our environment)
         # Note: darglint cannot be run as a module (python -m darglint),
         # so it's excluded
-        python_bundled_tools = {"ruff", "black", "bandit", "yamllint"}
+        python_bundled_tools = {"ruff", "black", "bandit", "yamllint", "mypy"}
         if tool_name in python_bundled_tools:
             # Use python -m to ensure we use the tool from lintro's environment
             python_exe = sys.executable

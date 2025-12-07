@@ -9,6 +9,7 @@ from lintro.tools.implementations.tool_darglint import DarglintTool
 from lintro.tools.implementations.tool_eslint import EslintTool
 from lintro.tools.implementations.tool_hadolint import HadolintTool
 from lintro.tools.implementations.tool_markdownlint import MarkdownlintTool
+from lintro.tools.implementations.tool_mypy import MypyTool
 from lintro.tools.implementations.tool_prettier import PrettierTool
 from lintro.tools.implementations.tool_pytest import PytestTool
 from lintro.tools.implementations.tool_ruff import RuffTool
@@ -23,6 +24,7 @@ class ToolEnum(Enum):
     ESLINT = EslintTool
     HADOLINT = HadolintTool
     MARKDOWNLINT = MarkdownlintTool
+    MYPY = MypyTool
     PRETTIER = PrettierTool
     PYTEST = PytestTool
     RUFF = RuffTool
