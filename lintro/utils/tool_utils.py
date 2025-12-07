@@ -192,7 +192,7 @@ def get_table_columns(
     issues: list[dict[str, str]],
     tool_name: str,
     group_by: str | None = None,
-) -> tuple[list[str], list[str]]:
+) -> tuple[list[str], list[list[str]]]:
     """Get table columns and rows for a list of issues.
 
     Args:

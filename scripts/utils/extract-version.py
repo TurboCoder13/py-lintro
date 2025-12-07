@@ -51,12 +51,12 @@ def _read_version_from_toml_bytes(data: bytes) -> str:
     """
     # Prefer stdlib tomllib (Python 3.11+); fall back to 'toml' if present
     try:
-        import tomllib  # type: ignore[attr-defined]
+        import tomllib
 
         parsed = tomllib.loads(data.decode("utf-8"))
     except Exception:  # pragma: no cover - fallback path for older envs
         try:
-            import toml  # type: ignore
+            import toml
 
             parsed = toml.loads(data.decode("utf-8"))
         except Exception as exc:  # pragma: no cover

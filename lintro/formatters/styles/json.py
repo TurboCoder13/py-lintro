@@ -34,7 +34,7 @@ class JsonStyle(OutputStyle):
         normalized_columns = [col.lower().replace(" ", "_") for col in columns]
 
         # Convert rows to list of dictionaries with proper data types
-        issues = []
+        issues: list[dict[str, Any]] = []
         for row in rows:
             issue_dict = {}
             for i, value in enumerate(row):
@@ -43,7 +43,7 @@ class JsonStyle(OutputStyle):
             issues.append(issue_dict)
 
         # Create the final JSON structure
-        result = {
+        result: dict[str, Any] = {
             "tool": tool_name,
             "timestamp": datetime.now().isoformat(),
             "total_issues": len(issues),

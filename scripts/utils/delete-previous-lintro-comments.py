@@ -55,7 +55,7 @@ def get_pr_comments(
     repo: str,
     pr_number: str,
     token: str,
-) -> list[dict[str, str | int]]:
+) -> list[dict[str, object]]:
     """Fetch all comments for a pull request with pagination and retries.
 
     Args:
@@ -78,7 +78,7 @@ def get_pr_comments(
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    all_comments: list[dict[str, str | int]] = []
+    all_comments: list[dict[str, object]] = []
     page: int = 1
     per_page: int = 100
     with httpx.Client(timeout=15) as client:
@@ -144,7 +144,7 @@ def main() -> None:
     marker: str = get_marker()
 
     try:
-        comments: list[dict[str, str | int]] = get_pr_comments(
+        comments: list[dict[str, object]] = get_pr_comments(
             repo=repo,
             pr_number=pr_number,
             token=token,
@@ -155,8 +155,10 @@ def main() -> None:
 
     deleted_any: bool = False
     for comment in comments:
-        if marker in comment.get("body", ""):
-            delete_comment(repo=repo, comment_id=comment["id"], token=token)
+        body = comment.get("body")
+        comment_id = comment.get("id")
+        if isinstance(body, str) and marker in body and isinstance(comment_id, int):
+            delete_comment(repo=repo, comment_id=comment_id, token=token)
             deleted_any = True
 
     if not deleted_any:

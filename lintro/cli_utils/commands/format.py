@@ -92,13 +92,12 @@ def format_code(
         ClickException: If issues are found during formatting.
     """
     # Default to current directory if no paths provided
-    if not paths:
-        paths = DEFAULT_PATHS
+    normalized_paths: list[str] = list(paths) if paths else list(DEFAULT_PATHS)
 
     # Run with simplified approach
     exit_code: int = run_lint_tools_simple(
         action=DEFAULT_ACTION,
-        paths=list(paths),
+        paths=normalized_paths,
         tools=tools,
         tool_options=tool_options,
         exclude=exclude,

@@ -107,7 +107,7 @@ class ToolManager:
             return []
 
         # Get core instances
-        tools = {name: self.get_tool(name) for name in tool_list}
+        tools: dict[ToolEnum, Tool] = {name: self.get_tool(name) for name in tool_list}
 
         # Validate for duplicate tools
         seen_names: set[str] = set()
@@ -156,8 +156,9 @@ class ToolManager:
         # Create mapping from tool name strings to ToolEnum members
         # Handle both lowercase strings and ToolEnum members in conflicts_with
         name_to_enum_map = {t.name.lower(): t for t in ToolEnum}
-        for name, tool in tools.items():
-            for conflict in tool.config.conflicts_with:
+        for tool_enum_value in tool_list:
+            tool_instance: Tool = tools[tool_enum_value]
+            for conflict in tool_instance.config.conflicts_with:
                 # Convert conflict string to ToolEnum if needed
                 conflict_enum: ToolEnum | None = None
                 if isinstance(conflict, str):
@@ -168,11 +169,11 @@ class ToolManager:
                     conflict_enum = conflict
                 # Only add to conflict graph if conflict_enum is in tool_list
                 if conflict_enum is not None and conflict_enum in tool_list:
-                    conflict_graph[name].add(conflict_enum)
-                    conflict_graph[conflict_enum].add(name)
+                    conflict_graph[tool_enum_value].add(conflict_enum)
+                    conflict_graph[conflict_enum].add(tool_enum_value)
 
         # Resolve conflicts by keeping the first tool in ordered sequence
-        result = []
+        result: list[ToolEnum] = []
         for tool_name in sorted_tools:
             # Check if this core conflicts with any already selected tools
             conflicts = conflict_graph[tool_name] & set(result)
