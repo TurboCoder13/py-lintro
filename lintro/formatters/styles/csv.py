@@ -14,12 +14,16 @@ class CsvStyle(OutputStyle):
         self,
         columns: list[str],
         rows: list[list[Any]],
+        tool_name: str | None = None,
+        **kwargs: Any,
     ) -> str:
         """Format a table given columns and rows as CSV.
 
         Args:
             columns: List of column header names.
             rows: List of row values (each row is a list of cell values).
+            tool_name: Optional tool name to include in context.
+            **kwargs: Extra options ignored by this formatter.
 
         Returns:
             Formatted data as CSV string.

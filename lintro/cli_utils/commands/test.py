@@ -1,5 +1,7 @@
 """Test command implementation for running pytest tests."""
 
+from typing import Any, cast
+
 import click
 from click.testing import CliRunner
 
@@ -255,7 +257,7 @@ def test_command(
 
 
 # Exclude from pytest collection - this is a Click command, not a test function
-test_command.__test__ = False
+cast(Any, test_command).__test__ = False
 
 
 def test(

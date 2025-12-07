@@ -33,6 +33,7 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
     echo "  - Hadolint (Dockerfile linter)"
     echo "  - Actionlint (GitHub Actions workflow linter)"
     echo "  - Bandit (Python security linter)"
+    echo "  - Mypy (Python static type checker)"
     echo ""
     echo "Use this script to set up a complete development environment."
     exit 0
@@ -450,6 +451,17 @@ main() {
         exit 1
     fi
 
+    # Install mypy (Python type checker)
+    echo -e "${BLUE}Installing mypy...${NC}"
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install mypy"
+    elif install_python_package "mypy"; then
+        echo -e "${GREEN}✓ mypy installed successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to install mypy${NC}"
+        exit 1
+    fi
+
     # Install prettier via npm (JavaScript/JSON formatting)
     echo -e "${BLUE}Installing prettier...${NC}"
     
@@ -577,13 +589,14 @@ main() {
     echo "  - markdownlint-cli2 (Markdown linting)"
     echo "  - prettier (JavaScript/JSON formatting)"
     echo "  - ruff (Python linting and formatting)"
+    echo "  - mypy (Python type checking)"
     echo "  - yamllint (YAML linting)"
     echo ""
     
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("actionlint" "bandit" "black" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint")
+    tools_to_verify=("actionlint" "bandit" "black" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint" "mypy")
     for tool in "${tools_to_verify[@]}"; do
         if command -v "$tool" &> /dev/null; then
             version=$("$tool" --version 2>/dev/null || echo "installed")
