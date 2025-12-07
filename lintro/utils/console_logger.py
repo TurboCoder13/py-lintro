@@ -755,6 +755,15 @@ class SimpleLintroLogger:
 
                     # Check if tool was skipped (version check failure, etc.)
                     is_skipped = result_output and "skipping" in result_output.lower()
+                    no_files_message = result_output and any(
+                        (
+                            msg in result_output
+                            for msg in (
+                                "No files to",
+                                "No Python files found to",
+                            )
+                        ),
+                    )
 
                     has_execution_failure = result_output and (
                         "timeout" in result_output.lower()
@@ -763,7 +772,7 @@ class SimpleLintroLogger:
                     )
 
                     # If tool was skipped, show SKIPPED status
-                    if is_skipped:
+                    if is_skipped or no_files_message:
                         status_display = click.style(
                             "⏭️  SKIPPED",
                             fg="yellow",
@@ -816,7 +825,6 @@ class SimpleLintroLogger:
                                 fg="green" if issues_count == 0 else "red",
                                 bold=True,
                             )
-
                 if action == "fmt":
                     summary_data.append(
                         [

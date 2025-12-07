@@ -39,6 +39,10 @@ from lintro.formatters.tools.markdownlint_formatter import (
     MarkdownlintTableDescriptor,
     format_markdownlint_issues,
 )
+from lintro.formatters.tools.mypy_formatter import (
+    MypyTableDescriptor,
+    format_mypy_issues,
+)
 from lintro.formatters.tools.prettier_formatter import (
     PrettierTableDescriptor,
     format_prettier_issues,
@@ -63,6 +67,7 @@ from lintro.parsers.eslint.eslint_issue import EslintIssue
 from lintro.parsers.eslint.eslint_parser import parse_eslint_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
+from lintro.parsers.mypy.mypy_parser import parse_mypy_output
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.parsers.pytest.pytest_parser import parse_pytest_text_output
@@ -77,6 +82,7 @@ TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
     "hadolint": (HadolintTableDescriptor(), format_hadolint_issues),
     "black": (BlackTableDescriptor(), format_black_issues),
     "prettier": (PrettierTableDescriptor(), format_prettier_issues),
+    "mypy": (MypyTableDescriptor(), format_mypy_issues),
     "pytest": (PytestFailuresTableDescriptor(), format_pytest_issues),
     "ruff": (RuffTableDescriptor(), format_ruff_issues),
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
@@ -389,6 +395,8 @@ def format_tool_output(
         parsed_issues = parse_ruff_output(output=output)
     elif tool_name == "prettier":
         parsed_issues = parse_prettier_output(output=output)
+    elif tool_name == "mypy":
+        parsed_issues = parse_mypy_output(output=output)
     elif tool_name == "black":
         parsed_issues = parse_black_output(output=output)
     elif tool_name == "darglint":

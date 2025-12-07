@@ -104,6 +104,7 @@ grype sbom:main-*-py-lintro-sbom.spdx-2.3.json
 | [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                                             | 🟨 JS/TS · 🧾 JSON  | ✅       |
 | [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                                             | 🐍 Python           | ✅       |
 | [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                                        | 🐍 Python           | ✅       |
+| [![Mypy](https://img.shields.io/badge/Mypy-type%20checking-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)                                            | 🐍 Python           | -        |
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                                | 🧾 YAML             | -        |
 
 <!-- markdownlint-enable MD013 MD060 -->
@@ -124,6 +125,7 @@ behavior. These tools are bundled as dependencies with versions centrally manage
 - **Ruff** - Fast Python linter and formatter
 - **Black** - Python code formatter
 - **Bandit** - Python security linter
+- **Mypy** - Python static type checker (not strict by default; enable strict checks with --strict or specific flags; reports missing imports unless you pass --ignore-missing-imports)
 - **Yamllint** - YAML linter
 - **Darglint** - Python docstring linter
 

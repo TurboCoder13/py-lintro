@@ -401,6 +401,25 @@ select = E,W,F,I,N,D
 exclude = .git,__pycache__,.venv
 ```
 
+#### Mypy Configuration
+
+- Default run mode: `--strict` with `--ignore-missing-imports` enabled to avoid
+  third-party stub noise.
+- Config discovery: mypy auto-discovers `mypy.ini`, `pyproject.toml`, or `setup.cfg` if
+  present.
+- Recommended overrides when needed:
+
+```bash
+# Disable strict mode temporarily
+lintro check --tools mypy --tool-options mypy:strict=False
+
+# Surface missing-import errors (no ignore)
+lintro check --tools mypy --tool-options mypy:ignore_missing_imports=False
+
+# Pin target Python version
+lintro check --tools mypy --tool-options mypy:python_version=3.13
+```
+
 #### Bandit Configuration
 
 **File:** `pyproject.toml`
