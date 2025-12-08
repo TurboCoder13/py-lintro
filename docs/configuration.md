@@ -403,10 +403,12 @@ exclude = .git,__pycache__,.venv
 
 #### Mypy Configuration
 
-- Default run mode: `--strict` with `--ignore-missing-imports` enabled to avoid
-  third-party stub noise.
-- Config discovery: mypy auto-discovers `mypy.ini`, `pyproject.toml`, or `setup.cfg` if
-  present.
+- Default run mode (when no native config): `--strict` with `--ignore-missing-imports`
+  enabled to avoid third-party stub noise.
+- Config discovery: mypy auto-discovers `pyproject.toml [tool.mypy]`, `mypy.ini`, or
+  `setup.cfg [mypy]` and the discovered config is passed via `--config-file`. When a
+  native config provides `exclude`, Lintro does **not** add its default
+  test/test_samples excludes; otherwise, it applies the defaults plus `.lintro-ignore`.
 - Recommended overrides when needed:
 
 ```bash

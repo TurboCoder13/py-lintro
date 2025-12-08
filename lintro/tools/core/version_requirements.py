@@ -92,7 +92,7 @@ def _get_version_timeout() -> int:
 VERSION_CHECK_TIMEOUT: int = _get_version_timeout()
 
 
-def _load_pyproject_config() -> dict:
+def _load_pyproject_config() -> dict[str, object]:
     """Load pyproject.toml configuration.
 
     Returns:
@@ -142,13 +142,18 @@ def _get_minimum_versions() -> dict[str, str]:
     """
     config = _load_pyproject_config()
 
-    versions = {}
+    versions: dict[str, str] = {}
 
     # Python tools bundled with lintro - extract from dependencies
     python_bundled_tools = {"ruff", "black", "bandit", "yamllint", "darglint", "mypy"}
-    dependencies = config.get("project", {}).get("dependencies", [])
+    project_section = config.get("project", {})
+    project_dependencies = (
+        project_section.get("dependencies", [])
+        if isinstance(project_section, dict)
+        else []
+    )
 
-    for dep in dependencies:
+    for dep in project_dependencies:
         dep = dep.strip()
         for tool in python_bundled_tools:
             if dep.startswith(f"{tool}>=") or dep.startswith(f"{tool}=="):
@@ -156,8 +161,17 @@ def _get_minimum_versions() -> dict[str, str]:
                 break
 
     # Other tools - read from [tool.lintro.versions] section
-    lintro_versions = config.get("tool", {}).get("lintro", {}).get("versions", {})
-    versions.update(lintro_versions)
+    tool_section = (
+        config.get("tool", {}) if isinstance(config.get("tool", {}), dict) else {}
+    )
+    lintro_section = (
+        tool_section.get("lintro", {}) if isinstance(tool_section, dict) else {}
+    )
+    lintro_versions = (
+        lintro_section.get("versions", {}) if isinstance(lintro_section, dict) else {}
+    )
+    if isinstance(lintro_versions, dict):
+        versions.update({k: str(v) for k, v in lintro_versions.items()})
 
     # Fill in any missing tools with defaults (for backward compatibility)
     defaults = {
@@ -183,7 +197,7 @@ def _get_install_hints() -> dict[str, str]:
         dict[str, str]: Dictionary mapping tool names to installation hint strings.
     """
     versions = _get_minimum_versions()
-    hints = {}
+    hints: dict[str, str] = {}
 
     # Python bundled tools
     python_bundled = {"ruff", "black", "bandit", "yamllint", "darglint", "mypy"}

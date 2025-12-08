@@ -248,7 +248,8 @@ class LintroGroup(click.Group):
                 return 0
 
         # Normal single command execution
-        return super().invoke(ctx)
+        result = super().invoke(ctx)
+        return int(result) if isinstance(result, int) else 0
 
 
 @click.group(cls=LintroGroup, invoke_without_command=True)

@@ -11,7 +11,7 @@ from loguru import logger
 
 
 def run_subprocess_with_timeout(
-    tool,
+    tool: Any,
     cmd: list[str],
     timeout: int | None = None,
     cwd: str | None = None,
@@ -40,7 +40,8 @@ def run_subprocess_with_timeout(
     tool_name = tool_name or tool.name
 
     try:
-        return tool._run_subprocess(cmd=cmd, timeout=timeout, cwd=cwd)
+        success, output = tool._run_subprocess(cmd=cmd, timeout=timeout, cwd=cwd)
+        return bool(success), str(output)
     except subprocess.TimeoutExpired as e:
         # Re-raise with more context for the calling tool
         actual_timeout = timeout or tool.options.get("timeout", tool._default_timeout)
@@ -61,7 +62,7 @@ def run_subprocess_with_timeout(
         ) from e
 
 
-def get_timeout_value(tool, default_timeout: int | None = None) -> int:
+def get_timeout_value(tool: Any, default_timeout: int | None = None) -> int:
     """Get timeout value from tool options with fallback to default.
 
     Args:
@@ -74,11 +75,11 @@ def get_timeout_value(tool, default_timeout: int | None = None) -> int:
     if default_timeout is None:
         default_timeout = getattr(tool, "_default_timeout", 300)
 
-    return tool.options.get("timeout", default_timeout)
+    return int(tool.options.get("timeout", default_timeout))
 
 
 def create_timeout_result(
-    tool,
+    tool: Any,
     timeout: int,
     cmd: list[str] | None = None,
     tool_name: str | None = None,

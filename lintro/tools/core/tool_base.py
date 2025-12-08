@@ -8,12 +8,14 @@ import subprocess  # nosec B404 - subprocess used safely with shell=False
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 
 from loguru import logger
 
 from lintro.config import LintroConfig
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.models.core.tool_config import ToolConfig
+from lintro.models.core.tool_result import ToolResult
 from lintro.utils.path_utils import find_lintro_ignore
 
 # Constants for default values
@@ -233,7 +235,7 @@ class BaseTool(ABC):
             if any(ch in arg for ch in unsafe_chars):
                 raise ValueError("Unsafe character detected in command argument")
 
-    def set_options(self, **kwargs) -> None:
+    def set_options(self, **kwargs: object) -> None:
         """Set core options.
 
         Args:
@@ -255,9 +257,9 @@ class BaseTool(ABC):
 
         # Update specific attributes for exclude_patterns and include_venv
         if "exclude_patterns" in kwargs:
-            self.exclude_patterns = kwargs["exclude_patterns"]
+            self.exclude_patterns = cast(list[str], kwargs["exclude_patterns"])
         if "include_venv" in kwargs:
-            self.include_venv = kwargs["include_venv"]
+            self.include_venv = cast(bool, kwargs["include_venv"])
 
     def _validate_paths(
         self,
@@ -447,9 +449,12 @@ class BaseTool(ABC):
             return []
 
         lintro_config = self._get_lintro_config()
-        return get_enforce_cli_args(
-            tool_name=self.name,
-            lintro_config=lintro_config,
+        return cast(
+            list[str],
+            get_enforce_cli_args(
+                tool_name=self.name,
+                lintro_config=lintro_config,
+            ),
         )
 
     def _get_defaults_config_args(self) -> list[str]:
@@ -479,9 +484,12 @@ class BaseTool(ABC):
         if config_path is None:
             return []
 
-        return get_defaults_injection_args(
-            tool_name=self.name,
-            config_path=config_path,
+        return cast(
+            list[str],
+            get_defaults_injection_args(
+                tool_name=self.name,
+                config_path=config_path,
+            ),
         )
 
     def _build_config_args(self) -> list[str]:
@@ -525,9 +533,12 @@ class BaseTool(ABC):
             "_get_defaults_config_args() directly.",
         )
         lintro_config = self._get_lintro_config()
-        return generate_defaults_config(
-            tool_name=self.name,
-            lintro_config=lintro_config,
+        return cast(
+            Path | None,
+            generate_defaults_config(
+                tool_name=self.name,
+                lintro_config=lintro_config,
+            ),
         )
 
     def _get_config_injection_args(self) -> list[str]:

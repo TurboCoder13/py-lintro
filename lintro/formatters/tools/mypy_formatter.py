@@ -1,5 +1,7 @@
 """Formatter for mypy issues."""
 
+from __future__ import annotations
+
 from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle

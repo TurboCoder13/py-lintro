@@ -9,7 +9,8 @@ from dataclasses import dataclass, field
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.models.core.tool_config import ToolConfig
+from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.config import get_central_line_length
