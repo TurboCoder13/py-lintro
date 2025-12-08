@@ -153,7 +153,7 @@ def parse_pytest_json_output(output: str) -> list[PytestIssue]:
     return issues
 
 
-def _parse_json_test_item(test_item: dict) -> PytestIssue:
+def _parse_json_test_item(test_item: dict[str, object]) -> PytestIssue:
     """Parse a single test item from JSON output.
 
     Args:
@@ -162,16 +162,36 @@ def _parse_json_test_item(test_item: dict) -> PytestIssue:
     Returns:
         PytestIssue: Parsed test issue.
     """
-    file_path = test_item.get("file", "")
-    line = test_item.get("lineno", 0)
-    test_name = test_item.get("name", "")
-    message = test_item.get("call", {}).get("longrepr", "") or test_item.get(
-        "longrepr",
-        "",
-    )
-    status = test_item.get("outcome", "UNKNOWN")
-    duration = test_item.get("duration", 0.0)
-    node_id = test_item.get("nodeid", "")
+    file_raw = test_item.get("file")
+    file_path = file_raw if isinstance(file_raw, str) else ""
+
+    line_raw = test_item.get("lineno")
+    line = int(line_raw) if isinstance(line_raw, int) else 0
+
+    name_raw = test_item.get("name")
+    test_name = name_raw if isinstance(name_raw, str) else ""
+
+    call_obj = test_item.get("call")
+    call_longrepr: str | None = None
+    if isinstance(call_obj, dict):
+        call_longrepr_val = call_obj.get("longrepr")
+        if isinstance(call_longrepr_val, str):
+            call_longrepr = call_longrepr_val
+
+    longrepr_raw = test_item.get("longrepr")
+    message = call_longrepr or (longrepr_raw if isinstance(longrepr_raw, str) else "")
+
+    status_raw = test_item.get("outcome")
+    status = status_raw if isinstance(status_raw, str) else "UNKNOWN"
+
+    duration_raw = test_item.get("duration")
+    if isinstance(duration_raw, (int, float)):
+        duration: float | None = float(duration_raw)
+    else:
+        duration = 0.0
+
+    node_id_raw = test_item.get("nodeid")
+    node_id: str | None = node_id_raw if isinstance(node_id_raw, str) else ""
 
     return PytestIssue(
         file=file_path,

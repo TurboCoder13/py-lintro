@@ -57,8 +57,8 @@ def _resolve_conflicts(
     help="Show potential conflicts between tools",
 )
 def list_tools_command(
-    output,
-    show_conflicts,
+    output: str | None,
+    show_conflicts: bool,
 ) -> None:
     """List all available tools and their configurations.
 

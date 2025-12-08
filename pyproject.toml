@@ -81,26 +81,28 @@ enforce_failure = true
 
 [tool.mypy]
 python_version = "3.13"
-strict = false
-ignore_missing_imports = true
+strict = true
+ignore_missing_imports = false
 warn_unused_ignores = true
 warn_unused_configs = true
 explicit_package_bases = true
 namespace_packages = true
-files = [ "lintro", "scripts",]
-exclude = [ "^tests/", "^test_samples/", "^node_modules/", "^dist/", "^build/",]
+follow_imports = "skip"
+files = [
+  "lintro/parsers/mypy",
+  "lintro/utils/unified_config.py",
+  "lintro/utils/console_logger.py",
+  "lintro/utils/tool_utils.py",
+  "lintro/tools/core",
+  "lintro/tools/implementations/tool_mypy.py",
+  "lintro/formatters/styles/json.py",
+  "tests/integration/test_mypy_integration.py",
+]
+exclude = [ "^test_samples/", "^node_modules/", "^dist/", "^build/",]
 
 [[tool.mypy.overrides]]
-module = "lintro.tools.implementations.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "lintro.formatters.tools.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "lintro.utils.tool_executor"
-ignore_errors = true
+module = [ "assertpy",]
+ignore_missing_imports = true
 
 [tool.lintro.versions]
 pytest = "8.0.0"

@@ -35,30 +35,42 @@ def parse_ruff_output(output: str) -> list[RuffIssue]:
     if not output or output.strip() in ("[]", "{}"):
         return issues
 
-    def _int_from(d: dict, candidates: list[str]) -> int | None:
+    def _int_from(
+        d: dict[str, object],
+        candidates: list[str],
+    ) -> int | None:
         for key in candidates:
             val = d.get(key)
             if isinstance(val, int):
                 return val
         return None
 
-    def _parse_item(item: dict) -> RuffIssue | None:
+    def _parse_item(item: dict[str, object]) -> RuffIssue | None:
         try:
-            filename: str = item.get("filename") or item.get("file") or ""
+            raw_filename = item.get("filename") or item.get("file")
+            filename: str = raw_filename if isinstance(raw_filename, str) else ""
 
-            loc: dict = item.get("location") or item.get("start") or {}
-            end_loc: dict = item.get("end_location") or item.get("end") or {}
+            loc_raw = item.get("location") or item.get("start") or {}
+            loc: dict[str, object] = loc_raw if isinstance(loc_raw, dict) else {}
+            end_loc_raw = item.get("end_location") or item.get("end") or {}
+            end_loc: dict[str, object] = (
+                end_loc_raw if isinstance(end_loc_raw, dict) else {}
+            )
 
             line = _int_from(loc, ["row", "line"]) or 0
             column = _int_from(loc, ["column", "col"]) or 0
             end_line = _int_from(end_loc, ["row", "line"]) or line
             end_column = _int_from(end_loc, ["column", "col"]) or column
 
-            code: str = item.get("code") or item.get("rule") or ""
-            message: str = item.get("message") or ""
-            url: str | None = item.get("url")
+            raw_code = item.get("code") or item.get("rule")
+            code: str = raw_code if isinstance(raw_code, str) else ""
+            raw_message = item.get("message")
+            message: str = raw_message if isinstance(raw_message, str) else ""
+            url_candidate = item.get("url")
+            url: str | None = url_candidate if isinstance(url_candidate, str) else None
 
-            fix = item.get("fix") or {}
+            fix_raw = item.get("fix") or {}
+            fix = fix_raw if isinstance(fix_raw, dict) else {}
             fixable: bool = bool(fix)
             fix_applicability = (
                 fix.get("applicability") if isinstance(fix, dict) else None

@@ -19,7 +19,8 @@ from lintro.enums.yamllint_format import (
     YamllintFormat,
     normalize_yamllint_format,
 )
-from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.models.core.tool_config import ToolConfig
+from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes

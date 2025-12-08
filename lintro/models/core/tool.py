@@ -28,7 +28,7 @@ class Tool(Protocol):
 
     def set_options(
         self,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         """Set core options.
 

@@ -80,18 +80,18 @@ DEFAULT_ACTION: str = "check"
     help="Show raw tool output instead of formatted output",
 )
 def check_command(
-    paths,
-    tools,
-    tool_options,
-    exclude,
-    include_venv,
-    output,
-    output_format,
-    group_by,
-    ignore_conflicts,
-    verbose,
-    no_log,
-    raw_output,
+    paths: tuple[str, ...],
+    tools: str | None,
+    tool_options: str | None,
+    exclude: str | None,
+    include_venv: bool,
+    output: str | None,
+    output_format: str,
+    group_by: str,
+    ignore_conflicts: bool,
+    verbose: bool,
+    no_log: bool,
+    raw_output: bool,
 ) -> None:
     """Check files for issues using the specified tools.
 
@@ -113,8 +113,7 @@ def check_command(
         SystemExit: Process exit with the aggregated exit code from tools.
     """
     # Add default paths if none provided
-    if not paths:
-        paths = DEFAULT_PATHS
+    path_list: list[str] = list(paths) if paths else list(DEFAULT_PATHS)
 
     # Build tool-specific options string
     tool_option_parts: list[str] = []
@@ -129,7 +128,7 @@ def check_command(
     # Run with simplified approach
     exit_code: int = run_lint_tools_simple(
         action=DEFAULT_ACTION,
-        paths=list(paths),
+        paths=path_list,
         tools=tools,
         tool_options=combined_tool_options,
         exclude=exclude,
@@ -147,17 +146,17 @@ def check_command(
 
 
 def check(
-    paths,
-    tools,
-    tool_options,
-    exclude,
-    include_venv,
-    output,
-    output_format,
-    group_by,
-    ignore_conflicts,
-    verbose,
-    no_log,
+    paths: tuple[str, ...],
+    tools: str | None,
+    tool_options: str | None,
+    exclude: str | None,
+    include_venv: bool,
+    output: str | None,
+    output_format: str,
+    group_by: str,
+    ignore_conflicts: bool,
+    verbose: bool,
+    no_log: bool,
 ) -> None:
     """Programmatic check function for backward compatibility.
 
@@ -180,7 +179,7 @@ def check(
     # Build arguments for the click command
     args: list[str] = []
     if paths:
-        args.extend(paths)
+        args.extend(list(paths))
     if tools:
         args.extend(["--tools", tools])
     if tool_options:

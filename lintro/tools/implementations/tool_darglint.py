@@ -11,7 +11,8 @@ from lintro.enums.darglint_strictness import (
     normalize_darglint_strictness,
 )
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.models.core.tool_config import ToolConfig
+from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.darglint.darglint_issue import DarglintIssue
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.tools.core.tool_base import BaseTool

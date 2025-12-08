@@ -7,7 +7,7 @@ No tee, no stream redirection, clean and simple with rich formatting.
 import re
 import sys
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import click
 from loguru import logger
@@ -81,7 +81,7 @@ class SimpleLintroLogger:
 
     @staticmethod
     def _get_summary_value(
-        summary: dict | object,
+        summary: dict[str, Any] | object,
         key: str,
         default: int | float = 0,
     ) -> int | float:
@@ -96,8 +96,10 @@ class SimpleLintroLogger:
             int | float: The extracted value or default.
         """
         if isinstance(summary, dict):
-            return summary.get(key, default)
-        return getattr(summary, key, default)
+            value = summary.get(key, default)
+            return value if isinstance(value, (int, float)) else default
+        value = getattr(summary, key, default)
+        return value if isinstance(value, (int, float)) else default
 
     def _setup_loguru(self) -> None:
         """Configure Loguru with clean, simple handlers."""
@@ -125,7 +127,7 @@ class SimpleLintroLogger:
             rotation=None,  # Don't rotate, each run gets its own file
         )
 
-    def info(self, message: str, **kwargs) -> None:
+    def info(self, message: str, **kwargs: Any) -> None:
         """Log an info message to the console.
 
         Args:
@@ -135,7 +137,7 @@ class SimpleLintroLogger:
         self.console_messages.append(message)
         logger.info(message, **kwargs)
 
-    def info_blue(self, message: str, **kwargs) -> None:
+    def info_blue(self, message: str, **kwargs: Any) -> None:
         """Log an info message to the console in blue color.
 
         Args:
@@ -147,7 +149,7 @@ class SimpleLintroLogger:
         self.console_messages.append(message)
         logger.info(message, **kwargs)
 
-    def debug(self, message: str, **kwargs) -> None:
+    def debug(self, message: str, **kwargs: Any) -> None:
         """Log debug message.
 
         Args:
@@ -156,7 +158,7 @@ class SimpleLintroLogger:
         """
         logger.debug(message, **kwargs)
 
-    def warning(self, message: str, **kwargs) -> None:
+    def warning(self, message: str, **kwargs: Any) -> None:
         """Log a warning message to the console.
 
         Args:
@@ -166,7 +168,7 @@ class SimpleLintroLogger:
         self.console_messages.append(f"WARNING: {message}")
         logger.warning(message, **kwargs)
 
-    def error(self, message: str, **kwargs) -> None:
+    def error(self, message: str, **kwargs: Any) -> None:
         """Log an error message to the console.
 
         Args:
@@ -195,7 +197,7 @@ class SimpleLintroLogger:
         # Track for console.log (without color codes)
         self.console_messages.append(text)
 
-    def success(self, message: str, **kwargs) -> None:
+    def success(self, message: str, **kwargs: Any) -> None:
         """Log a success message to the console.
 
         Args:

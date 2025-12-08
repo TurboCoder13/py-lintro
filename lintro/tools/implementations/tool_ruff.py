@@ -9,7 +9,8 @@ from pathlib import Path
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.models.core.tool_config import ToolConfig
+from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.ruff.ruff_issue import RuffFormatIssue
 from lintro.parsers.ruff.ruff_parser import (
     parse_ruff_format_check_output,

@@ -15,7 +15,8 @@ import click
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.models.core.tool_config import ToolConfig
+from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes

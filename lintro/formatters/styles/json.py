@@ -7,7 +7,7 @@ from typing import Any
 from lintro.formatters.core.output_style import OutputStyle
 
 
-class JsonStyle(OutputStyle):
+class JsonStyle(OutputStyle):  # type: ignore[misc]
     """Output format that renders data as structured JSON."""
 
     def format(
@@ -16,7 +16,7 @@ class JsonStyle(OutputStyle):
         rows: list[list[Any]],
         tool_name: str | None = None,
         metadata: dict[str, Any] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """Format a table given columns and rows as structured JSON.
 
@@ -36,7 +36,7 @@ class JsonStyle(OutputStyle):
         # Convert rows to list of dictionaries with proper data types
         issues: list[dict[str, Any]] = []
         for row in rows:
-            issue_dict = {}
+            issue_dict: dict[str, Any] = {}
             for i, value in enumerate(row):
                 if i < len(normalized_columns):
                     issue_dict[normalized_columns[i]] = value

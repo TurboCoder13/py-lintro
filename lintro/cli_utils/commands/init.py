@@ -4,7 +4,9 @@ Creates configuration files for Lintro and optionally native tool configs.
 """
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import click
 from loguru import logger
@@ -182,7 +184,7 @@ def _write_file(
 
 def _write_json_file(
     path: Path,
-    data: dict,
+    data: Mapping[str, Any],
     console: Console,
     force: bool,
 ) -> bool:

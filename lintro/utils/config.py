@@ -57,7 +57,11 @@ def _load_lintro_section() -> dict[str, Any]:
     try:
         with pyproject_path.open("rb") as f:
             data = tomllib.load(f)
-        return data.get("tool", {}).get("lintro", {})
+        tool_section = data.get("tool", {})
+        lintro_section = (
+            tool_section.get("lintro", {}) if isinstance(tool_section, dict) else {}
+        )
+        return lintro_section if isinstance(lintro_section, dict) else {}
     except Exception:
         return {}
 
