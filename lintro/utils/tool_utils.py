@@ -1,8 +1,11 @@
 """Tool utilities for handling core operations."""
 
+from __future__ import annotations
+
 import fnmatch
 import os
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Protocol
 
 try:
     from tabulate import tabulate
@@ -75,8 +78,28 @@ from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 from lintro.parsers.ruff.ruff_parser import parse_ruff_output
 from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 
+if TYPE_CHECKING:  # pragma: no cover - type-checking only
+    from lintro.tools.tool_enum import ToolEnum
+
+
+class TableDescriptor(Protocol):
+    """Descriptor for translating issues into tabular output."""
+
+    def get_columns(self) -> list[str]:
+        """Return column names for the table representation."""
+        ...
+
+    def get_rows(self, issues: Any) -> list[list[str]]:
+        """Return table rows derived from a collection of issues.
+
+        Args:
+            issues: Parsed issues to be displayed.
+        """
+        ...
+
+
 # Constants
-TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
+TOOL_TABLE_FORMATTERS: dict[str, tuple[TableDescriptor, Callable[..., str]]] = {
     "darglint": (DarglintTableDescriptor(), format_darglint_issues),
     "eslint": (EslintTableDescriptor(), format_eslint_issues),
     "hadolint": (HadolintTableDescriptor(), format_hadolint_issues),
@@ -104,7 +127,7 @@ VENV_PATTERNS: list[str] = [
 ]
 
 
-def parse_tool_list(tools_str: str | None) -> list[str]:
+def parse_tool_list(tools_str: str | None) -> list[ToolEnum]:
     """Parse a comma-separated list of core names into ToolEnum members.
 
     Args:
@@ -121,7 +144,7 @@ def parse_tool_list(tools_str: str | None) -> list[str]:
     # Import ToolEnum here to avoid circular import at module level
     from lintro.tools.tool_enum import ToolEnum
 
-    result: list = []
+    result: list[ToolEnum] = []
     for t in tools_str.split(","):
         t = t.strip()
         if not t:
@@ -133,7 +156,7 @@ def parse_tool_list(tools_str: str | None) -> list[str]:
     return result
 
 
-def parse_tool_options(tool_options_str: str | None) -> dict:
+def parse_tool_options(tool_options_str: str | None) -> dict[str, dict[str, str]]:
     """Parse tool-specific options.
 
     Args:
@@ -146,15 +169,14 @@ def parse_tool_options(tool_options_str: str | None) -> dict:
     if not tool_options_str:
         return {}
 
-    options: dict = {}
+    options: dict[str, dict[str, str]] = {}
     for opt in tool_options_str.split(","):
         if ":" in opt:
             tool_name, tool_opt = opt.split(":", 1)
             if "=" in tool_opt:
                 opt_name, opt_value = tool_opt.split("=", 1)
-                if tool_name not in options:
-                    options[tool_name] = {}
-                options[tool_name][opt_name] = opt_value
+                tool_options = options.setdefault(tool_name, {})
+                tool_options[opt_name] = opt_value
     return options
 
 
@@ -390,25 +412,25 @@ def format_tool_output(
     # fall back to the tool-specific formatter.
 
     # Otherwise, try to parse the output and format it
-    parsed_issues: list = []
+    parsed_issues: list[Any] = []
     if tool_name == "ruff":
-        parsed_issues = parse_ruff_output(output=output)
+        parsed_issues = list(parse_ruff_output(output=output))
     elif tool_name == "prettier":
-        parsed_issues = parse_prettier_output(output=output)
+        parsed_issues = list(parse_prettier_output(output=output))
     elif tool_name == "mypy":
-        parsed_issues = parse_mypy_output(output=output)
+        parsed_issues = list(parse_mypy_output(output=output))
     elif tool_name == "black":
-        parsed_issues = parse_black_output(output=output)
+        parsed_issues = list(parse_black_output(output=output))
     elif tool_name == "darglint":
-        parsed_issues = parse_darglint_output(output=output)
+        parsed_issues = list(parse_darglint_output(output=output))
     elif tool_name == "eslint":
-        parsed_issues = parse_eslint_output(output=output)
+        parsed_issues = list(parse_eslint_output(output=output))
     elif tool_name == "hadolint":
-        parsed_issues = parse_hadolint_output(output=output)
+        parsed_issues = list(parse_hadolint_output(output=output))
     elif tool_name == "yamllint":
-        parsed_issues = parse_yamllint_output(output=output)
+        parsed_issues = list(parse_yamllint_output(output=output))
     elif tool_name == "markdownlint":
-        parsed_issues = parse_markdownlint_output(output=output)
+        parsed_issues = list(parse_markdownlint_output(output=output))
     elif tool_name == "bandit":
         # Bandit emits JSON; try parsing when raw output is provided
         try:
@@ -419,7 +441,7 @@ def format_tool_output(
             parsed_issues = []
     elif tool_name == "pytest":
         # Pytest emits text output; parse it
-        parsed_issues = parse_pytest_text_output(output=output)
+        parsed_issues = list(parse_pytest_text_output(output=output))
 
     if parsed_issues and tool_name in TOOL_TABLE_FORMATTERS:
         _, formatter_func = TOOL_TABLE_FORMATTERS[tool_name]
