@@ -15,7 +15,6 @@ class JsonStyle(OutputStyle):  # type: ignore[misc]
         columns: list[str],
         rows: list[list[Any]],
         tool_name: str | None = None,
-        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> str:
         """Format a table given columns and rows as structured JSON.
@@ -24,12 +23,12 @@ class JsonStyle(OutputStyle):  # type: ignore[misc]
             columns: List of column names.
             rows: List of row values (each row is a list of cell values).
             tool_name: Name of the tool that generated the data.
-            metadata: Tool-specific metadata.
-            **kwargs: Additional metadata.
+            **kwargs: Additional metadata; `metadata` can be provided here.
 
         Returns:
             Formatted data as structured JSON string.
         """
+        metadata: dict[str, Any] | None = kwargs.pop("metadata", None)
         # Convert column names to standardized format
         normalized_columns = [col.lower().replace(" ", "_") for col in columns]
 

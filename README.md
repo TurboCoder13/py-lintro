@@ -125,9 +125,9 @@ behavior. These tools are bundled as dependencies with versions centrally manage
 - **Ruff** - Fast Python linter and formatter
 - **Black** - Python code formatter
 - **Bandit** - Python security linter
-- **Mypy** - Python static type checker (not strict by default; enable strict checks
-  with --strict or specific flags; reports missing imports unless you pass
-  --ignore-missing-imports)
+- **Mypy** - Python static type checker (runs in strict mode with
+  `--ignore-missing-imports` by default unless you override via `set_options()` or
+  `--tool-options`)
 - **Yamllint** - YAML linter
 - **Darglint** - Python docstring linter
 

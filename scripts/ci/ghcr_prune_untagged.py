@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """Prune untagged GHCR image versions for this repository.
 
 Google-style docstring.

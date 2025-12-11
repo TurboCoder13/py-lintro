@@ -39,6 +39,7 @@ ENFORCE_CLI_FLAGS: dict[str, dict[str, str]] = {
     "target_python": {
         "ruff": "--target-version",
         "black": "--target-version",
+        "mypy": "--python-version",
     },
 }
 
