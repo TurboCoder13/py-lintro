@@ -449,13 +449,11 @@ class BaseTool(ABC):
             return []
 
         lintro_config = self._get_lintro_config()
-        return cast(
-            list[str],
-            get_enforce_cli_args(
-                tool_name=self.name,
-                lintro_config=lintro_config,
-            ),
+        args: list[str] = get_enforce_cli_args(
+            tool_name=self.name,
+            lintro_config=lintro_config,
         )
+        return args
 
     def _get_defaults_config_args(self) -> list[str]:
         """Get CLI arguments for defaults config injection.
@@ -484,13 +482,11 @@ class BaseTool(ABC):
         if config_path is None:
             return []
 
-        return cast(
-            list[str],
-            get_defaults_injection_args(
-                tool_name=self.name,
-                config_path=config_path,
-            ),
+        args: list[str] = get_defaults_injection_args(
+            tool_name=self.name,
+            config_path=config_path,
         )
+        return args
 
     def _build_config_args(self) -> list[str]:
         """Build complete config-related CLI arguments for this tool.
@@ -533,13 +529,11 @@ class BaseTool(ABC):
             "_get_defaults_config_args() directly.",
         )
         lintro_config = self._get_lintro_config()
-        return cast(
-            Path | None,
-            generate_defaults_config(
-                tool_name=self.name,
-                lintro_config=lintro_config,
-            ),
+        config: Path | None = generate_defaults_config(
+            tool_name=self.name,
+            lintro_config=lintro_config,
         )
+        return config
 
     def _get_config_injection_args(self) -> list[str]:
         """Get CLI arguments to inject Lintro config into this tool.

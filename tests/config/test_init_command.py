@@ -216,7 +216,8 @@ class TestConfigTemplates:
         parsed = yaml.safe_load(DEFAULT_CONFIG_TEMPLATE)
 
         assert parsed["enforce"]["line_length"] == 88
-        # target_python is commented out to let tools infer from requires-python
-        assert "target_python" not in parsed["enforce"]
+        assert parsed["enforce"]["target_python"] == "py313"
         assert parsed["execution"]["tool_order"] == "priority"
         assert parsed["tools"]["ruff"]["enabled"] is True
+        assert parsed["defaults"]["mypy"]["strict"] is True
+        assert parsed["defaults"]["mypy"]["ignore_missing_imports"] is True

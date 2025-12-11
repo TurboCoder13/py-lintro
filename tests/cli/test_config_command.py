@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -42,7 +43,7 @@ def mock_config() -> LintroConfig:
         ),
         enforce=EnforceConfig(
             line_length=88,
-            target_python=None,
+            target_python="py313",
         ),
         tools={
             "ruff": ToolConfig(enabled=True),
@@ -209,6 +210,43 @@ class TestConfigCommand:
         assert (
             ".lintro-config.yaml" in result.output or "Config Source" in result.output
         )
+
+    @patch("lintro.cli_utils.commands.config.get_config")
+    @patch("lintro.cli_utils.commands.config.validate_config_consistency")
+    @patch("lintro.cli_utils.commands.config.is_tool_injectable")
+    def test_config_command_exports_yaml(
+        self,
+        mock_injectable: MagicMock,
+        mock_validate: MagicMock,
+        mock_get_config: MagicMock,
+        mock_config: LintroConfig,
+        cli_runner: CliRunner,
+    ) -> None:
+        """Config command exports effective config to YAML.
+
+        Args:
+            mock_injectable: Mock for is_tool_injectable function.
+            mock_validate: Mock for validate_config_consistency function.
+            mock_get_config: Mock for get_config function.
+            mock_config: Mock LintroConfig instance.
+            cli_runner: Click test runner instance.
+        """
+        mock_get_config.return_value = mock_config
+        mock_validate.return_value = []
+        mock_injectable.return_value = True
+
+        with cli_runner.isolated_filesystem():
+            result = cli_runner.invoke(
+                cli,
+                ["config", "--export", ".lintro-config.yaml"],
+            )
+
+            assert result.exit_code == 0
+            export_file = Path(".lintro-config.yaml")
+            assert export_file.exists()
+            content = export_file.read_text(encoding="utf-8")
+            assert "enforce:" in content
+            assert "py313" in content
 
 
 class TestConfigCommandJsonOutput:
