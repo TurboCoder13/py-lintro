@@ -76,19 +76,19 @@ jobs:
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
       - name: Upload coverage report as artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: coverage-report-python-3.13
           path: htmlcov/
           retention-days: 30
       - name: Upload coverage XML as artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: coverage-xml
           path: coverage.xml
           retention-days: 30
       - name: Upload .coverage as artifact (if present)
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: ${{ hashFiles('.coverage') != '' }}
         with:
           name: coverage-dotfile
@@ -122,7 +122,7 @@ jobs:
 
       - name: Upload coverage badge artifact
         if: success()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: coverage-badge
           path: assets/images/coverage-badge.svg
@@ -169,7 +169,7 @@ jobs:
         if: always()
         continue-on-error: true
         # yamllint disable-line rule:line-length
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: coverage-xml
           path: .
