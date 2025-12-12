@@ -27,7 +27,7 @@ jobs:
         shell: bash
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@079371071ed3274239f69243961c7232dde1e12e # actions-v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
