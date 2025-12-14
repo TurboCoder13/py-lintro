@@ -578,6 +578,53 @@ coverage/
 *.min.css
 ```
 
+#### ESLint Configuration
+
+**File:** `.eslintrc.json`
+
+```json
+{
+  "root": true,
+  "env": { "browser": true, "es2022": true, "node": true },
+  "parserOptions": { "ecmaVersion": "latest", "sourceType": "module" },
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "no-console": "warn",
+    "no-unused-vars": "warn"
+  }
+}
+```
+
+**File:** `eslint.config.js` (flat config)
+
+```javascript
+import js from "@eslint/js";
+import ts from "typescript-eslint";
+
+export default [
+  js.configs.recommended,
+  ...ts.configs.recommended,
+  {
+    rules: {
+      "no-console": "warn",
+      "no-unused-vars": "warn",
+    },
+  },
+];
+```
+
+**Ignore Files:** `.eslintignore`
+
+```text
+node_modules/
+dist/
+build/
+coverage/
+```
+
+**Lintro options:** use `--tool-options "eslint:timeout=60"` or set `exclude_patterns` via CLI to adjust discovery; native configs remain primary.
+
 ### YAML Tools
 
 #### Yamllint Configuration
