@@ -7,6 +7,7 @@ import pytest
 
 from lintro.config.lintro_config import EnforceConfig, LintroConfig
 from lintro.config.tool_config_generator import (
+    _convert_python_version_for_mypy,
     cleanup_temp_config,
     generate_defaults_config,
     get_defaults_injection_args,
@@ -112,6 +113,23 @@ class TestGetEnforceCliArgs:
         assert "100" in args
         assert "--target-version" in args
         assert "py313" in args
+
+    def test_converts_target_version_format_for_mypy(self) -> None:
+        """Should convert py313 format to 3.13 for mypy."""
+        lintro_config = LintroConfig(
+            enforce=EnforceConfig(target_python="py313"),
+        )
+
+        args = get_enforce_cli_args(
+            tool_name="mypy",
+            lintro_config=lintro_config,
+        )
+
+        assert args == ["--python-version", "3.13"]
+
+    def test_convert_python_version_helper_handles_plain_version(self) -> None:
+        """Should return plain version unchanged when already numeric."""
+        assert _convert_python_version_for_mypy("3.12") == "3.12"
 
     def test_returns_empty_for_unsupported_tool(self) -> None:
         """Should return empty list for tools without CLI mappings."""
