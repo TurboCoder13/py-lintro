@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lintro"
-version = "0.18.1"
+version = "0.19.0"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
 keywords = [ "linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker",]
 classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
@@ -63,6 +63,21 @@ exclude_dirs = [ "tests", "test_samples",]
 line_length = 88
 tool_order = "priority"
 
+[tool.mypy]
+python_version = "3.13"
+strict = true
+ignore_missing_imports = false
+warn_unused_ignores = true
+warn_unused_configs = true
+explicit_package_bases = true
+namespace_packages = true
+follow_imports = "skip"
+files = [ "lintro/parsers/mypy", "lintro/utils/unified_config.py", "lintro/utils/console_logger.py", "lintro/utils/tool_utils.py", "lintro/tools/core", "lintro/tools/implementations/tool_mypy.py", "lintro/formatters/styles/json.py", "tests/integration/test_mypy_integration.py",]
+exclude = [ "^test_samples/", "^node_modules/", "^dist/", "^build/",]
+[[tool.mypy.overrides]]
+module = [ "assertpy",]
+ignore_missing_imports = true
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
@@ -78,31 +93,6 @@ tools = [ "black",]
 enforce_failure = true
 
 [tool.lintro.ruff]
-
-[tool.mypy]
-python_version = "3.13"
-strict = true
-ignore_missing_imports = false
-warn_unused_ignores = true
-warn_unused_configs = true
-explicit_package_bases = true
-namespace_packages = true
-follow_imports = "skip"
-files = [
-  "lintro/parsers/mypy",
-  "lintro/utils/unified_config.py",
-  "lintro/utils/console_logger.py",
-  "lintro/utils/tool_utils.py",
-  "lintro/tools/core",
-  "lintro/tools/implementations/tool_mypy.py",
-  "lintro/formatters/styles/json.py",
-  "tests/integration/test_mypy_integration.py",
-]
-exclude = [ "^test_samples/", "^node_modules/", "^dist/", "^build/",]
-
-[[tool.mypy.overrides]]
-module = [ "assertpy",]
-ignore_missing_imports = true
 
 [tool.lintro.versions]
 pytest = "8.0.0"
