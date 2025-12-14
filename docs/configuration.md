@@ -599,16 +599,16 @@ coverage/
 **File:** `eslint.config.js` (flat config)
 
 ```javascript
-import js from "@eslint/js";
-import ts from "typescript-eslint";
+import js from '@eslint/js';
+import ts from 'typescript-eslint';
 
 export default [
   js.configs.recommended,
   ...ts.configs.recommended,
   {
     rules: {
-      "no-console": "warn",
-      "no-unused-vars": "warn",
+      'no-console': 'warn',
+      'no-unused-vars': 'warn',
     },
   },
 ];
@@ -623,7 +623,8 @@ build/
 coverage/
 ```
 
-**Lintro options:** use `--tool-options "eslint:timeout=60"` or set `exclude_patterns` via CLI to adjust discovery; native configs remain primary.
+**Lintro options:** use `--tool-options "eslint:timeout=60"` or set `exclude_patterns`
+via CLI to adjust discovery; native configs remain primary.
 
 ### YAML Tools
 

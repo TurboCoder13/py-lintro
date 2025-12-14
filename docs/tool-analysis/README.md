@@ -92,15 +92,16 @@ implementations with the core tools themselves.
 
 ### [Mypy Analysis](./mypy-analysis.md)
 
-**Python Static Type Checker**
+### Python Static Type Checker
 
 - ✅ **Preserved**: Strict checking, config discovery, JSON output with codes/columns
-- ⚠️ **Limited**: No plugin flag pass-through, incremental/cache tuning, warn-* toggles
-- 🚀 **Enhanced**: Strict-by-default, timeout handling, normalized results, default excludes
+- ⚠️ **Limited**: No plugin flag pass-through, incremental/cache tuning, warn-\* toggles
+- 🚀 **Enhanced**: Strict-by-default, timeout handling, normalized results, default
+  excludes
 
 ### [Pytest Analysis](./pytest-analysis.md)
 
-**Python Test Runner**
+### Python Test Runner
 
 - ✅ **Preserved**: Test discovery/execution, JSON/JUnit/plain outputs, config respect
 - ⚠️ **Limited**: No impact analysis or mutation testing; plugin install not managed
