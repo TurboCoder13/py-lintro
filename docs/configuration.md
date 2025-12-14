@@ -401,6 +401,28 @@ select = E,W,F,I,N,D
 exclude = .git,__pycache__,.venv
 ```
 
+#### Mypy Configuration
+
+- Default run mode: `--strict` with `--ignore-missing-imports` enabled to avoid
+  third-party stub noise (applied unless you override via `set_options()` or
+  `--tool-options`).
+- Config discovery: mypy auto-discovers `pyproject.toml [tool.mypy]`, `mypy.ini`, or
+  `setup.cfg [mypy]` and the discovered config is passed via `--config-file`. When a
+  native config provides `exclude`, Lintro does **not** add its default
+  test/test_samples excludes; otherwise, it applies the defaults plus `.lintro-ignore`.
+- Recommended overrides when needed:
+
+```bash
+# Disable strict mode temporarily
+lintro check --tools mypy --tool-options mypy:strict=False
+
+# Surface missing-import errors (no ignore)
+lintro check --tools mypy --tool-options mypy:ignore_missing_imports=False
+
+# Pin target Python version
+lintro check --tools mypy --tool-options mypy:python_version=3.13
+```
+
 #### Bandit Configuration
 
 **File:** `pyproject.toml`

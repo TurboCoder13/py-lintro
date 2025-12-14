@@ -1,5 +1,7 @@
 """Formatter for ruff issues."""
 
+from collections.abc import Sequence
+
 from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle
@@ -33,7 +35,7 @@ class RuffTableDescriptor(TableDescriptor):
 
     def get_rows(
         self,
-        issues: list[RuffIssue | RuffFormatIssue],
+        issues: Sequence[RuffIssue | RuffFormatIssue],
     ) -> list[list[str]]:
         """Return rows for the Ruff issues table.
 
@@ -72,7 +74,7 @@ class RuffTableDescriptor(TableDescriptor):
 
 
 def format_ruff_issues(
-    issues: list[RuffIssue | RuffFormatIssue],
+    issues: Sequence[RuffIssue | RuffFormatIssue],
     format: str = "grid",
 ) -> str:
     """Format Ruff issues, split into auto-fixable and not auto-fixable tables.

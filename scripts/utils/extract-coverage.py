@@ -12,7 +12,7 @@ import sys
 
 try:
     # Prefer hardened XML parsing
-    from defusedxml import ElementTree  # type: ignore
+    from defusedxml import ElementTree
 
     _DEFUSED = True
 except Exception:  # pragma: no cover - fallback path

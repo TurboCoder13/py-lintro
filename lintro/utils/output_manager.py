@@ -265,7 +265,7 @@ class OutputManager:
                     rows.append(
                         [
                             r.name,
-                            r.issues_count,
+                            str(r.issues_count),
                             getattr(issue, "file", ""),
                             getattr(issue, "line", ""),
                             getattr(issue, "code", ""),
@@ -273,7 +273,7 @@ class OutputManager:
                         ],
                     )
             else:
-                rows.append([r.name, r.issues_count, "", "", "", ""])
+                rows.append([r.name, str(r.issues_count), "", "", "", ""])
         self.write_csv(rows=rows, header=header)
 
     def cleanup_old_runs(self) -> None:

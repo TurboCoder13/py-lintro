@@ -1,5 +1,7 @@
 """Test command implementation for running pytest tests."""
 
+from typing import Any, cast
+
 import click
 from click.testing import CliRunner
 
@@ -127,23 +129,23 @@ def _ensure_pytest_prefix(option_fragment: str) -> str:
     help="Show help for parametrized tests",
 )
 def test_command(
-    paths,
-    exclude,
-    include_venv,
-    output,
-    output_format,
-    group_by,
-    verbose,
-    raw_output,
-    tool_options,
-    enable_docker,
-    list_plugins,
-    check_plugins,
-    collect_only,
-    fixtures,
-    fixture_info,
-    markers,
-    parametrize_help,
+    paths: tuple[str, ...],
+    exclude: str | None,
+    include_venv: bool,
+    output: str | None,
+    output_format: str,
+    group_by: str,
+    verbose: bool,
+    raw_output: bool,
+    tool_options: str | None,
+    enable_docker: bool,
+    list_plugins: bool,
+    check_plugins: bool,
+    collect_only: bool,
+    fixtures: bool,
+    fixture_info: str | None,
+    markers: bool,
+    parametrize_help: bool,
 ) -> None:
     """Run tests using pytest.
 
@@ -170,8 +172,7 @@ def test_command(
         SystemExit: Process exit with the aggregated exit code.
     """
     # Add default paths if none provided
-    if not paths:
-        paths = DEFAULT_PATHS
+    path_list: list[str] = list(paths) if paths else list(DEFAULT_PATHS)
 
     # Build tool options with pytest prefix
     tool_option_parts: list[str] = []
@@ -238,7 +239,7 @@ def test_command(
     # Run with pytest tool
     exit_code: int = run_lint_tools_simple(
         action=DEFAULT_ACTION,
-        paths=list(paths),
+        paths=path_list,
         tools="pytest",
         tool_options=combined_tool_options,
         exclude=exclude,
@@ -255,19 +256,19 @@ def test_command(
 
 
 # Exclude from pytest collection - this is a Click command, not a test function
-test_command.__test__ = False
+cast(Any, test_command).__test__ = False
 
 
 def test(
-    paths,
-    exclude,
-    include_venv,
-    output,
-    output_format,
-    group_by,
-    verbose,
-    raw_output=False,
-    tool_options=None,
+    paths: tuple[str, ...],
+    exclude: str | None,
+    include_venv: bool,
+    output: str | None,
+    output_format: str,
+    group_by: str,
+    verbose: bool,
+    raw_output: bool = False,
+    tool_options: str | None = None,
 ) -> None:
     """Programmatic test function for backward compatibility.
 
@@ -288,7 +289,7 @@ def test(
     # Build arguments for the click command
     args: list[str] = []
     if paths:
-        args.extend(paths)
+        args.extend(list(paths))
     if exclude:
         args.extend(["--exclude", exclude])
     if include_venv:

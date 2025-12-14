@@ -39,8 +39,26 @@ ENFORCE_CLI_FLAGS: dict[str, dict[str, str]] = {
     "target_python": {
         "ruff": "--target-version",
         "black": "--target-version",
+        "mypy": "--python-version",
     },
 }
+
+
+def _convert_python_version_for_mypy(version: str) -> str:
+    """Convert ``py313`` style strings to ``3.13`` for mypy.
+
+    Args:
+        version: Python version string, often ``py313`` format.
+
+    Returns:
+        str: Version string formatted for mypy (for example, ``3.13``).
+    """
+    if version.startswith("py") and len(version) >= 4:
+        major = version[2]
+        minor = version[3:]
+        return f"{major}.{minor}"
+    return version
+
 
 # Tool config format for defaults generation
 TOOL_CONFIG_FORMATS: dict[str, str] = {
@@ -145,9 +163,14 @@ def get_enforce_cli_args(
     if enforce.target_python is not None:
         flag = ENFORCE_CLI_FLAGS.get("target_python", {}).get(tool_lower)
         if flag:
-            args.extend([flag, enforce.target_python])
+            target_value = (
+                _convert_python_version_for_mypy(enforce.target_python)
+                if tool_lower == "mypy"
+                else enforce.target_python
+            )
+            args.extend([flag, target_value])
             logger.debug(
-                f"Injecting enforce.target_python={enforce.target_python} "
+                f"Injecting enforce.target_python={target_value} "
                 f"to {tool_name} as {flag}",
             )
 

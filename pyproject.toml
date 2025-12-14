@@ -9,13 +9,13 @@ description = "A unified CLI tool for code formatting, linting, and quality assu
 keywords = [ "linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker",]
 classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
 requires-python = ">=3.13"
-dependencies = [ "click==8.1.8", "coverage-badge==1.1.2", "darglint==1.8.1", "loguru==0.7.3", "tabulate==0.9.0", "yamllint==1.37.1", "httpx==0.28.1", "toml==0.10.2", "defusedxml==0.7.1", "ruff>=0.14.0", "black>=25.0.0", "bandit>=1.8.0",]
+dependencies = [ "click==8.1.8", "coverage-badge==1.1.2", "darglint==1.8.1", "loguru==0.7.3", "tabulate==0.9.0", "yamllint==1.37.1", "httpx==0.28.1", "toml==0.10.2", "defusedxml==0.7.1", "ruff>=0.14.0", "black>=25.0.0", "bandit>=1.8.0", "mypy>=1.14.1",]
 [[project.authors]]
 name = "TurboCoder13"
 email = "turbocoder13@gmail.com"
 
 [dependency-groups]
-dev = [ "build==1.3.0", "pytest==9.0.2", "pytest-cov==7.0.0", "pytest-xdist==3.8.0", "twine==6.2.0", "assertpy==1.1", "pytest-mock==3.15.1", "darglint==1.8.1", "bandit==1.9.2", "black==25.11.0", "ruff==0.14.8", "yamllint==1.37.1", "pytest-timeout==2.4.0",]
+dev = [ "build==1.3.0", "pytest==9.0.2", "pytest-cov==7.0.0", "pytest-xdist==3.8.0", "twine==6.2.0", "assertpy==1.1", "pytest-mock==3.15.1", "darglint==1.8.1", "bandit==1.9.2", "black==25.11.0", "ruff==0.14.8", "yamllint==1.37.1", "pytest-timeout==2.4.0", "mypy==1.14.1", "types-PyYAML>=6.0.12.20241230", "types-tabulate==0.9.0.20241207", "types-toml==0.10.8.20240310",]
 
 [project.license]
 file = "LICENSE"
@@ -38,7 +38,7 @@ Documentation = "https://github.com/TurboCoder13/py-lintro/docs"
 Source = "https://github.com/TurboCoder13/py-lintro"
 
 [tool.setuptools]
-packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.config", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.formatters.tools", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.actionlint", "lintro.parsers.bandit", "lintro.parsers.black", "lintro.parsers.darglint", "lintro.parsers.eslint", "lintro.parsers.hadolint", "lintro.parsers.markdownlint", "lintro.parsers.prettier", "lintro.parsers.pytest", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.tools", "lintro.tools.core", "lintro.tools.implementations", "lintro.tools.implementations.pytest", "lintro.utils",]
+packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.config", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.formatters.tools", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.actionlint", "lintro.parsers.bandit", "lintro.parsers.black", "lintro.parsers.darglint", "lintro.parsers.eslint", "lintro.parsers.hadolint", "lintro.parsers.markdownlint", "lintro.parsers.prettier", "lintro.parsers.pytest", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.parsers.mypy", "lintro.tools", "lintro.tools.core", "lintro.tools.implementations", "lintro.tools.implementations.pytest", "lintro.utils",]
 
 [tool.semantic_release]
 branch = "main"
@@ -78,6 +78,31 @@ tools = [ "black",]
 enforce_failure = true
 
 [tool.lintro.ruff]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+ignore_missing_imports = false
+warn_unused_ignores = true
+warn_unused_configs = true
+explicit_package_bases = true
+namespace_packages = true
+follow_imports = "skip"
+files = [
+  "lintro/parsers/mypy",
+  "lintro/utils/unified_config.py",
+  "lintro/utils/console_logger.py",
+  "lintro/utils/tool_utils.py",
+  "lintro/tools/core",
+  "lintro/tools/implementations/tool_mypy.py",
+  "lintro/formatters/styles/json.py",
+  "tests/integration/test_mypy_integration.py",
+]
+exclude = [ "^test_samples/", "^node_modules/", "^dist/", "^build/",]
+
+[[tool.mypy.overrides]]
+module = [ "assertpy",]
+ignore_missing_imports = true
 
 [tool.lintro.versions]
 pytest = "8.0.0"

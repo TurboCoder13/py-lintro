@@ -245,11 +245,13 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
         Native configuration dictionary
     """
     pyproject = _load_pyproject()
-    tool_section = pyproject.get("tool", {})
+    tool_section_raw = pyproject.get("tool", {})
+    tool_section = tool_section_raw if isinstance(tool_section_raw, dict) else {}
 
     # Tools with pyproject.toml config
     if tool_name in ("ruff", "black", "bandit"):
-        return tool_section.get(tool_name, {})
+        config_value = tool_section.get(tool_name, {})
+        return config_value if isinstance(config_value, dict) else {}
 
     # Yamllint: check native config files (not pyproject.toml)
     if tool_name == "yamllint":
@@ -277,14 +279,16 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
             if config_path.exists() and config_file.endswith(".json"):
                 try:
                     with config_path.open(encoding="utf-8") as f:
-                        return json.load(f)
+                        loaded = json.load(f)
+                        return loaded if isinstance(loaded, dict) else {}
                 except (json.JSONDecodeError, FileNotFoundError):
                     pass
             elif config_path.exists() and config_file == ".prettierrc":
                 # Try parsing as JSON (common format)
                 try:
                     with config_path.open(encoding="utf-8") as f:
-                        return json.load(f)
+                        loaded = json.load(f)
+                        return loaded if isinstance(loaded, dict) else {}
                 except (json.JSONDecodeError, FileNotFoundError):
                     pass
         # Check package.json prettier field
@@ -293,8 +297,9 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
             try:
                 with pkg_path.open(encoding="utf-8") as f:
                     pkg = json.load(f)
-                    if "prettier" in pkg:
-                        return pkg["prettier"]
+                    if isinstance(pkg, dict) and "prettier" in pkg:
+                        prettier_cfg = pkg.get("prettier", {})
+                        return prettier_cfg if isinstance(prettier_cfg, dict) else {}
             except (json.JSONDecodeError, FileNotFoundError):
                 pass
         return {}
@@ -321,7 +326,8 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
             if config_file.endswith(".json"):
                 try:
                     with config_path.open(encoding="utf-8") as f:
-                        return json.load(f)
+                        loaded = json.load(f)
+                        return loaded if isinstance(loaded, dict) else {}
                 except (json.JSONDecodeError, FileNotFoundError):
                     pass
             # Handle YAML files
@@ -343,8 +349,9 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
             try:
                 with pkg_path.open(encoding="utf-8") as f:
                     pkg = json.load(f)
-                    if "eslintConfig" in pkg:
-                        return pkg["eslintConfig"]
+                    if isinstance(pkg, dict) and "eslintConfig" in pkg:
+                        eslint_cfg = pkg.get("eslintConfig", {})
+                        return eslint_cfg if isinstance(eslint_cfg, dict) else {}
             except (json.JSONDecodeError, FileNotFoundError):
                 pass
         return {}
@@ -368,7 +375,8 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                         content = f.read()
                         # Strip JSONC comments safely (preserves strings)
                         content = _strip_jsonc_comments(content)
-                        return json.loads(content)
+                        loaded = json.loads(content)
+                        return loaded if isinstance(loaded, dict) else {}
                 except (json.JSONDecodeError, FileNotFoundError):
                     pass
 
@@ -427,7 +435,10 @@ def load_lintro_global_config() -> dict[str, Any]:
         Global configuration dictionary (excludes tool-specific sections)
     """
     pyproject = _load_pyproject()
-    lintro_config = pyproject.get("tool", {}).get("lintro", {})
+    tool_section_raw = pyproject.get("tool", {})
+    tool_section = tool_section_raw if isinstance(tool_section_raw, dict) else {}
+    lintro_config_raw = tool_section.get("lintro", {})
+    lintro_config = lintro_config_raw if isinstance(lintro_config_raw, dict) else {}
 
     # Filter out known tool-specific sections
     tool_sections = {
@@ -459,8 +470,12 @@ def load_lintro_tool_config(tool_name: str) -> dict[str, Any]:
         Tool-specific Lintro configuration
     """
     pyproject = _load_pyproject()
-    lintro_config = pyproject.get("tool", {}).get("lintro", {})
-    return lintro_config.get(tool_name, {})
+    tool_section_raw = pyproject.get("tool", {})
+    tool_section = tool_section_raw if isinstance(tool_section_raw, dict) else {}
+    lintro_config_raw = tool_section.get("lintro", {})
+    lintro_config = lintro_config_raw if isinstance(lintro_config_raw, dict) else {}
+    tool_config = lintro_config.get(tool_name, {})
+    return tool_config if isinstance(tool_config, dict) else {}
 
 
 def get_tool_order_config() -> dict[str, Any]:
@@ -493,10 +508,13 @@ def get_tool_priority(tool_name: str) -> int:
         Priority value (lower = runs first)
     """
     order_config = get_tool_order_config()
-    priority_overrides = order_config.get("priority_overrides", {})
+    priority_overrides_raw = order_config.get("priority_overrides", {})
+    priority_overrides = (
+        priority_overrides_raw if isinstance(priority_overrides_raw, dict) else {}
+    )
     # Normalize priority_overrides keys to lowercase for consistent lookup
-    priority_overrides_normalized = {
-        k.lower(): v for k, v in priority_overrides.items()
+    priority_overrides_normalized: dict[str, int] = {
+        k.lower(): int(v) for k, v in priority_overrides.items() if isinstance(v, int)
     }
     tool_name_lower = tool_name.lower()
 
@@ -505,7 +523,7 @@ def get_tool_priority(tool_name: str) -> int:
         return priority_overrides_normalized[tool_name_lower]
 
     # Use default priority
-    return DEFAULT_TOOL_PRIORITIES.get(tool_name_lower, 50)
+    return int(DEFAULT_TOOL_PRIORITIES.get(tool_name_lower, 50))
 
 
 def get_ordered_tools(
@@ -583,24 +601,33 @@ def get_effective_line_length(tool_name: str) -> int | None:
     """
     # 1. Check tool-specific lintro config
     lintro_tool = load_lintro_tool_config(tool_name)
-    if "line_length" in lintro_tool:
+    if "line_length" in lintro_tool and isinstance(lintro_tool["line_length"], int):
         return lintro_tool["line_length"]
-    if "line-length" in lintro_tool:
+    if "line-length" in lintro_tool and isinstance(lintro_tool["line-length"], int):
         return lintro_tool["line-length"]
 
     # 2. Check global lintro config
     lintro_global = load_lintro_global_config()
-    if "line_length" in lintro_global:
+    if "line_length" in lintro_global and isinstance(
+        lintro_global["line_length"],
+        int,
+    ):
         return lintro_global["line_length"]
-    if "line-length" in lintro_global:
+    if "line-length" in lintro_global and isinstance(
+        lintro_global["line-length"],
+        int,
+    ):
         return lintro_global["line-length"]
 
     # 3. Fall back to Ruff's line-length as source of truth
     pyproject = _load_pyproject()
-    ruff_config = pyproject.get("tool", {}).get("ruff", {})
-    if "line-length" in ruff_config:
+    tool_section_raw = pyproject.get("tool", {})
+    tool_section = tool_section_raw if isinstance(tool_section_raw, dict) else {}
+    ruff_config_raw = tool_section.get("ruff", {})
+    ruff_config = ruff_config_raw if isinstance(ruff_config_raw, dict) else {}
+    if "line-length" in ruff_config and isinstance(ruff_config["line-length"], int):
         return ruff_config["line-length"]
-    if "line_length" in ruff_config:
+    if "line_length" in ruff_config and isinstance(ruff_config["line_length"], int):
         return ruff_config["line_length"]
 
     # 4. Check native tool config (for non-Ruff tools)
@@ -608,7 +635,7 @@ def get_effective_line_length(tool_name: str) -> int | None:
     setting_key = GLOBAL_SETTINGS.get("line_length", {}).get("tools", {}).get(tool_name)
     if setting_key:
         native_value = _get_nested_value(native, setting_key)
-        if native_value is not None:
+        if isinstance(native_value, int):
             return native_value
 
     return None

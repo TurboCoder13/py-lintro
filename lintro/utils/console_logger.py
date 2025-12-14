@@ -7,6 +7,7 @@ No tee, no stream redirection, clean and simple with rich formatting.
 import re
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 import click
 from loguru import logger
@@ -80,7 +81,7 @@ class SimpleLintroLogger:
 
     @staticmethod
     def _get_summary_value(
-        summary: dict | object,
+        summary: dict[str, Any] | object,
         key: str,
         default: int | float = 0,
     ) -> int | float:
@@ -95,8 +96,10 @@ class SimpleLintroLogger:
             int | float: The extracted value or default.
         """
         if isinstance(summary, dict):
-            return summary.get(key, default)
-        return getattr(summary, key, default)
+            value = summary.get(key, default)
+            return value if isinstance(value, (int, float)) else default
+        value = getattr(summary, key, default)
+        return value if isinstance(value, (int, float)) else default
 
     def _setup_loguru(self) -> None:
         """Configure Loguru with clean, simple handlers."""
@@ -124,7 +127,7 @@ class SimpleLintroLogger:
             rotation=None,  # Don't rotate, each run gets its own file
         )
 
-    def info(self, message: str, **kwargs) -> None:
+    def info(self, message: str, **kwargs: Any) -> None:
         """Log an info message to the console.
 
         Args:
@@ -134,7 +137,7 @@ class SimpleLintroLogger:
         self.console_messages.append(message)
         logger.info(message, **kwargs)
 
-    def info_blue(self, message: str, **kwargs) -> None:
+    def info_blue(self, message: str, **kwargs: Any) -> None:
         """Log an info message to the console in blue color.
 
         Args:
@@ -146,7 +149,7 @@ class SimpleLintroLogger:
         self.console_messages.append(message)
         logger.info(message, **kwargs)
 
-    def debug(self, message: str, **kwargs) -> None:
+    def debug(self, message: str, **kwargs: Any) -> None:
         """Log debug message.
 
         Args:
@@ -155,7 +158,7 @@ class SimpleLintroLogger:
         """
         logger.debug(message, **kwargs)
 
-    def warning(self, message: str, **kwargs) -> None:
+    def warning(self, message: str, **kwargs: Any) -> None:
         """Log a warning message to the console.
 
         Args:
@@ -165,7 +168,7 @@ class SimpleLintroLogger:
         self.console_messages.append(f"WARNING: {message}")
         logger.warning(message, **kwargs)
 
-    def error(self, message: str, **kwargs) -> None:
+    def error(self, message: str, **kwargs: Any) -> None:
         """Log an error message to the console.
 
         Args:
@@ -194,7 +197,7 @@ class SimpleLintroLogger:
         # Track for console.log (without color codes)
         self.console_messages.append(text)
 
-    def success(self, message: str, **kwargs) -> None:
+    def success(self, message: str, **kwargs: Any) -> None:
         """Log a success message to the console.
 
         Args:
@@ -389,18 +392,21 @@ class SimpleLintroLogger:
             if output and ("Fixed" in output or "issue(s)" in output):
                 # This is a format operation - parse for better messaging
                 # Prefer standardized counters if present in the output object
-                fixed_count: int = (
-                    getattr(output, "fixed_issues_count", None)
+                fixed_count: int | None = (
+                    cast(int | None, getattr(output, "fixed_issues_count", None))
                     if hasattr(output, "fixed_issues_count")
                     else None
                 )
-                remaining_count: int = (
-                    getattr(output, "remaining_issues_count", None)
+                remaining_count: int | None = (
+                    cast(
+                        int | None,
+                        getattr(output, "remaining_issues_count", None),
+                    )
                     if hasattr(output, "remaining_issues_count")
                     else None
                 )
-                initial_count: int = (
-                    getattr(output, "initial_issues_count", None)
+                initial_count: int | None = (
+                    cast(int | None, getattr(output, "initial_issues_count", None))
                     if hasattr(output, "initial_issues_count")
                     else None
                 )
@@ -446,12 +452,12 @@ class SimpleLintroLogger:
                     )
                 else:
                     # Fallback to original behavior
-                    error_msg: str = f"✗ Found {issues_count} issues"
+                    error_msg = f"✗ Found {issues_count} issues"
                     self.console_output(text=error_msg, color="red")
             else:
                 # Show issue count with action-aware phrasing
                 if action == "fmt":
-                    error_msg: str = f"✗ {issues_count} issue(s) cannot be auto-fixed"
+                    error_msg = f"✗ {issues_count} issue(s) cannot be auto-fixed"
                 else:
                     error_msg = f"✗ Found {issues_count} issues"
                 self.console_output(text=error_msg, color="red")
@@ -675,7 +681,7 @@ class SimpleLintroLogger:
                 if action == "fmt":
                     # Format operations: show fixed count and remaining status
                     if success:
-                        status_display: str = click.style(
+                        status_display = click.style(
                             "✅ PASS",
                             fg="green",
                             bold=True,
@@ -755,6 +761,15 @@ class SimpleLintroLogger:
 
                     # Check if tool was skipped (version check failure, etc.)
                     is_skipped = result_output and "skipping" in result_output.lower()
+                    no_files_message = result_output and any(
+                        (
+                            msg in result_output
+                            for msg in (
+                                "No files to",
+                                "No Python files found to",
+                            )
+                        ),
+                    )
 
                     has_execution_failure = result_output and (
                         "timeout" in result_output.lower()
@@ -763,7 +778,7 @@ class SimpleLintroLogger:
                     )
 
                     # If tool was skipped, show SKIPPED status
-                    if is_skipped:
+                    if is_skipped or no_files_message:
                         status_display = click.style(
                             "⏭️  SKIPPED",
                             fg="yellow",
@@ -816,7 +831,6 @@ class SimpleLintroLogger:
                                 fg="green" if issues_count == 0 else "red",
                                 bold=True,
                             )
-
                 if action == "fmt":
                     summary_data.append(
                         [

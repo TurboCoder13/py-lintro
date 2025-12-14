@@ -20,7 +20,7 @@ install:
 	uv pip install -e .
 
 # Run all tests
-test:
+test: mypy
 	@echo "Running tests with coverage..."
 	uv run lintro tst tests/ --tool-options pytest:coverage_report=True,pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml,pytest:timeout=600
 	@echo "Coverage reports generated:"
@@ -34,7 +34,7 @@ test-integration:
 	./scripts/local-test.sh
 
 # Run linting using lintro itself
-lint:
+lint: mypy
 	@echo "Running lintro check..."
 	uv run lintro check .
 
@@ -61,8 +61,8 @@ docker-test:
 
 # Run type checking
 mypy:
-	@echo "Running mypy type checking..."
-	uv run mypy lintro/
+	@echo "Running mypy type checking via lintro..."
+	uv run lintro check . --tools mypy
 
 # Clean up build artifacts
 clean:
@@ -89,6 +89,7 @@ help:
 	@echo "  test            - Run unit tests with coverage"
 	@echo "  test-integration- Run integration tests"
 	@echo "  lint            - Run lintro check"
+	@echo "                    - Runs mypy before lintro"
 	@echo "  format          - Run lintro format"
 	@echo "  mypy            - Run type checking"
 	@echo "  docker-build    - Build Docker image"

@@ -48,6 +48,7 @@ The version system automatically reads from pyproject.toml, so Renovate and othe
 dependency management tools will keep versions up to date.
 """
 
+import os
 import re
 import subprocess  # nosec B404 - used safely with shell disabled
 import tomllib
@@ -57,7 +58,41 @@ from pathlib import Path
 from loguru import logger
 
 
-def _load_pyproject_config() -> dict:
+def _get_version_timeout() -> int:
+    """Return the validated version check timeout.
+
+    Returns:
+        int: Timeout in seconds; falls back to default when the env var is invalid.
+    """
+    default_timeout = 30
+    env_value = os.getenv("LINTRO_VERSION_TIMEOUT")
+    if env_value is None:
+        return default_timeout
+
+    try:
+        timeout = int(env_value)
+    except (TypeError, ValueError):
+        logger.warning(
+            "Invalid LINTRO_VERSION_TIMEOUT '%s'; using default %s",
+            env_value,
+            default_timeout,
+        )
+        return default_timeout
+
+    if timeout < 1:
+        logger.warning(
+            "LINTRO_VERSION_TIMEOUT must be >= 1; using default %s",
+            default_timeout,
+        )
+        return default_timeout
+
+    return timeout
+
+
+VERSION_CHECK_TIMEOUT: int = _get_version_timeout()
+
+
+def _load_pyproject_config() -> dict[str, object]:
     """Load pyproject.toml configuration.
 
     Returns:
@@ -107,13 +142,18 @@ def _get_minimum_versions() -> dict[str, str]:
     """
     config = _load_pyproject_config()
 
-    versions = {}
+    versions: dict[str, str] = {}
 
     # Python tools bundled with lintro - extract from dependencies
-    python_bundled_tools = {"ruff", "black", "bandit", "yamllint", "darglint"}
-    dependencies = config.get("project", {}).get("dependencies", [])
+    python_bundled_tools = {"ruff", "black", "bandit", "yamllint", "darglint", "mypy"}
+    project_section = config.get("project", {})
+    project_dependencies = (
+        project_section.get("dependencies", [])
+        if isinstance(project_section, dict)
+        else []
+    )
 
-    for dep in dependencies:
+    for dep in project_dependencies:
         dep = dep.strip()
         for tool in python_bundled_tools:
             if dep.startswith(f"{tool}>=") or dep.startswith(f"{tool}=="):
@@ -121,8 +161,17 @@ def _get_minimum_versions() -> dict[str, str]:
                 break
 
     # Other tools - read from [tool.lintro.versions] section
-    lintro_versions = config.get("tool", {}).get("lintro", {}).get("versions", {})
-    versions.update(lintro_versions)
+    tool_section = (
+        config.get("tool", {}) if isinstance(config.get("tool", {}), dict) else {}
+    )
+    lintro_section = (
+        tool_section.get("lintro", {}) if isinstance(tool_section, dict) else {}
+    )
+    lintro_versions = (
+        lintro_section.get("versions", {}) if isinstance(lintro_section, dict) else {}
+    )
+    if isinstance(lintro_versions, dict):
+        versions.update({k: str(v) for k, v in lintro_versions.items()})
 
     # Fill in any missing tools with defaults (for backward compatibility)
     defaults = {
@@ -148,10 +197,10 @@ def _get_install_hints() -> dict[str, str]:
         dict[str, str]: Dictionary mapping tool names to installation hint strings.
     """
     versions = _get_minimum_versions()
-    hints = {}
+    hints: dict[str, str] = {}
 
     # Python bundled tools
-    python_bundled = {"ruff", "black", "bandit", "yamllint", "darglint"}
+    python_bundled = {"ruff", "black", "bandit", "yamllint", "darglint", "mypy"}
     for tool in python_bundled:
         version = versions.get(tool, "latest")
         hints[tool] = (
@@ -312,7 +361,7 @@ def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
             version_cmd,
             capture_output=True,
             text=True,
-            timeout=10,  # 10 second timeout
+            timeout=VERSION_CHECK_TIMEOUT,  # Configurable version check timeout
         )
 
         if result.returncode != 0:

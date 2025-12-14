@@ -8,12 +8,14 @@ import subprocess  # nosec B404 - subprocess used safely with shell=False
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 
 from loguru import logger
 
 from lintro.config import LintroConfig
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.models.core.tool_config import ToolConfig
+from lintro.models.core.tool_result import ToolResult
 from lintro.utils.path_utils import find_lintro_ignore
 
 # Constants for default values
@@ -163,31 +165,36 @@ class BaseTool(ABC):
             CalledProcessError: If command fails.
             TimeoutExpired: If command times out.
             FileNotFoundError: If command executable is not found.
+            ValueError: If timeout is not numeric.
         """
         # Validate command arguments for safety prior to execution
         self._validate_subprocess_command(cmd=cmd)
+
+        raw_timeout = (
+            timeout
+            if timeout is not None
+            else self.options.get(
+                "timeout",
+                self._default_timeout,
+            )
+        )
+        if not isinstance(raw_timeout, (int, float)):
+            raise ValueError("Timeout must be a number")
+        effective_timeout: float = float(raw_timeout)
 
         try:
             result = subprocess.run(  # nosec B603 - args list, shell=False
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=timeout
-                or self.options.get(
-                    "timeout",
-                    self._default_timeout,
-                ),
+                timeout=effective_timeout,
                 cwd=cwd,
             )
             return result.returncode == 0, result.stdout + result.stderr
         except subprocess.TimeoutExpired as e:
             raise subprocess.TimeoutExpired(
                 cmd=cmd,
-                timeout=timeout
-                or self.options.get(
-                    "timeout",
-                    self._default_timeout,
-                ),
+                timeout=effective_timeout,
                 output=str(e),
             ) from e
         except subprocess.CalledProcessError as e:
@@ -228,7 +235,7 @@ class BaseTool(ABC):
             if any(ch in arg for ch in unsafe_chars):
                 raise ValueError("Unsafe character detected in command argument")
 
-    def set_options(self, **kwargs) -> None:
+    def set_options(self, **kwargs: object) -> None:
         """Set core options.
 
         Args:
@@ -250,9 +257,9 @@ class BaseTool(ABC):
 
         # Update specific attributes for exclude_patterns and include_venv
         if "exclude_patterns" in kwargs:
-            self.exclude_patterns = kwargs["exclude_patterns"]
+            self.exclude_patterns = cast(list[str], kwargs["exclude_patterns"])
         if "include_venv" in kwargs:
-            self.include_venv = kwargs["include_venv"]
+            self.include_venv = cast(bool, kwargs["include_venv"])
 
     def _validate_paths(
         self,
@@ -315,7 +322,7 @@ class BaseTool(ABC):
         # Python tools bundled with lintro (guaranteed in our environment)
         # Note: darglint cannot be run as a module (python -m darglint),
         # so it's excluded
-        python_bundled_tools = {"ruff", "black", "bandit", "yamllint"}
+        python_bundled_tools = {"ruff", "black", "bandit", "yamllint", "mypy"}
         if tool_name in python_bundled_tools:
             # Use python -m to ensure we use the tool from lintro's environment
             python_exe = sys.executable
@@ -442,10 +449,11 @@ class BaseTool(ABC):
             return []
 
         lintro_config = self._get_lintro_config()
-        return get_enforce_cli_args(
+        args: list[str] = get_enforce_cli_args(
             tool_name=self.name,
             lintro_config=lintro_config,
         )
+        return args
 
     def _get_defaults_config_args(self) -> list[str]:
         """Get CLI arguments for defaults config injection.
@@ -474,10 +482,11 @@ class BaseTool(ABC):
         if config_path is None:
             return []
 
-        return get_defaults_injection_args(
+        args: list[str] = get_defaults_injection_args(
             tool_name=self.name,
             config_path=config_path,
         )
+        return args
 
     def _build_config_args(self) -> list[str]:
         """Build complete config-related CLI arguments for this tool.
@@ -520,10 +529,11 @@ class BaseTool(ABC):
             "_get_defaults_config_args() directly.",
         )
         lintro_config = self._get_lintro_config()
-        return generate_defaults_config(
+        config: Path | None = generate_defaults_config(
             tool_name=self.name,
             lintro_config=lintro_config,
         )
+        return config
 
     def _get_config_injection_args(self) -> list[str]:
         """Get CLI arguments to inject Lintro config into this tool.
@@ -585,4 +595,4 @@ class BaseTool(ABC):
         """
         if not self.can_fix:
             raise NotImplementedError(f"{self.name} does not support fixing issues")
-        ...
+        raise NotImplementedError("Subclasses must implement fix()")

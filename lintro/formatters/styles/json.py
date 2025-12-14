@@ -7,7 +7,7 @@ from typing import Any
 from lintro.formatters.core.output_style import OutputStyle
 
 
-class JsonStyle(OutputStyle):
+class JsonStyle(OutputStyle):  # type: ignore[misc]
     """Output format that renders data as structured JSON."""
 
     def format(
@@ -15,8 +15,7 @@ class JsonStyle(OutputStyle):
         columns: list[str],
         rows: list[list[Any]],
         tool_name: str | None = None,
-        metadata: dict[str, Any] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """Format a table given columns and rows as structured JSON.
 
@@ -24,26 +23,26 @@ class JsonStyle(OutputStyle):
             columns: List of column names.
             rows: List of row values (each row is a list of cell values).
             tool_name: Name of the tool that generated the data.
-            metadata: Tool-specific metadata.
-            **kwargs: Additional metadata.
+            **kwargs: Additional metadata; `metadata` can be provided here.
 
         Returns:
             Formatted data as structured JSON string.
         """
+        metadata: dict[str, Any] | None = kwargs.pop("metadata", None)
         # Convert column names to standardized format
         normalized_columns = [col.lower().replace(" ", "_") for col in columns]
 
         # Convert rows to list of dictionaries with proper data types
-        issues = []
+        issues: list[dict[str, Any]] = []
         for row in rows:
-            issue_dict = {}
+            issue_dict: dict[str, Any] = {}
             for i, value in enumerate(row):
                 if i < len(normalized_columns):
                     issue_dict[normalized_columns[i]] = value
             issues.append(issue_dict)
 
         # Create the final JSON structure
-        result = {
+        result: dict[str, Any] = {
             "tool": tool_name,
             "timestamp": datetime.now().isoformat(),
             "total_issues": len(issues),

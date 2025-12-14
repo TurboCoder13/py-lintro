@@ -77,8 +77,8 @@ def main() -> int:
             print(f"Skipping (no sections or unreadable): {fp.name}")
             continue
         _write_sections(
-            arg1=fp,
-            arg2=sections,
+            file_path=fp,
+            sections=sections,
         )
         updated += 1
         print(f"Normalized: {fp.name} -> {args.width}x{args.height}")

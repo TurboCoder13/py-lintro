@@ -1,8 +1,11 @@
 """Tool utilities for handling core operations."""
 
+from __future__ import annotations
+
 import fnmatch
 import os
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Protocol
 
 try:
     from tabulate import tabulate
@@ -39,6 +42,10 @@ from lintro.formatters.tools.markdownlint_formatter import (
     MarkdownlintTableDescriptor,
     format_markdownlint_issues,
 )
+from lintro.formatters.tools.mypy_formatter import (
+    MypyTableDescriptor,
+    format_mypy_issues,
+)
 from lintro.formatters.tools.prettier_formatter import (
     PrettierTableDescriptor,
     format_prettier_issues,
@@ -63,6 +70,7 @@ from lintro.parsers.eslint.eslint_issue import EslintIssue
 from lintro.parsers.eslint.eslint_parser import parse_eslint_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
+from lintro.parsers.mypy.mypy_parser import parse_mypy_output
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.parsers.pytest.pytest_parser import parse_pytest_text_output
@@ -70,13 +78,34 @@ from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 from lintro.parsers.ruff.ruff_parser import parse_ruff_output
 from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 
+if TYPE_CHECKING:  # pragma: no cover - type-checking only
+    from lintro.tools.tool_enum import ToolEnum
+
+
+class TableDescriptor(Protocol):
+    """Descriptor for translating issues into tabular output."""
+
+    def get_columns(self) -> list[str]:
+        """Return column names for the table representation."""
+        ...
+
+    def get_rows(self, issues: Any) -> list[list[str]]:
+        """Return table rows derived from a collection of issues.
+
+        Args:
+            issues: Parsed issues to be displayed.
+        """
+        ...
+
+
 # Constants
-TOOL_TABLE_FORMATTERS: dict[str, tuple] = {
+TOOL_TABLE_FORMATTERS: dict[str, tuple[TableDescriptor, Callable[..., str]]] = {
     "darglint": (DarglintTableDescriptor(), format_darglint_issues),
     "eslint": (EslintTableDescriptor(), format_eslint_issues),
     "hadolint": (HadolintTableDescriptor(), format_hadolint_issues),
     "black": (BlackTableDescriptor(), format_black_issues),
     "prettier": (PrettierTableDescriptor(), format_prettier_issues),
+    "mypy": (MypyTableDescriptor(), format_mypy_issues),
     "pytest": (PytestFailuresTableDescriptor(), format_pytest_issues),
     "ruff": (RuffTableDescriptor(), format_ruff_issues),
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
@@ -98,7 +127,7 @@ VENV_PATTERNS: list[str] = [
 ]
 
 
-def parse_tool_list(tools_str: str | None) -> list[str]:
+def parse_tool_list(tools_str: str | None) -> list[ToolEnum]:
     """Parse a comma-separated list of core names into ToolEnum members.
 
     Args:
@@ -115,7 +144,7 @@ def parse_tool_list(tools_str: str | None) -> list[str]:
     # Import ToolEnum here to avoid circular import at module level
     from lintro.tools.tool_enum import ToolEnum
 
-    result: list = []
+    result: list[ToolEnum] = []
     for t in tools_str.split(","):
         t = t.strip()
         if not t:
@@ -127,7 +156,7 @@ def parse_tool_list(tools_str: str | None) -> list[str]:
     return result
 
 
-def parse_tool_options(tool_options_str: str | None) -> dict:
+def parse_tool_options(tool_options_str: str | None) -> dict[str, dict[str, str]]:
     """Parse tool-specific options.
 
     Args:
@@ -140,15 +169,14 @@ def parse_tool_options(tool_options_str: str | None) -> dict:
     if not tool_options_str:
         return {}
 
-    options: dict = {}
+    options: dict[str, dict[str, str]] = {}
     for opt in tool_options_str.split(","):
         if ":" in opt:
             tool_name, tool_opt = opt.split(":", 1)
             if "=" in tool_opt:
                 opt_name, opt_value = tool_opt.split("=", 1)
-                if tool_name not in options:
-                    options[tool_name] = {}
-                options[tool_name][opt_name] = opt_value
+                tool_options = options.setdefault(tool_name, {})
+                tool_options[opt_name] = opt_value
     return options
 
 
@@ -186,7 +214,7 @@ def get_table_columns(
     issues: list[dict[str, str]],
     tool_name: str,
     group_by: str | None = None,
-) -> tuple[list[str], list[str]]:
+) -> tuple[list[str], list[list[str]]]:
     """Get table columns and rows for a list of issues.
 
     Args:
@@ -384,23 +412,25 @@ def format_tool_output(
     # fall back to the tool-specific formatter.
 
     # Otherwise, try to parse the output and format it
-    parsed_issues: list = []
+    parsed_issues: list[Any] = []
     if tool_name == "ruff":
-        parsed_issues = parse_ruff_output(output=output)
+        parsed_issues = list(parse_ruff_output(output=output))
     elif tool_name == "prettier":
-        parsed_issues = parse_prettier_output(output=output)
+        parsed_issues = list(parse_prettier_output(output=output))
+    elif tool_name == "mypy":
+        parsed_issues = list(parse_mypy_output(output=output))
     elif tool_name == "black":
-        parsed_issues = parse_black_output(output=output)
+        parsed_issues = list(parse_black_output(output=output))
     elif tool_name == "darglint":
-        parsed_issues = parse_darglint_output(output=output)
+        parsed_issues = list(parse_darglint_output(output=output))
     elif tool_name == "eslint":
-        parsed_issues = parse_eslint_output(output=output)
+        parsed_issues = list(parse_eslint_output(output=output))
     elif tool_name == "hadolint":
-        parsed_issues = parse_hadolint_output(output=output)
+        parsed_issues = list(parse_hadolint_output(output=output))
     elif tool_name == "yamllint":
-        parsed_issues = parse_yamllint_output(output=output)
+        parsed_issues = list(parse_yamllint_output(output=output))
     elif tool_name == "markdownlint":
-        parsed_issues = parse_markdownlint_output(output=output)
+        parsed_issues = list(parse_markdownlint_output(output=output))
     elif tool_name == "bandit":
         # Bandit emits JSON; try parsing when raw output is provided
         try:
@@ -411,7 +441,7 @@ def format_tool_output(
             parsed_issues = []
     elif tool_name == "pytest":
         # Pytest emits text output; parse it
-        parsed_issues = parse_pytest_text_output(output=output)
+        parsed_issues = list(parse_pytest_text_output(output=output))
 
     if parsed_issues and tool_name in TOOL_TABLE_FORMATTERS:
         _, formatter_func = TOOL_TABLE_FORMATTERS[tool_name]

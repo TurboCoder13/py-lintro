@@ -4,14 +4,16 @@ Creates configuration files for Lintro and optionally native tool configs.
 """
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import click
 from loguru import logger
 from rich.console import Console
 from rich.panel import Panel
 
-# Default Lintro config template
+# Default Lintro config template (project-recommended defaults)
 DEFAULT_CONFIG_TEMPLATE = """\
 # Lintro Configuration
 # https://github.com/TurboCoder13/py-lintro
@@ -19,74 +21,52 @@ DEFAULT_CONFIG_TEMPLATE = """\
 # Lintro acts as the master configuration source for all tools.
 # Native tool configs (e.g., .prettierrc) are ignored by default unless
 # explicitly referenced via config_source.
+#
+# enforce: Cross-cutting settings injected via CLI flags
+# execution: What tools run and how
+# defaults: Fallback config when no native config exists
+# tools: Per-tool enable/disable and optional config source
 
 enforce:
-  # Line length limit applied to all supporting tools
-  # Maps to: ruff line-length, black line-length, prettier printWidth, etc.
+  # Applied to ruff/black/prettier and other tools that honor line length
   line_length: 88
-
-  # Python version target (e.g., "py313", "py312", "py310")
-  # Maps to: ruff target-version, black target-version
-  # Omit to let tools infer from requires-python in pyproject.toml
-  # target_python: "py310"
+  # Aligns with project requires-python (pyproject.toml)
+  target_python: "py313"
 
 execution:
-  # List of tools to run (empty = all available tools)
-  # enabled_tools: ["ruff", "prettier", "markdownlint", "yamllint"]
   enabled_tools: []
-
-  # Execution order strategy:
-  # - "priority": Formatters before linters (default)
-  # - "alphabetical": Alphabetical order
-  # - ["tool1", "tool2", ...]: Custom order
   tool_order: "priority"
-
-  # Stop on first tool failure
   fail_fast: false
 
+defaults:
+  mypy:
+    strict: true
+    ignore_missing_imports: true
+  prettier:
+    semi: true
+    singleQuote: true
+    tabWidth: 2
+    printWidth: 88
+
 tools:
-  # Ruff - Python linter and formatter
   ruff:
     enabled: true
-    # config_source: ".ruff.toml"  # Optional: inherit from native config
-    # Settings are passed directly to Ruff
-    # select: ["E", "F", "W", "I"]
-    # ignore: ["E501"]
-
-  # Black - Python formatter
   black:
     enabled: true
-    # config_source: "pyproject.toml"  # Optional: use [tool.black] section
-
-  # Prettier - Multi-language formatter
+  mypy:
+    enabled: true
   prettier:
     enabled: true
-    # config_source: ".prettierrc"  # Optional: inherit from native config
-    # overrides:
-    #   printWidth: 88  # Override to match enforce line_length
-
-  # Markdownlint - Markdown linter
   markdownlint:
     enabled: true
-    # MD013 line_length is automatically synced from enforce.line_length
-
-  # Yamllint - YAML linter
   yamllint:
     enabled: true
-
-  # Bandit - Security linter
   bandit:
     enabled: true
-
-  # Hadolint - Dockerfile linter
   hadolint:
     enabled: true
-
-  # Actionlint - GitHub Actions linter
   actionlint:
     enabled: true
-
-  # Darglint - Docstring linter
   darglint:
     enabled: true
 """
@@ -97,7 +77,12 @@ MINIMAL_CONFIG_TEMPLATE = """\
 
 enforce:
   line_length: 88
-  # target_python: "py310"  # Omit to infer from requires-python
+  target_python: "py313"
+
+defaults:
+  mypy:
+    strict: true
+    ignore_missing_imports: true
 
 execution:
   tool_order: "priority"
@@ -106,6 +91,8 @@ tools:
   ruff:
     enabled: true
   black:
+    enabled: true
+  mypy:
     enabled: true
   prettier:
     enabled: true
@@ -182,7 +169,7 @@ def _write_file(
 
 def _write_json_file(
     path: Path,
-    data: dict,
+    data: Mapping[str, Any],
     console: Console,
     force: bool,
 ) -> bool:

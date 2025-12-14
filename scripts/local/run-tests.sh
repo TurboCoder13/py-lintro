@@ -26,9 +26,13 @@ setup_python_env() {
     # Check if we're running in Docker
     if [ -n "$RUNNING_IN_DOCKER" ]; then
         echo -e "${YELLOW}Running in Docker environment${NC}"
-        # In Docker, the environment is already set up by the Dockerfile
-        # Just ensure we're in the right directory
+        # The host bind mount can mask the image venv; rebuild it if missing.
         cd /app
+        if [ ! -x "/app/.venv/bin/python" ]; then
+            echo -e "${YELLOW}Detected missing /app/.venv; rebuilding venv with uv...${NC}"
+            export UV_LINK_MODE=${UV_LINK_MODE:-copy}
+            uv sync --dev --no-progress
+        fi
     else
         echo -e "${YELLOW}Running in local environment${NC}"
         # In local environment, ensure we have uv and dependencies
@@ -85,16 +89,24 @@ discover_tests() {
 # Ensure required Python CLI tools are available in the active uv environment
 ensure_python_cli_tools() {
     echo -e "${BLUE}Ensuring required Python CLI tools are available...${NC}"
-    # Install bandit if missing or broken
-    if ! uv run python -c "import bandit" >/dev/null 2>&1; then
-        echo -e "${YELLOW}Installing bandit for integration tests...${NC}"
-        uv pip install bandit==1.8.6 >/dev/null 2>&1 || true
-    fi
-    # Install black if missing
-    if ! uv run python -c "import black" >/dev/null 2>&1; then
-        echo -e "${YELLOW}Installing black for formatting policy tests...${NC}"
-        uv pip install black >/dev/null 2>&1 || true
-    fi
+    # Ensure core Python CLIs needed for integration tests
+    local pkgs=(
+        "bandit==1.8.6"
+        "black"
+        "mypy>=1.14.1"
+        "ruff>=0.14.0"
+        "yamllint>=1.37.1"
+        "darglint==1.8.1"
+        "pytest>=9.0.1"
+    )
+    for pkg in "${pkgs[@]}"; do
+        # Derive import name from package (strip version spec)
+        local import_name="${pkg%%[=> ]*}"
+        if ! uv run python -c "import ${import_name}" >/dev/null 2>&1; then
+            echo -e "${YELLOW}Installing ${pkg} for integration tests...${NC}"
+            uv pip install "${pkg}" >/dev/null 2>&1 || true
+        fi
+    done
 }
 
 # Helper function to run tests and report results
