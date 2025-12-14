@@ -188,14 +188,31 @@ lintro check src/ --tool-options "black:line_length=100,black:target_version=py3
 ### JavaScript/TypeScript Projects
 
 ```bash
-# Check and format JS/TS files
-lintro check src/ --tools prettier
+# Check JS/TS files with ESLint
+lintro check src/ --tools eslint
+
+# Format JS/TS/JSON/CSS/HTML with Prettier
 lintro format src/ --tools prettier
+
+# Combined lint + format
+lintro check src/ --tools eslint,prettier
 ```
 
 **Tools:**
 
+- **ESLint** - Linter for JS/TS
 - **Prettier** - Code formatter for JS, TS, JSON, CSS, HTML
+
+### Markdown Files
+
+```bash
+# Check Markdown files
+lintro check docs/ --tools markdownlint
+```
+
+**Tools:**
+
+- **Markdownlint-cli2** - Markdown style validation
 
 ### YAML Files
 

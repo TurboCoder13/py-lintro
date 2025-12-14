@@ -32,6 +32,14 @@ implementations with the core tools themselves.
 - ⚠️ **Limited**: Runtime options, parser specification, debug capabilities
 - 🚀 **Enhanced**: Unified API, structured output, pipeline integration
 
+### [ESLint Analysis](./eslint-analysis.md)
+
+**JavaScript/TypeScript Linter**
+
+- ✅ **Preserved**: Linting, auto-fix, native config discovery, JSON output
+- ⚠️ **Limited**: Runtime rule/formatter selection, cache flags, dry-run fixes
+- 🚀 **Enhanced**: Normalized issues, unified API, priority after formatters
+
 ### [Yamllint Analysis](./yamllint-analysis.md)
 
 **YAML Linter for Syntax and Style**
@@ -39,6 +47,14 @@ implementations with the core tools themselves.
 - ✅ **Preserved**: Syntax validation, style checking, configuration files, error codes
 - ⚠️ **Limited**: Runtime rule customization, schema validation, auto-fixing
 - 🚀 **Enhanced**: Issue normalization, Python integration, error parsing
+
+### [Markdownlint Analysis](./markdownlint-analysis.md)
+
+**Markdown Style Linter (markdownlint-cli2)**
+
+- ✅ **Preserved**: Markdown rule enforcement, native config and ignore support
+- ⚠️ **Limited**: No auto-fix, limited CLI pass-through, single-process execution
+- 🚀 **Enhanced**: Central line-length injection, normalized issues, safe version checks
 
 ### [Hadolint Analysis](./hadolint-analysis.md)
 
@@ -73,6 +89,23 @@ implementations with the core tools themselves.
 - ✅ **Preserved**: Core formatting, pyproject config, check and write flows
 - ⚙️ **Pass-throughs**: `line_length`, `target_version`, `fast`, `preview`, `diff`
 - 🚀 **Notes**: Cooperates with Ruff via Lintro post-check policy
+
+### [Mypy Analysis](./mypy-analysis.md)
+
+### Python Static Type Checker
+
+- ✅ **Preserved**: Strict checking, config discovery, JSON output with codes/columns
+- ⚠️ **Limited**: No plugin flag pass-through, incremental/cache tuning, warn-\* toggles
+- 🚀 **Enhanced**: Strict-by-default, timeout handling, normalized results, default
+  excludes
+
+### [Pytest Analysis](./pytest-analysis.md)
+
+### Python Test Runner
+
+- ✅ **Preserved**: Test discovery/execution, JSON/JUnit/plain outputs, config respect
+- ⚠️ **Limited**: No impact analysis or mutation testing; plugin install not managed
+- 🚀 **Enhanced**: Coverage helpers, parallel presets, plugin/marker/fixture listings
 
 ## Analysis Framework
 
