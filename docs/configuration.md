@@ -578,43 +578,29 @@ coverage/
 *.min.css
 ```
 
-#### ESLint Configuration
+#### Biome Configuration
 
-**File:** `.eslintrc.json`
+**File:** `biome.json`
 
 ```json
 {
-  "root": true,
-  "env": { "browser": true, "es2022": true, "node": true },
-  "parserOptions": { "ecmaVersion": "latest", "sourceType": "module" },
-  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
-  "plugins": ["@typescript-eslint"],
-  "rules": {
-    "no-console": "warn",
-    "no-unused-vars": "warn"
+  "$schema": "https://biomejs.dev/schemas/2.3.9/schema.json",
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noConsole": "warn"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": false
   }
 }
 ```
 
-**File:** `eslint.config.js` (flat config)
-
-```javascript
-import js from '@eslint/js';
-import ts from 'typescript-eslint';
-
-export default [
-  js.configs.recommended,
-  ...ts.configs.recommended,
-  {
-    rules: {
-      'no-console': 'warn',
-      'no-unused-vars': 'warn',
-    },
-  },
-];
-```
-
-**Ignore Files:** `.eslintignore`
+**Ignore Files:** `.biomeignore`
 
 ```text
 node_modules/
@@ -623,7 +609,7 @@ build/
 coverage/
 ```
 
-**Lintro options:** use `--tool-options "eslint:timeout=60"` or set `exclude_patterns`
+**Lintro options:** use `--tool-options "biome:timeout=60"` or set `exclude_patterns`
 via CLI to adjust discovery; native configs remain primary.
 
 ### YAML Tools

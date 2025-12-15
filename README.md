@@ -101,7 +101,7 @@ grype sbom:main-*-py-lintro-sbom.spdx-2.3.json
 | [![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint)                    | 🐍 Python           | -        |
 | [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)                                 | 🐳 Dockerfile       | -        |
 | [![Markdownlint-cli2](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2) | 📝 Markdown         | -        |
-| [![ESLint](https://img.shields.io/badge/ESLint-lint-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/)                                                      | 🟨 JS/TS            | ✅       |
+| [![Biome](https://img.shields.io/badge/Biome-lint-60A5FA?logo=biome&logoColor=white)](https://biomejs.dev/)                                                        | 🟨 JS/TS/JSON/CSS   | ✅       |
 | [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                                             | 🟨 JS/TS · 🧾 JSON  | ✅       |
 | [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                                             | 🐍 Python           | ✅       |
 | [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                                        | 🐍 Python           | ✅       |
