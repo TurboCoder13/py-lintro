@@ -8,6 +8,10 @@ from lintro.formatters.tools.bandit_formatter import (
     BanditTableDescriptor,
     format_bandit_issues,
 )
+from lintro.formatters.tools.biome_formatter import (
+    BiomeTableDescriptor,
+    format_biome_issues,
+)
 from lintro.formatters.tools.clippy_formatter import (
     ClippyTableDescriptor,
     format_clippy_issues,
@@ -15,10 +19,6 @@ from lintro.formatters.tools.clippy_formatter import (
 from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
-)
-from lintro.formatters.tools.eslint_formatter import (
-    EslintTableDescriptor,
-    format_eslint_issues,
 )
 from lintro.formatters.tools.hadolint_formatter import (
     HadolintTableDescriptor,
@@ -46,12 +46,12 @@ __all__ = [
     "format_actionlint_issues",
     "BanditTableDescriptor",
     "format_bandit_issues",
+    "BiomeTableDescriptor",
+    "format_biome_issues",
     "ClippyTableDescriptor",
     "format_clippy_issues",
     "DarglintTableDescriptor",
     "format_darglint_issues",
-    "EslintTableDescriptor",
-    "format_eslint_issues",
     "HadolintTableDescriptor",
     "format_hadolint_issues",
     "MarkdownlintTableDescriptor",
