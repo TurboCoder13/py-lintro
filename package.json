@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/TurboCoder13/py-lintro#readme",
   "devDependencies": {
+    "@biomejs/biome": "^2.3.8",
     "prettier": "^3.7.3"
   }
 }
