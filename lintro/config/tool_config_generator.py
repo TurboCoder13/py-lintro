@@ -62,15 +62,20 @@ def _convert_python_version_for_mypy(version: str) -> str:
 
 # Tool config format for defaults generation
 TOOL_CONFIG_FORMATS: dict[str, str] = {
+    "bandit": "yaml",
+    "biome": "json",
+    "hadolint": "yaml",
+    "markdownlint": "json",
     "prettier": "json",
     "yamllint": "yaml",
-    "markdownlint": "json",
-    "hadolint": "yaml",
-    "bandit": "yaml",
 }
 
 # Native config file patterns for checking if tool has native config
 NATIVE_CONFIG_PATTERNS: dict[str, list[str]] = {
+    "biome": [
+        "biome.json",
+        "biome.jsonc",
+    ],
     "prettier": [
         ".prettierrc",
         ".prettierrc.json",
@@ -324,6 +329,7 @@ def get_defaults_injection_args(
 
     # Tool-specific config flags
     config_flags: dict[str, list[str]] = {
+        "biome": ["--config-path", config_str],
         "prettier": ["--config", config_str],
         "yamllint": ["-c", config_str],
         "markdownlint": ["--config", config_str],
