@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lintro"
-version = "0.19.1"
+version = "0.19.2"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
 keywords = [ "linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker",]
 classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
