@@ -212,7 +212,7 @@ DEFAULT_TOOL_PRIORITIES: dict[str, int] = {
     "yamllint": 35,  # Linter
     "darglint": 40,  # Linter
     "bandit": 45,  # Security linter
-    "eslint": 50,  # JavaScript/TypeScript linter
+    "biome": 50,  # JavaScript/TypeScript/JSON/CSS linter
     "hadolint": 50,  # Docker linter
     "actionlint": 55,  # GitHub Actions linter
     "pytest": 100,  # Test runner - runs last
@@ -304,54 +304,21 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                 pass
         return {}
 
-    # ESLint: check multiple config file formats
-    if tool_name == "eslint":
-        # Check flat config (ESLint 9+)
-        flat_config = Path("eslint.config.js")
-        if flat_config.exists():
-            # Note: We can't easily parse JS files, so return empty dict
-            # The tool will use the config natively
-            return {}
-        # Check legacy config files
+    # Biome: check config files
+    if tool_name == "biome":
+        # Check Biome config files
         for config_file in [
-            ".eslintrc.js",
-            ".eslintrc.json",
-            ".eslintrc.yaml",
-            ".eslintrc.yml",
+            "biome.json",
+            "biome.jsonc",
         ]:
             config_path = Path(config_file)
             if not config_path.exists():
                 continue
             # Handle JSON files
-            if config_file.endswith(".json"):
-                try:
-                    with config_path.open(encoding="utf-8") as f:
-                        loaded = json.load(f)
-                        return loaded if isinstance(loaded, dict) else {}
-                except (json.JSONDecodeError, FileNotFoundError):
-                    pass
-            # Handle YAML files
-            elif config_file.endswith((".yaml", ".yml")):
-                if yaml is None:
-                    logger.debug(
-                        f"[UnifiedConfig] Found {config_file} but yaml not installed",
-                    )
-                    continue
-                try:
-                    with config_path.open(encoding="utf-8") as f:
-                        content = yaml.safe_load(f)
-                        return content if isinstance(content, dict) else {}
-                except (yaml.YAMLError, OSError) as e:
-                    logger.debug(f"[UnifiedConfig] Failed to parse {config_file}: {e}")
-        # Check package.json eslintConfig field
-        pkg_path = Path("package.json")
-        if pkg_path.exists():
             try:
-                with pkg_path.open(encoding="utf-8") as f:
-                    pkg = json.load(f)
-                    if isinstance(pkg, dict) and "eslintConfig" in pkg:
-                        eslint_cfg = pkg.get("eslintConfig", {})
-                        return eslint_cfg if isinstance(eslint_cfg, dict) else {}
+                with config_path.open(encoding="utf-8") as f:
+                    loaded = json.load(f)
+                    return loaded if isinstance(loaded, dict) else {}
             except (json.JSONDecodeError, FileNotFoundError):
                 pass
         return {}

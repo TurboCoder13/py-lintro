@@ -177,7 +177,7 @@ def _get_minimum_versions() -> dict[str, str]:
     defaults = {
         "pytest": "8.0.0",
         "prettier": "3.7.0",
-        "eslint": "9.0.0",
+        "biome": "2.3.8",
         "hadolint": "2.12.0",
         "actionlint": "1.7.0",
         "markdownlint": "0.16.0",
@@ -220,9 +220,9 @@ def _get_install_hints() -> dict[str, str]:
                 f"Install via: npm install --save-dev "
                 f"prettier>={versions.get('prettier', '3.7.0')}"
             ),
-            "eslint": (
+            "biome": (
                 f"Install via: npm install --save-dev "
-                f"eslint>={versions.get('eslint', '9.0.0')}"
+                f"@biomejs/biome>={versions.get('biome', '2.3.8')}"
             ),
             "markdownlint": (
                 f"Install via: npm install --save-dev "
@@ -449,9 +449,9 @@ def _extract_version_from_output(output: str, tool_name: str) -> str | None:
         if match:
             return match.group(1)
 
-    elif tool_name == "eslint":
-        # eslint: "v9.0.0" or "9.0.0"
-        match = re.search(r"v?(\d+(?:\.\d+)*)", output)
+    elif tool_name == "biome":
+        # biome: "Biome CLI v2.3.8" or similar
+        match = re.search(r"(\d+(?:\.\d+)*)", output)
         if match:
             return match.group(1)
 
@@ -518,10 +518,11 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "yamllint": ["yamllint"],
         "darglint": ["darglint"],
         # Python user tools
+        "mypy": ["python", "-m", "mypy"],
         "pytest": ["python", "-m", "pytest"],
         # Node.js tools
         "prettier": ["npx", "--yes", "prettier"],
-        "eslint": ["npx", "--yes", "eslint"],
+        "biome": ["npx", "--yes", "@biomejs/biome"],
         "markdownlint": ["npx", "--yes", "markdownlint-cli2"],
         # Binary tools
         "hadolint": ["hadolint"],

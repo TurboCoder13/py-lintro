@@ -22,6 +22,10 @@ from lintro.formatters.tools.bandit_formatter import (
     BanditTableDescriptor,
     format_bandit_issues,
 )
+from lintro.formatters.tools.biome_formatter import (
+    BiomeTableDescriptor,
+    format_biome_issues,
+)
 from lintro.formatters.tools.black_formatter import (
     BlackTableDescriptor,
     format_black_issues,
@@ -33,10 +37,6 @@ from lintro.formatters.tools.clippy_formatter import (
 from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
-)
-from lintro.formatters.tools.eslint_formatter import (
-    EslintTableDescriptor,
-    format_eslint_issues,
 )
 from lintro.formatters.tools.hadolint_formatter import (
     HadolintTableDescriptor,
@@ -67,12 +67,11 @@ from lintro.formatters.tools.yamllint_formatter import (
     format_yamllint_issues,
 )
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
+from lintro.parsers.biome.biome_issue import BiomeIssue
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
 from lintro.parsers.clippy.clippy_parser import parse_clippy_output
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
-from lintro.parsers.eslint.eslint_issue import EslintIssue
-from lintro.parsers.eslint.eslint_parser import parse_eslint_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
 from lintro.parsers.mypy.mypy_parser import parse_mypy_output
@@ -105,19 +104,19 @@ class TableDescriptor(Protocol):
 
 # Constants
 TOOL_TABLE_FORMATTERS: dict[str, tuple[TableDescriptor, Callable[..., str]]] = {
-    "darglint": (DarglintTableDescriptor(), format_darglint_issues),
-    "eslint": (EslintTableDescriptor(), format_eslint_issues),
-    "hadolint": (HadolintTableDescriptor(), format_hadolint_issues),
+    "actionlint": (ActionlintTableDescriptor(), format_actionlint_issues),
+    "bandit": (BanditTableDescriptor(), format_bandit_issues),
+    "biome": (BiomeTableDescriptor(), format_biome_issues),
     "black": (BlackTableDescriptor(), format_black_issues),
-    "prettier": (PrettierTableDescriptor(), format_prettier_issues),
+    "clippy": (ClippyTableDescriptor(), format_clippy_issues),
+    "darglint": (DarglintTableDescriptor(), format_darglint_issues),
+    "hadolint": (HadolintTableDescriptor(), format_hadolint_issues),
+    "markdownlint": (MarkdownlintTableDescriptor(), format_markdownlint_issues),
     "mypy": (MypyTableDescriptor(), format_mypy_issues),
+    "prettier": (PrettierTableDescriptor(), format_prettier_issues),
     "pytest": (PytestFailuresTableDescriptor(), format_pytest_issues),
     "ruff": (RuffTableDescriptor(), format_ruff_issues),
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
-    "actionlint": (ActionlintTableDescriptor(), format_actionlint_issues),
-    "bandit": (BanditTableDescriptor(), format_bandit_issues),
-    "clippy": (ClippyTableDescriptor(), format_clippy_issues),
-    "markdownlint": (MarkdownlintTableDescriptor(), format_markdownlint_issues),
 }
 VENV_PATTERNS: list[str] = [
     "venv",
@@ -364,8 +363,8 @@ def format_tool_output(
                     "fixable",
                     True,
                 )
-            if tool == "eslint":
-                return lambda i: isinstance(i, EslintIssue) and getattr(
+            if tool == "biome":
+                return lambda i: isinstance(i, BiomeIssue) and getattr(
                     i,
                     "fixable",
                     False,
@@ -429,8 +428,6 @@ def format_tool_output(
         parsed_issues = list(parse_black_output(output=output))
     elif tool_name == "darglint":
         parsed_issues = list(parse_darglint_output(output=output))
-    elif tool_name == "eslint":
-        parsed_issues = list(parse_eslint_output(output=output))
     elif tool_name == "hadolint":
         parsed_issues = list(parse_hadolint_output(output=output))
     elif tool_name == "yamllint":

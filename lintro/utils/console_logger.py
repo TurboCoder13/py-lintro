@@ -18,7 +18,7 @@ from lintro.utils.formatting import read_ascii_art
 TOOL_EMOJIS: dict[str, str] = {
     "ruff": "🦀",
     "prettier": "💅",
-    "eslint": "🔍",
+    "biome": "🌿",
     "darglint": "📝",
     "hadolint": "🐳",
     "yamllint": "📄",
