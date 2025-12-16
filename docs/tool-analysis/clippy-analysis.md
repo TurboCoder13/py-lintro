@@ -60,9 +60,7 @@ result = tool.fix([\"path/to/project\"])
 
 - No pass-through for custom clippy args (e.g., target selection tweaks)
 - Does not surface secondary spans; only first span is shown
-- Formatter integration pending (table output)
 
 ## Recommendations
 
-- Add formatter entry for table/JSON output (this work item)
 - Consider pass-through for additional clippy flags when needed
