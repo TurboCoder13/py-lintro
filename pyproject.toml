@@ -4,13 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lintro"
-version = "0.19.2"
+version = "0.20.0"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
 keywords = [ "linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker",]
 classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
 requires-python = ">=3.13"
 dependencies = [ "click==8.1.8", "coverage-badge==1.1.2", "darglint==1.8.1", "loguru==0.7.3", "tabulate==0.9.0", "yamllint==1.37.1", "httpx==0.28.1", "toml==0.10.2", "defusedxml==0.7.1", "ruff>=0.14.0", "black>=25.0.0", "bandit>=1.8.0", "mypy>=1.14.1",]
-
 [[project.authors]]
 name = "TurboCoder13"
 email = "turbocoder13@gmail.com"
@@ -75,7 +74,6 @@ namespace_packages = true
 follow_imports = "skip"
 files = [ "lintro/parsers/mypy", "lintro/utils/unified_config.py", "lintro/utils/console_logger.py", "lintro/utils/tool_utils.py", "lintro/tools/core", "lintro/tools/implementations/tool_mypy.py", "lintro/formatters/styles/json.py", "tests/integration/test_mypy_integration.py",]
 exclude = [ "^test_samples/", "^node_modules/", "^dist/", "^build/",]
-
 [[tool.mypy.overrides]]
 module = [ "assertpy",]
 ignore_missing_imports = true
