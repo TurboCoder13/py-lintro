@@ -4,7 +4,7 @@
 var unused = 1;
 
 // Using == instead of ===
-if (unused == 2) {
+if (someVar == 2) {
   // Console statement
   console.log("test");
 }

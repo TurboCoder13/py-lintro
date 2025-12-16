@@ -28,7 +28,7 @@ DEFAULT_EXCLUDE_PATTERNS: list[str] = [
     "*.pyc",
     "*.pyo",
     "*.pyd",
-    ".pytest_cache",
+    "*cache*",
     ".coverage",
     "htmlcov",
     "dist",
@@ -349,7 +349,7 @@ class BaseTool(ABC):
             if shutil.which("npx"):
                 return ["npx", "--yes", nodejs_package_names[tool_name]]
             # Fall back to direct executable
-            return [nodejs_package_names[tool_name]]
+            return [tool_name]
 
         # Rust/Cargo tools: use system executable
         if tool_name == "clippy":

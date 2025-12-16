@@ -7,9 +7,9 @@ def test_char_to_line_column_basic() -> None:
     """Test basic character to line/column conversion."""
     source = "line1\nline2\nline3"
     assert _char_to_line_column(source, 0) == (1, 1)  # Start of file
-    assert _char_to_line_column(source, 5) == (1, 6)  # '1' in "line1"
-    assert _char_to_line_column(source, 6) == (2, 1)  # Start of line2
-    assert _char_to_line_column(source, 11) == (2, 6)  # '2' in "line2"
+    assert _char_to_line_column(source, 5) == (1, 6)  # '\n' after "line1"
+    assert _char_to_line_column(source, 6) == (2, 1)  # Start of "line2"
+    assert _char_to_line_column(source, 11) == (2, 6)  # '\n' after "line2"
     assert _char_to_line_column(source, 12) == (3, 1)  # Start of line3
 
 
@@ -49,7 +49,15 @@ def test_parse_biome_output_malformed_json() -> None:
 
 def test_parse_biome_output_with_extra_text() -> None:
     """Test parsing Biome output with extra text after JSON."""
-    json_content = '{"summary":{"changed":0,"unchanged":1,"matches":0,"duration":{"secs":0,"nanos":100},"scannerDuration":{"secs":0,"nanos":50},"errors":1,"warnings":0,"infos":0,"skipped":0,"suggestedFixesSkipped":0,"diagnosticsNotPrinted":0},"diagnostics":[{"category":"lint/test","severity":"error","description":"Test error","message":[{"elements":[],"content":"Test error"}],"location":{"path":{"file":"test.js"},"span":[10,15],"sourceCode":"test code"},"tags":[]}]}'
+    json_content = (
+        '{"summary":{"changed":0,"unchanged":1,"matches":0,"duration":{"secs":0,"nanos":100},'
+        '"scannerDuration":{"secs":0,"nanos":50},"errors":1,"warnings":0,"infos":0,"skipped":0,'
+        '"suggestedFixesSkipped":0,"diagnosticsNotPrinted":0},"diagnostics":'
+        '[{"category":"lint/test","severity":"error","description":"Test error",'
+        '"message":[{"elements":[],"content":"Test error"}],"location":'
+        '{"path":{"file":"test.js"},"span":[10,15],"sourceCode":"test code"},'
+        '"tags":[]}]}'
+    )
     extra_text = "\nThe --json option is unstable/experimental...\n"
 
     issues = parse_biome_output(json_content + extra_text)
@@ -62,7 +70,8 @@ def test_parse_biome_output_with_extra_text() -> None:
 def test_parse_biome_output_single_issue() -> None:
     """Test parsing Biome output with a single diagnostic."""
     json_output = """{
-        "summary": {"changed": 0, "unchanged": 1, "errors": 1, "warnings": 0, "infos": 0},
+        "summary": {"changed": 0, "unchanged": 1, "errors": 1,
+                    "warnings": 0, "infos": 0},
         "diagnostics": [{
             "category": "lint/suspicious/noDoubleEquals",
             "severity": "error",
@@ -99,7 +108,8 @@ def test_parse_biome_output_single_issue() -> None:
 def test_parse_biome_output_multiple_issues() -> None:
     """Test parsing Biome output with multiple diagnostics."""
     json_output = """{
-        "summary": {"changed": 0, "unchanged": 1, "errors": 2, "warnings": 1, "infos": 0},
+        "summary": {"changed": 0, "unchanged": 1, "errors": 2,
+                    "warnings": 1, "infos": 0},
         "diagnostics": [
             {
                 "category": "lint/suspicious/noDoubleEquals",

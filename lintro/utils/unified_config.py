@@ -316,9 +316,11 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                 continue
             # Handle JSON files
             try:
-                with config_path.open(encoding="utf-8") as f:
-                    loaded = json.load(f)
-                    return loaded if isinstance(loaded, dict) else {}
+                content = config_path.read_text(encoding="utf-8")
+                if config_file.endswith(".jsonc"):
+                    content = _strip_jsonc_comments(content)
+                loaded = json.loads(content)
+                return loaded if isinstance(loaded, dict) else {}
             except (json.JSONDecodeError, FileNotFoundError):
                 pass
         return {}
