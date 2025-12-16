@@ -70,9 +70,8 @@ def run_clippy_directly(project_dir: Path) -> tuple[bool, str, int]:
             for line in output.splitlines()
             if '"clippy::' in line and '"reason":"compiler-message"' in line
         )
-        # Success is when returncode is 0 OR when we have issues
-        # (clippy exits non-zero with warnings)
-        success = result.returncode == 0 or issues_count == 0
+        # Success is only when there are no issues (regardless of returncode)
+        success = issues_count == 0
         return success, output, issues_count
     except subprocess.TimeoutExpired:
         return False, "Timeout", 0
