@@ -3,7 +3,8 @@ FROM python:3.13-slim@sha256:05b118ecc93ea09e30569706568fb251c71b77d2a3908d338b7
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    PATH="/usr/local/bin:/root/.cargo/bin:${PATH}"
 
 # Set shell options for pipefail before using pipes
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -39,7 +40,14 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
 COPY scripts/ /app/scripts/
 COPY package.json /app/package.json
 RUN find /app/scripts -type f -name "*.sh" -print -exec chmod +x {} \; && \
-    /app/scripts/utils/install-tools.sh --docker
+    /app/scripts/utils/install-tools.sh --docker && \
+    # Copy Rust tools to system-wide location for non-root user access
+    if [ -d "/root/.cargo/bin" ]; then \
+        cp -p /root/.cargo/bin/cargo /usr/local/bin/cargo 2>/dev/null || true; \
+        cp -p /root/.cargo/bin/rustc /usr/local/bin/rustc 2>/dev/null || true; \
+        cp -p /root/.cargo/bin/rustup /usr/local/bin/rustup 2>/dev/null || true; \
+        chmod +x /usr/local/bin/cargo /usr/local/bin/rustc /usr/local/bin/rustup 2>/dev/null || true; \
+    fi
 
 # Copy pyproject.toml and lintro package first for better caching
 COPY pyproject.toml /app/
