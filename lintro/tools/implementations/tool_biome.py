@@ -1,4 +1,4 @@
-"""ESLint linter integration."""
+"""Biome linter integration."""
 
 import os
 import subprocess  # nosec B404 - used safely with shell disabled
@@ -8,51 +8,54 @@ from loguru import logger
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool import Tool, ToolConfig, ToolResult
-from lintro.parsers.eslint.eslint_issue import EslintIssue
-from lintro.parsers.eslint.eslint_parser import parse_eslint_output
+from lintro.parsers.biome.biome_issue import BiomeIssue
+from lintro.parsers.biome.biome_parser import parse_biome_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.tool_utils import walk_files_with_excludes
 
-# Constants for ESLint configuration
-ESLINT_DEFAULT_TIMEOUT: int = 30
-ESLINT_DEFAULT_PRIORITY: int = 50  # Lower priority than formatters
-ESLINT_FILE_PATTERNS: list[str] = [
+# Constants for Biome configuration
+BIOME_DEFAULT_TIMEOUT: int = 30
+BIOME_DEFAULT_PRIORITY: int = 50
+BIOME_FILE_PATTERNS: list[str] = [
     "*.js",
     "*.jsx",
     "*.ts",
     "*.tsx",
     "*.mjs",
     "*.cjs",
+    "*.json",
+    "*.css",
 ]
 
 
 @dataclass
-class EslintTool(BaseTool):
-    """ESLint linter integration.
+class BiomeTool(BaseTool):
+    """Biome linter integration.
 
-    A linter for JavaScript and TypeScript that identifies problems in code.
+    A fast linter for JavaScript, TypeScript, JSON, and CSS.
     """
 
-    name: str = "eslint"
+    name: str = "biome"
     description: str = (
-        "Linter for JavaScript and TypeScript that identifies and reports "
-        "on patterns in code"
+        "Fast linter for JavaScript, TypeScript, JSON, and CSS that "
+        "provides detailed diagnostics and safe fixes"
     )
     can_fix: bool = True
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
-            priority=ESLINT_DEFAULT_PRIORITY,  # Lower priority than formatters
+            priority=BIOME_DEFAULT_PRIORITY,
             conflicts_with=[],  # No direct conflicts
-            file_patterns=ESLINT_FILE_PATTERNS,
+            file_patterns=BIOME_FILE_PATTERNS,
             tool_type=ToolType.LINTER,
         ),
     )
 
     def __post_init__(self) -> None:
-        """Initialize eslint tool."""
+        """Initialize biome tool."""
         super().__post_init__()
-        # Note: .eslintignore is handled natively by ESLint
-        # ESLint config files (.eslintrc.*, eslint.config.*) are also
+        # Enable VCS ignore by default to respect .gitignore patterns
+        self.options.setdefault("use_vcs_ignore", True)
+        # Note: Biome config files (.biome.json, biome.jsonc) are also
         # discovered natively
 
     def set_options(
@@ -61,15 +64,17 @@ class EslintTool(BaseTool):
         include_venv: bool = False,
         timeout: int | None = None,
         verbose_fix_output: bool | None = None,
+        use_vcs_ignore: bool | None = None,
         **kwargs,
     ) -> None:
-        """Set options for the core.
+        """Set options for the tool.
 
         Args:
             exclude_patterns: List of patterns to exclude
             include_venv: Whether to include virtual environment directories
             timeout: Timeout in seconds per file (default: 30)
-            verbose_fix_output: If True, include raw ESLint output in fix()
+            verbose_fix_output: If True, include raw Biome output in fix()
+            use_vcs_ignore: If True, use VCS ignore file (.gitignore) to exclude files
             **kwargs: Additional options (ignored for compatibility)
         """
         if exclude_patterns is not None:
@@ -79,6 +84,8 @@ class EslintTool(BaseTool):
             self.options["timeout"] = timeout
         if verbose_fix_output is not None:
             self.options["verbose_fix_output"] = verbose_fix_output
+        if use_vcs_ignore is not None:
+            self.options["use_vcs_ignore"] = use_vcs_ignore
 
     def _create_timeout_result(
         self,
@@ -97,18 +104,18 @@ class EslintTool(BaseTool):
             ToolResult: ToolResult instance representing timeout failure.
         """
         timeout_msg = (
-            f"ESLint execution timed out ({timeout_val}s limit exceeded).\n\n"
+            f"Biome execution timed out ({timeout_val}s limit exceeded).\n\n"
             "This may indicate:\n"
             "  - Large codebase taking too long to process\n"
-            "  - Need to increase timeout via --tool-options eslint:timeout=N"
+            "  - Need to increase timeout via --tool-options biome:timeout=N"
         )
-        timeout_issue = EslintIssue(
+        timeout_issue = BiomeIssue(
             file="execution",
             line=1,
+            column=1,
             code="TIMEOUT",
             message=timeout_msg,
-            column=1,
-            severity=2,
+            severity="error",
             fixable=False,
         )
         combined_issues = (initial_issues or []) + [timeout_issue]
@@ -127,7 +134,7 @@ class EslintTool(BaseTool):
         self,
         paths: list[str],
     ) -> ToolResult:
-        """Check files with ESLint without making changes.
+        """Check files with Biome without making changes.
 
         Args:
             paths: List of file or directory paths to check
@@ -141,24 +148,24 @@ class EslintTool(BaseTool):
             return version_result
 
         self._validate_paths(paths=paths)
-        eslint_files: list[str] = walk_files_with_excludes(
+        biome_files: list[str] = walk_files_with_excludes(
             paths=paths,
             file_patterns=self.config.file_patterns,
             exclude_patterns=self.exclude_patterns,
             include_venv=self.include_venv,
         )
         logger.debug(
-            f"[EslintTool] Discovered {len(eslint_files)} files matching patterns: "
+            f"[BiomeTool] Discovered {len(biome_files)} files matching patterns: "
             f"{self.config.file_patterns}",
         )
         logger.debug(
-            f"[EslintTool] Exclude patterns applied: {self.exclude_patterns}",
+            f"[BiomeTool] Exclude patterns applied: {self.exclude_patterns}",
         )
-        if eslint_files:
+        if biome_files:
             logger.debug(
-                f"[EslintTool] Files to check (first 10): " f"{eslint_files[:10]}",
+                f"[BiomeTool] Files to check (first 10): " f"{biome_files[:10]}",
             )
-        if not eslint_files:
+        if not biome_files:
             return Tool.to_result(
                 name=self.name,
                 success=True,
@@ -167,15 +174,16 @@ class EslintTool(BaseTool):
             )
 
         # Use relative paths and set cwd to the common parent
-        cwd: str = self.get_cwd(paths=eslint_files)
-        logger.debug(f"[EslintTool] Working directory: {cwd}")
+        cwd: str = self.get_cwd(paths=biome_files)
+        logger.debug(f"[BiomeTool] Working directory: {cwd}")
         rel_files: list[str] = [
-            os.path.relpath(f, cwd) if cwd else f for f in eslint_files
+            os.path.relpath(f, cwd) if cwd else f for f in biome_files
         ]
 
-        # Build ESLint command with JSON output format
-        cmd: list[str] = self._get_executable_command(tool_name="eslint") + [
-            "--format",
+        # Build Biome command with JSON reporter
+        cmd: list[str] = self._get_executable_command(tool_name="biome") + [
+            "lint",
+            "--reporter",
             "json",
         ]
 
@@ -184,11 +192,16 @@ class EslintTool(BaseTool):
         if config_args:
             cmd.extend(config_args)
             logger.debug(
-                "[EslintTool] Using Lintro config injection",
+                "[BiomeTool] Using Lintro config injection",
             )
 
+        # Add VCS ignore option if enabled
+        if self.options.get("use_vcs_ignore", False):
+            cmd.extend(["--vcs-use-ignore-file", "true"])
+            logger.debug("[BiomeTool] Using VCS ignore file")
+
         cmd.extend(rel_files)
-        logger.debug(f"[EslintTool] Running: {' '.join(cmd)} (cwd={cwd})")
+        logger.debug(f"[BiomeTool] Running: {' '.join(cmd)} (cwd={cwd})")
         timeout_val: int = self.options.get("timeout", self._default_timeout)
         try:
             result = self._run_subprocess(
@@ -199,11 +212,11 @@ class EslintTool(BaseTool):
         except subprocess.TimeoutExpired:
             return self._create_timeout_result(timeout_val=timeout_val)
         output: str = result[1]
-        issues: list = parse_eslint_output(output=output)
+        issues: list = parse_biome_output(output=output)
         issues_count: int = len(issues)
         success: bool = issues_count == 0
 
-        # Standardize: suppress ESLint's informational output when no issues
+        # Standardize: suppress Biome's informational output when no issues
         # so the unified logger prints a single, consistent success line.
         if success:
             output = None
@@ -220,7 +233,7 @@ class EslintTool(BaseTool):
         self,
         paths: list[str],
     ) -> ToolResult:
-        """Fix auto-fixable issues in files with ESLint.
+        """Fix auto-fixable issues in files with Biome.
 
         Args:
             paths: List of file or directory paths to fix
@@ -234,13 +247,13 @@ class EslintTool(BaseTool):
             return version_result
 
         self._validate_paths(paths=paths)
-        eslint_files: list[str] = walk_files_with_excludes(
+        biome_files: list[str] = walk_files_with_excludes(
             paths=paths,
             file_patterns=self.config.file_patterns,
             exclude_patterns=self.exclude_patterns,
             include_venv=self.include_venv,
         )
-        if not eslint_files:
+        if not biome_files:
             return Tool.to_result(
                 name=self.name,
                 success=True,
@@ -249,23 +262,27 @@ class EslintTool(BaseTool):
             )
 
         # First, check for issues before fixing
-        cwd: str = self.get_cwd(paths=eslint_files)
+        cwd: str = self.get_cwd(paths=biome_files)
         rel_files: list[str] = [
-            os.path.relpath(f, cwd) if cwd else f for f in eslint_files
+            os.path.relpath(f, cwd) if cwd else f for f in biome_files
         ]
 
         # Get Lintro config injection args if available
         config_args = self._build_config_args()
 
         # Check for issues first
-        check_cmd: list[str] = self._get_executable_command(tool_name="eslint") + [
-            "--format",
+        check_cmd: list[str] = self._get_executable_command(tool_name="biome") + [
+            "lint",
+            "--reporter",
             "json",
         ]
         if config_args:
             check_cmd.extend(config_args)
+        # Add VCS ignore option if enabled
+        if self.options.get("use_vcs_ignore", False):
+            check_cmd.extend(["--vcs-use-ignore-file", "true"])
         check_cmd.extend(rel_files)
-        logger.debug(f"[EslintTool] Checking: {' '.join(check_cmd)} (cwd={cwd})")
+        logger.debug(f"[BiomeTool] Checking: {' '.join(check_cmd)} (cwd={cwd})")
         timeout_val: int = self.options.get("timeout", self._default_timeout)
         try:
             check_result = self._run_subprocess(
@@ -278,17 +295,21 @@ class EslintTool(BaseTool):
         check_output: str = check_result[1]
 
         # Parse initial issues
-        initial_issues: list = parse_eslint_output(output=check_output)
+        initial_issues: list = parse_biome_output(output=check_output)
         initial_count: int = len(initial_issues)
 
         # Now fix the issues
-        fix_cmd: list[str] = self._get_executable_command(tool_name="eslint") + [
-            "--fix",
+        fix_cmd: list[str] = self._get_executable_command(tool_name="biome") + [
+            "lint",
+            "--write",
         ]
         if config_args:
             fix_cmd.extend(config_args)
+        # Add VCS ignore option if enabled
+        if self.options.get("use_vcs_ignore", False):
+            fix_cmd.extend(["--vcs-use-ignore-file", "true"])
         fix_cmd.extend(rel_files)
-        logger.debug(f"[EslintTool] Fixing: {' '.join(fix_cmd)} (cwd={cwd})")
+        logger.debug(f"[BiomeTool] Fixing: {' '.join(fix_cmd)} (cwd={cwd})")
         try:
             fix_result = self._run_subprocess(
                 cmd=fix_cmd,
@@ -317,7 +338,7 @@ class EslintTool(BaseTool):
                 initial_count=initial_count,
             )
         final_check_output: str = final_check_result[1]
-        remaining_issues: list = parse_eslint_output(output=final_check_output)
+        remaining_issues: list = parse_biome_output(output=final_check_output)
         remaining_count: int = len(remaining_issues)
 
         # Calculate fixed issues

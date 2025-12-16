@@ -28,7 +28,7 @@ DEFAULT_EXCLUDE_PATTERNS: list[str] = [
     "*.pyc",
     "*.pyo",
     "*.pyd",
-    ".pytest_cache",
+    "*cache*",
     ".coverage",
     "htmlcov",
     "dist",
@@ -341,10 +341,13 @@ class BaseTool(ABC):
             return [tool_name]
 
         # Node.js tools: use npx to respect project's package.json
-        nodejs_tools = {"eslint", "prettier"}
-        if tool_name in nodejs_tools:
+        nodejs_package_names = {
+            "biome": "@biomejs/biome",
+            "prettier": "prettier",
+        }
+        if tool_name in nodejs_package_names:
             if shutil.which("npx"):
-                return ["npx", "--yes", tool_name]
+                return ["npx", "--yes", nodejs_package_names[tool_name]]
             # Fall back to direct executable
             return [tool_name]
 

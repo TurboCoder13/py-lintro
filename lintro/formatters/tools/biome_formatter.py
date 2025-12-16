@@ -1,4 +1,4 @@
-"""Formatter for ESLint issues."""
+"""Formatter for Biome issues."""
 
 from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.formatters.styles.csv import CsvStyle
@@ -7,7 +7,7 @@ from lintro.formatters.styles.html import HtmlStyle
 from lintro.formatters.styles.json import JsonStyle
 from lintro.formatters.styles.markdown import MarkdownStyle
 from lintro.formatters.styles.plain import PlainStyle
-from lintro.parsers.eslint.eslint_issue import EslintIssue
+from lintro.parsers.biome.biome_issue import BiomeIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 FORMAT_MAP = {
@@ -20,11 +20,11 @@ FORMAT_MAP = {
 }
 
 
-class EslintTableDescriptor(TableDescriptor):
-    """Describe columns and rows for ESLint issues."""
+class BiomeTableDescriptor(TableDescriptor):
+    """Describe columns and rows for Biome issues."""
 
     def get_columns(self) -> list[str]:
-        """Return ordered column headers for the ESLint table.
+        """Return ordered column headers for the Biome table.
 
         Returns:
             list[str]: Column names for the formatted table.
@@ -33,58 +33,57 @@ class EslintTableDescriptor(TableDescriptor):
 
     def get_rows(
         self,
-        issues: list[EslintIssue],
+        issues: list[BiomeIssue],
     ) -> list[list[str]]:
-        """Return rows for the ESLint issues table.
+        """Return rows for the Biome issues table.
 
         Args:
-            issues: Parsed ESLint issues to render.
+            issues: Parsed Biome issues to render.
 
         Returns:
             list[list[str]]: Table rows with normalized file path and fields.
         """
         rows = []
         for issue in issues:
-            severity_str = "error" if issue.severity == 2 else "warning"
             rows.append(
                 [
                     normalize_file_path_for_display(issue.file),
                     str(issue.line),
                     str(issue.column),
                     issue.code,
-                    severity_str,
+                    issue.severity,
                     issue.message,
                 ],
             )
         return rows
 
 
-def format_eslint_issues(
-    issues: list[EslintIssue],
+def format_biome_issues(
+    issues: list[BiomeIssue],
     format: str = "grid",
 ) -> str:
-    """Format ESLint issues with auto-fixable labeling.
+    """Format Biome issues with auto-fixable labeling.
 
     Args:
-        issues: List of EslintIssue objects.
+        issues: List of BiomeIssue objects.
         format: Output format identifier (e.g., "grid", "json").
 
     Returns:
         str: Formatted output string.
 
     Notes:
-        ESLint issues can be auto-fixable if the fixable flag is True.
+        Biome issues can be auto-fixable if the fixable flag is True.
         For non-JSON formats, issues are split into auto-fixable and
         not auto-fixable sections.
         JSON returns the combined table for compatibility.
     """
-    descriptor = EslintTableDescriptor()
+    descriptor = BiomeTableDescriptor()
     formatter = FORMAT_MAP.get(format, GridStyle())
 
     if format == "json":
         columns = descriptor.get_columns()
         rows = descriptor.get_rows(issues)
-        return formatter.format(columns=columns, rows=rows, tool_name="eslint")
+        return formatter.format(columns=columns, rows=rows, tool_name="biome")
 
     # Split issues by fixability
     fixable_issues = [i for i in issues if i.fixable]

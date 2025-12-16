@@ -10,8 +10,8 @@ if TYPE_CHECKING:
     from lintro.parsers import (
         actionlint,
         bandit,
+        biome,
         darglint,
-        eslint,
         hadolint,
         markdownlint,
         prettier,
@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 __all__ = [
     "actionlint",
     "bandit",
+    "biome",
     "darglint",
-    "eslint",
     "hadolint",
     "markdownlint",
     "prettier",
@@ -37,8 +37,8 @@ __all__ = [
 _SUBMODULES = {
     "actionlint",
     "bandit",
+    "biome",
     "darglint",
-    "eslint",
     "hadolint",
     "markdownlint",
     "prettier",

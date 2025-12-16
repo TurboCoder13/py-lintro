@@ -11,8 +11,8 @@ from enum import StrEnum, auto
 class ToolName(StrEnum):
     """Supported tool identifiers in lower-case values."""
 
+    BIOME = auto()
     DARGLINT = auto()
-    ESLINT = auto()
     HADOLINT = auto()
     MARKDOWNLINT = auto()
     PRETTIER = auto()

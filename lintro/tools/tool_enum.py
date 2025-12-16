@@ -4,10 +4,10 @@ from enum import Enum
 
 from lintro.tools.implementations.tool_actionlint import ActionlintTool
 from lintro.tools.implementations.tool_bandit import BanditTool
+from lintro.tools.implementations.tool_biome import BiomeTool
 from lintro.tools.implementations.tool_black import BlackTool
 from lintro.tools.implementations.tool_clippy import ClippyTool
 from lintro.tools.implementations.tool_darglint import DarglintTool
-from lintro.tools.implementations.tool_eslint import EslintTool
 from lintro.tools.implementations.tool_hadolint import HadolintTool
 from lintro.tools.implementations.tool_markdownlint import MarkdownlintTool
 from lintro.tools.implementations.tool_mypy import MypyTool
@@ -20,9 +20,12 @@ from lintro.tools.implementations.tool_yamllint import YamllintTool
 class ToolEnum(Enum):
     """Enumeration mapping tool names to their implementation classes."""
 
+    ACTIONLINT = ActionlintTool
+    BANDIT = BanditTool
+    BIOME = BiomeTool
     BLACK = BlackTool
+    CLIPPY = ClippyTool
     DARGLINT = DarglintTool
-    ESLINT = EslintTool
     HADOLINT = HadolintTool
     MARKDOWNLINT = MarkdownlintTool
     MYPY = MypyTool
@@ -30,6 +33,3 @@ class ToolEnum(Enum):
     PYTEST = PytestTool
     RUFF = RuffTool
     YAMLLINT = YamllintTool
-    ACTIONLINT = ActionlintTool
-    BANDIT = BanditTool
-    CLIPPY = ClippyTool
