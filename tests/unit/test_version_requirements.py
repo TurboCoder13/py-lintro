@@ -248,6 +248,7 @@ def test_get_all_tool_versions(mock_run):
         "hadolint",
         "actionlint",
         "markdownlint",
+        "clippy",
     }
 
     assert set(results.keys()) == expected_tools

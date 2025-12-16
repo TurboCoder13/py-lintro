@@ -722,6 +722,69 @@ MD041: false
 - Future versions may expose additional options via `[tool.lintro.markdownlint-cli2]` in
   `pyproject.toml`
 
+### Rust Tools
+
+#### Clippy Configuration
+
+Clippy is Rust's official linter and is configured through Cargo.toml or a separate
+clippy.toml file. Lintro automatically discovers and runs clippy on Rust projects by
+finding Cargo.toml files.
+
+**File:** `Cargo.toml`
+
+```toml
+[package]
+name = "my-rust-project"
+version = "0.1.0"
+
+[lints.clippy]
+# Enable all lints
+pedantic = "warn"
+# Or be more restrictive
+# pedantic = { level = "warn", priority = -1 }
+
+# Disable specific lints
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+# Configure lint levels
+needless_return = "warn"
+unused_variables = "error"
+```
+
+**File:** `clippy.toml` (alternative)
+
+```toml
+# Clippy-specific configuration
+too-many-arguments-threshold = 10
+type-complexity-threshold = 100
+cognitive-complexity-threshold = 15
+
+# Disable specific lints
+disallowed-names = []
+```
+
+**Available Options:**
+
+- **pedantic**: Enable all lints that are typically only enabled in CI
+- **nursery**: Enable newer, more experimental lints
+- **restriction**: Enable very strict lints that may be overly restrictive for some
+  projects
+- **cargo**: Enable lints that check Cargo.toml files
+
+**Lintro usage:**
+
+```bash
+# Check Rust code with Clippy
+lintro check --tools clippy
+
+# Auto-fix Clippy issues where possible
+lintro format --tools clippy
+
+# Check specific Rust directories
+lintro check src/ --tools clippy
+```
+
 ### Infrastructure Tools
 
 #### Hadolint Configuration

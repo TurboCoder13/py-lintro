@@ -181,6 +181,7 @@ def _get_minimum_versions() -> dict[str, str]:
         "hadolint": "2.12.0",
         "actionlint": "1.7.0",
         "markdownlint": "0.16.0",
+        "clippy": "1.75.0",
     }
 
     for tool, default_version in defaults.items():
@@ -234,6 +235,10 @@ def _get_install_hints() -> dict[str, str]:
             "actionlint": (
                 f"Install via: https://github.com/rhysd/actionlint/releases "
                 f"(v{versions.get('actionlint', '1.7.0')}+)"
+            ),
+            "clippy": (
+                f"Install via: rustup component add clippy "
+                f"(requires Rust {versions.get('clippy', '1.75.0')}+)"
             ),
         },
     )
@@ -477,6 +482,19 @@ def _extract_version_from_output(output: str, tool_name: str) -> str | None:
         if match:
             return match.group(1)
 
+    elif tool_name == "clippy":
+        # For clippy, we check Rust version instead (clippy is tied to Rust)
+        # rustc --version outputs: "rustc 1.92.0 (ded5c06cf 2025-12-08)"
+        # cargo clippy --version outputs: "clippy 0.1.92 (ded5c06cf2 2025-12-08)"
+        # Extract Rust version from rustc output
+        match = re.search(r"rustc\s+(\d+(?:\.\d+)*)", output, re.IGNORECASE)
+        if match:
+            return match.group(1)
+        # Fallback: try clippy version format
+        match = re.search(r"clippy\s+(\d+(?:\.\d+)*)", output, re.IGNORECASE)
+        if match:
+            return match.group(1)
+
     # Fallback: look for any version-like pattern
     match = re.search(r"(\d+(?:\.\d+)+)", output)
     if match:
@@ -508,6 +526,8 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         # Binary tools
         "hadolint": ["hadolint"],
         "actionlint": ["actionlint"],
+        # Rust/Cargo tools
+        "clippy": ["cargo", "clippy"],
     }
 
     results = {}
