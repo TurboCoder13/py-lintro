@@ -107,6 +107,7 @@ grype sbom:main-*-py-lintro-sbom.spdx-2.3.json
 | [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                                        | 🐍 Python           | ✅       |
 | [![Mypy](https://img.shields.io/badge/Mypy-type%20checking-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)                                            | 🐍 Python           | -        |
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                                | 🧾 YAML             | -        |
+| [![Clippy](https://img.shields.io/badge/Clippy-lint-000000?logo=rust&logoColor=white)](https://github.com/rust-lang/rust-clippy)                                   | 🦀 Rust             | ✅       |
 
 <!-- markdownlint-enable MD013 MD060 -->
 

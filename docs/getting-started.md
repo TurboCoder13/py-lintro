@@ -242,6 +242,23 @@ lintro check Dockerfile* --tools hadolint
 
 - **Hadolint** - Dockerfile best practices
 
+### Rust Projects
+
+```bash
+# Check Rust files with Clippy
+lintro check src/ --tools clippy
+
+# Auto-fix Clippy issues where possible
+lintro format src/ --tools clippy
+
+# Combined check and fix
+lintro check src/ --tools clippy
+```
+
+**Tools:**
+
+- **Clippy** - Official Rust linter with hundreds of lint rules
+
 ### Mixed Projects
 
 ```bash
