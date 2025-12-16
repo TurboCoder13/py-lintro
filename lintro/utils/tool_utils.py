@@ -26,6 +26,10 @@ from lintro.formatters.tools.black_formatter import (
     BlackTableDescriptor,
     format_black_issues,
 )
+from lintro.formatters.tools.clippy_formatter import (
+    ClippyTableDescriptor,
+    format_clippy_issues,
+)
 from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
@@ -65,6 +69,7 @@ from lintro.formatters.tools.yamllint_formatter import (
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
+from lintro.parsers.clippy.clippy_parser import parse_clippy_output
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.parsers.eslint.eslint_issue import EslintIssue
 from lintro.parsers.eslint.eslint_parser import parse_eslint_output
@@ -111,6 +116,7 @@ TOOL_TABLE_FORMATTERS: dict[str, tuple[TableDescriptor, Callable[..., str]]] = {
     "yamllint": (YamllintTableDescriptor(), format_yamllint_issues),
     "actionlint": (ActionlintTableDescriptor(), format_actionlint_issues),
     "bandit": (BanditTableDescriptor(), format_bandit_issues),
+    "clippy": (ClippyTableDescriptor(), format_clippy_issues),
     "markdownlint": (MarkdownlintTableDescriptor(), format_markdownlint_issues),
 }
 VENV_PATTERNS: list[str] = [
@@ -439,6 +445,8 @@ def format_tool_output(
             )
         except Exception:
             parsed_issues = []
+    elif tool_name == "clippy":
+        parsed_issues = list(parse_clippy_output(output=output))
     elif tool_name == "pytest":
         # Pytest emits text output; parse it
         parsed_issues = list(parse_pytest_text_output(output=output))

@@ -5,6 +5,7 @@ from enum import Enum
 from lintro.tools.implementations.tool_actionlint import ActionlintTool
 from lintro.tools.implementations.tool_bandit import BanditTool
 from lintro.tools.implementations.tool_black import BlackTool
+from lintro.tools.implementations.tool_clippy import ClippyTool
 from lintro.tools.implementations.tool_darglint import DarglintTool
 from lintro.tools.implementations.tool_eslint import EslintTool
 from lintro.tools.implementations.tool_hadolint import HadolintTool
@@ -31,3 +32,4 @@ class ToolEnum(Enum):
     YAMLLINT = YamllintTool
     ACTIONLINT = ActionlintTool
     BANDIT = BanditTool
+    CLIPPY = ClippyTool

@@ -348,6 +348,13 @@ class BaseTool(ABC):
             # Fall back to direct executable
             return [tool_name]
 
+        # Rust/Cargo tools: use system executable
+        if tool_name == "clippy":
+            return ["cargo", "clippy"]
+        cargo_tools = {"cargo"}
+        if tool_name in cargo_tools:
+            return [tool_name]
+
         # Binary tools: use system executable
         return [tool_name]
 
