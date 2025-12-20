@@ -1,4 +1,4 @@
-FROM python:3.13-slim@sha256:05b118ecc93ea09e30569706568fb251c71b77d2a3908d338b77be033e162b59
+FROM python:3.13-slim@sha256:baf66684c5fcafbda38a54b227ee30ec41e40af1e4073edee3a7110a417756ba
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
