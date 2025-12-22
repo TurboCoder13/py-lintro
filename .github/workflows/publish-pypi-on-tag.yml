@@ -26,20 +26,20 @@ jobs:
   quality:
     # Skip workflow if triggered by internal action version tags
     if: ${{ !startsWith(github.ref_name, 'actions-v') }}
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@actions-v1
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@079371071ed3274239f69243961c7232dde1e12e # actions-v1
     permissions:
       contents: read
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@actions-v1
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@079371071ed3274239f69243961c7232dde1e12e # actions-v1
     permissions:
       contents: read
 
   sbom:
     name: Generate and verify SBOM
     needs: [build, quality]
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@actions-v1
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@079371071ed3274239f69243961c7232dde1e12e # actions-v1
     permissions:
       contents: read
       actions: read
@@ -61,7 +61,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -79,7 +79,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@079371071ed3274239f69243961c7232dde1e12e # actions-v1
         with:
           python-version: '3.13'
       - name: Ensure tag points to a commit on main
