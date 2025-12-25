@@ -161,23 +161,81 @@ class FileProcessor:
 ```text
 lintro/
 ├── __init__.py
+├── __main__.py
 ├── cli.py
-├── tools/
+├── cli_utils/
 │   ├── __init__.py
-│   ├── darglint.py
-│   ├── flake8.py
-│   ├── hadolint.py
-│   ├── pydocstyle.py
-│   └── ruff.py
+│   └── commands/
+│       ├── check.py
+│       ├── config.py
+│       ├── format.py
+│       ├── init.py
+│       ├── list_tools.py
+│       ├── test.py
+│       └── versions.py
+├── config/
+│   ├── config_loader.py
+│   ├── lintro_config.py
+│   └── tool_config_generator.py
+├── enums/
+│   ├── action.py
+│   ├── tool_name.py
+│   └── tool_type.py
+├── exceptions/
+│   └── errors.py
+├── formatters/
+│   ├── core/
+│   ├── styles/
+│   └── tools/
+├── models/
+│   └── core/
+├── parsers/
+│   ├── actionlint/
+│   ├── bandit/
+│   ├── biome/
+│   ├── black/
+│   ├── clippy/
+│   ├── darglint/
+│   ├── hadolint/
+│   ├── markdownlint/
+│   ├── mypy/
+│   ├── prettier/
+│   ├── pytest/
+│   ├── ruff/
+│   └── yamllint/
+├── tools/
+│   ├── core/
+│   └── implementations/
+│       ├── pytest/
+│       ├── ruff/
+│       ├── tool_actionlint.py
+│       ├── tool_bandit.py
+│       ├── tool_biome.py
+│       ├── tool_black.py
+│       ├── tool_clippy.py
+│       ├── tool_darglint.py
+│       ├── tool_hadolint.py
+│       ├── tool_markdownlint.py
+│       ├── tool_mypy.py
+│       ├── tool_prettier.py
+│       ├── tool_pytest.py
+│       ├── tool_ruff.py
+│       ├── yamllint_config.py
+│       └── yamllint_runner.py
 └── utils/
-    ├── __init__.py
-    └── formatting.py
+    ├── console_logger.py
+    ├── logger_setup.py
+    ├── output_formatting.py
+    ├── result_formatters.py
+    ├── summary_tables.py
+    └── tool_executor.py
 tests/
-├── __init__.py
-├── test_cli.py
-└── tools/
-    ├── test_flake8.py
-    └── test_isort.py
+├── cli/
+├── config/
+├── formatters/
+├── integration/
+├── unit/
+└── utils/
 ```
 
 ### File Organization
@@ -242,27 +300,42 @@ def test_prettier_tool_formats_code_correctly():
 
 When adding new tools to Lintro, ensure they follow these guidelines:
 
-1. Implement the `Tool` interface
-2. Configure tool conflicts and priorities
-3. Include comprehensive docstrings
-4. Add appropriate tests
-5. Update documentation
+1. Inherit from `BaseTool` in `lintro.tools.core.tool_base`
+2. Implement the `check()` method (and `fix()` if `can_fix=True`)
+3. Configure tool conflicts and priorities via `ToolConfig`
+4. Create a parser in `lintro.parsers.{tool_name}/` to parse tool output
+5. Create a formatter in `lintro.formatters.tools.{tool_name}_formatter.py`
+6. Include comprehensive docstrings
+7. Add appropriate tests in `tests/unit/tools/` and `tests/integration/`
+8. Update documentation
 
 Example tool configuration:
 
 ```python
-class ExampleTool(Tool):
-  """Example tool integration."""
+from lintro.tools.core.tool_base import BaseTool
+from lintro.models.core.tool_config import ToolConfig
+from lintro.enums.tool_type import ToolType
 
-  name = "example"
-  description = "Example tool for demonstration"
-  can_fix = False
+@dataclass
+class ExampleTool(BaseTool):
+    """Example tool integration."""
 
-  config = ToolConfig(
-      priority=60,
-      conflicts_with=[],
-      file_patterns=["*.py"],
-  )
+    name: str = "example"
+    description: str = "Example tool for demonstration"
+    can_fix: bool = False
+    config: ToolConfig = field(
+        default_factory=lambda: ToolConfig(
+            priority=60,
+            conflicts_with=[],
+            file_patterns=["*.py"],
+            tool_type=ToolType.LINTER,
+        ),
+    )
+
+    def check(self, paths: list[str]) -> ToolResult:
+        """Check files with example tool."""
+        # Implementation here
+        pass
 ```
 
 ## Code Review
@@ -316,28 +389,45 @@ We use the Lintro tool for code formatting and linting:
 
 ### Style Guide Project Structure
 
+The current project structure follows a modular design with clear separation of
+concerns:
+
 ```text
 lintro/
 ├── lintro/
 │   ├── __init__.py
-│   ├── cli.py
-│   ├── tools/
-│   │   ├── __init__.py
-│   │   ├── ruff.py
-│   │   ├── flake8.py
-│   │   ├── pydocstyle.py
-│   │   └── darglint.py
-│   └── utils/
-│       ├── __init__.py
-│       └── output.py
+│   ├── __main__.py
+│   ├── cli.py                    # Main CLI entry point
+│   ├── cli_utils/                # CLI command implementations
+│   │   └── commands/
+│   │       ├── check.py          # Check command
+│   │       ├── format.py         # Format command
+│   │       └── test.py          # Test command
+│   ├── config/                   # Configuration management
+│   │   ├── config_loader.py     # Loads .lintro-config.yaml
+│   │   └── tool_config_generator.py
+│   ├── tools/                    # Tool implementations
+│   │   ├── core/                 # Base tool classes
+│   │   └── implementations/     # Specific tool implementations
+│   │       ├── tool_ruff.py
+│   │       ├── tool_black.py
+│   │       ├── tool_mypy.py
+│   │       └── ...
+│   ├── parsers/                  # Output parsers for each tool
+│   │   ├── ruff/
+│   │   ├── black/
+│   │   └── ...
+│   ├── formatters/              # Output formatters
+│   │   ├── styles/               # Output styles (grid, markdown, etc.)
+│   │   └── tools/                # Tool-specific formatters
+│   └── utils/                    # Utility functions
+│       ├── tool_executor.py      # Main execution logic
+│       ├── console_logger.py     # Console output handling
+│       └── logger_setup.py       # Loguru configuration
 └── tests/
-    ├── __init__.py
-    ├── test_cli.py
-    ├── test_cli_commands.py
-    ├── test_cli_commands_extended.py
-    ├── test_cli_commands_advanced.py
-    ├── test_cli_utils.py
-    └── test_cli_output.py
+    ├── unit/                     # Unit tests
+    ├── integration/              # Integration tests
+    └── ...
 ```
 
 ## Formatter and Output Style Architecture
