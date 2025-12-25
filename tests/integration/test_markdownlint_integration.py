@@ -12,7 +12,7 @@ from lintro.tools.implementations.tool_markdownlint import MarkdownlintTool
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
-SAMPLE_FILE = "test_samples/markdownlint_violations.md"
+SAMPLE_FILE = "test_samples/tools/config/markdown/markdownlint_violations.md"
 
 
 def find_markdownlint_cmd() -> list[str] | None:

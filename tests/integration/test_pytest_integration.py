@@ -8,6 +8,7 @@ import pytest
 from assertpy import assert_that
 from loguru import logger
 
+from lintro.enums.env_bool import EnvBool
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools.implementations.tool_pytest import PytestTool
 
@@ -25,7 +26,7 @@ def pytest_available() -> bool:
         bool: True if pytest is available, False otherwise.
     """
     # In Docker, pytest should always be available since we control the environment
-    if os.environ.get("RUNNING_IN_DOCKER") == "1":
+    if os.environ.get("RUNNING_IN_DOCKER") == EnvBool.TRUE:
         return True
 
     # Check if pytest is on PATH
@@ -64,27 +65,45 @@ def pytest_tool():
     Returns:
         PytestTool: A configured PytestTool instance.
     """
-    return PytestTool()
+    tool = PytestTool()
+    # Remove test_samples from exclude patterns so integration tests can run on sample
+    # files
+    tool.exclude_patterns = [
+        p for p in tool.exclude_patterns if "test_samples" not in p
+    ]
+    return tool
 
 
 @pytest.fixture
-def pytest_clean_file():
-    """Return the path to the static pytest clean file for testing.
+def pytest_clean_file(tmp_path):
+    """Copy pytest clean file to a temp location outside test_samples.
+
+    Args:
+        tmp_path: Pytest tmp_path fixture.
 
     Yields:
-        str: Path to the static pytest_clean.py file.
+        str: Path to the copied pytest_clean.py file.
     """
-    yield os.path.abspath("test_samples/pytest_clean.py")
+    src = os.path.abspath("test_samples/tools/python/pytest/pytest_clean.py")
+    dst = tmp_path / "pytest_clean.py"
+    shutil.copy(src, dst)
+    yield str(dst)
 
 
 @pytest.fixture
-def pytest_failures_file():
-    """Return the path to the static pytest failures file for testing.
+def pytest_failures_file(tmp_path):
+    """Copy pytest failures file to a temp location outside test_samples.
+
+    Args:
+        tmp_path: Pytest tmp_path fixture.
 
     Yields:
-        str: Path to the static pytest_failures.py file.
+        str: Path to the copied pytest_failures.py file.
     """
-    yield os.path.abspath("test_samples/pytest_failures.py")
+    src = os.path.abspath("test_samples/tools/python/pytest/pytest_failures.py")
+    dst = tmp_path / "pytest_failures.py"
+    shutil.copy(src, dst)
+    yield str(dst)
 
 
 @pytest.fixture
@@ -99,12 +118,14 @@ def temp_test_dir(request):
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy pytest_clean.py to temp directory
-        src_clean = os.path.abspath("test_samples/pytest_clean.py")
+        src_clean = os.path.abspath("test_samples/tools/python/pytest/pytest_clean.py")
         dst_clean = os.path.join(tmpdir, "test_clean.py")
         shutil.copy(src_clean, dst_clean)
 
         # Copy pytest_failures.py to temp directory
-        src_failures = os.path.abspath("test_samples/pytest_failures.py")
+        src_failures = os.path.abspath(
+            "test_samples/tools/python/pytest/pytest_failures.py",
+        )
         dst_failures = os.path.join(tmpdir, "test_failures.py")
         shutil.copy(src_failures, dst_failures)
 
@@ -351,7 +372,7 @@ def test_pytest_output_consistency_direct_vs_lintro(
 
     # In Docker, pytest is only available as python -m pytest
     # Check if we're in Docker or if pytest is available on PATH
-    if os.environ.get("RUNNING_IN_DOCKER") == "1":
+    if os.environ.get("RUNNING_IN_DOCKER") == EnvBool.TRUE:
         # Use python -m pytest in Docker
         cmd = [
             sys.executable,
