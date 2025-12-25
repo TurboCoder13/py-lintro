@@ -6,6 +6,8 @@ Small helpers to normalize paths for display consistency.
 import os
 from pathlib import Path
 
+from loguru import logger
+
 
 def find_lintro_ignore() -> Path | None:
     """Find .lintro-ignore file by searching upward from current directory.
@@ -46,6 +48,29 @@ def find_lintro_ignore() -> Path | None:
         depth += 1
 
     return None
+
+
+def load_lintro_ignore() -> list[str]:
+    """Load ignore patterns from .lintro-ignore file.
+
+    Returns:
+        list[str]: List of ignore patterns.
+    """
+    ignore_patterns: list[str] = []
+    lintro_ignore_path = find_lintro_ignore()
+
+    if lintro_ignore_path and lintro_ignore_path.exists():
+        try:
+            with open(lintro_ignore_path, encoding="utf-8") as f:
+                for line in f:
+                    line_stripped = line.strip()
+                    if not line_stripped or line_stripped.startswith("#"):
+                        continue
+                    ignore_patterns.append(line_stripped)
+        except Exception as e:
+            logger.warning(f"Failed to load .lintro-ignore: {e}")
+
+    return ignore_patterns
 
 
 def normalize_file_path_for_display(file_path: str) -> str:
