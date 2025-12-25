@@ -22,18 +22,13 @@ from lintro.config.config_loader import (
 from lintro.config.lintro_config import (
     EnforceConfig,
     ExecutionConfig,
-    GlobalConfig,
     LintroConfig,
-    ToolConfig,
+    LintroToolConfig,
 )
 from lintro.config.tool_config_generator import (
-    cleanup_temp_config,
     generate_defaults_config,
-    generate_tool_config,
-    get_config_injection_args,
     get_defaults_injection_args,
     get_enforce_cli_args,
-    get_no_auto_config_args,
     has_native_config,
 )
 
@@ -41,9 +36,8 @@ __all__ = [
     # Config dataclasses
     "EnforceConfig",
     "ExecutionConfig",
-    "GlobalConfig",  # Deprecated alias for EnforceConfig
     "LintroConfig",
-    "ToolConfig",
+    "LintroToolConfig",
     # Config loading
     "clear_config_cache",
     "get_config",
@@ -54,9 +48,4 @@ __all__ = [
     "has_native_config",
     "generate_defaults_config",
     "get_defaults_injection_args",
-    # Deprecated functions (kept for backward compatibility)
-    "cleanup_temp_config",
-    "generate_tool_config",
-    "get_config_injection_args",
-    "get_no_auto_config_args",
 ]
