@@ -317,8 +317,8 @@ def check_total_time_warning(
         warning_msg = (
             f"⚠️  Tests took {summary_duration:.1f}s to run "
             f"(threshold: {total_time_warning}s). "
-            "Consider optimizing slow tests or using pytest-xdist "
-            "for parallel execution."
+            "Consider optimizing slow tests or enabling parallel execution "
+            "with --tool-options workers=auto"
         )
         logger.warning(warning_msg)
 
