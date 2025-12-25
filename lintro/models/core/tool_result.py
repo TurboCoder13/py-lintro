@@ -6,7 +6,7 @@ fixed vs remaining counts for fix-capable tools.
 """
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -27,14 +27,14 @@ class ToolResult:
     support unified table formatting.
     """
 
-    name: str
-    success: bool
-    output: str | None = None
-    issues_count: int = 0
-    formatted_output: str | None = None
-    issues: Sequence[object] | None = None
+    name: str = field(default="")
+    success: bool = field(default=False)
+    output: str | None = field(default=None)
+    issues_count: int = field(default=0)
+    formatted_output: str | None = field(default=None)
+    issues: Sequence[object] | None = field(default=None)
 
     # Optional standardized counts for fix-capable tools
-    initial_issues_count: int | None = None
-    fixed_issues_count: int | None = None
-    remaining_issues_count: int | None = None
+    initial_issues_count: int | None = field(default=None)
+    fixed_issues_count: int | None = field(default=None)
+    remaining_issues_count: int | None = field(default=None)
