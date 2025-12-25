@@ -16,7 +16,7 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.darglint.darglint_issue import DarglintIssue
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Constants for Darglint configuration
 # Increased from 30 to handle large files with complex docstrings
@@ -72,7 +72,7 @@ class DarglintTool(BaseTool):
     description: str = (
         "Python docstring linter that checks docstring style and completeness"
     )
-    can_fix: bool = False  # Darglint can only check, not fix
+    can_fix: bool = field(default=False)  # Darglint can only check, not fix
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=DARGLINT_DEFAULT_PRIORITY,  # Lower priority than formatters, \

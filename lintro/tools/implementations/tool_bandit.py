@@ -3,19 +3,24 @@
 import json
 import os
 import subprocess  # nosec B404 - deliberate, shell disabled
-import tomllib
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 from loguru import logger
 
+from lintro.enums.bandit_levels import (
+    BanditConfidenceLevel,
+    BanditSeverityLevel,
+    normalize_bandit_confidence_level,
+    normalize_bandit_severity_level,
+)
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.config_utils import load_bandit_config
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Constants for Bandit configuration
 BANDIT_DEFAULT_TIMEOUT: int = 30
@@ -59,27 +64,6 @@ def _extract_bandit_json(raw_text: str) -> dict[str, Any]:
     return json.loads(json_str)
 
 
-def _load_bandit_config() -> dict[str, Any]:
-    """Load bandit configuration from pyproject.toml.
-
-    Returns:
-        dict[str, Any]: Bandit configuration dictionary.
-    """
-    config: dict[str, Any] = {}
-    pyproject_path = Path("pyproject.toml")
-
-    if pyproject_path.exists():
-        try:
-            with open(pyproject_path, "rb") as f:
-                pyproject_data = tomllib.load(f)
-                if "tool" in pyproject_data and "bandit" in pyproject_data["tool"]:
-                    config = pyproject_data["tool"]["bandit"]
-        except Exception as e:
-            logger.warning(f"Failed to load bandit configuration: {e}")
-
-    return config
-
-
 @dataclass
 class BanditTool(BaseTool):
     """Bandit security linter integration.
@@ -97,11 +81,11 @@ class BanditTool(BaseTool):
         include_venv: bool: Whether to include virtual environment files.
     """
 
-    name: str = "bandit"
-    description: str = (
-        "Security linter that finds common security issues in Python code"
+    name: str = field(default="bandit")
+    description: str = field(
+        default="Security linter that finds common security issues in Python code",
     )
-    can_fix: bool = False  # Bandit does not support auto-fixing
+    can_fix: bool = field(default=False)  # Bandit does not support auto-fixing
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=BANDIT_DEFAULT_PRIORITY,  # High priority for security
@@ -130,7 +114,7 @@ class BanditTool(BaseTool):
         super().__post_init__()
 
         # Load bandit configuration from pyproject.toml
-        bandit_config = _load_bandit_config()
+        bandit_config = load_bandit_config()
 
         # Apply configuration overrides
         if "exclude_dirs" in bandit_config:
@@ -252,21 +236,21 @@ class BanditTool(BaseTool):
 
         # Add configuration options
         if self.options.get("severity"):
-            severity = self.options["severity"]
-            if severity == "LOW":
+            severity = normalize_bandit_severity_level(self.options["severity"])
+            if severity == BanditSeverityLevel.LOW:
                 cmd.append("-l")
-            elif severity == "MEDIUM":
+            elif severity == BanditSeverityLevel.MEDIUM:
                 cmd.extend(["-ll"])
-            elif severity == "HIGH":
+            elif severity == BanditSeverityLevel.HIGH:
                 cmd.extend(["-lll"])
 
         if self.options.get("confidence"):
-            confidence = self.options["confidence"]
-            if confidence == "LOW":
+            confidence = normalize_bandit_confidence_level(self.options["confidence"])
+            if confidence == BanditConfidenceLevel.LOW:
                 cmd.append("-i")
-            elif confidence == "MEDIUM":
+            elif confidence == BanditConfidenceLevel.MEDIUM:
                 cmd.extend(["-ii"])
-            elif confidence == "HIGH":
+            elif confidence == BanditConfidenceLevel.HIGH:
                 cmd.extend(["-iii"])
 
         if self.options.get("tests"):

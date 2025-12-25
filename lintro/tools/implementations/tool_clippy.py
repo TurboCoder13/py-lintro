@@ -17,7 +17,7 @@ from lintro.tools.core.timeout_utils import (
     run_subprocess_with_timeout,
 )
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 CLIPPY_DEFAULT_TIMEOUT: int = 120
 CLIPPY_DEFAULT_PRIORITY: int = 85
@@ -100,9 +100,11 @@ class ClippyTool(BaseTool):
         include_venv: bool: Whether to include virtual environment files.
     """
 
-    name: str = "clippy"
-    description: str = "Rust linter with checks for correctness, style, and performance"
-    can_fix: bool = True
+    name: str = field(default="clippy")
+    description: str = field(
+        default="Rust linter for correctness, style, and performance",
+    )
+    can_fix: bool = field(default=True)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=CLIPPY_DEFAULT_PRIORITY,

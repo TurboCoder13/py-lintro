@@ -21,7 +21,7 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 BLACK_DEFAULT_TIMEOUT: int = 30
 BLACK_DEFAULT_PRIORITY: int = 90  # Prefer Black ahead of Ruff formatting
@@ -34,7 +34,7 @@ class BlackTool(BaseTool):
 
     name: str = "black"
     description: str = "Opinionated Python code formatter"
-    can_fix: bool = True
+    can_fix: bool = field(default=True)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=BLACK_DEFAULT_PRIORITY,
