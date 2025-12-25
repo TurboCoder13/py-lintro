@@ -21,13 +21,34 @@ import os
 import re
 import shutil
 import subprocess  # nosec B404
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import httpx
 
+from lintro.enums.git_command import GitCommand
+from lintro.enums.git_ref import GitRef
+
 SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 TAG_RE = re.compile(r"^v\d+\.\d+\.\d+$")
+
+# Allowed git arguments for security validation
+ALLOWED_GIT_DESCRIBE_ARGS = {
+    "--tags",
+    "--abbrev=0",
+    "--no-merges",
+    "-n",
+    "1",
+    "-1",
+    "--match",
+    "v*",
+    "--pretty=%s",
+    "--pretty=%B",
+    "--pretty=format:%h",
+    "--pretty=format:%s",
+    "--pretty=format:%B",
+    "--grep=^chore(release): prepare ",
+}
 
 
 @dataclass
@@ -43,12 +64,12 @@ class ComputeResult:
         has_fix_or_perf: Whether fix/perf commits were detected
     """
 
-    base_ref: str
-    base_version: str
-    next_version: str
-    has_breaking: bool
-    has_feat: bool
-    has_fix_or_perf: bool
+    base_ref: str = field(default="")
+    base_version: str = field(default="")
+    next_version: str = field(default="")
+    has_breaking: bool = field(default=False)
+    has_feat: bool = field(default=False)
+    has_fix_or_perf: bool = field(default=False)
 
 
 def _validate_git_args(arguments: list[str]) -> None:
@@ -79,7 +100,7 @@ def _validate_git_args(arguments: list[str]) -> None:
         return bool(re.fullmatch(r"[0-9a-fA-F]{7,40}", value))
 
     def is_head_range(value: str) -> bool:
-        if value == "HEAD":
+        if value == GitRef.HEAD:
             return True
         # vX.Y.Z..HEAD or <sha>..HEAD
         return bool(
@@ -89,45 +110,28 @@ def _validate_git_args(arguments: list[str]) -> None:
             ),
         )
 
-    allowed_fixed = {
-        "--tags",
-        "--abbrev=0",
-        "--no-merges",
-        "-n",
-        "1",
-        "-1",
-        "--match",
-        "v*",
-        "--pretty=%s",
-        "--pretty=%B",
-        "--pretty=format:%h",
-        "--pretty=format:%s",
-        "--pretty=format:%B",
-        "--grep=^chore(release): prepare ",
-    }
-
-    if cmd == "describe":
+    if cmd == GitCommand.DESCRIBE:
         # Expected: describe --tags --abbrev=0 --match v*
         for a in rest:
-            if a not in allowed_fixed:
+            if a not in ALLOWED_GIT_DESCRIBE_ARGS:
                 raise ValueError("unexpected git describe argument")
         return
 
-    if cmd == "rev-parse":
+    if cmd == GitCommand.REV_PARSE:
         # Expected: rev-parse HEAD
-        if rest != ["HEAD"]:
+        if rest != [GitRef.HEAD]:
             raise ValueError("unexpected git rev-parse arguments")
         return
 
-    if cmd == "log":
+    if cmd == GitCommand.LOG:
         # Accept forms used in this module only
         if not rest:
             raise ValueError("git log requires additional arguments")
         # Validate each argument
         for a in rest:
-            if a in allowed_fixed:
+            if a in ALLOWED_GIT_DESCRIBE_ARGS:
                 continue
-            if a.startswith("--pretty=") and a in allowed_fixed:
+            if a.startswith("--pretty=") and a in ALLOWED_GIT_DESCRIBE_ARGS:
                 continue
             if is_head_range(a) or is_sha(a):
                 continue
