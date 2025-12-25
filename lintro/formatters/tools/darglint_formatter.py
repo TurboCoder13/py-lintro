@@ -1,5 +1,6 @@
 """Formatter for darglint issues."""
 
+from lintro.enums.output_format import OutputFormat
 from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle
@@ -11,12 +12,12 @@ from lintro.parsers.darglint.darglint_issue import DarglintIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 FORMAT_MAP = {
-    "plain": PlainStyle(),
-    "grid": GridStyle(),
-    "markdown": MarkdownStyle(),
-    "html": HtmlStyle(),
-    "json": JsonStyle(),
-    "csv": CsvStyle(),
+    OutputFormat.PLAIN: PlainStyle(),
+    OutputFormat.GRID: GridStyle(),
+    OutputFormat.MARKDOWN: MarkdownStyle(),
+    OutputFormat.HTML: HtmlStyle(),
+    OutputFormat.JSON: JsonStyle(),
+    OutputFormat.CSV: CsvStyle(),
 }
 
 
@@ -58,7 +59,7 @@ class DarglintTableDescriptor(TableDescriptor):
 
 def format_darglint_issues(
     issues: list[DarglintIssue],
-    format: str = "grid",
+    format: OutputFormat = OutputFormat.GRID,
 ) -> str:
     """Format a list of Darglint issues using the specified format.
 
@@ -76,7 +77,7 @@ def format_darglint_issues(
     formatter = FORMAT_MAP.get(format, GridStyle())
 
     # For JSON format, pass tool name
-    if format == "json":
+    if format == OutputFormat.JSON:
         formatted_table = formatter.format(
             columns=columns,
             rows=rows,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from lintro.enums.output_format import OutputFormat
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle
 from lintro.formatters.styles.html import HtmlStyle
@@ -11,12 +12,12 @@ from lintro.formatters.styles.plain import PlainStyle
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 FORMAT_MAP = {
-    "plain": PlainStyle(),
-    "grid": GridStyle(),
-    "markdown": MarkdownStyle(),
-    "html": HtmlStyle(),
-    "json": JsonStyle(),
-    "csv": CsvStyle(),
+    OutputFormat.PLAIN: PlainStyle(),
+    OutputFormat.GRID: GridStyle(),
+    OutputFormat.MARKDOWN: MarkdownStyle(),
+    OutputFormat.HTML: HtmlStyle(),
+    OutputFormat.JSON: JsonStyle(),
+    OutputFormat.CSV: CsvStyle(),
 }
 
 
@@ -51,7 +52,7 @@ class BlackTableDescriptor:
         return rows
 
 
-def format_black_issues(issues, format: str) -> str:
+def format_black_issues(issues, format: OutputFormat) -> str:
     """Format Black issues according to the chosen style.
 
     Args:
@@ -65,6 +66,6 @@ def format_black_issues(issues, format: str) -> str:
     formatter = FORMAT_MAP.get(format, GridStyle())
     columns = descriptor.get_columns()
     rows = descriptor.get_rows(issues)
-    if format == "json":
+    if format == OutputFormat.JSON:
         return formatter.format(columns=columns, rows=rows, tool_name="black")
     return formatter.format(columns=columns, rows=rows)
