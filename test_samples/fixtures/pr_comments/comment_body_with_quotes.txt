@@ -1,0 +1,2 @@
+This comment has "double quotes" and 'single quotes'.
+It also has special chars like <>&.
