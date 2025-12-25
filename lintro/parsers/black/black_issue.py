@@ -6,21 +6,19 @@ in a normalized form that Lintro formatters can consume.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from lintro.parsers.base_issue import BaseIssue
 
 
 @dataclass
-class BlackIssue:
+class BlackIssue(BaseIssue):
     """Represents a Black formatting issue.
 
     Attributes:
-        file: Path to the file with a formatting difference.
-        message: Short human-readable description (e.g., "Would reformat file").
         fixable: Whether this issue can be auto-fixed by Black. Defaults to True
             for standard formatting issues. Set to False for line length violations
             that Black cannot safely wrap.
     """
 
-    file: str
-    message: str
-    fixable: bool = True
+    fixable: bool = field(default=True)

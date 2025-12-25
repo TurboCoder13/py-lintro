@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
+from lintro.enums.env_bool import EnvBool
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 # Ensure stable docker builds under pytest-xdist by disabling BuildKit, which
@@ -42,7 +43,7 @@ def pytest_collection_modifyitems(config, items) -> None:
         config: Pytest configuration object.
         items: Collected test items that may be modified.
     """
-    if os.getenv("LINTRO_RUN_DOCKER_TESTS") == "1":
+    if os.getenv("LINTRO_RUN_DOCKER_TESTS") == EnvBool.TRUE:
         return
 
     skip_marker = pytest.mark.skip(
@@ -91,10 +92,27 @@ def ruff_violation_file(temp_dir):
     Returns:
         str: Normalized path to the copied ruff_violations.py file.
     """
-    src = Path("test_samples/ruff_violations.py").resolve()
+    src = Path("test_samples/tools/python/ruff/ruff_e501_f401_violations.py").resolve()
     dst = temp_dir / "ruff_violations.py"
     shutil.copy(src, dst)
     return normalize_file_path_for_display(str(dst))
+
+
+@pytest.fixture
+def skip_config_injection(monkeypatch):
+    """Skip Lintro config injection for tests.
+
+    Sets LINTRO_SKIP_CONFIG_INJECTION environment variable to disable
+    config injection during tests that need to test native tool configs.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Yields:
+        None: This fixture is used for its side effect only.
+    """
+    monkeypatch.setenv("LINTRO_SKIP_CONFIG_INJECTION", "1")
+    yield
 
 
 @pytest.fixture(autouse=True)

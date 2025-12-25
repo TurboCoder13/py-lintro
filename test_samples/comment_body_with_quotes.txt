@@ -1,9 +1,0 @@
-## Test Comment with "Special" Characters
-
-This comment contains:
-- Double quotes: "quoted text"
-- Single quotes: 'single quoted'
-- Backslashes: \path\to\file
-- Newlines and special chars: ñáéíóú
-
-JSON encoding should handle all of these properly.

@@ -27,12 +27,8 @@ class EnforceConfig:
             Injected as: --target-version (ruff, black)
     """
 
-    line_length: int | None = None
-    target_python: str | None = None
-
-
-# Backward compatibility alias
-GlobalConfig = EnforceConfig
+    line_length: int | None = field(default=None)
+    target_python: str | None = field(default=None)
 
 
 @dataclass
@@ -50,13 +46,13 @@ class ExecutionConfig:
     """
 
     enabled_tools: list[str] = field(default_factory=list)
-    tool_order: str | list[str] = "priority"
-    fail_fast: bool = False
-    parallel: bool = False
+    tool_order: str | list[str] = field(default="priority")
+    fail_fast: bool = field(default=False)
+    parallel: bool = field(default=False)
 
 
 @dataclass
-class ToolConfig:
+class LintroToolConfig:
     """Configuration for a single tool.
 
     In the tiered model, tools use their native configs by default.
@@ -69,8 +65,8 @@ class ToolConfig:
             If not set, tool uses its own config discovery.
     """
 
-    enabled: bool = True
-    config_source: str | None = None
+    enabled: bool = field(default=True)
+    config_source: str | None = field(default=None)
 
 
 @dataclass
@@ -96,30 +92,20 @@ class LintroConfig:
     execution: ExecutionConfig = field(default_factory=ExecutionConfig)
     enforce: EnforceConfig = field(default_factory=EnforceConfig)
     defaults: dict[str, dict[str, Any]] = field(default_factory=dict)
-    tools: dict[str, ToolConfig] = field(default_factory=dict)
-    config_path: str | None = None
+    tools: dict[str, LintroToolConfig] = field(default_factory=dict)
+    config_path: str | None = field(default=None)
 
-    # Backward compatibility property
-    @property
-    def global_config(self) -> EnforceConfig:
-        """Get enforce config (deprecated alias for backward compatibility).
-
-        Returns:
-            EnforceConfig: The enforce configuration.
-        """
-        return self.enforce
-
-    def get_tool_config(self, tool_name: str) -> ToolConfig:
+    def get_tool_config(self, tool_name: str) -> LintroToolConfig:
         """Get configuration for a specific tool.
 
         Args:
             tool_name: Name of the tool (e.g., "ruff", "prettier").
 
         Returns:
-            ToolConfig: Tool configuration. Returns default config if not
+            LintroToolConfig: Tool configuration. Returns default config if not
                 explicitly configured.
         """
-        return self.tools.get(tool_name.lower(), ToolConfig())
+        return self.tools.get(tool_name.lower(), LintroToolConfig())
 
     def is_tool_enabled(self, tool_name: str) -> bool:
         """Check if a tool is enabled.

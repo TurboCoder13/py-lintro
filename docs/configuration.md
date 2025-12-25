@@ -24,6 +24,46 @@ Lintro uses a clear 4-tier configuration model that separates concerns:
 3. **`defaults` provide fallbacks** - Only used when a tool has no native config file
 4. **Simple and transparent** - Users know exactly which config is used
 
+### Tiered Configuration Flow
+
+The configuration system works in a specific order:
+
+1. **Execution Tier** - Determines which tools run and in what order
+   - `enabled_tools`: Empty list means all enabled tools run
+   - `tool_order`: Controls execution order (priority, alphabetical, or custom)
+   - `fail_fast`: Whether to stop on first tool failure
+
+2. **Enforce Tier** - Cross-cutting settings injected as CLI flags
+   - These settings override native configs via CLI arguments
+   - Example: `line_length: 88` becomes `--line-length 88` for ruff/black
+   - Applied to all tools that support the setting
+
+3. **Defaults Tier** - Fallback configuration when no native config exists
+   - Only used if tool's native config file is not found
+   - Example: If `.prettierrc` doesn't exist, use `defaults.prettier`
+   - Generated as temporary config files when needed
+
+4. **Tools Tier** - Per-tool enable/disable and config source tracking
+   - `enabled`: Whether the tool is enabled
+   - `config_source`: Optional explicit path to native config file
+
+### Configuration Resolution Example
+
+For a tool like Prettier:
+
+1. Check if tool is enabled (`tools.prettier.enabled`)
+2. Check for native config (`.prettierrc`, `.prettierrc.json`, etc.)
+3. If native config found:
+   - Use native config
+   - Inject `enforce.line_length` as `--print-width` CLI flag
+   - Ignore `defaults.prettier`
+4. If no native config found:
+   - Generate temp config from `defaults.prettier`
+   - Inject `enforce.line_length` as `--print-width` CLI flag
+   - Use generated config
+
+This ensures consistent behavior while respecting tool-specific configurations.
+
 ## Lintro Configuration
 
 ### Configuration File: `.lintro-config.yaml`
@@ -194,18 +234,6 @@ defaults:
 1. Lintro checks if the tool has a native config file (e.g., `.prettierrc`)
 2. If NO native config exists, Lintro generates a temp file from `defaults`
 3. If native config EXISTS, `defaults` are ignored (native config is used)
-
-### Legacy `pyproject.toml` Support
-
-You can still use `pyproject.toml` under `[tool.lintro]`, but `.lintro-config.yaml` is
-preferred. The `global:` section is deprecated in favor of `enforce:`.
-
-```toml
-# DEPRECATED - use .lintro-config.yaml instead
-[tool.lintro]
-line_length = 88
-target_python = "py313"
-```
 
 ### Tool Ordering Configuration
 

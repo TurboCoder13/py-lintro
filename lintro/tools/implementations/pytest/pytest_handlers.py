@@ -64,7 +64,7 @@ def handle_check_plugins(
             success=False,
             issues=[],
             output=(
-                "Error: required_plugins must be specified " "when check_plugins=True"
+                "Error: required_plugins must be specified when check_plugins=True"
             ),
             issues_count=0,
         )
