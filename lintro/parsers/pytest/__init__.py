@@ -5,8 +5,6 @@ from lintro.parsers.pytest.pytest_parser import (
     PytestSummary,
     extract_pytest_summary,
     parse_pytest_json_output,
-    parse_pytest_junit_xml,
-    parse_pytest_output,
     parse_pytest_text_output,
 )
 
@@ -15,7 +13,5 @@ __all__ = [
     "PytestSummary",
     "extract_pytest_summary",
     "parse_pytest_json_output",
-    "parse_pytest_junit_xml",
-    "parse_pytest_output",
     "parse_pytest_text_output",
 ]

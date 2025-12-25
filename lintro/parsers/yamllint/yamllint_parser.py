@@ -2,6 +2,7 @@
 
 import re
 
+from lintro.enums.severity_level import normalize_severity_level
 from lintro.parsers.yamllint.yamllint_issue import YamllintIssue
 
 
@@ -59,7 +60,7 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
                     file=filename,
                     line=int(line_num),
                     column=int(column) if column else None,
-                    level=level,
+                    level=normalize_severity_level(level),
                     rule=rule,
                     message=message.strip(),
                 ),
