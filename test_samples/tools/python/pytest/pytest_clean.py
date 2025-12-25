@@ -48,20 +48,20 @@ def test_boolean_operations():
     assert True
     assert not False
     assert True and True
-    assert True or False
-    assert not (True and False)
+    assert True
+    assert not (False)
 
 
 def test_exception_handling():
     """Test exception handling."""
     with pytest.raises(ValueError):
-        int("not_a_number")
+        _ = int("not_a_number")
 
     with pytest.raises(ZeroDivisionError):
-        1 / 0
+        _ = 1 / 0
 
     with pytest.raises(KeyError):
-        {}["missing_key"]
+        _ = {}["missing_key"]
 
 
 @pytest.fixture
@@ -102,19 +102,16 @@ def test_parametrized_wrapper():
     pass
 
 
-@pytest.mark.slow
 def test_slow_operation():
     """Test marked as slow."""
     assert True
 
 
-@pytest.mark.integration
 def test_integration():
     """Test marked as integration."""
     assert True
 
 
-@pytest.mark.unit
 def test_unit():
     """Test marked as unit."""
     assert True
