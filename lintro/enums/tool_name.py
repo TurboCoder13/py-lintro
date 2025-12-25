@@ -11,11 +11,17 @@ from enum import StrEnum, auto
 class ToolName(StrEnum):
     """Supported tool identifiers in lower-case values."""
 
+    ACTIONLINT = auto()
+    BANDIT = auto()
     BIOME = auto()
+    BLACK = auto()
+    CLIPPY = auto()
     DARGLINT = auto()
     HADOLINT = auto()
     MARKDOWNLINT = auto()
+    MYPY = auto()
     PRETTIER = auto()
+    PYTEST = auto()
     RUFF = auto()
     YAMLLINT = auto()
 
@@ -28,11 +34,15 @@ def normalize_tool_name(value: str | ToolName) -> ToolName:
 
     Returns:
         ToolName: Normalized enum member.
+
+    Raises:
+        ValueError: If the value is not a valid tool name.
     """
     if isinstance(value, ToolName):
         return value
     try:
         return ToolName[value.upper()]
-    except Exception:
-        # Conservative default if unknown
-        return ToolName.RUFF
+    except KeyError as err:
+        raise ValueError(
+            f"Unknown tool name: {value!r}. Supported tools: {list(ToolName)}",
+        ) from err
