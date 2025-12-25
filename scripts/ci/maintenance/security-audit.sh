@@ -7,14 +7,9 @@
 
 set -euo pipefail
 
-# Source common utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-# shellcheck source=../utils/utils.sh
-source "${SCRIPT_DIR}/../utils/utils.sh"
-
 # Configuration
 WORKFLOWS_DIR=".github/workflows"
-ACTIONS_DIR=".github/actions"  
+ACTIONS_DIR=".github/actions"
 SCRIPTS_DIR="scripts"
 EXIT_CODE=0
 
@@ -43,6 +38,17 @@ EXIT CODES:
     2    Script error
 EOF
 }
+
+# Check for help flag before sourcing utils (to avoid path issues)
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
+# Source common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+# shellcheck source=../utils/utils.sh
+source "${SCRIPT_DIR}/../utils/utils.sh"
 
 check_sha_pinning() {
     log_info "Checking SHA pinning for GitHub Actions..."

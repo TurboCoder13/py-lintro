@@ -10,7 +10,7 @@ Actions (GITHUB_TOKEN is sufficient for deleting own repo packages).
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
@@ -26,9 +26,9 @@ class GhcrVersion:
         tags: List of tags bound to this version.
     """
 
-    id: int
-    tags: list[str]
-    created_at: str = ""
+    id: int = field(default=0)
+    tags: list[str] = field(default_factory=list)
+    created_at: str = field(default="")
 
 
 def get_repo_owner_repo() -> tuple[str, str]:

@@ -19,9 +19,6 @@ set -euo pipefail
 #   GITHUB_OUTPUT         - GitHub Actions output file
 #   GITHUB_TOKEN          - GitHub token for authentication
 
-# Source utilities
-source "$(dirname "${BASH_SOURCE[0]}")/../utils/utils.sh"
-
 # Determine Python command to use (uv run python if available, else python3/python)
 get_python_cmd() {
     if command -v uv >/dev/null 2>&1; then
@@ -52,6 +49,15 @@ Examples:
   auto-tag-unified.sh read-version
 EOF
 }
+
+# Check for help flag before sourcing utils (to avoid path issues)
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
+# Source utilities
+source "$(dirname "${BASH_SOURCE[0]}")/../utils/utils.sh"
 
 check_tag_exists() {
     local tag="${1:-${TAG:-}}"

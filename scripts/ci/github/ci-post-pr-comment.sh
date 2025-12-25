@@ -25,7 +25,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 
 # Source shared utilities
-source "$(dirname "$0")/../utils/utils.sh"
+source "$(dirname "$0")/../../utils/utils.sh"
 
 # Check if we're in a PR context
 if ! is_pr_context; then
