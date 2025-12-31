@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 
 from loguru import logger
 
+from lintro.enums.pytest_enums import PytestSpecialMode
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
@@ -62,11 +63,11 @@ class PytestTool(BaseTool):
         error_handler: PytestErrorHandler: Error handling handler.
     """
 
-    name: str = "pytest"
-    description: str = (
-        "Mature full-featured Python testing tool that helps you write better programs"
+    name: str = field(default="pytest")
+    description: str = field(
+        default="Mature full-featured Python testing tool",
     )
-    can_fix: bool = False  # pytest doesn't fix code, it runs tests
+    can_fix: bool = field(default=False)  # pytest doesn't fix code, it runs tests
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=PYTEST_DEFAULT_PRIORITY,
@@ -76,7 +77,7 @@ class PytestTool(BaseTool):
         ),
     )
     exclude_patterns: list[str] = field(default_factory=load_lintro_ignore)
-    include_venv: bool = False
+    include_venv: bool = field(default=False)
     _default_timeout: int = PYTEST_DEFAULT_TIMEOUT
 
     # New component attributes
@@ -194,19 +195,19 @@ class PytestTool(BaseTool):
         if special_mode:
             mode_value = self.pytest_config.get_special_mode_value(special_mode)
 
-            if special_mode == "list_plugins":
+            if special_mode == PytestSpecialMode.LIST_PLUGINS:
                 return handle_list_plugins(self)
-            elif special_mode == "check_plugins":
+            elif special_mode == PytestSpecialMode.CHECK_PLUGINS:
                 return handle_check_plugins(self, mode_value)
-            elif special_mode == "collect_only":
+            elif special_mode == PytestSpecialMode.COLLECT_ONLY:
                 return handle_collect_only(self, target_files)
-            elif special_mode == "list_fixtures":
+            elif special_mode == PytestSpecialMode.LIST_FIXTURES:
                 return handle_list_fixtures(self, target_files)
-            elif special_mode == "fixture_info":
+            elif special_mode == PytestSpecialMode.FIXTURE_INFO:
                 return handle_fixture_info(self, mode_value, target_files)
-            elif special_mode == "list_markers":
+            elif special_mode == PytestSpecialMode.LIST_MARKERS:
                 return handle_list_markers(self)
-            elif special_mode == "parametrize_help":
+            elif special_mode == PytestSpecialMode.PARAMETRIZE_HELP:
                 return handle_parametrize_help(self)
 
         return None

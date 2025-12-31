@@ -11,7 +11,7 @@ from lintro.models.core.tool import Tool, ToolConfig, ToolResult
 from lintro.parsers.biome.biome_issue import BiomeIssue
 from lintro.parsers.biome.biome_parser import parse_biome_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Constants for Biome configuration
 BIOME_DEFAULT_TIMEOUT: int = 30
@@ -35,12 +35,12 @@ class BiomeTool(BaseTool):
     A fast linter for JavaScript, TypeScript, JSON, and CSS.
     """
 
-    name: str = "biome"
-    description: str = (
-        "Fast linter for JavaScript, TypeScript, JSON, and CSS that "
-        "provides detailed diagnostics and safe fixes"
+    name: str = field(default="biome")
+    description: str = field(
+        default="Fast linter for JavaScript, TypeScript, JSON, and CSS that "
+        "provides detailed diagnostics and safe fixes",
     )
-    can_fix: bool = True
+    can_fix: bool = field(default=True)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=BIOME_DEFAULT_PRIORITY,
@@ -163,7 +163,7 @@ class BiomeTool(BaseTool):
         )
         if biome_files:
             logger.debug(
-                f"[BiomeTool] Files to check (first 10): " f"{biome_files[:10]}",
+                f"[BiomeTool] Files to check (first 10): {biome_files[:10]}",
             )
         if not biome_files:
             return Tool.to_result(

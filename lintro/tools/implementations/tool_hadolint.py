@@ -17,7 +17,7 @@ from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Constants for Hadolint configuration
 HADOLINT_DEFAULT_TIMEOUT: int = 30
@@ -53,7 +53,7 @@ class HadolintTool(BaseTool):
     description: str = (
         "Dockerfile linter that helps you build best practice Docker images"
     )
-    can_fix: bool = False  # Hadolint can only check, not fix
+    can_fix: bool = field(default=False)  # Hadolint can only check, not fix
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=HADOLINT_DEFAULT_PRIORITY,  # Medium priority for \

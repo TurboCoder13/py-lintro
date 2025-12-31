@@ -11,10 +11,9 @@ from lintro.models.core.tool import Tool, ToolConfig, ToolResult
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Constants for Prettier configuration
-PRETTIER_DEFAULT_TIMEOUT: int = 30
 PRETTIER_DEFAULT_PRIORITY: int = 80
 PRETTIER_FILE_PATTERNS: list[str] = [
     "*.js",
@@ -47,7 +46,7 @@ class PrettierTool(BaseTool):
         "Code formatter that supports multiple languages (JavaScript, TypeScript, "
         "CSS, HTML, etc.)"
     )
-    can_fix: bool = True
+    can_fix: bool = field(default=True)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=PRETTIER_DEFAULT_PRIORITY,  # High priority
@@ -291,7 +290,7 @@ class PrettierTool(BaseTool):
         )
         if prettier_files:
             logger.debug(
-                f"[PrettierTool] Files to check (first 10): " f"{prettier_files[:10]}",
+                f"[PrettierTool] Files to check (first 10): {prettier_files[:10]}",
             )
         if not prettier_files:
             return Tool.to_result(

@@ -14,7 +14,7 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.config import get_central_line_length
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.path_filtering import walk_files_with_excludes
 from lintro.utils.unified_config import DEFAULT_TOOL_PRIORITIES
 
 # Constants
@@ -45,7 +45,7 @@ class MarkdownlintTool(BaseTool):
 
     name: str = "markdownlint"
     description: str = "Markdown linter for style checking and best practices"
-    can_fix: bool = False
+    can_fix: bool = field(default=False)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=MARKDOWNLINT_DEFAULT_PRIORITY,
@@ -146,7 +146,7 @@ class MarkdownlintTool(BaseTool):
 
         # Use npx to run markdownlint-cli2 (similar to prettier)
         if shutil.which("npx"):
-            return ["npx", "--yes", "markdownlint-cli2"]
+            return ["npx", "markdownlint-cli2"]
         # Fallback to direct executable if npx not found
         return ["markdownlint-cli2"]
 
@@ -248,8 +248,7 @@ class MarkdownlintTool(BaseTool):
         )
         if markdown_files:
             logger.debug(
-                f"[MarkdownlintTool] Files to check (first 10): "
-                f"{markdown_files[:10]}",
+                f"[MarkdownlintTool] Files to check (first 10): {markdown_files[:10]}",
             )
 
         if not markdown_files:

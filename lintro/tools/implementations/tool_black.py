@@ -21,7 +21,7 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 BLACK_DEFAULT_TIMEOUT: int = 30
 BLACK_DEFAULT_PRIORITY: int = 90  # Prefer Black ahead of Ruff formatting
@@ -34,7 +34,7 @@ class BlackTool(BaseTool):
 
     name: str = "black"
     description: str = "Opinionated Python code formatter"
-    can_fix: bool = True
+    can_fix: bool = field(default=True)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=BLACK_DEFAULT_PRIORITY,
@@ -201,7 +201,11 @@ class BlackTool(BaseTool):
                         black_issues.append(
                             BlackIssue(
                                 file=file_path,
+                                line=ruff_issue.line,
+                                column=ruff_issue.column,
+                                code=ruff_issue.code,
                                 message=message,
+                                severity="error",
                                 fixable=False,
                             ),
                         )
@@ -375,6 +379,7 @@ class BlackTool(BaseTool):
         timeout_val: int = self.options.get("timeout", BLACK_DEFAULT_TIMEOUT)
         if self.options.get("diff"):
             initial_issues = []
+            initial_line_length_issues = []
             initial_count = 0
         else:
             try:
@@ -386,7 +391,14 @@ class BlackTool(BaseTool):
             except subprocess.TimeoutExpired:
                 return self._handle_timeout_error(timeout_val, initial_count=0)
             initial_issues = parse_black_output(output=check_output)
-            initial_count = len(initial_issues)
+            # Also check for line length violations in initial state
+            # This ensures initial_count includes all issues that will be counted
+            # in remaining_count, preventing validation errors
+            initial_line_length_issues = self._check_line_length_violations(
+                files=rel_files,
+                cwd=cwd,
+            )
+            initial_count = len(initial_issues) + len(initial_line_length_issues)
 
         # Apply formatting
         fix_cmd_base: list[str] = self._get_executable_command(tool_name="black")
@@ -439,10 +451,16 @@ class BlackTool(BaseTool):
         if fixed_count_from_output > 0:
             fixed_count = fixed_count_from_output
         else:
-            # Subtract only Black-related remaining issues (exclude line-length)
-            line_length_issues_count = len(line_length_issues)
-            remaining_black_count = max(0, remaining_count - line_length_issues_count)
-            fixed_count = max(0, initial_count - remaining_black_count)
+            # Since initial_count now includes line length violations (which can't
+            # be fixed), and remaining_count also includes them,
+            # they cancel out in the subtraction. The result is the number of
+            # Black formatting issues that were fixed.
+            # Note: Line length violations are the same in initial and remaining
+            # since they can't be fixed, so:
+            # fixed_count = initial_count - remaining_count
+            initial_black_count = initial_count - len(initial_line_length_issues)
+            remaining_black_count = remaining_count - len(line_length_issues)
+            fixed_count = max(0, initial_black_count - remaining_black_count)
 
         # Build concise summary
         summary: list[str] = []
