@@ -4,7 +4,7 @@ This module contains the PytestResultProcessor class that handles test result
 processing, summary generation, and ToolResult building.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools.implementations.pytest.pytest_config import PytestConfiguration
@@ -29,8 +29,8 @@ class PytestResultProcessor:
         tool_name: Name of the tool (e.g., "pytest").
     """
 
-    config: PytestConfiguration
-    tool_name: str = "pytest"
+    config: PytestConfiguration = field(default_factory=PytestConfiguration)
+    tool_name: str = field(default="pytest")
 
     def process_test_results(
         self,

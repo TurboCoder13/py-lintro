@@ -7,7 +7,6 @@ maintainability and reduce file size.
 
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 
@@ -17,8 +16,6 @@ from lintro.tools.implementations.pytest.collection import (
     PYTEST_FLAKY_CACHE_FILE,
     PYTEST_FLAKY_FAILURE_RATE,
     PYTEST_FLAKY_MIN_RUNS,
-    load_flaky_test_history,
-    save_flaky_test_history,
 )
 
 PYTEST_SLOW_TEST_THRESHOLD: float = 1.0

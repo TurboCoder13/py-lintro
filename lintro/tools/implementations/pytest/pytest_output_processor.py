@@ -15,11 +15,12 @@ from lintro.parsers.pytest.pytest_parser import (
     extract_pytest_summary,
     parse_pytest_output,
 )
+from lintro.tools.implementations.pytest.collection import save_flaky_test_history
 from lintro.tools.implementations.pytest.pytest_utils import (
+    compute_updated_flaky_test_history,
     detect_flaky_tests,
     extract_all_test_results_from_junit,
     is_ci_environment,
-    update_flaky_test_history,
 )
 
 # Constants for pytest configuration
@@ -317,8 +318,8 @@ def check_total_time_warning(
         warning_msg = (
             f"⚠️  Tests took {summary_duration:.1f}s to run "
             f"(threshold: {total_time_warning}s). "
-            "Consider optimizing slow tests or using pytest-xdist "
-            "for parallel execution."
+            "Consider optimizing slow tests or enabling parallel execution "
+            "with --tool-options workers=auto"
         )
         logger.warning(warning_msg)
 
@@ -350,7 +351,8 @@ def detect_and_log_flaky_tests(
             )
 
         # Update flaky test history
-        history = update_flaky_test_history(issues, all_test_results)
+        history = compute_updated_flaky_test_history(issues, all_test_results)
+        save_flaky_test_history(history)
 
         # Detect flaky tests
         min_runs = options.get("flaky_min_runs", PYTEST_FLAKY_MIN_RUNS)
