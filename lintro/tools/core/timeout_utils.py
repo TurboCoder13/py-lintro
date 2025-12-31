@@ -5,9 +5,22 @@ ensuring consistent behavior and error messages for subprocess timeouts.
 """
 
 import subprocess  # nosec B404 - used safely with shell disabled
+from dataclasses import dataclass, field
 from typing import Any
 
 from loguru import logger
+
+
+@dataclass
+class TimeoutResult:
+    """Timeout result structure."""
+
+    success: bool
+    output: str
+    issues_count: int
+    issues: list[Any] = field(default_factory=list)
+    timed_out: bool = True
+    timeout_seconds: int = 0
 
 
 def run_subprocess_with_timeout(
@@ -83,8 +96,8 @@ def create_timeout_result(
     timeout: int,
     cmd: list[str] | None = None,
     tool_name: str | None = None,
-) -> dict[str, Any]:
-    """Create a standardized timeout result dictionary.
+) -> TimeoutResult:
+    """Create a standardized timeout result.
 
     Args:
         tool: Tool instance.
@@ -93,21 +106,21 @@ def create_timeout_result(
         tool_name: Optional tool name override.
 
     Returns:
-        dict: Result dictionary with timeout information.
+        TimeoutResult: Result dataclass with timeout information.
     """
     tool_name = tool_name or tool.name
 
-    return {
-        "success": False,
-        "output": (
+    return TimeoutResult(
+        success=False,
+        output=(
             f"{tool_name} execution timed out ({timeout}s limit exceeded).\n\n"
             "This may indicate:\n"
             "  - Large codebase taking too long to process\n"
             "  - Need to increase timeout via --tool-options timeout=N\n"
             "  - Command hanging due to external dependencies\n"
         ),
-        "issues_count": 1,  # Count timeout as execution failure
-        "issues": [],
-        "timed_out": True,
-        "timeout_seconds": timeout,
-    }
+        issues_count=1,  # Count timeout as execution failure
+        issues=[],
+        timed_out=True,
+        timeout_seconds=timeout,
+    )

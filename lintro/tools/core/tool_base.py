@@ -7,12 +7,13 @@ import shutil
 import subprocess  # nosec B404 - subprocess used safely with shell=False
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import cast
 
 from loguru import logger
 
-from lintro.config import LintroConfig
+from lintro.config.lintro_config import LintroConfig
+from lintro.enums.tool_name import ToolName
+from lintro.enums.tool_option_key import ToolOptionKey
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
@@ -61,10 +62,10 @@ class BaseTool(ABC):
 
     name: str
     description: str
-    can_fix: bool
+    can_fix: bool = False
     config: ToolConfig = field(default_factory=ToolConfig)
     exclude_patterns: list[str] = field(default_factory=list)
-    include_venv: bool = False
+    include_venv: bool = field(default=False)
 
     _default_timeout: int = DEFAULT_TIMEOUT
     _default_exclude_patterns: list[str] = field(
@@ -83,9 +84,9 @@ class BaseTool(ABC):
         Raises:
             ValueError: If the configuration is invalid.
         """
-        if not self.name:
+        if self.name == "":
             raise ValueError("Tool name cannot be empty")
-        if not self.description:
+        if self.description == "":
             raise ValueError("Tool description cannot be empty")
         if not isinstance(self.config, ToolConfig):
             raise ValueError("Tool config must be a ToolConfig instance")
@@ -245,11 +246,17 @@ class BaseTool(ABC):
             ValueError: If an option value is invalid.
         """
         for key, value in kwargs.items():
-            if key == "timeout" and not isinstance(value, (int, type(None))):
+            if key == ToolOptionKey.TIMEOUT.value and not isinstance(
+                value,
+                (int, type(None)),
+            ):
                 raise ValueError("Timeout must be an integer or None")
-            if key == "exclude_patterns" and not isinstance(value, list):
+            if key == ToolOptionKey.EXCLUDE_PATTERNS.value and not isinstance(
+                value,
+                list,
+            ):
                 raise ValueError("Exclude patterns must be a list")
-            if key == "include_venv" and not isinstance(value, bool):
+            if key == ToolOptionKey.INCLUDE_VENV.value and not isinstance(value, bool):
                 raise ValueError("Include venv must be a boolean")
 
         # Update options dict
@@ -319,11 +326,26 @@ class BaseTool(ABC):
         """
         import sys
 
+        from lintro.enums.tool_name import normalize_tool_name
+
+        # Try to normalize tool_name to ToolName enum for comparison
+        # If it's not a valid ToolName, we'll handle it as a binary tool
+        try:
+            tool_name_enum = normalize_tool_name(tool_name)
+        except ValueError:
+            # Not a valid ToolName enum - treat as binary tool
+            tool_name_enum = None
+
         # Python tools bundled with lintro (guaranteed in our environment)
-        # Note: darglint cannot be run as a module (python -m darglint),
-        # so it's excluded
-        python_bundled_tools = {"ruff", "black", "bandit", "yamllint", "mypy"}
-        if tool_name in python_bundled_tools:
+        # Note: darglint cannot be run as a module, so it's excluded
+        python_bundled_tools = {
+            ToolName.RUFF,
+            ToolName.BLACK,
+            ToolName.BANDIT,
+            ToolName.YAMLLINT,
+            ToolName.MYPY,
+        }
+        if tool_name_enum in python_bundled_tools:
             # Use python -m to ensure we use the tool from lintro's environment
             python_exe = sys.executable
             if python_exe:
@@ -332,7 +354,7 @@ class BaseTool(ABC):
             return [tool_name]
 
         # Pytest: user environment tool (not bundled)
-        if tool_name == "pytest":
+        if tool_name_enum == ToolName.PYTEST:
             # Use python -m pytest for cross-platform compatibility
             python_exe = sys.executable
             if python_exe:
@@ -342,19 +364,19 @@ class BaseTool(ABC):
 
         # Node.js tools: use npx to respect project's package.json
         nodejs_package_names = {
-            "biome": "@biomejs/biome",
-            "prettier": "prettier",
+            ToolName.BIOME: "@biomejs/biome",
+            ToolName.PRETTIER: "prettier",
         }
-        if tool_name in nodejs_package_names:
+        if tool_name_enum in nodejs_package_names:
             if shutil.which("npx"):
-                return ["npx", "--yes", nodejs_package_names[tool_name]]
+                return ["npx", nodejs_package_names[tool_name_enum]]
             # Fall back to direct executable
             return [tool_name]
 
         # Rust/Cargo tools: use system executable
-        if tool_name == "clippy":
+        if tool_name_enum == ToolName.CLIPPY:
             return ["cargo", "clippy"]
-        cargo_tools = {"cargo"}
+        cargo_tools = {"cargo"}  # cargo itself, not a lintro tool
         if tool_name in cargo_tools:
             return [tool_name]
 
@@ -398,177 +420,72 @@ class BaseTool(ABC):
         """Get the current Lintro configuration.
 
         Returns:
-            LintroConfig: The loaded Lintro configuration.
+            LintroConfig: Current Lintro configuration instance.
         """
-        from lintro.config import get_config
+        from lintro.tools.core.config_injection import _get_lintro_config
 
-        return get_config()
+        return _get_lintro_config()
 
-    def _should_use_lintro_config(self) -> bool:
-        """Check if Lintro config should be used.
-
-        Returns True if:
-        1. LINTRO_SKIP_CONFIG_INJECTION env var is NOT set, AND
-        2. A .lintro-config.yaml exists, OR [tool.lintro] is in pyproject.toml
+    def _get_enforced_settings(self) -> dict[str, object]:
+        """Get enforced settings as a dictionary.
 
         Returns:
-            bool: True if Lintro config should be used.
+            dict[str, object]: Dictionary of enforced settings.
         """
-        # Allow tests to disable config injection
-        if os.environ.get("LINTRO_SKIP_CONFIG_INJECTION"):
-            return False
+        from lintro.tools.core.config_injection import _get_enforced_settings
 
-        lintro_config = self._get_lintro_config()
-        return lintro_config.config_path is not None
-
-    def _get_enforced_settings(self) -> set[str]:
-        """Get the set of settings that are enforced by Lintro config.
-
-        This allows tools to check whether a setting is already being
-        injected via CLI args from the enforce tier, so they can avoid
-        adding duplicate arguments from their own options.
-
-        Returns:
-            set[str]: Set of setting names like 'line_length', 'target_python'.
-        """
-        if not self._should_use_lintro_config():
-            return set()
-
-        lintro_config = self._get_lintro_config()
-        enforced: set[str] = set()
-
-        if lintro_config.enforce.line_length is not None:
-            enforced.add("line_length")
-        if lintro_config.enforce.target_python is not None:
-            enforced.add("target_python")
-
-        return enforced
+        return _get_enforced_settings(lintro_config=self._get_lintro_config())
 
     def _get_enforce_cli_args(self) -> list[str]:
         """Get CLI arguments for enforced settings.
 
-        Returns CLI args that inject enforce settings (like line_length)
-        directly into the tool command line.
-
         Returns:
-            list[str]: CLI arguments for enforced settings.
+            list[str]: CLI arguments to inject enforced settings.
         """
-        from lintro.config import get_enforce_cli_args
+        from lintro.tools.core.config_injection import _get_enforce_cli_args
 
-        if not self._should_use_lintro_config():
-            return []
-
-        lintro_config = self._get_lintro_config()
-        args: list[str] = get_enforce_cli_args(
+        return _get_enforce_cli_args(
             tool_name=self.name,
-            lintro_config=lintro_config,
+            lintro_config=self._get_lintro_config(),
         )
-        return args
 
     def _get_defaults_config_args(self) -> list[str]:
         """Get CLI arguments for defaults config injection.
 
-        If the tool has no native config and defaults are defined in
-        the Lintro config, generates a temp config file and returns
-        the CLI args to pass it to the tool.
+        Returns:
+            list[str]: CLI arguments to inject defaults config file.
+        """
+        from lintro.tools.core.config_injection import _get_defaults_config_args
+
+        return _get_defaults_config_args(
+            tool_name=self.name,
+            lintro_config=self._get_lintro_config(),
+        )
+
+    def _should_use_lintro_config(self) -> bool:
+        """Check if Lintro config should be used for this tool.
 
         Returns:
-            list[str]: CLI arguments for defaults config injection.
+            bool: True if Lintro config should be injected.
         """
-        from lintro.config import (
-            generate_defaults_config,
-            get_defaults_injection_args,
-        )
+        from lintro.tools.core.config_injection import _should_use_lintro_config
 
-        if not self._should_use_lintro_config():
-            return []
-
-        lintro_config = self._get_lintro_config()
-        config_path = generate_defaults_config(
-            tool_name=self.name,
-            lintro_config=lintro_config,
-        )
-
-        if config_path is None:
-            return []
-
-        args: list[str] = get_defaults_injection_args(
-            tool_name=self.name,
-            config_path=config_path,
-        )
-        return args
+        return _should_use_lintro_config(tool_name=self.name)
 
     def _build_config_args(self) -> list[str]:
-        """Build complete config-related CLI arguments for this tool.
+        """Build combined CLI arguments for config injection.
 
-        Uses the tiered model:
-        1. Enforced settings are injected via CLI flags
-        2. Defaults config is used only if no native config exists
+        Combines enforce CLI args and defaults config args.
 
         Returns:
-            list[str]: Combined CLI arguments for configuration.
+            list[str]: Combined CLI arguments for config injection.
         """
-        args: list[str] = []
+        from lintro.tools.core.config_injection import _build_config_args
 
-        # Add enforce CLI args (e.g., --line-length 88)
-        args.extend(self._get_enforce_cli_args())
-
-        # Add defaults config args if applicable
-        args.extend(self._get_defaults_config_args())
-
-        return args
-
-    # -------------------------------------------------------------------------
-    # Deprecated methods for backward compatibility
-    # -------------------------------------------------------------------------
-
-    def _generate_tool_config(self) -> Path | None:
-        """Generate a temporary config file for this tool.
-
-        DEPRECATED: Use _get_enforce_cli_args() and _get_defaults_config_args()
-        instead.
-
-        Returns:
-            Path | None: Path to generated config file, or None if not needed.
-        """
-        from lintro.config import generate_defaults_config
-
-        logger.debug(
-            f"_generate_tool_config() is deprecated for {self.name}. "
-            "Use _build_config_args() or call _get_enforce_cli_args() and "
-            "_get_defaults_config_args() directly.",
-        )
-        lintro_config = self._get_lintro_config()
-        config: Path | None = generate_defaults_config(
+        return _build_config_args(
             tool_name=self.name,
-            lintro_config=lintro_config,
+            lintro_config=self._get_lintro_config(),
         )
-        return config
-
-    def _get_config_injection_args(self) -> list[str]:
-        """Get CLI arguments to inject Lintro config into this tool.
-
-        DEPRECATED: Use _get_enforce_cli_args() and _get_defaults_config_args()
-        instead, or use _build_config_args() which combines both.
-
-        Returns:
-            list[str]: CLI arguments for config injection (enforce + defaults).
-        """
-        args: list[str] = []
-        args.extend(self._get_enforce_cli_args())
-        args.extend(self._get_defaults_config_args())
-        return args
-
-    def _get_no_auto_config_args(self) -> list[str]:
-        """Get CLI arguments to disable native config auto-discovery.
-
-        DEPRECATED: No longer needed with the tiered model.
-        Tools use their native configs by default.
-
-        Returns:
-            list[str]: Empty list (no longer used).
-        """
-        return []
 
     @abstractmethod
     def check(

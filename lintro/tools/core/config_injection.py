@@ -65,10 +65,11 @@ def _get_enforce_cli_args(
     if lintro_config is None:
         lintro_config = _get_lintro_config()
 
-    return get_enforce_cli_args(
+    args: list[str] = get_enforce_cli_args(
         tool_name=tool_name,
         lintro_config=lintro_config,
     )
+    return args
 
 
 def _get_defaults_config_args(
@@ -93,10 +94,11 @@ def _get_defaults_config_args(
         lintro_config=lintro_config,
     )
 
-    return get_defaults_injection_args(
+    args: list[str] = get_defaults_injection_args(
         tool_name=tool_name,
         config_path=config_path,
     )
+    return args
 
 
 def _should_use_lintro_config(
