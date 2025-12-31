@@ -22,7 +22,7 @@ concurrency:
 jobs:
   sbom:
     # yamllint disable-line rule:line-length
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@actions-v1
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@079371071ed3274239f69243961c7232dde1e12e # actions-v1
     permissions:
       contents: read
       actions: read
