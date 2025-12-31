@@ -13,3 +13,23 @@ class InvalidToolConfigError(LintroError):
 
 class InvalidToolOptionError(LintroError):
     """Raised when invalid options are provided to a tool."""
+
+
+class ToolExecutionError(LintroError):
+    """Raised when a tool fails to execute properly."""
+
+
+class ToolTimeoutError(LintroError):
+    """Raised when a tool execution times out."""
+
+
+class ParserError(LintroError):
+    """Raised when parsing tool output fails."""
+
+
+class ConfigurationError(LintroError):
+    """Raised when configuration loading or validation fails."""
+
+
+class FileAccessError(LintroError):
+    """Raised when file access operations fail."""
