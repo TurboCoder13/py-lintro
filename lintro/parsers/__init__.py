@@ -5,12 +5,15 @@ from __future__ import annotations
 from importlib import import_module
 from typing import TYPE_CHECKING
 
+from .base_issue import BaseIssue
+
 if TYPE_CHECKING:
     # Type checking imports
     from lintro.parsers import (
         actionlint,
         bandit,
         biome,
+        black,
         darglint,
         hadolint,
         markdownlint,
@@ -21,9 +24,11 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "BaseIssue",
     "actionlint",
     "bandit",
     "biome",
+    "black",
     "darglint",
     "hadolint",
     "markdownlint",
@@ -38,6 +43,7 @@ _SUBMODULES = {
     "actionlint",
     "bandit",
     "biome",
+    "black",
     "darglint",
     "hadolint",
     "markdownlint",

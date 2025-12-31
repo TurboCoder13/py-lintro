@@ -8,7 +8,7 @@ This module provides functions to parse pytest output in various formats:
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from defusedxml import ElementTree
 
@@ -30,14 +30,14 @@ class PytestSummary:
         duration: Total execution duration in seconds.
     """
 
-    total: int = 0
-    passed: int = 0
-    failed: int = 0
-    skipped: int = 0
-    error: int = 0
-    xfailed: int = 0
-    xpassed: int = 0
-    duration: float = 0.0
+    total: int = field(default=0)
+    passed: int = field(default=0)
+    failed: int = field(default=0)
+    skipped: int = field(default=0)
+    error: int = field(default=0)
+    xfailed: int = field(default=0)
+    xpassed: int = field(default=0)
+    duration: float = field(default=0.0)
 
 
 def extract_pytest_summary(output: str) -> PytestSummary:
