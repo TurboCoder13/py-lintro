@@ -49,8 +49,8 @@ class PrettierTableDescriptor(TableDescriptor):
             rows.append(
                 [
                     normalize_file_path_for_display(issue.file),
-                    str(issue.line) if issue.line is not None else "-",
-                    str(issue.column) if issue.column is not None else "-",
+                    str(issue.line) if issue.line > 0 else "-",
+                    str(issue.column) if issue.column > 0 else "-",
                     issue.code,
                     issue.message,
                 ],

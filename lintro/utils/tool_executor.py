@@ -107,7 +107,11 @@ def _get_tools_to_run(
                 "pytest tool is not available",
             ) from None
 
-    if tools == ToolsValue.ALL or tools is None:
+    if (
+        tools is None
+        or tools == ToolsValue.ALL
+        or (isinstance(tools, str) and tools.lower() == "all")
+    ):
         # Get all available tools for the action
         if action == Action.FIX:
             available_tools = tool_manager.get_fix_tools()
@@ -122,7 +126,7 @@ def _get_tools_to_run(
 
     for name in tool_names:
         # Reject pytest for check/fmt actions
-        if name == ToolName.PYTEST.value:
+        if name == ToolName.PYTEST.value.upper():
             raise ValueError(
                 "pytest tool is not available for check/fmt actions. "
                 "Use 'lintro test' instead.",
@@ -245,22 +249,7 @@ def run_lint_tools_simple(
         )
 
     # Print main header with output directory information
-    tools_list: str = ", ".join(t.name.lower() for t in tools_to_run)
-    logger.print_lintro_header(
-        action=action,
-        tool_count=len(tools_to_run),
-        tools_list=tools_list,
-    )
-
-    # Print verbose info if requested
-    if verbose:
-        paths_list: str = ", ".join(paths)
-        logger.print_verbose_info(
-            action=action,
-            tools_list=tools_list,
-            paths_list=paths_list,
-            output_format=output_format,
-        )
+    logger.print_lintro_header()
 
     # Execute tools and collect results
     all_results = []
@@ -452,14 +441,16 @@ def run_lint_tools_simple(
             # Continue execution - report writing failures should not stop the tool
 
     # Determine final exit code
+    # Check for tool failures first (applies to all actions)
+    if any(not getattr(r, "success", True) for r in all_results):
+        exit_code = 1
+
+    # Then check for issues based on action
     if action == Action.FIX:
         if total_remaining > 0:
             exit_code = 1
     else:  # check
         if total_issues > 0:
-            exit_code = 1
-        # Also check for tool failures
-        if any(not getattr(r, "success", True) for r in all_results):
             exit_code = 1
 
     return exit_code

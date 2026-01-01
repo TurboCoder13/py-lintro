@@ -16,6 +16,7 @@ from lintro.utils.executor_helpers import (
     _get_tool_display_name,
     _get_tool_lookup_keys,
 )
+from lintro.models.core.tool_result import ToolResult
 from lintro.utils.output_manager import OutputManager
 from lintro.utils.post_checks import execute_post_checks
 from lintro.utils.tool_options import parse_tool_options
@@ -136,7 +137,7 @@ def run_lint_tools_with_json(
     # For JSON output format, we'll collect results and output JSON at the end
     # Normalize enums while maintaining backward compatibility
     output_fmt_enum: OutputFormat = normalize_output_format(output_format)
-    normalize_group_by(group_by)
+    _ = normalize_group_by(group_by)  # Validation only - raises on invalid input
     json_output_mode = output_fmt_enum == OutputFormat.JSON
 
     try:
@@ -180,27 +181,16 @@ def run_lint_tools_with_json(
             return DEFAULT_EXIT_CODE_FAILURE
 
         # Print main header (skip for JSON mode)
-        tools_list: str = ", ".join(t.name.lower() for t in tools_to_run)
         if not json_output_mode:
-            logger.print_lintro_header(
-                action=action,
-                tool_count=len(tools_to_run),
-                tools_list=tools_list,
-            )
-
-            # Print verbose info if requested
-            paths_list: str = ", ".join(paths)
-            logger.print_verbose_info(
-                action=action,
-                tools_list=tools_list,
-                paths_list=paths_list,
-                output_format=output_format,
-            )
+            logger.print_lintro_header()
 
         all_results: list = []
         total_issues: int = 0
         total_fixed: int = 0
         total_remaining: int = 0
+
+        # Create UnifiedConfigManager once before the loop to avoid repeated initialization
+        config_manager = UnifiedConfigManager()
 
         # Run each tool with rich formatting
         for tool_enum in tools_to_run:
@@ -210,7 +200,6 @@ def run_lint_tools_with_json(
             except Exception as e:
                 tool_name: str = _get_tool_display_name(tool_enum)
                 logger.warning(f"Tool '{tool_name}' unavailable: {e}")
-                from lintro.models.core.tool_result import ToolResult
 
                 all_results.append(
                     ToolResult(
@@ -231,8 +220,6 @@ def run_lint_tools_with_json(
             try:
                 # Configure tool options using UnifiedConfigManager
                 # Priority: CLI --tool-options > [tool.lintro.<tool>] > global settings
-                config_manager = UnifiedConfigManager()
-
                 # Build CLI overrides from --tool-options
                 cli_overrides: dict[str, object] = {}
                 lookup_keys = _get_tool_lookup_keys(tool_enum, tool_name)
@@ -291,7 +278,6 @@ def run_lint_tools_with_json(
             except Exception as e:
                 tool_name: str = _get_tool_display_name(tool_enum)
                 logger.warning(f"Tool '{tool_name}' failed: {e}")
-                from lintro.models.core.tool_result import ToolResult
 
                 all_results.append(
                     ToolResult(

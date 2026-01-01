@@ -15,9 +15,11 @@ from lintro.parsers.pytest.pytest_parser import (
     extract_pytest_summary,
     parse_pytest_output,
 )
-from lintro.tools.implementations.pytest.collection import save_flaky_test_history
-from lintro.tools.implementations.pytest.pytest_utils import (
+from lintro.tools.implementations.pytest.collection import (
     compute_updated_flaky_test_history,
+    save_flaky_test_history,
+)
+from lintro.tools.implementations.pytest.pytest_utils import (
     detect_flaky_tests,
     extract_all_test_results_from_junit,
     is_ci_environment,

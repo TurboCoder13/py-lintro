@@ -240,10 +240,10 @@ class PrettierTool(BaseTool):
         )
         timeout_issue = PrettierIssue(
             file="execution",
-            line=None,
+            line=0,
             code="TIMEOUT",
             message=timeout_msg,
-            column=None,
+            column=0,
         )
         combined_issues = (initial_issues or []) + [timeout_issue]
         return ToolResult(

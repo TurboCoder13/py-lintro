@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
 import click
 from loguru import logger
 
-from lintro.enums.action import Action
+from lintro.enums.action import Action, normalize_action
 from lintro.enums.tool_name import ToolName
 from lintro.utils.console_formatting import (
     BORDER_LENGTH,
@@ -57,12 +58,12 @@ class ConsoleLogger:
         self.console_output(message)
 
     def debug(self, message: str) -> None:
-        """Log a debug message.
+        """Log a debug message (only shown when debug logging is enabled).
 
         Args:
             message: str: Message to log.
         """
-        self.console_output(message)
+        logger.debug(message)
 
     def warning(self, message: str) -> None:
         """Log a warning message.
@@ -108,7 +109,7 @@ class ConsoleLogger:
         """Print the execution summary for all tools.
 
         Args:
-            action: str: The action being performed ("check" or "fmt").
+            action: Action: The action being performed.
             tool_results: list[object]: The list of tool results.
         """
         # Add separation before Execution Summary
@@ -193,35 +194,38 @@ class ConsoleLogger:
 
     def _print_summary_table(
         self,
-        action: str,
+        action: Action | str,
         tool_results: list[object],
     ) -> None:
         """Print the summary table for the run.
 
         Args:
-            action: str: The action being performed.
+            action: Action | str: The action being performed.
             tool_results: list[object]: The list of tool results.
         """
+        # Convert to Action enum if string provided
+        action_enum = normalize_action(action)
         print_summary_table(
             console_output_func=self.console_output,
-            action=action,
+            action=action_enum,
             tool_results=tool_results,
         )
 
     def _print_final_status(
         self,
-        action: str,
+        action: Action | str,
         total_issues: int,
     ) -> None:
         """Print the final status for the run.
 
         Args:
-            action: str: The action being performed.
+            action: Action | str: The action being performed.
             total_issues: int: The total number of issues found.
         """
+        action_enum = normalize_action(action)
         print_final_status(
             console_output_func=self.console_output,
-            action=action,
+            action=action_enum,
             total_issues=total_issues,
         )
 
@@ -256,19 +260,8 @@ class ConsoleLogger:
             issue_count=total_issues,
         )
 
-    def print_lintro_header(
-        self,
-        action: str,
-        tool_count: int,
-        tools_list: str,
-    ) -> None:
-        """Print the main Lintro header with output directory information.
-
-        Args:
-            action: str: The action being performed ("check" or "fmt").
-            tool_count: int: Number of tools to run.
-            tools_list: str: Comma-separated list of tool names.
-        """
+    def print_lintro_header(self) -> None:
+        """Print the main Lintro header with output directory information."""
         if self.run_dir:
             header_msg: str = (
                 f"[LINTRO] All output formats will be auto-generated in {self.run_dir}"
@@ -338,8 +331,6 @@ class ConsoleLogger:
         Args:
             raw_output: str: Raw tool output to parse for metadata.
         """
-        import re
-
         # Pattern-to-message mapping for consistent formatting
         # Order matters: more specific patterns should be checked first
         output_lower = raw_output.lower()
@@ -393,25 +384,6 @@ class ConsoleLogger:
         if output:
             self.console_output(text="")
             self.console_output(text=output)
-
-    def print_verbose_info(
-        self,
-        action: str,
-        tools_list: str,
-        paths_list: str,
-        output_format: str,
-    ) -> None:
-        """Print verbose information about the run.
-
-        Args:
-            action: str: The action being performed.
-            tools_list: str: Comma-separated list of tool names.
-            paths_list: str: Comma-separated list of paths.
-            output_format: str: Output format being used.
-        """
-        # Verbose info can be displayed here if needed
-        # Currently not shown in expected output, so leaving empty
-        pass
 
     def print_post_checks_header(
         self,

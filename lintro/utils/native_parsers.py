@@ -32,6 +32,23 @@ MARKDOWNLINT_CONFIG_FILES = [
 ]
 
 
+def _load_json_config(config_path: Path) -> dict[str, Any]:
+    """Load and parse a JSON configuration file.
+
+    Args:
+        config_path: Path to the JSON configuration file.
+
+    Returns:
+        Parsed configuration as dict, or empty dict on error.
+    """
+    try:
+        with config_path.open(encoding="utf-8") as f:
+            loaded = json.load(f)
+            return loaded if isinstance(loaded, dict) else {}
+    except (json.JSONDecodeError, FileNotFoundError):
+        return {}
+
+
 def _strip_jsonc_comments(content: str) -> str:
     """Strip JSONC comments from content, preserving strings.
 
@@ -90,16 +107,15 @@ def _strip_jsonc_comments(content: str) -> str:
             i += 2
             continue
 
-        # Check for block comment end */
+        # Check for block comment end */ (when we see *)
         if (
-            i > 0
-            and i < content_len
-            and char == "/"
-            and content[i - 1] == "*"
+            char == "*"
             and in_block_comment
+            and i < content_len - 1
+            and content[i + 1] == "/"
         ):
             in_block_comment = False
-            i += 1
+            i += 2  # Skip both * and /
             continue
 
         # Check for line comment //
@@ -178,21 +194,11 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
     if tool_enum == ToolName.PRETTIER:
         for config_file in PRETTIER_CONFIG_FILES:
             config_path = Path(config_file)
-            if config_path.exists() and config_file.endswith(".json"):
-                try:
-                    with config_path.open(encoding="utf-8") as f:
-                        loaded = json.load(f)
-                        return loaded if isinstance(loaded, dict) else {}
-                except (json.JSONDecodeError, FileNotFoundError):
-                    pass
-            elif config_path.exists() and config_file == ".prettierrc":
-                # Try parsing as JSON (common format)
-                try:
-                    with config_path.open(encoding="utf-8") as f:
-                        loaded = json.load(f)
-                        return loaded if isinstance(loaded, dict) else {}
-                except (json.JSONDecodeError, FileNotFoundError):
-                    pass
+            if config_path.exists():
+                # Try parsing as JSON (works for both .json files and .prettierrc)
+                loaded = _load_json_config(config_path)
+                if loaded:
+                    return loaded
         # Check package.json prettier field
         pkg_path = Path("package.json")
         if pkg_path.exists():
@@ -266,7 +272,6 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                         f"Failed to parse {config_path}: {type(e).__name__}",
                     )
                     # Continue to next config file
-                    pass
         return {}
 
     return {}

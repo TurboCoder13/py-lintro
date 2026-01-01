@@ -26,7 +26,7 @@ def test_create_logger_and_basic_methods(
     logger.debug("debug message")
     logger.warning("warn message")
     logger.error("error message")
-    logger.print_lintro_header(action="check", tool_count=1, tools_list="ruff")
+    logger.print_lintro_header()
     logger.print_tool_header(tool_name="ruff", action="check")
     logger.print_tool_result(tool_name="ruff", output="", issues_count=0)
     raw = (

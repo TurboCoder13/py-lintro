@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum, auto
-from typing import Any, cast
+from typing import Any
 
 from loguru import logger
 
@@ -32,11 +32,6 @@ from lintro.utils.config_loaders import (
     load_pyproject,
 )
 from lintro.utils.native_parsers import _load_native_tool_config
-
-try:
-    import yaml
-except ImportError:
-    yaml = None  # type: ignore[assignment]
 
 
 # JSONC stripping moved to native_parsers.py
@@ -540,7 +535,7 @@ class UnifiedConfigManager:
             except Exception as e:
                 # Other unexpected errors - log at warning but allow execution
                 logger.warning(
-                    f"Failed to apply config to {tool_name}: {e}",
+                    f"Failed to apply config to {tool_name}: {type(e).__name__}: {e}",
                     exc_info=True,
                 )
 
@@ -553,7 +548,7 @@ class UnifiedConfigManager:
         # Late import to avoid circular dependency
         from lintro.utils.config_reporting import get_config_report
 
-        return cast(str, get_config_report())
+        return str(get_config_report())
 
     def print_report(self) -> None:
         """Print configuration report."""

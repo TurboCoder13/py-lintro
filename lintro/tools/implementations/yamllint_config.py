@@ -522,7 +522,7 @@ class YamllintTool(BaseTool):
         timeout_skipped_count = 0
         other_execution_failures = 0
 
-        timeout = self.options.get("timeout", 30)
+        timeout = self.options.get("timeout", YAMLLINT_DEFAULT_TIMEOUT)
 
         # Load ignore patterns from yamllint config before processing files
         config_file = self._find_yamllint_config(search_dir=paths[0] if paths else None)
