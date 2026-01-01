@@ -3,11 +3,14 @@
 This module provides functionality for running linting tools with JSON output format.
 """
 
+from typing import Any
+
 from lintro.enums.action import Action, normalize_action
 from lintro.enums.group_by import normalize_group_by
 from lintro.enums.output_format import OutputFormat, normalize_output_format
 from lintro.enums.tool_name import ToolName
 from lintro.enums.tools_value import ToolsValue
+from lintro.models.core.tool_result import ToolResult
 from lintro.tools import tool_manager
 from lintro.tools.tool_enum import ToolEnum
 from lintro.utils.config import load_post_checks_config
@@ -23,6 +26,56 @@ from lintro.utils.unified_config import UnifiedConfigManager
 
 # Constants
 DEFAULT_EXIT_CODE_FAILURE: int = 1
+
+
+def create_json_output(
+    action: str | Action,
+    results: list,
+    total_issues: int,
+    total_fixed: int,
+    total_remaining: int,
+    exit_code: int,
+) -> dict[str, Any]:
+    """Create JSON output data structure from tool results.
+
+    Args:
+        action: The action being performed (check, fmt, test).
+        results: List of tool result objects.
+        total_issues: Total number of issues found.
+        total_fixed: Total number of issues fixed (only for FIX action).
+        total_remaining: Total number of issues remaining (only for FIX action).
+        exit_code: Exit code for the run.
+
+    Returns:
+        Dictionary containing JSON-serializable results and summary data.
+    """
+    # Normalize action to Action enum if string
+    action_enum = normalize_action(action) if isinstance(action, str) else action
+
+    json_data: dict[str, Any] = {
+        "results": [],
+        "summary": {
+            "total_issues": total_issues,
+            "total_fixed": total_fixed if action_enum == Action.FIX else 0,
+            "total_remaining": total_remaining if action_enum == Action.FIX else 0,
+        },
+    }
+    for result in results:
+        result_data: dict[str, Any] = {
+            "tool": result.name,
+            "success": getattr(result, "success", True),
+            "issues_count": getattr(result, "issues_count", 0),
+        }
+        if action_enum == Action.FIX:
+            result_data["fixed"] = getattr(result, "fixed_issues_count", 0)
+            result_data["remaining"] = getattr(
+                result,
+                "remaining_issues_count",
+                0,
+            )
+        json_data["results"].append(result_data)
+
+    return json_data
 
 
 def _get_tools_to_run(
@@ -112,16 +165,15 @@ def run_lint_tools_with_json(
     # Normalize action to enum
     action = normalize_action(action)
 
+    # Create OutputManager once, then conditionally override run_dir if provided
+    from pathlib import Path
+
+    output_manager = OutputManager()
     if run_dir is None:
-        output_manager = OutputManager()
         run_dir = str(output_manager.run_dir)
     else:
         # When run_dir is provided, use it consistently for both
         # OutputManager and logger
-        from pathlib import Path
-
-        output_manager = OutputManager()
-        # Override the run_dir to match the provided one for consistency
         run_dir_path = Path(run_dir)
         run_dir_path.mkdir(parents=True, exist_ok=True)
         output_manager.run_dir = run_dir_path
@@ -136,7 +188,7 @@ def run_lint_tools_with_json(
     # For JSON output format, we'll collect results and output JSON at the end
     # Normalize enums while maintaining backward compatibility
     output_fmt_enum: OutputFormat = normalize_output_format(output_format)
-    normalize_group_by(group_by)
+    _ = normalize_group_by(group_by)  # Validation only - raises on invalid input
     json_output_mode = output_fmt_enum == OutputFormat.JSON
 
     try:
@@ -180,27 +232,17 @@ def run_lint_tools_with_json(
             return DEFAULT_EXIT_CODE_FAILURE
 
         # Print main header (skip for JSON mode)
-        tools_list: str = ", ".join(t.name.lower() for t in tools_to_run)
         if not json_output_mode:
-            logger.print_lintro_header(
-                action=action,
-                tool_count=len(tools_to_run),
-                tools_list=tools_list,
-            )
-
-            # Print verbose info if requested
-            paths_list: str = ", ".join(paths)
-            logger.print_verbose_info(
-                action=action,
-                tools_list=tools_list,
-                paths_list=paths_list,
-                output_format=output_format,
-            )
+            logger.print_lintro_header()
 
         all_results: list = []
         total_issues: int = 0
         total_fixed: int = 0
         total_remaining: int = 0
+
+        # Create UnifiedConfigManager once before the loop to avoid
+        # repeated initialization
+        config_manager = UnifiedConfigManager()
 
         # Run each tool with rich formatting
         for tool_enum in tools_to_run:
@@ -210,7 +252,6 @@ def run_lint_tools_with_json(
             except Exception as e:
                 tool_name: str = _get_tool_display_name(tool_enum)
                 logger.warning(f"Tool '{tool_name}' unavailable: {e}")
-                from lintro.models.core.tool_result import ToolResult
 
                 all_results.append(
                     ToolResult(
@@ -231,8 +272,6 @@ def run_lint_tools_with_json(
             try:
                 # Configure tool options using UnifiedConfigManager
                 # Priority: CLI --tool-options > [tool.lintro.<tool>] > global settings
-                config_manager = UnifiedConfigManager()
-
                 # Build CLI overrides from --tool-options
                 cli_overrides: dict[str, object] = {}
                 lookup_keys = _get_tool_lookup_keys(tool_enum, tool_name)
@@ -291,7 +330,6 @@ def run_lint_tools_with_json(
             except Exception as e:
                 tool_name: str = _get_tool_display_name(tool_enum)
                 logger.warning(f"Tool '{tool_name}' failed: {e}")
-                from lintro.models.core.tool_result import ToolResult
 
                 all_results.append(
                     ToolResult(
@@ -323,29 +361,14 @@ def run_lint_tools_with_json(
         if json_output_mode:
             import json
 
-            json_data = {
-                "results": [],
-                "summary": {
-                    "total_issues": total_issues,
-                    "total_fixed": total_fixed if action == Action.FIX else 0,
-                    "total_remaining": total_remaining if action == Action.FIX else 0,
-                },
-            }
-            for result in all_results:
-                result_data = {
-                    "tool": result.name,
-                    "success": getattr(result, "success", True),
-                    "issues_count": getattr(result, "issues_count", 0),
-                }
-                if action == Action.FIX:
-                    result_data["fixed"] = getattr(result, "fixed_issues_count", 0)
-                    result_data["remaining"] = getattr(
-                        result,
-                        "remaining_issues_count",
-                        0,
-                    )
-                json_data["results"].append(result_data)
-
+            json_data = create_json_output(
+                action=action,
+                results=all_results,
+                total_issues=total_issues,
+                total_fixed=total_fixed,
+                total_remaining=total_remaining,
+                exit_code=0,  # Will be set later based on results
+            )
             print(json.dumps(json_data, indent=2))
 
         # Write report files

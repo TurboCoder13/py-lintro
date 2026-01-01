@@ -12,14 +12,28 @@ from lintro.enums.tool_name import ToolName, normalize_tool_name
 # Import actual implementations from version_checking with aliases
 # to avoid name conflicts
 from lintro.tools.core.version_checking import (
+    VERSION_CHECK_TIMEOUT,
+)
+from lintro.tools.core.version_checking import (
     get_install_hints as _get_install_hints_impl,
 )
 from lintro.tools.core.version_checking import (
     get_minimum_versions as _get_minimum_versions_impl,
 )
 
-# Constants
-VERSION_CHECK_TIMEOUT: int = 10
+# Common regex pattern for tools that output simple version numbers
+# Matches version strings like "1.2.3", "0.14.0", "25.1", etc.
+VERSION_NUMBER_PATTERN: str = r"(\d+(?:\.\d+)*)"
+
+# Tools that use the simple version number pattern
+TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
+    ToolName.BANDIT,
+    ToolName.HADOLINT,
+    ToolName.PRETTIER,
+    ToolName.BIOME,
+    ToolName.ACTIONLINT,
+    ToolName.DARGLINT,
+}
 
 
 @lru_cache(maxsize=1)
@@ -89,7 +103,8 @@ def parse_version(version_str: str) -> tuple[int, ...]:
         ValueError: If the version string cannot be parsed.
     """
     # Extract version numbers, handling pre-release suffixes
-    match = re.match(r"^(\d+(?:\.\d+)*)", version_str.strip())
+    # Also handle optional leading 'v' (e.g., "v1.2.3")
+    match = re.match(r"^v?(\d+(?:\.\d+)*)", version_str.strip(), re.IGNORECASE)
     if not match:
         raise ValueError(f"Unable to parse version string: {version_str!r}")
 
@@ -201,7 +216,7 @@ def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
                 f"{info.error_message}",
             )
 
-    except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError) as e:
+    except (subprocess.TimeoutExpired, OSError) as e:
         info.error_message = f"Failed to run version check: {e}"
         logger.debug(f"[VersionCheck] Exception checking version for {tool_name}: {e}")
 
@@ -228,39 +243,10 @@ def extract_version_from_output(output: str, tool_name: str | ToolName) -> str |
         if match:
             return match.group(1)
 
-    elif tool_name == ToolName.BANDIT:
-        # bandit: "__main__.py 1.8.6"
-        match = re.search(r"(\d+(?:\.\d+)*)", output)
-        if match:
-            return match.group(1)
-
-    elif tool_name == ToolName.HADOLINT:
-        # hadolint: "Haskell Dockerfile Linter 2.14.0"
-        match = re.search(r"(\d+(?:\.\d+)*)", output)
-        if match:
-            return match.group(1)
-
-    elif tool_name == ToolName.PRETTIER:
-        # prettier: "Prettier x.y.z" or just version
-        match = re.search(r"(\d+(?:\.\d+)*)", output)
-        if match:
-            return match.group(1)
-
-    elif tool_name == ToolName.BIOME:
-        # biome: "Biome CLI v2.3.8" or similar
-        match = re.search(r"(\d+(?:\.\d+)*)", output)
-        if match:
-            return match.group(1)
-
-    elif tool_name == ToolName.ACTIONLINT:
-        # actionlint: "actionlint x.y.z" or just version
-        match = re.search(r"(\d+(?:\.\d+)*)", output)
-        if match:
-            return match.group(1)
-
-    elif tool_name == ToolName.DARGLINT:
-        # darglint outputs just the version number
-        match = re.search(r"(\d+(?:\.\d+)*)", output)
+    elif tool_name in TOOLS_WITH_SIMPLE_VERSION_PATTERN:
+        # Tools that output simple version numbers: BANDIT, HADOLINT, PRETTIER,
+        # BIOME, ACTIONLINT, DARGLINT
+        match = re.search(VERSION_NUMBER_PATTERN, output)
         if match:
             return match.group(1)
 
@@ -299,54 +285,3 @@ def extract_version_from_output(output: str, tool_name: str | ToolName) -> str |
         return match.group(1)
 
     return None
-
-
-def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
-    """Get version information for all supported tools.
-
-    Returns:
-        dict[str, ToolVersionInfo]: Tool name to version info mapping
-    """
-    # Define tool commands - this avoids circular imports
-    tool_commands = {
-        # Python bundled tools (available as scripts when installed)
-        "ruff": ["ruff"],
-        "black": ["black"],
-        "bandit": ["bandit"],
-        "yamllint": ["yamllint"],
-        "darglint": ["darglint"],
-        # Python user tools
-        "mypy": ["python", "-m", "mypy"],
-        "pytest": ["python", "-m", "pytest"],
-        # Node.js tools
-        # Note: Direct executable usage prevents any auto-installation
-        # Users must install packages explicitly
-        "prettier": ["prettier"],
-        "biome": ["biome"],
-        "markdownlint": ["markdownlint-cli2"],
-        # Binary tools
-        "hadolint": ["hadolint"],
-        "actionlint": ["actionlint"],
-        # Rust/Cargo tools
-        "clippy": ["cargo", "clippy"],
-    }
-
-    results = {}
-    minimum_versions = get_minimum_versions()
-    install_hints = get_install_hints()
-
-    for tool_name, command in tool_commands.items():
-        try:
-            results[tool_name] = check_tool_version(tool_name, command)
-        except Exception as e:
-            logger.debug(f"Failed to check version for {tool_name}: {e}")
-            min_version = minimum_versions.get(tool_name, "unknown")
-            install_hint = install_hints.get(tool_name, f"Install {tool_name}")
-            results[tool_name] = ToolVersionInfo(
-                name=tool_name,
-                min_version=min_version,
-                install_hint=install_hint,
-                error_message=f"Failed to check version: {e}",
-            )
-
-    return results

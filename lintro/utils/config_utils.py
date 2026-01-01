@@ -122,7 +122,7 @@ def load_mypy_config(
             logger.warning(f"Failed to load mypy config from pyproject.toml: {e}")
 
     # Fallback to mypy.ini or .mypy.ini
-    for config_file in [".mypy.ini", "mypy.ini"]:
+    for config_file in ["mypy.ini", ".mypy.ini"]:
         config_path = root / config_file
         if config_path.exists():
             try:

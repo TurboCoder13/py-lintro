@@ -14,6 +14,23 @@ from lintro.enums.action import Action
 from lintro.enums.output_format import OutputFormat
 
 
+def _sanitize_csv_value(value: str) -> str:
+    """Sanitize CSV cell value to prevent formula injection.
+
+    Prefixes values starting with '=', '+', '-', or '@' with a single quote
+    to prevent spreadsheet applications from interpreting them as formulas.
+
+    Args:
+        value: str: The value to sanitize.
+
+    Returns:
+        str: Sanitized value with leading quote if needed.
+    """
+    if value and value.startswith(("=", "+", "-", "@")):
+        return "'" + value
+    return value
+
+
 def write_output_file(
     *,
     output_path: str,
@@ -39,7 +56,7 @@ def write_output_file(
     if output_format == OutputFormat.JSON:
         # Build JSON structure similar to stdout JSON mode
         json_data = {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
             "action": action.value,
             "summary": {
                 "total_issues": total_issues,
@@ -80,19 +97,21 @@ def write_output_file(
                 for issue in result.issues:
                     rows.append(
                         [
-                            result.name,
-                            str(getattr(result, "issues_count", 0)),
-                            str(getattr(issue, "file", "")),
-                            str(getattr(issue, "line", "")),
-                            str(getattr(issue, "code", "")),
-                            str(getattr(issue, "message", "")),
+                            _sanitize_csv_value(result.name),
+                            _sanitize_csv_value(
+                                str(getattr(result, "issues_count", 0)),
+                            ),
+                            _sanitize_csv_value(str(getattr(issue, "file", ""))),
+                            _sanitize_csv_value(str(getattr(issue, "line", ""))),
+                            _sanitize_csv_value(str(getattr(issue, "code", ""))),
+                            _sanitize_csv_value(str(getattr(issue, "message", ""))),
                         ],
                     )
             else:
                 rows.append(
                     [
-                        result.name,
-                        str(getattr(result, "issues_count", 0)),
+                        _sanitize_csv_value(result.name),
+                        _sanitize_csv_value(str(getattr(result, "issues_count", 0))),
                         "",
                         "",
                         "",

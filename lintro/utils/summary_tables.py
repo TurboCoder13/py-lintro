@@ -4,6 +4,7 @@ Handles formatting and display of execution summary tables with tabulate.
 """
 
 from collections.abc import Callable
+from typing import Any
 
 from lintro.enums.action import Action
 from lintro.enums.tool_name import ToolName
@@ -15,7 +16,30 @@ from lintro.utils.console_formatting import (
 )
 
 # Constants
-DEFAULT_REMAINING_COUNT: int = 1
+DEFAULT_REMAINING_COUNT: str = "?"
+
+
+def _safe_cast(
+    summary: dict[str, Any],
+    key: str,
+    default: int | float,
+    converter: Callable[[Any], int | float],
+) -> int | float:
+    """Safely extract and cast a value from a summary dictionary.
+
+    Args:
+        summary: Dictionary containing summary data.
+        key: Key to extract from summary.
+        default: Default value if extraction/conversion fails.
+        converter: Function to convert the extracted value (e.g., int, float).
+
+    Returns:
+        Converted value or default if extraction/conversion fails.
+    """
+    try:
+        return converter(get_summary_value(summary, key, default))
+    except (ValueError, TypeError):
+        return default
 
 
 def print_summary_table(
@@ -47,46 +71,17 @@ def print_summary_table(
                 pytest_summary = getattr(result, "pytest_summary", None)
                 if pytest_summary:
                     # Use pytest summary data for more detailed display
-                    try:
-                        passed = int(
-                            get_summary_value(pytest_summary, "passed", 0),
-                        )
-                    except (ValueError, TypeError):
-                        passed = 0
-                    try:
-                        failed = int(
-                            get_summary_value(pytest_summary, "failed", 0),
-                        )
-                    except (ValueError, TypeError):
-                        failed = 0
-                    try:
-                        skipped = int(
-                            get_summary_value(pytest_summary, "skipped", 0),
-                        )
-                    except (ValueError, TypeError):
-                        skipped = 0
-                    try:
-                        docker_skipped = int(
-                            get_summary_value(
-                                pytest_summary,
-                                "docker_skipped",
-                                0,
-                            ),
-                        )
-                    except (ValueError, TypeError):
-                        docker_skipped = 0
-                    try:
-                        duration = float(
-                            get_summary_value(pytest_summary, "duration", 0.0),
-                        )
-                    except (ValueError, TypeError):
-                        duration = 0.0
-                    try:
-                        total = int(
-                            get_summary_value(pytest_summary, "total", 0),
-                        )
-                    except (ValueError, TypeError):
-                        total = 0
+                    passed = _safe_cast(pytest_summary, "passed", 0, int)
+                    failed = _safe_cast(pytest_summary, "failed", 0, int)
+                    skipped = _safe_cast(pytest_summary, "skipped", 0, int)
+                    docker_skipped = _safe_cast(
+                        pytest_summary,
+                        "docker_skipped",
+                        0,
+                        int,
+                    )
+                    duration = _safe_cast(pytest_summary, "duration", 0.0, float)
+                    total = _safe_cast(pytest_summary, "total", 0, int)
 
                     # Create detailed status display
                     status_display = (
@@ -166,12 +161,12 @@ def print_summary_table(
 
                     if remaining_std is not None:
                         try:
-                            remaining_count: int = int(remaining_std)
+                            remaining_count: int | str = int(remaining_std)
                         except (ValueError, TypeError):
-                            remaining_count = 0
+                            remaining_count = DEFAULT_REMAINING_COUNT
                     else:
                         # Parse output to determine remaining issues
-                        remaining_count = 0
+                        remaining_count: int | str = 0
                         if result_output and (
                             "remaining" in result_output.lower()
                             or "cannot be auto-fixed" in result_output.lower()
@@ -189,7 +184,7 @@ def print_summary_table(
                                 try:
                                     remaining_count = int(remaining_match.group(1))
                                 except (ValueError, TypeError):
-                                    remaining_count = 0
+                                    remaining_count = DEFAULT_REMAINING_COUNT
                             elif not success:
                                 remaining_count = DEFAULT_REMAINING_COUNT
 
@@ -209,20 +204,34 @@ def print_summary_table(
                     fixed_display = f"\033[92m{fixed_display_value}\033[0m"  # green
 
                     # Remaining issues display
-                    remaining_display = (
-                        f"\033[91m{remaining_count}\033[0m"  # red
-                        if remaining_count > 0
-                        else f"\033[92m{remaining_count}\033[0m"  # green
-                    )
+                    if isinstance(remaining_count, str):
+                        # Display sentinel value verbatim
+                        remaining_display = (
+                            f"\033[93m{remaining_count}\033[0m"  # yellow
+                        )
+                    else:
+                        remaining_display = (
+                            f"\033[91m{remaining_count}\033[0m"  # red
+                            if remaining_count > 0
+                            else f"\033[92m{remaining_count}\033[0m"  # green
+                        )
             else:  # check
                 # Check if this is an execution failure (timeout/error)
                 # vs linting issues
-                result_output = getattr(result, "output", "")
+                result_output = getattr(result, "output", "") or ""
 
                 # Check if tool was skipped (version check failure, etc.)
-                # Only mark as skipped if the tool was actually skipped, not if it
-                # ran successfully but found no files
-                is_skipped = result_output and "skipping" in result_output.lower()
+                # Only mark as skipped if the output matches the version check
+                # failure pattern: "Skipping {tool_name}: ..." (case-insensitive)
+                # This prevents false positives when tools output "skipping"
+                # in their own messages
+                is_skipped = (
+                    result_output
+                    and isinstance(result_output, str)
+                    and result_output.lower().startswith(
+                        f"skipping {tool_name.lower()}:",
+                    )
+                )
 
                 has_execution_failure = result_output and (
                     "timeout" in result_output.lower()

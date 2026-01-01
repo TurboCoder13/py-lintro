@@ -18,15 +18,20 @@ __all__ = [
 ]
 
 
-@functools.lru_cache(maxsize=1)
-def _find_pyproject() -> Path | None:
+@functools.lru_cache(maxsize=32)
+def _find_pyproject(start_path: Path | None = None) -> Path | None:
     """Search for pyproject.toml up the directory tree.
+
+    Args:
+        start_path: Optional starting path for search.
+                    Defaults to current working directory.
 
     Returns:
         Path to pyproject.toml if found, None otherwise.
     """
-    current = Path.cwd()
-    for parent in [current, *current.parents]:
+    if start_path is None:
+        start_path = Path.cwd()
+    for parent in [start_path, *start_path.parents]:
         candidate = parent / "pyproject.toml"
         if candidate.exists():
             return candidate
@@ -91,6 +96,9 @@ def load_lintro_global_config() -> dict[str, Any]:
         "hadolint",
         "actionlint",
         "pytest",
+        "mypy",
+        "biome",
+        "clippy",
         "post_checks",
         "versions",
     }

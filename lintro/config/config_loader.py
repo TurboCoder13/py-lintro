@@ -271,13 +271,13 @@ def _convert_pyproject_to_config(data: dict[str, Any]) -> dict[str, Any]:
         elif key in enforce_keys or key.replace("-", "_") in enforce_keys:
             # Enforce config
             result["enforce"][key.replace("-", "_")] = value
-        elif key == ConfigKey.POST_CHECKS:
+        elif key_lower == ConfigKey.POST_CHECKS.value.lower():
             # Skip post_checks (handled separately)
             pass
-        elif key == ConfigKey.VERSIONS:
+        elif key_lower == ConfigKey.VERSIONS.value.lower():
             # Skip versions (handled separately)
             pass
-        elif key == ConfigKey.DEFAULTS and isinstance(value, dict):
+        elif key_lower == ConfigKey.DEFAULTS.value.lower() and isinstance(value, dict):
             # Defaults section
             result["defaults"] = value
 

@@ -111,7 +111,7 @@ def execute_post_checks(
     if post_tools:
         # Print a clear post-checks section header (only when not in JSON mode)
         if not json_output_mode:
-            logger.print_post_checks_header(action=action)
+            logger.print_post_checks_header()
 
         for post_tool_name in post_tools:
             try:

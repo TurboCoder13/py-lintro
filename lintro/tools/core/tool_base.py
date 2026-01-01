@@ -62,7 +62,7 @@ class BaseTool(ABC):
 
     name: str
     description: str
-    can_fix: bool = False
+    can_fix: bool = field(default=False)
     config: ToolConfig = field(default_factory=ToolConfig)
     exclude_patterns: list[str] = field(default_factory=list)
     include_venv: bool = field(default=False)
@@ -146,15 +146,15 @@ class BaseTool(ABC):
     def _run_subprocess(
         self,
         cmd: list[str],
-        timeout: int | None = None,
+        timeout: int | float | None = None,
         cwd: str | None = None,
     ) -> tuple[bool, str]:
         """Run a subprocess command.
 
         Args:
             cmd: list[str]: Command to run.
-            timeout: int | None: Command timeout in seconds (defaults to core's \
-                timeout).
+            timeout: int | float | None: Command timeout in seconds \
+                (defaults to core's timeout).
             cwd: str | None: Working directory to run the command in (optional).
 
         Returns:
@@ -246,11 +246,11 @@ class BaseTool(ABC):
             ValueError: If an option value is invalid.
         """
         for key, value in kwargs.items():
-            if key == ToolOptionKey.TIMEOUT.value and not isinstance(
-                value,
-                (int, type(None)),
-            ):
-                raise ValueError("Timeout must be an integer or None")
+            if key == ToolOptionKey.TIMEOUT.value:
+                if value is not None and not isinstance(value, (int, float)):
+                    raise ValueError("Timeout must be a number or None")
+                # Coerce to float for consistency with _run_subprocess
+                kwargs[key] = float(value) if value is not None else None
             if key == ToolOptionKey.EXCLUDE_PATTERNS.value and not isinstance(
                 value,
                 list,
@@ -263,10 +263,13 @@ class BaseTool(ABC):
         self.options.update(kwargs)
 
         # Update specific attributes for exclude_patterns and include_venv
-        if "exclude_patterns" in kwargs:
-            self.exclude_patterns = cast(list[str], kwargs["exclude_patterns"])
-        if "include_venv" in kwargs:
-            self.include_venv = cast(bool, kwargs["include_venv"])
+        if ToolOptionKey.EXCLUDE_PATTERNS.value in kwargs:
+            self.exclude_patterns = cast(
+                list[str],
+                kwargs[ToolOptionKey.EXCLUDE_PATTERNS.value],
+            )
+        if ToolOptionKey.INCLUDE_VENV.value in kwargs:
+            self.include_venv = cast(bool, kwargs[ToolOptionKey.INCLUDE_VENV.value])
 
     def _validate_paths(
         self,
@@ -324,8 +327,6 @@ class BaseTool(ABC):
         Returns:
             list[str]: Command prefix to execute the tool.
         """
-        import sys
-
         from lintro.enums.tool_name import normalize_tool_name
 
         # Try to normalize tool_name to ToolName enum for comparison
@@ -336,8 +337,42 @@ class BaseTool(ABC):
             # Not a valid ToolName enum - treat as binary tool
             tool_name_enum = None
 
+        # Try each category handler in order
+        if cmd := self._get_python_bundled_command(tool_name, tool_name_enum):
+            return cmd
+        if cmd := self._get_pytest_command(tool_name, tool_name_enum):
+            return cmd
+        if cmd := self._get_nodejs_command(tool_name, tool_name_enum):
+            return cmd
+        if cmd := self._get_cargo_command(tool_name, tool_name_enum):
+            return cmd
+
+        # Default to binary tool
+        return [tool_name]
+
+    def _get_python_bundled_command(
+        self,
+        tool_name: str,
+        tool_name_enum: ToolName | None,
+    ) -> list[str] | None:
+        """Get command for Python bundled tools.
+
+        Includes: ruff, black, bandit, yamllint, mypy.
+
+        Note: darglint is excluded because it cannot be run as a module.
+
+        Args:
+            tool_name: str: Name of the tool executable.
+            tool_name_enum: ToolName | None: Normalized tool name enum, if valid.
+
+        Returns:
+            list[str] | None: Command prefix if tool is a Python bundled \
+                tool, None otherwise.
+        """
+        import sys
+
         # Python tools bundled with lintro (guaranteed in our environment)
-        # Note: darglint cannot be run as a module, so it's excluded
+        # Note: darglint cannot be run as a module (python -m darglint fails)
         python_bundled_tools = {
             ToolName.RUFF,
             ToolName.BLACK,
@@ -352,6 +387,23 @@ class BaseTool(ABC):
                 return [python_exe, "-m", tool_name]
             # Fallback to direct executable if python path not found
             return [tool_name]
+        return None
+
+    def _get_pytest_command(
+        self,
+        tool_name: str,
+        tool_name_enum: ToolName | None,
+    ) -> list[str] | None:
+        """Get command for pytest (user environment tool).
+
+        Args:
+            tool_name: str: Name of the tool executable.
+            tool_name_enum: ToolName | None: Normalized tool name enum, if valid.
+
+        Returns:
+            list[str] | None: Command prefix if tool is pytest, None otherwise.
+        """
+        import sys
 
         # Pytest: user environment tool (not bundled)
         if tool_name_enum == ToolName.PYTEST:
@@ -361,7 +413,22 @@ class BaseTool(ABC):
                 return [python_exe, "-m", "pytest"]
             # Fall back to direct executable
             return [tool_name]
+        return None
 
+    def _get_nodejs_command(
+        self,
+        tool_name: str,
+        tool_name_enum: ToolName | None,
+    ) -> list[str] | None:
+        """Get command for Node.js tools (biome, prettier).
+
+        Args:
+            tool_name: str: Name of the tool executable.
+            tool_name_enum: ToolName | None: Normalized tool name enum, if valid.
+
+        Returns:
+            list[str] | None: Command prefix if tool is a Node.js tool, None otherwise.
+        """
         # Node.js tools: use npx to respect project's package.json
         nodejs_package_names = {
             ToolName.BIOME: "@biomejs/biome",
@@ -372,16 +439,29 @@ class BaseTool(ABC):
                 return ["npx", nodejs_package_names[tool_name_enum]]
             # Fall back to direct executable
             return [tool_name]
+        return None
 
+    def _get_cargo_command(
+        self,
+        tool_name: str,
+        tool_name_enum: ToolName | None,
+    ) -> list[str] | None:
+        """Get command for Cargo/Rust tools.
+
+        Args:
+            tool_name: str: Name of the tool executable.
+            tool_name_enum: ToolName | None: Normalized tool name enum, if valid.
+
+        Returns:
+            list[str] | None: Command prefix if tool is a Cargo tool, None otherwise.
+        """
         # Rust/Cargo tools: use system executable
         if tool_name_enum == ToolName.CLIPPY:
             return ["cargo", "clippy"]
         cargo_tools = {"cargo"}  # cargo itself, not a lintro tool
         if tool_name in cargo_tools:
             return [tool_name]
-
-        # Binary tools: use system executable
-        return [tool_name]
+        return None
 
     def _verify_tool_version(self) -> ToolResult | None:
         """Verify that the tool meets minimum version requirements.

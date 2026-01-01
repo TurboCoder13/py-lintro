@@ -444,23 +444,19 @@ class BlackTool(BaseTool):
 
         # Parse per-file reformats from the formatting run to display in console
         fixed_issues_parsed = parse_black_output(output=fix_output)
-        fixed_count_from_output = len(fixed_issues_parsed)
 
-        # Calculate fixed count: use reformatted files count if available,
-        # otherwise calculate from initial - remaining
-        if fixed_count_from_output > 0:
-            fixed_count = fixed_count_from_output
-        else:
-            # Since initial_count now includes line length violations (which can't
-            # be fixed), and remaining_count also includes them,
-            # they cancel out in the subtraction. The result is the number of
-            # Black formatting issues that were fixed.
-            # Note: Line length violations are the same in initial and remaining
-            # since they can't be fixed, so:
-            # fixed_count = initial_count - remaining_count
-            initial_black_count = initial_count - len(initial_line_length_issues)
-            remaining_black_count = remaining_count - len(line_length_issues)
-            fixed_count = max(0, initial_black_count - remaining_black_count)
+        # Calculate fixed count: always use issue-based calculation to ensure
+        # consistency with initial_count and remaining_count (which count issues,
+        # not files). The fixed_count_from_output is useful for display but
+        # shouldn't be used for validation since it counts files, not issues.
+        #
+        # To maintain the invariant initial = fixed + remaining:
+        # - initial_count includes ALL issues (formatting + line length)
+        # - remaining_count includes ALL remaining issues (fmt + line length)
+        # - fixed_count = initial_count - remaining_count
+        # This ensures initial = fixed + remaining even though line
+        # length violations can't be fixed
+        fixed_count = max(0, initial_count - remaining_count)
 
         # Build concise summary
         summary: list[str] = []

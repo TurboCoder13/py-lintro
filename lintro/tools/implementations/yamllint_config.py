@@ -34,6 +34,30 @@ YAMLLINT_FILE_PATTERNS: list[str] = [
 ]
 YAMLLINT_FORMATS: tuple[str, ...] = tuple(m.name.lower() for m in YamllintFormat)
 
+# Cache the yamllint parser import to avoid repeated try/except overhead
+_yamllint_parser: object | None = None
+
+
+def _get_yamllint_parser():
+    """Get the yamllint parser function, caching the import result.
+
+    Returns:
+        The parse_yamllint_output function if available, None otherwise.
+    """
+    global _yamllint_parser
+    if _yamllint_parser is None:
+        try:
+            from lintro.parsers.yamllint.yamllint_parser import (
+                parse_yamllint_output,
+            )
+
+            _yamllint_parser = parse_yamllint_output
+        except ImportError:
+            _yamllint_parser = (
+                False  # Use False to distinguish from None (not yet tried)
+            )
+    return _yamllint_parser if _yamllint_parser is not False else None
+
 
 @dataclass
 class YamllintTool(BaseTool):
@@ -398,14 +422,11 @@ class YamllintTool(BaseTool):
 
         if result.returncode != 0:
             # Parse the output to extract issues
-            try:
-                from lintro.parsers.yamllint.yamllint_parser import (
-                    parse_yamllint_output,
-                )
-
+            parse_yamllint_output = _get_yamllint_parser()
+            if parse_yamllint_output:
                 issues = parse_yamllint_output(result.stdout + result.stderr)
                 issues_count = len(issues)
-            except ImportError:
+            else:
                 logger.warning(
                     "[YamllintTool] Could not import yamllint parser, "
                     f"issues may not be properly parsed. Output: {result.stdout}",
@@ -522,7 +543,7 @@ class YamllintTool(BaseTool):
         timeout_skipped_count = 0
         other_execution_failures = 0
 
-        timeout = self.options.get("timeout", 30)
+        timeout = self.options.get("timeout", YAMLLINT_DEFAULT_TIMEOUT)
 
         # Load ignore patterns from yamllint config before processing files
         config_file = self._find_yamllint_config(search_dir=paths[0] if paths else None)
@@ -588,8 +609,8 @@ class YamllintTool(BaseTool):
                 )
             output = "\n".join(output_lines) if output_lines else None
 
-        # Include execution failures (timeouts/errors) in issues_count
-        # to properly reflect tool failure status
+        # Include execution failures in issues_count to properly reflect tool
+        # failure status (timeouts are tracked separately and not counted as issues)
         total_issues_with_failures = total_issues + other_execution_failures
         return ToolResult(
             name=self.name,

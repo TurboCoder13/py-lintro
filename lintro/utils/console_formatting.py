@@ -24,7 +24,7 @@ TOOL_EMOJIS: dict[str, str] = {
 DEFAULT_EMOJI: str = "🔧"
 BORDER_LENGTH: int = 70
 INFO_BORDER_LENGTH: int = 70
-DEFAULT_REMAINING_COUNT: int = 1
+DEFAULT_REMAINING_COUNT: str = "?"
 
 # Regex patterns used to parse tool outputs for remaining issue counts
 # Centralized to avoid repeated long literals and to keep matching logic

@@ -16,11 +16,12 @@ from lintro.tools.tool_enum import ToolEnum
 from lintro.utils.config import load_post_checks_config
 from lintro.utils.output_manager import OutputManager
 from lintro.utils.post_checks import execute_post_checks
+from lintro.utils.unified_config import UnifiedConfigManager
 
 # Constants
 DEFAULT_EXIT_CODE_SUCCESS: int = 0
 DEFAULT_EXIT_CODE_FAILURE: int = 1
-DEFAULT_REMAINING_COUNT: int = 1
+DEFAULT_REMAINING_COUNT: str = "?"
 
 # Mapping from ToolEnum to canonical display names
 _TOOL_DISPLAY_NAMES: dict[ToolEnum, str] = {
@@ -107,7 +108,11 @@ def _get_tools_to_run(
                 "pytest tool is not available",
             ) from None
 
-    if tools == ToolsValue.ALL or tools is None:
+    if (
+        tools is None
+        or tools == ToolsValue.ALL
+        or (isinstance(tools, str) and tools.lower() == "all")
+    ):
         # Get all available tools for the action
         if action == Action.FIX:
             available_tools = tool_manager.get_fix_tools()
@@ -122,7 +127,7 @@ def _get_tools_to_run(
 
     for name in tool_names:
         # Reject pytest for check/fmt actions
-        if name == ToolName.PYTEST.value:
+        if name == ToolName.PYTEST.value.upper():
             raise ValueError(
                 "pytest tool is not available for check/fmt actions. "
                 "Use 'lintro test' instead.",
@@ -245,22 +250,7 @@ def run_lint_tools_simple(
         )
 
     # Print main header with output directory information
-    tools_list: str = ", ".join(t.name.lower() for t in tools_to_run)
-    logger.print_lintro_header(
-        action=action,
-        tool_count=len(tools_to_run),
-        tools_list=tools_list,
-    )
-
-    # Print verbose info if requested
-    if verbose:
-        paths_list: str = ", ".join(paths)
-        logger.print_verbose_info(
-            action=action,
-            tools_list=tools_list,
-            paths_list=paths_list,
-            output_format=output_format,
-        )
+    logger.print_lintro_header()
 
     # Execute tools and collect results
     all_results = []
@@ -274,6 +264,13 @@ def run_lint_tools_simple(
 
     tool_option_dict = parse_tool_options(tool_options)
 
+    # Create UnifiedConfigManager once before the loop to avoid repeated initialization
+    config_manager = UnifiedConfigManager()
+
+    # Define success_func once before the loop to avoid repeated function creation
+    def success_func(message: str) -> None:
+        logger.console_output(text=message, color="green")
+
     for tool_enum in tools_to_run:
         try:
             tool = tool_manager.get_tool(tool_enum)
@@ -284,10 +281,6 @@ def run_lint_tools_simple(
 
             # Configure tool options using UnifiedConfigManager
             # Priority: CLI --tool-options > [tool.lintro.<tool>] > global settings
-            from lintro.utils.unified_config import UnifiedConfigManager
-
-            config_manager = UnifiedConfigManager()
-
             # Build CLI overrides from --tool-options
             cli_overrides: dict[str, object] = {}
             lookup_keys = _get_tool_lookup_keys(tool_enum, tool_name)
@@ -366,9 +359,6 @@ def run_lint_tools_simple(
             # Display the formatted output if available
             if display_output and display_output.strip():
                 from lintro.utils.result_formatters import print_tool_result
-
-                def success_func(message: str) -> None:
-                    logger.console_output(text=message, color="green")
 
                 print_tool_result(
                     console_output_func=logger.console_output,
@@ -452,14 +442,16 @@ def run_lint_tools_simple(
             # Continue execution - report writing failures should not stop the tool
 
     # Determine final exit code
+    # Check for tool failures first (applies to all actions)
+    if any(not getattr(r, "success", True) for r in all_results):
+        exit_code = 1
+
+    # Then check for issues based on action
     if action == Action.FIX:
         if total_remaining > 0:
             exit_code = 1
     else:  # check
         if total_issues > 0:
-            exit_code = 1
-        # Also check for tool failures
-        if any(not getattr(r, "success", True) for r in all_results):
             exit_code = 1
 
     return exit_code

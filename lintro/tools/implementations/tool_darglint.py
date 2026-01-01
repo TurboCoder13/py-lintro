@@ -19,8 +19,9 @@ from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Constants for Darglint configuration
-# Increased from 30 to handle large files with complex docstrings
-DARGLINT_DEFAULT_TIMEOUT: int = 60
+# Reduced to 15s to fail fast on problematic files while allowing normal files to complete
+# Can be increased at runtime via --tool-options darglint:timeout=N if needed
+DARGLINT_DEFAULT_TIMEOUT: int = 15
 DARGLINT_DEFAULT_PRIORITY: int = 45
 DARGLINT_FILE_PATTERNS: list[str] = ["*.py"]
 DARGLINT_STRICTNESS_LEVELS: tuple[str, ...] = tuple(

@@ -142,7 +142,17 @@ class BanditTool(BaseTool):
 
         for config_key, option_key in config_mapping.items():
             if config_key in bandit_config:
-                self.options[option_key] = bandit_config[config_key]
+                value = bandit_config[config_key]
+                # Validate and normalize severity/confidence early to fail fast
+                if config_key == "severity" and value is not None:
+                    value = normalize_bandit_severity_level(
+                        value,
+                    ).value  # Normalize and convert to string
+                elif config_key == "confidence" and value is not None:
+                    value = normalize_bandit_confidence_level(
+                        value,
+                    ).value  # Normalize and convert to string
+                self.options[option_key] = value
 
     def set_options(
         self,
@@ -178,19 +188,13 @@ class BanditTool(BaseTool):
         Raises:
             ValueError: If an option value is invalid.
         """
-        # Validate severity level
+        # Validate severity level using enum normalization
         if severity is not None:
-            valid_severities = ["LOW", "MEDIUM", "HIGH"]
-            if severity.upper() not in valid_severities:
-                raise ValueError(f"severity must be one of {valid_severities}")
-            severity = severity.upper()
+            severity = normalize_bandit_severity_level(severity).value
 
-        # Validate confidence level
+        # Validate confidence level using enum normalization
         if confidence is not None:
-            valid_confidences = ["LOW", "MEDIUM", "HIGH"]
-            if confidence.upper() not in valid_confidences:
-                raise ValueError(f"confidence must be one of {valid_confidences}")
-            confidence = confidence.upper()
+            confidence = normalize_bandit_confidence_level(confidence).value
 
         # Validate aggregate option
         if aggregate is not None:
@@ -379,11 +383,7 @@ class BanditTool(BaseTool):
         # Parse the JSON output
         try:
             # If command failed and no obvious JSON present, surface error cleanly
-            if (
-                ("{" not in output or "}" not in output)
-                and "rc" in locals()
-                and rc != 0
-            ):
+            if ("{" not in output or "}" not in output) and rc != 0:
                 return ToolResult(
                     name=self.name,
                     success=False,
