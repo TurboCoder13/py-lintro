@@ -43,7 +43,7 @@ def test_actionlint_available() -> None:
         pytest.skip("actionlint not available")
 
 
-SAMPLE_BAD = Path("test_samples/actionlint_violations.yml")
+SAMPLE_BAD = Path("test_samples/tools/config/github_actions/actionlint_violations.yml")
 
 
 @pytest.mark.actionlint

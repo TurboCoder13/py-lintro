@@ -10,11 +10,11 @@ import pytest
 from assertpy import assert_that
 from loguru import logger
 
-from lintro.tools.implementations.tool_yamllint import YamllintTool
+from lintro.tools.implementations.yamllint_config import YamllintTool
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
-SAMPLE_FILE = "test_samples/yaml_violations.yml"
+SAMPLE_FILE = "test_samples/tools/config/yaml/yaml_violations.yml"
 
 
 def run_yamllint_directly(file_path: Path) -> tuple[bool, str, int]:
@@ -173,13 +173,14 @@ def test_yamllint_output_consistency_direct_vs_lintro(tmp_path) -> None:
     )
     logger.info("[TEST] Comparing yamllint CLI and Lintro YamllintTool outputs...")
     tool = YamllintTool()
-    tool.set_options(format="parsable")
+    # Use config_data to ensure we use default config, not project's .yamllint
+    tool.set_options(format="parsable", config_data="extends: default")
     direct_success, direct_output, direct_issues = run_yamllint_directly(sample_file)
     result = tool.check([str(sample_file)])
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
-    assert direct_issues == result.issues_count, (
+    assert_that(direct_issues).is_equal_to(result.issues_count), (
         f"Mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
         f"CLI Output:\n{direct_output}\n"
         f"Lintro Output:\n{result.output}"
@@ -265,8 +266,12 @@ def test_yamllint_empty_directory(tmp_path) -> None:
     tool = YamllintTool()
     result = tool.check([str(empty_dir)])
     logger.info(f"[LOG] Empty directory result: {result.success}, {result.output}")
-    assert result.success, "Empty directory should be handled successfully."
-    assert result.issues_count == 0, "Empty directory should have no issues."
+    assert_that(result.success).is_true().described_as(
+        "Empty directory should be handled successfully.",
+    )
+    assert_that(result.issues_count).is_equal_to(
+        0,
+    ), "Empty directory should have no issues."
 
 
 @pytest.mark.yamllint
@@ -289,12 +294,16 @@ def test_yamllint_parser_validation(tmp_path) -> None:
     )
     issues = parse_yamllint_output(sample_output)
     logger.info(f"[LOG] Parsed {len(issues)} issues from sample output")
-    assert len(issues) == 3, "Should parse 3 issues"
-    assert issues[0].level == "error", "First issue should be error level"
+    assert_that(issues).is_length(3), "Should parse 3 issues"
+    from lintro.enums.severity_level import SeverityLevel
+
+    assert issues[0].level == SeverityLevel.ERROR, "First issue should be error level"
     assert issues[0].rule == "empty-lines", "First issue should be empty-lines rule"
-    assert issues[1].level == "warning", "Second issue should be warning level"
+    assert (
+        issues[1].level == SeverityLevel.WARNING
+    ), "Second issue should be warning level"
     assert issues[1].rule == "indentation", "Second issue should be indentation rule"
-    assert issues[2].level == "error", "Third issue should be error level"
+    assert issues[2].level == SeverityLevel.ERROR, "Third issue should be error level"
     assert issues[2].rule == "line-length", "Third issue should be line-length rule"
 
 
@@ -325,7 +334,9 @@ def test_yamllint_config_discovery(tmp_path) -> None:
         f"auto-discovered config. Output:\n{result.output}",
     )
     # Should succeed with document-start rule disabled
-    assert result.success, "Should succeed with document-start rule disabled"
+    assert_that(result.success).is_true().described_as(
+        "Should succeed with document-start rule disabled",
+    )
     assert (
         result.issues_count == 0
     ), "Should have no issues with document-start disabled"

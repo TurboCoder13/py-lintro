@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from assertpy import assert_that
 
 
 def _fake_completed(stdout: str = "") -> subprocess.CompletedProcess[str]:
@@ -45,7 +46,7 @@ def test_run_git_describe_allowed(monkeypatch: pytest.MonkeyPatch) -> None:
     Args:
         monkeypatch: pytest.MonkeyPatch instance.
     """
-    from scripts.ci import semantic_release_compute_next as mod
+    from scripts.ci.maintenance import semantic_release_compute_next as mod
 
     monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")
     monkeypatch.setattr(
@@ -55,7 +56,7 @@ def test_run_git_describe_allowed(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     out = mod.run_git("describe", "--tags", "--abbrev=0", "--match", "v*")
-    assert out == "v1.2.3"
+    assert_that(out).is_equal_to("v1.2.3")
 
 
 def test_run_git_rev_parse_head_allowed(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -64,7 +65,7 @@ def test_run_git_rev_parse_head_allowed(monkeypatch: pytest.MonkeyPatch) -> None
     Args:
         monkeypatch: pytest.MonkeyPatch instance.
     """
-    from scripts.ci import semantic_release_compute_next as mod
+    from scripts.ci.maintenance import semantic_release_compute_next as mod
 
     monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")
     monkeypatch.setattr(
@@ -74,7 +75,7 @@ def test_run_git_rev_parse_head_allowed(monkeypatch: pytest.MonkeyPatch) -> None
     )
 
     out = mod.run_git("rev-parse", "HEAD")
-    assert out == "abcd123"
+    assert_that(out).is_equal_to("abcd123")
 
 
 @pytest.mark.parametrize(
@@ -95,13 +96,13 @@ def test_run_git_log_allowed(
         monkeypatch: pytest.MonkeyPatch instance.
         args: Tuple of arguments to pass to run_git.
     """
-    from scripts.ci import semantic_release_compute_next as mod
+    from scripts.ci.maintenance import semantic_release_compute_next as mod
 
     monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")
     monkeypatch.setattr(mod.subprocess, "run", lambda *_, **__: _fake_completed("ok\n"))
 
     out = mod.run_git(*args)
-    assert out == "ok"
+    assert_that(out).is_equal_to("ok")
 
 
 @pytest.mark.parametrize(
@@ -123,7 +124,7 @@ def test_run_git_rejects_unsupported_or_unsafe(
         monkeypatch: pytest.MonkeyPatch instance.
         args: Tuple of arguments to pass to run_git.
     """
-    from scripts.ci import semantic_release_compute_next as mod
+    from scripts.ci.maintenance import semantic_release_compute_next as mod
 
     monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")
 
