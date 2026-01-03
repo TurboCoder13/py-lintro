@@ -1,24 +1,20 @@
 """Hadolint issue model."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from lintro.parsers.base_issue import BaseIssue
 
 
 @dataclass
-class HadolintIssue:
+class HadolintIssue(BaseIssue):
     """Represents an issue found by hadolint.
 
     Attributes:
-        file: File path where the issue was found
-        line: Line number where the issue occurs
-        column: Column number where the issue occurs (if available)
         level: Severity level (error, warning, info, style)
         code: Rule code (e.g., DL3006, SC2086)
-        message: Description of the issue
+        column: Column number where the issue occurs (if available)
     """
 
-    file: str
-    line: int
-    column: int | None
-    level: str
-    code: str
-    message: str
+    level: str = field(default="error")
+    code: str = field(default="")
+    # Note: column is inherited from BaseIssue

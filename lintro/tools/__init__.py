@@ -14,7 +14,7 @@ from lintro.tools.implementations.tool_mypy import MypyTool
 from lintro.tools.implementations.tool_prettier import PrettierTool
 from lintro.tools.implementations.tool_pytest import PytestTool
 from lintro.tools.implementations.tool_ruff import RuffTool
-from lintro.tools.implementations.tool_yamllint import YamllintTool
+from lintro.tools.implementations.yamllint_config import YamllintTool
 from lintro.tools.tool_enum import ToolEnum
 
 # Create global core manager instance

@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from loguru import logger
+
 from lintro.parsers.mypy.mypy_issue import MypyIssue
 
 
@@ -101,9 +103,12 @@ def parse_mypy_output(output: str) -> list[MypyIssue]:
         data = json.loads(output)
         items = _extract_errors(data)
         return [issue for item in items if (issue := _parse_issue(item))]
-    except json.JSONDecodeError:
-        pass
+    except json.JSONDecodeError as e:
+        logger.debug(f"Failed to parse mypy JSON output: {e}")
+    except (TypeError, ValueError) as e:
+        logger.debug(f"Error processing mypy output: {e}")
 
+    # Fallback: try JSON Lines format
     issues: list[MypyIssue] = []
     for line in output.splitlines():
         line = line.strip()
@@ -113,10 +118,17 @@ def parse_mypy_output(output: str) -> list[MypyIssue]:
             data = json.loads(line)
         except json.JSONDecodeError:
             continue
-        items = _extract_errors(data) if isinstance(data, (dict, list)) else []
-        for item in items:
-            parsed = _parse_issue(item)
-            if parsed:
-                issues.append(parsed)
+        except (TypeError, ValueError) as e:
+            logger.debug(f"Error parsing mypy JSON line: {e}")
+            continue
+        try:
+            items = _extract_errors(data) if isinstance(data, (dict, list)) else []
+            for item in items:
+                parsed = _parse_issue(item)
+                if parsed:
+                    issues.append(parsed)
+        except (TypeError, ValueError, KeyError) as e:
+            logger.debug(f"Error extracting mypy errors: {e}")
+            continue
 
     return issues

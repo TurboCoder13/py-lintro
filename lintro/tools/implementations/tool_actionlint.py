@@ -19,7 +19,7 @@ from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Defaults
 ACTIONLINT_DEFAULT_TIMEOUT: int = 30
@@ -39,9 +39,9 @@ class ActionlintTool(BaseTool):
             `ToolType` classification.
     """
 
-    name: str = "actionlint"
-    description: str = "Static checker for GitHub Actions workflows"
-    can_fix: bool = False
+    name: str = field(default="actionlint")
+    description: str = field(default="Static checker for GitHub Actions workflows")
+    can_fix: bool = field(default=False)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=ACTIONLINT_DEFAULT_PRIORITY,

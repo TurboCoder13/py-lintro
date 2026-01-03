@@ -13,7 +13,6 @@ from __future__ import annotations
 import sys
 
 import pytest
-
 from lintro.tools.implementations.tool_yamllint import YamllintTool
 
 

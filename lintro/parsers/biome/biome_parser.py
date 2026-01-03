@@ -6,6 +6,8 @@ Handles Biome JSON format output from --reporter=json flag.
 import json
 from typing import Any
 
+from loguru import logger
+
 from lintro.parsers.biome.biome_issue import BiomeIssue
 
 
@@ -61,92 +63,112 @@ def parse_biome_output(output: str) -> list[BiomeIssue]:
             return issues
         json_content = output[json_start:json_end]
         biome_data: dict[str, Any] = json.loads(json_content)
-    except (json.JSONDecodeError, ValueError):
-        # If output is not valid JSON, return empty list
+    except json.JSONDecodeError as e:
+        logger.debug(f"Failed to parse Biome JSON output: {e}")
+        return issues
+    except (ValueError, TypeError) as e:
+        logger.debug(f"Error processing Biome output: {e}")
+        return issues
+
+    if not isinstance(biome_data, dict):
+        logger.debug("Biome output is not a dictionary")
         return issues
 
     diagnostics = biome_data.get("diagnostics", [])
+    if not isinstance(diagnostics, list):
+        logger.debug("Biome diagnostics is not a list")
+        return issues
+
     for diagnostic in diagnostics:
-        # Extract location information
-        location = diagnostic.get("location", {})
-        path_info = location.get("path", {})
-        file_path = (
-            path_info.get("file", "") if isinstance(path_info, dict) else str(path_info)
-        )
+        if not isinstance(diagnostic, dict):
+            continue
+        try:
+            # Extract location information
+            location = diagnostic.get("location", {})
+            path_info = location.get("path", {})
+            file_path = (
+                path_info.get("file", "")
+                if isinstance(path_info, dict)
+                else str(path_info)
+            )
 
-        # Extract span (character positions array)
-        span = location.get("span", [])
-        if isinstance(span, list) and len(span) >= 1:
-            start_char = span[0]
-            # Convert character position to line/column
-            # Note: Biome spans are absolute positions in the file, but we use
-            # the sourceCode snippet for relative positioning within the error context
-            source_code = location.get("sourceCode", "")
-            if source_code:
-                # Only calculate line/column if start position is within the
-                # source code snippet (Biome sometimes provides absolute file
-                # positions beyond the snippet)
-                if start_char <= len(source_code):
-                    line, column = _char_to_line_column(source_code, start_char)
-                else:
-                    # Start position beyond snippet, use defaults
-                    line = 1
-                    column = 1
+            # Extract span (character positions array)
+            span = location.get("span", [])
+            if isinstance(span, list) and len(span) >= 1:
+                start_char = span[0]
+                # Convert character position to line/column
+                # Note: Biome spans are absolute positions in the file,
+                # but we use the sourceCode snippet for relative positioning
+                # within the error context
+                source_code = location.get("sourceCode", "")
+                if source_code:
+                    # Only calculate line/column if start position is within the
+                    # source code snippet (Biome sometimes provides absolute file
+                    # positions beyond the snippet)
+                    if start_char <= len(source_code):
+                        line, column = _char_to_line_column(source_code, start_char)
+                    else:
+                        # Start position beyond snippet, use defaults
+                        line = 1
+                        column = 1
 
-                # End position (optional) - only set if span has end position
-                if len(span) >= 2:
-                    end_char = span[1]
-                    # Only set end position if it's within the source code snippet
-                    # (Biome sometimes provides absolute file positions)
-                    if end_char <= len(source_code):
-                        end_line, end_column = _char_to_line_column(
-                            source_code,
-                            end_char,
-                        )
+                    # End position (optional) - only set if span has end position
+                    if len(span) >= 2:
+                        end_char = span[1]
+                        # Only set end position if it's within the source code snippet
+                        # (Biome sometimes provides absolute file positions)
+                        if end_char <= len(source_code):
+                            end_line, end_column = _char_to_line_column(
+                                source_code,
+                                end_char,
+                            )
+                        else:
+                            end_line = None
+                            end_column = None
                     else:
                         end_line = None
                         end_column = None
                 else:
+                    # No source code available, use defaults
+                    line = 1
+                    column = 1
                     end_line = None
                     end_column = None
             else:
-                # No source code available, use defaults
+                # Fallback for malformed span
                 line = 1
                 column = 1
                 end_line = None
                 end_column = None
-        else:
-            # Fallback for malformed span
-            line = 1
-            column = 1
-            end_line = None
-            end_column = None
 
-        # Extract diagnostic details
-        category = diagnostic.get("category", "unknown")
-        severity = diagnostic.get("severity", "error")
-        description = diagnostic.get("description", "")
+            # Extract diagnostic details
+            category = diagnostic.get("category", "unknown")
+            severity = diagnostic.get("severity", "error")
+            description = diagnostic.get("description", "")
 
-        # Check if fixable
-        tags = diagnostic.get("tags", [])
-        fixable = "fixable" in tags
+            # Check if fixable
+            tags = diagnostic.get("tags", [])
+            fixable = "fixable" in tags
 
-        # Skip if no file path
-        if not file_path:
+            # Skip if no file path
+            if not file_path:
+                continue
+
+            issues.append(
+                BiomeIssue(
+                    file=file_path,
+                    line=line,
+                    column=column,
+                    end_line=end_line,
+                    end_column=end_column,
+                    code=category,
+                    message=description,
+                    severity=severity,
+                    fixable=fixable,
+                ),
+            )
+        except (KeyError, TypeError, ValueError) as e:
+            logger.debug(f"Failed to parse Biome diagnostic: {e}")
             continue
-
-        issues.append(
-            BiomeIssue(
-                file=file_path,
-                line=line,
-                column=column,
-                end_line=end_line,
-                end_column=end_column,
-                code=category,
-                message=description,
-                severity=severity,
-                fixable=fixable,
-            ),
-        )
 
     return issues

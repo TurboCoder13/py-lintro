@@ -1,22 +1,19 @@
 """Typed structure representing a single Prettier issue."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from lintro.parsers.base_issue import BaseIssue
 
 
 @dataclass
-class PrettierIssue:
+class PrettierIssue(BaseIssue):
     """Simple container for Prettier findings.
 
     Attributes:
-        file: File path where the issue occurred.
-        line: Line number, if provided by Prettier.
         code: Tool-specific code identifying the rule.
-        message: Human-readable description of the issue.
+        line: Line number, if provided by Prettier.
         column: Column number, if provided by Prettier.
     """
 
-    file: str
-    line: int | None
-    code: str
-    message: str
-    column: int | None = None
+    code: str = field(default="")
+    # Note: line and column are inherited from BaseIssue

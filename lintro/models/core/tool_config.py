@@ -20,8 +20,17 @@ class ToolConfig:
         options: dict[str, object]: Default tool options applied at runtime.
     """
 
-    priority: int = 0
+    priority: int = field(default=0)
     conflicts_with: list[str] = field(default_factory=list)
     file_patterns: list[str] = field(default_factory=list)
-    tool_type: ToolType = ToolType.LINTER
+    tool_type: ToolType = field(default=ToolType.LINTER)
     options: dict[str, object] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Validate tool configuration.
+
+        Raises:
+            ValueError: If priority is negative.
+        """
+        if self.priority < 0:
+            raise ValueError(f"Tool priority must be non-negative, got {self.priority}")

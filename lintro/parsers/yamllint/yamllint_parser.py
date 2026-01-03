@@ -2,6 +2,9 @@
 
 import re
 
+from loguru import logger
+
+from lintro.enums.severity_level import normalize_severity_level
 from lintro.parsers.yamllint.yamllint_issue import YamllintIssue
 
 
@@ -46,23 +49,45 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
 
         match: re.Match[str] | None = pattern.match(line)
         if match:
-            filename: str
-            line_num: str
-            column: str
-            level: str
-            message: str
-            rule: str | None
-            filename, line_num, column, level, message, rule = match.groups()
+            try:
+                filename: str
+                line_num: str
+                column: str
+                level: str
+                message: str
+                rule: str | None
+                filename, line_num, column, level, message, rule = match.groups()
 
-            issues.append(
-                YamllintIssue(
-                    file=filename,
-                    line=int(line_num),
-                    column=int(column) if column else None,
-                    level=level,
-                    rule=rule,
-                    message=message.strip(),
-                ),
-            )
+                # Validate and convert line number
+                try:
+                    line_int = int(line_num)
+                except ValueError:
+                    logger.debug(f"Invalid line number in yamllint output: {line_num}")
+                    continue
+
+                # Validate and convert column number
+                column_int: int = 0
+                if column:
+                    try:
+                        column_int = int(column)
+                    except ValueError:
+                        logger.debug(
+                            f"Invalid column number in yamllint output: {column}",
+                        )
+                        column_int = 0
+
+                issues.append(
+                    YamllintIssue(
+                        file=filename,
+                        line=line_int,
+                        column=column_int,
+                        level=normalize_severity_level(level),
+                        rule=rule,
+                        message=message.strip(),
+                    ),
+                )
+            except (ValueError, TypeError, IndexError) as e:
+                logger.debug(f"Failed to parse yamllint line '{line}': {e}")
+                continue
 
     return issues

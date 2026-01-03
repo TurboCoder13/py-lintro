@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from lintro.enums.output_format import OutputFormat, normalize_output_format
 from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle
@@ -73,18 +74,18 @@ def format_clippy_issues(
     if not rows:
         return "No issues found."
 
-    style = (format or "grid").lower()
-    if style == "grid":
+    style = normalize_output_format(format or "grid")
+    if style == OutputFormat.GRID:
         return GridStyle().format(columns=columns, rows=rows)
-    if style == "plain":
+    if style == OutputFormat.PLAIN:
         return PlainStyle().format(columns=columns, rows=rows)
-    if style == "markdown":
+    if style == OutputFormat.MARKDOWN:
         return MarkdownStyle().format(columns=columns, rows=rows)
-    if style == "html":
+    if style == OutputFormat.HTML:
         return HtmlStyle().format(columns=columns, rows=rows)
-    if style == "json":
+    if style == OutputFormat.JSON:
         return JsonStyle().format(columns=columns, rows=rows, tool_name="clippy")
-    if style == "csv":
+    if style == OutputFormat.CSV:
         return CsvStyle().format(columns=columns, rows=rows)
 
     return GridStyle().format(columns=columns, rows=rows)

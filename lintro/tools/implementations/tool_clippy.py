@@ -17,7 +17,7 @@ from lintro.tools.core.timeout_utils import (
     run_subprocess_with_timeout,
 )
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 CLIPPY_DEFAULT_TIMEOUT: int = 120
 CLIPPY_DEFAULT_PRIORITY: int = 85
@@ -100,9 +100,11 @@ class ClippyTool(BaseTool):
         include_venv: bool: Whether to include virtual environment files.
     """
 
-    name: str = "clippy"
-    description: str = "Rust linter with checks for correctness, style, and performance"
-    can_fix: bool = True
+    name: str = field(default="clippy")
+    description: str = field(
+        default="Rust linter for correctness, style, and performance",
+    )
+    can_fix: bool = field(default=True)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=CLIPPY_DEFAULT_PRIORITY,
@@ -220,10 +222,10 @@ class ClippyTool(BaseTool):
             )
             return ToolResult(
                 name=self.name,
-                success=timeout_result["success"],
-                output=timeout_result["output"],
-                issues_count=timeout_result["issues_count"],
-                issues=timeout_result["issues"],
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
+                issues=timeout_result.issues,
             )
 
         issues = parse_clippy_output(output=output)
@@ -315,10 +317,10 @@ class ClippyTool(BaseTool):
             )
             return ToolResult(
                 name=self.name,
-                success=timeout_result["success"],
-                output=timeout_result["output"],
-                issues_count=timeout_result["issues_count"],
-                issues=timeout_result["issues"],
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
+                issues=timeout_result.issues,
                 initial_issues_count=0,
                 fixed_issues_count=0,
                 remaining_issues_count=1,
@@ -346,9 +348,9 @@ class ClippyTool(BaseTool):
             )
             return ToolResult(
                 name=self.name,
-                success=timeout_result["success"],
-                output=timeout_result["output"],
-                issues_count=timeout_result["issues_count"],
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
                 issues=initial_issues,
                 initial_issues_count=initial_count,
                 fixed_issues_count=0,
@@ -373,9 +375,9 @@ class ClippyTool(BaseTool):
             )
             return ToolResult(
                 name=self.name,
-                success=timeout_result["success"],
-                output=timeout_result["output"],
-                issues_count=timeout_result["issues_count"],
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
                 issues=initial_issues,
                 initial_issues_count=initial_count,
                 fixed_issues_count=0,

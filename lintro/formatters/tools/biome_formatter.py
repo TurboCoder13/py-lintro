@@ -1,5 +1,6 @@
 """Formatter for Biome issues."""
 
+from lintro.enums.output_format import OutputFormat
 from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.formatters.styles.csv import CsvStyle
 from lintro.formatters.styles.grid import GridStyle
@@ -11,12 +12,12 @@ from lintro.parsers.biome.biome_issue import BiomeIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 FORMAT_MAP = {
-    "plain": PlainStyle(),
-    "grid": GridStyle(),
-    "markdown": MarkdownStyle(),
-    "html": HtmlStyle(),
-    "json": JsonStyle(),
-    "csv": CsvStyle(),
+    OutputFormat.PLAIN: PlainStyle(),
+    OutputFormat.GRID: GridStyle(),
+    OutputFormat.MARKDOWN: MarkdownStyle(),
+    OutputFormat.HTML: HtmlStyle(),
+    OutputFormat.JSON: JsonStyle(),
+    OutputFormat.CSV: CsvStyle(),
 }
 
 
@@ -60,7 +61,7 @@ class BiomeTableDescriptor(TableDescriptor):
 
 def format_biome_issues(
     issues: list[BiomeIssue],
-    format: str = "grid",
+    format: OutputFormat = OutputFormat.GRID,
 ) -> str:
     """Format Biome issues with auto-fixable labeling.
 
@@ -80,7 +81,7 @@ def format_biome_issues(
     descriptor = BiomeTableDescriptor()
     formatter = FORMAT_MAP.get(format, GridStyle())
 
-    if format == "json":
+    if format == OutputFormat.JSON:
         columns = descriptor.get_columns()
         rows = descriptor.get_rows(issues)
         return formatter.format(columns=columns, rows=rows, tool_name="biome")

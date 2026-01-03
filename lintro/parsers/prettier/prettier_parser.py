@@ -6,6 +6,8 @@ including ANSI-colored lines produced in CI environments.
 
 import re
 
+from loguru import logger
+
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 
 
@@ -37,24 +39,29 @@ def parse_prettier_output(output: str) -> list[PrettierIssue]:
     lines = normalized_output.splitlines()
 
     for _i, line in enumerate(lines):
-        line = line.strip()
-        if not line:
-            continue
+        try:
+            line = line.strip()
+            if not line:
+                continue
 
-        # Look for [warn] lines that contain file paths
-        if line.startswith("[warn]") and not line.endswith("fix."):
-            # Extract the file path from the [warn] line
-            file_path = line[6:].strip()  # Remove "[warn] " prefix
-            if file_path and not file_path.startswith("Code style issues"):
-                # Create a generic issue for the file
-                issues.append(
-                    PrettierIssue(
-                        file=file_path,
-                        line=1,  # Prettier doesn't provide specific line numbers
-                        code="FORMAT",
-                        message="Code style issues found",
-                        column=1,  # Prettier doesn't provide specific column numbers
-                    ),
-                )
+            # Look for [warn] lines that contain file paths
+            if line.startswith("[warn]") and not line.endswith("fix."):
+                # Extract the file path from the [warn] line
+                file_path = line[6:].strip()  # Remove "[warn] " prefix
+                if file_path and not file_path.startswith("Code style issues"):
+                    # Create a generic issue for the file
+                    issues.append(
+                        PrettierIssue(
+                            file=file_path,
+                            line=1,  # Prettier doesn't provide specific line numbers
+                            code="FORMAT",
+                            message="Code style issues found",
+                            # Prettier doesn't provide specific column numbers
+                            column=1,
+                        ),
+                    )
+        except (IndexError, AttributeError, TypeError) as e:
+            logger.debug(f"Failed to parse prettier line '{line}': {e}")
+            continue
 
     return issues

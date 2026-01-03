@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import subprocess  # nosec B404 - subprocess used safely with shell=False
-import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -21,7 +20,8 @@ from lintro.tools.core.timeout_utils import (
     run_subprocess_with_timeout,
 )
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.config_utils import load_mypy_config
+from lintro.utils.path_filtering import walk_files_with_excludes
 
 MYPY_DEFAULT_TIMEOUT: int = 60
 MYPY_DEFAULT_PRIORITY: int = 82
@@ -60,60 +60,6 @@ def _split_config_values(raw_value: str) -> list[str]:
     return entries
 
 
-def _load_mypy_config(
-    base_dir: Path | None = None,
-) -> tuple[dict[str, Any], Path | None]:
-    """Return mypy config data and the path it came from.
-
-    Args:
-        base_dir: Directory to search for mypy configuration files. Defaults to
-            the current working directory.
-
-    Returns:
-        tuple[dict[str, Any], Path | None]: Parsed configuration data and the
-            path to the config file if found.
-    """
-    root = base_dir or Path.cwd()
-    pyproject = root / "pyproject.toml"
-    if pyproject.exists():
-        try:
-            with pyproject.open("rb") as handle:
-                data = tomllib.load(handle)
-            pyproject_config = data.get("tool", {}).get("mypy", {}) or {}
-            if pyproject_config:
-                return pyproject_config, pyproject
-        except (OSError, tomllib.TOMLDecodeError):
-            logger.debug(
-                "Failed to load pyproject.toml for mypy config from {}",
-                pyproject,
-            )
-
-    import configparser
-
-    for cfg_name in ("mypy.ini", "setup.cfg"):
-        cfg_path = root / cfg_name
-        if not cfg_path.exists():
-            continue
-        parser = configparser.ConfigParser()
-        try:
-            parser.read(cfg_path)
-        except configparser.Error:
-            logger.debug("Failed to parse mypy config file {}", cfg_path)
-            continue
-        if not parser.has_section("mypy"):
-            continue
-
-        section = parser["mypy"]
-        config: dict[str, Any] = {}
-        if "files" in section:
-            config["files"] = _split_config_values(section.get("files", ""))
-        if "exclude" in section:
-            config["exclude"] = _split_config_values(section.get("exclude", ""))
-        return config, cfg_path
-
-    return {}, None
-
-
 def _regex_to_glob(pattern: str) -> str:
     """Coerce a simple regex pattern to a fnmatch glob.
 
@@ -140,7 +86,7 @@ class MypyTool(BaseTool):
 
     name: str = "mypy"
     description: str = "Static type checker for Python"
-    can_fix: bool = False
+    can_fix: bool = field(default=False)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=MYPY_DEFAULT_PRIORITY,
@@ -159,13 +105,10 @@ class MypyTool(BaseTool):
     )
 
     def __post_init__(self) -> None:
-        """Initialize base tool settings and preload mypy config."""
+        """Initialize base tool settings."""
         super().__post_init__()
         self._config_data: dict[str, Any]
         self._config_path: Path | None
-        self._config_data, self._config_path = _load_mypy_config()
-        if self._config_path:
-            logger.debug("Loaded mypy config during init from {}", self._config_path)
 
     def set_options(self, **kwargs: object) -> None:
         """Set mypy-specific options.
@@ -268,7 +211,7 @@ class MypyTool(BaseTool):
             return version_result
 
         base_dir = Path.cwd()
-        config_data, config_path = _load_mypy_config(base_dir=base_dir)
+        config_data, config_path = load_mypy_config(base_dir=base_dir)
         self._config_data, self._config_path = config_data, config_path
         if config_path:
             logger.debug("Discovered mypy config at {}", config_path)
@@ -360,10 +303,10 @@ class MypyTool(BaseTool):
             )
             return ToolResult(
                 name=self.name,
-                success=timeout_result["success"],
-                output=timeout_result["output"],
-                issues_count=timeout_result["issues_count"],
-                issues=timeout_result["issues"],
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
+                issues=timeout_result.issues,
             )
 
         issues = parse_mypy_output(output=output)

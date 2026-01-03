@@ -8,9 +8,8 @@ from pathlib import Path
 
 import pytest
 from assertpy import assert_that
-from loguru import logger
-
 from lintro.tools.implementations.tool_yamllint import YamllintTool
+from loguru import logger
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")

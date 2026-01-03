@@ -17,6 +17,8 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
+from loguru import logger
+
 from lintro.parsers.black.black_issue import BlackIssue
 
 _WOULD_REFORMAT = re.compile(r"^would reformat\s+(?P<file>.+)$", re.IGNORECASE)
@@ -54,37 +56,51 @@ def parse_black_output(output: str) -> list[BlackIssue]:
         return []
 
     issues: list[BlackIssue] = []
-    for line in _iter_issue_lines(output.splitlines()):
-        m = _WOULD_REFORMAT.match(line)
-        if m:
-            issues.append(
-                BlackIssue(file=m.group("file"), message="Would reformat file"),
-            )
-            continue
-        m = _REFORMATTED.match(line)
-        if m:
-            issues.append(BlackIssue(file=m.group("file"), message="Reformatted file"))
-            continue
-
-    # Some environments (e.g., CI) may emit only a summary line without listing
-    # per-file entries. In that case, synthesize issues so counts remain
-    # consistent across environments.
-    if not issues:
-        m_sum = _SUMMARY_WOULD.search(output)
-        if not m_sum:
-            m_sum = _SUMMARY_REFORMATTED.search(output)
-        if m_sum:
+    try:
+        for line in _iter_issue_lines(output.splitlines()):
             try:
-                count = int(m_sum.group("count"))
-            except Exception:
-                count = 0
-            if count > 0:
-                for _ in range(count):
-                    issues.append(
-                        BlackIssue(
-                            file="<unknown>",
-                            message="Formatting change detected",
-                        ),
-                    )
+                m = _WOULD_REFORMAT.match(line)
+                if m:
+                    file_match = m.group("file")
+                    if file_match:
+                        issues.append(
+                            BlackIssue(file=file_match, message="Would reformat file"),
+                        )
+                    continue
+                m = _REFORMATTED.match(line)
+                if m:
+                    file_match = m.group("file")
+                    if file_match:
+                        issues.append(
+                            BlackIssue(file=file_match, message="Reformatted file"),
+                        )
+                    continue
+            except (AttributeError, IndexError) as e:
+                logger.debug(f"Failed to parse black line '{line}': {e}")
+                continue
+
+        # Some environments (e.g., CI) may emit only a summary line without listing
+        # per-file entries. In that case, synthesize issues so counts remain
+        # consistent across environments.
+        if not issues:
+            m_sum = _SUMMARY_WOULD.search(output)
+            if not m_sum:
+                m_sum = _SUMMARY_REFORMATTED.search(output)
+            if m_sum:
+                try:
+                    count = int(m_sum.group("count"))
+                except (ValueError, TypeError, AttributeError) as e:
+                    logger.debug(f"Failed to parse black summary count: {e}")
+                    count = 0
+                if count > 0:
+                    for _ in range(count):
+                        issues.append(
+                            BlackIssue(
+                                file="<unknown>",
+                                message="Formatting change detected",
+                            ),
+                        )
+    except Exception as e:
+        logger.debug(f"Error parsing black output: {e}")
 
     return issues

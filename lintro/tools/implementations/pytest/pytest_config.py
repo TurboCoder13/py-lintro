@@ -4,9 +4,10 @@ This module contains the PytestConfiguration dataclass that encapsulates
 all pytest-specific option management and validation logic.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
+from lintro.enums.pytest_enums import PytestSpecialMode
 from lintro.tools.implementations.pytest.pytest_option_validators import (
     validate_pytest_options,
 )
@@ -58,39 +59,49 @@ class PytestConfiguration:
         reruns_delay: Delay in seconds between retries (pytest-rerunfailures plugin).
     """
 
-    verbose: bool | None = None
-    tb: str | None = None
-    maxfail: int | None = None
-    no_header: bool | None = None
-    disable_warnings: bool | None = None
-    json_report: bool | None = None
-    junitxml: str | None = None
-    run_docker_tests: bool | None = None
-    slow_test_threshold: float | None = None
-    total_time_warning: float | None = None
-    workers: str | None = None
-    coverage_threshold: float | None = None
-    auto_junitxml: bool | None = None
-    detect_flaky: bool | None = None
-    flaky_min_runs: int | None = None
-    flaky_failure_rate: float | None = None
-    html_report: str | None = None
-    parallel_preset: str | None = None
-    list_plugins: bool | None = None
-    check_plugins: bool | None = None
-    required_plugins: str | None = None
-    coverage_html: str | None = None
-    coverage_xml: str | None = None
-    coverage_report: bool | None = None
-    collect_only: bool | None = None
-    list_fixtures: bool | None = None
-    fixture_info: str | None = None
-    list_markers: bool | None = None
-    parametrize_help: bool | None = None
-    show_progress: bool | None = None
-    timeout: int | None = None
-    reruns: int | None = None
-    reruns_delay: int | None = None
+    # Constants for special modes
+    _SPECIAL_MODES = [
+        PytestSpecialMode.LIST_PLUGINS,
+        PytestSpecialMode.CHECK_PLUGINS,
+        PytestSpecialMode.COLLECT_ONLY,
+        PytestSpecialMode.LIST_FIXTURES,
+        PytestSpecialMode.LIST_MARKERS,
+        PytestSpecialMode.PARAMETRIZE_HELP,
+    ]
+
+    verbose: bool | None = field(default=None)
+    tb: str | None = field(default=None)
+    maxfail: int | None = field(default=None)
+    no_header: bool | None = field(default=None)
+    disable_warnings: bool | None = field(default=None)
+    json_report: bool | None = field(default=None)
+    junitxml: str | None = field(default=None)
+    run_docker_tests: bool | None = field(default=None)
+    slow_test_threshold: float | None = field(default=None)
+    total_time_warning: float | None = field(default=None)
+    workers: str | None = field(default=None)
+    coverage_threshold: float | None = field(default=None)
+    auto_junitxml: bool | None = field(default=None)
+    detect_flaky: bool | None = field(default=None)
+    flaky_min_runs: int | None = field(default=None)
+    flaky_failure_rate: float | None = field(default=None)
+    html_report: str | None = field(default=None)
+    parallel_preset: str | None = field(default=None)
+    list_plugins: bool | None = field(default=None)
+    check_plugins: bool | None = field(default=None)
+    required_plugins: str | None = field(default=None)
+    coverage_html: str | None = field(default=None)
+    coverage_xml: str | None = field(default=None)
+    coverage_report: bool | None = field(default=None)
+    collect_only: bool | None = field(default=None)
+    list_fixtures: bool | None = field(default=None)
+    fixture_info: str | None = field(default=None)
+    list_markers: bool | None = field(default=None)
+    parametrize_help: bool | None = field(default=None)
+    show_progress: bool | None = field(default=None)
+    timeout: int | None = field(default=None)
+    reruns: int | None = field(default=None)
+    reruns_delay: int | None = field(default=None)
 
     def set_options(self, **kwargs: Any) -> None:
         """Set pytest-specific options with validation.
@@ -142,17 +153,8 @@ class PytestConfiguration:
         Returns:
             bool: True if any special mode is enabled.
         """
-        special_modes = [
-            "list_plugins",
-            "check_plugins",
-            "collect_only",
-            "list_fixtures",
-            "list_markers",
-            "parametrize_help",
-        ]
-
         # Check boolean special modes
-        if any(getattr(self, mode, False) for mode in special_modes):
+        if any(getattr(self, mode.value, False) for mode in self._SPECIAL_MODES):
             return True
 
         # Check fixture_info (string value, not boolean)
@@ -164,22 +166,13 @@ class PytestConfiguration:
         Returns:
             str | None: Name of the active special mode, or None if no special mode.
         """
-        special_modes = [
-            ("list_plugins", "list_plugins"),
-            ("check_plugins", "check_plugins"),
-            ("collect_only", "collect_only"),
-            ("list_fixtures", "list_fixtures"),
-            ("list_markers", "list_markers"),
-            ("parametrize_help", "parametrize_help"),
-        ]
-
-        for attr_name, mode_name in special_modes:
-            if getattr(self, attr_name, False):
-                return mode_name
+        for mode in self._SPECIAL_MODES:
+            if getattr(self, mode.value, False):
+                return mode.value
 
         # Check for fixture_info (string value, not boolean)
-        if getattr(self, "fixture_info", None):
-            return "fixture_info"
+        if getattr(self, PytestSpecialMode.FIXTURE_INFO.value, None):
+            return PytestSpecialMode.FIXTURE_INFO.value
 
         return None
 
@@ -192,9 +185,9 @@ class PytestConfiguration:
         Returns:
             Any: The value associated with the special mode.
         """
-        if mode == "fixture_info":
+        if mode == PytestSpecialMode.FIXTURE_INFO.value:
             return self.fixture_info
-        elif mode == "check_plugins":
+        elif mode == PytestSpecialMode.CHECK_PLUGINS.value:
             return self.required_plugins
         else:
             return getattr(self, mode, False)

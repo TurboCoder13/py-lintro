@@ -1,5 +1,7 @@
 """Tool type definitions."""
 
+from __future__ import annotations
+
 from enum import Flag, auto
 
 
@@ -27,3 +29,34 @@ class ToolType(Flag):
     SECURITY = auto()
     INFRASTRUCTURE = auto()
     TEST_RUNNER = auto()
+
+
+def normalize_tool_type(value: str | ToolType) -> ToolType:
+    """Normalize a raw value to a ToolType enum.
+
+    For enum instances, combined Flag values
+    (e.g., ToolType.LINTER | ToolType.FORMATTER) are preserved.
+    For string inputs, attempts to match a single enum name
+    (case-insensitive, e.g., "LINTER"). String inputs do not support
+    combination syntax like "LINTER|FORMATTER".
+
+    Args:
+        value: str or ToolType to normalize.
+
+    Returns:
+        ToolType: Normalized enum value.
+
+    Raises:
+        ValueError: If the value is not a valid tool type.
+    """
+    if isinstance(value, ToolType):
+        return value
+    if isinstance(value, str):
+        try:
+            return ToolType[value.upper()]
+        except KeyError as err:
+            supported = f"Supported types: {list(ToolType)}"
+            raise ValueError(
+                f"Unknown tool type: {value!r}. {supported}",
+            ) from err
+    raise ValueError(f"Invalid tool type: {value!r}. Expected str or ToolType.")
