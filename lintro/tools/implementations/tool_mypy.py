@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import subprocess  # nosec B404 - subprocess used safely with shell=False
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -14,14 +13,9 @@ from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.mypy.mypy_parser import parse_mypy_output
-from lintro.tools.core.timeout_utils import (
-    create_timeout_result,
-    get_timeout_value,
-    run_subprocess_with_timeout,
-)
+from lintro.tools.core.timeout_utils import create_timeout_result
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.config_utils import load_mypy_config
-from lintro.utils.path_filtering import walk_files_with_excludes
 
 MYPY_DEFAULT_TIMEOUT: int = 60
 MYPY_DEFAULT_PRIORITY: int = 82
@@ -194,49 +188,15 @@ class MypyTool(BaseTool):
         cmd.extend(files)
         return cmd
 
-    def check(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
-        """Run mypy type checking.
+    def _build_effective_excludes(self, configured_excludes: Any) -> list[str]:
+        """Build effective exclude patterns from config and defaults.
 
         Args:
-            paths: Paths or files to type-check.
+            configured_excludes: Exclude patterns from mypy config.
 
         Returns:
-            A ``ToolResult`` describing the check outcome.
+            list[str]: Combined exclude patterns.
         """
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        base_dir = Path.cwd()
-        config_data, config_path = load_mypy_config(base_dir=base_dir)
-        self._config_data, self._config_path = config_data, config_path
-        if config_path:
-            logger.debug("Discovered mypy config at {}", config_path)
-        configured_files = config_data.get("files")
-        configured_excludes = config_data.get("exclude")
-
-        target_paths: list[str] = list(paths) if paths else []
-        if (not target_paths or target_paths == ["."]) and configured_files:
-            if isinstance(configured_files, str):
-                target_paths = [configured_files]
-            elif isinstance(configured_files, list):
-                target_paths = [
-                    str(path) for path in configured_files if str(path).strip()
-                ]
-
-        if not target_paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-
-        self._validate_paths(paths=target_paths)
-
         effective_excludes: list[str] = list(self.exclude_patterns)
         if configured_excludes:
             raw_excludes = (
@@ -252,53 +212,71 @@ class MypyTool(BaseTool):
             for default_pattern in MYPY_DEFAULT_EXCLUDE_PATTERNS:
                 if default_pattern not in effective_excludes:
                     effective_excludes.append(default_pattern)
-        logger.debug(
-            "Effective mypy exclude patterns: {}",
-            effective_excludes,
-        )
+        return effective_excludes
 
-        python_files = walk_files_with_excludes(
-            paths=target_paths,
-            file_patterns=self.config.file_patterns,
+    def check(
+        self,
+        paths: list[str],
+    ) -> ToolResult:
+        """Run mypy type checking.
+
+        Args:
+            paths: Paths or files to type-check.
+
+        Returns:
+            A ``ToolResult`` describing the check outcome.
+        """
+        # Load mypy config first (needed to determine paths and excludes)
+        base_dir = Path.cwd()
+        config_data, config_path = load_mypy_config(base_dir=base_dir)
+        self._config_data, self._config_path = config_data, config_path
+        if config_path:
+            logger.debug("Discovered mypy config at {}", config_path)
+
+        # Determine target paths (use config files if paths empty)
+        target_paths: list[str] = list(paths) if paths else []
+        configured_files = config_data.get("files")
+        if (not target_paths or target_paths == ["."]) and configured_files:
+            if isinstance(configured_files, str):
+                target_paths = [configured_files]
+            elif isinstance(configured_files, list):
+                target_paths = [
+                    str(path) for path in configured_files if str(path).strip()
+                ]
+
+        # Build effective excludes from config
+        effective_excludes = self._build_effective_excludes(config_data.get("exclude"))
+        logger.debug("Effective mypy exclude patterns: {}", effective_excludes)
+
+        # Use shared preparation with custom excludes
+        ctx = self._prepare_execution(
+            target_paths,
+            default_timeout=MYPY_DEFAULT_TIMEOUT,
             exclude_patterns=effective_excludes,
-            include_venv=self.include_venv,
         )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
-        logger.debug("Mypy discovered {} python file(s)", len(python_files))
+        logger.debug("Mypy discovered {} python file(s)", len(ctx.files))
 
-        if not python_files:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No Python files found to check.",
-                issues_count=0,
-            )
-
-        cwd = self.get_cwd(paths=python_files)
-        rel_files = [os.path.relpath(f, cwd) if cwd else f for f in python_files]
-
+        # Set config file if discovered
         if not self.options.get("config_file") and config_path:
             self.options["config_file"] = str(config_path.resolve())
-            logger.debug(
-                "Setting mypy --config-file to {}",
-                self.options["config_file"],
-            )
+            logger.debug("Setting mypy --config-file to {}", self.options["config_file"])
 
-        timeout = get_timeout_value(self, MYPY_DEFAULT_TIMEOUT)
-        cmd = self._build_command(files=rel_files)
-        logger.debug("Running mypy with cwd={} and cmd={}", cwd, cmd)
+        cmd = self._build_command(files=ctx.rel_files)
+        logger.debug("Running mypy with cwd={} and cmd={}", ctx.cwd, cmd)
 
         try:
-            success, output = run_subprocess_with_timeout(
-                tool=self,
+            success, output = self._run_subprocess(
                 cmd=cmd,
-                timeout=timeout,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
             timeout_result = create_timeout_result(
                 tool=self,
-                timeout=timeout,
+                timeout=ctx.timeout,
                 cmd=cmd,
             )
             return ToolResult(
