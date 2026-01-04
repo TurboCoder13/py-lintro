@@ -53,10 +53,10 @@ def _get_tool_display_name(tool_enum: ToolEnum) -> str:
     # Try to get the tool instance to use its canonical name
     try:
         tool = tool_manager.get_tool(tool_enum)
-        return tool.name
+        return str(tool.name)
     except Exception:
         # Fall back to predefined mapping if tool cannot be instantiated
-        return _TOOL_DISPLAY_NAMES.get(tool_enum, tool_enum.name.lower())
+        return str(_TOOL_DISPLAY_NAMES.get(tool_enum, tool_enum.name.lower()))
 
 
 def _get_tool_lookup_keys(tool_enum: ToolEnum, tool_name: str) -> set[str]:
@@ -241,7 +241,9 @@ def run_lint_tools_simple(
 
     # If early post-check filtering removed all tools from the main phase,
     # that's okay - post-checks will still run. Just log the situation.
-    if not tools_to_run:
+    # Track this state so we can return failure if post-checks don't run.
+    main_phase_empty_due_to_filter = bool(not tools_to_run and post_tools_early)
+    if main_phase_empty_due_to_filter:
         logger.console_output(
             text=(
                 "All selected tools are configured as post-checks - "
@@ -453,5 +455,9 @@ def run_lint_tools_simple(
     else:  # check
         if total_issues > 0:
             exit_code = 1
+
+    # If all tools were filtered to post-checks but nothing ran, return failure
+    if main_phase_empty_due_to_filter and not all_results:
+        exit_code = 1
 
     return exit_code

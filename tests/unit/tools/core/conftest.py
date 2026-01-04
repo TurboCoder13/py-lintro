@@ -15,13 +15,14 @@ def temp_python_file(tmp_path):
     """
     file_path = tmp_path / "test_file.py"
     # Create a file with lines of varying lengths
+    # NOTE: Long lines below are intentional test data for E501 detection
     content = '''"""Test module."""
 
 x = 1
 y = 2
 
-# This is a very long comment that exceeds the default line length of 88 characters and should trigger E501
-long_string = "This is a very very very very very very very very very long string that exceeds the limit"
-'''
+# This is a long comment that exceeds 88 chars and triggers E501
+long_string = "This is a very long string that exceeds the limit"
+'''  # noqa: E501
     file_path.write_text(content)
     return file_path

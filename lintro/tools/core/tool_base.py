@@ -359,9 +359,12 @@ class BaseTool(ABC):
         Args:
             paths: Input paths to process.
             no_files_message: Message when no files are found.
-            default_timeout: Default timeout override (uses tool's default if None).
-            file_patterns: Override file patterns (uses config patterns if None).
-            exclude_patterns: Override exclude patterns (uses instance patterns if None).
+            default_timeout: Default timeout override (uses tool's default
+                if None).
+            file_patterns: Override file patterns (uses config patterns
+                if None).
+            exclude_patterns: Override exclude patterns (uses instance
+                patterns if None).
 
         Returns:
             ExecutionContext: Context with files, cwd, and optional early_result.
@@ -372,7 +375,9 @@ class BaseTool(ABC):
                 return ctx.early_result
 
             cmd = self._build_command(ctx.rel_files)
-            success, output = self._run_subprocess(cmd, timeout=ctx.timeout, cwd=ctx.cwd)
+            success, output = self._run_subprocess(
+                cmd, timeout=ctx.timeout, cwd=ctx.cwd
+            )
         """
         # Step 1: Check version requirements
         version_result = self._verify_tool_version()
@@ -429,7 +434,10 @@ class BaseTool(ABC):
         rel_files: list[str] = [os.path.relpath(f, cwd) if cwd else f for f in files]
 
         # Step 5: Determine timeout
-        timeout_val = default_timeout or self.options.get("timeout", self._default_timeout)
+        timeout_val = default_timeout or self.options.get(
+            "timeout",
+            self._default_timeout,
+        )
         # Ensure timeout is an integer (options dict values are typed as object)
         if isinstance(timeout_val, int):
             timeout = timeout_val

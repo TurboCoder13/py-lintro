@@ -18,8 +18,8 @@ from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.tools.core.tool_base import BaseTool
 
 # Constants for Darglint configuration
-# Reduced to 15s to fail fast on problematic files while allowing normal files to complete
-# Can be increased at runtime via --tool-options darglint:timeout=N if needed
+# Reduced to 15s to fail fast on problematic files while allowing
+# normal files to complete. Increase via --tool-options darglint:timeout=N
 DARGLINT_DEFAULT_TIMEOUT: int = 15
 DARGLINT_DEFAULT_PRIORITY: int = 45
 DARGLINT_FILE_PATTERNS: list[str] = ["*.py"]
@@ -277,7 +277,8 @@ class DarglintTool(BaseTool):
             ) as bar:
                 for file_path in bar:
                     result = self._process_file(
-                        file_path=file_path, timeout=ctx.timeout
+                        file_path=file_path,
+                        timeout=ctx.timeout,
                     )
                     if not result.success:
                         all_success = False

@@ -175,7 +175,9 @@ class TestPrepareExecution:
 
         assert_that(ctx.should_skip).is_false()
         assert_that(ctx.early_result).is_none()
-        assert_that(ctx.files).is_equal_to(["/project/src/file.py", "/project/src/test.py"])
+        assert_that(ctx.files).is_equal_to(
+            ["/project/src/file.py", "/project/src/test.py"],
+        )
         assert_that(ctx.rel_files).is_equal_to(["file.py", "test.py"])
         assert_that(ctx.cwd).is_equal_to("/project/src")
 
@@ -277,7 +279,7 @@ class TestPrepareExecution:
         )
 
         # When no files found, should still get "No ... files found to check"
-        # from the file type detection, but if paths list is empty it uses custom message
+        # from file type detection. Empty paths list uses custom message.
         assert_that(ctx.should_skip).is_true()
         assert_that(ctx.early_result).is_not_none()
 

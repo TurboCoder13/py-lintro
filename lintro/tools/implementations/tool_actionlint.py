@@ -172,10 +172,13 @@ class ActionlintTool(BaseTool):
             )
 
         non_timeout_failures = results["execution_failures"] - len(
-            results["skipped_files"]
+            results["skipped_files"],
         )
         if non_timeout_failures > 0:
-            failure_msg = f"Failed to process {non_timeout_failures} file(s) due to execution errors"
+            failure_msg = (
+                f"Failed to process {non_timeout_failures} file(s) "
+                "due to execution errors"
+            )
             combined_output = (
                 f"{combined_output}\n\n{failure_msg}"
                 if combined_output

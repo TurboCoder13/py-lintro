@@ -373,12 +373,18 @@ def test_post_checks_early_filter_removes_black_from_main(monkeypatch) -> None:
 def test_all_filtered_results_in_no_tools_warning(monkeypatch) -> None:
     """If filtering removes all tools, executor should return failure gracefully.
 
+    When all selected tools are configured as post-checks (filtered from main phase)
+    but post-checks don't actually produce results, the executor should return 1.
+
     Args:
         monkeypatch: Pytest fixture to modify objects during the test.
     """
     _stub_logger(monkeypatch)
 
     import lintro.utils.tool_executor as te
+
+    # Mock config that filters out all tools to post-checks
+    mock_config = {"enabled": True, "tools": ["black"], "enforce_failure": True}
 
     # Start with only black
     monkeypatch.setattr(
@@ -388,11 +394,13 @@ def test_all_filtered_results_in_no_tools_warning(monkeypatch) -> None:
         raising=True,
     )
     # Early config filters out black
+    monkeypatch.setattr(te, "load_post_checks_config", lambda: mock_config)
+    # Mock execute_post_checks to do nothing (simulates post-checks not running)
+    # Returns (total_issues, total_fixed, total_remaining)
     monkeypatch.setattr(
         te,
-        "load_post_checks_config",
-        lambda: {"enabled": True, "tools": ["black"], "enforce_failure": True},
-        raising=True,
+        "execute_post_checks",
+        lambda **kwargs: (0, 0, 0),
     )
 
     code = run_lint_tools_simple(

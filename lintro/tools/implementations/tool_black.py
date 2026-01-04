@@ -9,7 +9,6 @@ Project: https://github.com/psf/black
 
 from __future__ import annotations
 
-import os
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 

@@ -271,7 +271,8 @@ class MypyTool(BaseTool):
         if not self.options.get("config_file") and config_path:
             self.options["config_file"] = str(config_path.resolve())
             logger.debug(
-                "Setting mypy --config-file to {}", self.options["config_file"]
+                "Setting mypy --config-file to {}",
+                self.options["config_file"],
             )
 
         cmd = self._build_command(files=ctx.rel_files)

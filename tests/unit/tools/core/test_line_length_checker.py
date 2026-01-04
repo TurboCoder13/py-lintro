@@ -4,7 +4,6 @@ import json
 import subprocess
 from unittest.mock import MagicMock, patch
 
-import pytest
 from assertpy import assert_that
 
 from lintro.tools.core.line_length_checker import (
@@ -71,14 +70,16 @@ class TestCheckLineLengthViolations:
         mock_which.return_value = "/usr/bin/ruff"
 
         # Simulate Ruff JSON output with E501 violation
-        ruff_output = json.dumps([
-            {
-                "filename": "/path/to/file.py",
-                "location": {"row": 10, "column": 89},
-                "message": "Line too long (100 > 88)",
-                "code": "E501",
-            },
-        ])
+        ruff_output = json.dumps(
+            [
+                {
+                    "filename": "/path/to/file.py",
+                    "location": {"row": 10, "column": 89},
+                    "message": "Line too long (100 > 88)",
+                    "code": "E501",
+                },
+            ],
+        )
         mock_run.return_value = MagicMock(
             stdout=ruff_output,
             returncode=1,  # Ruff returns 1 when issues found
@@ -220,15 +221,17 @@ class TestCheckLineLengthViolations:
         mock_which.return_value = "/usr/bin/ruff"
 
         # Older Ruff format with row/column at top level
-        ruff_output = json.dumps([
-            {
-                "filename": "/path/to/file.py",
-                "row": 15,
-                "column": 100,
-                "message": "Line too long (110 > 88)",
-                "code": "E501",
-            },
-        ])
+        ruff_output = json.dumps(
+            [
+                {
+                    "filename": "/path/to/file.py",
+                    "row": 15,
+                    "column": 100,
+                    "message": "Line too long (110 > 88)",
+                    "code": "E501",
+                },
+            ],
+        )
         mock_run.return_value = MagicMock(
             stdout=ruff_output,
             returncode=1,
@@ -250,26 +253,28 @@ class TestCheckLineLengthViolations:
         """Test handling multiple E501 violations."""
         mock_which.return_value = "/usr/bin/ruff"
 
-        ruff_output = json.dumps([
-            {
-                "filename": "/path/file1.py",
-                "location": {"row": 10, "column": 89},
-                "message": "Line too long (100 > 88)",
-                "code": "E501",
-            },
-            {
-                "filename": "/path/file2.py",
-                "location": {"row": 25, "column": 89},
-                "message": "Line too long (150 > 88)",
-                "code": "E501",
-            },
-            {
-                "filename": "/path/file1.py",
-                "location": {"row": 50, "column": 89},
-                "message": "Line too long (200 > 88)",
-                "code": "E501",
-            },
-        ])
+        ruff_output = json.dumps(
+            [
+                {
+                    "filename": "/path/file1.py",
+                    "location": {"row": 10, "column": 89},
+                    "message": "Line too long (100 > 88)",
+                    "code": "E501",
+                },
+                {
+                    "filename": "/path/file2.py",
+                    "location": {"row": 25, "column": 89},
+                    "message": "Line too long (150 > 88)",
+                    "code": "E501",
+                },
+                {
+                    "filename": "/path/file1.py",
+                    "location": {"row": 50, "column": 89},
+                    "message": "Line too long (200 > 88)",
+                    "code": "E501",
+                },
+            ],
+        )
         mock_run.return_value = MagicMock(
             stdout=ruff_output,
             returncode=1,

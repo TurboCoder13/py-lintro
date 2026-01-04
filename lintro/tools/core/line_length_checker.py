@@ -85,14 +85,20 @@ def check_line_length_violations(
         if cwd and not os.path.isabs(file_path):
             abs_files.append(os.path.abspath(os.path.join(cwd, file_path)))
         else:
-            abs_files.append(os.path.abspath(file_path) if not os.path.isabs(file_path) else file_path)
+            abs_files.append(
+                os.path.abspath(file_path)
+                if not os.path.isabs(file_path)
+                else file_path
+            )
 
     # Build the Ruff command
     cmd: list[str] = [
         ruff_path,
         "check",
-        "--select", "E501",
-        "--output-format", "json",
+        "--select",
+        "E501",
+        "--output-format",
+        "json",
         "--no-cache",  # Avoid cache issues when checking specific files
     ]
 
@@ -142,7 +148,7 @@ def check_line_length_violations(
                     column=column,
                     message=issue.get("message", "Line too long"),
                     code=issue.get("code", "E501"),
-                )
+                ),
             )
 
         return violations
