@@ -129,7 +129,7 @@ class BlackTool(BaseTool):
         files: list[str],
         cwd: str | None,
     ) -> list[BlackIssue]:
-        """Check for line length violations using Ruff's E501 rule.
+        """Check for line length violations using the shared line-length checker.
 
         This catches lines that exceed the line length limit but cannot be
         safely wrapped by Black. Black's --check mode only reports files that
@@ -146,73 +146,35 @@ class BlackTool(BaseTool):
         if not files:
             return []
 
-        # Import here to avoid circular dependency
-        from lintro.tools.implementations.tool_ruff import RuffTool
+        from lintro.tools.core.line_length_checker import check_line_length_violations
 
-        try:
-            ruff_tool = RuffTool()
-            # Use the same line_length as Black is configured with
-            line_length = self.options.get("line_length")
-            if line_length:
-                ruff_tool.set_options(
-                    select=["E501"],
-                    line_length=line_length,
-                    timeout=self.options.get("timeout", BLACK_DEFAULT_TIMEOUT),
-                )
-            else:
-                # If no line_length configured, use Ruff's default (88)
-                ruff_tool.set_options(
-                    select=["E501"],
-                    timeout=self.options.get("timeout", BLACK_DEFAULT_TIMEOUT),
-                )
+        # Use the shared utility to check for E501 violations
+        violations = check_line_length_violations(
+            files=files,
+            cwd=cwd,
+            line_length=self.options.get("line_length"),
+            timeout=self.options.get("timeout", BLACK_DEFAULT_TIMEOUT),
+        )
 
-            # Convert relative paths to absolute paths for RuffTool
-            abs_files: list[str] = []
-            for file_path in files:
-                if cwd and not os.path.isabs(file_path):
-                    abs_files.append(os.path.abspath(os.path.join(cwd, file_path)))
-                else:
-                    abs_files.append(file_path)
-
-            # Run Ruff E501 check on the absolute file paths
-            ruff_result = ruff_tool.check(paths=abs_files)
-
-            # Convert Ruff E501 violations to BlackIssue objects
-            black_issues: list[BlackIssue] = []
-            if ruff_result.issues:
-                for ruff_issue in ruff_result.issues:
-                    # Only process E501 violations
-                    if hasattr(ruff_issue, "code") and ruff_issue.code == "E501":
-                        file_path = ruff_issue.file
-                        # Ensure absolute path
-                        if not os.path.isabs(file_path):
-                            if cwd:
-                                file_path = os.path.abspath(
-                                    os.path.join(cwd, file_path),
-                                )
-                            else:
-                                file_path = os.path.abspath(file_path)
-                        message = (
-                            f"Line {ruff_issue.line} exceeds line length limit "
-                            f"({ruff_issue.message})"
-                        )
-                        # Line length violations cannot be fixed by Black
-                        black_issues.append(
-                            BlackIssue(
-                                file=file_path,
-                                line=ruff_issue.line,
-                                column=ruff_issue.column,
-                                code=ruff_issue.code,
-                                message=message,
-                                severity="error",
-                                fixable=False,
-                            ),
-                        )
-
-        except Exception as e:
-            # If Ruff check fails, log but don't fail the entire Black check
-            logger.debug(f"Failed to check line length violations with Ruff: {e}")
-            return []
+        # Convert LineLengthViolation objects to BlackIssue objects
+        black_issues: list[BlackIssue] = []
+        for violation in violations:
+            message = (
+                f"Line {violation.line} exceeds line length limit "
+                f"({violation.message})"
+            )
+            # Line length violations cannot be fixed by Black
+            black_issues.append(
+                BlackIssue(
+                    file=violation.file,
+                    line=violation.line,
+                    column=violation.column,
+                    code=violation.code,
+                    message=message,
+                    severity="error",
+                    fixable=False,
+                ),
+            )
 
         return black_issues
 
