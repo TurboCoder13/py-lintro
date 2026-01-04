@@ -54,7 +54,6 @@ def test_format_tool_output_with_parsed_issues_and_fixable_sections(
     txt = format_tool_output(
         tool_name="ruff",
         output="raw",
-        group_by="auto",
         output_format="grid",
         issues=issues,
     )
@@ -70,7 +69,6 @@ def test_format_tool_output_parsing_fallbacks(monkeypatch) -> None:
     out = format_tool_output(
         tool_name="unknown",
         output="some raw output",
-        group_by="auto",
         output_format="grid",
         issues=None,
     )
@@ -151,7 +149,6 @@ def test_format_tool_output_with_pytest_issues(monkeypatch) -> None:
     txt = format_tool_output(
         tool_name="pytest",
         output="raw output",
-        group_by="auto",
         output_format="grid",
         issues=pytest_issues,
     )
@@ -192,7 +189,6 @@ def test_format_tool_output_pytest_raw_fallback(monkeypatch) -> None:
     txt = format_tool_output(
         tool_name="pytest",
         output="raw pytest output",
-        group_by="auto",
         output_format="grid",
         issues=pytest_issues,
     )

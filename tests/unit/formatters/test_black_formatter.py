@@ -15,14 +15,17 @@ from lintro.parsers.black.black_issue import BlackIssue
 def test_black_table_descriptor_columns_and_rows() -> None:
     """Ensure columns and rows render expected values for issues."""
     desc = BlackTableDescriptor()
-    assert_that(desc.get_columns()).is_equal_to(["File", "Message"])
+    assert_that(desc.get_columns()).is_equal_to(
+        ["File", "Line", "Column", "Code", "Severity", "Message"],
+    )
     issues = [
         BlackIssue(file="src/a.py", message="Would reformat file"),
         BlackIssue(file="b.py", message="Reformatted file"),
     ]
     rows = desc.get_rows(issues)
     assert_that(rows[0][0].endswith("src/a.py")).is_true()
-    assert_that(rows[0][1]).contains("reformat")
+    # Message is now in the last column (index 5)
+    assert_that(rows[0][5]).contains("reformat")
 
 
 def test_format_black_issues_all_styles() -> None:

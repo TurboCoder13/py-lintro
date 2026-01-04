@@ -52,8 +52,8 @@ def test_prettier_table_and_formatting(tmp_path) -> None:
     issues = [
         PrettierIssue(
             file=str(tmp_path / "f.js"),
-            line=None,
-            column=None,
+            line=0,
+            column=0,
             code="FORMAT",
             message="m",
         ),

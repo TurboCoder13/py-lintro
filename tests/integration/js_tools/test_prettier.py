@@ -209,7 +209,6 @@ def test_prettier_fix_sets_issues_for_table(temp_prettier_file) -> None:
     formatted = format_tool_output(
         tool_name="prettier",
         output=fix_result.output or "",
-        group_by="auto",
         output_format="grid",
         issues=fix_result.issues,
     )

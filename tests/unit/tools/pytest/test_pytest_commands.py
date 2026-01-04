@@ -93,7 +93,7 @@ def test_pytest_tool_build_check_command_with_timeout() -> None:
         cmd = tool._build_check_command(["test_file.py"])
 
         assert_that(cmd).contains("--timeout")
-        assert_that(cmd).contains("300")
+        assert_that(cmd).contains("300.0")
         assert_that(cmd).contains("--timeout-method")
         assert_that(cmd).contains("signal")  # default method
 

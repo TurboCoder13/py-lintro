@@ -4,6 +4,7 @@ import subprocess
 from unittest.mock import Mock
 
 import pytest
+from assertpy import assert_that
 
 from lintro.tools.core.timeout_utils import (
     create_timeout_result,
@@ -45,35 +46,37 @@ def test_get_timeout_value_with_option():
     tool = MockTool()
     tool.options["timeout"] = 60
 
-    assert get_timeout_value(tool) == 60
+    assert_that(get_timeout_value(tool)).is_equal_to(60)
 
 
 def test_get_timeout_value_with_default():
     """Test getting timeout value when using tool default."""
     tool = MockTool(default_timeout=45)
 
-    assert get_timeout_value(tool) == 45
+    assert_that(get_timeout_value(tool)).is_equal_to(45)
 
 
 def test_get_timeout_value_with_custom_default():
     """Test getting timeout value with custom default parameter."""
     tool = MockTool()
 
-    assert get_timeout_value(tool, 120) == 120
+    assert_that(get_timeout_value(tool, 120)).is_equal_to(120)
 
 
 def test_create_timeout_result():
-    """Test creating a timeout result dictionary."""
+    """Test creating a timeout result object."""
     tool = MockTool("pytest")
 
     result = create_timeout_result(tool, 30, ["pytest", "test"])
 
-    assert result["success"] is False
-    assert "pytest execution timed out (30s limit exceeded)" in result["output"]
-    assert result["issues_count"] == 1
-    assert result["issues"] == []
-    assert result["timed_out"] is True
-    assert result["timeout_seconds"] == 30
+    assert_that(result.success).is_false()
+    assert_that(result.output).contains(
+        "pytest execution timed out (30s limit exceeded)"
+    )
+    assert_that(result.issues_count).is_equal_to(1)
+    assert_that(result.issues).is_empty()
+    assert_that(result.timed_out).is_true()
+    assert_that(result.timeout_seconds).is_equal_to(30)
 
 
 def test_run_subprocess_with_timeout_success():
@@ -83,8 +86,8 @@ def test_run_subprocess_with_timeout_success():
 
     success, output = run_subprocess_with_timeout(tool, ["echo", "test"])
 
-    assert success is True
-    assert output == "output"
+    assert_that(success).is_true()
+    assert_that(output).is_equal_to("output")
     tool._run_subprocess.assert_called_once_with(
         cmd=["echo", "test"],
         timeout=None,
@@ -110,5 +113,5 @@ def test_run_subprocess_with_timeout_exception():
         run_subprocess_with_timeout(tool, ["slow", "command"], timeout=10)
 
     # Verify the exception has enhanced message
-    assert "test_tool execution timed out" in str(exc_info.value.output)
-    assert "(10s limit exceeded)" in str(exc_info.value.output)
+    assert_that(str(exc_info.value.output)).contains("test_tool execution timed out")
+    assert_that(str(exc_info.value.output)).contains("(10s limit exceeded)")

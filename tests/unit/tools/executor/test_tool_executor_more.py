@@ -282,6 +282,7 @@ def test_post_checks_early_filter_removes_black_from_main(monkeypatch) -> None:
     class LoggerCapture:
         def __init__(self) -> None:
             self.tools_list = None
+            self.run_dir = None
 
         def __getattr__(self, name: str):  # default no-ops
             def _(*a: Any, **k: Any) -> None:
@@ -289,14 +290,14 @@ def test_post_checks_early_filter_removes_black_from_main(monkeypatch) -> None:
 
             return _
 
-        def print_lintro_header(
-            self,
-            *,
-            action: str,
-            tool_count: int,
-            tools_list: str,
-        ) -> None:
-            self.tools_list = tools_list
+        def print_lintro_header(self) -> None:
+            return None
+
+        def print_tool_header(self, tool_name: str, action: str) -> None:
+            # Capture tool names that get executed
+            if self.tools_list is None:
+                self.tools_list = []
+            self.tools_list.append(tool_name)
             return None
 
     logger = LoggerCapture()
@@ -364,9 +365,9 @@ def test_post_checks_early_filter_removes_black_from_main(monkeypatch) -> None:
         raw_output=False,
     )
     assert_that(code).is_equal_to(0)
-    # Ensure black is not in main-phase header list
+    # Ensure black is not in main-phase tool headers
     assert_that(logger.tools_list).is_not_none()
-    assert_that("black" in (logger.tools_list or "")).is_false()
+    assert_that("black" not in (logger.tools_list or [])).is_true()
 
 
 def test_all_filtered_results_in_no_tools_warning(monkeypatch) -> None:

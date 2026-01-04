@@ -7,7 +7,7 @@ from pathlib import Path
 from assertpy import assert_that
 
 from lintro.utils.config import load_lintro_tool_config
-from lintro.utils.config_loaders import _load_pyproject
+from lintro.utils.config_loaders import _find_pyproject, load_pyproject
 
 
 def test_load_lintro_tool_config(tmp_path: Path, monkeypatch) -> None:
@@ -17,8 +17,9 @@ def test_load_lintro_tool_config(tmp_path: Path, monkeypatch) -> None:
         tmp_path: Temporary directory for pyproject creation.
         monkeypatch: Pytest monkeypatch to chdir into temp dir.
     """
-    # Clear the LRU cache to ensure we load from the test directory
-    _load_pyproject.cache_clear()
+    # Clear both LRU caches to ensure we load from the test directory
+    load_pyproject.cache_clear()
+    _find_pyproject.cache_clear()
 
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
@@ -51,8 +52,9 @@ def test_config_loader_handles_missing_and_malformed_pyproject(
         tmp_path: Temporary directory used to simulate project roots.
         monkeypatch: Pytest monkeypatch fixture for chdir and environment.
     """
-    # Clear the LRU cache to ensure we load from the test directory
-    _load_pyproject.cache_clear()
+    # Clear both LRU caches to ensure we load from the test directory
+    load_pyproject.cache_clear()
+    _find_pyproject.cache_clear()
 
     from lintro.utils import config as cfg
 

@@ -210,7 +210,6 @@ def test_biome_fix_sets_issues_for_table(temp_biome_file) -> None:
     formatted = format_tool_output(
         tool_name="biome",
         output=fix_result.output or "",
-        group_by="auto",
         output_format="grid",
         issues=fix_result.issues,
     )

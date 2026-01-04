@@ -13,7 +13,7 @@ def test_collect_tests_once_single_pass(tmp_path) -> None:
     Args:
         tmp_path: Pytest temporary directory fixture.
     """
-    from lintro.tools.implementations.pytest.pytest_utils import collect_tests_once
+    from lintro.tools.implementations.pytest.markers import collect_tests_once
 
     # Create test files
     (tmp_path / "test_example.py").write_text(
@@ -41,7 +41,7 @@ def test_docker_one():
         # Mock the subprocess call to count how many times it's called
         call_count = 0
 
-        def mock_run_subprocess(cmd):
+        def mock_run_subprocess(cmd, timeout=None, cwd=None, env=None):
             nonlocal call_count
             call_count += 1
             # Simulate successful collection output in pytest --collect-only format
@@ -76,7 +76,7 @@ def test_collect_tests_once_no_tests(tmp_path) -> None:
     Args:
         tmp_path: Pytest temporary directory fixture.
     """
-    from lintro.tools.implementations.pytest.pytest_utils import collect_tests_once
+    from lintro.tools.implementations.pytest.markers import collect_tests_once
 
     original_cwd = os.getcwd()
     os.chdir(tmp_path)
@@ -85,7 +85,7 @@ def test_collect_tests_once_no_tests(tmp_path) -> None:
         tool = PytestTool()
 
         # Mock subprocess for no tests
-        def mock_run_subprocess(cmd):
+        def mock_run_subprocess(cmd, timeout=None, cwd=None, env=None):
             output = "no tests collected in 0.01s"
             return True, output
 
@@ -106,7 +106,7 @@ def test_collect_tests_once_only_docker_tests(tmp_path) -> None:
     Args:
         tmp_path: Pytest temporary directory fixture.
     """
-    from lintro.tools.implementations.pytest.pytest_utils import collect_tests_once
+    from lintro.tools.implementations.pytest.markers import collect_tests_once
 
     # Create only docker tests
     (tmp_path / "docker").mkdir()
@@ -126,7 +126,7 @@ def test_docker_two():
         tool = PytestTool()
 
         # Mock subprocess for docker tests only
-        def mock_run_subprocess(cmd):
+        def mock_run_subprocess(cmd, timeout=None, cwd=None, env=None):
             output = """<Dir docker>
   <Function test_docker_one>
   <Function test_docker_two>
@@ -151,7 +151,7 @@ def test_collect_tests_once_mixed_tests(tmp_path) -> None:
     Args:
         tmp_path: Pytest temporary directory fixture.
     """
-    from lintro.tools.implementations.pytest.pytest_utils import collect_tests_once
+    from lintro.tools.implementations.pytest.markers import collect_tests_once
 
     # Create mixed tests
     (tmp_path / "test_regular.py").write_text(
@@ -174,7 +174,7 @@ def test_docker():
         tool = PytestTool()
 
         # Mock subprocess for mixed tests
-        def mock_run_subprocess(cmd):
+        def mock_run_subprocess(cmd, timeout=None, cwd=None, env=None):
             output = """<Module test_regular.py>
   <Function test_regular>
 <Dir docker>

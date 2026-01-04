@@ -22,7 +22,7 @@ def test_format_as_table_fallback_when_no_tabulate(monkeypatch) -> None:
         {"file": "x.py", "line": 1, "column": 2, "code": "X", "message": "m"},
         {"file": "y.py", "line": 3, "column": 4, "code": "Y", "message": "n"},
     ]
-    txt = tu.format_as_table(issues=issues, tool_name="unknown", group_by=None)
+    txt = tu.format_as_table(issues=issues, tool_name="unknown")
     assert_that(isinstance(txt, str)).is_true()
     # Fallback header may be lowercase normalized keys
     assert_that(

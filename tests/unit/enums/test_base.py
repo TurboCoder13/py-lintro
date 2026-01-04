@@ -6,13 +6,14 @@ from enum import auto
 
 from assertpy import assert_that
 
-from lintro.enums.base import HyphenatedStrEnum, UpperCaseStrEnum
+from lintro.enums.hyphenated_str_enum import HyphenatedStrEnum
+from lintro.enums.uppercase_str_enum import UppercaseStrEnum
 
 
 def test_upper_case_str_enum_single_word() -> None:
-    """UpperCaseStrEnum produces uppercase values for single-word members."""
+    """UppercaseStrEnum produces uppercase values for single-word members."""
 
-    class TestEnum(UpperCaseStrEnum):
+    class TestEnum(UppercaseStrEnum):
         HEAD = auto()
         MAIN = auto()
         MASTER = auto()
@@ -23,9 +24,9 @@ def test_upper_case_str_enum_single_word() -> None:
 
 
 def test_upper_case_str_enum_with_underscores() -> None:
-    """UpperCaseStrEnum produces uppercase values preserving underscores."""
+    """UppercaseStrEnum produces uppercase values preserving underscores."""
 
-    class TestEnum(UpperCaseStrEnum):
+    class TestEnum(UppercaseStrEnum):
         REV_PARSE = auto()
         GIT_COMMAND = auto()
 
@@ -71,7 +72,7 @@ def test_hyphenated_str_enum_multiple_underscores() -> None:
 
 
 def test_git_ref_enum_uses_upper_case() -> None:
-    """GitRef enum correctly uses UpperCaseStrEnum to produce uppercase values."""
+    """GitRef enum correctly uses UppercaseStrEnum to produce uppercase values."""
     from lintro.enums.git_ref import GitRef
 
     assert_that(GitRef.HEAD.value).is_equal_to("HEAD")

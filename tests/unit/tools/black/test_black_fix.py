@@ -48,43 +48,6 @@ def test_black_fix_with_options(monkeypatch, tmp_path: Path) -> None:
     assert_that(cmd).contains("--preview")
 
 
-def test_black_diff_flag_in_fix(monkeypatch, tmp_path: Path) -> None:
-    """Ensure the diff flag is present during formatting in fix mode.
-
-    Args:
-        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
-        tmp_path: Temporary directory for creating files.
-    """
-    tool = BlackTool()
-
-    f = tmp_path / "diff.py"
-    f.write_text("print('x')\n")
-
-    monkeypatch.setattr(
-        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
-        lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
-        raising=True,
-    )
-
-    calls: list[list[str]] = []
-
-    def fake_run(cmd, timeout=None, cwd=None):
-        calls.append(cmd)
-        # First and last are --check; middle is format run
-        if "--check" in cmd:
-            return (False, f"would reformat {f.name}\n")
-        return (True, f"reformatted {f.name}\n")
-
-    monkeypatch.setattr(
-        tool,
-        "_run_subprocess",
-        lambda cmd, timeout, cwd=None: fake_run(cmd, timeout, cwd),
-    )
-
-    tool.set_options(diff=True)
-    _ = tool.fix([str(tmp_path)])
-
-
 def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
     """Exercise BlackTool option wiring and subprocess building paths.
 
@@ -127,7 +90,7 @@ def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(
         config_injection,
         "_should_use_lintro_config",
-        lambda tool_name: False,
+        lambda tool_name, lintro_config=None: False,
     )
 
     tool.set_options(

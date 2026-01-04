@@ -239,8 +239,9 @@ def test_executor_json_output(monkeypatch, fake_logger, capsys) -> None:
     assert_that(code).is_equal_to(1)
     out = capsys.readouterr().out
     data = json.loads(out)
-    assert_that(data["action"]).is_equal_to("check")
+    # JSON output includes results and summary sections
     assert_that("results" in data and len(data["results"]) >= 2).is_true()
+    assert_that("summary" in data).is_true()
 
 
 def test_executor_handles_tool_failure_with_output(

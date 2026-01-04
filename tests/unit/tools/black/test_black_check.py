@@ -140,7 +140,7 @@ def test_black_options_build_line_length_and_target(
     monkeypatch.setattr(
         config_injection,
         "_should_use_lintro_config",
-        lambda tool_name: False,
+        lambda tool_name, lintro_config=None: False,
     )
 
     tool.set_options(line_length=100, target_version="py313")

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from assertpy import assert_that
 
-from lintro.utils.tool_utils import (
+from lintro.utils.path_filtering import (
     _is_venv_directory,
-    format_as_table,
     should_exclude_path,
     walk_files_with_excludes,
 )
+from lintro.utils.table_formatting import format_as_table
 
 
 def test_should_exclude_path_patterns() -> None:
@@ -47,7 +47,7 @@ def test_get_table_columns_and_format_tabulate(monkeypatch) -> None:
         {"file": "a.py", "line": 1, "column": 2, "code": "X", "message": "m"},
         {"file": "b.py", "line": 3, "column": 4, "code": "Y", "message": "n"},
     ]
-    table = format_as_table(issues=issues, tool_name="unknown", group_by=None)
+    table = format_as_table(issues=issues, tool_name="unknown")
     assert_that(table).is_equal_to("TABLE")
     assert_that(rows_captured["headers"]).is_true()
     assert_that(rows_captured["rows"]).is_true()

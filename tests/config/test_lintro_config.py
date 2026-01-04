@@ -6,7 +6,7 @@ from lintro.config.lintro_config import (
     EnforceConfig,
     ExecutionConfig,
     LintroConfig,
-    ToolConfig,
+    LintroToolConfig,
 )
 
 
@@ -29,8 +29,8 @@ def test_execution_config_defaults() -> None:
 
 
 def test_tool_config_defaults() -> None:
-    """ToolConfig should have sensible defaults."""
-    config = ToolConfig()
+    """LintroToolConfig should have sensible defaults."""
+    config = LintroToolConfig()
 
     assert config.enabled is True
     assert config.config_source is None
@@ -60,7 +60,7 @@ def test_get_tool_config_returns_default() -> None:
 def test_get_tool_config_case_insensitive() -> None:
     """get_tool_config should be case insensitive."""
     config = LintroConfig(
-        tools={"ruff": ToolConfig(enabled=False)},
+        tools={"ruff": LintroToolConfig(enabled=False)},
     )
 
     # Lowercase should work

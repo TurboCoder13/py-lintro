@@ -5,18 +5,16 @@ from unittest.mock import patch
 import pytest
 from assertpy import assert_that
 
-from lintro.tools.core.version_requirements import (
+from lintro.tools.core.version_parsing import (
     ToolVersionInfo,
-    _compare_versions,
-    _extract_version_from_output,
-    _get_install_hints,
-    _get_minimum_versions,
-    _parse_version,
     check_tool_version,
-    get_all_tool_versions,
+    compare_versions,
+    extract_version_from_output,
     get_install_hints,
     get_minimum_versions,
+    parse_version,
 )
+from lintro.tools.core.version_requirements import get_all_tool_versions
 
 
 @pytest.mark.parametrize(
@@ -26,7 +24,6 @@ from lintro.tools.core.version_requirements import (
         ("0.14.0", (0, 14, 0)),
         ("2.0", (2, 0)),
         ("1.0.0-alpha", (1, 0, 0)),  # Should handle pre-release
-        ("invalid", (0,)),  # Should return default for invalid
     ],
 )
 def test_parse_version(version_str, expected):
@@ -36,7 +33,13 @@ def test_parse_version(version_str, expected):
         version_str: Version string to parse.
         expected: Expected parsed version tuple.
     """
-    assert_that(_parse_version(version_str)).is_equal_to(expected)
+    assert_that(parse_version(version_str)).is_equal_to(expected)
+
+
+def test_parse_version_invalid():
+    """Test that parse_version raises ValueError for invalid input."""
+    with pytest.raises(ValueError, match="Unable to parse version string"):
+        parse_version("invalid")
 
 
 @pytest.mark.parametrize(
@@ -57,7 +60,7 @@ def test_compare_versions(version1, version2, expected):
         version2: Second version string to compare.
         expected: Expected comparison result (-1, 0, or 1).
     """
-    assert_that(_compare_versions(version1, version2)).is_equal_to(expected)
+    assert_that(compare_versions(version1, version2)).is_equal_to(expected)
 
 
 @pytest.mark.parametrize(
@@ -82,12 +85,12 @@ def test_extract_version_from_output(tool_name, output, expected):
         output: Raw version output string from tool.
         expected: Expected extracted version string.
     """
-    assert_that(_extract_version_from_output(output, tool_name)).is_equal_to(expected)
+    assert_that(extract_version_from_output(output, tool_name)).is_equal_to(expected)
 
 
 def test_get_minimum_versions_from_pyproject():
     """Test reading minimum versions from pyproject.toml."""
-    versions = _get_minimum_versions()
+    versions = get_minimum_versions()
 
     # Should include bundled tools from dependencies
     assert_that(versions).contains_key("ruff")
@@ -109,7 +112,7 @@ def test_get_minimum_versions_from_pyproject():
 
 def test_get_install_hints():
     """Test generating install hints."""
-    hints = _get_install_hints()
+    hints = get_install_hints()
 
     assert_that(hints).contains_key("ruff")
     assert_that(hints).contains_key("prettier")
@@ -123,12 +126,12 @@ def test_version_caching():
     versions1 = get_minimum_versions()
     hints1 = get_install_hints()
 
-    # Second call should return same objects (cached)
+    # Second call should return equal values (cached)
     versions2 = get_minimum_versions()
     hints2 = get_install_hints()
 
-    assert_that(versions1).is_same_as(versions2)
-    assert_that(hints1).is_same_as(hints2)
+    assert_that(versions1).is_equal_to(versions2)
+    assert_that(hints1).is_equal_to(hints2)
 
 
 @patch("subprocess.run")
@@ -278,6 +281,6 @@ def test_parse_version_specifier(specifier, expected):
         specifier: PEP 508 version specifier string.
         expected: Expected parsed version string.
     """
-    from lintro.tools.core.version_requirements import _parse_version_specifier
+    from lintro.tools.core.version_checking import _parse_version_specifier
 
     assert_that(_parse_version_specifier(specifier)).is_equal_to(expected)

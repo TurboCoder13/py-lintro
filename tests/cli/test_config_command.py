@@ -14,7 +14,7 @@ from lintro.config.lintro_config import (
     EnforceConfig,
     ExecutionConfig,
     LintroConfig,
-    ToolConfig,
+    LintroToolConfig,
 )
 
 
@@ -46,8 +46,8 @@ def mock_config() -> LintroConfig:
             target_python="py313",
         ),
         tools={
-            "ruff": ToolConfig(enabled=True),
-            "prettier": ToolConfig(enabled=True),
+            "ruff": LintroToolConfig(enabled=True),
+            "prettier": LintroToolConfig(enabled=True),
         },
         config_path="/path/to/.lintro-config.yaml",
     )

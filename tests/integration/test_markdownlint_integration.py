@@ -110,6 +110,8 @@ def test_markdownlint_direct_vs_lintro_parity() -> None:
 
     # Run via lintro
     tool = MarkdownlintTool()
+    # Clear exclude patterns to allow scanning test_samples
+    tool.exclude_patterns = []
     lintro_result = tool.check(paths=[str(sample_path)])
 
     # Compare issue counts (allow some variance due to parsing differences)

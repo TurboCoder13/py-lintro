@@ -10,6 +10,7 @@ import pytest
 from assertpy import assert_that
 from loguru import logger
 
+from lintro.enums.severity_level import SeverityLevel
 from lintro.tools.implementations.yamllint_config import YamllintTool
 
 logger.remove()
@@ -142,7 +143,7 @@ def test_yamllint_reports_violations_through_lintro(tmp_path) -> None:
     ), "Lintro YamllintTool should report at least one issue."
     assert result.issues, "Parsed issues list should be present"
     assert any(
-        (getattr(i, "level", None) in {"error", "warning"} for i in result.issues),
+        (getattr(i, "level", None) in {SeverityLevel.ERROR, SeverityLevel.WARNING} for i in result.issues),
     ), "Parsed issues should include error or warning levels."
 
 
