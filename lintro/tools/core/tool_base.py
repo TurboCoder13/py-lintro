@@ -429,9 +429,14 @@ class BaseTool(ABC):
         rel_files: list[str] = [os.path.relpath(f, cwd) if cwd else f for f in files]
 
         # Step 5: Determine timeout
-        timeout = default_timeout or self.options.get("timeout", self._default_timeout)
-        if not isinstance(timeout, int):
-            timeout = int(timeout)
+        timeout_val = default_timeout or self.options.get("timeout", self._default_timeout)
+        # Ensure timeout is an integer (options dict values are typed as object)
+        if isinstance(timeout_val, int):
+            timeout = timeout_val
+        elif isinstance(timeout_val, (str, float)):
+            timeout = int(timeout_val)
+        else:
+            timeout = self._default_timeout
 
         return ExecutionContext(
             files=files,

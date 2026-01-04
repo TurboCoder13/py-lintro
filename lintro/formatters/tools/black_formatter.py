@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from lintro.enums.output_format import OutputFormat
 from lintro.formatters.core.format_registry import get_style
+from lintro.formatters.core.table_descriptor import TableDescriptor
+from lintro.parsers.black.black_issue import BlackIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 
-class BlackTableDescriptor:
+class BlackTableDescriptor(TableDescriptor):
     """Column layout for Black issues in tabular output."""
 
     def get_columns(self) -> list[str]:
@@ -18,7 +20,7 @@ class BlackTableDescriptor:
         """
         return ["File", "Line", "Column", "Code", "Severity", "Message"]
 
-    def get_rows(self, issues: list) -> list[list[str]]:
+    def get_rows(self, issues: list[BlackIssue]) -> list[list[str]]:
         """Return formatted rows for Black issues.
 
         Args:
@@ -54,7 +56,7 @@ class BlackTableDescriptor:
         return rows
 
 
-def format_black_issues(issues, format: OutputFormat) -> str:
+def format_black_issues(issues: list[BlackIssue], format: OutputFormat) -> str:
     """Format Black issues according to the chosen style.
 
     Args:
