@@ -70,17 +70,13 @@ def get_style(format_key: OutputFormat | str) -> OutputStyle:
                     format_key = fmt
                     break
             else:
-                # Fallback to GridStyle for unknown formats (backward compatibility)
-                from lintro.formatters.styles.grid import GridStyle
-
-                return GridStyle()
+                # Fallback to cached GridStyle for unknown formats
+                return styles[OutputFormat.GRID]
 
     style = styles.get(format_key)
     if style is None:
-        # Fallback to grid style
-        from lintro.formatters.styles.grid import GridStyle
-
-        return GridStyle()
+        # Fallback to cached grid style
+        return styles[OutputFormat.GRID]
 
     return style
 

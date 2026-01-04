@@ -171,4 +171,4 @@ def test_clippy_check_no_rust_files(monkeypatch, tmp_path: Path) -> None:
     res = tool.check([str(tmp_path)])
     assert_that(res.success).is_true()
     assert_that(res.issues_count).is_equal_to(0)
-    assert_that(res.output).contains("No")
+    assert_that(res.output).contains("No .rs files found")

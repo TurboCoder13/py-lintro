@@ -191,6 +191,10 @@ class MypyTool(BaseTool):
     def _build_effective_excludes(self, configured_excludes: Any) -> list[str]:
         """Build effective exclude patterns from config and defaults.
 
+        Always includes default patterns, then adds any configured excludes.
+        This ensures common directories (tests/, build/, dist/) are always
+        excluded unless explicitly overridden.
+
         Args:
             configured_excludes: Exclude patterns from mypy config.
 
@@ -198,6 +202,13 @@ class MypyTool(BaseTool):
             list[str]: Combined exclude patterns.
         """
         effective_excludes: list[str] = list(self.exclude_patterns)
+
+        # Always add default patterns first
+        for default_pattern in MYPY_DEFAULT_EXCLUDE_PATTERNS:
+            if default_pattern not in effective_excludes:
+                effective_excludes.append(default_pattern)
+
+        # Then add configured excludes (if any)
         if configured_excludes:
             raw_excludes = (
                 [configured_excludes]
@@ -208,10 +219,7 @@ class MypyTool(BaseTool):
                 glob_pattern = _regex_to_glob(str(pattern))
                 if glob_pattern and glob_pattern not in effective_excludes:
                     effective_excludes.append(glob_pattern)
-        else:
-            for default_pattern in MYPY_DEFAULT_EXCLUDE_PATTERNS:
-                if default_pattern not in effective_excludes:
-                    effective_excludes.append(default_pattern)
+
         return effective_excludes
 
     def check(

@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from lintro.formatters.core.format_registry import get_string_format_map, get_style
+from lintro.formatters.core.format_registry import get_style
 from lintro.formatters.core.table_descriptor import TableDescriptor
 from lintro.parsers.mypy.mypy_issue import MypyIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
-
-# Use shared format registry (string keys for backward compatibility)
-FORMAT_MAP = get_string_format_map()
 
 
 class MypyTableDescriptor(TableDescriptor):
