@@ -50,28 +50,27 @@ def get_style(format_key: OutputFormat | str) -> "OutputStyle":
 
     Returns:
         OutputStyle: The appropriate style instance for formatting.
-
-    Raises:
-        ValueError: If format_key is not a valid format.
+            Falls back to GridStyle for unknown formats to maintain
+            backward compatibility.
     """
     styles = _create_style_instances()
 
     # Handle string keys for backward compatibility
     if isinstance(format_key, str):
-        format_key = format_key.lower()
+        format_key_lower = format_key.lower()
         try:
-            format_key = OutputFormat(format_key)
+            format_key = OutputFormat(format_key_lower)
         except ValueError:
             # Try matching by name
             for fmt in OutputFormat:
-                if fmt.value == format_key or fmt.name.lower() == format_key:
+                if fmt.value == format_key_lower or fmt.name.lower() == format_key_lower:
                     format_key = fmt
                     break
             else:
-                raise ValueError(
-                    f"Unknown format: {format_key}. "
-                    f"Valid formats: {[f.value for f in OutputFormat]}"
-                )
+                # Fallback to GridStyle for unknown formats (backward compatibility)
+                from lintro.formatters.styles.grid import GridStyle
+
+                return GridStyle()
 
     style = styles.get(format_key)
     if style is None:

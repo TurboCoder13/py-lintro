@@ -3,22 +3,8 @@
 from __future__ import annotations
 
 from lintro.enums.output_format import OutputFormat
-from lintro.formatters.styles.csv import CsvStyle
-from lintro.formatters.styles.grid import GridStyle
-from lintro.formatters.styles.html import HtmlStyle
-from lintro.formatters.styles.json import JsonStyle
-from lintro.formatters.styles.markdown import MarkdownStyle
-from lintro.formatters.styles.plain import PlainStyle
+from lintro.formatters.core.format_registry import get_style
 from lintro.utils.path_utils import normalize_file_path_for_display
-
-FORMAT_MAP = {
-    OutputFormat.PLAIN: PlainStyle(),
-    OutputFormat.GRID: GridStyle(),
-    OutputFormat.MARKDOWN: MarkdownStyle(),
-    OutputFormat.HTML: HtmlStyle(),
-    OutputFormat.JSON: JsonStyle(),
-    OutputFormat.CSV: CsvStyle(),
-}
 
 
 class BlackTableDescriptor:
@@ -79,7 +65,7 @@ def format_black_issues(issues, format: OutputFormat) -> str:
         str: Rendered table string.
     """
     descriptor = BlackTableDescriptor()
-    formatter = FORMAT_MAP.get(format, GridStyle())
+    formatter = get_style(format)
     columns = descriptor.get_columns()
     rows = descriptor.get_rows(issues)
     if format == OutputFormat.JSON:

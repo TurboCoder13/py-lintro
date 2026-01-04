@@ -1,24 +1,10 @@
 """Formatter for Prettier issues."""
 
 from lintro.enums.output_format import OutputFormat
+from lintro.formatters.core.format_registry import get_style
 from lintro.formatters.core.table_descriptor import TableDescriptor
-from lintro.formatters.styles.csv import CsvStyle
-from lintro.formatters.styles.grid import GridStyle
-from lintro.formatters.styles.html import HtmlStyle
-from lintro.formatters.styles.json import JsonStyle
-from lintro.formatters.styles.markdown import MarkdownStyle
-from lintro.formatters.styles.plain import PlainStyle
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
-
-FORMAT_MAP = {
-    OutputFormat.PLAIN: PlainStyle(),
-    OutputFormat.GRID: GridStyle(),
-    OutputFormat.MARKDOWN: MarkdownStyle(),
-    OutputFormat.HTML: HtmlStyle(),
-    OutputFormat.JSON: JsonStyle(),
-    OutputFormat.CSV: CsvStyle(),
-}
 
 
 class PrettierTableDescriptor(TableDescriptor):
@@ -77,7 +63,7 @@ def format_prettier_issues(
         JSON returns the combined table for compatibility.
     """
     descriptor = PrettierTableDescriptor()
-    formatter = FORMAT_MAP.get(format, GridStyle())
+    formatter = get_style(format)
 
     if format == OutputFormat.JSON:
         columns = descriptor.get_columns()
