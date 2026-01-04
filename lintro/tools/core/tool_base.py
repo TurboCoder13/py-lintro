@@ -17,6 +17,7 @@ from lintro.enums.tool_option_key import ToolOptionKey
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
+from lintro.utils.path_filtering import walk_files_with_excludes
 from lintro.utils.path_utils import find_lintro_ignore
 
 # Constants for default values
@@ -36,6 +37,34 @@ DEFAULT_EXCLUDE_PATTERNS: list[str] = [
     "build",
     "*.egg-info",
 ]
+
+
+@dataclass
+class ExecutionContext:
+    """Context for tool execution containing prepared files and metadata.
+
+    This dataclass encapsulates the common preparation steps needed before
+    running a tool, eliminating duplicate boilerplate across tool implementations.
+
+    Attributes:
+        files: List of absolute file paths to process.
+        rel_files: List of file paths relative to cwd.
+        cwd: Working directory for command execution.
+        early_result: If set, return this result immediately (e.g., version check
+            failed, no files found).
+        timeout: Timeout value for subprocess execution.
+    """
+
+    files: list[str] = field(default_factory=list)
+    rel_files: list[str] = field(default_factory=list)
+    cwd: str | None = None
+    early_result: ToolResult | None = None
+    timeout: int = DEFAULT_TIMEOUT
+
+    @property
+    def should_skip(self) -> bool:
+        """Check if execution should be skipped due to early result."""
+        return self.early_result is not None
 
 
 @dataclass
@@ -309,6 +338,105 @@ class BaseTool(ABC):
             else:
                 return os.path.commonpath(list(parent_dirs))
         return None
+
+    def _prepare_execution(
+        self,
+        paths: list[str],
+        *,
+        no_files_message: str = "No files to check.",
+        default_timeout: int | None = None,
+        file_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
+    ) -> ExecutionContext:
+        """Prepare execution context with common boilerplate steps.
+
+        This method consolidates the repeated pattern across all tool implementations:
+        1. Verify tool version requirements
+        2. Validate input paths
+        3. Discover files matching patterns
+        4. Compute working directory and relative paths
+
+        Args:
+            paths: Input paths to process.
+            no_files_message: Message when no files are found.
+            default_timeout: Default timeout override (uses tool's default if None).
+            file_patterns: Override file patterns (uses config patterns if None).
+            exclude_patterns: Override exclude patterns (uses instance patterns if None).
+
+        Returns:
+            ExecutionContext: Context with files, cwd, and optional early_result.
+
+        Example:
+            ctx = self._prepare_execution(paths)
+            if ctx.should_skip:
+                return ctx.early_result
+
+            cmd = self._build_command(ctx.rel_files)
+            success, output = self._run_subprocess(cmd, timeout=ctx.timeout, cwd=ctx.cwd)
+        """
+        # Step 1: Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return ExecutionContext(early_result=version_result)
+
+        # Step 2: Validate paths
+        self._validate_paths(paths=paths)
+        if not paths:
+            return ExecutionContext(
+                early_result=ToolResult(
+                    name=self.name,
+                    success=True,
+                    output=no_files_message,
+                    issues_count=0,
+                ),
+            )
+
+        # Step 3: Discover files
+        effective_patterns = file_patterns or self.config.file_patterns
+        effective_excludes = exclude_patterns or self.exclude_patterns
+
+        files: list[str] = walk_files_with_excludes(
+            paths=paths,
+            file_patterns=effective_patterns,
+            exclude_patterns=effective_excludes,
+            include_venv=self.include_venv,
+        )
+
+        if not files:
+            # Customize message based on file type
+            file_type = "files"
+            if effective_patterns:
+                # Extract file types from patterns for a friendlier message
+                extensions = [p.replace("*", "") for p in effective_patterns if p.startswith("*.")]
+                if extensions:
+                    file_type = "/".join(extensions) + " files"
+
+            return ExecutionContext(
+                early_result=ToolResult(
+                    name=self.name,
+                    success=True,
+                    output=f"No {file_type} found to check.",
+                    issues_count=0,
+                ),
+            )
+
+        logger.debug(f"Files to process: {files}")
+
+        # Step 4: Compute cwd and relative paths
+        cwd: str | None = self.get_cwd(paths=files)
+        rel_files: list[str] = [os.path.relpath(f, cwd) if cwd else f for f in files]
+
+        # Step 5: Determine timeout
+        timeout = default_timeout or self.options.get("timeout", self._default_timeout)
+        if not isinstance(timeout, int):
+            timeout = int(timeout)
+
+        return ExecutionContext(
+            files=files,
+            rel_files=rel_files,
+            cwd=cwd,
+            timeout=timeout,
+        )
 
     def _get_executable_command(
         self,

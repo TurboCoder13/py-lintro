@@ -3,24 +3,13 @@
 from collections.abc import Sequence
 
 from lintro.enums.output_format import OutputFormat
+from lintro.formatters.core.format_registry import get_format_map, get_style
 from lintro.formatters.core.table_descriptor import TableDescriptor
-from lintro.formatters.styles.csv import CsvStyle
-from lintro.formatters.styles.grid import GridStyle
-from lintro.formatters.styles.html import HtmlStyle
-from lintro.formatters.styles.json import JsonStyle
-from lintro.formatters.styles.markdown import MarkdownStyle
-from lintro.formatters.styles.plain import PlainStyle
 from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
 
-FORMAT_MAP = {
-    OutputFormat.PLAIN: PlainStyle(),
-    OutputFormat.GRID: GridStyle(),
-    OutputFormat.MARKDOWN: MarkdownStyle(),
-    OutputFormat.HTML: HtmlStyle(),
-    OutputFormat.JSON: JsonStyle(),
-    OutputFormat.CSV: CsvStyle(),
-}
+# Use shared format registry instead of duplicating style instances
+FORMAT_MAP = get_format_map()
 
 
 class RuffTableDescriptor(TableDescriptor):
@@ -93,7 +82,7 @@ def format_ruff_issues(
 
     normalized_format = normalize_output_format(format or "grid")
     descriptor = RuffTableDescriptor()
-    formatter = FORMAT_MAP.get(normalized_format, GridStyle())
+    formatter = get_style(normalized_format)
 
     # Partition issues
     fixable_issues: list[RuffIssue | RuffFormatIssue] = []

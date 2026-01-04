@@ -1,7 +1,6 @@
 """Bandit security linter integration."""
 
 import json
-import os
 import subprocess  # nosec B404 - deliberate, shell disabled
 from dataclasses import dataclass, field
 from typing import Any
@@ -20,7 +19,6 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.config_utils import load_bandit_config
-from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Constants for Bandit configuration
 BANDIT_DEFAULT_TIMEOUT: int = 30
@@ -309,47 +307,16 @@ class BanditTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        if not paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-
-        # Use shared utility for file discovery
-        python_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation to handle version check, path validation,
+        # file discovery, and cwd computation
+        ctx = self._prepare_execution(
+            paths,
+            default_timeout=BANDIT_DEFAULT_TIMEOUT,
         )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
-        if not python_files:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No Python files found to check.",
-                issues_count=0,
-            )
-
-        logger.debug(f"Files to check: {python_files}")
-
-        # Ensure Bandit discovers the correct configuration by setting the
-        # working directory to the common parent of the target files.
-        cwd: str | None = self.get_cwd(paths=python_files)
-        rel_files: list[str] = [
-            os.path.relpath(f, cwd) if cwd else f for f in python_files
-        ]
-
-        timeout: int = self.options.get("timeout", BANDIT_DEFAULT_TIMEOUT)
-        cmd: list[str] = self._build_check_command(files=rel_files)
+        cmd: list[str] = self._build_check_command(files=ctx.rel_files)
 
         output: str
         execution_failure: bool = False
@@ -358,22 +325,26 @@ class BanditTool(BaseTool):
         try:
             success, combined = self._run_subprocess(
                 cmd=cmd,
-                timeout=timeout,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
             output = (combined or "").strip()
             rc: int = 0 if success else 1
         except subprocess.TimeoutExpired:
-            # Handle timeout gracefully
-            execution_failure = True
-            timeout_msg = (
-                f"Bandit execution timed out ({timeout}s limit exceeded).\n\n"
-                "This may indicate:\n"
-                "  - Large codebase taking too long to process\n"
-                "  - Need to increase timeout via --tool-options bandit:timeout=N"
+            # Handle timeout gracefully using shared utility
+            from lintro.tools.core.timeout_utils import create_timeout_result
+
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=ctx.timeout,
+                cmd=cmd,
             )
-            output = timeout_msg
-            rc = 1
+            return ToolResult(
+                name=self.name,
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
+            )
         except Exception as e:
             logger.error(f"Failed to run Bandit: {e}")
             output = f"Bandit failed: {e}"
