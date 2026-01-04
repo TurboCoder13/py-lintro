@@ -22,9 +22,9 @@ def test_black_check_parses_issues(monkeypatch, tmp_path: Path) -> None:
     f = tmp_path / "a.py"
     f.write_text("print('x')\n")
 
-    # Stub file discovery to return our file
+    # Stub file discovery to return our file (mock in path_filtering module)
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
         raising=True,
     )
@@ -61,7 +61,7 @@ def test_black_fix_computes_counts(monkeypatch, tmp_path: Path) -> None:
     f.write_text("print('y')\n")
 
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
         raising=True,
     )
@@ -116,7 +116,7 @@ def test_black_options_build_line_length_and_target(
     f.write_text("print('opt')\n")
 
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
         raising=True,
     )
@@ -167,7 +167,7 @@ def test_black_options_include_fast_and_preview(monkeypatch, tmp_path: Path) -> 
     f.write_text("print('x')\n")
 
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
         raising=True,
     )

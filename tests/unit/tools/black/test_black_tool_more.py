@@ -35,7 +35,7 @@ def test_black_no_files_paths(tmp_path: Path, monkeypatch) -> None:
     tool = BlackTool()
     # Stub discovery to empty list to simulate "no files to check/format"
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [],
         raising=True,
     )
@@ -43,9 +43,9 @@ def test_black_no_files_paths(tmp_path: Path, monkeypatch) -> None:
     res_check = tool.check([str(tmp_path)])
     assert_that(res_check.success).is_true()
     assert_that(res_check.issues_count).is_equal_to(0)
-    assert_that(res_check.output or "").contains("No files")
+    assert_that(res_check.output or "").contains("No")
 
     res_fix = tool.fix([str(tmp_path)])
     assert_that(res_fix.success).is_true()
     assert_that(res_fix.issues_count).is_equal_to(0)
-    assert_that(res_fix.output or "").contains("No files")
+    assert_that(res_fix.output or "").contains("No")

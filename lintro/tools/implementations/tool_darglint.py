@@ -16,7 +16,6 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.darglint.darglint_issue import DarglintIssue
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Constants for Darglint configuration
 # Reduced to 15s to fail fast on problematic files while allowing normal files to complete
@@ -253,30 +252,15 @@ class DarglintTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        if not paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-        # Use shared utility for file discovery
-        python_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            default_timeout=DARGLINT_DEFAULT_TIMEOUT,
         )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
-        logger.debug(f"Files to check: {python_files}")
-
-        timeout: int = self.options.get("timeout", DARGLINT_DEFAULT_TIMEOUT)
+        logger.debug(f"Files to check: {ctx.files}")
         all_outputs: list[str] = []
         all_issues: list[DarglintIssue] = []
         all_success: bool = True
@@ -285,14 +269,14 @@ class DarglintTool(BaseTool):
         total_issues: int = 0
 
         # Show progress bar only when processing multiple files
-        if len(python_files) >= 2:
+        if len(ctx.files) >= 2:
             with click.progressbar(
-                python_files,
+                ctx.files,
                 label="Processing files",
                 bar_template="%(label)s  %(info)s",
             ) as bar:
                 for file_path in bar:
-                    result = self._process_file(file_path=file_path, timeout=timeout)
+                    result = self._process_file(file_path=file_path, timeout=ctx.timeout)
                     if not result.success:
                         all_success = False
                     total_issues += result.issues_count
@@ -329,8 +313,8 @@ class DarglintTool(BaseTool):
                         all_issues.append(error_issue)
         else:
             # Process without progress bar for single file or no files
-            for file_path in python_files:
-                result = self._process_file(file_path=file_path, timeout=timeout)
+            for file_path in ctx.files:
+                result = self._process_file(file_path=file_path, timeout=ctx.timeout)
                 if not result.success:
                     all_success = False
                 total_issues += result.issues_count
@@ -370,7 +354,7 @@ class DarglintTool(BaseTool):
         if skipped_files:
             output += (
                 f"\n\nSkipped {len(skipped_files)} file(s) due to timeout "
-                f"({timeout}s limit exceeded):"
+                f"({ctx.timeout}s limit exceeded):"
             )
             for file in skipped_files:
                 output += f"\n  - {file}"

@@ -1,6 +1,5 @@
 """Biome linter integration."""
 
-import os
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 
@@ -11,7 +10,6 @@ from lintro.models.core.tool import Tool, ToolConfig, ToolResult
 from lintro.parsers.biome.biome_issue import BiomeIssue
 from lintro.parsers.biome.biome_parser import parse_biome_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Constants for Biome configuration
 BIOME_DEFAULT_TIMEOUT: int = 30
@@ -142,43 +140,26 @@ class BiomeTool(BaseTool):
         Returns:
             ToolResult instance
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        biome_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            default_timeout=BIOME_DEFAULT_TIMEOUT,
         )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
+
         logger.debug(
-            f"[BiomeTool] Discovered {len(biome_files)} files matching patterns: "
+            f"[BiomeTool] Discovered {len(ctx.files)} files matching patterns: "
             f"{self.config.file_patterns}",
         )
         logger.debug(
             f"[BiomeTool] Exclude patterns applied: {self.exclude_patterns}",
         )
-        if biome_files:
+        if ctx.files:
             logger.debug(
-                f"[BiomeTool] Files to check (first 10): {biome_files[:10]}",
+                f"[BiomeTool] Files to check (first 10): {ctx.files[:10]}",
             )
-        if not biome_files:
-            return Tool.to_result(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-
-        # Use relative paths and set cwd to the common parent
-        cwd: str = self.get_cwd(paths=biome_files)
-        logger.debug(f"[BiomeTool] Working directory: {cwd}")
-        rel_files: list[str] = [
-            os.path.relpath(f, cwd) if cwd else f for f in biome_files
-        ]
+        logger.debug(f"[BiomeTool] Working directory: {ctx.cwd}")
 
         # Build Biome command with JSON reporter
         cmd: list[str] = self._get_executable_command(tool_name="biome") + [
@@ -200,17 +181,16 @@ class BiomeTool(BaseTool):
             cmd.extend(["--vcs-use-ignore-file", "true"])
             logger.debug("[BiomeTool] Using VCS ignore file")
 
-        cmd.extend(rel_files)
-        logger.debug(f"[BiomeTool] Running: {' '.join(cmd)} (cwd={cwd})")
-        timeout_val: int = self.options.get("timeout", self._default_timeout)
+        cmd.extend(ctx.rel_files)
+        logger.debug(f"[BiomeTool] Running: {' '.join(cmd)} (cwd={ctx.cwd})")
         try:
             result = self._run_subprocess(
                 cmd=cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
-            return self._create_timeout_result(timeout_val=timeout_val)
+            return self._create_timeout_result(timeout_val=ctx.timeout)
         output: str = result[1]
         issues: list = parse_biome_output(output=output)
         issues_count: int = len(issues)
@@ -241,31 +221,14 @@ class BiomeTool(BaseTool):
         Returns:
             ToolResult: Result object with counts and messages.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        biome_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            no_files_message="No files to fix.",
+            default_timeout=BIOME_DEFAULT_TIMEOUT,
         )
-        if not biome_files:
-            return Tool.to_result(
-                name=self.name,
-                success=True,
-                output="No files to fix.",
-                issues_count=0,
-            )
-
-        # First, check for issues before fixing
-        cwd: str = self.get_cwd(paths=biome_files)
-        rel_files: list[str] = [
-            os.path.relpath(f, cwd) if cwd else f for f in biome_files
-        ]
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
         # Get Lintro config injection args if available
         config_args = self._build_config_args()
@@ -281,17 +244,16 @@ class BiomeTool(BaseTool):
         # Add VCS ignore option if enabled
         if self.options.get("use_vcs_ignore", False):
             check_cmd.extend(["--vcs-use-ignore-file", "true"])
-        check_cmd.extend(rel_files)
-        logger.debug(f"[BiomeTool] Checking: {' '.join(check_cmd)} (cwd={cwd})")
-        timeout_val: int = self.options.get("timeout", self._default_timeout)
+        check_cmd.extend(ctx.rel_files)
+        logger.debug(f"[BiomeTool] Checking: {' '.join(check_cmd)} (cwd={ctx.cwd})")
         try:
             check_result = self._run_subprocess(
                 cmd=check_cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
-            return self._create_timeout_result(timeout_val=timeout_val)
+            return self._create_timeout_result(timeout_val=ctx.timeout)
         check_output: str = check_result[1]
 
         # Parse initial issues
@@ -308,17 +270,17 @@ class BiomeTool(BaseTool):
         # Add VCS ignore option if enabled
         if self.options.get("use_vcs_ignore", False):
             fix_cmd.extend(["--vcs-use-ignore-file", "true"])
-        fix_cmd.extend(rel_files)
-        logger.debug(f"[BiomeTool] Fixing: {' '.join(fix_cmd)} (cwd={cwd})")
+        fix_cmd.extend(ctx.rel_files)
+        logger.debug(f"[BiomeTool] Fixing: {' '.join(fix_cmd)} (cwd={ctx.cwd})")
         try:
             fix_result = self._run_subprocess(
                 cmd=fix_cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
             return self._create_timeout_result(
-                timeout_val=timeout_val,
+                timeout_val=ctx.timeout,
                 initial_issues=initial_issues,
                 initial_count=initial_count,
             )
@@ -328,12 +290,12 @@ class BiomeTool(BaseTool):
         try:
             final_check_result = self._run_subprocess(
                 cmd=check_cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
             return self._create_timeout_result(
-                timeout_val=timeout_val,
+                timeout_val=ctx.timeout,
                 initial_issues=initial_issues,
                 initial_count=initial_count,
             )

@@ -11,9 +11,9 @@ from lintro.models.core.tool import Tool, ToolConfig, ToolResult
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.path_filtering import walk_files_with_excludes
 
 # Constants for Prettier configuration
+PRETTIER_DEFAULT_TIMEOUT: int = 30
 PRETTIER_DEFAULT_PRIORITY: int = 80
 PRETTIER_FILE_PATTERNS: list[str] = [
     "*.js",
@@ -269,42 +269,27 @@ class PrettierTool(BaseTool):
         Returns:
             ToolResult instance
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        prettier_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            default_timeout=PRETTIER_DEFAULT_TIMEOUT,
         )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
+
         logger.debug(
-            f"[PrettierTool] Discovered {len(prettier_files)} files matching patterns: "
+            f"[PrettierTool] Discovered {len(ctx.files)} files matching patterns: "
             f"{self.config.file_patterns}",
         )
         logger.debug(
             f"[PrettierTool] Exclude patterns applied: {self.exclude_patterns}",
         )
-        if prettier_files:
+        if ctx.files:
             logger.debug(
-                f"[PrettierTool] Files to check (first 10): {prettier_files[:10]}",
+                f"[PrettierTool] Files to check (first 10): {ctx.files[:10]}",
             )
-        if not prettier_files:
-            return Tool.to_result(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-        # Use relative paths and set cwd to the common parent
-        cwd: str = self.get_cwd(paths=prettier_files)
-        logger.debug(f"[PrettierTool] Working directory: {cwd}")
-        rel_files: list[str] = [
-            os.path.relpath(f, cwd) if cwd else f for f in prettier_files
-        ]
+        logger.debug(f"[PrettierTool] Working directory: {ctx.cwd}")
+
         # Resolve executable in a manner consistent with other tools
         cmd: list[str] = self._get_executable_command(tool_name="prettier") + [
             "--check",
@@ -320,7 +305,7 @@ class PrettierTool(BaseTool):
             )
         else:
             # Fallback: Find config and ignore files by walking up from cwd
-            found_config = self._find_prettier_config(search_dir=cwd)
+            found_config = self._find_prettier_config(search_dir=ctx.cwd)
             if found_config:
                 logger.debug(
                     f"[PrettierTool] Found config: {found_config} (auto-detecting)",
@@ -338,24 +323,23 @@ class PrettierTool(BaseTool):
                         line_length,
                     )
             # Find .prettierignore by walking up from cwd
-            prettierignore_path = self._find_prettierignore(search_dir=cwd)
+            prettierignore_path = self._find_prettierignore(search_dir=ctx.cwd)
             if prettierignore_path:
                 logger.debug(
                     f"[PrettierTool] Found .prettierignore: {prettierignore_path} "
                     "(auto-detecting)",
                 )
 
-        cmd.extend(rel_files)
-        logger.debug(f"[PrettierTool] Running: {' '.join(cmd)} (cwd={cwd})")
-        timeout_val: int = self.options.get("timeout", self._default_timeout)
+        cmd.extend(ctx.rel_files)
+        logger.debug(f"[PrettierTool] Running: {' '.join(cmd)} (cwd={ctx.cwd})")
         try:
             result = self._run_subprocess(
                 cmd=cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
-            return self._create_timeout_result(timeout_val=timeout_val)
+            return self._create_timeout_result(timeout_val=ctx.timeout)
         output: str = result[1]
         # Do not filter lines post-hoc; rely on discovery and ignore files
         issues: list = parse_prettier_output(output=output)
@@ -387,38 +371,21 @@ class PrettierTool(BaseTool):
         Returns:
             ToolResult: Result object with counts and messages.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        prettier_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            no_files_message="No files to format.",
+            default_timeout=PRETTIER_DEFAULT_TIMEOUT,
         )
-        if not prettier_files:
-            return Tool.to_result(
-                name=self.name,
-                success=True,
-                output="No files to format.",
-                issues_count=0,
-            )
-
-        # First, check for issues before fixing
-        cwd: str = self.get_cwd(paths=prettier_files)
-        rel_files: list[str] = [
-            os.path.relpath(f, cwd) if cwd else f for f in prettier_files
-        ]
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
         # Get Lintro config injection args (--no-config, --config)
         config_args = self._build_config_args()
         fallback_args: list[str] = []
         if not config_args:
             # Fallback: Find config and ignore files by walking up from cwd
-            found_config = self._find_prettier_config(search_dir=cwd)
+            found_config = self._find_prettier_config(search_dir=ctx.cwd)
             if found_config:
                 logger.debug(
                     f"[PrettierTool] Found config: {found_config} (auto-detecting)",
@@ -435,7 +402,7 @@ class PrettierTool(BaseTool):
                         "[PrettierTool] Using --print-width=%s from options",
                         line_length,
                     )
-            prettierignore_path = self._find_prettierignore(search_dir=cwd)
+            prettierignore_path = self._find_prettierignore(search_dir=ctx.cwd)
             if prettierignore_path:
                 logger.debug(
                     f"[PrettierTool] Found .prettierignore: {prettierignore_path} "
@@ -451,17 +418,16 @@ class PrettierTool(BaseTool):
             check_cmd.extend(config_args)
         elif fallback_args:
             check_cmd.extend(fallback_args)
-        check_cmd.extend(rel_files)
-        logger.debug(f"[PrettierTool] Checking: {' '.join(check_cmd)} (cwd={cwd})")
-        timeout_val: int = self.options.get("timeout", self._default_timeout)
+        check_cmd.extend(ctx.rel_files)
+        logger.debug(f"[PrettierTool] Checking: {' '.join(check_cmd)} (cwd={ctx.cwd})")
         try:
             check_result = self._run_subprocess(
                 cmd=check_cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
-            return self._create_timeout_result(timeout_val=timeout_val)
+            return self._create_timeout_result(timeout_val=ctx.timeout)
         check_output: str = check_result[1]
 
         # Parse initial issues
@@ -477,17 +443,17 @@ class PrettierTool(BaseTool):
             fix_cmd.extend(config_args)
         elif fallback_args:
             fix_cmd.extend(fallback_args)
-        fix_cmd.extend(rel_files)
-        logger.debug(f"[PrettierTool] Fixing: {' '.join(fix_cmd)} (cwd={cwd})")
+        fix_cmd.extend(ctx.rel_files)
+        logger.debug(f"[PrettierTool] Fixing: {' '.join(fix_cmd)} (cwd={ctx.cwd})")
         try:
             fix_result = self._run_subprocess(
                 cmd=fix_cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
             return self._create_timeout_result(
-                timeout_val=timeout_val,
+                timeout_val=ctx.timeout,
                 initial_issues=initial_issues,
                 initial_count=initial_count,
             )
@@ -497,12 +463,12 @@ class PrettierTool(BaseTool):
         try:
             final_check_result = self._run_subprocess(
                 cmd=check_cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
             return self._create_timeout_result(
-                timeout_val=timeout_val,
+                timeout_val=ctx.timeout,
                 initial_issues=initial_issues,
                 initial_count=initial_count,
             )

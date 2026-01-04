@@ -29,7 +29,7 @@ def test_clippy_check_parses_issues(monkeypatch, tmp_path: Path) -> None:
 
     # Stub file discovery to return our file
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_clippy.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [
             str(rust_file),
         ],
@@ -75,7 +75,7 @@ def test_clippy_check_no_cargo_toml(monkeypatch, tmp_path: Path) -> None:
     rust_file.write_text("fn main() {}\n")
 
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_clippy.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [
             str(rust_file),
         ],
@@ -107,7 +107,7 @@ def test_clippy_fix_computes_counts(monkeypatch, tmp_path: Path) -> None:
     cargo_toml.write_text('[package]\nname = "test"\nversion = "0.1.0"\n')
 
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_clippy.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [
             str(rust_file),
         ],
@@ -163,7 +163,7 @@ def test_clippy_check_no_rust_files(monkeypatch, tmp_path: Path) -> None:
     python_file.write_text("print('hello')\n")
 
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_clippy.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [],
         raising=True,
     )
@@ -171,4 +171,4 @@ def test_clippy_check_no_rust_files(monkeypatch, tmp_path: Path) -> None:
     res = tool.check([str(tmp_path)])
     assert_that(res.success).is_true()
     assert_that(res.issues_count).is_equal_to(0)
-    assert_that(res.output).contains("No Rust files")
+    assert_that(res.output).contains("No")

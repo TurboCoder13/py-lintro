@@ -17,7 +17,6 @@ from lintro.tools.core.timeout_utils import (
     run_subprocess_with_timeout,
 )
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.path_filtering import walk_files_with_excludes
 
 CLIPPY_DEFAULT_TIMEOUT: int = 120
 CLIPPY_DEFAULT_PRIORITY: int = 85
@@ -166,34 +165,16 @@ class ClippyTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        if not paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-
-        rust_paths = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            no_files_message="No Rust files found to check.",
+            default_timeout=CLIPPY_DEFAULT_TIMEOUT,
         )
-        if not rust_paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No Rust files found to check.",
-                issues_count=0,
-            )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
-        cargo_root = _find_cargo_root(rust_paths)
+        cargo_root = _find_cargo_root(ctx.files)
         if cargo_root is None:
             return ToolResult(
                 name=self.name,
@@ -202,21 +183,20 @@ class ClippyTool(BaseTool):
                 issues_count=0,
             )
 
-        timeout = get_timeout_value(self, CLIPPY_DEFAULT_TIMEOUT)
         cmd = _build_clippy_command(fix=False)
 
         try:
             success_cmd, output = run_subprocess_with_timeout(
                 tool=self,
                 cmd=cmd,
-                timeout=timeout,
+                timeout=ctx.timeout,
                 cwd=str(cargo_root),
                 tool_name="clippy",
             )
         except subprocess.TimeoutExpired:
             timeout_result = create_timeout_result(
                 tool=self,
-                timeout=timeout,
+                timeout=ctx.timeout,
                 cmd=cmd,
                 tool_name="clippy",
             )
@@ -251,40 +231,16 @@ class ClippyTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        if not paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to fix.",
-                issues_count=0,
-                initial_issues_count=0,
-                fixed_issues_count=0,
-                remaining_issues_count=0,
-            )
-
-        rust_paths = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            no_files_message="No Rust files found to fix.",
+            default_timeout=CLIPPY_DEFAULT_TIMEOUT,
         )
-        if not rust_paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No Rust files found to fix.",
-                issues_count=0,
-                initial_issues_count=0,
-                fixed_issues_count=0,
-                remaining_issues_count=0,
-            )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
-        cargo_root = _find_cargo_root(rust_paths)
+        cargo_root = _find_cargo_root(ctx.files)
         if cargo_root is None:
             return ToolResult(
                 name=self.name,
@@ -296,7 +252,6 @@ class ClippyTool(BaseTool):
                 remaining_issues_count=0,
             )
 
-        timeout = get_timeout_value(self, CLIPPY_DEFAULT_TIMEOUT)
         check_cmd = _build_clippy_command(fix=False)
 
         # First, count issues before fixing
@@ -304,14 +259,14 @@ class ClippyTool(BaseTool):
             success_check, output_check = run_subprocess_with_timeout(
                 tool=self,
                 cmd=check_cmd,
-                timeout=timeout,
+                timeout=ctx.timeout,
                 cwd=str(cargo_root),
                 tool_name="clippy",
             )
         except subprocess.TimeoutExpired:
             timeout_result = create_timeout_result(
                 tool=self,
-                timeout=timeout,
+                timeout=ctx.timeout,
                 cmd=check_cmd,
                 tool_name="clippy",
             )
@@ -335,14 +290,14 @@ class ClippyTool(BaseTool):
             success_fix, output_fix = run_subprocess_with_timeout(
                 tool=self,
                 cmd=fix_cmd,
-                timeout=timeout,
+                timeout=ctx.timeout,
                 cwd=str(cargo_root),
                 tool_name="clippy",
             )
         except subprocess.TimeoutExpired:
             timeout_result = create_timeout_result(
                 tool=self,
-                timeout=timeout,
+                timeout=ctx.timeout,
                 cmd=fix_cmd,
                 tool_name="clippy",
             )
@@ -362,14 +317,14 @@ class ClippyTool(BaseTool):
             success_after, output_after = run_subprocess_with_timeout(
                 tool=self,
                 cmd=check_cmd,
-                timeout=timeout,
+                timeout=ctx.timeout,
                 cwd=str(cargo_root),
                 tool_name="clippy",
             )
         except subprocess.TimeoutExpired:
             timeout_result = create_timeout_result(
                 tool=self,
-                timeout=timeout,
+                timeout=ctx.timeout,
                 cmd=check_cmd,
                 tool_name="clippy",
             )

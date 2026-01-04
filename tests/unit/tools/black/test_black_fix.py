@@ -23,7 +23,7 @@ def test_black_fix_with_options(monkeypatch, tmp_path: Path) -> None:
     f.write_text("x=1\n")
 
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
         raising=True,
     )
@@ -147,7 +147,7 @@ def test_black_check_detects_e501_violations(monkeypatch, tmp_path: Path) -> Non
 
     # Stub file discovery to return our file
     monkeypatch.setattr(
-        "lintro.tools.implementations.tool_black.walk_files_with_excludes",
+        "lintro.utils.path_filtering.walk_files_with_excludes",
         lambda paths, file_patterns, exclude_patterns, include_venv: [str(f)],
         raising=True,
     )
