@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 @lru_cache(maxsize=1)
-def _create_style_instances() -> dict[OutputFormat, "OutputStyle"]:
+def _create_style_instances() -> dict[OutputFormat, OutputStyle]:
     """Create singleton instances of all output styles.
 
     Uses lazy imports to avoid circular dependencies and improve startup time.
@@ -42,7 +42,7 @@ def _create_style_instances() -> dict[OutputFormat, "OutputStyle"]:
     }
 
 
-def get_style(format_key: OutputFormat | str) -> "OutputStyle":
+def get_style(format_key: OutputFormat | str) -> OutputStyle:
     """Get the output style for a given format.
 
     Args:
@@ -63,7 +63,10 @@ def get_style(format_key: OutputFormat | str) -> "OutputStyle":
         except ValueError:
             # Try matching by name
             for fmt in OutputFormat:
-                if fmt.value == format_key_lower or fmt.name.lower() == format_key_lower:
+                if (
+                    fmt.value == format_key_lower
+                    or fmt.name.lower() == format_key_lower
+                ):
                     format_key = fmt
                     break
             else:
@@ -82,7 +85,7 @@ def get_style(format_key: OutputFormat | str) -> "OutputStyle":
     return style
 
 
-def get_format_map() -> dict[OutputFormat, "OutputStyle"]:
+def get_format_map() -> dict[OutputFormat, OutputStyle]:
     """Get the complete format map for direct access.
 
     This provides backward compatibility for code that expects a FORMAT_MAP dict.
@@ -93,7 +96,7 @@ def get_format_map() -> dict[OutputFormat, "OutputStyle"]:
     return _create_style_instances()
 
 
-def get_string_format_map() -> dict[str, "OutputStyle"]:
+def get_string_format_map() -> dict[str, OutputStyle]:
     """Get format map with string keys for backward compatibility.
 
     Some formatters use string keys like "grid" instead of OutputFormat.GRID.

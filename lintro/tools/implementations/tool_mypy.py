@@ -262,7 +262,9 @@ class MypyTool(BaseTool):
         # Set config file if discovered
         if not self.options.get("config_file") and config_path:
             self.options["config_file"] = str(config_path.resolve())
-            logger.debug("Setting mypy --config-file to {}", self.options["config_file"])
+            logger.debug(
+                "Setting mypy --config-file to {}", self.options["config_file"]
+            )
 
         cmd = self._build_command(files=ctx.rel_files)
         logger.debug("Running mypy with cwd={} and cmd={}", ctx.cwd, cmd)

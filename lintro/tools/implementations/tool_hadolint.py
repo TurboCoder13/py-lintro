@@ -4,7 +4,6 @@ import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 
 import click
-from loguru import logger
 
 from lintro.enums.hadolint_enums import (
     HadolintFailureThreshold,
@@ -289,7 +288,9 @@ class HadolintTool(BaseTool):
                 self._process_single_file(file_path, ctx.timeout, results)
 
         # Build output from accumulated results
-        output: str = "\n".join(results["all_outputs"]) if results["all_outputs"] else ""
+        output: str = (
+            "\n".join(results["all_outputs"]) if results["all_outputs"] else ""
+        )
         if results["execution_failures"] > 0:
             if output:
                 output += "\n\n"

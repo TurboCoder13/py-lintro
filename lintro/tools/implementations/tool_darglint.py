@@ -276,7 +276,9 @@ class DarglintTool(BaseTool):
                 bar_template="%(label)s  %(info)s",
             ) as bar:
                 for file_path in bar:
-                    result = self._process_file(file_path=file_path, timeout=ctx.timeout)
+                    result = self._process_file(
+                        file_path=file_path, timeout=ctx.timeout
+                    )
                     if not result.success:
                         all_success = False
                     total_issues += result.issues_count

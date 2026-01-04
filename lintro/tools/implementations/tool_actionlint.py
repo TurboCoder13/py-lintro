@@ -7,7 +7,6 @@ structured issues, and returns a normalized `ToolResult`.
 
 from __future__ import annotations
 
-import contextlib
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
 
@@ -121,8 +120,7 @@ class ActionlintTool(BaseTool):
 
         # Restrict to GitHub Actions workflow location
         workflow_files: list[str] = [
-            f for f in ctx.files
-            if "/.github/workflows/" in f.replace("\\", "/")
+            f for f in ctx.files if "/.github/workflows/" in f.replace("\\", "/")
         ]
         logger.debug(f"Files to check (actionlint): {workflow_files}")
 
@@ -157,7 +155,9 @@ class ActionlintTool(BaseTool):
                 self._process_single_file(file_path, ctx.timeout, results)
 
         # Build combined output
-        combined_output = "\n".join(results["all_outputs"]) if results["all_outputs"] else None
+        combined_output = (
+            "\n".join(results["all_outputs"]) if results["all_outputs"] else None
+        )
         if results["skipped_files"]:
             timeout_msg = (
                 f"Skipped {len(results['skipped_files'])} file(s) due to timeout "
@@ -165,12 +165,22 @@ class ActionlintTool(BaseTool):
             )
             for file in results["skipped_files"]:
                 timeout_msg += f"\n  - {file}"
-            combined_output = f"{combined_output}\n\n{timeout_msg}" if combined_output else timeout_msg
+            combined_output = (
+                f"{combined_output}\n\n{timeout_msg}"
+                if combined_output
+                else timeout_msg
+            )
 
-        non_timeout_failures = results["execution_failures"] - len(results["skipped_files"])
+        non_timeout_failures = results["execution_failures"] - len(
+            results["skipped_files"]
+        )
         if non_timeout_failures > 0:
             failure_msg = f"Failed to process {non_timeout_failures} file(s) due to execution errors"
-            combined_output = f"{combined_output}\n\n{failure_msg}" if combined_output else failure_msg
+            combined_output = (
+                f"{combined_output}\n\n{failure_msg}"
+                if combined_output
+                else failure_msg
+            )
 
         return ToolResult(
             name=self.name,

@@ -71,7 +71,7 @@ def test_create_timeout_result():
 
     assert_that(result.success).is_false()
     assert_that(result.output).contains(
-        "pytest execution timed out (30s limit exceeded)"
+        "pytest execution timed out (30s limit exceeded)",
     )
     assert_that(result.issues_count).is_equal_to(1)
     assert_that(result.issues).is_empty()

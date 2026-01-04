@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import Tool, ToolConfig, ToolResult
+from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.parsers.biome.biome_issue import BiomeIssue
 from lintro.parsers.biome.biome_parser import parse_biome_output
 from lintro.tools.core.tool_base import BaseTool

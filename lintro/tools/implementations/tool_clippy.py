@@ -13,7 +13,6 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.clippy.clippy_parser import parse_clippy_output
 from lintro.tools.core.timeout_utils import (
     create_timeout_result,
-    get_timeout_value,
     run_subprocess_with_timeout,
 )
 from lintro.tools.core.tool_base import BaseTool

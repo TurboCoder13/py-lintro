@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import Tool, ToolConfig, ToolResult
+from lintro.models.core.tool import ToolConfig, ToolResult
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.tools.core.tool_base import BaseTool

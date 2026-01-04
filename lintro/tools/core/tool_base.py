@@ -407,7 +407,9 @@ class BaseTool(ABC):
             file_type = "files"
             if effective_patterns:
                 # Extract file types from patterns for a friendlier message
-                extensions = [p.replace("*", "") for p in effective_patterns if p.startswith("*.")]
+                extensions = [
+                    p.replace("*", "") for p in effective_patterns if p.startswith("*.")
+                ]
                 if extensions:
                     file_type = "/".join(extensions) + " files"
 
