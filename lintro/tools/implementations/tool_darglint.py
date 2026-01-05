@@ -155,12 +155,12 @@ class DarglintTool(BaseTool):
                     f"{DARGLINT_MAX_VERBOSITY}",
                 )
         if strictness is not None:
-            strict_enum = normalize_darglint_strictness(  # type: ignore[arg-type]
+            strict_enum = normalize_darglint_strictness(
                 strictness,
             )
             strictness = strict_enum.name.lower()
 
-        options: dict = {
+        options: dict[str, object] = {
             "ignore": ignore,
             "ignore_regex": ignore_regex,
             "ignore_syntax": ignore_syntax,

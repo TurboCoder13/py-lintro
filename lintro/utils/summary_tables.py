@@ -166,7 +166,7 @@ def print_summary_table(
                             remaining_count = DEFAULT_REMAINING_COUNT
                     else:
                         # Parse output to determine remaining issues
-                        remaining_count: int | str = 0
+                        remaining_count = 0
                         if result_output and (
                             "remaining" in result_output.lower()
                             or "cannot be auto-fixed" in result_output.lower()

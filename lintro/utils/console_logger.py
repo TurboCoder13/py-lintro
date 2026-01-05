@@ -24,6 +24,9 @@ from lintro.utils.display_helpers import (
 )
 from lintro.utils.summary_tables import print_summary_table
 
+# Re-export for backwards compatibility
+__all__ = ["ConsoleLogger", "get_tool_emoji"]
+
 
 class ConsoleLogger:
     """Logger for console output formatting and display."""

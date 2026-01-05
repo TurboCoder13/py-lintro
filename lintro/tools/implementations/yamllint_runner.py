@@ -7,6 +7,7 @@ with per-file processing and progress tracking.
 import contextlib
 import os
 import subprocess  # nosec B404 - used safely with shell disabled
+from typing import Any
 
 import click
 from loguru import logger
@@ -292,7 +293,7 @@ class YamllintRunner(YamllintTool):
         timeout: int = self.options.get("timeout", YAMLLINT_DEFAULT_TIMEOUT)
         # Aggregate parsed issues across files and rely on table renderers upstream
         all_success: bool = True
-        all_issues: list = []
+        all_issues: list[Any] = []
         skipped_files: list[str] = []
         timeout_skipped_count: int = 0
         other_execution_failures: int = 0

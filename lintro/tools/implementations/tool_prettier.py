@@ -342,7 +342,7 @@ class PrettierTool(BaseTool):
             return self._create_timeout_result(timeout_val=ctx.timeout)
         output: str = result[1]
         # Do not filter lines post-hoc; rely on discovery and ignore files
-        issues: list = parse_prettier_output(output=output)
+        issues: list[Any] = parse_prettier_output(output=output)
         issues_count: int = len(issues)
         success: bool = issues_count == 0
         # Standardize: suppress Prettier's informational output when no issues
@@ -431,7 +431,7 @@ class PrettierTool(BaseTool):
         check_output: str = check_result[1]
 
         # Parse initial issues
-        initial_issues: list = parse_prettier_output(output=check_output)
+        initial_issues: list[Any] = parse_prettier_output(output=check_output)
         initial_count: int = len(initial_issues)
 
         # Now fix the issues
@@ -473,7 +473,7 @@ class PrettierTool(BaseTool):
                 initial_count=initial_count,
             )
         final_check_output: str = final_check_result[1]
-        remaining_issues: list = parse_prettier_output(output=final_check_output)
+        remaining_issues: list[Any] = parse_prettier_output(output=final_check_output)
         remaining_count: int = len(remaining_issues)
 
         # Calculate fixed issues

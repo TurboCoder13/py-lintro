@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
@@ -71,7 +72,7 @@ def detect_flaky_tests(
 
 
 # Module-level cache for pytest config to avoid repeated file parsing
-_PYTEST_CONFIG_CACHE: dict[tuple[str, float, float], dict] = {}
+_PYTEST_CONFIG_CACHE: dict[tuple[str, float, float], dict[str, Any]] = {}
 
 
 def clear_pytest_config_cache() -> None:
@@ -83,7 +84,7 @@ def clear_pytest_config_cache() -> None:
     _PYTEST_CONFIG_CACHE.clear()
 
 
-def load_pytest_config() -> dict:
+def load_pytest_config() -> dict[str, Any]:
     """Load pytest configuration from pyproject.toml or pytest.ini.
 
     Priority order (highest to lowest):
@@ -113,7 +114,7 @@ def load_pytest_config() -> dict:
     if cache_key in _PYTEST_CONFIG_CACHE:
         return _PYTEST_CONFIG_CACHE[cache_key].copy()
 
-    config: dict = {}
+    config: dict[str, Any] = {}
 
     # Check pyproject.toml first
     if pyproject_path.exists():
@@ -160,7 +161,7 @@ def load_pytest_config() -> dict:
 
 
 def load_file_patterns_from_config(
-    pytest_config: dict,
+    pytest_config: dict[str, Any],
 ) -> list[str]:
     """Load file patterns from pytest configuration.
 

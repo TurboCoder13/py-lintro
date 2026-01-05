@@ -21,7 +21,7 @@ def parse_tool_list(tools_str: str | None) -> list:
     # Import ToolEnum here to avoid circular import at module level
     from lintro.tools.tool_enum import ToolEnum
 
-    result: list = []
+    result: list[str] = []
     for t in tools_str.split(","):
         t = t.strip()
         if not t:

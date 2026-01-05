@@ -2,6 +2,7 @@
 
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
+from typing import Any
 
 import click
 
@@ -109,11 +110,11 @@ class HadolintTool(BaseTool):
             ValueError: If an option value is invalid.
         """
         if format is not None:
-            fmt_enum = normalize_hadolint_format(format)  # type: ignore[arg-type]
+            fmt_enum = normalize_hadolint_format(format)
             format = fmt_enum.name.lower()
 
         if failure_threshold is not None:
-            thr_enum = normalize_hadolint_threshold(  # type: ignore[arg-type]
+            thr_enum = normalize_hadolint_threshold(
                 failure_threshold,
             )
             failure_threshold = thr_enum.name.lower()
@@ -136,7 +137,7 @@ class HadolintTool(BaseTool):
         if no_color is not None and not isinstance(no_color, bool):
             raise ValueError("no_color must be a boolean")
 
-        options: dict = {
+        options: dict[str, object] = {
             "format": format,
             "failure_threshold": failure_threshold,
             "ignore": ignore,
@@ -265,7 +266,7 @@ class HadolintTool(BaseTool):
         dockerfile_files = ctx.files
 
         # Accumulate results across all files
-        results: dict = {
+        results: dict[str, Any] = {
             "all_outputs": [],
             "all_issues": [],
             "all_success": True,

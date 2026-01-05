@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
+from typing import Any
 
 import click
 from loguru import logger
@@ -133,7 +134,7 @@ class ActionlintTool(BaseTool):
             )
 
         # Accumulate results across all files
-        results: dict = {
+        results: dict[str, Any] = {
             "all_outputs": [],
             "all_issues": [],
             "all_success": True,

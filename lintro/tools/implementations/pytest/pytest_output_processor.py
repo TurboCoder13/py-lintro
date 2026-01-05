@@ -7,6 +7,7 @@ maintainability and reduce file size.
 
 import json
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
@@ -35,7 +36,7 @@ PYTEST_FLAKY_FAILURE_RATE: float = 0.3  # Consider flaky if fails >= 30% but < 1
 def parse_pytest_output_with_fallback(
     output: str,
     return_code: int,
-    options: dict,
+    options: dict[str, Any],
     subprocess_start_time: float | None = None,
 ) -> list[PytestIssue]:
     """Parse pytest output into issues with format detection and fallback.
@@ -173,7 +174,7 @@ def process_test_summary(
     total_available_tests: int,
     docker_test_count: int,
     run_docker_tests: bool,
-) -> dict:
+) -> dict[str, Any]:
     """Process test summary and calculate skipped tests.
 
     Args:
@@ -257,7 +258,7 @@ def process_test_summary(
 
 def detect_and_log_slow_tests(
     issues: list[PytestIssue],
-    options: dict,
+    options: dict[str, Any],
 ) -> list[tuple[str, float]]:
     """Detect slow tests and log warnings.
 
@@ -304,7 +305,7 @@ def detect_and_log_slow_tests(
 
 def check_total_time_warning(
     summary_duration: float,
-    options: dict,
+    options: dict[str, Any],
 ) -> None:
     """Check and warn if total execution time exceeds threshold.
 
@@ -328,7 +329,7 @@ def check_total_time_warning(
 
 def detect_and_log_flaky_tests(
     issues: list[PytestIssue],
-    options: dict,
+    options: dict[str, Any],
 ) -> list[tuple[str, float]]:
     """Detect flaky tests and log warnings.
 
@@ -381,7 +382,7 @@ def detect_and_log_flaky_tests(
 
 
 def build_output_with_failures(
-    summary_data: dict,
+    summary_data: dict[str, Any],
     all_issues: list[PytestIssue],
 ) -> str:
     """Build output string with summary and test details.

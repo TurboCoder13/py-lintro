@@ -185,7 +185,7 @@ class RuffTool(BaseTool):
         if format_check is not None and not isinstance(format_check, bool):
             raise ValueError("format_check must be a boolean")
 
-        options: dict = {
+        options: dict[str, object] = {
             "select": select,
             "ignore": ignore,
             "extend_select": extend_select,

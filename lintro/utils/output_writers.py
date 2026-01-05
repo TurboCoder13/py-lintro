@@ -9,9 +9,11 @@ import datetime
 import html
 import json
 from pathlib import Path
+from typing import Any
 
 from lintro.enums.action import Action
 from lintro.enums.output_format import OutputFormat
+from lintro.models.core.tool_result import ToolResult
 
 
 def _sanitize_csv_value(value: str) -> str:
@@ -35,7 +37,7 @@ def write_output_file(
     *,
     output_path: str,
     output_format: OutputFormat,
-    all_results: list,
+    all_results: list[ToolResult],
     action: Action,
     total_issues: int,
     total_fixed: int,
@@ -55,7 +57,7 @@ def write_output_file(
 
     if output_format == OutputFormat.JSON:
         # Build JSON structure similar to stdout JSON mode
-        json_data = {
+        json_data: dict[str, Any] = {
             "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
             "action": action.value,
             "summary": {
@@ -193,7 +195,7 @@ def write_output_file(
 
     else:
         # Plain or Grid format - write formatted text output
-        lines: list[str] = [f"Lintro {action.value.capitalize()} Report", "=" * 40, ""]
+        lines = [f"Lintro {action.value.capitalize()} Report", "=" * 40, ""]
         for result in all_results:
             issues_count = getattr(result, "issues_count", 0)
             lines.append(f"{result.name}: {issues_count} issues")

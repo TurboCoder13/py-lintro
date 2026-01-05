@@ -7,7 +7,7 @@ from typing import Any
 from lintro.formatters.core.output_style import OutputStyle
 
 
-class JsonStyle(OutputStyle):  # type: ignore[misc]
+class JsonStyle(OutputStyle):
     """Output format that renders data as structured JSON."""
 
     def format(

@@ -8,7 +8,7 @@ from lintro.parsers.base_issue import BaseIssue
 
 
 @dataclass
-class MypyIssue(BaseIssue):  # type: ignore[misc]
+class MypyIssue(BaseIssue):
     """Represents a mypy type-checking issue.
 
     This class extends BaseIssue with mypy-specific fields for type checking

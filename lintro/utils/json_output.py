@@ -235,7 +235,7 @@ def run_lint_tools_with_json(
         if not json_output_mode:
             logger.print_lintro_header()
 
-        all_results: list = []
+        all_results: list[ToolResult] = []
         total_issues: int = 0
         total_fixed: int = 0
         total_remaining: int = 0
@@ -264,7 +264,7 @@ def run_lint_tools_with_json(
                 continue
 
             # Use canonical display name for consistent logging
-            tool_name: str = _get_tool_display_name(tool_enum)
+            tool_name = _get_tool_display_name(tool_enum)
             # Print rich tool header (skip for JSON mode)
             if not json_output_mode:
                 logger.print_tool_header(tool_name=tool_name, action=action)
@@ -328,7 +328,7 @@ def run_lint_tools_with_json(
                     total_remaining += getattr(result, "remaining_issues_count", 0) or 0
 
             except Exception as e:
-                tool_name: str = _get_tool_display_name(tool_enum)
+                tool_name = _get_tool_display_name(tool_enum)
                 logger.warning(f"Tool '{tool_name}' failed: {e}")
 
                 all_results.append(

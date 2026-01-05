@@ -30,7 +30,7 @@ def build_base_command(tool) -> list[str]:
     return tool._get_executable_command(tool_name="pytest")
 
 
-def add_verbosity_options(cmd: list[str], options: dict) -> None:
+def add_verbosity_options(cmd: list[str], options: dict[str, object]) -> None:
     """Add verbosity and traceback options to command.
 
     Args:
@@ -62,7 +62,7 @@ def add_verbosity_options(cmd: list[str], options: dict) -> None:
         cmd.append("--disable-warnings")
 
 
-def add_output_options(cmd: list[str], options: dict) -> str | None:
+def add_output_options(cmd: list[str], options: dict[str, object]) -> str | None:
     """Add output format options (JSON, JUnit XML, HTML) to command.
 
     Args:
@@ -104,7 +104,7 @@ def add_output_options(cmd: list[str], options: dict) -> str | None:
     return auto_junitxml_path
 
 
-def add_parallel_options(cmd: list[str], options: dict) -> None:
+def add_parallel_options(cmd: list[str], options: dict[str, object]) -> None:
     """Add parallel execution options to command.
 
     Args:
@@ -125,7 +125,7 @@ def add_parallel_options(cmd: list[str], options: dict) -> None:
         cmd.extend(["-n", str(workers)])
 
 
-def add_coverage_options(cmd: list[str], options: dict) -> None:
+def add_coverage_options(cmd: list[str], options: dict[str, object]) -> None:
     """Add coverage options to command.
 
     Args:
@@ -206,7 +206,7 @@ def add_test_mode_options(cmd: list[str]) -> None:
         cmd.append("--strict-config")
 
 
-def add_plugin_options(cmd: list[str], options: dict) -> None:
+def add_plugin_options(cmd: list[str], options: dict[str, object]) -> None:
     """Add plugin-specific options to command.
 
     Args:

@@ -33,6 +33,21 @@ from lintro.utils.config_loaders import (
 )
 from lintro.utils.native_parsers import _load_native_tool_config
 
+# Re-export for backwards compatibility
+__all__ = [
+    "get_tool_order_config",
+    "_load_native_tool_config",
+    "load_lintro_global_config",
+    "load_lintro_tool_config",
+    "ToolOrderStrategy",
+    "ToolConfigInfo",
+    "UnifiedConfig",
+    "get_effective_line_length",
+    "get_ordered_tools",
+    "get_tool_priority",
+    "is_tool_injectable",
+    "validate_config_consistency",
+]
 
 # JSONC stripping moved to native_parsers.py
 class ToolOrderStrategy(StrEnum):

@@ -4,6 +4,7 @@ import fnmatch
 import os
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
+from typing import Any
 
 from loguru import logger
 
@@ -127,7 +128,7 @@ class YamllintTool(BaseTool):
         """
         if format is not None:
             # Accept both enum and string values for backward compatibility
-            fmt_enum = normalize_yamllint_format(format)  # type: ignore[arg-type]
+            fmt_enum = normalize_yamllint_format(format)
             format = fmt_enum.name.lower()
         if config_file is not None and not isinstance(config_file, str):
             raise ValueError("config_file must be a string path")
@@ -417,7 +418,7 @@ class YamllintTool(BaseTool):
             return (0, [], False, True, True, False)
 
         # Parse the output
-        issues: list = []
+        issues: list[Any] = []
         issues_count = 0
 
         if result.returncode != 0:
@@ -536,7 +537,7 @@ class YamllintTool(BaseTool):
             )
 
         # Process each YAML file
-        all_issues: list = []
+        all_issues: list[Any] = []
         total_issues = 0
         all_success = True
         skipped_files: list[str] = []

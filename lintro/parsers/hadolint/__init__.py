@@ -6,7 +6,7 @@ from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 __all__ = ["HadolintIssue", "HadolintOutput", "parse_hadolint_output"]
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> type[HadolintIssue]:
     """Handle deprecated attribute access.
 
     Args:
