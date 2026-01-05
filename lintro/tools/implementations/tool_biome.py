@@ -2,6 +2,7 @@
 
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
+from typing import Any
 
 from loguru import logger
 

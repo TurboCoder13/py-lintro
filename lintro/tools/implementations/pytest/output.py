@@ -215,7 +215,6 @@ def initialize_pytest_tool_config(tool: PytestTool) -> None:
         tool.config.file_patterns = config_file_patterns
 
     # Apply any additional config options from pytest_config
-    if pytest_config:
-        # Merge pytest_config options into tool.options with safe defaults
-        if "options" in pytest_config:
-            tool.options.update(pytest_config.get("options", {}))
+    # Merge pytest_config options into tool.options with safe defaults
+    if pytest_config and "options" in pytest_config:
+        tool.options.update(pytest_config.get("options", {}))

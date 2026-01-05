@@ -41,7 +41,6 @@ __all__ = [
     "load_lintro_tool_config",
     "ToolOrderStrategy",
     "ToolConfigInfo",
-    "UnifiedConfig",
     "get_effective_line_length",
     "get_ordered_tools",
     "get_tool_priority",

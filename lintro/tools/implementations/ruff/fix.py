@@ -34,7 +34,7 @@ def _temporary_option(
     tool: "RuffTool",
     option_key: str,
     option_value: object,
-) -> Generator[None, None, None]:
+) -> Generator[None]:
     """Context manager for temporarily setting a tool option.
 
     Safely mutates tool.options for the duration of the context, ensuring

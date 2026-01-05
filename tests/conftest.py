@@ -11,7 +11,6 @@ import shutil
 import tempfile
 from collections.abc import Generator, Iterator
 from pathlib import Path
-from typing import Any
 
 import pytest
 from _pytest.config import Config
@@ -74,7 +73,7 @@ def cli_runner() -> CliRunner:
 
 
 @pytest.fixture
-def temp_dir() -> Generator[Path, None, None]:
+def temp_dir() -> Generator[Path]:
     """Provide a temporary directory for testing.
 
     Yields:

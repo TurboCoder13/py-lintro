@@ -4,7 +4,7 @@ Functions for building ruff check and format command line arguments.
 """
 
 import os
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from lintro.enums.env_bool import EnvBool
 
