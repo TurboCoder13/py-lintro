@@ -63,7 +63,11 @@ class ExecutionContext:
 
     @property
     def should_skip(self) -> bool:
-        """Check if execution should be skipped due to early result."""
+        """Check if execution should be skipped due to early result.
+
+        Returns:
+            bool: True if early_result is set and execution should be skipped.
+        """
         return self.early_result is not None
 
 

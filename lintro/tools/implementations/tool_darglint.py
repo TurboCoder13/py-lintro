@@ -16,6 +16,7 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.darglint.darglint_issue import DarglintIssue
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.tools.core.tool_base import BaseTool
+from lintro.utils.config_utils import load_darglint_config
 
 # Constants for Darglint configuration
 # Reduced to 15s to fail fast on problematic files while allowing
@@ -94,6 +95,24 @@ class DarglintTool(BaseTool):
             },
         ),
     )
+
+    def __post_init__(self) -> None:
+        """Initialize the tool with configuration from pyproject.toml."""
+        super().__post_init__()
+
+        # Load darglint configuration from pyproject.toml
+        darglint_config = load_darglint_config()
+
+        # Apply exclude_dirs as exclude patterns
+        # Use /* instead of /** since path_filtering.should_exclude_path
+        # handles /* patterns but not ** recursive globs
+        if "exclude_dirs" in darglint_config:
+            exclude_dirs = darglint_config["exclude_dirs"]
+            if isinstance(exclude_dirs, list):
+                for exclude_dir in exclude_dirs:
+                    pattern = f"{exclude_dir}/*"
+                    if pattern not in self.exclude_patterns:
+                        self.exclude_patterns.append(pattern)
 
     def set_options(
         self,

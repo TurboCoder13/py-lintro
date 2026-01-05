@@ -214,9 +214,6 @@ class MarkdownlintTool(BaseTool):
 
         Returns:
             ToolResult: Result of the check operation.
-
-        Raises:
-            ValueError: If configured timeout is invalid.
         """
         # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(

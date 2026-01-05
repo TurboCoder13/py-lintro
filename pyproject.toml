@@ -57,7 +57,10 @@ unsafe-fixes = false
 exclude = [ ".venv", "venv", "env", "build", "dist", "__pycache__", "test_samples",]
 
 [tool.bandit]
-exclude_dirs = [ "tests", "test_samples",]
+exclude_dirs = [ "test_samples",]
+
+[tool.darglint]
+exclude_dirs = [ "test_samples",]
 
 [tool.lintro]
 line_length = 88

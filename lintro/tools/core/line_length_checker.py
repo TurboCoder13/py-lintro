@@ -86,9 +86,11 @@ def check_line_length_violations(
             abs_files.append(os.path.abspath(os.path.join(cwd, file_path)))
         else:
             abs_files.append(
-                os.path.abspath(file_path)
-                if not os.path.isabs(file_path)
-                else file_path
+                (
+                    os.path.abspath(file_path)
+                    if not os.path.isabs(file_path)
+                    else file_path
+                ),
             )
 
     # Build the Ruff command

@@ -22,10 +22,6 @@ MYPY_DEFAULT_PRIORITY: int = 82
 MYPY_FILE_PATTERNS: list[str] = ["*.py", "*.pyi"]
 
 MYPY_DEFAULT_EXCLUDE_PATTERNS: list[str] = [
-    "tests/*",
-    "tests/**",
-    "*/tests/*",
-    "*/tests/**",
     "test_samples/*",
     "test_samples/**",
     "*/test_samples/*",
@@ -263,7 +259,7 @@ class MypyTool(BaseTool):
             exclude_patterns=effective_excludes,
         )
         if ctx.should_skip:
-            return ctx.early_result  # type: ignore[return-value]
+            return ctx.early_result
 
         logger.debug("Mypy discovered {} python file(s)", len(ctx.files))
 

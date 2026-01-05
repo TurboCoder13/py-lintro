@@ -85,6 +85,15 @@ def load_bandit_config() -> dict[str, Any]:
     return load_tool_config_from_pyproject("bandit")
 
 
+def load_darglint_config() -> dict[str, Any]:
+    """Load darglint configuration from pyproject.toml.
+
+    Returns:
+        dict[str, Any]: Darglint configuration dictionary.
+    """
+    return load_tool_config_from_pyproject("darglint")
+
+
 def load_black_config() -> dict[str, Any]:
     """Load black configuration from pyproject.toml.
 
