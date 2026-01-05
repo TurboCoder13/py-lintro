@@ -9,9 +9,13 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
+from collections.abc import Generator, Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
+from _pytest.config import Config
+from _pytest.nodes import Item
 from click.testing import CliRunner
 
 from lintro.enums.env_bool import EnvBool
@@ -33,7 +37,7 @@ def _ensure_test_docker_images_built() -> None:
     return
 
 
-def pytest_collection_modifyitems(config, items) -> None:
+def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
     """Optionally skip docker tests locally unless explicitly enabled.
 
     If `LINTRO_RUN_DOCKER_TESTS` is not set to "1", skip tests marked with
@@ -60,7 +64,7 @@ def pytest_collection_modifyitems(config, items) -> None:
 
 
 @pytest.fixture
-def cli_runner():
+def cli_runner() -> CliRunner:
     """Provide a Click CLI runner for testing.
 
     Returns:
@@ -70,7 +74,7 @@ def cli_runner():
 
 
 @pytest.fixture
-def temp_dir():
+def temp_dir() -> Generator[Path, None, None]:
     """Provide a temporary directory for testing.
 
     Yields:
@@ -81,7 +85,7 @@ def temp_dir():
 
 
 @pytest.fixture
-def ruff_violation_file(temp_dir):
+def ruff_violation_file(temp_dir: Path) -> str:
     """Copy the ruff_violations.py sample to a temp directory.
 
     return normalized path.
@@ -99,7 +103,7 @@ def ruff_violation_file(temp_dir):
 
 
 @pytest.fixture
-def skip_config_injection(monkeypatch):
+def skip_config_injection(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Skip Lintro config injection for tests.
 
     Sets LINTRO_SKIP_CONFIG_INJECTION environment variable to disable
@@ -116,7 +120,7 @@ def skip_config_injection(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def clear_logging_handlers():
+def clear_logging_handlers() -> Iterator[None]:
     """Clear logging handlers before each test.
 
     Yields:

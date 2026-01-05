@@ -11,7 +11,7 @@ from lintro.models.core.tool_result import ToolResult
 
 
 @pytest.fixture
-def sample_tool_results():
+def sample_tool_results() -> list[ToolResult]:
     """Provide sample tool results for testing.
 
     Returns:

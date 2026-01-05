@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import os
 import subprocess  # nosec B404 - subprocess used safely with shell=False
+from typing import TYPE_CHECKING
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from lintro.tools.implementations.tool_pytest import PytestTool
 
 
 def check_plugin_installed(plugin_name: str) -> bool:
@@ -110,7 +114,7 @@ def get_pytest_version_info() -> str:
 
 
 def collect_tests_once(
-    tool,
+    tool: PytestTool,
     target_files: list[str],
 ) -> tuple[int, int]:
     """Collect tests once and return both total count and docker test count.
@@ -204,7 +208,7 @@ def collect_tests_once(
 
 
 def get_total_test_count(
-    tool,
+    tool: PytestTool,
     target_files: list[str],
 ) -> int:
     """Get total count of all available tests (including deselected ones).
@@ -234,7 +238,7 @@ def get_total_test_count(
 
 
 def count_docker_tests(
-    tool,
+    tool: PytestTool,
     target_files: list[str],
 ) -> int:
     """Count docker tests that would be skipped.

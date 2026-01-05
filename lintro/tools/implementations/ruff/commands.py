@@ -4,12 +4,28 @@ Functions for building ruff check and format command line arguments.
 """
 
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from lintro.enums.env_bool import EnvBool
 
 if TYPE_CHECKING:
     from lintro.tools.implementations.tool_ruff import RuffTool
+
+
+def _get_list_option(options: dict[str, Any], key: str) -> list[str]:
+    """Get a list option from options dict, returning empty list if not set."""
+    value = options.get(key)
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    return []
+
+
+def _get_set_option(options: dict[str, Any], key: str) -> set[str]:
+    """Get a set option from options dict, returning empty set if not set."""
+    return set(_get_list_option(options, key))
+
 
 # Constants from tool_ruff.py
 RUFF_OUTPUT_FORMAT: str = "json"
@@ -45,9 +61,9 @@ def build_ruff_check_command(
         cmd.append("--isolated")
 
     # Add configuration options
-    selected_rules = list(tool.options.get("select") or [])
-    ignored_rules = set(tool.options.get("ignore") or [])
-    extend_selected_rules = list(tool.options.get("extend_select") or [])
+    selected_rules = _get_list_option(tool.options, "select")
+    ignored_rules = _get_set_option(tool.options, "ignore")
+    extend_selected_rules = _get_list_option(tool.options, "extend_select")
 
     # Ensure E501 is included when selecting E-family
     # Check in selected_rules, extend_selected_rules, and ignored_rules
@@ -69,7 +85,7 @@ def build_ruff_check_command(
         cmd.extend(["--ignore", ",".join(sorted(ignored_rules))])
     if extend_selected_rules:
         cmd.extend(["--extend-select", ",".join(extend_selected_rules)])
-    extend_ignored_rules = list(tool.options.get("extend_ignore") or [])
+    extend_ignored_rules = _get_list_option(tool.options, "extend_ignore")
     if extend_ignored_rules:
         cmd.extend(["--extend-ignore", ",".join(extend_ignored_rules)])
     # Only add line_length/target_version from options if not enforced.
@@ -78,7 +94,7 @@ def build_ruff_check_command(
     if tool.options.get("line_length") and "line_length" not in enforced:
         cmd.extend(["--line-length", str(tool.options["line_length"])])
     if tool.options.get("target_version") and "target_python" not in enforced:
-        cmd.extend(["--target-version", tool.options["target_version"]])
+        cmd.extend(["--target-version", str(tool.options["target_version"])])
 
     # Fix options
     if fix:
@@ -128,7 +144,7 @@ def build_ruff_format_command(
         if tool.options.get("line_length"):
             cmd.extend(["--line-length", str(tool.options["line_length"])])
         if tool.options.get("target_version"):
-            cmd.extend(["--target-version", tool.options["target_version"]])
+            cmd.extend(["--target-version", str(tool.options["target_version"])])
 
     # Add files
     cmd.extend(files)

@@ -98,6 +98,28 @@ exclude = [ "^test_samples/", "^node_modules/", "^dist/", "^build/", "^\\.venv/"
 module = [ "assertpy",]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = [
+    "tests",
+    "tests.*",
+    "tests.unit",
+    "tests.unit.*",
+    "tests.utils",
+    "tests.utils.*",
+    "tests.scripts",
+    "tests.scripts.*",
+    "tests.integration",
+    "tests.integration.*",
+]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [ "scripts", "scripts.*", "scripts.utils", "scripts.utils.*",]
+disallow_untyped_defs = false
+check_untyped_defs = true
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

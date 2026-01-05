@@ -147,7 +147,7 @@ def format_as_table(
             # Try to use the formatter, but it might expect specific issue objects
             result = formatter_func(issues=issues, format=OutputFormat.GRID)
             if result is not None:  # If formatter worked, return the result
-                return result
+                return str(result)
         except (TypeError, AttributeError) as e:
             # Formatter failed, fall back to tabulate
             from loguru import logger

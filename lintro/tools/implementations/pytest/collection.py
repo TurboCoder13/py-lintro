@@ -41,6 +41,8 @@ def extract_all_test_results_from_junit(junitxml_path: str) -> dict[str, str] | 
 
         tree = ElementTree.parse(xml_path)
         root = tree.getroot()
+        if root is None:
+            return None
 
         test_results: dict[str, str] = {}
 
@@ -187,7 +189,8 @@ def load_flaky_test_history() -> dict[str, dict[str, int]]:
 
     try:
         with open(cache_path, encoding="utf-8") as f:
-            return json.load(f)
+            data: dict[str, dict[str, int]] = json.load(f)
+            return data
     except (json.JSONDecodeError, OSError) as e:
         logger.debug(f"Failed to load flaky test history: {e}")
         return {}

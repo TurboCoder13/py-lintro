@@ -4,6 +4,7 @@ Handles all console display operations, separating them from logging concerns.
 """
 
 from pathlib import Path
+from typing import Any
 
 import click
 from loguru import logger
@@ -39,7 +40,7 @@ class ConsoleOutputWriter:
         # Track for console.log (without color codes)
         self.console_messages.append(text)
 
-    def info(self, message: str, **kwargs) -> None:
+    def info(self, message: str, **kwargs: Any) -> None:
         """Log an info message to the console.
 
         Args:
@@ -50,7 +51,7 @@ class ConsoleOutputWriter:
         self.console_messages.append(message)
         logger.info(message, **kwargs)
 
-    def info_blue(self, message: str, **kwargs) -> None:
+    def info_blue(self, message: str, **kwargs: Any) -> None:
         """Log an info message to the console in blue color.
 
         Args:
@@ -62,7 +63,7 @@ class ConsoleOutputWriter:
         self.console_messages.append(message)
         logger.info(message, **kwargs)
 
-    def success(self, message: str, **kwargs) -> None:
+    def success(self, message: str, **kwargs: Any) -> None:
         """Log a success message to the console.
 
         Args:
@@ -72,7 +73,7 @@ class ConsoleOutputWriter:
         self.console_output(text=message, color="green")
         logger.info(f"SUCCESS: {message}", **kwargs)
 
-    def warning(self, message: str, **kwargs) -> None:
+    def warning(self, message: str, **kwargs: Any) -> None:
         """Log a warning message to the console.
 
         Args:
@@ -85,7 +86,7 @@ class ConsoleOutputWriter:
         self.console_messages.append(warning_text)
         logger.warning(message, **kwargs)
 
-    def error(self, message: str, **kwargs) -> None:
+    def error(self, message: str, **kwargs: Any) -> None:
         """Log an error message to the console.
 
         Args:

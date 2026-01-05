@@ -181,6 +181,7 @@ class BaseTool(ABC):
         cmd: list[str],
         timeout: int | float | None = None,
         cwd: str | None = None,
+        env: dict[str, str] | None = None,
     ) -> tuple[bool, str]:
         """Run a subprocess command.
 
@@ -189,6 +190,8 @@ class BaseTool(ABC):
             timeout: int | float | None: Command timeout in seconds \
                 (defaults to core's timeout).
             cwd: str | None: Working directory to run the command in (optional).
+            env: dict[str, str] | None: Environment variables for the subprocess.
+                If None, the current environment is used.
 
         Returns:
             tuple[bool, str]: Tuple of (success, output)
@@ -223,6 +226,7 @@ class BaseTool(ABC):
                 text=True,
                 timeout=effective_timeout,
                 cwd=cwd,
+                env=env,
             )
             return result.returncode == 0, result.stdout + result.stderr
         except subprocess.TimeoutExpired as e:

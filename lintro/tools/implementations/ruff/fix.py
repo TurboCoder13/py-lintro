@@ -4,6 +4,7 @@ Functions for running ruff fix commands and processing results.
 """
 
 import subprocess  # nosec B404 - subprocess used safely to execute ruff commands with controlled input
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
@@ -29,7 +30,11 @@ DEFAULT_REMAINING_ISSUES_DISPLAY: int = 5
 
 
 @contextmanager
-def _temporary_option(tool: "RuffTool", option_key: str, option_value: object):
+def _temporary_option(
+    tool: "RuffTool",
+    option_key: str,
+    option_value: object,
+) -> Generator[None, None, None]:
     """Context manager for temporarily setting a tool option.
 
     Safely mutates tool.options for the duration of the context, ensuring
@@ -117,7 +122,7 @@ def execute_ruff_fix(
     overall_success: bool = True
 
     # Track unsafe fixes for internal decisioning; do not emit as user-facing noise
-    unsafe_fixes_enabled: bool = tool.options.get("unsafe_fixes", False)
+    unsafe_fixes_enabled: bool = bool(tool.options.get("unsafe_fixes", False))
 
     # First, count issues before fixing
     cmd_check: list[str] = build_ruff_check_command(

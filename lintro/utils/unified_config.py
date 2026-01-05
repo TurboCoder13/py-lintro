@@ -49,6 +49,7 @@ __all__ = [
     "validate_config_consistency",
 ]
 
+
 # JSONC stripping moved to native_parsers.py
 class ToolOrderStrategy(StrEnum):
     """Strategy for ordering tool execution."""

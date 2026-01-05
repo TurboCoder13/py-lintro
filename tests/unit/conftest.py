@@ -1,5 +1,7 @@
 """Shared fixtures for unit tests."""
 
+from typing import Any
+
 import pytest
 
 
@@ -8,13 +10,13 @@ class FakeLogger:
 
     def __init__(self) -> None:
         """Initialize the fake logger with call storage and run dir."""
-        self.calls: list[tuple[str, tuple, dict]] = []
+        self.calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
         self.run_dir = ".lintro/test"
 
-    def _rec(self, name: str, *a, **k) -> None:
+    def _rec(self, name: str, *a: Any, **k: Any) -> None:
         self.calls.append((name, a, k))
 
-    def info(self, *a, **k) -> None:
+    def info(self, *a: Any, **k: Any) -> None:
         """Record an info call.
 
         Args:
@@ -23,7 +25,7 @@ class FakeLogger:
         """
         self._rec("info", *a, **k)
 
-    def debug(self, *a, **k) -> None:
+    def debug(self, *a: Any, **k: Any) -> None:
         """Record a debug call.
 
         Args:
@@ -32,7 +34,7 @@ class FakeLogger:
         """
         self._rec("debug", *a, **k)
 
-    def warning(self, *a, **k) -> None:
+    def warning(self, *a: Any, **k: Any) -> None:
         """Record a warning call.
 
         Args:
@@ -41,7 +43,7 @@ class FakeLogger:
         """
         self._rec("warning", *a, **k)
 
-    def error(self, *a, **k) -> None:
+    def error(self, *a: Any, **k: Any) -> None:
         """Record an error call.
 
         Args:
@@ -50,7 +52,7 @@ class FakeLogger:
         """
         self._rec("error", *a, **k)
 
-    def success(self, *a, **k) -> None:
+    def success(self, *a: Any, **k: Any) -> None:
         """Record a success call.
 
         Args:
@@ -59,7 +61,7 @@ class FakeLogger:
         """
         self._rec("success", *a, **k)
 
-    def console_output(self, *a, **k) -> None:
+    def console_output(self, *a: Any, **k: Any) -> None:
         """Record console output.
 
         Args:
@@ -68,7 +70,7 @@ class FakeLogger:
         """
         self._rec("console_output", *a, **k)
 
-    def print_lintro_header(self, *a, **k) -> None:
+    def print_lintro_header(self, *a: Any, **k: Any) -> None:
         """Record header printing.
 
         Args:
@@ -77,7 +79,7 @@ class FakeLogger:
         """
         self._rec("print_lintro_header", *a, **k)
 
-    def print_verbose_info(self, *a, **k) -> None:
+    def print_verbose_info(self, *a: Any, **k: Any) -> None:
         """Record verbose info printing.
 
         Args:
@@ -86,7 +88,7 @@ class FakeLogger:
         """
         self._rec("print_verbose_info", *a, **k)
 
-    def print_tool_header(self, *a, **k) -> None:
+    def print_tool_header(self, *a: Any, **k: Any) -> None:
         """Record tool header printing.
 
         Args:
@@ -95,7 +97,7 @@ class FakeLogger:
         """
         self._rec("print_tool_header", *a, **k)
 
-    def print_tool_result(self, *a, **k) -> None:
+    def print_tool_result(self, *a: Any, **k: Any) -> None:
         """Record tool result printing.
 
         Args:
@@ -104,7 +106,7 @@ class FakeLogger:
         """
         self._rec("print_tool_result", *a, **k)
 
-    def print_execution_summary(self, *a, **k) -> None:
+    def print_execution_summary(self, *a: Any, **k: Any) -> None:
         """Record execution summary printing.
 
         Args:
@@ -113,7 +115,7 @@ class FakeLogger:
         """
         self._rec("print_execution_summary", *a, **k)
 
-    def print_post_checks_header(self, *a, **k) -> None:
+    def print_post_checks_header(self, *a: Any, **k: Any) -> None:
         """Record post checks header printing.
 
         Args:
@@ -122,7 +124,7 @@ class FakeLogger:
         """
         self._rec("print_post_checks_header", *a, **k)
 
-    def save_console_log(self, *a, **k) -> None:
+    def save_console_log(self, *a: Any, **k: Any) -> None:
         """Record console log saving.
 
         Args:
@@ -133,7 +135,7 @@ class FakeLogger:
 
 
 @pytest.fixture
-def fake_logger():
+def fake_logger() -> FakeLogger:
     """Provide a FakeLogger instance for testing.
 
     Returns:

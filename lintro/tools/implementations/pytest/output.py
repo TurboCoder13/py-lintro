@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from lintro.tools.implementations.tool_pytest import PytestTool
 
 from lintro.tools.implementations.pytest.collection import (
     PYTEST_FLAKY_CACHE_FILE,
@@ -193,7 +196,7 @@ def load_file_patterns_from_config(
         return []
 
 
-def initialize_pytest_tool_config(tool) -> None:
+def initialize_pytest_tool_config(tool: PytestTool) -> None:
     """Initialize pytest tool configuration from config files.
 
     Loads pytest config, file patterns, and default options.
@@ -216,6 +219,3 @@ def initialize_pytest_tool_config(tool) -> None:
         # Merge pytest_config options into tool.options with safe defaults
         if "options" in pytest_config:
             tool.options.update(pytest_config.get("options", {}))
-        # Apply exclude_patterns if present
-        if "exclude_patterns" in pytest_config:
-            tool.config.exclude_patterns = pytest_config.get("exclude_patterns")

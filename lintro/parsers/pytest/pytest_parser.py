@@ -421,7 +421,7 @@ def parse_pytest_junit_xml(output: str) -> list[PytestIssue]:
             # Check for failure
             failure = testcase.find("failure")
             if failure is not None:
-                message = failure.text or failure.get("message", "")
+                message = failure.text or failure.get("message") or ""
                 issues.append(
                     PytestIssue(
                         file=file_path,
@@ -437,7 +437,7 @@ def parse_pytest_junit_xml(output: str) -> list[PytestIssue]:
             # Check for error
             error = testcase.find("error")
             if error is not None:
-                message = error.text or error.get("message", "")
+                message = error.text or error.get("message") or ""
                 issues.append(
                     PytestIssue(
                         file=file_path,
@@ -453,7 +453,7 @@ def parse_pytest_junit_xml(output: str) -> list[PytestIssue]:
             # Check for skip
             skip = testcase.find("skipped")
             if skip is not None:
-                message = skip.text or skip.get("message", "")
+                message = skip.text or skip.get("message") or ""
                 # Clean up skip message by removing file path prefix if present
                 # Format is typically: "/path/to/file.py:line: actual message"
                 if message and ":" in message:

@@ -9,16 +9,19 @@ standard library with explicit justification.
 
 import os
 import sys
+import types
+import xml.etree.ElementTree as StdlibET  # nosec B405
 
+ET: types.ModuleType
 try:
     # Prefer hardened XML parsing
-    from defusedxml import ElementTree
+    from defusedxml import ElementTree as ET  # type: ignore[no-redef]
 
     _DEFUSED = True
 except Exception:  # pragma: no cover - fallback path
     # Fallback to stdlib. This script parses a local CI-generated coverage.xml,
     # not untrusted input. We explicitly justify the fallback usage.
-    import xml.etree.ElementTree as ElementTree  # nosec B405
+    ET = StdlibET
 
     _DEFUSED = False
 
@@ -61,14 +64,18 @@ def extract_coverage_percentage() -> None:
         dbg(f"Coverage XML file size: {os.path.getsize(coverage_file)} bytes")
 
         # Read and parse the XML file
-        tree = ElementTree.parse(coverage_file)  # nosec B314 - see module docstring
+        tree = ET.parse(coverage_file)  # nosec B314 - see module docstring
         root = tree.getroot()
+        if root is None:
+            print("Error: Could not get root element from coverage.xml")
+            print("percentage=0.0")
+            return
 
         dbg(f"XML root tag: {root.tag}")
         dbg(f"XML root attributes: {root.attrib}")
 
         # Look for coverage data at root level first (most common)
-        root_line_rate = root.get("line-rate", "0")
+        root_line_rate = root.get("line-rate") or "0"
         dbg(f"Root line-rate={root_line_rate}")
         if root_line_rate != "0":
             percentage = float(root_line_rate) * 100
