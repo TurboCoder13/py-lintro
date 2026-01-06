@@ -296,7 +296,14 @@ class DarglintTool(BaseTool):
         if isinstance(configured_timeout_opt, int):
             configured_timeout = configured_timeout_opt
         elif configured_timeout_opt is not None:
-            configured_timeout = int(str(configured_timeout_opt))
+            try:
+                configured_timeout = int(str(configured_timeout_opt))
+            except ValueError:
+                logger.warning(
+                    f"Invalid timeout value '{configured_timeout_opt}', "
+                    f"using default {DARGLINT_DEFAULT_TIMEOUT}s",
+                )
+                configured_timeout = DARGLINT_DEFAULT_TIMEOUT
         else:
             configured_timeout = DARGLINT_DEFAULT_TIMEOUT
         ctx = self._prepare_execution(

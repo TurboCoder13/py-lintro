@@ -309,7 +309,7 @@ def test_yamllint_parser_validation(tmp_path: Path) -> None:
     )
     issues = parse_yamllint_output(sample_output)
     logger.info(f"[LOG] Parsed {len(issues)} issues from sample output")
-    assert_that(issues).is_length(3), "Should parse 3 issues"
+    assert_that(issues).described_as("Should parse 3 issues").is_length(3)
     from lintro.enums.severity_level import SeverityLevel
 
     assert_that(issues[0].level).is_equal_to(SeverityLevel.ERROR).described_as(

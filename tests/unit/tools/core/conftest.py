@@ -25,8 +25,8 @@ def temp_python_file(tmp_path: Path) -> Path:
 x = 1
 y = 2
 
-# This is a long comment that exceeds 88 chars and triggers E501
-long_string = "This is a very long string that exceeds the limit"
+# This is a long comment line that definitely exceeds the 88 character limit and should trigger E501 detection
+long_string = "This is a very long string literal that definitely exceeds the 88 character limit for testing purposes"
 '''  # noqa: E501
     file_path.write_text(content)
     return file_path

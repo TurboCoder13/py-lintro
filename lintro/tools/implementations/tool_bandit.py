@@ -119,14 +119,18 @@ class BanditTool(BaseTool):
         # Apply configuration overrides
         if "exclude_dirs" in bandit_config:
             # Convert exclude_dirs to exclude patterns
-            # Use /* instead of /** since path_filtering.should_exclude_path
-            # handles /* patterns but not ** recursive globs
+            # Add both /* for immediate children and /**/* for nested subdirectories
             exclude_dirs = bandit_config["exclude_dirs"]
             if isinstance(exclude_dirs, list):
                 for exclude_dir in exclude_dirs:
+                    # Pattern for immediate children
                     pattern = f"{exclude_dir}/*"
                     if pattern not in self.exclude_patterns:
                         self.exclude_patterns.append(pattern)
+                    # Pattern for nested subdirectories (recursive)
+                    recursive_pattern = f"{exclude_dir}/**/*"
+                    if recursive_pattern not in self.exclude_patterns:
+                        self.exclude_patterns.append(recursive_pattern)
 
         # Set other options from configuration
         config_mapping = {

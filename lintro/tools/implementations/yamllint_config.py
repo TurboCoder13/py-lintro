@@ -547,10 +547,17 @@ class YamllintTool(BaseTool):
         other_execution_failures = 0
 
         timeout_opt = self.options.get("timeout", YAMLLINT_DEFAULT_TIMEOUT)
-        if timeout_opt is not None and not isinstance(timeout_opt, int):
-            timeout_val = int(str(timeout_opt))
-        elif isinstance(timeout_opt, int):
+        if isinstance(timeout_opt, int):
             timeout_val = timeout_opt
+        elif timeout_opt is not None:
+            try:
+                timeout_val = int(str(timeout_opt))
+            except ValueError:
+                logger.warning(
+                    f"Invalid timeout value '{timeout_opt}', "
+                    f"using default {YAMLLINT_DEFAULT_TIMEOUT}s",
+                )
+                timeout_val = YAMLLINT_DEFAULT_TIMEOUT
         else:
             timeout_val = YAMLLINT_DEFAULT_TIMEOUT
 

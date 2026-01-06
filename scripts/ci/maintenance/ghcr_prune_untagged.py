@@ -62,7 +62,11 @@ def list_container_versions(client: httpx.Client, owner: str) -> list[GhcrVersio
     data: list[dict[str, Any]] = resp.json()
     versions: list[GhcrVersion] = []
     for item in data:
-        vid = int(item.get("id", 0))
+        vid_raw = item.get("id")
+        if vid_raw is None:
+            logger.error("API response missing 'id' field for item: {}", item)
+            continue
+        vid = int(vid_raw)
         tags = list(item.get("metadata", {}).get("container", {}).get("tags", []))
         created_at = str(item.get("created_at", ""))
         versions.append(GhcrVersion(id=vid, tags=tags, created_at=created_at))

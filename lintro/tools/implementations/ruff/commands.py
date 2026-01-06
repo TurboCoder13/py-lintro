@@ -16,18 +16,24 @@ def _get_list_option(options: dict[str, Any], key: str) -> list[str]:
     """Get a list option from options dict, returning empty list if not set.
 
     Args:
-        options: dict[str, Any]: Dictionary of options to retrieve from.
-        key: str: Key to look up in the options dictionary.
+        options: Dictionary of options to retrieve from.
+        key: Key to look up in the options dictionary.
 
     Returns:
-        list[str]: List of string values, or empty list if key not found.
+        List of string values, or empty list if key not found.
     """
     value = options.get(key)
     if value is None:
         return []
-    if isinstance(value, list):
+    # Handle single string value
+    if isinstance(value, str):
+        return [value]
+    # Handle list, tuple, set, or other iterables
+    try:
         return [str(item) for item in value]
-    return []
+    except TypeError:
+        # Non-iterable scalar value
+        return [str(value)]
 
 
 def _get_set_option(options: dict[str, Any], key: str) -> set[str]:

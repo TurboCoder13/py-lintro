@@ -227,7 +227,9 @@ def test_prettier_fix_sets_issues_for_table(temp_prettier_file: Path) -> None:
         output_format="grid",
         issues=issues_list,
     )
-    assert_that("Auto-fixable issues" in formatted or bool(formatted)).is_true()
+    assert_that(formatted).is_not_empty().described_as(
+        "Formatted output should not be empty",
+    )
 
 
 def test_prettier_respects_prettierignore(tmp_path: Path) -> None:

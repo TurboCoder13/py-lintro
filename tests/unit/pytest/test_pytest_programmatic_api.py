@@ -9,8 +9,8 @@ from assertpy import assert_that
 from lintro.cli_utils.commands.test import test
 
 
-def test_test_function_no_options() -> None:
-    """Test programmatic test function with no options."""
+def test_test_function_with_default_options() -> None:
+    """Test programmatic test function with explicit default options."""
     with patch("lintro.cli_utils.commands.test.CliRunner.invoke") as mock_invoke:
         mock_result = Mock()
         mock_result.exit_code = 0

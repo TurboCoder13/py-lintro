@@ -148,7 +148,7 @@ def test_markdownlint_integration_basic() -> None:
     # If there are issues, verify they're properly structured
     if result.issues:
         issue = result.issues[0]
-        assert_that(isinstance(issue, MarkdownlintIssue)).is_true()
+        # Use isinstance check for type narrowing
         if not isinstance(issue, MarkdownlintIssue):
             pytest.fail("issue should be MarkdownlintIssue")
         assert_that(issue.file).is_not_empty()
