@@ -15,7 +15,7 @@ import xml.etree.ElementTree as StdlibET  # nosec B405
 ET: types.ModuleType
 try:
     # Prefer hardened XML parsing
-    from defusedxml import ElementTree as ET  # type: ignore[no-redef]  # noqa: N817
+    from defusedxml import ElementTree as ET  # noqa: N817
 
     _DEFUSED = True
 except Exception:  # pragma: no cover - fallback path

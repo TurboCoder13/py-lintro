@@ -67,7 +67,7 @@ def generate_version_table() -> str:
     return bundled_table + "\n" + external_table
 
 
-def main():
+def main() -> None:
     """Generate documentation and print to stdout."""
     print("=== Tool Version Requirements (Generated from pyproject.toml) ===")
     print()
