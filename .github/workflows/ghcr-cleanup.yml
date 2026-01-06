@@ -50,4 +50,4 @@ jobs:
       - name: Prune untagged GHCR versions
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: uv run python scripts/ci/ghcr_prune_untagged.py
+        run: uv run python scripts/ci/maintenance/ghcr_prune_untagged.py

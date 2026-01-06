@@ -51,11 +51,11 @@ jobs:
           PR_NUMBER: ${{ inputs.pr-number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: scripts/ci/post-pr-delete-previous.sh '<!-- coverage-report -->'
+        run: scripts/ci/github/post-pr-delete-previous.sh '<!-- coverage-report -->'
 
       - name: Delete previous Lintro analysis comments
         env:
           PR_NUMBER: ${{ inputs.pr-number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: scripts/ci/post-pr-delete-previous.sh '<!-- lintro-report -->'
+        run: scripts/ci/github/post-pr-delete-previous.sh '<!-- lintro-report -->'

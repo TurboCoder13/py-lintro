@@ -39,4 +39,4 @@ runs:
         REQUIRE_SCOPE: ${{ inputs['require-scope'] }}
         COMMENT_ON_FAIL: ${{ inputs['comment-on-fail'] }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
-      run: scripts/ci/semantic-pr-title-check.sh
+      run: scripts/ci/github/semantic-pr-title-check.sh

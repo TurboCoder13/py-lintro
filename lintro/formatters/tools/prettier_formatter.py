@@ -1,23 +1,10 @@
 """Formatter for Prettier issues."""
 
+from lintro.enums.output_format import OutputFormat
+from lintro.formatters.core.format_registry import get_style
 from lintro.formatters.core.table_descriptor import TableDescriptor
-from lintro.formatters.styles.csv import CsvStyle
-from lintro.formatters.styles.grid import GridStyle
-from lintro.formatters.styles.html import HtmlStyle
-from lintro.formatters.styles.json import JsonStyle
-from lintro.formatters.styles.markdown import MarkdownStyle
-from lintro.formatters.styles.plain import PlainStyle
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
-
-FORMAT_MAP = {
-    "plain": PlainStyle(),
-    "grid": GridStyle(),
-    "markdown": MarkdownStyle(),
-    "html": HtmlStyle(),
-    "json": JsonStyle(),
-    "csv": CsvStyle(),
-}
 
 
 class PrettierTableDescriptor(TableDescriptor):
@@ -48,8 +35,8 @@ class PrettierTableDescriptor(TableDescriptor):
             rows.append(
                 [
                     normalize_file_path_for_display(issue.file),
-                    str(issue.line) if issue.line is not None else "-",
-                    str(issue.column) if issue.column is not None else "-",
+                    str(issue.line) if issue.line > 0 else "-",
+                    str(issue.column) if issue.column > 0 else "-",
                     issue.code,
                     issue.message,
                 ],
@@ -59,7 +46,7 @@ class PrettierTableDescriptor(TableDescriptor):
 
 def format_prettier_issues(
     issues: list[PrettierIssue],
-    format: str = "grid",
+    format: OutputFormat = OutputFormat.GRID,
 ) -> str:
     """Format Prettier issues with auto-fixable labeling.
 
@@ -76,9 +63,9 @@ def format_prettier_issues(
         JSON returns the combined table for compatibility.
     """
     descriptor = PrettierTableDescriptor()
-    formatter = FORMAT_MAP.get(format, GridStyle())
+    formatter = get_style(format)
 
-    if format == "json":
+    if format == OutputFormat.JSON:
         columns = descriptor.get_columns()
         rows = descriptor.get_rows(issues)
         return formatter.format(columns=columns, rows=rows, tool_name="prettier")

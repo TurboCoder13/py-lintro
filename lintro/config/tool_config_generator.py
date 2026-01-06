@@ -22,6 +22,8 @@ from typing import Any
 from loguru import logger
 
 from lintro.config.lintro_config import LintroConfig
+from lintro.enums.config_format import ConfigFormat
+from lintro.enums.tool_name import ToolName
 
 try:
     import yaml
@@ -61,13 +63,13 @@ def _convert_python_version_for_mypy(version: str) -> str:
 
 
 # Tool config format for defaults generation
-TOOL_CONFIG_FORMATS: dict[str, str] = {
-    "bandit": "yaml",
-    "biome": "json",
-    "hadolint": "yaml",
-    "markdownlint": "json",
-    "prettier": "json",
-    "yamllint": "yaml",
+TOOL_CONFIG_FORMATS: dict[str, ConfigFormat] = {
+    "bandit": ConfigFormat.YAML,
+    "biome": ConfigFormat.JSON,
+    "hadolint": ConfigFormat.YAML,
+    "markdownlint": ConfigFormat.JSON,
+    "prettier": ConfigFormat.JSON,
+    "yamllint": ConfigFormat.YAML,
 }
 
 # Native config file patterns for checking if tool has native config
@@ -170,7 +172,7 @@ def get_enforce_cli_args(
         if flag:
             target_value = (
                 _convert_python_version_for_mypy(enforce.target_python)
-                if tool_lower == "mypy"
+                if tool_lower == ToolName.MYPY.value
                 else enforce.target_python
             )
             args.extend([flag, target_value])
@@ -253,7 +255,7 @@ def generate_defaults_config(
         return None
 
     # Get config format for this tool
-    config_format = TOOL_CONFIG_FORMATS.get(tool_lower, "json")
+    config_format = TOOL_CONFIG_FORMATS.get(tool_lower, ConfigFormat.JSON)
 
     try:
         return _write_defaults_config(
@@ -269,7 +271,7 @@ def generate_defaults_config(
 def _write_defaults_config(
     defaults: dict[str, Any],
     tool_name: str,
-    config_format: str,
+    config_format: ConfigFormat,
 ) -> Path:
     """Write defaults configuration to a temporary file.
 
@@ -284,7 +286,7 @@ def _write_defaults_config(
     Raises:
         ImportError: If PyYAML is not installed and YAML format is requested.
     """
-    suffix_map = {"json": ".json", "yaml": ".yaml"}
+    suffix_map = {ConfigFormat.JSON: ".json", ConfigFormat.YAML: ".yaml"}
     suffix = suffix_map.get(config_format, ".json")
 
     temp_fd, temp_path_str = tempfile.mkstemp(
@@ -295,7 +297,7 @@ def _write_defaults_config(
     temp_path = Path(temp_path_str)
     _temp_files.append(temp_path)
 
-    if config_format == "yaml":
+    if config_format == ConfigFormat.YAML:
         if yaml is None:
             raise ImportError("PyYAML required for YAML output")
         content = yaml.dump(defaults, default_flow_style=False)
@@ -357,76 +359,3 @@ def cleanup_temp_config(config_path: Path) -> None:
 
 
 # =============================================================================
-# DEPRECATED: Legacy functions for backward compatibility
-# These will be removed in a future version.
-# =============================================================================
-
-
-def generate_tool_config(
-    tool_name: str,
-    lintro_config: LintroConfig,
-) -> Path | None:
-    """Generate a temporary configuration file for a tool.
-
-    DEPRECATED: This function is deprecated. Use get_enforce_cli_args() for
-    CLI flag injection and generate_defaults_config() for defaults.
-
-    Args:
-        tool_name: Name of the tool.
-        lintro_config: Lintro configuration.
-
-    Returns:
-        Path | None: Path to generated config file, or None.
-    """
-    logger.warning(
-        f"generate_tool_config() is deprecated for {tool_name}. "
-        "Use get_enforce_cli_args() instead.",
-    )
-    return generate_defaults_config(
-        tool_name=tool_name,
-        lintro_config=lintro_config,
-    )
-
-
-def get_config_injection_args(
-    tool_name: str,
-    config_path: Path | None,
-) -> list[str]:
-    """Get CLI arguments to inject config file into a tool.
-
-    DEPRECATED: Use get_defaults_injection_args() instead.
-
-    Args:
-        tool_name: Name of the tool.
-        config_path: Path to config file (or None).
-
-    Returns:
-        list[str]: CLI arguments to pass to the tool.
-    """
-    logger.warning(
-        f"get_config_injection_args() is deprecated for {tool_name}. "
-        "Use get_defaults_injection_args() instead.",
-    )
-    return get_defaults_injection_args(
-        tool_name=tool_name,
-        config_path=config_path,
-    )
-
-
-def get_no_auto_config_args(tool_name: str) -> list[str]:
-    """Get CLI arguments to disable auto-config discovery.
-
-    DEPRECATED: No longer needed with the tiered model.
-    Tools use their native configs by default.
-
-    Args:
-        tool_name: Name of the tool.
-
-    Returns:
-        list[str]: Empty list (no longer used).
-    """
-    logger.warning(
-        f"get_no_auto_config_args() is deprecated for {tool_name}. "
-        "No longer needed with the tiered config model.",
-    )
-    return []

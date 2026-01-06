@@ -1,16 +1,16 @@
 """Bandit issue model for security vulnerabilities."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
+
+from lintro.parsers.base_issue import BaseIssue
 
 
 @dataclass
-class BanditIssue:
+class BanditIssue(BaseIssue):
     """Represents a security issue found by Bandit.
 
     Attributes:
-        file: str: Path to the file containing the issue.
-        line: int: Line number where the issue was found.
         col_offset: int: Column offset of the issue.
         issue_severity: str: Severity level (LOW, MEDIUM, HIGH).
         issue_confidence: str: Confidence level (LOW, MEDIUM, HIGH).
@@ -23,22 +23,26 @@ class BanditIssue:
         line_range: list[int]: Range of lines containing the issue.
     """
 
-    file: str
-    line: int
-    col_offset: int
-    issue_severity: str
-    issue_confidence: str
-    test_id: str
-    test_name: str
-    issue_text: str
-    more_info: str
-    cwe: dict[str, Any] | None = None
-    code: str | None = None
-    line_range: list[int] | None = None
+    col_offset: int = field(default=0)
+    issue_severity: str = field(default="UNKNOWN")
+    issue_confidence: str = field(default="UNKNOWN")
+    test_id: str = field(default="")
+    test_name: str = field(default="")
+    issue_text: str = field(default="")
+    more_info: str = field(default="")
+    cwe: dict[str, Any] | None = field(default=None)
+    code: str | None = field(default=None)
+    line_range: list[int] | None = field(default=None)
 
-    @property
-    def message(self) -> str:
-        """Get a human-readable message for the issue.
+    def __post_init__(self) -> None:
+        """Initialize the inherited fields."""
+        # Map col_offset to column for BaseIssue compatibility
+        self.column = self.col_offset
+        # Set the message field to the computed value
+        self.message = self._get_message()
+
+    def _get_message(self) -> str:
+        """Get the formatted issue message.
 
         Returns:
             str: Formatted issue message.

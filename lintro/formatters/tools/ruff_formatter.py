@@ -2,24 +2,14 @@
 
 from collections.abc import Sequence
 
+from lintro.enums.output_format import OutputFormat
+from lintro.formatters.core.format_registry import get_format_map, get_style
 from lintro.formatters.core.table_descriptor import TableDescriptor
-from lintro.formatters.styles.csv import CsvStyle
-from lintro.formatters.styles.grid import GridStyle
-from lintro.formatters.styles.html import HtmlStyle
-from lintro.formatters.styles.json import JsonStyle
-from lintro.formatters.styles.markdown import MarkdownStyle
-from lintro.formatters.styles.plain import PlainStyle
 from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
 
-FORMAT_MAP = {
-    "plain": PlainStyle(),
-    "grid": GridStyle(),
-    "markdown": MarkdownStyle(),
-    "html": HtmlStyle(),
-    "json": JsonStyle(),
-    "csv": CsvStyle(),
-}
+# Use shared format registry instead of duplicating style instances
+FORMAT_MAP = get_format_map()
 
 
 class RuffTableDescriptor(TableDescriptor):
@@ -75,7 +65,7 @@ class RuffTableDescriptor(TableDescriptor):
 
 def format_ruff_issues(
     issues: Sequence[RuffIssue | RuffFormatIssue],
-    format: str = "grid",
+    format: str | OutputFormat = "grid",
 ) -> str:
     """Format Ruff issues, split into auto-fixable and not auto-fixable tables.
 
@@ -88,8 +78,11 @@ def format_ruff_issues(
     Returns:
         str: Formatted string (one or two tables depending on format).
     """
+    from lintro.enums.output_format import normalize_output_format
+
+    normalized_format = normalize_output_format(format or "grid")
     descriptor = RuffTableDescriptor()
-    formatter = FORMAT_MAP.get(format, GridStyle())
+    formatter = get_style(normalized_format)
 
     # Partition issues
     fixable_issues: list[RuffIssue | RuffFormatIssue] = []
@@ -106,7 +99,7 @@ def format_ruff_issues(
             non_fixable_issues.append(issue)
 
     # JSON: keep a single table for compatibility
-    if format == "json":
+    if normalized_format == OutputFormat.JSON:
         columns = descriptor.get_columns()
         rows = descriptor.get_rows(issues)
         return formatter.format(

@@ -18,118 +18,39 @@ Priority order (highest to lowest):
 
 from __future__ import annotations
 
-import json
-import tomllib
 from dataclasses import dataclass, field
 from enum import StrEnum, auto
-from pathlib import Path
 from typing import Any
 
 from loguru import logger
 
-try:
-    import yaml
-except ImportError:
-    yaml = None  # type: ignore[assignment]
+from lintro.enums.tool_name import ToolName
+from lintro.utils.config_loaders import (
+    get_tool_order_config,
+    load_lintro_global_config,
+    load_lintro_tool_config,
+    load_pyproject,
+)
+from lintro.utils.native_parsers import _load_native_tool_config
+
+# Re-export for backwards compatibility
+__all__ = [
+    "get_tool_order_config",
+    "_load_native_tool_config",
+    "load_lintro_global_config",
+    "load_lintro_tool_config",
+    "ToolOrderStrategy",
+    "ToolConfigInfo",
+    "UnifiedConfigManager",
+    "get_effective_line_length",
+    "get_ordered_tools",
+    "get_tool_priority",
+    "is_tool_injectable",
+    "validate_config_consistency",
+]
 
 
-def _strip_jsonc_comments(content: str) -> str:
-    """Strip JSONC comments from content, preserving strings.
-
-    This function safely removes // and /* */ comments from JSONC content
-    while preserving comment-like sequences inside string values.
-
-    Args:
-        content: JSONC content as string
-
-    Returns:
-        Content with comments stripped
-
-    Note:
-        This is a simple implementation that handles most common cases.
-        For complex JSONC with nested comments or edge cases, consider
-        using a proper JSONC parser library (e.g., json5 or commentjson).
-    """
-    result: list[str] = []
-    i = 0
-    content_len = len(content)
-    in_string = False
-    escape_next = False
-    in_block_comment = False
-
-    while i < content_len:
-        char = content[i]
-
-        if escape_next:
-            escape_next = False
-            if not in_block_comment:
-                result.append(char)
-            i += 1
-            continue
-
-        if char == "\\" and in_string:
-            escape_next = True
-            if not in_block_comment:
-                result.append(char)
-            i += 1
-            continue
-
-        if char == '"' and not in_block_comment:
-            in_string = not in_string
-            result.append(char)
-            i += 1
-            continue
-
-        if in_string:
-            result.append(char)
-            i += 1
-            continue
-
-        # Check for block comment start /* ... */
-        if i < content_len - 1 and char == "/" and content[i + 1] == "*":
-            in_block_comment = True
-            i += 2
-            continue
-
-        # Check for block comment end */
-        if (
-            i > 0
-            and i < content_len
-            and char == "/"
-            and content[i - 1] == "*"
-            and in_block_comment
-        ):
-            in_block_comment = False
-            i += 1
-            continue
-
-        # Check for line comment //
-        if (
-            i < content_len - 1
-            and char == "/"
-            and content[i + 1] == "/"
-            and not in_block_comment
-        ):
-            # Skip to end of line
-            while i < content_len and content[i] != "\n":
-                i += 1
-            # Include the newline if present
-            if i < content_len:
-                result.append("\n")
-                i += 1
-            continue
-
-        if not in_block_comment:
-            result.append(char)
-
-        i += 1
-
-    if in_block_comment:
-        logger.warning("Unclosed block comment in JSONC content")
-
-    return "".join(result)
-
-
+# JSONC stripping moved to native_parsers.py
 class ToolOrderStrategy(StrEnum):
     """Strategy for ordering tool execution."""
 
@@ -219,162 +140,9 @@ DEFAULT_TOOL_PRIORITIES: dict[str, int] = {
 }
 
 
-def _load_pyproject() -> dict[str, Any]:
-    """Load the full pyproject.toml.
+# Pyproject loading moved to config_loaders.py
 
-    Returns:
-        Full pyproject.toml contents as dict
-    """
-    pyproject_path = Path("pyproject.toml")
-    if not pyproject_path.exists():
-        return {}
-    try:
-        with pyproject_path.open("rb") as f:
-            return tomllib.load(f)
-    except (OSError, tomllib.TOMLDecodeError):
-        return {}
-
-
-def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
-    """Load native configuration for a specific tool.
-
-    Args:
-        tool_name: Name of the tool
-
-    Returns:
-        Native configuration dictionary
-    """
-    pyproject = _load_pyproject()
-    tool_section_raw = pyproject.get("tool", {})
-    tool_section = tool_section_raw if isinstance(tool_section_raw, dict) else {}
-
-    # Tools with pyproject.toml config
-    if tool_name in ("ruff", "black", "bandit"):
-        config_value = tool_section.get(tool_name, {})
-        return config_value if isinstance(config_value, dict) else {}
-
-    # Yamllint: check native config files (not pyproject.toml)
-    if tool_name == "yamllint":
-        yamllint_config_files = [".yamllint", ".yamllint.yaml", ".yamllint.yml"]
-        for config_file in yamllint_config_files:
-            config_path = Path(config_file)
-            if config_path.exists():
-                if yaml is None:
-                    logger.debug(
-                        f"[UnifiedConfig] Found {config_file} but yaml not installed",
-                    )
-                    return {}
-                try:
-                    with config_path.open(encoding="utf-8") as f:
-                        content = yaml.safe_load(f)
-                        return content if isinstance(content, dict) else {}
-                except (yaml.YAMLError, OSError) as e:
-                    logger.debug(f"[UnifiedConfig] Failed to parse {config_file}: {e}")
-        return {}
-
-    # Prettier: check multiple config file formats
-    if tool_name == "prettier":
-        for config_file in [".prettierrc", ".prettierrc.json", "prettier.config.js"]:
-            config_path = Path(config_file)
-            if config_path.exists() and config_file.endswith(".json"):
-                try:
-                    with config_path.open(encoding="utf-8") as f:
-                        loaded = json.load(f)
-                        return loaded if isinstance(loaded, dict) else {}
-                except (json.JSONDecodeError, FileNotFoundError):
-                    pass
-            elif config_path.exists() and config_file == ".prettierrc":
-                # Try parsing as JSON (common format)
-                try:
-                    with config_path.open(encoding="utf-8") as f:
-                        loaded = json.load(f)
-                        return loaded if isinstance(loaded, dict) else {}
-                except (json.JSONDecodeError, FileNotFoundError):
-                    pass
-        # Check package.json prettier field
-        pkg_path = Path("package.json")
-        if pkg_path.exists():
-            try:
-                with pkg_path.open(encoding="utf-8") as f:
-                    pkg = json.load(f)
-                    if isinstance(pkg, dict) and "prettier" in pkg:
-                        prettier_cfg = pkg.get("prettier", {})
-                        return prettier_cfg if isinstance(prettier_cfg, dict) else {}
-            except (json.JSONDecodeError, FileNotFoundError):
-                pass
-        return {}
-
-    # Biome: check config files
-    if tool_name == "biome":
-        # Check Biome config files
-        for config_file in [
-            "biome.json",
-            "biome.jsonc",
-        ]:
-            config_path = Path(config_file)
-            if not config_path.exists():
-                continue
-            # Handle JSON files
-            try:
-                content = config_path.read_text(encoding="utf-8")
-                if config_file.endswith(".jsonc"):
-                    content = _strip_jsonc_comments(content)
-                loaded = json.loads(content)
-                return loaded if isinstance(loaded, dict) else {}
-            except (json.JSONDecodeError, FileNotFoundError):
-                pass
-        return {}
-
-    # Markdownlint: check config files
-    if tool_name == "markdownlint":
-        for config_file in [
-            ".markdownlint.json",
-            ".markdownlint.yaml",
-            ".markdownlint.yml",
-            ".markdownlint.jsonc",
-        ]:
-            config_path = Path(config_file)
-            if not config_path.exists():
-                continue
-
-            # Handle JSON/JSONC files
-            if config_file.endswith((".json", ".jsonc")):
-                try:
-                    with config_path.open(encoding="utf-8") as f:
-                        content = f.read()
-                        # Strip JSONC comments safely (preserves strings)
-                        content = _strip_jsonc_comments(content)
-                        loaded = json.loads(content)
-                        return loaded if isinstance(loaded, dict) else {}
-                except (json.JSONDecodeError, FileNotFoundError):
-                    pass
-
-            # Handle YAML files
-            elif config_file.endswith((".yaml", ".yml")):
-                if yaml is None:
-                    logger.warning(
-                        "PyYAML not available; cannot parse .markdownlint.yaml",
-                    )
-                    continue
-                try:
-                    with config_path.open(encoding="utf-8") as f:
-                        content = yaml.safe_load(f)
-                        # Handle multi-document YAML (coerce to dict)
-                        if isinstance(content, list) and len(content) > 0:
-                            content = content[0]
-                        if isinstance(content, dict):
-                            return content
-                except Exception as e:  # noqa: BLE001
-                    # Catch yaml.YAMLError and other exceptions
-                    # (file I/O, parsing errors)
-                    # Continue to next config file if this one fails to parse
-                    logger.debug(
-                        f"Failed to parse {config_path}: {type(e).__name__}",
-                    )
-                    pass
-        return {}
-
-    return {}
+# Native config loading moved to native_parsers.py
 
 
 def _get_nested_value(config: dict[str, Any], key_path: str) -> Any:
@@ -397,72 +165,7 @@ def _get_nested_value(config: dict[str, Any], key_path: str) -> Any:
     return current
 
 
-def load_lintro_global_config() -> dict[str, Any]:
-    """Load global Lintro configuration from [tool.lintro].
-
-    Returns:
-        Global configuration dictionary (excludes tool-specific sections)
-    """
-    pyproject = _load_pyproject()
-    tool_section_raw = pyproject.get("tool", {})
-    tool_section = tool_section_raw if isinstance(tool_section_raw, dict) else {}
-    lintro_config_raw = tool_section.get("lintro", {})
-    lintro_config = lintro_config_raw if isinstance(lintro_config_raw, dict) else {}
-
-    # Filter out known tool-specific sections
-    tool_sections = {
-        "ruff",
-        "black",
-        "prettier",
-        "yamllint",
-        "markdownlint",
-        "markdownlint-cli2",
-        "bandit",
-        "darglint",
-        "hadolint",
-        "actionlint",
-        "pytest",
-        "post_checks",
-        "versions",
-    }
-
-    return {k: v for k, v in lintro_config.items() if k not in tool_sections}
-
-
-def load_lintro_tool_config(tool_name: str) -> dict[str, Any]:
-    """Load tool-specific Lintro config from [tool.lintro.<tool>].
-
-    Args:
-        tool_name: Name of the tool
-
-    Returns:
-        Tool-specific Lintro configuration
-    """
-    pyproject = _load_pyproject()
-    tool_section_raw = pyproject.get("tool", {})
-    tool_section = tool_section_raw if isinstance(tool_section_raw, dict) else {}
-    lintro_config_raw = tool_section.get("lintro", {})
-    lintro_config = lintro_config_raw if isinstance(lintro_config_raw, dict) else {}
-    tool_config = lintro_config.get(tool_name, {})
-    return tool_config if isinstance(tool_config, dict) else {}
-
-
-def get_tool_order_config() -> dict[str, Any]:
-    """Get tool ordering configuration from [tool.lintro].
-
-    Returns:
-        Tool ordering configuration with keys:
-        - strategy: "priority", "alphabetical", or "custom"
-        - custom_order: list of tool names (for custom strategy)
-        - priority_overrides: dict of tool -> priority (for priority strategy)
-    """
-    global_config = load_lintro_global_config()
-
-    return {
-        "strategy": global_config.get("tool_order", "priority"),
-        "custom_order": global_config.get("tool_order_custom", []),
-        "priority_overrides": global_config.get("tool_priorities", {}),
-    }
+# Config loading functions moved to config_loaders.py
 
 
 def get_tool_priority(tool_name: str) -> int:
@@ -513,21 +216,35 @@ def get_ordered_tools(
         List of tool names in execution order
     """
     # Determine strategy and custom order
+    strategy: ToolOrderStrategy
     if tool_order is None:
         order_config = get_tool_order_config()
-        strategy = order_config.get("strategy", "priority")
+        strategy_str = order_config.get("strategy", "priority")
+        try:
+            strategy = ToolOrderStrategy(strategy_str)
+        except ValueError:
+            logger.warning(
+                f"Invalid tool order strategy '{strategy_str}', using 'priority'",
+            )
+            strategy = ToolOrderStrategy.PRIORITY
         custom_order = order_config.get("custom_order", [])
     elif isinstance(tool_order, list):
-        strategy = "custom"
+        strategy = ToolOrderStrategy.CUSTOM
         custom_order = tool_order
     else:
-        strategy = tool_order
+        try:
+            strategy = ToolOrderStrategy(tool_order)
+        except ValueError:
+            logger.warning(
+                f"Invalid tool order strategy '{tool_order}', using 'priority'",
+            )
+            strategy = ToolOrderStrategy.PRIORITY
         custom_order = []
 
-    if strategy == "alphabetical":
+    if strategy == ToolOrderStrategy.ALPHABETICAL:
         return sorted(tool_names, key=str.lower)
 
-    if strategy == "custom":
+    if strategy == ToolOrderStrategy.CUSTOM:
         # Tools in custom_order come first (in that order), then remaining
         # by priority
         ordered: list[str] = []
@@ -589,7 +306,7 @@ def get_effective_line_length(tool_name: str) -> int | None:
         return lintro_global["line-length"]
 
     # 3. Fall back to Ruff's line-length as source of truth
-    pyproject = _load_pyproject()
+    pyproject = load_pyproject()
     tool_section_raw = pyproject.get("tool", {})
     tool_section = tool_section_raw if isinstance(tool_section_raw, dict) else {}
     ruff_config_raw = tool_section.get("ruff", {})
@@ -636,7 +353,7 @@ def validate_config_consistency() -> list[str]:
 
     # Check each tool's native config for mismatches
     for tool_name, setting_key in GLOBAL_SETTINGS["line_length"]["tools"].items():
-        if tool_name == "ruff":
+        if tool_name == ToolName.RUFF.value:
             continue  # Skip Ruff (it's the source of truth)
 
         native = _load_native_tool_config(tool_name)
@@ -705,78 +422,7 @@ def get_tool_config_summary() -> dict[str, ToolConfigInfo]:
     return summary
 
 
-def get_config_report() -> str:
-    """Generate a configuration report as a string.
-
-    Returns:
-        Formatted configuration report
-    """
-    summary = get_tool_config_summary()
-    central_ll = get_effective_line_length("ruff")
-    order_config = get_tool_order_config()
-
-    lines: list[str] = []
-    lines.append("=" * 60)
-    lines.append("LINTRO CONFIGURATION REPORT")
-    lines.append("=" * 60)
-    lines.append("")
-
-    # Global settings section
-    lines.append("── Global Settings ──")
-    lines.append(f"  Central line_length: {central_ll or 'Not configured'}")
-    lines.append(f"  Tool order strategy: {order_config.get('strategy', 'priority')}")
-    if order_config.get("custom_order"):
-        lines.append(f"  Custom order: {', '.join(order_config['custom_order'])}")
-    lines.append("")
-
-    # Tool execution order section
-    lines.append("── Tool Execution Order ──")
-    tool_names = list(summary.keys())
-    ordered_tools = get_ordered_tools(tool_names)
-    for idx, tool_name in enumerate(ordered_tools, 1):
-        priority = get_tool_priority(tool_name)
-        lines.append(f"  {idx}. {tool_name} (priority: {priority})")
-    lines.append("")
-
-    # Per-tool configuration section
-    lines.append("── Per-Tool Configuration ──")
-    for tool_name, info in summary.items():
-        injectable = "✅ Syncable" if info.is_injectable else "⚠️ Native only"
-        effective = info.effective_config.get("line_length", "default")
-        lines.append(f"  {tool_name}:")
-        lines.append(f"    Status: {injectable}")
-        lines.append(f"    Effective line_length: {effective}")
-        if info.lintro_tool_config:
-            lines.append(f"    Lintro config: {info.lintro_tool_config}")
-        if info.native_config and tool_name not in ("ruff", "black", "bandit"):
-            # Only show native config for tools with external config files
-            lines.append(f"    Native config: {info.native_config}")
-    lines.append("")
-
-    # Warnings section
-    all_warnings = validate_config_consistency()
-    if all_warnings:
-        lines.append("── Configuration Warnings ──")
-        for warning in all_warnings:
-            lines.append(f"  {warning}")
-        lines.append("")
-    else:
-        lines.append("── Configuration Warnings ──")
-        lines.append("  None - all configs consistent!")
-        lines.append("")
-
-    lines.append("=" * 60)
-    return "\n".join(lines)
-
-
-def print_config_report() -> None:
-    """Print a report of configuration status for all tools."""
-    report = get_config_report()
-    for line in report.split("\n"):
-        if line.startswith("⚠️") or "Warning" in line:
-            logger.warning(line)
-        else:
-            logger.info(line)
+# Config reporting functions moved to config_reporting.py
 
 
 @dataclass
@@ -905,7 +551,7 @@ class UnifiedConfigManager:
             except Exception as e:
                 # Other unexpected errors - log at warning but allow execution
                 logger.warning(
-                    f"Failed to apply config to {tool_name}: {e}",
+                    f"Failed to apply config to {tool_name}: {type(e).__name__}: {e}",
                     exc_info=True,
                 )
 
@@ -915,8 +561,14 @@ class UnifiedConfigManager:
         Returns:
             Formatted configuration report string
         """
-        return get_config_report()
+        # Late import to avoid circular dependency
+        from lintro.utils.config_reporting import get_config_report
+
+        return str(get_config_report())
 
     def print_report(self) -> None:
         """Print configuration report."""
+        # Late import to avoid circular dependency
+        from lintro.utils.config_reporting import print_config_report
+
         print_config_report()

@@ -43,11 +43,11 @@ def test_actionlint_available() -> None:
         pytest.skip("actionlint not available")
 
 
-SAMPLE_BAD = Path("test_samples/actionlint_violations.yml")
+SAMPLE_BAD = Path("test_samples/tools/config/github_actions/actionlint_violations.yml")
 
 
 @pytest.mark.actionlint
-def test_actionlint_reports_violations(tmp_path) -> None:
+def test_actionlint_reports_violations(tmp_path: Path) -> None:
     """Assert that Lintro detects violations reported by actionlint.
 
     Args:
@@ -72,7 +72,7 @@ def test_actionlint_reports_violations(tmp_path) -> None:
 
 
 @pytest.mark.actionlint
-def test_actionlint_no_files(tmp_path) -> None:
+def test_actionlint_no_files(tmp_path: Path) -> None:
     """Assert that Lintro succeeds when no workflow files are present.
 
     Args:

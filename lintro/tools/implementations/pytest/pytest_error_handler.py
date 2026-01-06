@@ -5,7 +5,7 @@ scenarios consistently and provides standardized error messages.
 """
 
 import subprocess  # nosec B404 - used safely with shell disabled
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from loguru import logger
 
@@ -23,7 +23,7 @@ class PytestErrorHandler:
         tool_name: Name of the tool (e.g., "pytest").
     """
 
-    tool_name: str = "pytest"
+    tool_name: str = field(default="pytest")
 
     def handle_timeout_error(
         self,

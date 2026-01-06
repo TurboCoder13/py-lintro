@@ -22,8 +22,9 @@ from lintro.config.lintro_config import (
     EnforceConfig,
     ExecutionConfig,
     LintroConfig,
-    ToolConfig,
+    LintroToolConfig,
 )
+from lintro.enums.config_key import ConfigKey
 
 try:
     import yaml
@@ -163,7 +164,7 @@ def _parse_execution_config(data: dict[str, Any]) -> ExecutionConfig:
     )
 
 
-def _parse_tool_config(data: dict[str, Any]) -> ToolConfig:
+def _parse_tool_config(data: dict[str, Any]) -> LintroToolConfig:
     """Parse a single tool configuration.
 
     In the tiered model, tools only have enabled and optional config_source.
@@ -172,34 +173,34 @@ def _parse_tool_config(data: dict[str, Any]) -> ToolConfig:
         data: Raw tool configuration dict.
 
     Returns:
-        ToolConfig: Parsed tool configuration.
+        LintroToolConfig: Parsed tool configuration.
     """
     enabled = data.get("enabled", True)
     config_source = data.get("config_source")
 
-    return ToolConfig(
+    return LintroToolConfig(
         enabled=enabled,
         config_source=config_source,
     )
 
 
-def _parse_tools_config(data: dict[str, Any]) -> dict[str, ToolConfig]:
+def _parse_tools_config(data: dict[str, Any]) -> dict[str, LintroToolConfig]:
     """Parse all tool configurations.
 
     Args:
         data: Raw 'tools' section from config.
 
     Returns:
-        dict[str, ToolConfig]: Tool configurations keyed by tool name.
+        dict[str, LintroToolConfig]: Tool configurations keyed by tool name.
     """
-    tools: dict[str, ToolConfig] = {}
+    tools: dict[str, LintroToolConfig] = {}
 
     for tool_name, tool_data in data.items():
         if isinstance(tool_data, dict):
             tools[tool_name.lower()] = _parse_tool_config(tool_data)
         elif isinstance(tool_data, bool):
             # Simple enabled/disabled flag
-            tools[tool_name.lower()] = ToolConfig(enabled=tool_data)
+            tools[tool_name.lower()] = LintroToolConfig(enabled=tool_data)
 
     return tools
 
@@ -270,13 +271,13 @@ def _convert_pyproject_to_config(data: dict[str, Any]) -> dict[str, Any]:
         elif key in enforce_keys or key.replace("-", "_") in enforce_keys:
             # Enforce config
             result["enforce"][key.replace("-", "_")] = value
-        elif key == "post_checks":
+        elif key_lower == ConfigKey.POST_CHECKS.value.lower():
             # Skip post_checks (handled separately)
             pass
-        elif key == "versions":
+        elif key_lower == ConfigKey.VERSIONS.value.lower():
             # Skip versions (handled separately)
             pass
-        elif key == "defaults" and isinstance(value, dict):
+        elif key_lower == ConfigKey.DEFAULTS.value.lower() and isinstance(value, dict):
             # Defaults section
             result["defaults"] = value
 
@@ -292,10 +293,8 @@ def load_config(
     Priority:
     1. Explicit config_path if provided
     2. .lintro-config.yaml found by searching upward
-    3. [tool.lintro] in pyproject.toml (deprecated fallback)
+    3. [tool.lintro] in pyproject.toml fallback
     4. Default empty configuration
-
-    Supports both new 'enforce' section and deprecated 'global' section.
 
     Args:
         config_path: Explicit path to config file. If None, searches for
@@ -334,30 +333,12 @@ def load_config(
             data = _convert_pyproject_to_config(pyproject_data)
             resolved_path = str(pyproject_path.resolve()) if pyproject_path else None
             logger.debug(
-                "Using [tool.lintro] from pyproject.toml (deprecated). "
+                "Using [tool.lintro] from pyproject.toml. "
                 "Consider migrating to .lintro-config.yaml",
             )
 
-    # Parse enforce config - support both 'enforce' and deprecated 'global'
+    # Parse enforce config
     enforce_data = data.get("enforce", {})
-    global_data = data.get("global", {})
-
-    # Always warn if 'global' section exists (it's deprecated)
-    if global_data:
-        if enforce_data:
-            # Both exist - warn that 'global' is ignored
-            logger.warning(
-                "The 'global' config section is deprecated and ignored "
-                "because 'enforce' is also present. Remove 'global' from your "
-                ".lintro-config.yaml",
-            )
-        else:
-            # Only 'global' exists - warn and use it
-            logger.warning(
-                "The 'global' config section is deprecated. "
-                "Please rename it to 'enforce' in your .lintro-config.yaml",
-            )
-            enforce_data = global_data
 
     enforce_config = _parse_enforce_config(enforce_data)
     execution_config = _parse_execution_config(data.get("execution", {}))

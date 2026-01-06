@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import os
 import subprocess  # nosec B404 - subprocess used safely with shell=False
-import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -15,23 +13,15 @@ from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.mypy.mypy_parser import parse_mypy_output
-from lintro.tools.core.timeout_utils import (
-    create_timeout_result,
-    get_timeout_value,
-    run_subprocess_with_timeout,
-)
+from lintro.tools.core.timeout_utils import create_timeout_result
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.config_utils import load_mypy_config
 
 MYPY_DEFAULT_TIMEOUT: int = 60
 MYPY_DEFAULT_PRIORITY: int = 82
 MYPY_FILE_PATTERNS: list[str] = ["*.py", "*.pyi"]
 
 MYPY_DEFAULT_EXCLUDE_PATTERNS: list[str] = [
-    "tests/*",
-    "tests/**",
-    "*/tests/*",
-    "*/tests/**",
     "test_samples/*",
     "test_samples/**",
     "*/test_samples/*",
@@ -60,60 +50,6 @@ def _split_config_values(raw_value: str) -> list[str]:
     return entries
 
 
-def _load_mypy_config(
-    base_dir: Path | None = None,
-) -> tuple[dict[str, Any], Path | None]:
-    """Return mypy config data and the path it came from.
-
-    Args:
-        base_dir: Directory to search for mypy configuration files. Defaults to
-            the current working directory.
-
-    Returns:
-        tuple[dict[str, Any], Path | None]: Parsed configuration data and the
-            path to the config file if found.
-    """
-    root = base_dir or Path.cwd()
-    pyproject = root / "pyproject.toml"
-    if pyproject.exists():
-        try:
-            with pyproject.open("rb") as handle:
-                data = tomllib.load(handle)
-            pyproject_config = data.get("tool", {}).get("mypy", {}) or {}
-            if pyproject_config:
-                return pyproject_config, pyproject
-        except (OSError, tomllib.TOMLDecodeError):
-            logger.debug(
-                "Failed to load pyproject.toml for mypy config from {}",
-                pyproject,
-            )
-
-    import configparser
-
-    for cfg_name in ("mypy.ini", "setup.cfg"):
-        cfg_path = root / cfg_name
-        if not cfg_path.exists():
-            continue
-        parser = configparser.ConfigParser()
-        try:
-            parser.read(cfg_path)
-        except configparser.Error:
-            logger.debug("Failed to parse mypy config file {}", cfg_path)
-            continue
-        if not parser.has_section("mypy"):
-            continue
-
-        section = parser["mypy"]
-        config: dict[str, Any] = {}
-        if "files" in section:
-            config["files"] = _split_config_values(section.get("files", ""))
-        if "exclude" in section:
-            config["exclude"] = _split_config_values(section.get("exclude", ""))
-        return config, cfg_path
-
-    return {}, None
-
-
 def _regex_to_glob(pattern: str) -> str:
     """Coerce a simple regex pattern to a fnmatch glob.
 
@@ -140,7 +76,7 @@ class MypyTool(BaseTool):
 
     name: str = "mypy"
     description: str = "Static type checker for Python"
-    can_fix: bool = False
+    can_fix: bool = field(default=False)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=MYPY_DEFAULT_PRIORITY,
@@ -159,13 +95,10 @@ class MypyTool(BaseTool):
     )
 
     def __post_init__(self) -> None:
-        """Initialize base tool settings and preload mypy config."""
+        """Initialize base tool settings."""
         super().__post_init__()
         self._config_data: dict[str, Any]
         self._config_path: Path | None
-        self._config_data, self._config_path = _load_mypy_config()
-        if self._config_path:
-            logger.debug("Loaded mypy config during init from {}", self._config_path)
 
     def set_options(self, **kwargs: object) -> None:
         """Set mypy-specific options.
@@ -251,6 +184,40 @@ class MypyTool(BaseTool):
         cmd.extend(files)
         return cmd
 
+    def _build_effective_excludes(self, configured_excludes: Any) -> list[str]:
+        """Build effective exclude patterns from config and defaults.
+
+        Always includes default patterns, then adds any configured excludes.
+        This ensures common directories (tests/, build/, dist/) are always
+        excluded unless explicitly overridden.
+
+        Args:
+            configured_excludes: Exclude patterns from mypy config.
+
+        Returns:
+            list[str]: Combined exclude patterns.
+        """
+        effective_excludes: list[str] = list(self.exclude_patterns)
+
+        # Always add default patterns first
+        for default_pattern in MYPY_DEFAULT_EXCLUDE_PATTERNS:
+            if default_pattern not in effective_excludes:
+                effective_excludes.append(default_pattern)
+
+        # Then add configured excludes (if any)
+        if configured_excludes:
+            raw_excludes = (
+                [configured_excludes]
+                if isinstance(configured_excludes, str)
+                else list(configured_excludes)
+            )
+            for pattern in raw_excludes:
+                glob_pattern = _regex_to_glob(str(pattern))
+                if glob_pattern and glob_pattern not in effective_excludes:
+                    effective_excludes.append(glob_pattern)
+
+        return effective_excludes
+
     def check(
         self,
         paths: list[str],
@@ -263,19 +230,16 @@ class MypyTool(BaseTool):
         Returns:
             A ``ToolResult`` describing the check outcome.
         """
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
+        # Load mypy config first (needed to determine paths and excludes)
         base_dir = Path.cwd()
-        config_data, config_path = _load_mypy_config(base_dir=base_dir)
+        config_data, config_path = load_mypy_config(base_dir=base_dir)
         self._config_data, self._config_path = config_data, config_path
         if config_path:
             logger.debug("Discovered mypy config at {}", config_path)
-        configured_files = config_data.get("files")
-        configured_excludes = config_data.get("exclude")
 
+        # Determine target paths (use config files if paths empty)
         target_paths: list[str] = list(paths) if paths else []
+        configured_files = config_data.get("files")
         if (not target_paths or target_paths == ["."]) and configured_files:
             if isinstance(configured_files, str):
                 target_paths = [configured_files]
@@ -284,7 +248,21 @@ class MypyTool(BaseTool):
                     str(path) for path in configured_files if str(path).strip()
                 ]
 
-        if not target_paths:
+        # Build effective excludes from config
+        effective_excludes = self._build_effective_excludes(config_data.get("exclude"))
+        logger.debug("Effective mypy exclude patterns: {}", effective_excludes)
+
+        # Use shared preparation with custom excludes
+        ctx = self._prepare_execution(
+            target_paths,
+            default_timeout=MYPY_DEFAULT_TIMEOUT,
+            exclude_patterns=effective_excludes,
+        )
+        if ctx.should_skip and ctx.early_result is not None:
+            return ctx.early_result
+
+        # Safety check: if should_skip but no early_result, create one
+        if ctx.should_skip:
             return ToolResult(
                 name=self.name,
                 success=True,
@@ -292,48 +270,9 @@ class MypyTool(BaseTool):
                 issues_count=0,
             )
 
-        self._validate_paths(paths=target_paths)
+        logger.debug("Mypy discovered {} python file(s)", len(ctx.files))
 
-        effective_excludes: list[str] = list(self.exclude_patterns)
-        if configured_excludes:
-            raw_excludes = (
-                [configured_excludes]
-                if isinstance(configured_excludes, str)
-                else list(configured_excludes)
-            )
-            for pattern in raw_excludes:
-                glob_pattern = _regex_to_glob(str(pattern))
-                if glob_pattern and glob_pattern not in effective_excludes:
-                    effective_excludes.append(glob_pattern)
-        else:
-            for default_pattern in MYPY_DEFAULT_EXCLUDE_PATTERNS:
-                if default_pattern not in effective_excludes:
-                    effective_excludes.append(default_pattern)
-        logger.debug(
-            "Effective mypy exclude patterns: {}",
-            effective_excludes,
-        )
-
-        python_files = walk_files_with_excludes(
-            paths=target_paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=effective_excludes,
-            include_venv=self.include_venv,
-        )
-
-        logger.debug("Mypy discovered {} python file(s)", len(python_files))
-
-        if not python_files:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No Python files found to check.",
-                issues_count=0,
-            )
-
-        cwd = self.get_cwd(paths=python_files)
-        rel_files = [os.path.relpath(f, cwd) if cwd else f for f in python_files]
-
+        # Set config file if discovered
         if not self.options.get("config_file") and config_path:
             self.options["config_file"] = str(config_path.resolve())
             logger.debug(
@@ -341,29 +280,27 @@ class MypyTool(BaseTool):
                 self.options["config_file"],
             )
 
-        timeout = get_timeout_value(self, MYPY_DEFAULT_TIMEOUT)
-        cmd = self._build_command(files=rel_files)
-        logger.debug("Running mypy with cwd={} and cmd={}", cwd, cmd)
+        cmd = self._build_command(files=ctx.rel_files)
+        logger.debug("Running mypy with cwd={} and cmd={}", ctx.cwd, cmd)
 
         try:
-            success, output = run_subprocess_with_timeout(
-                tool=self,
+            success, output = self._run_subprocess(
                 cmd=cmd,
-                timeout=timeout,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
             timeout_result = create_timeout_result(
                 tool=self,
-                timeout=timeout,
+                timeout=ctx.timeout,
                 cmd=cmd,
             )
             return ToolResult(
                 name=self.name,
-                success=timeout_result["success"],
-                output=timeout_result["output"],
-                issues_count=timeout_result["issues_count"],
-                issues=timeout_result["issues"],
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
+                issues=timeout_result.issues,
             )
 
         issues = parse_mypy_output(output=output)

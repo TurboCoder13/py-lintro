@@ -58,7 +58,7 @@ jobs:
         uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1
 
       - name: Run Lintro on codebase
-        run: ./scripts/ci/lintro-report-generate.sh
+        run: ./scripts/ci/testing/lintro-report-generate.sh
 
       - name: Upload report artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

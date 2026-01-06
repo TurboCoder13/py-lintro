@@ -8,7 +8,7 @@ This module provides functions to parse pytest output in various formats:
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from defusedxml import ElementTree
 
@@ -30,14 +30,14 @@ class PytestSummary:
         duration: Total execution duration in seconds.
     """
 
-    total: int = 0
-    passed: int = 0
-    failed: int = 0
-    skipped: int = 0
-    error: int = 0
-    xfailed: int = 0
-    xpassed: int = 0
-    duration: float = 0.0
+    total: int = field(default=0)
+    passed: int = field(default=0)
+    failed: int = field(default=0)
+    skipped: int = field(default=0)
+    error: int = field(default=0)
+    xfailed: int = field(default=0)
+    xpassed: int = field(default=0)
+    duration: float = field(default=0.0)
 
 
 def extract_pytest_summary(output: str) -> PytestSummary:
@@ -421,7 +421,7 @@ def parse_pytest_junit_xml(output: str) -> list[PytestIssue]:
             # Check for failure
             failure = testcase.find("failure")
             if failure is not None:
-                message = failure.text or failure.get("message", "")
+                message = failure.text or failure.get("message") or ""
                 issues.append(
                     PytestIssue(
                         file=file_path,
@@ -437,7 +437,7 @@ def parse_pytest_junit_xml(output: str) -> list[PytestIssue]:
             # Check for error
             error = testcase.find("error")
             if error is not None:
-                message = error.text or error.get("message", "")
+                message = error.text or error.get("message") or ""
                 issues.append(
                     PytestIssue(
                         file=file_path,
@@ -453,7 +453,7 @@ def parse_pytest_junit_xml(output: str) -> list[PytestIssue]:
             # Check for skip
             skip = testcase.find("skipped")
             if skip is not None:
-                message = skip.text or skip.get("message", "")
+                message = skip.text or skip.get("message") or ""
                 # Clean up skip message by removing file path prefix if present
                 # Format is typically: "/path/to/file.py:line: actual message"
                 if message and ":" in message:

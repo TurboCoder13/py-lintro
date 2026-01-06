@@ -4,15 +4,15 @@ import subprocess
 import sys
 from unittest.mock import patch
 
+import pytest
 from assertpy import assert_that
+from click.testing import CliRunner
 
 from lintro.cli import cli
 
 
 def test_cli_help() -> None:
     """Test that CLI shows help."""
-    from click.testing import CliRunner
-
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])
     assert_that(result.exit_code).is_equal_to(0)
@@ -21,58 +21,61 @@ def test_cli_help() -> None:
 
 def test_cli_version() -> None:
     """Test that CLI shows version."""
-    from click.testing import CliRunner
-
     runner = CliRunner()
     result = runner.invoke(cli, ["--version"])
     assert_that(result.exit_code).is_equal_to(0)
     assert_that(result.output.lower()).contains("version")
 
 
-def test_cli_commands_registered() -> None:
-    """Test that all commands are registered."""
-    from click.testing import CliRunner
+@pytest.mark.parametrize(
+    "command",
+    ["check", "format", "list-tools", "test"],
+    ids=["check", "format", "list-tools", "test"],
+)
+def test_cli_commands_registered(command: str) -> None:
+    """Test that all commands are registered and show help.
 
+    Args:
+        command: CLI command to test.
+    """
     runner = CliRunner()
-    result = runner.invoke(cli, ["check", "--help"])
-    assert_that(result.exit_code).is_equal_to(0)
-    result = runner.invoke(cli, ["format", "--help"])
-    assert_that(result.exit_code).is_equal_to(0)
-    result = runner.invoke(cli, ["list-tools", "--help"])
-    assert_that(result.exit_code).is_equal_to(0)
-    result = runner.invoke(cli, ["test", "--help"])
+    result = runner.invoke(cli, [command, "--help"])
     assert_that(result.exit_code).is_equal_to(0)
 
 
 def test_main_function() -> None:
     """Test the main function."""
-    from click.testing import CliRunner
-
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])
     assert_that(result.exit_code).is_equal_to(0)
     assert_that(result.output).contains("Lintro")
 
 
-def test_cli_command_aliases() -> None:
-    """Test that command aliases work."""
-    from click.testing import CliRunner
+@pytest.mark.parametrize(
+    "alias,expected_text",
+    [
+        ("chk", "check"),
+        ("fmt", "format"),
+        ("ls", "list all available tools"),
+        ("tst", "Run tests"),
+    ],
+    ids=["chk", "fmt", "ls", "tst"],
+)
+def test_cli_command_aliases(alias: str, expected_text: str) -> None:
+    """Test that command aliases work.
 
+    Args:
+        alias: Command alias to test.
+        expected_text: Text expected in help output.
+    """
     runner = CliRunner()
-    result = runner.invoke(cli, ["chk", "--help"])
+    result = runner.invoke(cli, [alias, "--help"])
     assert_that(result.exit_code).is_equal_to(0)
-    result = runner.invoke(cli, ["fmt", "--help"])
-    assert_that(result.exit_code).is_equal_to(0)
-    result = runner.invoke(cli, ["ls", "--help"])
-    assert_that(result.exit_code).is_equal_to(0)
-    result = runner.invoke(cli, ["tst", "--help"])
-    assert_that(result.exit_code).is_equal_to(0)
+    assert_that(result.output.lower()).contains(expected_text.lower())
 
 
 def test_cli_with_no_args() -> None:
     """Test CLI with no arguments."""
-    from click.testing import CliRunner
-
     runner = CliRunner()
     result = runner.invoke(cli, [])
     assert_that(result.exit_code).is_equal_to(0)
@@ -99,32 +102,8 @@ def test_main_module_as_script() -> None:
     assert_that(result.stdout).contains("Lintro")
 
 
-def test_test_command_help() -> None:
-    """Test that test command displays help."""
-    from click.testing import CliRunner
-
-    runner = CliRunner()
-    result = runner.invoke(cli, ["test", "--help"])
-    assert_that(result.exit_code).is_equal_to(0)
-    assert_that(result.output).contains("Run tests")
-
-
-def test_test_command_alias() -> None:
-    """Test that 'tst' alias works for test command."""
-    from click.testing import CliRunner
-
-    runner = CliRunner()
-    result = runner.invoke(cli, ["tst", "--help"])
-    assert_that(result.exit_code).is_equal_to(0)
-    assert_that(result.output).contains("Run tests")
-
-
 def test_command_chaining_basic() -> None:
     """Test basic command chaining syntax recognition."""
-    from unittest.mock import patch
-
-    from click.testing import CliRunner
-
     runner = CliRunner()
     # Patch both format and check commands to prevent real tools from executing
     with (
@@ -139,23 +118,19 @@ def test_command_chaining_basic() -> None:
         assert_that(result.output).does_not_contain("Error: unexpected argument")
 
 
-def test_pytest_excluded_from_check_help() -> None:
-    """Test that pytest is excluded from available tools in check command."""
-    from click.testing import CliRunner
+@pytest.mark.parametrize(
+    "command",
+    ["check", "format"],
+    ids=["check", "format"],
+)
+def test_pytest_excluded_from_command_help(command: str) -> None:
+    """Test that pytest is excluded from available tools in check/format commands.
 
+    Args:
+        command: CLI command to test.
+    """
     runner = CliRunner()
-    result = runner.invoke(cli, ["check", "--help"])
+    result = runner.invoke(cli, [command, "--help"])
     assert_that(result.exit_code).is_equal_to(0)
-    # The help should not mention pytest as an available tool for check
-    assert_that(result.output).does_not_contain("pytest")
-
-
-def test_pytest_excluded_from_fmt_help() -> None:
-    """Test that pytest is excluded from available tools in format command."""
-    from click.testing import CliRunner
-
-    runner = CliRunner()
-    result = runner.invoke(cli, ["format", "--help"])
-    assert_that(result.exit_code).is_equal_to(0)
-    # The help should not mention pytest as an available tool for format
+    # The help should not mention pytest as an available tool
     assert_that(result.output).does_not_contain("pytest")

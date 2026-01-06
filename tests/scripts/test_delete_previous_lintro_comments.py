@@ -6,6 +6,8 @@ This module tests that the script correctly deletes only comments containing the
 import importlib.util
 import sys
 from pathlib import Path
+from types import ModuleType
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -18,13 +20,15 @@ script_path = (
     / "delete-previous-lintro-comments.py"
 )
 spec = importlib.util.spec_from_file_location("del_script", str(script_path))
-del_script = importlib.util.module_from_spec(spec)
+if spec is None or spec.loader is None:
+    raise ImportError("Failed to load delete-previous-lintro-comments.py script")
+del_script: ModuleType = importlib.util.module_from_spec(spec)
 sys.modules["del_script"] = del_script
 spec.loader.exec_module(del_script)
 
 
 @pytest.fixture(autouse=True)
-def patch_env(monkeypatch) -> None:
+def patch_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Patch environment variables for the script.
 
     Args:
@@ -35,21 +39,25 @@ def patch_env(monkeypatch) -> None:
     monkeypatch.setenv("PR_NUMBER", "123")
 
 
-def test_deletes_only_marker_comments(monkeypatch) -> None:
+def test_deletes_only_marker_comments(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that only comments with the marker are deleted.
 
     Args:
         monkeypatch: Pytest fixture for monkeypatching.
     """
-    comments = [
+    comments: list[dict[str, Any]] = [
         {"id": 1, "body": "Hello world"},
         {"id": 2, "body": "<!-- lintro-report --> Lint results"},
         {"id": 3, "body": "<!-- lintro-report --> Another lint comment"},
         {"id": 4, "body": "Unrelated comment"},
     ]
-    deleted = []
+    deleted: list[int] = []
 
-    def mock_get_pr_comments(repo: str, pr_number: str, token: str):
+    def mock_get_pr_comments(
+        repo: str,
+        pr_number: str,
+        token: str,
+    ) -> list[dict[str, Any]]:
         return comments
 
     def mock_delete_comment(repo: str, comment_id: int, token: str) -> None:
@@ -69,19 +77,23 @@ def test_deletes_only_marker_comments(monkeypatch) -> None:
     assert_that(set(deleted)).is_equal_to({2, 3})
 
 
-def test_no_marker_comments(monkeypatch) -> None:
+def test_no_marker_comments(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that script prints message if no marker comments are found.
 
     Args:
         monkeypatch: Pytest fixture for monkeypatching.
     """
-    comments = [
+    comments: list[dict[str, Any]] = [
         {"id": 1, "body": "Hello world"},
         {"id": 4, "body": "Unrelated comment"},
     ]
-    deleted = []
+    deleted: list[int] = []
 
-    def mock_get_pr_comments(repo: str, pr_number: str, token: str):
+    def mock_get_pr_comments(
+        repo: str,
+        pr_number: str,
+        token: str,
+    ) -> list[dict[str, Any]]:
         return comments
 
     def mock_delete_comment(repo: str, comment_id: int, token: str) -> None:

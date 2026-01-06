@@ -96,13 +96,13 @@ jobs:
           retention-days: 30
       - name: Extract coverage percentage
         id: coverage
-        run: ./scripts/ci/ci-extract-coverage.sh
+        run: ./scripts/ci/testing/ci-extract-coverage.sh
 
       - name: Enforce coverage threshold (80%)
         if: github.ref == 'refs/heads/main' && success()
         env:
           COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
-        run: bash ./scripts/ci/enforce-coverage-threshold.sh
+        run: bash ./scripts/ci/testing/enforce-coverage-threshold.sh
 
       - name: Upload coverage to Codecov (always)
         if: always()
@@ -118,7 +118,7 @@ jobs:
         if: success()
         env:
           COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
-        run: ./scripts/ci/coverage-badge-update.sh
+        run: ./scripts/ci/testing/coverage-badge-update.sh
 
       - name: Upload coverage badge artifact
         if: success()
@@ -181,7 +181,7 @@ jobs:
         run: |
           export COVERAGE_PERCENTAGE
           export JOB_RESULT
-          ./scripts/ci/coverage-pr-comment.sh
+          ./scripts/ci/github/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
         uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@actions-v1

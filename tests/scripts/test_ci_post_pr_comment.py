@@ -27,7 +27,11 @@ def ci_script_path() -> Path:
         Path: Absolute path to the script.
     """
     return (
-        Path(__file__).parent.parent.parent / "scripts" / "ci" / "ci-post-pr-comment.sh"
+        Path(__file__).parent.parent.parent
+        / "scripts"
+        / "ci"
+        / "github"
+        / "ci-post-pr-comment.sh"
     )
 
 
@@ -293,7 +297,7 @@ def test_script_sources_utilities(ci_script_path: Path) -> None:
     content = ci_script_path.read_text()
 
     # Should source the shared utilities
-    assert_that(content).contains('source "$(dirname "$0")/../utils/utils.sh"')
+    assert_that(content).contains('source "$(dirname "$0")/../../utils/utils.sh"')
 
     # Should call the Python utilities we created
     assert_that(content).contains("find_comment_with_marker.py")

@@ -20,7 +20,9 @@ from lintro.tools.implementations.tool_bandit import BanditTool
 def test_bandit_detects_issues_on_sample_file() -> None:
     """Run BanditTool against a known vulnerable sample and expect findings."""
     tool = BanditTool()
-    sample = os.path.abspath("test_samples/bandit_violations.py")
+    # Clear exclude patterns to allow scanning test_samples
+    tool.exclude_patterns = []
+    sample = os.path.abspath("test_samples/tools/python/bandit/bandit_violations.py")
     assert_that(os.path.exists(sample)).is_true()
     result: ToolResult = tool.check([sample])
     assert_that(isinstance(result, ToolResult)).is_true()

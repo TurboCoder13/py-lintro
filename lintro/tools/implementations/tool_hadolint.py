@@ -2,9 +2,9 @@
 
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
+from typing import Any
 
 import click
-from loguru import logger
 
 from lintro.enums.hadolint_enums import (
     HadolintFailureThreshold,
@@ -17,7 +17,6 @@ from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
 
 # Constants for Hadolint configuration
 HADOLINT_DEFAULT_TIMEOUT: int = 30
@@ -53,7 +52,7 @@ class HadolintTool(BaseTool):
     description: str = (
         "Dockerfile linter that helps you build best practice Docker images"
     )
-    can_fix: bool = False  # Hadolint can only check, not fix
+    can_fix: bool = field(default=False)  # Hadolint can only check, not fix
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=HADOLINT_DEFAULT_PRIORITY,  # Medium priority for \
@@ -78,7 +77,7 @@ class HadolintTool(BaseTool):
         ),
     )
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         format: str | HadolintFormat | None = None,
         failure_threshold: str | HadolintFailureThreshold | None = None,
@@ -88,7 +87,7 @@ class HadolintTool(BaseTool):
         strict_labels: bool | None = None,
         no_fail: bool | None = None,
         no_color: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Hadolint-specific options.
 
@@ -111,11 +110,11 @@ class HadolintTool(BaseTool):
             ValueError: If an option value is invalid.
         """
         if format is not None:
-            fmt_enum = normalize_hadolint_format(format)  # type: ignore[arg-type]
+            fmt_enum = normalize_hadolint_format(format)
             format = fmt_enum.name.lower()
 
         if failure_threshold is not None:
-            thr_enum = normalize_hadolint_threshold(  # type: ignore[arg-type]
+            thr_enum = normalize_hadolint_threshold(
                 failure_threshold,
             )
             failure_threshold = thr_enum.name.lower()
@@ -138,7 +137,7 @@ class HadolintTool(BaseTool):
         if no_color is not None and not isinstance(no_color, bool):
             raise ValueError("no_color must be a boolean")
 
-        options: dict = {
+        options: dict[str, object] = {
             "format": format,
             "failure_threshold": failure_threshold,
             "ignore": ignore,
@@ -161,34 +160,45 @@ class HadolintTool(BaseTool):
         cmd: list[str] = ["hadolint"]
 
         # Add format option
-        format_option: str = self.options.get("format", HADOLINT_DEFAULT_FORMAT)
+        format_opt = self.options.get("format", HADOLINT_DEFAULT_FORMAT)
+        format_option = (
+            str(format_opt) if format_opt is not None else HADOLINT_DEFAULT_FORMAT
+        )
         cmd.extend(["--format", format_option])
 
         # Add failure threshold
-        failure_threshold: str = self.options.get(
+        threshold_opt = self.options.get(
             "failure_threshold",
             HADOLINT_DEFAULT_FAILURE_THRESHOLD,
+        )
+        failure_threshold = (
+            str(threshold_opt)
+            if threshold_opt is not None
+            else HADOLINT_DEFAULT_FAILURE_THRESHOLD
         )
         cmd.extend(["--failure-threshold", failure_threshold])
 
         # Add ignore rules
-        ignore_rules: list[str] | None = self.options.get("ignore")
-        if ignore_rules is None:
-            ignore_rules = []
+        ignore_opt = self.options.get("ignore")
+        ignore_rules: list[str] = []
+        if ignore_opt is not None and isinstance(ignore_opt, list):
+            ignore_rules = [str(r) for r in ignore_opt]
         for rule in ignore_rules:
             cmd.extend(["--ignore", rule])
 
         # Add trusted registries
-        trusted_registries: list[str] | None = self.options.get("trusted_registries")
-        if trusted_registries is None:
-            trusted_registries = []
+        registries_opt = self.options.get("trusted_registries")
+        trusted_registries: list[str] = []
+        if registries_opt is not None and isinstance(registries_opt, list):
+            trusted_registries = [str(r) for r in registries_opt]
         for registry in trusted_registries:
             cmd.extend(["--trusted-registry", registry])
 
         # Add required labels
-        require_labels: list[str] | None = self.options.get("require_labels")
-        if require_labels is None:
-            require_labels = []
+        labels_opt = self.options.get("require_labels")
+        require_labels: list[str] = []
+        if labels_opt is not None and isinstance(labels_opt, list):
+            require_labels = [str(lbl) for lbl in labels_opt]
         for label in require_labels:
             cmd.extend(["--require-label", label])
 
@@ -206,6 +216,42 @@ class HadolintTool(BaseTool):
 
         return cmd
 
+    def _process_single_file(
+        self,
+        file_path: str,
+        timeout: int,
+        results: dict[str, Any],
+    ) -> None:
+        """Process a single Dockerfile with hadolint.
+
+        Args:
+            file_path: Path to the Dockerfile.
+            timeout: Timeout in seconds.
+            results: Mutable dict to accumulate results.
+        """
+        cmd: list[str] = self._build_command() + [str(file_path)]
+        try:
+            success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
+            issues = parse_hadolint_output(output=output)
+            issues_count = len(issues)
+
+            if not success:
+                results["all_success"] = False
+            results["total_issues"] += issues_count
+
+            if not success or issues:
+                results["all_outputs"].append(output)
+            if issues:
+                results["all_issues"].extend(issues)
+        except subprocess.TimeoutExpired:
+            results["skipped_files"].append(file_path)
+            results["all_success"] = False
+            results["execution_failures"] += 1
+        except Exception as e:
+            results["all_outputs"].append(f"Error processing {file_path}: {str(e)}")
+            results["all_success"] = False
+            results["execution_failures"] += 1
+
     def check(
         self,
         paths: list[str],
@@ -218,37 +264,27 @@ class HadolintTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        if not paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-
-        # Use shared utility for file discovery
-        dockerfile_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            default_timeout=HADOLINT_DEFAULT_TIMEOUT,
         )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
-        logger.debug(f"Files to check: {dockerfile_files}")
+        # Hadolint processes files one at a time (doesn't support batch mode)
+        # Use files directly since hadolint needs absolute paths
+        dockerfile_files = ctx.files
 
-        timeout: int = self.options.get("timeout", HADOLINT_DEFAULT_TIMEOUT)
-        all_outputs: list[str] = []
-        all_issues: list = []
-        all_success: bool = True
-        skipped_files: list[str] = []
-        execution_failures: int = 0
-        total_issues: int = 0
+        # Accumulate results across all files
+        results: dict[str, Any] = {
+            "all_outputs": [],
+            "all_issues": [],
+            "all_success": True,
+            "skipped_files": [],
+            "execution_failures": 0,
+            "total_issues": 0,
+        }
 
         # Show progress bar only when processing multiple files
         if len(dockerfile_files) >= 2:
@@ -258,100 +294,42 @@ class HadolintTool(BaseTool):
                 bar_template="%(label)s  %(info)s",
             ) as bar:
                 for file_path in bar:
-                    cmd: list[str] = self._build_command() + [str(file_path)]
-                    try:
-                        success: bool
-                        output: str
-                        success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
-                        issues = parse_hadolint_output(output=output)
-                        issues_count: int = len(issues)
-                        # Tool is successful if subprocess succeeds,
-                        # regardless of issues found
-                        if not success:
-                            all_success = False
-                        total_issues += issues_count
-                        # Prefer parsed issues for formatted output;
-                        # keep raw for metadata
-                        # Preserve output when subprocess fails even if parsing
-                        # yields no issues
-                        if not success or issues:
-                            all_outputs.append(output)
-                        if issues:
-                            all_issues.extend(issues)
-                    except subprocess.TimeoutExpired:
-                        skipped_files.append(file_path)
-                        all_success = False
-                        # Count timeout as an execution failure
-                        execution_failures += 1
-                    except Exception as e:
-                        all_outputs.append(f"Error processing {file_path}: {str(e)}")
-                        all_success = False
-                        # Count execution errors as failures
-                        execution_failures += 1
+                    self._process_single_file(file_path, ctx.timeout, results)
         else:
-            # Process without progress bar for single file or no files
             for file_path in dockerfile_files:
-                cmd: list[str] = self._build_command() + [str(file_path)]
-                try:
-                    success: bool
-                    output: str
-                    success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
-                    issues = parse_hadolint_output(output=output)
-                    issues_count: int = len(issues)
-                    # Tool is successful if subprocess succeeds,
-                    # regardless of issues found
-                    if not success:
-                        all_success = False
-                    total_issues += issues_count
-                    # Prefer parsed issues for formatted output;
-                    # keep raw for metadata
-                    # Preserve output when subprocess fails even if parsing
-                    # yields no issues
-                    if not success or issues:
-                        all_outputs.append(output)
-                    if issues:
-                        all_issues.extend(issues)
-                except subprocess.TimeoutExpired:
-                    skipped_files.append(file_path)
-                    all_success = False
-                    # Count timeout as an execution failure
-                    execution_failures += 1
-                except Exception as e:
-                    all_outputs.append(f"Error processing {file_path}: {str(e)}")
-                    all_success = False
-                    # Count execution errors as failures
-                    execution_failures += 1
+                self._process_single_file(file_path, ctx.timeout, results)
 
-        output: str = "\n".join(all_outputs) if all_outputs else ""
-        if execution_failures > 0:
+        # Build output from accumulated results
+        output: str = (
+            "\n".join(results["all_outputs"]) if results["all_outputs"] else ""
+        )
+        if results["execution_failures"] > 0:
             if output:
                 output += "\n\n"
-            if skipped_files:
+            if results["skipped_files"]:
                 output += (
-                    f"Skipped/failed {execution_failures} file(s) due to "
+                    f"Skipped/failed {results['execution_failures']} file(s) due to "
                     f"execution failures (including timeouts)"
                 )
-                if timeout:
-                    output += f" (timeout: {timeout}s)"
-                output += ":"
-                for file in skipped_files:
+                output += f" (timeout: {ctx.timeout}s):"
+                for file in results["skipped_files"]:
                     output += f"\n  - {file}"
             else:
-                # Execution failures but no skipped files (all were exceptions)
                 output += (
-                    f"Failed to process {execution_failures} file(s) "
+                    f"Failed to process {results['execution_failures']} file(s) "
                     "due to execution errors"
                 )
 
+        final_output: str | None = output
         if not output.strip():
-            output = None
+            final_output = None
 
         return ToolResult(
             name=self.name,
-            success=all_success,
-            output=output,
-            issues_count=total_issues,
-            issues=all_issues,
+            success=results["all_success"],
+            output=final_output,
+            issues_count=results["total_issues"],
+            issues=results["all_issues"],
         )
 
     def fix(

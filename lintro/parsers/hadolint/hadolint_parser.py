@@ -55,7 +55,7 @@ def parse_hadolint_output(output: str) -> list[HadolintIssue]:
                 HadolintIssue(
                     file=file,
                     line=int(line_num),
-                    column=None,  # hadolint doesn't provide column in this format
+                    column=0,  # hadolint doesn't provide column in this format
                     level=level,
                     code=code,
                     message=message.strip(),

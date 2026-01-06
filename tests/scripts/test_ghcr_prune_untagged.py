@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from scripts.ci.ghcr_prune_untagged import (
+import pytest
+from assertpy import assert_that
+
+if TYPE_CHECKING:
+    from types import TracebackType
+
+from scripts.ci.maintenance.ghcr_prune_untagged import (
     GhcrVersion,
     delete_version,
     list_container_versions,
@@ -14,12 +20,14 @@ from scripts.ci.ghcr_prune_untagged import (
 
 def test_version_dataclass() -> None:
     """Construct ``GhcrVersion`` and validate fields are populated."""
-    v = GhcrVersion(id=123, tags=["latest"])  # type: ignore[call-arg]
-    assert v.id == 123
-    assert v.tags == ["latest"]
+    v = GhcrVersion(id=123, tags=["latest"])
+    assert_that(v.id).is_equal_to(123)
+    assert_that(v.tags).is_equal_to(["latest"])
 
 
-def test_list_container_versions_parses_minimal_structure(monkeypatch) -> None:
+def test_list_container_versions_parses_minimal_structure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Parse a minimal response structure into version objects.
 
     Args:
@@ -45,13 +53,13 @@ def test_list_container_versions_parses_minimal_structure(monkeypatch) -> None:
                 ],
             )
 
-    versions = list_container_versions(client=DummyClient(), owner="owner")
-    assert [v.id for v in versions] == [1, 2]
-    assert versions[0].tags == ["latest"]
-    assert versions[1].tags == []
+    versions = list_container_versions(client=DummyClient(), owner="owner")  # type: ignore[arg-type]
+    assert_that([v.id for v in versions]).is_equal_to([1, 2])
+    assert_that(versions[0].tags).is_equal_to(["latest"])
+    assert_that(versions[1].tags).is_equal_to([])
 
 
-def test_delete_version_calls_delete(monkeypatch) -> None:
+def test_delete_version_calls_delete(monkeypatch: pytest.MonkeyPatch) -> None:
     """Call delete and ensure correct endpoint is used.
 
     Args:
@@ -74,8 +82,9 @@ def test_delete_version_calls_delete(monkeypatch) -> None:
             calls.append((url, headers))
             return DummyResp()
 
-    delete_version(client=DummyClient(), owner="owner", version_id=42)
-    assert calls and "versions/42" in calls[0][0]
+    delete_version(client=DummyClient(), owner="owner", version_id=42)  # type: ignore[arg-type]
+    assert_that(calls).is_not_empty()
+    assert_that(calls[0][0]).contains("versions/42")
 
 
 def test_delete_version_raises_on_non_204_non_404() -> None:
@@ -100,13 +109,13 @@ def test_delete_version_raises_on_non_204_non_404() -> None:
             return DummyResp()
 
     try:
-        delete_version(client=DummyClient(), owner="owner", version_id=1)
+        delete_version(client=DummyClient(), owner="owner", version_id=1)  # type: ignore[arg-type]
     except RuntimeError:
         return
     raise AssertionError("Expected RuntimeError on non-204/404 response")
 
 
-def test_main_deletes_only_untagged(monkeypatch) -> None:
+def test_main_deletes_only_untagged(monkeypatch: pytest.MonkeyPatch) -> None:
     """Delete only untagged versions using the main entry point.
 
     Args:
@@ -160,10 +169,15 @@ def test_main_deletes_only_untagged(monkeypatch) -> None:
         ) -> None:  # noqa: ARG002
             pass
 
-        def __enter__(self) -> DummyClient:  # type: ignore[name-defined]
+        def __enter__(self) -> DummyClient:
             return self
 
-        def __exit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc: BaseException | None,
+            tb: TracebackType | None,
+        ) -> None:
             return None
 
         def get(
@@ -183,19 +197,19 @@ def test_main_deletes_only_untagged(monkeypatch) -> None:
             return DummyRespDelete()
 
     # Patch httpx.Client used inside the module
-    import scripts.ci.ghcr_prune_untagged as mod
+    import scripts.ci.maintenance.ghcr_prune_untagged as mod
 
     monkeypatch.setenv("GITHUB_TOKEN", "x")
     monkeypatch.setenv("GITHUB_REPOSITORY", "owner/name")
     monkeypatch.setattr(mod, "httpx", type("HX", (), {"Client": DummyClient}))
 
     rc = main()
-    assert rc == 0
+    assert_that(rc).is_equal_to(0)
     # Only untagged IDs 22 and 44 should be deleted
-    assert sorted(deleted) == [22, 44]
+    assert_that(sorted(deleted)).is_equal_to([22, 44])
 
 
-def test_main_respects_keep_n_and_dry_run(monkeypatch) -> None:
+def test_main_respects_keep_n_and_dry_run(monkeypatch: pytest.MonkeyPatch) -> None:
     """Respect keep-N and dry-run options when pruning.
 
     Args:
@@ -245,10 +259,15 @@ def test_main_respects_keep_n_and_dry_run(monkeypatch) -> None:
         ) -> None:  # noqa: ARG002
             pass
 
-        def __enter__(self) -> DummyClient:  # type: ignore[name-defined]
+        def __enter__(self) -> DummyClient:
             return self
 
-        def __exit__(self, exc_type, exc, tb) -> None:  # noqa: ANN001
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc: BaseException | None,
+            tb: TracebackType | None,
+        ) -> None:
             return None
 
         def get(
@@ -266,7 +285,7 @@ def test_main_respects_keep_n_and_dry_run(monkeypatch) -> None:
             deleted.append(int(url.rstrip("/").split("/")[-1]))
             return DummyRespDelete()
 
-    import scripts.ci.ghcr_prune_untagged as mod
+    import scripts.ci.maintenance.ghcr_prune_untagged as mod
 
     # Dry-run with keep 2 -> no deletions performed
     monkeypatch.setenv("GITHUB_TOKEN", "x")
@@ -275,6 +294,6 @@ def test_main_respects_keep_n_and_dry_run(monkeypatch) -> None:
     monkeypatch.setenv("GHCR_PRUNE_KEEP_UNTAGGED_N", "2")
     monkeypatch.setattr(mod, "httpx", type("HX", (), {"Client": DummyClient}))
     rc = main()
-    assert rc == 0
+    assert_that(rc).is_equal_to(0)
     # Keep 2 newest untagged (100, 200). Would delete only 300; dry-run prevents it
-    assert deleted == []
+    assert_that(deleted).is_equal_to([])

@@ -7,15 +7,17 @@ import shutil
 import subprocess  # nosec B404 - subprocess used safely with shell=False
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import cast
 
 from loguru import logger
 
-from lintro.config import LintroConfig
+from lintro.config.lintro_config import LintroConfig
+from lintro.enums.tool_name import ToolName
+from lintro.enums.tool_option_key import ToolOptionKey
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
+from lintro.utils.path_filtering import walk_files_with_excludes
 from lintro.utils.path_utils import find_lintro_ignore
 
 # Constants for default values
@@ -35,6 +37,38 @@ DEFAULT_EXCLUDE_PATTERNS: list[str] = [
     "build",
     "*.egg-info",
 ]
+
+
+@dataclass
+class ExecutionContext:
+    """Context for tool execution containing prepared files and metadata.
+
+    This dataclass encapsulates the common preparation steps needed before
+    running a tool, eliminating duplicate boilerplate across tool implementations.
+
+    Attributes:
+        files: List of absolute file paths to process.
+        rel_files: List of file paths relative to cwd.
+        cwd: Working directory for command execution.
+        early_result: If set, return this result immediately (e.g., version check
+            failed, no files found).
+        timeout: Timeout value for subprocess execution.
+    """
+
+    files: list[str] = field(default_factory=list)
+    rel_files: list[str] = field(default_factory=list)
+    cwd: str | None = None
+    early_result: ToolResult | None = None
+    timeout: int = DEFAULT_TIMEOUT
+
+    @property
+    def should_skip(self) -> bool:
+        """Check if execution should be skipped due to early result.
+
+        Returns:
+            bool: True if early_result is set and execution should be skipped.
+        """
+        return self.early_result is not None
 
 
 @dataclass
@@ -61,10 +95,10 @@ class BaseTool(ABC):
 
     name: str
     description: str
-    can_fix: bool
+    can_fix: bool = field(default=False)
     config: ToolConfig = field(default_factory=ToolConfig)
     exclude_patterns: list[str] = field(default_factory=list)
-    include_venv: bool = False
+    include_venv: bool = field(default=False)
 
     _default_timeout: int = DEFAULT_TIMEOUT
     _default_exclude_patterns: list[str] = field(
@@ -83,9 +117,9 @@ class BaseTool(ABC):
         Raises:
             ValueError: If the configuration is invalid.
         """
-        if not self.name:
+        if self.name == "":
             raise ValueError("Tool name cannot be empty")
-        if not self.description:
+        if self.description == "":
             raise ValueError("Tool description cannot be empty")
         if not isinstance(self.config, ToolConfig):
             raise ValueError("Tool config must be a ToolConfig instance")
@@ -97,6 +131,62 @@ class BaseTool(ABC):
             raise ValueError("Tool file_patterns must be a list")
         if not isinstance(self.config.tool_type, ToolType):
             raise ValueError("Tool tool_type must be a ToolType instance")
+
+    def _validate_timeout(
+        self,
+        timeout_opt: object,
+        default_timeout: int,
+    ) -> int:
+        """Validate and normalize a timeout value.
+
+        Handles various input types and edge cases:
+        - Rejects boolean values (bool is a subclass of int in Python)
+        - Rejects non-positive values
+        - Converts string values to int
+        - Falls back to default on invalid input
+
+        Args:
+            timeout_opt: The timeout value to validate (from options or config).
+            default_timeout: The default timeout to use if validation fails.
+
+        Returns:
+            A valid positive integer timeout value.
+        """
+        # Guard against boolean values (bool is a subclass of int in Python)
+        if isinstance(timeout_opt, bool):
+            logger.warning(
+                f"Boolean timeout value '{timeout_opt}' is invalid, "
+                f"using default {default_timeout}s",
+            )
+            return default_timeout
+
+        if isinstance(timeout_opt, int):
+            if timeout_opt <= 0:
+                logger.warning(
+                    f"Non-positive timeout value '{timeout_opt}' is invalid, "
+                    f"using default {default_timeout}s",
+                )
+                return default_timeout
+            return timeout_opt
+
+        if timeout_opt is not None:
+            try:
+                timeout_val = int(str(timeout_opt))
+                if timeout_val <= 0:
+                    logger.warning(
+                        f"Non-positive timeout value '{timeout_opt}' is invalid, "
+                        f"using default {default_timeout}s",
+                    )
+                    return default_timeout
+                return timeout_val
+            except ValueError:
+                logger.warning(
+                    f"Invalid timeout value '{timeout_opt}', "
+                    f"using default {default_timeout}s",
+                )
+                return default_timeout
+
+        return default_timeout
 
     def _find_lintro_ignore(self) -> str | None:
         """Find .lintro-ignore file by searching upward from current directory.
@@ -145,16 +235,19 @@ class BaseTool(ABC):
     def _run_subprocess(
         self,
         cmd: list[str],
-        timeout: int | None = None,
+        timeout: int | float | None = None,
         cwd: str | None = None,
+        env: dict[str, str] | None = None,
     ) -> tuple[bool, str]:
         """Run a subprocess command.
 
         Args:
             cmd: list[str]: Command to run.
-            timeout: int | None: Command timeout in seconds (defaults to core's \
-                timeout).
+            timeout: int | float | None: Command timeout in seconds \
+                (defaults to core's timeout).
             cwd: str | None: Working directory to run the command in (optional).
+            env: dict[str, str] | None: Environment variables for the subprocess.
+                If None, the current environment is used.
 
         Returns:
             tuple[bool, str]: Tuple of (success, output)
@@ -189,6 +282,7 @@ class BaseTool(ABC):
                 text=True,
                 timeout=effective_timeout,
                 cwd=cwd,
+                env=env,
             )
             return result.returncode == 0, result.stdout + result.stderr
         except subprocess.TimeoutExpired as e:
@@ -245,21 +339,30 @@ class BaseTool(ABC):
             ValueError: If an option value is invalid.
         """
         for key, value in kwargs.items():
-            if key == "timeout" and not isinstance(value, (int, type(None))):
-                raise ValueError("Timeout must be an integer or None")
-            if key == "exclude_patterns" and not isinstance(value, list):
+            if key == ToolOptionKey.TIMEOUT.value:
+                if value is not None and not isinstance(value, (int, float)):
+                    raise ValueError("Timeout must be a number or None")
+                # Coerce to float for consistency with _run_subprocess
+                kwargs[key] = float(value) if value is not None else None
+            if key == ToolOptionKey.EXCLUDE_PATTERNS.value and not isinstance(
+                value,
+                list,
+            ):
                 raise ValueError("Exclude patterns must be a list")
-            if key == "include_venv" and not isinstance(value, bool):
+            if key == ToolOptionKey.INCLUDE_VENV.value and not isinstance(value, bool):
                 raise ValueError("Include venv must be a boolean")
 
         # Update options dict
         self.options.update(kwargs)
 
         # Update specific attributes for exclude_patterns and include_venv
-        if "exclude_patterns" in kwargs:
-            self.exclude_patterns = cast(list[str], kwargs["exclude_patterns"])
-        if "include_venv" in kwargs:
-            self.include_venv = cast(bool, kwargs["include_venv"])
+        if ToolOptionKey.EXCLUDE_PATTERNS.value in kwargs:
+            self.exclude_patterns = cast(
+                list[str],
+                kwargs[ToolOptionKey.EXCLUDE_PATTERNS.value],
+            )
+        if ToolOptionKey.INCLUDE_VENV.value in kwargs:
+            self.include_venv = cast(bool, kwargs[ToolOptionKey.INCLUDE_VENV.value])
 
     def _validate_paths(
         self,
@@ -300,6 +403,120 @@ class BaseTool(ABC):
                 return os.path.commonpath(list(parent_dirs))
         return None
 
+    def _prepare_execution(
+        self,
+        paths: list[str],
+        *,
+        no_files_message: str = "No files to check.",
+        default_timeout: int | None = None,
+        file_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
+    ) -> ExecutionContext:
+        """Prepare execution context with common boilerplate steps.
+
+        This method consolidates the repeated pattern across all tool implementations:
+        1. Verify tool version requirements
+        2. Validate input paths
+        3. Discover files matching patterns
+        4. Compute working directory and relative paths
+
+        Args:
+            paths: Input paths to process.
+            no_files_message: Message when no files are found.
+            default_timeout: Default timeout override (uses tool's default
+                if None).
+            file_patterns: Override file patterns (uses config patterns
+                if None).
+            exclude_patterns: Override exclude patterns (uses instance
+                patterns if None).
+
+        Returns:
+            ExecutionContext: Context with files, cwd, and optional early_result.
+
+        Example:
+            ctx = self._prepare_execution(paths)
+            if ctx.should_skip:
+                return ctx.early_result
+
+            cmd = self._build_command(ctx.rel_files)
+            success, output = self._run_subprocess(
+                cmd, timeout=ctx.timeout, cwd=ctx.cwd
+            )
+        """
+        # Step 1: Check version requirements
+        version_result = self._verify_tool_version()
+        if version_result is not None:
+            return ExecutionContext(early_result=version_result)
+
+        # Step 2: Validate paths
+        self._validate_paths(paths=paths)
+        if not paths:
+            return ExecutionContext(
+                early_result=ToolResult(
+                    name=self.name,
+                    success=True,
+                    output=no_files_message,
+                    issues_count=0,
+                ),
+            )
+
+        # Step 3: Discover files
+        effective_patterns = file_patterns or self.config.file_patterns
+        effective_excludes = exclude_patterns or self.exclude_patterns
+
+        files: list[str] = walk_files_with_excludes(
+            paths=paths,
+            file_patterns=effective_patterns,
+            exclude_patterns=effective_excludes,
+            include_venv=self.include_venv,
+        )
+
+        if not files:
+            # Customize message based on file type
+            file_type = "files"
+            if effective_patterns:
+                # Extract file types from patterns for a friendlier message
+                extensions = [
+                    p.replace("*", "") for p in effective_patterns if p.startswith("*.")
+                ]
+                if extensions:
+                    file_type = "/".join(extensions) + " files"
+
+            return ExecutionContext(
+                early_result=ToolResult(
+                    name=self.name,
+                    success=True,
+                    output=f"No {file_type} found to check.",
+                    issues_count=0,
+                ),
+            )
+
+        logger.debug(f"Files to process: {files}")
+
+        # Step 4: Compute cwd and relative paths
+        cwd: str | None = self.get_cwd(paths=files)
+        rel_files: list[str] = [os.path.relpath(f, cwd) if cwd else f for f in files]
+
+        # Step 5: Determine timeout
+        timeout_val = default_timeout or self.options.get(
+            "timeout",
+            self._default_timeout,
+        )
+        # Ensure timeout is an integer (options dict values are typed as object)
+        if isinstance(timeout_val, int):
+            timeout = timeout_val
+        elif isinstance(timeout_val, (str, float)):
+            timeout = int(timeout_val)
+        else:
+            timeout = self._default_timeout
+
+        return ExecutionContext(
+            files=files,
+            rel_files=rel_files,
+            cwd=cwd,
+            timeout=timeout,
+        )
+
     def _get_executable_command(
         self,
         tool_name: str,
@@ -317,49 +534,141 @@ class BaseTool(ABC):
         Returns:
             list[str]: Command prefix to execute the tool.
         """
+        from lintro.enums.tool_name import normalize_tool_name
+
+        # Try to normalize tool_name to ToolName enum for comparison
+        # If it's not a valid ToolName, we'll handle it as a binary tool
+        try:
+            tool_name_enum = normalize_tool_name(tool_name)
+        except ValueError:
+            # Not a valid ToolName enum - treat as binary tool
+            tool_name_enum = None
+
+        # Try each category handler in order
+        if cmd := self._get_python_bundled_command(tool_name, tool_name_enum):
+            return cmd
+        if cmd := self._get_pytest_command(tool_name, tool_name_enum):
+            return cmd
+        if cmd := self._get_nodejs_command(tool_name, tool_name_enum):
+            return cmd
+        if cmd := self._get_cargo_command(tool_name, tool_name_enum):
+            return cmd
+
+        # Default to binary tool
+        return [tool_name]
+
+    def _get_python_bundled_command(
+        self,
+        tool_name: str,
+        tool_name_enum: ToolName | None,
+    ) -> list[str] | None:
+        """Get command for Python bundled tools.
+
+        Includes: ruff, black, bandit, yamllint, mypy.
+
+        Note: darglint is excluded because it cannot be run as a module.
+
+        Args:
+            tool_name: str: Name of the tool executable.
+            tool_name_enum: ToolName | None: Normalized tool name enum, if valid.
+
+        Returns:
+            list[str] | None: Command prefix if tool is a Python bundled \
+                tool, None otherwise.
+        """
         import sys
 
         # Python tools bundled with lintro (guaranteed in our environment)
-        # Note: darglint cannot be run as a module (python -m darglint),
-        # so it's excluded
-        python_bundled_tools = {"ruff", "black", "bandit", "yamllint", "mypy"}
-        if tool_name in python_bundled_tools:
+        # Note: darglint cannot be run as a module (python -m darglint fails)
+        python_bundled_tools = {
+            ToolName.RUFF,
+            ToolName.BLACK,
+            ToolName.BANDIT,
+            ToolName.YAMLLINT,
+            ToolName.MYPY,
+        }
+        if tool_name_enum in python_bundled_tools:
             # Use python -m to ensure we use the tool from lintro's environment
             python_exe = sys.executable
             if python_exe:
                 return [python_exe, "-m", tool_name]
             # Fallback to direct executable if python path not found
             return [tool_name]
+        return None
+
+    def _get_pytest_command(
+        self,
+        tool_name: str,
+        tool_name_enum: ToolName | None,
+    ) -> list[str] | None:
+        """Get command for pytest (user environment tool).
+
+        Args:
+            tool_name: str: Name of the tool executable.
+            tool_name_enum: ToolName | None: Normalized tool name enum, if valid.
+
+        Returns:
+            list[str] | None: Command prefix if tool is pytest, None otherwise.
+        """
+        import sys
 
         # Pytest: user environment tool (not bundled)
-        if tool_name == "pytest":
+        if tool_name_enum == ToolName.PYTEST:
             # Use python -m pytest for cross-platform compatibility
             python_exe = sys.executable
             if python_exe:
                 return [python_exe, "-m", "pytest"]
             # Fall back to direct executable
             return [tool_name]
+        return None
 
+    def _get_nodejs_command(
+        self,
+        tool_name: str,
+        tool_name_enum: ToolName | None,
+    ) -> list[str] | None:
+        """Get command for Node.js tools (biome, prettier).
+
+        Args:
+            tool_name: str: Name of the tool executable.
+            tool_name_enum: ToolName | None: Normalized tool name enum, if valid.
+
+        Returns:
+            list[str] | None: Command prefix if tool is a Node.js tool, None otherwise.
+        """
         # Node.js tools: use npx to respect project's package.json
         nodejs_package_names = {
-            "biome": "@biomejs/biome",
-            "prettier": "prettier",
+            ToolName.BIOME: "@biomejs/biome",
+            ToolName.PRETTIER: "prettier",
         }
-        if tool_name in nodejs_package_names:
+        if tool_name_enum in nodejs_package_names:
             if shutil.which("npx"):
-                return ["npx", "--yes", nodejs_package_names[tool_name]]
+                return ["npx", nodejs_package_names[tool_name_enum]]
             # Fall back to direct executable
             return [tool_name]
+        return None
 
+    def _get_cargo_command(
+        self,
+        tool_name: str,
+        tool_name_enum: ToolName | None,
+    ) -> list[str] | None:
+        """Get command for Cargo/Rust tools.
+
+        Args:
+            tool_name: str: Name of the tool executable.
+            tool_name_enum: ToolName | None: Normalized tool name enum, if valid.
+
+        Returns:
+            list[str] | None: Command prefix if tool is a Cargo tool, None otherwise.
+        """
         # Rust/Cargo tools: use system executable
-        if tool_name == "clippy":
+        if tool_name_enum == ToolName.CLIPPY:
             return ["cargo", "clippy"]
-        cargo_tools = {"cargo"}
+        cargo_tools = {"cargo"}  # cargo itself, not a lintro tool
         if tool_name in cargo_tools:
             return [tool_name]
-
-        # Binary tools: use system executable
-        return [tool_name]
+        return None
 
     def _verify_tool_version(self) -> ToolResult | None:
         """Verify that the tool meets minimum version requirements.
@@ -398,177 +707,72 @@ class BaseTool(ABC):
         """Get the current Lintro configuration.
 
         Returns:
-            LintroConfig: The loaded Lintro configuration.
+            LintroConfig: Current Lintro configuration instance.
         """
-        from lintro.config import get_config
+        from lintro.tools.core.config_injection import _get_lintro_config
 
-        return get_config()
+        return _get_lintro_config()
 
-    def _should_use_lintro_config(self) -> bool:
-        """Check if Lintro config should be used.
-
-        Returns True if:
-        1. LINTRO_SKIP_CONFIG_INJECTION env var is NOT set, AND
-        2. A .lintro-config.yaml exists, OR [tool.lintro] is in pyproject.toml
+    def _get_enforced_settings(self) -> dict[str, object]:
+        """Get enforced settings as a dictionary.
 
         Returns:
-            bool: True if Lintro config should be used.
+            dict[str, object]: Dictionary of enforced settings.
         """
-        # Allow tests to disable config injection
-        if os.environ.get("LINTRO_SKIP_CONFIG_INJECTION"):
-            return False
+        from lintro.tools.core.config_injection import _get_enforced_settings
 
-        lintro_config = self._get_lintro_config()
-        return lintro_config.config_path is not None
-
-    def _get_enforced_settings(self) -> set[str]:
-        """Get the set of settings that are enforced by Lintro config.
-
-        This allows tools to check whether a setting is already being
-        injected via CLI args from the enforce tier, so they can avoid
-        adding duplicate arguments from their own options.
-
-        Returns:
-            set[str]: Set of setting names like 'line_length', 'target_python'.
-        """
-        if not self._should_use_lintro_config():
-            return set()
-
-        lintro_config = self._get_lintro_config()
-        enforced: set[str] = set()
-
-        if lintro_config.enforce.line_length is not None:
-            enforced.add("line_length")
-        if lintro_config.enforce.target_python is not None:
-            enforced.add("target_python")
-
-        return enforced
+        return _get_enforced_settings(lintro_config=self._get_lintro_config())
 
     def _get_enforce_cli_args(self) -> list[str]:
         """Get CLI arguments for enforced settings.
 
-        Returns CLI args that inject enforce settings (like line_length)
-        directly into the tool command line.
-
         Returns:
-            list[str]: CLI arguments for enforced settings.
+            list[str]: CLI arguments to inject enforced settings.
         """
-        from lintro.config import get_enforce_cli_args
+        from lintro.tools.core.config_injection import _get_enforce_cli_args
 
-        if not self._should_use_lintro_config():
-            return []
-
-        lintro_config = self._get_lintro_config()
-        args: list[str] = get_enforce_cli_args(
+        return _get_enforce_cli_args(
             tool_name=self.name,
-            lintro_config=lintro_config,
+            lintro_config=self._get_lintro_config(),
         )
-        return args
 
     def _get_defaults_config_args(self) -> list[str]:
         """Get CLI arguments for defaults config injection.
 
-        If the tool has no native config and defaults are defined in
-        the Lintro config, generates a temp config file and returns
-        the CLI args to pass it to the tool.
+        Returns:
+            list[str]: CLI arguments to inject defaults config file.
+        """
+        from lintro.tools.core.config_injection import _get_defaults_config_args
+
+        return _get_defaults_config_args(
+            tool_name=self.name,
+            lintro_config=self._get_lintro_config(),
+        )
+
+    def _should_use_lintro_config(self) -> bool:
+        """Check if Lintro config should be used for this tool.
 
         Returns:
-            list[str]: CLI arguments for defaults config injection.
+            bool: True if Lintro config should be injected.
         """
-        from lintro.config import (
-            generate_defaults_config,
-            get_defaults_injection_args,
-        )
+        from lintro.tools.core.config_injection import _should_use_lintro_config
 
-        if not self._should_use_lintro_config():
-            return []
-
-        lintro_config = self._get_lintro_config()
-        config_path = generate_defaults_config(
-            tool_name=self.name,
-            lintro_config=lintro_config,
-        )
-
-        if config_path is None:
-            return []
-
-        args: list[str] = get_defaults_injection_args(
-            tool_name=self.name,
-            config_path=config_path,
-        )
-        return args
+        return _should_use_lintro_config(tool_name=self.name)
 
     def _build_config_args(self) -> list[str]:
-        """Build complete config-related CLI arguments for this tool.
+        """Build combined CLI arguments for config injection.
 
-        Uses the tiered model:
-        1. Enforced settings are injected via CLI flags
-        2. Defaults config is used only if no native config exists
+        Combines enforce CLI args and defaults config args.
 
         Returns:
-            list[str]: Combined CLI arguments for configuration.
+            list[str]: Combined CLI arguments for config injection.
         """
-        args: list[str] = []
+        from lintro.tools.core.config_injection import _build_config_args
 
-        # Add enforce CLI args (e.g., --line-length 88)
-        args.extend(self._get_enforce_cli_args())
-
-        # Add defaults config args if applicable
-        args.extend(self._get_defaults_config_args())
-
-        return args
-
-    # -------------------------------------------------------------------------
-    # Deprecated methods for backward compatibility
-    # -------------------------------------------------------------------------
-
-    def _generate_tool_config(self) -> Path | None:
-        """Generate a temporary config file for this tool.
-
-        DEPRECATED: Use _get_enforce_cli_args() and _get_defaults_config_args()
-        instead.
-
-        Returns:
-            Path | None: Path to generated config file, or None if not needed.
-        """
-        from lintro.config import generate_defaults_config
-
-        logger.debug(
-            f"_generate_tool_config() is deprecated for {self.name}. "
-            "Use _build_config_args() or call _get_enforce_cli_args() and "
-            "_get_defaults_config_args() directly.",
-        )
-        lintro_config = self._get_lintro_config()
-        config: Path | None = generate_defaults_config(
+        return _build_config_args(
             tool_name=self.name,
-            lintro_config=lintro_config,
+            lintro_config=self._get_lintro_config(),
         )
-        return config
-
-    def _get_config_injection_args(self) -> list[str]:
-        """Get CLI arguments to inject Lintro config into this tool.
-
-        DEPRECATED: Use _get_enforce_cli_args() and _get_defaults_config_args()
-        instead, or use _build_config_args() which combines both.
-
-        Returns:
-            list[str]: CLI arguments for config injection (enforce + defaults).
-        """
-        args: list[str] = []
-        args.extend(self._get_enforce_cli_args())
-        args.extend(self._get_defaults_config_args())
-        return args
-
-    def _get_no_auto_config_args(self) -> list[str]:
-        """Get CLI arguments to disable native config auto-discovery.
-
-        DEPRECATED: No longer needed with the tiered model.
-        Tools use their native configs by default.
-
-        Returns:
-            list[str]: Empty list (no longer used).
-        """
-        return []
 
     @abstractmethod
     def check(

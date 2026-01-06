@@ -14,7 +14,7 @@ from lintro.tools.implementations.tool_hadolint import HadolintTool
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
-SAMPLE_FILE = "test_samples/Dockerfile.violations"
+SAMPLE_FILE = "test_samples/tools/config/docker/Dockerfile.violations"
 
 
 def run_hadolint_directly(file_path: Path) -> tuple[bool, str, int]:
@@ -85,7 +85,7 @@ def test_hadolint_available() -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_reports_violations_direct(tmp_path) -> None:
+def test_hadolint_reports_violations_direct(tmp_path: Path) -> None:
     """Hadolint CLI: Should detect and report violations in a sample file.
 
     Args:
@@ -107,15 +107,19 @@ def test_hadolint_reports_violations_direct(tmp_path) -> None:
     logger.info("[TEST] Running hadolint directly on sample file...")
     success, output, issues = run_hadolint_directly(sample_file)
     logger.info(f"[LOG] Hadolint found {issues} issues. Output:\n{output}")
-    assert not success, "Hadolint should fail when violations are present."
-    assert issues > 0, "Hadolint should report at least one issue."
-    assert any(
-        (code in output for code in ["DL", "SC"]),
-    ), "Hadolint output should contain error codes."
+    assert_that(success).is_false().described_as(
+        "Hadolint should fail when violations are present.",
+    )
+    assert_that(issues).is_greater_than(0).described_as(
+        "Hadolint should report at least one issue.",
+    )
+    assert_that(any(code in output for code in ["DL", "SC"])).is_true().described_as(
+        "Hadolint output should contain error codes.",
+    )
 
 
 @pytest.mark.hadolint
-def test_hadolint_reports_violations_through_lintro(tmp_path) -> None:
+def test_hadolint_reports_violations_through_lintro(tmp_path: Path) -> None:
     """Lintro HadolintTool: Should detect and report violations in a sample file.
 
     Args:
@@ -133,19 +137,24 @@ def test_hadolint_reports_violations_through_lintro(tmp_path) -> None:
         f"[LOG] Lintro HadolintTool found {result.issues_count} issues. "
         f"Output:\n{result.output}",
     )
-    assert (
-        not result.success
-    ), "Lintro HadolintTool should fail when violations are present."
-    assert (
-        result.issues_count > 0
-    ), "Lintro HadolintTool should report at least one issue."
-    assert any(
-        (code in result.output for code in ["DL", "SC"]),
-    ), "Lintro HadolintTool output should contain error codes."
+    assert_that(result.success).is_false().described_as(
+        "Lintro HadolintTool should fail when violations are present.",
+    )
+    assert_that(result.issues_count).is_greater_than(0).described_as(
+        "Lintro HadolintTool should report at least one issue.",
+    )
+    assert_that(result.output).is_not_none()
+    if result.output is None:
+        pytest.fail("output should not be None")
+    assert_that(
+        any(code in result.output for code in ["DL", "SC"]),
+    ).is_true().described_as(
+        "Lintro HadolintTool output should contain error codes.",
+    )
 
 
 @pytest.mark.hadolint
-def test_hadolint_output_consistency_direct_vs_lintro(tmp_path) -> None:
+def test_hadolint_output_consistency_direct_vs_lintro(tmp_path: Path) -> None:
     """Hadolint CLI vs Lintro: Should produce consistent results for the same file.
 
     Args:
@@ -170,21 +179,21 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path) -> None:
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
-    assert direct_issues == result.issues_count, (
+    assert_that(direct_issues).is_equal_to(result.issues_count), (
         f"Mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
         f"CLI Output:\n{direct_output}\n"
         f"Lintro Output:\n{result.output}"
     )
-    assert (
-        direct_success == result.success
-    ), "Success/failure mismatch between CLI and Lintro."
-    assert (
-        direct_issues == result.issues_count
-    ), "Issue count mismatch between CLI and Lintro."
+    assert_that(direct_success).is_equal_to(result.success).described_as(
+        "Success/failure mismatch between CLI and Lintro.",
+    )
+    assert_that(direct_issues).is_equal_to(result.issues_count).described_as(
+        "Issue count mismatch between CLI and Lintro.",
+    )
 
 
 @pytest.mark.hadolint
-def test_hadolint_with_ignore_rules(tmp_path) -> None:
+def test_hadolint_with_ignore_rules(tmp_path: Path) -> None:
     """Lintro HadolintTool: Should properly ignore specified rules.
 
     Args:
@@ -206,7 +215,7 @@ def test_hadolint_with_ignore_rules(tmp_path) -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_fix_method_not_implemented(tmp_path) -> None:
+def test_hadolint_fix_method_not_implemented(tmp_path: Path) -> None:
     """Lintro HadolintTool: .fix() should raise NotImplementedError.
 
     Args:
@@ -225,7 +234,7 @@ def test_hadolint_fix_method_not_implemented(tmp_path) -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_empty_directory(tmp_path) -> None:
+def test_hadolint_empty_directory(tmp_path: Path) -> None:
     """Lintro HadolintTool: Should handle empty directories gracefully.
 
     Args:
@@ -238,12 +247,16 @@ def test_hadolint_empty_directory(tmp_path) -> None:
     tool = HadolintTool()
     result = tool.check([str(empty_dir)])
     logger.info(f"[LOG] Empty directory result: {result.success}, {result.output}")
-    assert result.success, "Empty directory should be handled successfully."
-    assert result.issues_count == 0, "Empty directory should have no issues."
+    assert_that(result.success).is_true().described_as(
+        "Empty directory should be handled successfully.",
+    )
+    assert_that(result.issues_count).is_equal_to(
+        0,
+    ), "Empty directory should have no issues."
 
 
 @pytest.mark.hadolint
-def test_hadolint_parser_validation(tmp_path) -> None:
+def test_hadolint_parser_validation(tmp_path: Path) -> None:
     """Test that hadolint parser correctly parses output.
 
     Args:
@@ -262,8 +275,16 @@ def test_hadolint_parser_validation(tmp_path) -> None:
     )
     issues = parse_hadolint_output(sample_output)
     logger.info(f"[LOG] Parsed {len(issues)} issues from sample output")
-    assert len(issues) == 3, "Should parse 3 issues"
-    assert issues[0].level == "error", "First issue should be error level"
-    assert issues[0].code == "DL3006", "First issue should be DL3006"
-    assert issues[1].level == "warning", "Second issue should be warning level"
-    assert issues[2].level == "info", "Third issue should be info level"
+    assert_that(issues).is_length(3), "Should parse 3 issues"
+    assert_that(issues[0].level).is_equal_to("error").described_as(
+        "First issue should be error level",
+    )
+    assert_that(issues[0].code).is_equal_to("DL3006").described_as(
+        "First issue should be DL3006",
+    )
+    assert_that(issues[1].level).is_equal_to("warning").described_as(
+        "Second issue should be warning level",
+    )
+    assert_that(issues[2].level).is_equal_to("info").described_as(
+        "Third issue should be info level",
+    )

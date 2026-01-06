@@ -33,7 +33,7 @@ def generate_version_table() -> str:
     external_tools = {
         "pytest": (
             "Python test framework",
-            ("pip install pytest>={version} or " "uv add pytest>={version}"),
+            ("pip install pytest>={version} or uv add pytest>={version}"),
         ),
         "prettier": (
             "JavaScript/TypeScript formatter",
@@ -41,11 +41,11 @@ def generate_version_table() -> str:
         ),
         "hadolint": (
             "Dockerfile linter",
-            ("https://github.com/hadolint/hadolint/releases " "(v{version}+)"),
+            ("https://github.com/hadolint/hadolint/releases (v{version}+)"),
         ),
         "actionlint": (
             "GitHub Actions linter",
-            ("https://github.com/rhysd/actionlint/releases " "(v{version}+)"),
+            ("https://github.com/rhysd/actionlint/releases (v{version}+)"),
         ),
     }
 
@@ -67,7 +67,7 @@ def generate_version_table() -> str:
     return bundled_table + "\n" + external_table
 
 
-def main():
+def main() -> None:
     """Generate documentation and print to stdout."""
     print("=== Tool Version Requirements (Generated from pyproject.toml) ===")
     print()

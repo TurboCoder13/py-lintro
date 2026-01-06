@@ -1,21 +1,24 @@
 """Bandit security linter integration."""
 
 import json
-import os
 import subprocess  # nosec B404 - deliberate, shell disabled
-import tomllib
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 from loguru import logger
 
+from lintro.enums.bandit_levels import (
+    BanditConfidenceLevel,
+    BanditSeverityLevel,
+    normalize_bandit_confidence_level,
+    normalize_bandit_severity_level,
+)
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.config_utils import load_bandit_config
 
 # Constants for Bandit configuration
 BANDIT_DEFAULT_TIMEOUT: int = 30
@@ -48,7 +51,8 @@ def _extract_bandit_json(raw_text: str) -> dict[str, Any]:
 
     # Quick path: if the entire text is JSON
     if text.startswith("{") and text.endswith("}"):
-        return json.loads(text)
+        result: dict[str, Any] = json.loads(text)
+        return result
 
     start: int = text.find("{")
     end: int = text.rfind("}")
@@ -56,28 +60,8 @@ def _extract_bandit_json(raw_text: str) -> dict[str, Any]:
         raise ValueError("Could not locate JSON object in Bandit output")
 
     json_str: str = text[start : end + 1]
-    return json.loads(json_str)
-
-
-def _load_bandit_config() -> dict[str, Any]:
-    """Load bandit configuration from pyproject.toml.
-
-    Returns:
-        dict[str, Any]: Bandit configuration dictionary.
-    """
-    config: dict[str, Any] = {}
-    pyproject_path = Path("pyproject.toml")
-
-    if pyproject_path.exists():
-        try:
-            with open(pyproject_path, "rb") as f:
-                pyproject_data = tomllib.load(f)
-                if "tool" in pyproject_data and "bandit" in pyproject_data["tool"]:
-                    config = pyproject_data["tool"]["bandit"]
-        except Exception as e:
-            logger.warning(f"Failed to load bandit configuration: {e}")
-
-    return config
+    parsed: dict[str, Any] = json.loads(json_str)
+    return parsed
 
 
 @dataclass
@@ -97,11 +81,11 @@ class BanditTool(BaseTool):
         include_venv: bool: Whether to include virtual environment files.
     """
 
-    name: str = "bandit"
-    description: str = (
-        "Security linter that finds common security issues in Python code"
+    name: str = field(default="bandit")
+    description: str = field(
+        default="Security linter that finds common security issues in Python code",
     )
-    can_fix: bool = False  # Bandit does not support auto-fixing
+    can_fix: bool = field(default=False)  # Bandit does not support auto-fixing
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=BANDIT_DEFAULT_PRIORITY,  # High priority for security
@@ -130,17 +114,23 @@ class BanditTool(BaseTool):
         super().__post_init__()
 
         # Load bandit configuration from pyproject.toml
-        bandit_config = _load_bandit_config()
+        bandit_config = load_bandit_config()
 
         # Apply configuration overrides
         if "exclude_dirs" in bandit_config:
             # Convert exclude_dirs to exclude patterns
+            # Add both /* for immediate children and /**/* for nested subdirectories
             exclude_dirs = bandit_config["exclude_dirs"]
             if isinstance(exclude_dirs, list):
                 for exclude_dir in exclude_dirs:
-                    pattern = f"{exclude_dir}/**"
+                    # Pattern for immediate children
+                    pattern = f"{exclude_dir}/*"
                     if pattern not in self.exclude_patterns:
                         self.exclude_patterns.append(pattern)
+                    # Pattern for nested subdirectories (recursive)
+                    recursive_pattern = f"{exclude_dir}/**/*"
+                    if recursive_pattern not in self.exclude_patterns:
+                        self.exclude_patterns.append(recursive_pattern)
 
         # Set other options from configuration
         config_mapping = {
@@ -158,9 +148,22 @@ class BanditTool(BaseTool):
 
         for config_key, option_key in config_mapping.items():
             if config_key in bandit_config:
-                self.options[option_key] = bandit_config[config_key]
+                value = bandit_config[config_key]
+                # Validate and normalize severity/confidence early to fail fast
+                if config_key == "severity" and value is not None:
+                    value = normalize_bandit_severity_level(
+                        value,
+                    ).value  # Normalize and convert to string
+                elif config_key == "confidence" and value is not None:
+                    value = normalize_bandit_confidence_level(
+                        value,
+                    ).value  # Normalize and convert to string
+                # Convert lists to comma-separated strings for skips/tests
+                elif config_key in ("skips", "tests") and isinstance(value, list):
+                    value = ",".join(value)
+                self.options[option_key] = value
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         severity: str | None = None,
         confidence: str | None = None,
@@ -173,7 +176,7 @@ class BanditTool(BaseTool):
         aggregate: str | None = None,
         verbose: bool | None = None,
         quiet: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Bandit-specific options.
 
@@ -194,19 +197,13 @@ class BanditTool(BaseTool):
         Raises:
             ValueError: If an option value is invalid.
         """
-        # Validate severity level
+        # Validate severity level using enum normalization
         if severity is not None:
-            valid_severities = ["LOW", "MEDIUM", "HIGH"]
-            if severity.upper() not in valid_severities:
-                raise ValueError(f"severity must be one of {valid_severities}")
-            severity = severity.upper()
+            severity = normalize_bandit_severity_level(severity).value
 
-        # Validate confidence level
+        # Validate confidence level using enum normalization
         if confidence is not None:
-            valid_confidences = ["LOW", "MEDIUM", "HIGH"]
-            if confidence.upper() not in valid_confidences:
-                raise ValueError(f"confidence must be one of {valid_confidences}")
-            confidence = confidence.upper()
+            confidence = normalize_bandit_confidence_level(confidence).value
 
         # Validate aggregate option
         if aggregate is not None:
@@ -251,44 +248,52 @@ class BanditTool(BaseTool):
         cmd: list[str] = exec_cmd + ["-r"]
 
         # Add configuration options
-        if self.options.get("severity"):
-            severity = self.options["severity"]
-            if severity == "LOW":
+        severity_opt = self.options.get("severity")
+        if severity_opt is not None:
+            severity = normalize_bandit_severity_level(str(severity_opt))
+            if severity == BanditSeverityLevel.LOW:
                 cmd.append("-l")
-            elif severity == "MEDIUM":
+            elif severity == BanditSeverityLevel.MEDIUM:
                 cmd.extend(["-ll"])
-            elif severity == "HIGH":
+            elif severity == BanditSeverityLevel.HIGH:
                 cmd.extend(["-lll"])
 
-        if self.options.get("confidence"):
-            confidence = self.options["confidence"]
-            if confidence == "LOW":
+        confidence_opt = self.options.get("confidence")
+        if confidence_opt is not None:
+            confidence = normalize_bandit_confidence_level(str(confidence_opt))
+            if confidence == BanditConfidenceLevel.LOW:
                 cmd.append("-i")
-            elif confidence == "MEDIUM":
+            elif confidence == BanditConfidenceLevel.MEDIUM:
                 cmd.extend(["-ii"])
-            elif confidence == "HIGH":
+            elif confidence == BanditConfidenceLevel.HIGH:
                 cmd.extend(["-iii"])
 
-        if self.options.get("tests"):
-            cmd.extend(["-t", self.options["tests"]])
+        tests_opt = self.options.get("tests")
+        if tests_opt is not None:
+            cmd.extend(["-t", str(tests_opt)])
 
-        if self.options.get("skips"):
-            cmd.extend(["-s", self.options["skips"]])
+        skips_opt = self.options.get("skips")
+        if skips_opt is not None:
+            cmd.extend(["-s", str(skips_opt)])
 
-        if self.options.get("profile"):
-            cmd.extend(["-p", self.options["profile"]])
+        profile_opt = self.options.get("profile")
+        if profile_opt is not None:
+            cmd.extend(["-p", str(profile_opt)])
 
-        if self.options.get("configfile"):
-            cmd.extend(["-c", self.options["configfile"]])
+        configfile_opt = self.options.get("configfile")
+        if configfile_opt is not None:
+            cmd.extend(["-c", str(configfile_opt)])
 
-        if self.options.get("baseline"):
-            cmd.extend(["-b", self.options["baseline"]])
+        baseline_opt = self.options.get("baseline")
+        if baseline_opt is not None:
+            cmd.extend(["-b", str(baseline_opt)])
 
         if self.options.get("ignore_nosec"):
             cmd.append("--ignore-nosec")
 
-        if self.options.get("aggregate"):
-            cmd.extend(["-a", self.options["aggregate"]])
+        aggregate_opt = self.options.get("aggregate")
+        if aggregate_opt is not None:
+            cmd.extend(["-a", str(aggregate_opt)])
 
         if self.options.get("verbose"):
             cmd.append("-v")
@@ -321,47 +326,16 @@ class BanditTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        if not paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-
-        # Use shared utility for file discovery
-        python_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation to handle version check, path validation,
+        # file discovery, and cwd computation
+        ctx = self._prepare_execution(
+            paths,
+            default_timeout=BANDIT_DEFAULT_TIMEOUT,
         )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
-        if not python_files:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No Python files found to check.",
-                issues_count=0,
-            )
-
-        logger.debug(f"Files to check: {python_files}")
-
-        # Ensure Bandit discovers the correct configuration by setting the
-        # working directory to the common parent of the target files.
-        cwd: str | None = self.get_cwd(paths=python_files)
-        rel_files: list[str] = [
-            os.path.relpath(f, cwd) if cwd else f for f in python_files
-        ]
-
-        timeout: int = self.options.get("timeout", BANDIT_DEFAULT_TIMEOUT)
-        cmd: list[str] = self._build_check_command(files=rel_files)
+        cmd: list[str] = self._build_check_command(files=ctx.rel_files)
 
         output: str
         execution_failure: bool = False
@@ -370,22 +344,26 @@ class BanditTool(BaseTool):
         try:
             success, combined = self._run_subprocess(
                 cmd=cmd,
-                timeout=timeout,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
             output = (combined or "").strip()
             rc: int = 0 if success else 1
         except subprocess.TimeoutExpired:
-            # Handle timeout gracefully
-            execution_failure = True
-            timeout_msg = (
-                f"Bandit execution timed out ({timeout}s limit exceeded).\n\n"
-                "This may indicate:\n"
-                "  - Large codebase taking too long to process\n"
-                "  - Need to increase timeout via --tool-options bandit:timeout=N"
+            # Handle timeout gracefully using shared utility
+            from lintro.tools.core.timeout_utils import create_timeout_result
+
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=ctx.timeout,
+                cmd=cmd,
             )
-            output = timeout_msg
-            rc = 1
+            return ToolResult(
+                name=self.name,
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
+            )
         except Exception as e:
             logger.error(f"Failed to run Bandit: {e}")
             output = f"Bandit failed: {e}"
@@ -395,11 +373,7 @@ class BanditTool(BaseTool):
         # Parse the JSON output
         try:
             # If command failed and no obvious JSON present, surface error cleanly
-            if (
-                ("{" not in output or "}" not in output)
-                and "rc" in locals()
-                and rc != 0
-            ):
+            if ("{" not in output or "}" not in output) and rc != 0:
                 return ToolResult(
                     name=self.name,
                     success=False,

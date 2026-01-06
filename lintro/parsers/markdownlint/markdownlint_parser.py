@@ -101,7 +101,7 @@ def parse_markdownlint_output(output: str) -> list[MarkdownlintIssue]:
                 MarkdownlintIssue(
                     file=filename,
                     line=int(line_num),
-                    column=int(column) if column else None,
+                    column=int(column) if column else 0,
                     code=code,
                     message=full_message,
                 ),
