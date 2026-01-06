@@ -57,7 +57,7 @@ if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
 fi
 
 # Source utilities
-source "$(dirname "${BASH_SOURCE[0]}")/../utils/utils.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../../utils/utils.sh"
 
 check_tag_exists() {
     local tag="${1:-${TAG:-}}"

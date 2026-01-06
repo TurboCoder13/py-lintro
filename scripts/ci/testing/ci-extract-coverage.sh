@@ -23,7 +23,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 
 # Source shared utilities
-source "$(dirname "$0")/../utils/utils.sh"
+source "$(dirname "$0")/../../utils/utils.sh"
 
 # Set up environment if not in GitHub Actions
 GITHUB_ENV="${GITHUB_ENV:-/dev/null}"

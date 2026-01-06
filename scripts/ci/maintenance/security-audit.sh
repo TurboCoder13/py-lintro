@@ -47,8 +47,8 @@ fi
 
 # Source common utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-# shellcheck source=../utils/utils.sh
-source "${SCRIPT_DIR}/../utils/utils.sh"
+# shellcheck source=../../utils/utils.sh
+source "${SCRIPT_DIR}/../../utils/utils.sh"
 
 check_sha_pinning() {
     log_info "Checking SHA pinning for GitHub Actions..."

@@ -22,7 +22,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 
 # Source shared utilities
-source "$(dirname "$0")/../utils/utils.sh"
+source "$(dirname "$0")/../../utils/utils.sh"
 
 # Set coverage percentage if not already set (handle nounset)
 if [ -z "${COVERAGE_PERCENTAGE:-}" ]; then

@@ -22,7 +22,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 
 # Source shared utilities
-source "$(dirname "$0")/../utils/utils.sh"
+source "$(dirname "$0")/../../utils/utils.sh"
 
 echo "## 🔧 Lintro Full Codebase Report" >> $GITHUB_STEP_SUMMARY
 echo "" >> $GITHUB_STEP_SUMMARY

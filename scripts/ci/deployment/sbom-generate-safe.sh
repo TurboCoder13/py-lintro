@@ -34,8 +34,8 @@ fi
 
 # Source common utilities for consistent logging
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-# shellcheck source=../utils/utils.sh
-source "${SCRIPT_DIR}/../utils/utils.sh"
+# shellcheck source=../../utils/utils.sh
+source "${SCRIPT_DIR}/../../utils/utils.sh"
 
 main() {
     log_info "Generating SBOMs with standard formats"
