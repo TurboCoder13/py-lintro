@@ -28,7 +28,7 @@ def test_format_tool_output_bandit_across_styles() -> None:
         issue_text="subprocess call with shell=True identified, security issue.",
         more_info="https://bandit.readthedocs.io/en/latest/plugins/b602_subprocess_popen_with_shell_equals_true.html",
     )
-    issues = [sample_issue]
+    issues: list[object] = [sample_issue]
     styles: list[str] = ["grid", "plain", "markdown", "html", "json", "csv"]
     for style in styles:
         rendered = format_tool_output(

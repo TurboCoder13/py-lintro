@@ -51,7 +51,11 @@ class TestCheckLineLengthViolations:
 
     @patch("shutil.which")
     def test_ruff_not_available_returns_empty(self, mock_which: MagicMock) -> None:
-        """Test that missing ruff returns empty violations without error."""
+        """Test that missing ruff returns empty violations without error.
+
+        Args:
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = None
 
         result = check_line_length_violations(files=["test.py"])
@@ -66,7 +70,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test successful detection of E501 violations."""
+        """Test successful detection of E501 violations.
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
 
         # Simulate Ruff JSON output with E501 violation
@@ -104,7 +113,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test that custom line_length is passed to ruff."""
+        """Test that custom line_length is passed to ruff.
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
         mock_run.return_value = MagicMock(stdout="[]", returncode=0)
 
@@ -126,7 +140,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test that timeout exception returns empty list gracefully."""
+        """Test that timeout exception returns empty list gracefully.
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
         mock_run.side_effect = subprocess.TimeoutExpired(
             cmd=["ruff"],
@@ -144,7 +163,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test that invalid JSON returns empty list gracefully."""
+        """Test that invalid JSON returns empty list gracefully.
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
         mock_run.return_value = MagicMock(
             stdout="not valid json",
@@ -162,7 +186,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test that empty stdout returns empty list."""
+        """Test that empty stdout returns empty list.
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
         mock_run.return_value = MagicMock(
             stdout="",
@@ -180,7 +209,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test that FileNotFoundError returns empty list gracefully."""
+        """Test that FileNotFoundError returns empty list gracefully.
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
         mock_run.side_effect = FileNotFoundError("ruff not found")
 
@@ -195,7 +229,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test that relative file paths are converted to absolute."""
+        """Test that relative file paths are converted to absolute.
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
         mock_run.return_value = MagicMock(stdout="[]", returncode=0)
 
@@ -217,7 +256,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test compatibility with older Ruff JSON format (no location wrapper)."""
+        """Test compatibility with older Ruff JSON format (no location wrapper).
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
 
         # Older Ruff format with row/column at top level
@@ -250,7 +294,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test handling multiple E501 violations."""
+        """Test handling multiple E501 violations.
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
 
         ruff_output = json.dumps(
@@ -295,7 +344,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test that the ruff command includes required flags."""
+        """Test that the ruff command includes required flags.
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
         mock_run.return_value = MagicMock(stdout="[]", returncode=0)
 
@@ -319,7 +373,12 @@ class TestCheckLineLengthViolations:
         mock_run: MagicMock,
         mock_which: MagicMock,
     ) -> None:
-        """Test that generic exceptions return empty list gracefully."""
+        """Test that generic exceptions return empty list gracefully.
+
+        Args:
+            mock_run: Mock for subprocess.run function.
+            mock_which: Mock for shutil.which function.
+        """
         mock_which.return_value = "/usr/bin/ruff"
         mock_run.side_effect = RuntimeError("Unexpected error")
 

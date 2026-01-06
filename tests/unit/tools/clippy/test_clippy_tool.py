@@ -4,12 +4,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from assertpy import assert_that
 
+from lintro.parsers.clippy.clippy_issue import ClippyIssue
 from lintro.tools.implementations.tool_clippy import ClippyTool
 
 
-def test_clippy_check_parses_issues(monkeypatch, tmp_path: Path) -> None:
+def test_clippy_check_parses_issues(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Ensure check mode parses Clippy JSON output correctly.
 
     Args:
@@ -44,7 +49,11 @@ def test_clippy_check_parses_issues(monkeypatch, tmp_path: Path) -> None:
         '"column_start":15,"column_end":21}]}}\n'
     )
 
-    def fake_run(cmd, timeout=None, cwd=None):
+    def fake_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         if "clippy" in cmd and "--fix" not in cmd:
             return (False, clippy_output)
         return (True, "")
@@ -58,11 +67,22 @@ def test_clippy_check_parses_issues(monkeypatch, tmp_path: Path) -> None:
     res = tool.check([str(tmp_path)])
     assert_that(res.issues_count).is_equal_to(1)
     assert_that(res.success).is_false()
+    assert_that(res.issues).is_not_none()
     assert_that(res.issues).is_not_empty()
-    assert_that(res.issues[0].code).is_equal_to("clippy::needless_return")
+    issues = res.issues
+    if issues is None:
+        pytest.fail("issues should not be None")
+    first_issue = issues[0]
+    assert_that(isinstance(first_issue, ClippyIssue)).is_true()
+    if not isinstance(first_issue, ClippyIssue):
+        pytest.fail("first_issue should be ClippyIssue")
+    assert_that(first_issue.code).is_equal_to("clippy::needless_return")
 
 
-def test_clippy_check_no_cargo_toml(monkeypatch, tmp_path: Path) -> None:
+def test_clippy_check_no_cargo_toml(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Skip when no Cargo.toml is found.
 
     Args:
@@ -85,12 +105,17 @@ def test_clippy_check_no_cargo_toml(monkeypatch, tmp_path: Path) -> None:
     res = tool.check([str(tmp_path)])
     assert_that(res.success).is_true()
     assert_that(res.issues_count).is_equal_to(0)
-    assert_that(
-        "No Cargo.toml found" in res.output or "skipping" in res.output.lower(),
-    ).is_true()
+    assert_that(res.output).is_not_none()
+    if res.output is not None:
+        assert_that(
+            "No Cargo.toml found" in res.output or "skipping" in res.output.lower(),
+        ).is_true()
 
 
-def test_clippy_fix_computes_counts(monkeypatch, tmp_path: Path) -> None:
+def test_clippy_fix_computes_counts(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Ensure fix mode computes initial/fixed/remaining issue counts.
 
     Args:
@@ -123,7 +148,11 @@ def test_clippy_fix_computes_counts(monkeypatch, tmp_path: Path) -> None:
         '"line_start":1,"line_end":1,"column_start":15,"column_end":21}]}}\n'
     )
 
-    def fake_run(cmd, timeout=None, cwd=None):
+    def fake_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         if "clippy" in cmd:
             if "--fix" in cmd:
                 calls["n"] += 1
@@ -150,7 +179,10 @@ def test_clippy_fix_computes_counts(monkeypatch, tmp_path: Path) -> None:
     assert_that(res.success).is_true()
 
 
-def test_clippy_check_no_rust_files(monkeypatch, tmp_path: Path) -> None:
+def test_clippy_check_no_rust_files(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Handle case when no Rust files are found.
 
     Args:

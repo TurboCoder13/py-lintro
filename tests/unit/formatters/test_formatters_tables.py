@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from assertpy import assert_that
 
+from lintro.enums.output_format import OutputFormat
 from lintro.formatters.tools.darglint_formatter import (
     DarglintTableDescriptor,
     format_darglint_issues,
@@ -26,7 +29,7 @@ from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
 
 
-def test_darglint_table_and_formatting(tmp_path) -> None:
+def test_darglint_table_and_formatting(tmp_path: Path) -> None:
     """Validate Darglint table layout and grid formatting.
 
     Args:
@@ -39,11 +42,11 @@ def test_darglint_table_and_formatting(tmp_path) -> None:
     assert_that(desc.get_columns()).is_equal_to(["File", "Line", "Code", "Message"])
     rows = desc.get_rows(issues)
     assert_that(rows and len(rows[0]) == 4).is_true()
-    out = format_darglint_issues(issues=issues, format="grid")
+    out = format_darglint_issues(issues=issues, format=OutputFormat.GRID)
     assert_that(out).contains("D100")
 
 
-def test_prettier_table_and_formatting(tmp_path) -> None:
+def test_prettier_table_and_formatting(tmp_path: Path) -> None:
     """Validate Prettier table layout and plain formatting.
 
     Args:
@@ -64,11 +67,11 @@ def test_prettier_table_and_formatting(tmp_path) -> None:
     )
     rows = desc.get_rows(issues)
     assert_that(rows and len(rows[0]) == 5).is_true()
-    out = format_prettier_issues(issues=issues, format="plain")
+    out = format_prettier_issues(issues=issues, format=OutputFormat.PLAIN)
     assert_that("Auto-fixable" in out or out).is_true()
 
 
-def test_ruff_table_and_formatting(tmp_path) -> None:
+def test_ruff_table_and_formatting(tmp_path: Path) -> None:
     """Validate Ruff table layout and grid formatting for issues.
 
     Args:
@@ -89,13 +92,13 @@ def test_ruff_table_and_formatting(tmp_path) -> None:
     assert_that(desc.get_columns()).is_equal_to(
         ["File", "Line", "Column", "Code", "Message"],
     )
-    rows = desc.get_rows(issues)
+    rows = desc.get_rows(issues)  # type: ignore[arg-type]
     assert_that(rows and len(rows[0]) == 5).is_true()
-    out = format_ruff_issues(issues=issues, format="grid")
+    out = format_ruff_issues(issues=issues, format=OutputFormat.GRID)  # type: ignore[arg-type]
     assert_that("Auto-fixable" in out or "Not auto-fixable" in out or out).is_true()
 
 
-def test_ruff_json_format(tmp_path) -> None:
+def test_ruff_json_format(tmp_path: Path) -> None:
     """Test JSON format path in ruff formatter.
 
     Args:
@@ -112,14 +115,14 @@ def test_ruff_json_format(tmp_path) -> None:
         ),
         RuffFormatIssue(file=str(tmp_path / "g.py")),
     ]
-    out = format_ruff_issues(issues=issues, format="json")
+    out = format_ruff_issues(issues=issues, format=OutputFormat.JSON)  # type: ignore[arg-type]
     # JSON format should return a single table without sections
     assert_that(out).is_not_empty()
     assert_that("Auto-fixable" not in out).is_true()
     assert_that("Not auto-fixable" not in out).is_true()
 
 
-def test_ruff_empty_sections(tmp_path) -> None:
+def test_ruff_empty_sections(tmp_path: Path) -> None:
     """Test empty sections path in ruff formatter.
 
     Args:
@@ -127,12 +130,12 @@ def test_ruff_empty_sections(tmp_path) -> None:
     """
     # Empty issues list should trigger the empty sections path
     issues: list[RuffIssue | RuffFormatIssue] = []
-    out = format_ruff_issues(issues=issues, format="grid")
+    out = format_ruff_issues(issues=issues, format=OutputFormat.GRID)
     # GridStyle returns empty string when no rows
     assert_that(out).is_equal_to("")
 
 
-def test_hadolint_table_and_formatting(tmp_path) -> None:
+def test_hadolint_table_and_formatting(tmp_path: Path) -> None:
     """Validate Hadolint table layout and markdown formatting.
 
     Args:
@@ -154,5 +157,5 @@ def test_hadolint_table_and_formatting(tmp_path) -> None:
     )
     rows = desc.get_rows(issues)
     assert_that(rows and len(rows[0]) == 6).is_true()
-    out = format_hadolint_issues(issues=issues, format="markdown")
+    out = format_hadolint_issues(issues=issues, format=OutputFormat.MARKDOWN)
     assert_that(out).contains("DL3001")

@@ -2,6 +2,7 @@
 
 from assertpy import assert_that
 
+from lintro.enums.output_format import OutputFormat
 from lintro.formatters.tools.biome_formatter import (
     BiomeTableDescriptor,
     format_biome_issues,
@@ -68,7 +69,7 @@ def test_format_biome_issues_json_format() -> None:
         ),
     ]
 
-    result = format_biome_issues(issues, format="json")
+    result = format_biome_issues(issues, format=OutputFormat.JSON)
     # JSON format should return raw table data, not split by fixability
     assert_that(result).contains("test.js")
     assert_that(result).contains("lint/test")
@@ -88,7 +89,7 @@ def test_format_biome_issues_grid_format_fixable_only() -> None:
         ),
     ]
 
-    result = format_biome_issues(issues, format="grid")
+    result = format_biome_issues(issues, format=OutputFormat.GRID)
     assert_that(result).contains("Auto-fixable issues")
     assert_that(result).contains("test.js")
     assert_that(result).contains("Fixable error")
@@ -110,7 +111,7 @@ def test_format_biome_issues_grid_format_non_fixable_only() -> None:
         ),
     ]
 
-    result = format_biome_issues(issues, format="grid")
+    result = format_biome_issues(issues, format=OutputFormat.GRID)
     assert_that(result).contains("Not auto-fixable issues")
     assert_that(result).contains("test.js")
     assert_that(result).contains("Not fixable error")
@@ -141,7 +142,7 @@ def test_format_biome_issues_grid_format_mixed() -> None:
         ),
     ]
 
-    result = format_biome_issues(issues, format="grid")
+    result = format_biome_issues(issues, format=OutputFormat.GRID)
     assert_that(result).contains("Auto-fixable issues")
     assert_that(result).contains("fixable.js")
     assert_that(result).contains("Fixable error")
@@ -164,7 +165,7 @@ def test_format_biome_issues_markdown_format() -> None:
         ),
     ]
 
-    result = format_biome_issues(issues, format="markdown")
+    result = format_biome_issues(issues, format=OutputFormat.MARKDOWN)
     assert_that(result).contains("Auto-fixable issues")
     assert_that(result).contains("test.js")
 
@@ -183,7 +184,7 @@ def test_format_biome_issues_unknown_format() -> None:
         ),
     ]
 
-    result = format_biome_issues(issues, format="unknown")
+    result = format_biome_issues(issues, format=OutputFormat.GRID)
     # Should fall back to grid format
     assert_that(result).contains("Auto-fixable issues")
 
@@ -204,6 +205,6 @@ def test_format_biome_issues_with_end_positions() -> None:
         ),
     ]
 
-    result = format_biome_issues(issues, format="grid")
+    result = format_biome_issues(issues, format=OutputFormat.GRID)
     assert_that(result).contains("test.js")
     assert_that(result).contains("Test error with range")

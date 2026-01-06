@@ -22,10 +22,10 @@ class _DummyTool(BaseTool):
         tool_type=ToolType.SECURITY,
     )
 
-    def check(self, paths: list[str]) -> Never:  # type: ignore[override]
+    def check(self, paths: list[str]) -> Never:
         raise NotImplementedError
 
-    def fix(self, paths: list[str]) -> Never:  # type: ignore[override]
+    def fix(self, paths: list[str]) -> Never:
         raise NotImplementedError
 
 

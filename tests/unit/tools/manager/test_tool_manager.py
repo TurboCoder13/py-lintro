@@ -24,7 +24,9 @@ def test_tool_manager_register_and_get_tools() -> None:
     assert_that(set(fix_tools.keys()) <= set(ToolEnum)).is_true()
 
 
-def test_tool_manager_execution_order_and_conflicts(monkeypatch) -> None:
+def test_tool_manager_execution_order_and_conflicts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Honor conflicts in execution order unless ignore_conflicts is set.
 
     Args:
@@ -35,8 +37,8 @@ def test_tool_manager_execution_order_and_conflicts(monkeypatch) -> None:
         tm.register_tool(enum_member.value)
     t1 = tm.get_tool(ToolEnum.RUFF)
     t2 = tm.get_tool(ToolEnum.PRETTIER)
-    t1.config.conflicts_with = [ToolEnum.PRETTIER]
-    t2.config.conflicts_with = [ToolEnum.RUFF]
+    t1.config.conflicts_with = ["prettier"]
+    t2.config.conflicts_with = ["ruff"]
     monkeypatch.setattr(
         tm,
         "get_tool",
@@ -64,7 +66,9 @@ def test_tool_manager_get_tool_missing() -> None:
         tm.get_tool(ToolEnum.RUFF)
 
 
-def test_tool_manager_conflicts_with_strings(monkeypatch) -> None:
+def test_tool_manager_conflicts_with_strings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify that conflicts_with with string values are properly detected.
 
     This test verifies the fix for the bug where string-to-enum comparisons

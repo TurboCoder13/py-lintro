@@ -187,10 +187,19 @@ def test_pytest_tool_check_failure() -> None:
         assert_that(result.name).is_equal_to("pytest")
         assert_that(result.success).is_false()
         assert_that(result.issues).is_length(1)
-        assert_that(result.issues[0].file).is_equal_to("test_file.py")
-        assert_that(result.issues[0].test_name).is_equal_to("test_failure")
-        assert_that(result.issues[0].test_status).is_equal_to("FAILED")
-        assert_that(result.issues[0].message).contains("AssertionError")
+        # Type narrowing for mypy
+        assert_that(result.issues).is_not_none()
+        issues = result.issues
+        if issues is None:
+            pytest.fail("issues should not be None")
+        first_issue = issues[0]
+        assert_that(isinstance(first_issue, PytestIssue)).is_true()
+        if not isinstance(first_issue, PytestIssue):
+            pytest.fail("first_issue should be PytestIssue")
+        assert_that(first_issue.file).is_equal_to("test_file.py")
+        assert_that(first_issue.test_name).is_equal_to("test_failure")
+        assert_that(first_issue.test_status).is_equal_to("FAILED")
+        assert_that(first_issue.message).contains("AssertionError")
         # Output should contain JSON summary
         assert_that(result.output).contains('"failed": 1')
         assert_that(result.issues_count).is_equal_to(1)

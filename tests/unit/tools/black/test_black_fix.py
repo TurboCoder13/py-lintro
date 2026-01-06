@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
+import pytest
 from assertpy import assert_that
 
-from lintro.tools.implementations.tool_black import BlackIssue, BlackTool
+from lintro.parsers.black.black_issue import BlackIssue
+from lintro.tools.implementations.tool_black import BlackTool
 
 
-def test_black_fix_with_options(monkeypatch, tmp_path: Path) -> None:
+def test_black_fix_with_options(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Test that Black fix mode respects option settings.
 
     Args:
@@ -30,7 +36,11 @@ def test_black_fix_with_options(monkeypatch, tmp_path: Path) -> None:
 
     calls: list[list[str]] = []
 
-    def fake_run(cmd, timeout=None, cwd=None):
+    def fake_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         calls.append(cmd)
         return (True, f"reformatted {f.name}\n")
 
@@ -48,7 +58,10 @@ def test_black_fix_with_options(monkeypatch, tmp_path: Path) -> None:
     assert_that(cmd).contains("--preview")
 
 
-def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
+def test_black_check_and_fix_with_options(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Exercise BlackTool option wiring and subprocess building paths.
 
     Args:
@@ -64,9 +77,13 @@ def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
     sample = tmp_path / "a.py"
     sample.write_text("x=1\n")
 
-    calls: list[dict] = []
+    calls: list[dict[str, Any]] = []
 
-    def fake_run(cmd, timeout=None, cwd=None):  # noqa: ANN001
+    def fake_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         calls.append({"cmd": cmd, "cwd": cwd})
         # Simulate: check finds 1 issue, fix applies changes, final check finds 0
         if "--check" in cmd:
@@ -119,7 +136,10 @@ def test_black_check_and_fix_with_options(monkeypatch, tmp_path: Path) -> None:
         assert_that(middle_cmd).contains("--diff")
 
 
-def test_black_check_detects_e501_violations(monkeypatch, tmp_path: Path) -> None:
+def test_black_check_detects_e501_violations(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Verify Black's check method integrates line length violation detection.
 
     Black's --check mode only reports files that would be reformatted, but
@@ -154,7 +174,11 @@ def test_black_check_detects_e501_violations(monkeypatch, tmp_path: Path) -> Non
 
     # Stub Black's subprocess to return success (no formatting changes)
     # This simulates Black not detecting the long line because it can't wrap it
-    def fake_black_run(cmd, timeout=None, cwd=None):
+    def fake_black_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         if "--check" in cmd:
             return (True, "All done! 1 file left unchanged.")
         return (True, "")
@@ -166,15 +190,19 @@ def test_black_check_detects_e501_violations(monkeypatch, tmp_path: Path) -> Non
     )
 
     # Mock _check_line_length_violations to return E501 violations directly
-    def fake_check_line_length_violations(self, files, cwd):
+    def fake_check_line_length_violations(
+        self: BlackTool,
+        files: list[str],
+        cwd: str | None,
+    ) -> list[BlackIssue]:
         # Calculate actual line length for accurate test
-        line_length = len(long_line)
+        line_len = len(long_line)
         return [
             BlackIssue(
                 file=str(f),
                 message=(
                     f"Line 1 exceeds line length limit "
-                    f"(Line too long ({line_length} > 88 characters))"
+                    f"(Line too long ({line_len} > 88 characters))"
                 ),
                 fixable=False,
             ),
@@ -193,8 +221,15 @@ def test_black_check_detects_e501_violations(monkeypatch, tmp_path: Path) -> Non
     assert_that(res.success).is_false()
     assert_that(res.issues).is_not_empty()
     # Verify the issue is a line length violation
-    issue = res.issues[0]
+    assert_that(res.issues).is_not_none()
+    issues = res.issues
+    if issues is None:
+        pytest.fail("issues should not be None")
+    issue = issues[0]
     assert_that(issue).is_instance_of(BlackIssue)
+    assert_that(isinstance(issue, BlackIssue)).is_true()
+    if not isinstance(issue, BlackIssue):
+        pytest.fail("issue should be BlackIssue")
     assert_that(issue.message.lower()).contains("exceeds line length limit")
     assert_that(issue.message.lower()).contains("line")
     assert_that(issue.fixable).is_false()

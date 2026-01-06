@@ -4,12 +4,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from assertpy import assert_that
 
+from lintro.parsers.black.black_issue import BlackIssue
 from lintro.tools.implementations.tool_black import BlackTool
 
 
-def test_black_check_parses_issues(monkeypatch, tmp_path: Path) -> None:
+def test_black_check_parses_issues(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Ensure check mode recognizes would-reformat output as an issue.
 
     Args:
@@ -30,7 +35,11 @@ def test_black_check_parses_issues(monkeypatch, tmp_path: Path) -> None:
     )
 
     # Stub subprocess to emit a would-reformat line in check mode
-    def fake_run(cmd, timeout=None, cwd=None):
+    def fake_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         if "--check" in cmd:
             return (False, f"would reformat {f.name}\nAll done!\n")
         return (True, "")
@@ -45,10 +54,22 @@ def test_black_check_parses_issues(monkeypatch, tmp_path: Path) -> None:
     assert_that(res.issues_count).is_equal_to(1)
     assert_that(res.success).is_false()
     assert_that(res.issues).is_not_empty()
-    assert_that(res.issues[0].file).is_equal_to(f.name)
+    assert_that(res.issues).is_not_none()
+    issues = res.issues
+    assert_that(issues).is_not_none()
+    if issues is None:
+        pytest.fail("issues should not be None")
+    first_issue = issues[0]
+    assert_that(isinstance(first_issue, BlackIssue)).is_true()
+    if not isinstance(first_issue, BlackIssue):
+        pytest.fail("first_issue should be BlackIssue")
+    assert_that(first_issue.file).is_equal_to(f.name)
 
 
-def test_black_fix_computes_counts(monkeypatch, tmp_path: Path) -> None:
+def test_black_fix_computes_counts(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Ensure fix mode computes initial/fixed/remaining issue counts.
 
     Args:
@@ -69,7 +90,11 @@ def test_black_fix_computes_counts(monkeypatch, tmp_path: Path) -> None:
     # Sequence: initial check -> differences, fix -> output unused, final check -> none
     calls = {"n": 0}
 
-    def fake_run(cmd, timeout=None, cwd=None):
+    def fake_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         if "--check" in cmd:
             if calls["n"] == 0:
                 calls["n"] += 1
@@ -93,7 +118,7 @@ def test_black_fix_computes_counts(monkeypatch, tmp_path: Path) -> None:
 
 
 def test_black_options_build_line_length_and_target(
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     """Verify line-length and target version flags are passed in check mode.
@@ -123,7 +148,11 @@ def test_black_options_build_line_length_and_target(
 
     captured: dict[str, list[str]] = {}
 
-    def fake_run(cmd, timeout=None, cwd=None):
+    def fake_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         captured["cmd"] = cmd
         # Simulate no differences so command content is what we validate
         return (True, "All done! 1 file left unchanged.")
@@ -154,7 +183,10 @@ def test_black_options_build_line_length_and_target(
     assert_that(cmd).contains("py313")
 
 
-def test_black_options_include_fast_and_preview(monkeypatch, tmp_path: Path) -> None:
+def test_black_options_include_fast_and_preview(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Verify fast and preview flags are honored in check mode.
 
     Args:
@@ -174,7 +206,11 @@ def test_black_options_include_fast_and_preview(monkeypatch, tmp_path: Path) -> 
 
     captured: dict[str, list[str]] = {}
 
-    def fake_run(cmd, timeout=None, cwd=None):
+    def fake_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         captured["cmd"] = cmd
         return (True, "All done! 1 file left unchanged.")
 

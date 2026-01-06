@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+import pytest
 from assertpy import assert_that
 
 from lintro.tools.implementations.tool_pytest import PytestTool
@@ -112,6 +113,9 @@ collected 2 items"""
         result = handle_collect_only(tool, ["test_file.py"])
 
         assert_that(result.success).is_true()
+        assert_that(result.output).is_not_none()
+        if result.output is None:
+            pytest.fail("output should not be None")
         assert_that("Collected" in result.output or "2" in result.output).is_true()
 
 

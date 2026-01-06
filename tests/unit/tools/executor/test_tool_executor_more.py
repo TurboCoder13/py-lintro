@@ -11,12 +11,19 @@ These tests focus on unhit branches in the simple executor:
 from __future__ import annotations
 
 import json
-from typing import Any, Never
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Never
 
+import pytest
 from assertpy import assert_that
 
+if TYPE_CHECKING:
+    pass
+
 from lintro.models.core.tool_result import ToolResult
+from lintro.tools import tool_manager
 from lintro.tools.tool_enum import ToolEnum
+from lintro.utils.output_manager import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
 
 
@@ -25,20 +32,23 @@ class _EnumLike:
         self.name = name
 
 
-def _stub_logger(monkeypatch) -> None:
+def _stub_logger(monkeypatch: pytest.MonkeyPatch) -> None:
     import lintro.utils.console_logger as cl
 
     class SilentLogger:
-        def __getattr__(self, name: str):  # noqa: D401 - test stub
+        def __getattr__(
+            self,
+            name: str,
+        ) -> Callable[..., None]:  # noqa: D401 - test stub
             def _(*a: Any, **k: Any) -> None:
                 return None
 
             return _
 
-    monkeypatch.setattr(cl, "create_logger", lambda *a, **k: SilentLogger())
+    monkeypatch.setattr(cl, "create_logger", lambda *_a, **_k: SilentLogger())
 
 
-def test_get_tools_to_run_unknown_tool_raises(monkeypatch) -> None:
+def test_get_tools_to_run_unknown_tool_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     """Unknown tool name should raise ValueError.
 
     Args:
@@ -53,7 +63,7 @@ def test_get_tools_to_run_unknown_tool_raises(monkeypatch) -> None:
 
     # Use real function; only patch manager lookups to be harmless if called
     monkeypatch.setattr(
-        te.tool_manager,
+        tool_manager,
         "get_check_tools",
         lambda: {},
         raising=True,
@@ -66,7 +76,9 @@ def test_get_tools_to_run_unknown_tool_raises(monkeypatch) -> None:
         assert_that(str(e)).contains("Unknown tool")
 
 
-def test_get_tools_to_run_fmt_with_cannot_fix_raises(monkeypatch) -> None:
+def test_get_tools_to_run_fmt_with_cannot_fix_raises(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Selecting a non-fix tool for fmt should raise a validation error.
 
     Args:
@@ -82,12 +94,12 @@ def test_get_tools_to_run_fmt_with_cannot_fix_raises(monkeypatch) -> None:
     class NoFixTool:
         can_fix = False
 
-        def set_options(self, **kwargs) -> None:  # noqa: D401
+        def set_options(self, **kwargs: Any) -> None:  # noqa: D401
             return None
 
     # Ensure we resolve a tool instance with can_fix False
     monkeypatch.setattr(
-        te.tool_manager,
+        tool_manager,
         "get_tool",
         lambda enum_val: NoFixTool(),
         raising=True,
@@ -101,7 +113,10 @@ def test_get_tools_to_run_fmt_with_cannot_fix_raises(monkeypatch) -> None:
         assert_that(str(e)).contains("does not support formatting")
 
 
-def test_main_loop_get_tool_raises_appends_failure(monkeypatch, capsys) -> None:
+def test_main_loop_get_tool_raises_appends_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """If a tool cannot be resolved, a failure result is appended and run continues.
 
     Args:
@@ -114,10 +129,10 @@ def test_main_loop_get_tool_raises_appends_failure(monkeypatch, capsys) -> None:
 
     ok = ToolResult(name="black", success=True, output="", issues_count=0)
 
-    def fake_get_tools(tools: str | None, action: str):
+    def fake_get_tools(tools: str | None, action: str) -> list[ToolEnum]:
         return [ToolEnum.RUFF, ToolEnum.BLACK]
 
-    def fake_get_tool(enum_val):
+    def fake_get_tool(enum_val: ToolEnum) -> object:
         if enum_val == ToolEnum.RUFF:
             raise RuntimeError("ruff not available")
         return type(
@@ -134,9 +149,9 @@ def test_main_loop_get_tool_raises_appends_failure(monkeypatch, capsys) -> None:
         )()
 
     monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
-    monkeypatch.setattr(te.tool_manager, "get_tool", fake_get_tool, raising=True)
+    monkeypatch.setattr(tool_manager, "get_tool", fake_get_tool, raising=True)
     monkeypatch.setattr(
-        te.OutputManager,
+        OutputManager,
         "write_reports_from_results",
         lambda self, results: None,
         raising=True,
@@ -162,7 +177,7 @@ def test_main_loop_get_tool_raises_appends_failure(monkeypatch, capsys) -> None:
     assert_that(code).is_equal_to(1)
 
 
-def test_write_reports_errors_are_swallowed(monkeypatch) -> None:
+def test_write_reports_errors_are_swallowed(monkeypatch: pytest.MonkeyPatch) -> None:
     """Errors while saving outputs should not crash or change exit semantics.
 
     Args:
@@ -174,7 +189,7 @@ def test_write_reports_errors_are_swallowed(monkeypatch) -> None:
 
     ok = ToolResult(name="ruff", success=True, output="", issues_count=0)
 
-    def fake_get_tools(tools: str | None, action: str):
+    def fake_get_tools(tools: str | None, action: str) -> list[_EnumLike]:
         return [_EnumLike("RUFF")]
 
     ruff_tool = type(
@@ -191,13 +206,13 @@ def test_write_reports_errors_are_swallowed(monkeypatch) -> None:
     )()
 
     monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
-    monkeypatch.setattr(te.tool_manager, "get_tool", lambda e: ruff_tool)
+    monkeypatch.setattr(tool_manager, "get_tool", lambda e: ruff_tool)
 
-    def boom(self, results) -> Never:
+    def boom(self: object, results: list[ToolResult]) -> Never:
         raise RuntimeError("disk full")
 
     monkeypatch.setattr(
-        te.OutputManager,
+        OutputManager,
         "write_reports_from_results",
         boom,
         raising=True,
@@ -218,7 +233,7 @@ def test_write_reports_errors_are_swallowed(monkeypatch) -> None:
     assert_that(code).is_equal_to(0)
 
 
-def test_unknown_post_check_tool_is_skipped(monkeypatch) -> None:
+def test_unknown_post_check_tool_is_skipped(monkeypatch: pytest.MonkeyPatch) -> None:
     """Unknown post-check tool names should be warned and skipped gracefully.
 
     Args:
@@ -248,7 +263,7 @@ def test_unknown_post_check_tool_is_skipped(monkeypatch) -> None:
         lambda tools, action: [_EnumLike("RUFF")],
         raising=True,
     )
-    monkeypatch.setattr(te.tool_manager, "get_tool", lambda e: ruff_tool)
+    monkeypatch.setattr(tool_manager, "get_tool", lambda e: ruff_tool)
     monkeypatch.setattr(
         te,
         "load_post_checks_config",
@@ -271,7 +286,9 @@ def test_unknown_post_check_tool_is_skipped(monkeypatch) -> None:
     assert_that(code).is_equal_to(0)
 
 
-def test_post_checks_early_filter_removes_black_from_main(monkeypatch) -> None:
+def test_post_checks_early_filter_removes_black_from_main(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Black should be excluded from main phase when configured as post-check.
 
     Args:
@@ -281,10 +298,10 @@ def test_post_checks_early_filter_removes_black_from_main(monkeypatch) -> None:
 
     class LoggerCapture:
         def __init__(self) -> None:
-            self.tools_list = None
-            self.run_dir = None
+            self.tools_list: list[str] | None = None
+            self.run_dir: str | None = None
 
-        def __getattr__(self, name: str):  # default no-ops
+        def __getattr__(self, name: str) -> Callable[..., None]:  # default no-ops
             def _(*a: Any, **k: Any) -> None:
                 return None
 
@@ -340,13 +357,13 @@ def test_post_checks_early_filter_removes_black_from_main(monkeypatch) -> None:
         },
     )()
     monkeypatch.setattr(
-        te.tool_manager,
+        tool_manager,
         "get_tool",
         lambda enum_val: ruff_tool,
         raising=True,
     )
     monkeypatch.setattr(
-        te.OutputManager,
+        OutputManager,
         "write_reports_from_results",
         lambda self, results: None,
         raising=True,
@@ -370,7 +387,9 @@ def test_post_checks_early_filter_removes_black_from_main(monkeypatch) -> None:
     assert_that("black" not in (logger.tools_list or [])).is_true()
 
 
-def test_all_filtered_results_in_no_tools_warning(monkeypatch) -> None:
+def test_all_filtered_results_in_no_tools_warning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """If filtering removes all tools, executor should return failure gracefully.
 
     When all selected tools are configured as post-checks (filtered from main phase)

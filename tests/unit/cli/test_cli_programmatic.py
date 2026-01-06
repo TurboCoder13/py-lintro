@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import pytest
-from assertpy import assert_that
 
 from lintro.cli_utils.commands.check import check as check_prog
 from lintro.cli_utils.commands.format import format_code
 
 
-def test_check_programmatic_success(monkeypatch) -> None:
+def test_check_programmatic_success(monkeypatch: pytest.MonkeyPatch) -> None:
     """Programmatic check returns None on success.
 
     Args:
@@ -18,24 +17,23 @@ def test_check_programmatic_success(monkeypatch) -> None:
     import lintro.cli_utils.commands.check as check_mod
 
     monkeypatch.setattr(check_mod, "run_lint_tools_simple", lambda **k: 0, raising=True)
-    assert_that(
-        check_prog(
-            paths=["."],
-            tools="ruff",
-            tool_options=None,
-            exclude=None,
-            include_venv=False,
-            output=None,
-            output_format="grid",
-            group_by="auto",
-            ignore_conflicts=False,
-            verbose=False,
-            no_log=False,
-        ),
-    ).is_none()
+    # check() returns None on success, call without assignment
+    check_prog(
+        paths=(".",),
+        tools="ruff",
+        tool_options=None,
+        exclude=None,
+        include_venv=False,
+        output=None,
+        output_format="grid",
+        group_by="auto",
+        ignore_conflicts=False,
+        verbose=False,
+        no_log=False,
+    )
 
 
-def test_format_programmatic_success(monkeypatch) -> None:
+def test_format_programmatic_success(monkeypatch: pytest.MonkeyPatch) -> None:
     """Programmatic format returns None on success.
 
     Args:
@@ -49,21 +47,20 @@ def test_format_programmatic_success(monkeypatch) -> None:
         lambda **k: 0,
         raising=True,
     )
-    assert_that(
-        format_code(
-            paths=["."],
-            tools="prettier",
-            tool_options=None,
-            exclude=None,
-            include_venv=False,
-            group_by="auto",
-            output_format="grid",
-            verbose=False,
-        ),
-    ).is_none()
+    # format_code() returns None on success, call without assignment
+    format_code(
+        paths=["."],
+        tools="prettier",
+        tool_options=None,
+        exclude=None,
+        include_venv=False,
+        group_by="auto",
+        output_format="grid",
+        verbose=False,
+    )
 
 
-def test_format_programmatic_failure_raises(monkeypatch) -> None:
+def test_format_programmatic_failure_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     """Programmatic format raises when executor returns non-zero.
 
     Args:

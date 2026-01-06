@@ -25,7 +25,7 @@ def test_black_set_options_validation_errors() -> None:
         tool.set_options(diff="maybe")  # type: ignore[arg-type]
 
 
-def test_black_no_files_paths(tmp_path: Path, monkeypatch) -> None:
+def test_black_no_files_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Return success and informative output when no files are discovered.
 
     Args:

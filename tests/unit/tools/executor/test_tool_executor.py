@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import json
-from typing import Never
+from pathlib import Path
+from typing import Any, Never
 
+import pytest
 from assertpy import assert_that
 
 from lintro.models.core.tool_result import ToolResult
+from lintro.tools import tool_manager
 from lintro.utils import tool_executor as te
+from lintro.utils.output_manager import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
 
 
@@ -26,9 +30,9 @@ class FakeTool:
         self.name = name
         self.can_fix = can_fix
         self._result = result
-        self.options = {}
+        self.options: dict[str, Any] = {}
 
-    def set_options(self, **kwargs) -> None:
+    def set_options(self, **kwargs: Any) -> None:
         """Record option values provided to the tool stub.
 
         Args:
@@ -36,7 +40,7 @@ class FakeTool:
         """
         self.options.update(kwargs)
 
-    def check(self, paths):
+    def check(self, paths: list[str]) -> ToolResult:
         """Return the stored result for a check invocation.
 
         Args:
@@ -47,7 +51,7 @@ class FakeTool:
         """
         return self._result
 
-    def fix(self, paths):
+    def fix(self, paths: list[str]) -> ToolResult:
         """Return the stored result for a fix invocation.
 
         Args:
@@ -66,7 +70,10 @@ class _EnumLike:
         self.name = name
 
 
-def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]) -> None:
+def _setup_tool_manager(
+    monkeypatch: pytest.MonkeyPatch,
+    tools: dict[str, FakeTool],
+) -> None:
     """Configure tool manager stubs to return provided tools.
 
     Args:
@@ -74,29 +81,35 @@ def _setup_tool_manager(monkeypatch, tools: dict[str, FakeTool]) -> None:
         tools: Mapping of tool name to FakeTool instance.
     """
 
-    def fake_get_tools(tools: str | None, action: str):
+    def fake_get_tools(
+        tools: str | None,
+        action: str,
+    ) -> list[_EnumLike]:
         return [_EnumLike(name.upper()) for name in tools_dict]
 
     tools_dict = tools
     monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
 
-    def fake_get_tool(enum_val):
+    def fake_get_tool(enum_val: _EnumLike) -> FakeTool:
         return tools_dict[enum_val.name.lower()]
 
-    monkeypatch.setattr(te.tool_manager, "get_tool", fake_get_tool, raising=True)
+    monkeypatch.setattr(tool_manager, "get_tool", fake_get_tool, raising=True)
 
-    def noop_write_reports_from_results(self, results) -> None:
+    def noop_write_reports_from_results(
+        self: Any,
+        results: list[ToolResult],
+    ) -> None:
         return None
 
     monkeypatch.setattr(
-        te.OutputManager,
+        OutputManager,
         "write_reports_from_results",
         noop_write_reports_from_results,
         raising=True,
     )
 
 
-def _stub_logger(monkeypatch, fake_logger) -> None:
+def _stub_logger(monkeypatch: pytest.MonkeyPatch, fake_logger: Any) -> None:
     """Patch create_logger to return a FakeLogger instance.
 
     Args:
@@ -108,7 +121,10 @@ def _stub_logger(monkeypatch, fake_logger) -> None:
     monkeypatch.setattr(cl, "create_logger", lambda **k: fake_logger, raising=True)
 
 
-def test_executor_check_success(monkeypatch, fake_logger) -> None:
+def test_executor_check_success(
+    monkeypatch: pytest.MonkeyPatch,
+    fake_logger: Any,
+) -> None:
     """Exit with 0 when check succeeds and has zero issues.
 
     Args:
@@ -136,7 +152,10 @@ def test_executor_check_success(monkeypatch, fake_logger) -> None:
     assert_that(code).is_equal_to(0)
 
 
-def test_executor_check_failure(monkeypatch, fake_logger) -> None:
+def test_executor_check_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    fake_logger: Any,
+) -> None:
     """Exit with 1 when check succeeds but issues are reported.
 
     Args:
@@ -164,7 +183,10 @@ def test_executor_check_failure(monkeypatch, fake_logger) -> None:
     assert_that(code).is_equal_to(1)
 
 
-def test_executor_fmt_success_with_counts(monkeypatch, fake_logger) -> None:
+def test_executor_fmt_success_with_counts(
+    monkeypatch: pytest.MonkeyPatch,
+    fake_logger: Any,
+) -> None:
     """Exit with 0 when format succeeds and counts are populated.
 
     Args:
@@ -199,7 +221,11 @@ def test_executor_fmt_success_with_counts(monkeypatch, fake_logger) -> None:
     assert_that(code).is_equal_to(0)
 
 
-def test_executor_json_output(monkeypatch, fake_logger, capsys) -> None:
+def test_executor_json_output(
+    monkeypatch: pytest.MonkeyPatch,
+    fake_logger: Any,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Emit JSON output containing action and results when requested.
 
     Args:
@@ -245,9 +271,9 @@ def test_executor_json_output(monkeypatch, fake_logger, capsys) -> None:
 
 
 def test_executor_handles_tool_failure_with_output(
-    monkeypatch,
-    fake_logger,
-    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+    fake_logger: Any,
+    tmp_path: Path,
 ) -> None:
     """Return non-zero when a tool fails but emits output (coverage branch).
 
@@ -311,7 +337,10 @@ def test_parse_tool_options_typed_values() -> None:
     ).is_true()
 
 
-def test_executor_unknown_tool(monkeypatch, fake_logger) -> None:
+def test_executor_unknown_tool(
+    monkeypatch: pytest.MonkeyPatch,
+    fake_logger: Any,
+) -> None:
     """Exit with 1 when an unknown tool is requested.
 
     Args:
@@ -320,7 +349,7 @@ def test_executor_unknown_tool(monkeypatch, fake_logger) -> None:
     """
     _stub_logger(monkeypatch, fake_logger)
 
-    def raise_value_error(tools, action) -> Never:
+    def raise_value_error(tools: str | None, action: str) -> Never:
         raise ValueError("unknown tool")
 
     monkeypatch.setattr(te, "_get_tools_to_run", raise_value_error, raising=True)

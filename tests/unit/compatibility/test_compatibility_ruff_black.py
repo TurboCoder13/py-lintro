@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
+
+import pytest
 from assertpy import assert_that
 
+if TYPE_CHECKING:
+    pass
+
 from lintro.models.core.tool_result import ToolResult
+from lintro.tools import tool_manager
+from lintro.utils.output_manager import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
 
 
@@ -20,9 +29,9 @@ class FakeTool:
         """
         self.name = name
         self.can_fix = can_fix
-        self.options = {}
+        self.options: dict[str, Any] = {}
 
-    def set_options(self, **kwargs) -> None:
+    def set_options(self, **kwargs: Any) -> None:
         """Record provided options for later assertions.
 
         Args:
@@ -30,7 +39,7 @@ class FakeTool:
         """
         self.options.update(kwargs)
 
-    def check(self, paths):
+    def check(self, paths: list[str]) -> ToolResult:
         """Return a successful empty result for lint checks.
 
         Args:
@@ -41,7 +50,7 @@ class FakeTool:
         """
         return ToolResult(name=self.name, success=True, output="", issues_count=0)
 
-    def fix(self, paths):
+    def fix(self, paths: list[str]) -> ToolResult:
         """Return a successful empty result for fixes.
 
         Args:
@@ -60,7 +69,7 @@ class _EnumLike:
         self.name = name
 
 
-def _stub_logger(monkeypatch) -> None:
+def _stub_logger(monkeypatch: pytest.MonkeyPatch) -> None:
     """Silence console logger for deterministic tests.
 
     Args:
@@ -69,16 +78,16 @@ def _stub_logger(monkeypatch) -> None:
     import lintro.utils.console_logger as cl
 
     class SilentLogger:
-        def __getattr__(self, name):
-            def _(*a, **k) -> None:
+        def __getattr__(self, name: str) -> Callable[..., None]:
+            def _(*a: Any, **k: Any) -> None:
                 return None
 
             return _
 
-    monkeypatch.setattr(cl, "create_logger", lambda *a, **k: SilentLogger())
+    monkeypatch.setattr(cl, "create_logger", lambda *_a, **_k: SilentLogger())
 
 
-def _setup_tools(monkeypatch):
+def _setup_tools(monkeypatch: pytest.MonkeyPatch) -> tuple[FakeTool, FakeTool]:
     """Prepare stubbed tool manager and output manager plumbing.
 
     Args:
@@ -93,7 +102,7 @@ def _setup_tools(monkeypatch):
     black = FakeTool("black", can_fix=True)
     tool_map = {"ruff": ruff, "black": black}
 
-    def fake_get_tools(tools: str | None, action: str):
+    def fake_get_tools(tools: str | None, action: str) -> list[_EnumLike]:
         """Return enum-like entries for ruff and black in order.
 
         Args:
@@ -106,9 +115,12 @@ def _setup_tools(monkeypatch):
         return [_EnumLike("RUFF"), _EnumLike("BLACK")]
 
     monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
-    monkeypatch.setattr(te.tool_manager, "get_tool", lambda e: tool_map[e.name.lower()])
+    monkeypatch.setattr(tool_manager, "get_tool", lambda e: tool_map[e.name.lower()])
 
-    def noop_write_reports_from_results(self, results) -> None:
+    def noop_write_reports_from_results(
+        self: object,
+        results: list[ToolResult],
+    ) -> None:
         """No-op writer used to avoid filesystem interaction.
 
         Args:
@@ -121,7 +133,7 @@ def _setup_tools(monkeypatch):
         return None
 
     monkeypatch.setattr(
-        te.OutputManager,
+        OutputManager,
         "write_reports_from_results",
         noop_write_reports_from_results,
     )
@@ -129,7 +141,9 @@ def _setup_tools(monkeypatch):
     return ruff, black
 
 
-def test_ruff_formatting_disabled_when_black_present(monkeypatch) -> None:
+def test_ruff_formatting_disabled_when_black_present(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Black present: Ruff formatting should be disabled by default.
 
     Args:
@@ -155,7 +169,9 @@ def test_ruff_formatting_disabled_when_black_present(monkeypatch) -> None:
     assert_that(ruff.options.get("format")).is_false()
 
 
-def test_ruff_formatting_respects_cli_override(monkeypatch) -> None:
+def test_ruff_formatting_respects_cli_override(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """CLI options should re-enable Ruff format and format_check.
 
     Args:
@@ -182,7 +198,9 @@ def test_ruff_formatting_respects_cli_override(monkeypatch) -> None:
     assert_that(ruff.options.get("format_check")).is_true()
 
 
-def test_ruff_format_check_disabled_in_check_when_black_present(monkeypatch) -> None:
+def test_ruff_format_check_disabled_in_check_when_black_present(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Black present: Ruff format_check should be disabled in check.
 
     Args:

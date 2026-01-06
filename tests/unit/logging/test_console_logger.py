@@ -7,12 +7,13 @@ from pathlib import Path
 import pytest
 from assertpy import assert_that
 
+from lintro.enums.action import Action
 from lintro.utils.console_logger import SimpleLintroLogger, create_logger
 
 
 def test_create_logger_and_basic_methods(
     tmp_path: Path,
-    capsys: pytest.CaptureFixture,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Exercise basic logging methods and ensure files are created.
 
@@ -42,7 +43,7 @@ def test_create_logger_and_basic_methods(
         output="some formatted table",
         issues_count=3,
         raw_output_for_meta=raw,
-        action="check",
+        action=Action.CHECK,
     )
 
     class Result:
@@ -59,7 +60,7 @@ def test_create_logger_and_basic_methods(
             self.output = output
 
     logger.print_execution_summary(
-        action="check",
+        action=Action.CHECK,
         tool_results=[Result("ruff", 1, False)],
     )
 
@@ -79,7 +80,7 @@ def test_create_logger_and_basic_methods(
             self.output = output
 
     logger.print_execution_summary(
-        action="fmt",
+        action=Action.FIX,
         tool_results=[FmtResult("ruff", fixed=2, remaining=0, success=True)],
     )
     logger.save_console_log()
@@ -95,7 +96,7 @@ def test_create_logger_and_basic_methods(
 
 def test_summary_marks_fail_on_tool_failure(
     tmp_path: Path,
-    capsys: pytest.CaptureFixture,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Ensure summary marks FAIL when any tool result indicates failure.
 
@@ -119,7 +120,7 @@ def test_summary_marks_fail_on_tool_failure(
             self.output = output
 
     logger.print_execution_summary(
-        action="check",
+        action=Action.CHECK,
         tool_results=[Result("bandit", 0, False, output="Failed to parse")],
     )
     out = capsys.readouterr().out

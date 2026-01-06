@@ -1,9 +1,15 @@
 """Tests for version requirements functionality."""
 
-from unittest.mock import patch
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+from unittest.mock import MagicMock, patch
 
 import pytest
 from assertpy import assert_that
+
+if TYPE_CHECKING:
+    pass
 
 from lintro.tools.core.version_parsing import (
     ToolVersionInfo,
@@ -26,7 +32,7 @@ from lintro.tools.core.version_requirements import get_all_tool_versions
         ("1.0.0-alpha", (1, 0, 0)),  # Should handle pre-release
     ],
 )
-def test_parse_version(version_str, expected):
+def test_parse_version(version_str: str, expected: tuple[int, ...]) -> None:
     """Test version string parsing.
 
     Args:
@@ -36,7 +42,7 @@ def test_parse_version(version_str, expected):
     assert_that(parse_version(version_str)).is_equal_to(expected)
 
 
-def test_parse_version_invalid():
+def test_parse_version_invalid() -> None:
     """Test that parse_version raises ValueError for invalid input."""
     with pytest.raises(ValueError, match="Unable to parse version string"):
         parse_version("invalid")
@@ -52,7 +58,7 @@ def test_parse_version_invalid():
         ("1.10.0", "1.2.0", 1),  # Minor version difference
     ],
 )
-def test_compare_versions(version1, version2, expected):
+def test_compare_versions(version1: str, version2: str, expected: int) -> None:
     """Test version comparison.
 
     Args:
@@ -77,7 +83,11 @@ def test_compare_versions(version1, version2, expected):
         ("yamllint", "yamllint 1.37.1", "1.37.1"),
     ],
 )
-def test_extract_version_from_output(tool_name, output, expected):
+def test_extract_version_from_output(
+    tool_name: str,
+    output: str,
+    expected: str,
+) -> None:
     """Test version extraction from various tool outputs.
 
     Args:
@@ -88,7 +98,7 @@ def test_extract_version_from_output(tool_name, output, expected):
     assert_that(extract_version_from_output(output, tool_name)).is_equal_to(expected)
 
 
-def test_get_minimum_versions_from_pyproject():
+def test_get_minimum_versions_from_pyproject() -> None:
     """Test reading minimum versions from pyproject.toml."""
     versions = get_minimum_versions()
 
@@ -110,7 +120,7 @@ def test_get_minimum_versions_from_pyproject():
     assert_that(versions["prettier"]).is_instance_of(str)
 
 
-def test_get_install_hints():
+def test_get_install_hints() -> None:
     """Test generating install hints."""
     hints = get_install_hints()
 
@@ -120,7 +130,7 @@ def test_get_install_hints():
     assert_that(hints["prettier"]).contains("npm install")
 
 
-def test_version_caching():
+def test_version_caching() -> None:
     """Test that versions are cached properly."""
     # First call
     versions1 = get_minimum_versions()
@@ -135,7 +145,7 @@ def test_version_caching():
 
 
 @patch("subprocess.run")
-def test_check_tool_version_success(mock_run):
+def test_check_tool_version_success(mock_run: MagicMock) -> None:
     """Test successful version check.
 
     Args:
@@ -161,7 +171,7 @@ def test_check_tool_version_success(mock_run):
 
 
 @patch("subprocess.run")
-def test_check_tool_version_failure(mock_run):
+def test_check_tool_version_failure(mock_run: MagicMock) -> None:
     """Test version check that fails due to old version.
 
     Args:
@@ -187,7 +197,7 @@ def test_check_tool_version_failure(mock_run):
 
 
 @patch("subprocess.run")
-def test_check_tool_version_command_failure(mock_run):
+def test_check_tool_version_command_failure(mock_run: MagicMock) -> None:
     """Test version check when command fails.
 
     Args:
@@ -205,7 +215,7 @@ def test_check_tool_version_command_failure(mock_run):
     assert_that(result.error_message).contains("Failed to run version check")
 
 
-def test_tool_version_info_creation():
+def test_tool_version_info_creation() -> None:
     """Test ToolVersionInfo dataclass."""
     info = ToolVersionInfo(
         name="test_tool",
@@ -221,7 +231,7 @@ def test_tool_version_info_creation():
 
 
 @patch("subprocess.run")
-def test_get_all_tool_versions(mock_run):
+def test_get_all_tool_versions(mock_run: MagicMock) -> None:
     """Test getting versions for all tools.
 
     Args:
@@ -274,7 +284,7 @@ def test_get_all_tool_versions(mock_run):
         ("1.0.0", "1.0.0"),  # No operator
     ],
 )
-def test_parse_version_specifier(specifier, expected):
+def test_parse_version_specifier(specifier: str, expected: str) -> None:
     """Test parsing PEP 508 version specifiers.
 
     Args:

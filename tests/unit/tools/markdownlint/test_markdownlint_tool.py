@@ -113,8 +113,10 @@ def test_markdownlint_check_with_issues(
         result = markdownlint_tool.check(paths=[str(test_file)])
         assert_that(result.success).is_false()
         assert_that(result.issues_count).is_equal_to(1)
+        assert_that(result.issues).is_not_none()
         assert_that(result.issues).is_length(1)
-        assert_that(result.issues[0]).is_instance_of(MarkdownlintIssue)
+        if result.issues is not None:
+            assert_that(result.issues[0]).is_instance_of(MarkdownlintIssue)
 
 
 def test_markdownlint_fix_not_supported(markdownlint_tool: MarkdownlintTool) -> None:

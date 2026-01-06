@@ -27,10 +27,10 @@ class _TestTool(BaseTool):
         tool_type=ToolType.LINTER,
     )
 
-    def check(self, paths: list[str]) -> Never:  # type: ignore[override]
+    def check(self, paths: list[str]) -> Never:
         raise NotImplementedError
 
-    def fix(self, paths: list[str]) -> Never:  # type: ignore[override]
+    def fix(self, paths: list[str]) -> Never:
         raise NotImplementedError
 
 
@@ -105,7 +105,11 @@ class TestPrepareExecution:
         )
 
     def test_empty_paths_returns_early_result(self, tool: _TestTool) -> None:
-        """Test that empty paths returns success with message."""
+        """Test that empty paths returns success with message.
+
+        Args:
+            tool: Test tool instance fixture.
+        """
         ctx = tool._prepare_execution([])
 
         assert_that(ctx.should_skip).is_true()
@@ -120,7 +124,12 @@ class TestPrepareExecution:
         mock_verify: MagicMock,
         tool: _TestTool,
     ) -> None:
-        """Test that version check failure returns early result."""
+        """Test that version check failure returns early result.
+
+        Args:
+            mock_verify: Mock for _verify_tool_version method.
+            tool: Test tool instance fixture.
+        """
         version_error = ToolResult(
             name="test_tool",
             success=False,
@@ -144,7 +153,14 @@ class TestPrepareExecution:
         mock_validate: MagicMock,
         tool: _TestTool,
     ) -> None:
-        """Test that no matching files returns early result."""
+        """Test that no matching files returns early result.
+
+        Args:
+            mock_walk: Mock for walk_files_with_excludes function.
+            mock_verify: Mock for _verify_tool_version method.
+            mock_validate: Mock for _validate_paths method.
+            tool: Test tool instance fixture.
+        """
         mock_walk.return_value = []
 
         ctx = tool._prepare_execution(["some/path"])
@@ -167,7 +183,15 @@ class TestPrepareExecution:
         mock_validate: MagicMock,
         tool: _TestTool,
     ) -> None:
-        """Test successful execution context preparation."""
+        """Test successful execution context preparation.
+
+        Args:
+            mock_walk: Mock for walk_files_with_excludes function.
+            mock_cwd: Mock for get_cwd method.
+            mock_verify: Mock for _verify_tool_version method.
+            mock_validate: Mock for _validate_paths method.
+            tool: Test tool instance fixture.
+        """
         mock_walk.return_value = ["/project/src/file.py", "/project/src/test.py"]
         mock_cwd.return_value = "/project/src"
 
@@ -193,7 +217,15 @@ class TestPrepareExecution:
         mock_validate: MagicMock,
         tool: _TestTool,
     ) -> None:
-        """Test custom default_timeout is used."""
+        """Test custom default_timeout is used.
+
+        Args:
+            mock_walk: Mock for walk_files_with_excludes function.
+            mock_cwd: Mock for get_cwd method.
+            mock_verify: Mock for _verify_tool_version method.
+            mock_validate: Mock for _validate_paths method.
+            tool: Test tool instance fixture.
+        """
         mock_walk.return_value = ["/project/file.py"]
         mock_cwd.return_value = "/project"
 
@@ -213,7 +245,15 @@ class TestPrepareExecution:
         mock_validate: MagicMock,
         tool: _TestTool,
     ) -> None:
-        """Test timeout from tool options takes precedence."""
+        """Test timeout from tool options takes precedence.
+
+        Args:
+            mock_walk: Mock for walk_files_with_excludes function.
+            mock_cwd: Mock for get_cwd method.
+            mock_verify: Mock for _verify_tool_version method.
+            mock_validate: Mock for _validate_paths method.
+            tool: Test tool instance fixture.
+        """
         mock_walk.return_value = ["/project/file.py"]
         mock_cwd.return_value = "/project"
         tool.options["timeout"] = 90
@@ -232,7 +272,14 @@ class TestPrepareExecution:
         mock_validate: MagicMock,
         tool: _TestTool,
     ) -> None:
-        """Test custom file patterns are passed to walk_files_with_excludes."""
+        """Test custom file patterns are passed to walk_files_with_excludes.
+
+        Args:
+            mock_walk: Mock for walk_files_with_excludes function.
+            mock_verify: Mock for _verify_tool_version method.
+            mock_validate: Mock for _validate_paths method.
+            tool: Test tool instance fixture.
+        """
         mock_walk.return_value = []
 
         tool._prepare_execution(["/project"], file_patterns=["*.tsx", "*.ts"])
@@ -251,7 +298,14 @@ class TestPrepareExecution:
         mock_validate: MagicMock,
         tool: _TestTool,
     ) -> None:
-        """Test custom exclude patterns are passed to walk_files_with_excludes."""
+        """Test custom exclude patterns are passed to walk_files_with_excludes.
+
+        Args:
+            mock_walk: Mock for walk_files_with_excludes function.
+            mock_verify: Mock for _verify_tool_version method.
+            mock_validate: Mock for _validate_paths method.
+            tool: Test tool instance fixture.
+        """
         mock_walk.return_value = []
 
         tool._prepare_execution(["/project"], exclude_patterns=["vendor/*", "dist/*"])
@@ -270,7 +324,14 @@ class TestPrepareExecution:
         mock_validate: MagicMock,
         tool: _TestTool,
     ) -> None:
-        """Test custom no_files_message is used."""
+        """Test custom no_files_message is used.
+
+        Args:
+            mock_walk: Mock for walk_files_with_excludes function.
+            mock_verify: Mock for _verify_tool_version method.
+            mock_validate: Mock for _validate_paths method.
+            tool: Test tool instance fixture.
+        """
         mock_walk.return_value = []
 
         ctx = tool._prepare_execution(
@@ -295,7 +356,15 @@ class TestPrepareExecution:
         mock_validate: MagicMock,
         tool: _TestTool,
     ) -> None:
-        """Test file paths when cwd is None."""
+        """Test file paths when cwd is None.
+
+        Args:
+            mock_walk: Mock for walk_files_with_excludes function.
+            mock_cwd: Mock for get_cwd method.
+            mock_verify: Mock for _verify_tool_version method.
+            mock_validate: Mock for _validate_paths method.
+            tool: Test tool instance fixture.
+        """
         mock_walk.return_value = ["/project/file.py"]
         mock_cwd.return_value = None
 

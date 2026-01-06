@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from assertpy import assert_that
 
 from lintro.utils.config import load_post_checks_config
 
 
-def test_load_post_checks_config_present(tmp_path: Path, monkeypatch) -> None:
+def test_load_post_checks_config_present(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Load post-checks config from pyproject.
 
     Args:

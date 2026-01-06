@@ -15,17 +15,16 @@ def test_test_function_no_options() -> None:
         mock_result = Mock()
         mock_result.exit_code = 0
         mock_invoke.return_value = mock_result
-        result = test(
+        test(
             paths=(),
             exclude=None,
             include_venv=False,
             output=None,
-            output_format=None,
-            group_by=None,
+            output_format="grid",
+            group_by="file",
             verbose=False,
             tool_options=None,
         )
-        assert_that(result).is_none()
         assert_that(mock_invoke.called).is_true()
 
 
@@ -40,8 +39,8 @@ def test_test_function_with_paths() -> None:
             exclude=None,
             include_venv=False,
             output=None,
-            output_format=None,
-            group_by=None,
+            output_format="grid",
+            group_by="file",
             verbose=False,
             tool_options=None,
         )
@@ -60,8 +59,8 @@ def test_test_function_with_exclude() -> None:
             exclude="*.venv",
             include_venv=False,
             output=None,
-            output_format=None,
-            group_by=None,
+            output_format="grid",
+            group_by="file",
             verbose=False,
             tool_options=None,
         )
@@ -81,8 +80,8 @@ def test_test_function_with_include_venv() -> None:
             exclude=None,
             include_venv=True,
             output=None,
-            output_format=None,
-            group_by=None,
+            output_format="grid",
+            group_by="file",
             verbose=False,
             tool_options=None,
         )
@@ -101,8 +100,8 @@ def test_test_function_with_output() -> None:
             exclude=None,
             include_venv=False,
             output="/tmp/output.txt",
-            output_format=None,
-            group_by=None,
+            output_format="grid",
+            group_by="file",
             verbose=False,
             tool_options=None,
         )
@@ -123,7 +122,7 @@ def test_test_function_with_output_format() -> None:
             include_venv=False,
             output=None,
             output_format="json",
-            group_by=None,
+            group_by="file",
             verbose=False,
             tool_options=None,
         )
@@ -143,7 +142,7 @@ def test_test_function_with_group_by() -> None:
             exclude=None,
             include_venv=False,
             output=None,
-            output_format=None,
+            output_format="grid",
             group_by="code",
             verbose=False,
             tool_options=None,
@@ -164,8 +163,8 @@ def test_test_function_with_verbose() -> None:
             exclude=None,
             include_venv=False,
             output=None,
-            output_format=None,
-            group_by=None,
+            output_format="grid",
+            group_by="file",
             verbose=True,
             tool_options=None,
         )
@@ -184,8 +183,8 @@ def test_test_function_with_raw_output() -> None:
             exclude=None,
             include_venv=False,
             output=None,
-            output_format=None,
-            group_by=None,
+            output_format="grid",
+            group_by="file",
             verbose=False,
             raw_output=True,
             tool_options=None,
@@ -205,8 +204,8 @@ def test_test_function_with_tool_options() -> None:
             exclude=None,
             include_venv=False,
             output=None,
-            output_format=None,
-            group_by=None,
+            output_format="grid",
+            group_by="file",
             verbose=False,
             tool_options="maxfail=5",
         )
@@ -221,17 +220,18 @@ def test_test_function_exit_code_success() -> None:
         mock_result = Mock()
         mock_result.exit_code = 0
         mock_invoke.return_value = mock_result
-        result = test(
+        # test() returns None on success, no assignment needed
+        test(
             paths=(),
             exclude=None,
             include_venv=False,
             output=None,
-            output_format=None,
-            group_by=None,
+            output_format="grid",
+            group_by="file",
             verbose=False,
             tool_options=None,
         )
-        assert_that(result).is_none()
+        assert_that(mock_invoke.called).is_true()
 
 
 def test_test_function_exit_code_failure() -> None:
@@ -246,8 +246,8 @@ def test_test_function_exit_code_failure() -> None:
                 exclude=None,
                 include_venv=False,
                 output=None,
-                output_format=None,
-                group_by=None,
+                output_format="grid",
+                group_by="file",
                 verbose=False,
                 tool_options=None,
             )

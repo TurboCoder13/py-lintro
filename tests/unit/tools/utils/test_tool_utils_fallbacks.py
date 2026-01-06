@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import pytest
 from assertpy import assert_that
 
 import lintro.utils.tool_utils as tu
 from lintro.utils.cli_parsing import parse_tool_list
 
 
-def test_format_as_table_fallback_when_no_tabulate(monkeypatch) -> None:
+def test_format_as_table_fallback_when_no_tabulate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Fallback to plain text table when tabulate is unavailable.
 
     Args:
@@ -18,9 +21,9 @@ def test_format_as_table_fallback_when_no_tabulate(monkeypatch) -> None:
 
     # Force TABULATE_AVAILABLE False
     monkeypatch.setattr(table_formatting, "TABULATE_AVAILABLE", False, raising=True)
-    issues = [
-        {"file": "x.py", "line": 1, "column": 2, "code": "X", "message": "m"},
-        {"file": "y.py", "line": 3, "column": 4, "code": "Y", "message": "n"},
+    issues: list[dict[str, str]] = [
+        {"file": "x.py", "line": "1", "column": "2", "code": "X", "message": "m"},
+        {"file": "y.py", "line": "3", "column": "4", "code": "Y", "message": "n"},
     ]
     txt = tu.format_as_table(issues=issues, tool_name="unknown")
     assert_that(isinstance(txt, str)).is_true()

@@ -2,6 +2,7 @@
 
 import io
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
 
 from assertpy import assert_that
@@ -10,7 +11,7 @@ from lintro.tools.implementations.tool_bandit import BanditTool
 
 
 @contextmanager
-def temp_pyproject(content: str):
+def temp_pyproject(content: str) -> Generator[None]:
     """Temporarily write a pyproject.toml with provided content.
 
     Args:

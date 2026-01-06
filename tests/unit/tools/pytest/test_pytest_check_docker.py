@@ -86,5 +86,5 @@ def test_pytest_tool_check_docker_skipped_calculation() -> None:
     ):
         result = tool.check(["tests"])
         assert_that(result.success).is_true()
-        if hasattr(result, "pytest_summary"):
+        if hasattr(result, "pytest_summary") and result.pytest_summary is not None:
             assert_that(result.pytest_summary["docker_skipped"]).is_equal_to(3)

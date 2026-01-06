@@ -55,21 +55,18 @@ def test_line_length_has_tools() -> None:
     assert_that(tools).contains("prettier")
     assert_that(tools).contains("yamllint")
 
-    def test_line_length_has_injectable_tools(self) -> None:
-        """Verify injectable tools are defined.
 
-        Args:
-            self: Test instance.
-        """
-        assert_that(GLOBAL_SETTINGS["line_length"]).contains("injectable")
-        injectable = GLOBAL_SETTINGS["line_length"]["injectable"]
+def test_line_length_has_injectable_tools() -> None:
+    """Verify injectable tools are defined."""
+    assert_that(GLOBAL_SETTINGS["line_length"]).contains("injectable")
+    injectable = GLOBAL_SETTINGS["line_length"]["injectable"]
 
-        assert_that(injectable).contains("ruff")
-        assert_that(injectable).contains("black")
-        assert_that(injectable).contains("markdownlint")
-        # Prettier and yamllint are now injectable via Lintro config generation
-        assert_that(injectable).contains("prettier")
-        assert_that(injectable).contains("yamllint")
+    assert_that(injectable).contains("ruff")
+    assert_that(injectable).contains("black")
+    assert_that(injectable).contains("markdownlint")
+    # Prettier and yamllint are now injectable via Lintro config generation
+    assert_that(injectable).contains("prettier")
+    assert_that(injectable).contains("yamllint")
 
 
 class TestDefaultToolPriorities:
@@ -77,9 +74,11 @@ class TestDefaultToolPriorities:
 
     def test_formatters_have_lower_priority(self) -> None:
         """Formatters should run before linters (lower priority value)."""
-        assert DEFAULT_TOOL_PRIORITIES["prettier"] < DEFAULT_TOOL_PRIORITIES["ruff"]
-        assert (
-            DEFAULT_TOOL_PRIORITIES["black"] < DEFAULT_TOOL_PRIORITIES["markdownlint"]
+        assert_that(DEFAULT_TOOL_PRIORITIES["prettier"]).is_less_than(
+            DEFAULT_TOOL_PRIORITIES["ruff"],
+        )
+        assert_that(DEFAULT_TOOL_PRIORITIES["black"]).is_less_than(
+            DEFAULT_TOOL_PRIORITIES["markdownlint"],
         )
 
     def test_pytest_runs_last(self) -> None:
@@ -87,19 +86,19 @@ class TestDefaultToolPriorities:
         pytest_priority = DEFAULT_TOOL_PRIORITIES["pytest"]
         for tool, priority in DEFAULT_TOOL_PRIORITIES.items():
             if tool != "pytest":
-                assert priority < pytest_priority
+                assert_that(priority).is_less_than(pytest_priority)
 
 
 def test_ruff_is_injectable() -> None:
     """Ruff supports config injection."""
-    assert is_tool_injectable("ruff") is True
+    assert_that(is_tool_injectable("ruff")).is_true()
 
 
 def test_markdownlint_is_injectable() -> None:
     """Markdownlint supports config injection."""
-    assert is_tool_injectable("markdownlint") is True
+    assert_that(is_tool_injectable("markdownlint")).is_true()
 
 
 def test_yamllint_is_injectable() -> None:
     """Yamllint supports config injection via Lintro config generation."""
-    assert is_tool_injectable("yamllint") is True
+    assert_that(is_tool_injectable("yamllint")).is_true()

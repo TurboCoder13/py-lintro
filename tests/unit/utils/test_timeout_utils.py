@@ -1,6 +1,7 @@
 """Unit tests for timeout utilities."""
 
 import subprocess
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -16,7 +17,7 @@ from lintro.tools.core.timeout_utils import (
 class MockTool:
     """Mock tool for testing timeout utilities."""
 
-    def __init__(self, name="test_tool", default_timeout=300) -> None:
+    def __init__(self, name: str = "test_tool", default_timeout: int = 300) -> None:
         """Initialize mock tool.
 
         Args:
@@ -25,9 +26,14 @@ class MockTool:
         """
         self.name = name
         self._default_timeout = default_timeout
-        self.options = {}
+        self.options: dict[str, Any] = {}
 
-    def _run_subprocess(self, cmd, timeout=None, cwd=None):
+    def _run_subprocess(
+        self,
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         """Mock subprocess runner.
 
         Args:
@@ -41,7 +47,7 @@ class MockTool:
         return True, "success"
 
 
-def test_get_timeout_value_with_option():
+def test_get_timeout_value_with_option() -> None:
     """Test getting timeout value when set in options."""
     tool = MockTool()
     tool.options["timeout"] = 60
@@ -49,21 +55,21 @@ def test_get_timeout_value_with_option():
     assert_that(get_timeout_value(tool)).is_equal_to(60)
 
 
-def test_get_timeout_value_with_default():
+def test_get_timeout_value_with_default() -> None:
     """Test getting timeout value when using tool default."""
     tool = MockTool(default_timeout=45)
 
     assert_that(get_timeout_value(tool)).is_equal_to(45)
 
 
-def test_get_timeout_value_with_custom_default():
+def test_get_timeout_value_with_custom_default() -> None:
     """Test getting timeout value with custom default parameter."""
     tool = MockTool()
 
     assert_that(get_timeout_value(tool, 120)).is_equal_to(120)
 
 
-def test_create_timeout_result():
+def test_create_timeout_result() -> None:
     """Test creating a timeout result object."""
     tool = MockTool("pytest")
 
@@ -79,10 +85,10 @@ def test_create_timeout_result():
     assert_that(result.timeout_seconds).is_equal_to(30)
 
 
-def test_run_subprocess_with_timeout_success():
+def test_run_subprocess_with_timeout_success() -> None:
     """Test successful subprocess execution with timeout."""
     tool = MockTool()
-    tool._run_subprocess = Mock(return_value=(True, "output"))
+    tool._run_subprocess = Mock(return_value=(True, "output"))  # type: ignore[method-assign]
 
     success, output = run_subprocess_with_timeout(tool, ["echo", "test"])
 
@@ -95,19 +101,23 @@ def test_run_subprocess_with_timeout_success():
     )
 
 
-def test_run_subprocess_with_timeout_exception():
+def test_run_subprocess_with_timeout_exception() -> None:
     """Test subprocess timeout exception handling."""
     tool = MockTool()
 
     # Mock subprocess to raise TimeoutExpired
-    def mock_run_subprocess(**kwargs):
+    def mock_run_subprocess(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
         raise subprocess.TimeoutExpired(
             cmd=["slow", "command"],
             timeout=10,
             output="timeout occurred",
         )
 
-    tool._run_subprocess = mock_run_subprocess
+    tool._run_subprocess = mock_run_subprocess  # type: ignore[method-assign]
 
     with pytest.raises(subprocess.TimeoutExpired) as exc_info:
         run_subprocess_with_timeout(tool, ["slow", "command"], timeout=10)

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Any
+
+import pytest
 from assertpy import assert_that
 
 from lintro.utils.path_filtering import (
@@ -19,20 +23,22 @@ def test_should_exclude_path_patterns() -> None:
     assert_that(should_exclude_path("dir/file.md", ["*.md"]) is True).is_true()
 
 
-def test_get_table_columns_and_format_tabulate(monkeypatch) -> None:
+def test_get_table_columns_and_format_tabulate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Use tabulate when available and validate headers/rows are passed.
 
     Args:
         monkeypatch: Pytest monkeypatch fixture to stub tabulate.
     """
-    rows_captured = {}
+    rows_captured: dict[str, Any] = {}
 
     def fake_tabulate(
-        tabular_data,
-        headers,
-        tablefmt,
-        stralign=None,
-        disable_numparse=None,
+        tabular_data: list[list[Any]],
+        headers: list[str],
+        tablefmt: str,
+        stralign: str | None = None,
+        disable_numparse: bool | None = None,
     ) -> str:
         rows_captured["headers"] = headers
         rows_captured["rows"] = tabular_data
@@ -43,9 +49,9 @@ def test_get_table_columns_and_format_tabulate(monkeypatch) -> None:
 
     monkeypatch.setattr(tf, "tabulate", fake_tabulate)
     monkeypatch.setattr(tf, "TABULATE_AVAILABLE", True)
-    issues = [
-        {"file": "a.py", "line": 1, "column": 2, "code": "X", "message": "m"},
-        {"file": "b.py", "line": 3, "column": 4, "code": "Y", "message": "n"},
+    issues: list[dict[str, str]] = [
+        {"file": "a.py", "line": "1", "column": "2", "code": "X", "message": "m"},
+        {"file": "b.py", "line": "3", "column": "4", "code": "Y", "message": "n"},
     ]
     table = format_as_table(issues=issues, tool_name="unknown")
     assert_that(table).is_equal_to("TABLE")
@@ -53,7 +59,7 @@ def test_get_table_columns_and_format_tabulate(monkeypatch) -> None:
     assert_that(rows_captured["rows"]).is_true()
 
 
-def test_walk_files_with_excludes(tmp_path) -> None:
+def test_walk_files_with_excludes(tmp_path: Path) -> None:
     """Walk files with include/exclude patterns.
 
     Args:

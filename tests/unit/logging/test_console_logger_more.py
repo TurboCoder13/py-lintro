@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from assertpy import assert_that
 
+from lintro.enums.action import Action
 from lintro.utils.console_logger import create_logger, get_tool_emoji
 
 
@@ -18,7 +20,10 @@ def test_get_tool_emoji_default() -> None:
     assert_that(emoji).is_not_equal_to("")
 
 
-def test_console_logger_parsing_messages(tmp_path: Path, capsys) -> None:
+def test_console_logger_parsing_messages(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """Parse typical messages and print a concise summary.
 
     Args:
@@ -36,7 +41,7 @@ def test_console_logger_parsing_messages(tmp_path: Path, capsys) -> None:
         output="formatted table",
         issues_count=2,
         raw_output_for_meta=raw,
-        action="check",
+        action=Action.CHECK,
     )
     out = capsys.readouterr().out
     assert_that(
@@ -55,7 +60,7 @@ def test_get_tool_emoji_pytest() -> None:
 
 def test_console_logger_pytest_result_no_issues(
     tmp_path: Path,
-    capsys,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Test print_tool_result for pytest with no issues.
 
@@ -68,7 +73,7 @@ def test_console_logger_pytest_result_no_issues(
         tool_name="pytest",
         output="All tests passed",
         issues_count=0,
-        action="test",
+        action=Action.TEST,
         success=True,
     )
     out = capsys.readouterr().out
@@ -78,7 +83,7 @@ def test_console_logger_pytest_result_no_issues(
 
 def test_console_logger_pytest_result_with_failures(
     tmp_path: Path,
-    capsys,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Test print_tool_result for pytest with failures.
 
@@ -91,7 +96,7 @@ def test_console_logger_pytest_result_with_failures(
         tool_name="pytest",
         output="2 tests failed",
         issues_count=2,
-        action="test",
+        action=Action.TEST,
         success=False,
     )
     out = capsys.readouterr().out
@@ -101,7 +106,7 @@ def test_console_logger_pytest_result_with_failures(
 
 def test_console_logger_pytest_success_message(
     tmp_path: Path,
-    capsys,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Test success message for pytest results.
 
@@ -117,7 +122,7 @@ def test_console_logger_pytest_success_message(
 
 def test_console_logger_print_tool_header_pytest(
     tmp_path: Path,
-    capsys,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Test print_tool_header for pytest.
 

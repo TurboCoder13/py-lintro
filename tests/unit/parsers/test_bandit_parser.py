@@ -1,8 +1,13 @@
 """Unit tests for Bandit output parsing and tool JSON extraction."""
 
-import json
-from types import SimpleNamespace
+from __future__ import annotations
 
+import json
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
+
+import pytest
 from assertpy import assert_that
 
 from lintro.models.core.tool_result import ToolResult
@@ -99,7 +104,9 @@ def test_parse_bandit_missing_results_key() -> None:
     assert_that(issues).is_equal_to([])
 
 
-def test_parse_bandit_handles_malformed_issue_gracefully(caplog) -> None:
+def test_parse_bandit_handles_malformed_issue_gracefully(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """Malformed issue entries should be skipped with a warning.
 
     Args:
@@ -110,7 +117,10 @@ def test_parse_bandit_handles_malformed_issue_gracefully(caplog) -> None:
     assert_that(issues).is_equal_to([])
 
 
-def test_bandit_check_parses_mixed_output_json(monkeypatch, tmp_path) -> None:
+def test_bandit_check_parses_mixed_output_json(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """BanditTool.check should parse JSON amidst mixed stdout/stderr text.
 
     Args:
@@ -139,7 +149,13 @@ def test_bandit_check_parses_mixed_output_json(monkeypatch, tmp_path) -> None:
     mixed_stdout = "Working... 100%\n" + json.dumps(sample) + "\n"
     mixed_stderr = "[main] INFO done\n"
 
-    def fake_run(cmd, capture_output, text, timeout, **kwargs):
+    def fake_run(
+        cmd: list[str],
+        capture_output: bool,
+        text: bool,
+        timeout: int,
+        **kwargs: Any,
+    ) -> SimpleNamespace:
         return SimpleNamespace(stdout=mixed_stdout, stderr=mixed_stderr, returncode=0)
 
     monkeypatch.setattr("subprocess.run", fake_run)
@@ -152,8 +168,8 @@ def test_bandit_check_parses_mixed_output_json(monkeypatch, tmp_path) -> None:
 
 
 def test_bandit_check_handles_nonzero_rc_with_errors_array(
-    monkeypatch,
-    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     """Ensure nonzero return with JSON errors[] sets success False but parses.
 
@@ -184,12 +200,18 @@ def test_bandit_check_handles_nonzero_rc_with_errors_array(
     }
 
     class NS:
-        def __init__(self, stdout, stderr, returncode) -> None:
+        def __init__(self, stdout: str, stderr: str, returncode: int) -> None:
             self.stdout = stdout
             self.stderr = stderr
             self.returncode = returncode
 
-    def fake_run(cmd, capture_output, text, timeout, **kwargs):
+    def fake_run(
+        cmd: list[str],
+        capture_output: bool,
+        text: bool,
+        timeout: int,
+        **kwargs: Any,
+    ) -> NS:
         # Handle version check calls
         if "--version" in cmd:
             return NS(stdout="bandit 1.8.0", stderr="", returncode=0)
@@ -203,7 +225,10 @@ def test_bandit_check_handles_nonzero_rc_with_errors_array(
     assert_that(result.issues_count).is_equal_to(1)
 
 
-def test_bandit_check_handles_unparseable_output(monkeypatch, tmp_path) -> None:
+def test_bandit_check_handles_unparseable_output(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """On unparseable output, BanditTool.check should fail gracefully.
 
     Args:
@@ -213,7 +238,13 @@ def test_bandit_check_handles_unparseable_output(monkeypatch, tmp_path) -> None:
     p = tmp_path / "b.py"
     p.write_text("x=1\n")
 
-    def fake_run(cmd, capture_output, text, timeout, **kwargs):
+    def fake_run(
+        cmd: list[str],
+        capture_output: bool,
+        text: bool,
+        timeout: int,
+        **kwargs: Any,
+    ) -> SimpleNamespace:
         # Handle version check calls
         if "--version" in cmd:
             return SimpleNamespace(stdout="bandit 1.8.0", stderr="", returncode=0)

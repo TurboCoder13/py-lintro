@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import time
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -176,7 +177,7 @@ def test_pytest_config_caching() -> None:
     assert_that(config3).is_equal_to(config1)
 
 
-def test_pytest_config_caching_with_file_changes(tmp_path) -> None:
+def test_pytest_config_caching_with_file_changes(tmp_path: Path) -> None:
     """Test that config cache invalidates when files change.
 
     Args:

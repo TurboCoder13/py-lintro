@@ -161,7 +161,7 @@ def test_format_pytest_issues_grid_format() -> None:
     result = format_pytest_issues(issues, format="grid")
 
     assert_that(result).contains("test_example.py")
-    assert "❌ FAIL" in result
+    assert_that(result).contains("❌ FAIL")
     assert_that(result).contains("AssertionError")
 
 
@@ -202,7 +202,7 @@ def test_format_pytest_issues_json_format() -> None:
     # JSON format should contain the tool name (but it's null in this case)
     assert_that(result).contains("tool")
     assert_that(result).contains("test_example.py")
-    assert "❌ FAIL" in result
+    assert_that(result).contains("❌ FAIL")
     assert_that(result).contains("AssertionError")
 
 
@@ -222,7 +222,7 @@ def test_format_pytest_issues_html_format() -> None:
 
     assert_that(result).contains("<table")
     assert_that(result).contains("test_example.py")
-    assert "❌ FAIL" in result
+    assert_that(result).contains("❌ FAIL")
     assert_that(result).contains("AssertionError")
 
 
@@ -241,7 +241,7 @@ def test_format_pytest_issues_csv_format() -> None:
     result = format_pytest_issues(issues, format="csv")
 
     assert_that(result).contains("File,Status,Error")
-    assert "test_example.py,❌ FAIL,AssertionError" in result
+    assert_that(result).contains("test_example.py,❌ FAIL,AssertionError")
 
 
 def test_format_pytest_issues_plain_format() -> None:
@@ -259,7 +259,7 @@ def test_format_pytest_issues_plain_format() -> None:
     result = format_pytest_issues(issues, format="plain")
 
     assert_that(result).contains("test_example.py")
-    assert "❌ FAIL" in result
+    assert_that(result).contains("❌ FAIL")
     assert_that(result).contains("AssertionError")
 
 
@@ -279,7 +279,7 @@ def test_format_pytest_issues_default_format() -> None:
 
     # Default format should be grid
     assert_that(result).contains("test_example.py")
-    assert "❌ FAIL" in result
+    assert_that(result).contains("❌ FAIL")
     assert_that(result).contains("AssertionError")
 
 
@@ -299,5 +299,5 @@ def test_format_pytest_issues_unknown_format() -> None:
 
     # Should fall back to grid format
     assert_that(result).contains("test_example.py")
-    assert "❌ FAIL" in result
+    assert_that(result).contains("❌ FAIL")
     assert_that(result).contains("AssertionError")

@@ -4,13 +4,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from assertpy import assert_that
 
 from lintro.utils.config import load_lintro_tool_config
 from lintro.utils.config_loaders import _find_pyproject, load_pyproject
 
 
-def test_load_lintro_tool_config(tmp_path: Path, monkeypatch) -> None:
+def test_load_lintro_tool_config(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Load tool-specific config sections from pyproject.
 
     Args:
@@ -44,7 +48,7 @@ def test_load_lintro_tool_config(tmp_path: Path, monkeypatch) -> None:
 
 def test_config_loader_handles_missing_and_malformed_pyproject(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Validate loaders handle missing and malformed pyproject files.
 
