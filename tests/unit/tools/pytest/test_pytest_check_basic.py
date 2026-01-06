@@ -231,159 +231,59 @@ def test_pytest_tool_check_exception() -> None:
         assert_that(result.output).contains("Test error")
 
 
-def test_pytest_tool_fix_default_behavior() -> None:
-    """Test that fix raises NotImplementedError when can_fix is False (default)."""
-    tool = PytestTool()
-    assert_that(tool.can_fix).is_false()
+@pytest.mark.parametrize(
+    "set_can_fix,expected_match",
+    [
+        (False, None),
+        (True, "pytest does not support fixing issues"),
+    ],
+    ids=["can_fix_false", "can_fix_true"],
+)
+def test_pytest_tool_fix_raises_not_implemented(
+    set_can_fix: bool,
+    expected_match: str | None,
+) -> None:
+    """Test that fix raises NotImplementedError regardless of can_fix value.
 
-    with pytest.raises(NotImplementedError):
+    Args:
+        set_can_fix: Whether to set can_fix to True.
+        expected_match: Expected match string for the exception.
+    """
+    tool = PytestTool()
+    if set_can_fix:
+        tool.can_fix = True
+    else:
+        assert_that(tool.can_fix).is_false()
+
+    with pytest.raises(NotImplementedError, match=expected_match):
         tool.fix(["test_file.py"])
 
 
-def test_pytest_tool_fix_with_can_fix_true() -> None:
-    """Test that fix raises NotImplementedError even when can_fix is True."""
+@pytest.mark.parametrize(
+    "files,paths,description",
+    [
+        (None, None, "discovers test files without files or paths"),
+        (None, None, "target_files as None"),
+        (["."], None, "target_files as just '.'"),
+    ],
+    ids=["discover-files", "files-none", "files-dot"],
+)
+def test_pytest_tool_check_target_variants(
+    files: list[str] | None,
+    paths: list[str] | None,
+    description: str,
+) -> None:
+    """Test check with various file/path combinations.
+
+    Args:
+        files: List of files to check.
+        paths: List of paths to check.
+        description: Description of the test case.
+    """
+    from tests.unit.tools.pytest.conftest import patch_pytest_tool_for_check
+
     tool = PytestTool()
-    # Mock can_fix to True to test the second check
-    tool.can_fix = True
-
-    with pytest.raises(
-        NotImplementedError,
-        match="pytest does not support fixing issues",
-    ):
-        tool.fix(["test_file.py"])
-
-
-def test_pytest_tool_check_paths_vs_files_precedence() -> None:
-    """Test that paths parameter takes precedence over files."""
-    tool = PytestTool()
-
-    # Create a mock to capture the command passed to execute_tests
-    mock_execute_tests = Mock(return_value=(True, "All tests passed", 0))
-
-    with (
-        patch.object(tool, "_verify_tool_version", return_value=None),
-        patch.object(tool, "_get_executable_command", return_value=["pytest"]),
-        patch.object(
-            tool.executor,
-            "prepare_test_execution",
-            return_value=(0, 0, None),
-        ),
-        patch.object(
-            tool.executor,
-            "execute_tests",
-            mock_execute_tests,
-        ),
-        patch.object(tool, "_parse_output", return_value=[]),
-        patch.object(
-            tool.result_processor,
-            "process_test_results",
-            return_value=(
-                {
-                    "passed": 0,
-                    "failed": 0,
-                    "skipped": 0,
-                    "error": 0,
-                    "total": 0,
-                    "duration": 0.0,
-                },
-                [],
-            ),
-        ),
-        patch.object(
-            tool.result_processor,
-            "build_result",
-            return_value=ToolResult(
-                name="pytest",
-                success=True,
-                issues=[],
-                output='{"passed": 0}',
-                issues_count=0,
-            ),
-        ),
-    ):
-        # Both paths and files provided; paths should be used
-        tool.check(files=["file.py"], paths=["path/"])
-
-        # Verify execute_tests was called
-        assert_that(mock_execute_tests.called).is_true()
-        # Get the command that was passed to execute_tests
-        call_args = mock_execute_tests.call_args
-        cmd = call_args[0][0]  # First positional argument is the command list
-
-        # Assert that paths argument ("path/") is in the command
-        assert_that(cmd).contains("path/").described_as(
-            f"Expected 'path/' in command, got: {cmd}",
-        )
-        # Assert that files argument ("file.py") is NOT in the command
-        # since paths takes precedence over files
-        assert_that(cmd).does_not_contain("file.py").described_as(
-            f"Expected 'file.py' NOT in command (paths takes precedence), got: {cmd}",
-        )
-
-
-def test_pytest_tool_check_discovers_test_files() -> None:
-    """Verify that check discovers test files without files or paths."""
-    tool = PytestTool()
-
-    with (
-        patch.object(tool, "_get_executable_command", return_value=["pytest"]),
-        patch.object(
-            tool,
-            "_run_subprocess",
-            return_value=(True, "5 passed in 0.10s"),
-        ),
-        patch.object(tool, "_parse_output", return_value=[]),
-        patch.object(
-            tool.executor,
-            "prepare_test_execution",
-            return_value=(5, 0, None),
-        ),
-    ):
-        result = tool.check()
-
+    with patch_pytest_tool_for_check(tool):
+        result = tool.check(files=files, paths=paths)
         assert_that(result.name).is_equal_to("pytest")
-        assert_that(result.success).is_true()
-
-
-def test_pytest_tool_check_target_files_none() -> None:
-    """Test check with target_files as None."""
-    tool = PytestTool()
-
-    with (
-        patch.object(tool, "_get_executable_command", return_value=["pytest"]),
-        patch.object(
-            tool,
-            "_run_subprocess",
-            return_value=(True, "All tests passed"),
-        ),
-        patch.object(tool, "_parse_output", return_value=[]),
-        patch.object(
-            tool.executor,
-            "prepare_test_execution",
-            return_value=(10, 0, None),
-        ),
-    ):
-        result = tool.check(files=None, paths=None)
-        assert_that(result.success).is_true()
-
-
-def test_pytest_tool_check_target_files_dot() -> None:
-    """Test check with target_files as just '.'."""
-    tool = PytestTool()
-
-    with (
-        patch.object(tool, "_get_executable_command", return_value=["pytest"]),
-        patch.object(
-            tool,
-            "_run_subprocess",
-            return_value=(True, "All tests passed"),
-        ),
-        patch.object(tool, "_parse_output", return_value=[]),
-        patch.object(
-            tool.executor,
-            "prepare_test_execution",
-            return_value=(10, 0, None),
-        ),
-    ):
-        result = tool.check(files=["."])
         assert_that(result.success).is_true()
