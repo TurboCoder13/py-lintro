@@ -1,12 +1,14 @@
 """Shared fixtures for formatter unit tests."""
 
+from __future__ import annotations
+
 import pytest
 
 from lintro.models.core.tool_result import ToolResult
 
 
 @pytest.fixture
-def sample_tool_result():
+def sample_tool_result() -> ToolResult:
     """Provide a sample tool result for testing.
 
     Returns:
@@ -21,7 +23,7 @@ def sample_tool_result():
 
 
 @pytest.fixture
-def sample_tool_results():
+def sample_tool_results() -> list[ToolResult]:
     """Provide sample tool results for testing.
 
     Returns:

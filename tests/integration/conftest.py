@@ -2,13 +2,14 @@
 
 import os
 import tempfile
+from collections.abc import Callable, Generator
 from pathlib import Path
 
 import pytest
 
 
 @pytest.fixture
-def temp_project_dir():
+def temp_project_dir() -> Generator[Path]:
     """Create a temporary directory structure for integration testing.
 
     Yields:
@@ -38,7 +39,7 @@ line-length = 88
 
 
 @pytest.fixture
-def lintro_test_mode():
+def lintro_test_mode() -> Generator[str]:
     """Set LINTRO_TEST_MODE=1 environment variable for tests.
 
     This disables config injection and other test-incompatible features.
@@ -58,7 +59,7 @@ def lintro_test_mode():
 
 
 @pytest.fixture
-def skip_if_tool_unavailable():
+def skip_if_tool_unavailable() -> Callable[[str], None]:
     """Skip test if required tool is not available in PATH.
 
     Returns:
@@ -66,7 +67,7 @@ def skip_if_tool_unavailable():
         to skip tests for unavailable tools.
     """
 
-    def _skip_if_unavailable(tool_name: str):
+    def _skip_if_unavailable(tool_name: str) -> None:
         """Skip the current test if tool is not available.
 
         Args:

@@ -67,7 +67,7 @@ def cli_runner() -> CliRunner:
     """Provide a Click CLI runner for testing.
 
     Returns:
-        click.testing.CliRunner: CLI runner for invoking commands.
+        CliRunner: CLI runner for invoking commands.
     """
     return CliRunner()
 
@@ -98,7 +98,8 @@ def ruff_violation_file(temp_dir: Path) -> str:
     src = Path("test_samples/tools/python/ruff/ruff_e501_f401_violations.py").resolve()
     dst = temp_dir / "ruff_violations.py"
     shutil.copy(src, dst)
-    return normalize_file_path_for_display(str(dst))
+    result: str = normalize_file_path_for_display(str(dst))
+    return result
 
 
 @pytest.fixture

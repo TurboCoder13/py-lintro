@@ -1,12 +1,19 @@
 """Shared fixtures for tool unit tests."""
 
+from __future__ import annotations
+
+from collections.abc import Generator
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
 import pytest
 
+if TYPE_CHECKING:
+    from unittest.mock import MagicMock
+
 
 @pytest.fixture
-def mock_subprocess_run():
+def mock_subprocess_run() -> Generator[MagicMock]:
     """Mock subprocess.run for tool testing.
 
     Yields:
@@ -22,7 +29,7 @@ def mock_subprocess_run():
 
 
 @pytest.fixture
-def mock_tool_config():
+def mock_tool_config() -> dict[str, Any]:
     """Provide a mock tool configuration.
 
     Returns:
@@ -40,7 +47,7 @@ def mock_tool_config():
 
 
 @pytest.fixture
-def mock_tool_result():
+def mock_tool_result() -> Mock:
     """Provide a mock tool result.
 
     Returns:

@@ -1,5 +1,7 @@
 """Shared fixtures for CLI unit tests."""
 
+from __future__ import annotations
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -7,7 +9,7 @@ from click.testing import CliRunner
 
 
 @pytest.fixture
-def mock_tool_manager():
+def mock_tool_manager() -> MagicMock:
     """Provide a mock tool manager for CLI tests.
 
     Returns:
@@ -20,7 +22,7 @@ def mock_tool_manager():
 
 
 @pytest.fixture
-def mock_format_output():
+def mock_format_output() -> MagicMock:
     """Provide a mock format output function.
 
     Returns:
@@ -30,7 +32,7 @@ def mock_format_output():
 
 
 @pytest.fixture
-def mock_print_summary():
+def mock_print_summary() -> MagicMock:
     """Provide a mock print summary function.
 
     Returns:
@@ -40,7 +42,7 @@ def mock_print_summary():
 
 
 @pytest.fixture
-def cli_runner():
+def cli_runner() -> CliRunner:
     """Provide a Click CLI runner for testing.
 
     Returns:

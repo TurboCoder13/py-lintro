@@ -1,12 +1,15 @@
 """Shared fixtures for config unit tests."""
 
+from __future__ import annotations
+
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
 
 @pytest.fixture
-def temp_config_dir(tmp_path):
+def temp_config_dir(tmp_path: Path) -> Path:
     """Provide a temporary directory with config files.
 
     Args:
@@ -35,7 +38,7 @@ line_length = 88
 
 
 @pytest.fixture
-def mock_config_loader():
+def mock_config_loader() -> MagicMock:
     """Provide a mock config loader for testing.
 
     Returns:

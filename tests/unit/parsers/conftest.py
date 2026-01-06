@@ -1,12 +1,14 @@
 """Shared fixtures for parser unit tests."""
 
+from __future__ import annotations
+
 from unittest.mock import Mock
 
 import pytest
 
 
 @pytest.fixture
-def mock_tool_output():
+def mock_tool_output() -> Mock:
     """Provide a mock tool output for parser testing.
 
     Returns:
@@ -20,7 +22,7 @@ def mock_tool_output():
 
 
 @pytest.fixture
-def sample_ruff_json_output():
+def sample_ruff_json_output() -> str:
     """Provide sample JSON output from ruff for testing.
 
     Returns:
@@ -37,7 +39,7 @@ def sample_ruff_json_output():
 
 
 @pytest.fixture
-def sample_pytest_json_output():
+def sample_pytest_json_output() -> str:
     """Provide sample JSON output from pytest for testing.
 
     Returns:

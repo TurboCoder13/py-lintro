@@ -1,10 +1,14 @@
 """Fixtures for tools/core tests."""
 
+from __future__ import annotations
+
+from pathlib import Path
+
 import pytest
 
 
 @pytest.fixture
-def temp_python_file(tmp_path):
+def temp_python_file(tmp_path: Path) -> Path:
     """Create a temporary Python file with long lines for testing.
 
     Args:

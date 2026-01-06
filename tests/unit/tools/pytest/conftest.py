@@ -1,17 +1,19 @@
 """Shared fixtures for pytest tool tests."""
 
+from __future__ import annotations
+
+from unittest.mock import MagicMock
+
 import pytest
 
 
 @pytest.fixture
-def mock_pytest_tool():
+def mock_pytest_tool() -> MagicMock:
     """Provide a mock PytestTool instance for testing.
 
     Returns:
         MagicMock: Mock PytestTool instance.
     """
-    from unittest.mock import MagicMock
-
     tool = MagicMock()
     tool.name = "pytest"
     tool.can_fix = False
