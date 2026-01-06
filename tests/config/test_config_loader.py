@@ -21,8 +21,8 @@ def test_empty_data() -> None:
     """Should return EnforceConfig with None values."""
     config = _parse_enforce_config({})
 
-    assert config.line_length is None
-    assert config.target_python is None
+    assert_that(config.line_length).is_none()
+    assert_that(config.target_python).is_none()
 
 
 def test_execution_config_empty_data() -> None:
@@ -31,8 +31,8 @@ def test_execution_config_empty_data() -> None:
 
     assert_that(config.enabled_tools).is_equal_to([])
     assert_that(config.tool_order).is_equal_to("priority")
-    assert config.fail_fast is False
-    assert config.parallel is False
+    assert_that(config.fail_fast).is_false()
+    assert_that(config.parallel).is_false()
 
 
 def test_string_enabled_tools() -> None:
@@ -48,8 +48,8 @@ def test_tool_config_empty_data() -> None:
     """Should return default ToolConfig."""
     config = _parse_tool_config({})
 
-    assert config.enabled is True
-    assert config.config_source is None
+    assert_that(config.enabled).is_true()
+    assert_that(config.config_source).is_none()
 
 
 def test_disabled_tool() -> None:
@@ -58,7 +58,7 @@ def test_disabled_tool() -> None:
 
     config = _parse_tool_config(data)
 
-    assert config.enabled is False
+    assert_that(config.enabled).is_false()
 
 
 def test_tools_config_empty_data() -> None:
@@ -77,8 +77,8 @@ def test_with_bool_values() -> None:
 
     config = _parse_tools_config(data)
 
-    assert config["ruff"].enabled is True
-    assert config["prettier"].enabled is False
+    assert_that(config["ruff"].enabled).is_true()
+    assert_that(config["prettier"].enabled).is_false()
 
 
 def test_defaults_empty_data() -> None:
@@ -95,7 +95,7 @@ def test_case_normalization() -> None:
     defaults = _parse_defaults(data)
 
     assert_that(defaults).contains("prettier")
-    assert "PRETTIER" not in defaults
+    assert_that(defaults).does_not_contain("PRETTIER")
 
 
 def test_convert_pyproject_empty_data() -> None:
@@ -117,8 +117,8 @@ def test_enforce_settings() -> None:
 
     result = _convert_pyproject_to_config(data)
 
-    assert result["enforce"]["line_length"] == 88
-    assert result["enforce"]["target_python"] == "py313"
+    assert_that(result["enforce"]["line_length"]).is_equal_to(88)
+    assert_that(result["enforce"]["target_python"]).is_equal_to("py313")
 
 
 def test_tool_sections() -> None:
@@ -130,8 +130,8 @@ def test_tool_sections() -> None:
 
     result = _convert_pyproject_to_config(data)
 
-    assert result["tools"]["ruff"] == {"enabled": True}
-    assert result["tools"]["prettier"] == {"enabled": False}
+    assert_that(result["tools"]["ruff"]).is_equal_to({"enabled": True})
+    assert_that(result["tools"]["prettier"]).is_equal_to({"enabled": False})
 
 
 def test_execution_settings() -> None:
@@ -143,8 +143,8 @@ def test_execution_settings() -> None:
 
     result = _convert_pyproject_to_config(data)
 
-    assert result["execution"]["tool_order"] == "alphabetical"
-    assert result["execution"]["fail_fast"] is True
+    assert_that(result["execution"]["tool_order"]).is_equal_to("alphabetical")
+    assert_that(result["execution"]["fail_fast"]).is_true()
 
 
 def test_load_yaml_config_with_defaults(tmp_path: Path) -> None:
@@ -171,8 +171,8 @@ defaults:
 
         config = load_config()
 
-        assert config.get_tool_defaults("prettier")["singleQuote"] is True
-        assert config.get_tool_defaults("prettier")["tabWidth"] == 2
+        assert_that(config.get_tool_defaults("prettier")["singleQuote"]).is_true()
+        assert_that(config.get_tool_defaults("prettier")["tabWidth"]).is_equal_to(2)
     finally:
         os.chdir(original_cwd)
 
@@ -192,7 +192,7 @@ enforce:
 
     config = load_config(config_path=str(config_file))
 
-    assert config.enforce.line_length == 120
+    assert_that(config.enforce.line_length).is_equal_to(120)
 
 
 def test_returns_default_when_no_config(tmp_path: Path) -> None:
@@ -211,7 +211,7 @@ def test_returns_default_when_no_config(tmp_path: Path) -> None:
         config = load_config(allow_pyproject_fallback=False)
 
         # Should get default empty config
-        assert config.enforce.line_length is None
+        assert_that(config.enforce.line_length).is_none()
     finally:
         os.chdir(original_cwd)
 
@@ -220,7 +220,7 @@ def test_returns_sensible_defaults() -> None:
     """Should return config with sensible defaults."""
     config = get_default_config()
 
-    assert config.enforce.line_length == 88
+    assert_that(config.enforce.line_length).is_equal_to(88)
     # target_python is None to let tools infer from requires-python
-    assert config.enforce.target_python is None
-    assert config.execution.tool_order == "priority"
+    assert_that(config.enforce.target_python).is_none()
+    assert_that(config.execution.tool_order).is_equal_to("priority")

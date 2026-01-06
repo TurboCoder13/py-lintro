@@ -40,12 +40,12 @@ def test_creates_minimal_template(
         content = config_file.read_text()
 
         # Minimal template should be shorter
-        assert "# Lintro Configuration (Minimal)" in content
+        assert_that(content).contains("# Lintro Configuration (Minimal)")
         # But still have core sections
         assert_that(content).contains("enforce:")
         assert_that(content).contains("tools:")
         # Minimal doesn't have all tools
-        assert "bandit:" not in content
+        assert_that(content).does_not_contain("bandit:")
 
 
 def test_refuses_to_overwrite_existing(
@@ -65,8 +65,8 @@ def test_refuses_to_overwrite_existing(
         result = runner.invoke(init_command)
 
         assert_that(result.exit_code).is_equal_to(1)
-        assert "already exists" in result.output
-        assert "Use --force to overwrite" in result.output
+        assert_that(result.output).contains("already exists")
+        assert_that(result.output).contains("Use --force to overwrite")
 
         # Original content should be preserved
         content = Path(".lintro-config.yaml").read_text()
@@ -90,7 +90,7 @@ def test_force_overwrites_existing(
         result = runner.invoke(init_command, ["--force"])
 
         assert_that(result.exit_code).is_equal_to(0)
-        assert "Created .lintro-config.yaml" in result.output
+        assert_that(result.output).contains("Created .lintro-config.yaml")
 
         # Should have new template content
         content = Path(".lintro-config.yaml").read_text()
@@ -114,10 +114,10 @@ def test_custom_output_path(
         )
 
         assert_that(result.exit_code).is_equal_to(0)
-        assert "Created custom-config.yaml" in result.output
+        assert_that(result.output).contains("Created custom-config.yaml")
 
         config_file = Path("custom-config.yaml")
-        assert config_file.exists()
+        assert_that(config_file.exists()).is_true()
 
 
 def test_shows_next_steps(
@@ -133,9 +133,9 @@ def test_shows_next_steps(
     with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(init_command)
 
-        assert "Next steps:" in result.output
-        assert "lintro config" in result.output
-        assert "lintro check" in result.output
+        assert_that(result.output).contains("Next steps:")
+        assert_that(result.output).contains("lintro config")
+        assert_that(result.output).contains("lintro check")
 
 
 def test_default_template_is_valid_yaml() -> None:
@@ -165,9 +165,9 @@ def test_default_template_has_sensible_defaults() -> None:
 
     parsed = yaml.safe_load(DEFAULT_CONFIG_TEMPLATE)
 
-    assert parsed["enforce"]["line_length"] == 88
-    assert parsed["enforce"]["target_python"] == "py313"
-    assert parsed["execution"]["tool_order"] == "priority"
-    assert parsed["tools"]["ruff"]["enabled"] is True
-    assert parsed["defaults"]["mypy"]["strict"] is True
-    assert parsed["defaults"]["mypy"]["ignore_missing_imports"] is True
+    assert_that(parsed["enforce"]["line_length"]).is_equal_to(88)
+    assert_that(parsed["enforce"]["target_python"]).is_equal_to("py313")
+    assert_that(parsed["execution"]["tool_order"]).is_equal_to("priority")
+    assert_that(parsed["tools"]["ruff"]["enabled"]).is_true()
+    assert_that(parsed["defaults"]["mypy"]["strict"]).is_true()
+    assert_that(parsed["defaults"]["mypy"]["ignore_missing_imports"]).is_true()

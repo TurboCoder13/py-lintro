@@ -48,9 +48,9 @@ def test_run_git_describe_allowed(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     from scripts.ci.maintenance import semantic_release_compute_next as mod
 
-    monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")
+    monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")  # type: ignore[attr-defined]
     monkeypatch.setattr(
-        mod.subprocess,
+        mod.subprocess,  # type: ignore[attr-defined]
         "run",
         lambda *_, **__: _fake_completed("v1.2.3\n"),
     )
@@ -67,9 +67,9 @@ def test_run_git_rev_parse_head_allowed(monkeypatch: pytest.MonkeyPatch) -> None
     """
     from scripts.ci.maintenance import semantic_release_compute_next as mod
 
-    monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")
+    monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")  # type: ignore[attr-defined]
     monkeypatch.setattr(
-        mod.subprocess,
+        mod.subprocess,  # type: ignore[attr-defined]
         "run",
         lambda *_, **__: _fake_completed("abcd123\n"),
     )
@@ -98,8 +98,8 @@ def test_run_git_log_allowed(
     """
     from scripts.ci.maintenance import semantic_release_compute_next as mod
 
-    monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")
-    monkeypatch.setattr(mod.subprocess, "run", lambda *_, **__: _fake_completed("ok\n"))
+    monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")  # type: ignore[attr-defined]
+    monkeypatch.setattr(mod.subprocess, "run", lambda *_, **__: _fake_completed("ok\n"))  # type: ignore[attr-defined]
 
     out = mod.run_git(*args)
     assert_that(out).is_equal_to("ok")
@@ -126,7 +126,7 @@ def test_run_git_rejects_unsupported_or_unsafe(
     """
     from scripts.ci.maintenance import semantic_release_compute_next as mod
 
-    monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")
+    monkeypatch.setattr(mod.shutil, "which", lambda *_: "/usr/bin/git")  # type: ignore[attr-defined]
 
     # subprocess.run should not be called; keep a guard that would fail if it is
     def _should_not_run(
@@ -135,7 +135,7 @@ def test_run_git_rejects_unsupported_or_unsafe(
     ) -> subprocess.CompletedProcess[str]:  # pragma: no cover
         raise AssertionError("subprocess.run must not be invoked for rejected args")
 
-    monkeypatch.setattr(mod.subprocess, "run", _should_not_run)
+    monkeypatch.setattr(mod.subprocess, "run", _should_not_run)  # type: ignore[attr-defined]
 
     with pytest.raises(ValueError):
         mod.run_git(*args)

@@ -14,8 +14,8 @@ def test_default_values() -> None:
     """EnforceConfig should have None defaults."""
     config = EnforceConfig()
 
-    assert config.line_length is None
-    assert config.target_python is None
+    assert_that(config.line_length).is_none()
+    assert_that(config.target_python).is_none()
 
 
 def test_execution_config_defaults() -> None:
@@ -24,27 +24,27 @@ def test_execution_config_defaults() -> None:
 
     assert_that(config.enabled_tools).is_equal_to([])
     assert_that(config.tool_order).is_equal_to("priority")
-    assert config.fail_fast is False
-    assert config.parallel is False
+    assert_that(config.fail_fast).is_false()
+    assert_that(config.parallel).is_false()
 
 
 def test_tool_config_defaults() -> None:
     """LintroToolConfig should have sensible defaults."""
     config = LintroToolConfig()
 
-    assert config.enabled is True
-    assert config.config_source is None
+    assert_that(config.enabled).is_true()
+    assert_that(config.config_source).is_none()
 
 
 def test_lintro_config_defaults() -> None:
     """LintroConfig should have sensible defaults."""
     config = LintroConfig()
 
-    assert config.enforce is not None
-    assert config.execution is not None
+    assert_that(config.enforce).is_not_none()
+    assert_that(config.execution).is_not_none()
     assert_that(config.defaults).is_equal_to({})
     assert_that(config.tools).is_equal_to({})
-    assert config.config_path is None
+    assert_that(config.config_path).is_none()
 
 
 def test_get_tool_config_returns_default() -> None:
@@ -53,8 +53,8 @@ def test_get_tool_config_returns_default() -> None:
 
     tool_config = config.get_tool_config("unknown_tool")
 
-    assert tool_config.enabled is True
-    assert tool_config.config_source is None
+    assert_that(tool_config.enabled).is_true()
+    assert_that(tool_config.config_source).is_none()
 
 
 def test_get_tool_config_case_insensitive() -> None:
@@ -64,11 +64,11 @@ def test_get_tool_config_case_insensitive() -> None:
     )
 
     # Lowercase should work
-    assert config.get_tool_config("ruff").enabled is False
+    assert_that(config.get_tool_config("ruff").enabled).is_false()
     # Uppercase should also work (converted to lowercase)
-    assert config.get_tool_config("RUFF").enabled is False
+    assert_that(config.get_tool_config("RUFF").enabled).is_false()
     # Mixed case should also work
-    assert config.get_tool_config("Ruff").enabled is False
+    assert_that(config.get_tool_config("Ruff").enabled).is_false()
 
 
 def test_is_tool_enabled_filtered() -> None:
@@ -77,8 +77,8 @@ def test_is_tool_enabled_filtered() -> None:
         execution=ExecutionConfig(enabled_tools=["ruff"]),
     )
 
-    assert config.is_tool_enabled("ruff") is True
-    assert config.is_tool_enabled("prettier") is False
+    assert_that(config.is_tool_enabled("ruff")).is_true()
+    assert_that(config.is_tool_enabled("prettier")).is_false()
 
 
 def test_get_tool_defaults() -> None:
@@ -91,8 +91,8 @@ def test_get_tool_defaults() -> None:
 
     defaults = config.get_tool_defaults("prettier")
 
-    assert defaults["singleQuote"] is True
-    assert defaults["tabWidth"] == 2
+    assert_that(defaults["singleQuote"]).is_true()
+    assert_that(defaults["tabWidth"]).is_equal_to(2)
 
 
 def test_get_effective_line_length_from_enforce() -> None:
@@ -101,8 +101,8 @@ def test_get_effective_line_length_from_enforce() -> None:
         enforce=EnforceConfig(line_length=120),
     )
 
-    assert config.get_effective_line_length("ruff") == 120
-    assert config.get_effective_line_length("prettier") == 120
+    assert_that(config.get_effective_line_length("ruff")).is_equal_to(120)
+    assert_that(config.get_effective_line_length("prettier")).is_equal_to(120)
 
 
 def test_get_effective_target_python() -> None:
@@ -111,5 +111,5 @@ def test_get_effective_target_python() -> None:
         enforce=EnforceConfig(target_python="py312"),
     )
 
-    assert config.get_effective_target_python("ruff") == "py312"
-    assert config.get_effective_target_python("black") == "py312"
+    assert_that(config.get_effective_target_python("ruff")).is_equal_to("py312")
+    assert_that(config.get_effective_target_python("black")).is_equal_to("py312")
