@@ -16,4 +16,4 @@ runs:
       shell: bash
       env:
         EGRESS_ALLOWED_ENDPOINTS: ${{ inputs.allowed-endpoints }}
-      run: scripts/ci/egress-audit-lite.sh "${{ inputs.fail-on-missing }}"
+      run: scripts/ci/maintenance/egress-audit-lite.sh "${{ inputs.fail-on-missing }}"

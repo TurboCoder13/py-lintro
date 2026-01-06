@@ -71,10 +71,8 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Egress audit (allowlist verification)
-        # yamllint disable-line rule:line-length
-        uses: TurboCoder13/py-lintro/.github/actions/egress-audit-lite@actions-v1
-        with:
-          allowed-endpoints: >
+        env:
+          EGRESS_ALLOWED_ENDPOINTS: >
             github.com:443
             api.github.com:443
             codeload.github.com:443
@@ -83,7 +81,7 @@ jobs:
             objects.githubusercontent.com:443
             pypi.org:443
             files.pythonhosted.org:443
-          fail-on-missing: 'true'
+        run: scripts/ci/maintenance/egress-audit-lite.sh "true"
 
       - name: Environment setup
         # yamllint disable-line rule:line-length

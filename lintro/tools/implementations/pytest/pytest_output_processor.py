@@ -7,6 +7,7 @@ maintainability and reduce file size.
 
 import json
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
@@ -15,11 +16,14 @@ from lintro.parsers.pytest.pytest_parser import (
     extract_pytest_summary,
     parse_pytest_output,
 )
+from lintro.tools.implementations.pytest.collection import (
+    compute_updated_flaky_test_history,
+    save_flaky_test_history,
+)
 from lintro.tools.implementations.pytest.pytest_utils import (
     detect_flaky_tests,
     extract_all_test_results_from_junit,
     is_ci_environment,
-    update_flaky_test_history,
 )
 
 # Constants for pytest configuration
@@ -32,7 +36,7 @@ PYTEST_FLAKY_FAILURE_RATE: float = 0.3  # Consider flaky if fails >= 30% but < 1
 def parse_pytest_output_with_fallback(
     output: str,
     return_code: int,
-    options: dict,
+    options: dict[str, Any],
     subprocess_start_time: float | None = None,
 ) -> list[PytestIssue]:
     """Parse pytest output into issues with format detection and fallback.
@@ -170,7 +174,7 @@ def process_test_summary(
     total_available_tests: int,
     docker_test_count: int,
     run_docker_tests: bool,
-) -> dict:
+) -> dict[str, Any]:
     """Process test summary and calculate skipped tests.
 
     Args:
@@ -254,7 +258,7 @@ def process_test_summary(
 
 def detect_and_log_slow_tests(
     issues: list[PytestIssue],
-    options: dict,
+    options: dict[str, Any],
 ) -> list[tuple[str, float]]:
     """Detect slow tests and log warnings.
 
@@ -301,7 +305,7 @@ def detect_and_log_slow_tests(
 
 def check_total_time_warning(
     summary_duration: float,
-    options: dict,
+    options: dict[str, Any],
 ) -> None:
     """Check and warn if total execution time exceeds threshold.
 
@@ -317,15 +321,15 @@ def check_total_time_warning(
         warning_msg = (
             f"⚠️  Tests took {summary_duration:.1f}s to run "
             f"(threshold: {total_time_warning}s). "
-            "Consider optimizing slow tests or using pytest-xdist "
-            "for parallel execution."
+            "Consider optimizing slow tests or enabling parallel execution "
+            "with --tool-options workers=auto"
         )
         logger.warning(warning_msg)
 
 
 def detect_and_log_flaky_tests(
     issues: list[PytestIssue],
-    options: dict,
+    options: dict[str, Any],
 ) -> list[tuple[str, float]]:
     """Detect flaky tests and log warnings.
 
@@ -350,7 +354,8 @@ def detect_and_log_flaky_tests(
             )
 
         # Update flaky test history
-        history = update_flaky_test_history(issues, all_test_results)
+        history = compute_updated_flaky_test_history(issues, all_test_results)
+        save_flaky_test_history(history)
 
         # Detect flaky tests
         min_runs = options.get("flaky_min_runs", PYTEST_FLAKY_MIN_RUNS)
@@ -377,7 +382,7 @@ def detect_and_log_flaky_tests(
 
 
 def build_output_with_failures(
-    summary_data: dict,
+    summary_data: dict[str, Any],
     all_issues: list[PytestIssue],
 ) -> str:
     """Build output string with summary and test details.

@@ -9,11 +9,15 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
+from collections.abc import Generator, Iterator
 from pathlib import Path
 
 import pytest
+from _pytest.config import Config
+from _pytest.nodes import Item
 from click.testing import CliRunner
 
+from lintro.enums.env_bool import EnvBool
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 # Ensure stable docker builds under pytest-xdist by disabling BuildKit, which
@@ -32,7 +36,7 @@ def _ensure_test_docker_images_built() -> None:
     return
 
 
-def pytest_collection_modifyitems(config, items) -> None:
+def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
     """Optionally skip docker tests locally unless explicitly enabled.
 
     If `LINTRO_RUN_DOCKER_TESTS` is not set to "1", skip tests marked with
@@ -42,7 +46,7 @@ def pytest_collection_modifyitems(config, items) -> None:
         config: Pytest configuration object.
         items: Collected test items that may be modified.
     """
-    if os.getenv("LINTRO_RUN_DOCKER_TESTS") == "1":
+    if os.getenv("LINTRO_RUN_DOCKER_TESTS") == EnvBool.TRUE:
         return
 
     skip_marker = pytest.mark.skip(
@@ -59,17 +63,17 @@ def pytest_collection_modifyitems(config, items) -> None:
 
 
 @pytest.fixture
-def cli_runner():
+def cli_runner() -> CliRunner:
     """Provide a Click CLI runner for testing.
 
     Returns:
-        click.testing.CliRunner: CLI runner for invoking commands.
+        CliRunner: CLI runner for invoking commands.
     """
     return CliRunner()
 
 
 @pytest.fixture
-def temp_dir():
+def temp_dir() -> Generator[Path]:
     """Provide a temporary directory for testing.
 
     Yields:
@@ -80,7 +84,7 @@ def temp_dir():
 
 
 @pytest.fixture
-def ruff_violation_file(temp_dir):
+def ruff_violation_file(temp_dir: Path) -> str:
     """Copy the ruff_violations.py sample to a temp directory.
 
     return normalized path.
@@ -91,14 +95,32 @@ def ruff_violation_file(temp_dir):
     Returns:
         str: Normalized path to the copied ruff_violations.py file.
     """
-    src = Path("test_samples/ruff_violations.py").resolve()
+    src = Path("test_samples/tools/python/ruff/ruff_e501_f401_violations.py").resolve()
     dst = temp_dir / "ruff_violations.py"
     shutil.copy(src, dst)
-    return normalize_file_path_for_display(str(dst))
+    result: str = normalize_file_path_for_display(str(dst))
+    return result
+
+
+@pytest.fixture
+def skip_config_injection(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Skip Lintro config injection for tests.
+
+    Sets LINTRO_SKIP_CONFIG_INJECTION environment variable to disable
+    config injection during tests that need to test native tool configs.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Yields:
+        None: This fixture is used for its side effect only.
+    """
+    monkeypatch.setenv("LINTRO_SKIP_CONFIG_INJECTION", "1")
+    yield
 
 
 @pytest.fixture(autouse=True)
-def clear_logging_handlers():
+def clear_logging_handlers() -> Iterator[None]:
     """Clear logging handlers before each test.
 
     Yields:

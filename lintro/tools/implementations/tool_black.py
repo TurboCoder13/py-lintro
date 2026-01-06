@@ -9,9 +9,9 @@ Project: https://github.com/psf/black
 
 from __future__ import annotations
 
-import os
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
+from typing import Any
 
 from loguru import logger
 
@@ -21,7 +21,6 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
 
 BLACK_DEFAULT_TIMEOUT: int = 30
 BLACK_DEFAULT_PRIORITY: int = 90  # Prefer Black ahead of Ruff formatting
@@ -34,7 +33,7 @@ class BlackTool(BaseTool):
 
     name: str = "black"
     description: str = "Opinionated Python code formatter"
-    can_fix: bool = True
+    can_fix: bool = field(default=True)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=BLACK_DEFAULT_PRIORITY,
@@ -51,14 +50,14 @@ class BlackTool(BaseTool):
         ),
     )
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         line_length: int | None = None,
         target_version: str | None = None,
         fast: bool | None = None,
         preview: bool | None = None,
         diff: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Black-specific options with validation.
 
@@ -130,7 +129,7 @@ class BlackTool(BaseTool):
         files: list[str],
         cwd: str | None,
     ) -> list[BlackIssue]:
-        """Check for line length violations using Ruff's E501 rule.
+        """Check for line length violations using the shared line-length checker.
 
         This catches lines that exceed the line length limit but cannot be
         safely wrapped by Black. Black's --check mode only reports files that
@@ -147,69 +146,48 @@ class BlackTool(BaseTool):
         if not files:
             return []
 
-        # Import here to avoid circular dependency
-        from lintro.tools.implementations.tool_ruff import RuffTool
+        from lintro.tools.core.line_length_checker import check_line_length_violations
 
-        try:
-            ruff_tool = RuffTool()
-            # Use the same line_length as Black is configured with
-            line_length = self.options.get("line_length")
-            if line_length:
-                ruff_tool.set_options(
-                    select=["E501"],
-                    line_length=line_length,
-                    timeout=self.options.get("timeout", BLACK_DEFAULT_TIMEOUT),
-                )
-            else:
-                # If no line_length configured, use Ruff's default (88)
-                ruff_tool.set_options(
-                    select=["E501"],
-                    timeout=self.options.get("timeout", BLACK_DEFAULT_TIMEOUT),
-                )
+        # Use the shared utility to check for E501 violations
+        line_length_opt = self.options.get("line_length")
+        timeout_opt = self.options.get("timeout", BLACK_DEFAULT_TIMEOUT)
+        line_length_val: int | None = None
+        if isinstance(line_length_opt, int):
+            line_length_val = line_length_opt
+        elif line_length_opt is not None:
+            line_length_val = int(str(line_length_opt))
+        if isinstance(timeout_opt, int):
+            timeout_val = timeout_opt
+        elif timeout_opt is not None:
+            timeout_val = int(str(timeout_opt))
+        else:
+            timeout_val = BLACK_DEFAULT_TIMEOUT
+        violations = check_line_length_violations(
+            files=files,
+            cwd=cwd,
+            line_length=line_length_val,
+            timeout=timeout_val,
+        )
 
-            # Convert relative paths to absolute paths for RuffTool
-            abs_files: list[str] = []
-            for file_path in files:
-                if cwd and not os.path.isabs(file_path):
-                    abs_files.append(os.path.abspath(os.path.join(cwd, file_path)))
-                else:
-                    abs_files.append(file_path)
-
-            # Run Ruff E501 check on the absolute file paths
-            ruff_result = ruff_tool.check(paths=abs_files)
-
-            # Convert Ruff E501 violations to BlackIssue objects
-            black_issues: list[BlackIssue] = []
-            if ruff_result.issues:
-                for ruff_issue in ruff_result.issues:
-                    # Only process E501 violations
-                    if hasattr(ruff_issue, "code") and ruff_issue.code == "E501":
-                        file_path = ruff_issue.file
-                        # Ensure absolute path
-                        if not os.path.isabs(file_path):
-                            if cwd:
-                                file_path = os.path.abspath(
-                                    os.path.join(cwd, file_path),
-                                )
-                            else:
-                                file_path = os.path.abspath(file_path)
-                        message = (
-                            f"Line {ruff_issue.line} exceeds line length limit "
-                            f"({ruff_issue.message})"
-                        )
-                        # Line length violations cannot be fixed by Black
-                        black_issues.append(
-                            BlackIssue(
-                                file=file_path,
-                                message=message,
-                                fixable=False,
-                            ),
-                        )
-
-        except Exception as e:
-            # If Ruff check fails, log but don't fail the entire Black check
-            logger.debug(f"Failed to check line length violations with Ruff: {e}")
-            return []
+        # Convert LineLengthViolation objects to BlackIssue objects
+        black_issues: list[BlackIssue] = []
+        for violation in violations:
+            message = (
+                f"Line {violation.line} exceeds line length limit "
+                f"({violation.message})"
+            )
+            # Line length violations cannot be fixed by Black
+            black_issues.append(
+                BlackIssue(
+                    file=violation.file,
+                    line=violation.line,
+                    column=violation.column,
+                    code=violation.code,
+                    message=message,
+                    severity="error",
+                    fixable=False,
+                ),
+            )
 
         return black_issues
 
@@ -265,55 +243,37 @@ class BlackTool(BaseTool):
         Returns:
             ToolResult: Result containing success flag, issue count, and issues.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-
-        py_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            default_timeout=BLACK_DEFAULT_TIMEOUT,
         )
-
-        if not py_files:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-
-        cwd: str | None = self.get_cwd(paths=py_files)
-        rel_files: list[str] = [os.path.relpath(f, cwd) if cwd else f for f in py_files]
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
         cmd: list[str] = self._get_executable_command(tool_name="black") + [
             "--check",
         ]
         cmd.extend(self._build_common_args())
-        cmd.extend(rel_files)
+        cmd.extend(ctx.rel_files)
 
-        logger.debug(f"[BlackTool] Running: {' '.join(cmd)} (cwd={cwd})")
-        timeout_val: int = self.options.get("timeout", BLACK_DEFAULT_TIMEOUT)
+        logger.debug(f"[BlackTool] Running: {' '.join(cmd)} (cwd={ctx.cwd})")
         try:
             success, output = self._run_subprocess(
                 cmd=cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
-            return self._handle_timeout_error(timeout_val)
+            return self._handle_timeout_error(ctx.timeout)
 
         black_issues = parse_black_output(output=output)
 
         # Also check for line length violations that Black cannot wrap
         # This catches E501 violations that Ruff finds but Black doesn't report
         line_length_issues = self._check_line_length_violations(
-            files=rel_files,
-            cwd=cwd,
+            files=ctx.rel_files,
+            cwd=ctx.cwd,
         )
 
         # Combine Black formatting issues with line length violations
@@ -338,55 +298,47 @@ class BlackTool(BaseTool):
         Returns:
             ToolResult: Result containing counts and any remaining issues.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-
-        py_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            no_files_message="No files to format.",
+            default_timeout=BLACK_DEFAULT_TIMEOUT,
         )
-        if not py_files:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to format.",
-                issues_count=0,
-            )
-
-        cwd: str | None = self.get_cwd(paths=py_files)
-        rel_files: list[str] = [os.path.relpath(f, cwd) if cwd else f for f in py_files]
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
         # Build reusable check command (used for final verification)
         check_cmd: list[str] = self._get_executable_command(tool_name="black") + [
             "--check",
         ]
         check_cmd.extend(self._build_common_args())
-        check_cmd.extend(rel_files)
+        check_cmd.extend(ctx.rel_files)
 
         # When diff is requested, skip the initial check to ensure the middle
         # invocation is the formatting run (as exercised by unit tests) and to
         # avoid redundant subprocess calls.
-        timeout_val: int = self.options.get("timeout", BLACK_DEFAULT_TIMEOUT)
         if self.options.get("diff"):
             initial_issues = []
+            initial_line_length_issues = []
             initial_count = 0
         else:
             try:
                 _, check_output = self._run_subprocess(
                     cmd=check_cmd,
-                    timeout=timeout_val,
-                    cwd=cwd,
+                    timeout=ctx.timeout,
+                    cwd=ctx.cwd,
                 )
             except subprocess.TimeoutExpired:
-                return self._handle_timeout_error(timeout_val, initial_count=0)
+                return self._handle_timeout_error(ctx.timeout, initial_count=0)
             initial_issues = parse_black_output(output=check_output)
-            initial_count = len(initial_issues)
+            # Also check for line length violations in initial state
+            # This ensures initial_count includes all issues that will be counted
+            # in remaining_count, preventing validation errors
+            initial_line_length_issues = self._check_line_length_violations(
+                files=ctx.rel_files,
+                cwd=ctx.cwd,
+            )
+            initial_count = len(initial_issues) + len(initial_line_length_issues)
 
         # Apply formatting
         fix_cmd_base: list[str] = self._get_executable_command(tool_name="black")
@@ -396,34 +348,34 @@ class BlackTool(BaseTool):
             # so tests can assert its presence on the middle invocation.
             fix_cmd.append("--diff")
         fix_cmd.extend(self._build_common_args())
-        fix_cmd.extend(rel_files)
+        fix_cmd.extend(ctx.rel_files)
 
-        logger.debug(f"[BlackTool] Fixing: {' '.join(fix_cmd)} (cwd={cwd})")
+        logger.debug(f"[BlackTool] Fixing: {' '.join(fix_cmd)} (cwd={ctx.cwd})")
         try:
             _, fix_output = self._run_subprocess(
                 cmd=fix_cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
-            return self._handle_timeout_error(timeout_val, initial_count=initial_count)
+            return self._handle_timeout_error(ctx.timeout, initial_count=initial_count)
 
         # Final check for remaining differences
         try:
             final_success, final_output = self._run_subprocess(
                 cmd=check_cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
-            return self._handle_timeout_error(timeout_val, initial_count=initial_count)
+            return self._handle_timeout_error(ctx.timeout, initial_count=initial_count)
         remaining_issues = parse_black_output(output=final_output)
 
         # Also check for line length violations that Black cannot wrap
         # This catches E501 violations that Ruff finds but Black doesn't report
         line_length_issues = self._check_line_length_violations(
-            files=rel_files,
-            cwd=cwd,
+            files=ctx.rel_files,
+            cwd=ctx.cwd,
         )
 
         # Combine Black formatting issues with line length violations
@@ -432,17 +384,19 @@ class BlackTool(BaseTool):
 
         # Parse per-file reformats from the formatting run to display in console
         fixed_issues_parsed = parse_black_output(output=fix_output)
-        fixed_count_from_output = len(fixed_issues_parsed)
 
-        # Calculate fixed count: use reformatted files count if available,
-        # otherwise calculate from initial - remaining
-        if fixed_count_from_output > 0:
-            fixed_count = fixed_count_from_output
-        else:
-            # Subtract only Black-related remaining issues (exclude line-length)
-            line_length_issues_count = len(line_length_issues)
-            remaining_black_count = max(0, remaining_count - line_length_issues_count)
-            fixed_count = max(0, initial_count - remaining_black_count)
+        # Calculate fixed count: always use issue-based calculation to ensure
+        # consistency with initial_count and remaining_count (which count issues,
+        # not files). The fixed_count_from_output is useful for display but
+        # shouldn't be used for validation since it counts files, not issues.
+        #
+        # To maintain the invariant initial = fixed + remaining:
+        # - initial_count includes ALL issues (formatting + line length)
+        # - remaining_count includes ALL remaining issues (fmt + line length)
+        # - fixed_count = initial_count - remaining_count
+        # This ensures initial = fixed + remaining even though line
+        # length violations can't be fixed
+        fixed_count = max(0, initial_count - remaining_count)
 
         # Build concise summary
         summary: list[str] = []

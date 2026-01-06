@@ -12,6 +12,7 @@ DEFAULT_ACTION: str = "fmt"
 
 
 @click.command()
+@click.pass_context
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 @click.option(
     "--tools",
@@ -59,7 +60,8 @@ DEFAULT_ACTION: str = "fmt"
     default=False,
     help="Show raw tool output instead of formatted output.",
 )
-def format_code(
+def format_command(
+    ctx: click.Context,
     paths: tuple[str, ...],
     tools: str | None,
     tool_options: str | None,
@@ -76,6 +78,7 @@ def format_code(
     Uses simplified Loguru-based logging for clean output and proper file logging.
 
     Args:
+        ctx: click.Context: Click context object for command execution.
         paths: tuple[str, ...]:
             Paths to format (defaults to current directory if none provided).
         tools: str | None: Specific tools to run, or 'all' for all available tools.
@@ -87,9 +90,6 @@ def format_code(
         verbose: bool: Enable detailed debug output.
         raw_output: bool:
             Show raw tool output instead of formatted output.
-
-    Raises:
-        ClickException: If issues are found during formatting.
     """
     # Default to current directory if no paths provided
     normalized_paths: list[str] = list(paths) if paths else list(DEFAULT_PATHS)
@@ -108,12 +108,13 @@ def format_code(
         raw_output=raw_output,
     )
 
-    # Exit with appropriate code
-    if exit_code != DEFAULT_EXIT_CODE:
-        raise click.ClickException("Format found issues")
+    # Exit with code from tool execution
+    # For fmt action, exit_code is 1 only if there were execution errors
+    # (not if issues were found and fixed - that's success)
+    ctx.exit(exit_code)
 
 
-def format_code_legacy(
+def format_code(
     paths: list[str] | None = None,
     tools: str | None = None,
     tool_options: str | None = None,
@@ -123,7 +124,7 @@ def format_code_legacy(
     output_format: str = "grid",
     verbose: bool = False,
 ) -> None:
-    """Programmatic format function for backward compatibility.
+    """Programmatic format function.
 
     Args:
         paths: list[str] | None: List of file/directory paths to format.
@@ -160,7 +161,14 @@ def format_code_legacy(
         args.append("--verbose")
 
     runner = CliRunner()
-    result = runner.invoke(format_code, args)
+    result = runner.invoke(format_command, args)
     if result.exit_code != DEFAULT_EXIT_CODE:
         raise RuntimeError(f"Format failed: {result.output}")
     return None
+
+
+# Legacy alias for backward compatibility
+format_code_legacy = format_code
+
+# Export the Click command as the main interface
+__all__ = ["format_command", "format_code", "format_code_legacy"]

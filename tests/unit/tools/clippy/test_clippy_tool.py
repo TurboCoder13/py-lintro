@@ -1,0 +1,206 @@
+"""Unit tests for Clippy tool integration."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+from assertpy import assert_that
+
+from lintro.parsers.clippy.clippy_issue import ClippyIssue
+from lintro.tools.implementations.tool_clippy import ClippyTool
+
+
+def test_clippy_check_parses_issues(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Ensure check mode parses Clippy JSON output correctly.
+
+    Args:
+        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
+        tmp_path: Temporary directory for creating files.
+    """
+    tool = ClippyTool()
+
+    # Create a dummy Rust file
+    rust_file = tmp_path / "src" / "lib.rs"
+    rust_file.parent.mkdir()
+    rust_file.write_text("fn main() { return 42; }\n")
+
+    # Create Cargo.toml
+    cargo_toml = tmp_path / "Cargo.toml"
+    cargo_toml.write_text('[package]\nname = "test"\nversion = "0.1.0"\n')
+
+    # Stub file discovery to return our file
+    monkeypatch.setattr(
+        "lintro.utils.path_filtering.walk_files_with_excludes",
+        lambda paths, file_patterns, exclude_patterns, include_venv: [
+            str(rust_file),
+        ],
+        raising=True,
+    )
+
+    # Stub subprocess to emit Clippy JSON output
+    clippy_output = (
+        '{"reason":"compiler-message","message":{"code":{"code":"clippy::needless_return"},'
+        '"level":"warning","message":"unneeded `return` statement",'
+        '"spans":[{"file_name":"src/lib.rs","line_start":1,"line_end":1,'
+        '"column_start":15,"column_end":21}]}}\n'
+    )
+
+    def fake_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
+        if "clippy" in cmd and "--fix" not in cmd:
+            return (False, clippy_output)
+        return (True, "")
+
+    monkeypatch.setattr(
+        tool,
+        "_run_subprocess",
+        lambda cmd, timeout, cwd=None: fake_run(cmd, timeout, cwd),
+    )
+
+    res = tool.check([str(tmp_path)])
+    assert_that(res.issues_count).is_equal_to(1)
+    assert_that(res.success).is_false()
+    assert_that(res.issues).is_not_none()
+    assert_that(res.issues).is_not_empty()
+    issues = res.issues
+    if issues is None:
+        pytest.fail("issues should not be None")
+    first_issue = issues[0]
+    assert_that(isinstance(first_issue, ClippyIssue)).is_true()
+    if not isinstance(first_issue, ClippyIssue):
+        pytest.fail("first_issue should be ClippyIssue")
+    assert_that(first_issue.code).is_equal_to("clippy::needless_return")
+
+
+def test_clippy_check_no_cargo_toml(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Skip when no Cargo.toml is found.
+
+    Args:
+        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
+        tmp_path: Temporary directory for creating files.
+    """
+    tool = ClippyTool()
+
+    rust_file = tmp_path / "lib.rs"
+    rust_file.write_text("fn main() {}\n")
+
+    monkeypatch.setattr(
+        "lintro.utils.path_filtering.walk_files_with_excludes",
+        lambda paths, file_patterns, exclude_patterns, include_venv: [
+            str(rust_file),
+        ],
+        raising=True,
+    )
+
+    res = tool.check([str(tmp_path)])
+    assert_that(res.success).is_true()
+    assert_that(res.issues_count).is_equal_to(0)
+    assert_that(res.output).is_not_none()
+    if res.output is not None:
+        assert_that(
+            "No Cargo.toml found" in res.output or "skipping" in res.output.lower(),
+        ).is_true()
+
+
+def test_clippy_fix_computes_counts(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Ensure fix mode computes initial/fixed/remaining issue counts.
+
+    Args:
+        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
+        tmp_path: Temporary directory for creating files.
+    """
+    tool = ClippyTool()
+
+    rust_file = tmp_path / "src" / "lib.rs"
+    rust_file.parent.mkdir()
+    rust_file.write_text("fn main() { return 42; }\n")
+
+    cargo_toml = tmp_path / "Cargo.toml"
+    cargo_toml.write_text('[package]\nname = "test"\nversion = "0.1.0"\n')
+
+    monkeypatch.setattr(
+        "lintro.utils.path_filtering.walk_files_with_excludes",
+        lambda paths, file_patterns, exclude_patterns, include_venv: [
+            str(rust_file),
+        ],
+        raising=True,
+    )
+
+    calls = {"n": 0}
+
+    initial_output = (
+        '{"reason":"compiler-message","message":{"code":{"code":"clippy::needless_return"},'
+        '"level":"warning","message":"unneeded return",'
+        '"spans":[{"file_name":"src/lib.rs",'
+        '"line_start":1,"line_end":1,"column_start":15,"column_end":21}]}}\n'
+    )
+
+    def fake_run(
+        cmd: list[str],
+        timeout: int | None = None,
+        cwd: str | None = None,
+    ) -> tuple[bool, str]:
+        if "clippy" in cmd:
+            if "--fix" in cmd:
+                calls["n"] += 1
+                return (True, "")
+            # Check mode
+            if calls["n"] == 0:
+                calls["n"] += 1
+                return (False, initial_output)
+            else:
+                # After fix, no issues
+                return (True, "")
+        return (True, "")
+
+    monkeypatch.setattr(
+        tool,
+        "_run_subprocess",
+        lambda cmd, timeout, cwd=None: fake_run(cmd, timeout, cwd),
+    )
+
+    res = tool.fix([str(tmp_path)])
+    assert_that(res.initial_issues_count).is_equal_to(1)
+    assert_that(res.fixed_issues_count).is_equal_to(1)
+    assert_that(res.remaining_issues_count).is_equal_to(0)
+    assert_that(res.success).is_true()
+
+
+def test_clippy_check_no_rust_files(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Handle case when no Rust files are found.
+
+    Args:
+        monkeypatch: Pytest fixture for monkeypatching subprocess behavior.
+        tmp_path: Temporary directory for creating files.
+    """
+    tool = ClippyTool()
+
+    python_file = tmp_path / "main.py"
+    python_file.write_text("print('hello')\n")
+
+    monkeypatch.setattr(
+        "lintro.utils.path_filtering.walk_files_with_excludes",
+        lambda paths, file_patterns, exclude_patterns, include_venv: [],
+        raising=True,
+    )
+
+    res = tool.check([str(tmp_path)])
+    assert_that(res.success).is_true()
+    assert_that(res.issues_count).is_equal_to(0)
+    assert_that(res.output).contains("No .rs files found")

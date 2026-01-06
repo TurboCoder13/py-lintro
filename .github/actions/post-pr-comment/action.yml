@@ -26,7 +26,7 @@ runs:
         PR_NUMBER: ${{ github.event.pull_request.number }}
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_REPOSITORY: ${{ github.repository }}
-      run: scripts/ci/post-pr-delete-previous.sh "${{ inputs.marker }}"
+      run: scripts/ci/github/post-pr-delete-previous.sh "${{ inputs.marker }}"
 
     - name: Post comment
       shell: bash
@@ -36,4 +36,4 @@ runs:
         GITHUB_REPOSITORY: ${{ github.repository }}
       run: |
         MARKER="${{ inputs.marker }}" \
-        ./scripts/ci/ci-post-pr-comment.sh "${{ inputs.file }}"
+        ./scripts/ci/github/ci-post-pr-comment.sh "${{ inputs.file }}"

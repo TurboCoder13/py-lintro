@@ -52,4 +52,4 @@ jobs:
 
       - name: Quality gate
         id: version
-        run: scripts/ci/reusable-quality-entry.sh
+        run: scripts/ci/testing/reusable-quality-entry.sh

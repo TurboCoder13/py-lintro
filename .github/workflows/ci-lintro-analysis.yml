@@ -101,7 +101,7 @@ jobs:
         id: lintro
         env:
           RUFF_UNSAFE_FIXES: true # Enable unsafe fixes for CI to catch C4/SIM issues
-        run: ./scripts/ci/ci-lintro.sh
+        run: ./scripts/ci/testing/ci-lintro.sh
         continue-on-error: true
 
       # Deletion handled by composite action below via marker

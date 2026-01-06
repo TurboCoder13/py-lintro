@@ -56,7 +56,7 @@ jobs:
 
       - name: Guard ensure last commit is a release bump
         id: guard
-        run: bash scripts/ci/guard-release-commit.sh
+        run: bash scripts/ci/deployment/guard-release-commit.sh
 
       - name: Skip if not a release bump commit
         if: steps.guard.outputs.ok != 'true'
@@ -72,11 +72,11 @@ jobs:
 
       - name: Read version from pyproject.toml
         id: version
-        run: scripts/ci/auto-tag-unified.sh read-version
+        run: scripts/ci/maintenance/auto-tag-unified.sh read-version
 
       - name: Detect previous version
         id: prev
-        run: scripts/ci/auto-tag-unified.sh detect-previous
+        run: scripts/ci/maintenance/auto-tag-unified.sh detect-previous
 
       - name: Skip if version unchanged
         if: steps.prev.outputs.version == steps.version.outputs.version
@@ -87,7 +87,7 @@ jobs:
         if: steps.prev.outputs.version != steps.version.outputs.version
         env:
           TAG: v${{ steps.version.outputs.version }}
-        run: scripts/ci/auto-tag-unified.sh check-exists
+        run: scripts/ci/maintenance/auto-tag-unified.sh check-exists
 
       - name: Configure auth for push
         if: >-
@@ -95,7 +95,7 @@ jobs:
           steps.check.outputs.exists == 'false'
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: scripts/ci/auto-tag-unified.sh configure-auth
+        run: scripts/ci/maintenance/auto-tag-unified.sh configure-auth
 
       - name: Create and push tag
         if: >-
@@ -103,4 +103,4 @@ jobs:
           steps.check.outputs.exists == 'false'
         env:
           TAG: v${{ steps.version.outputs.version }}
-        run: scripts/ci/auto-tag-unified.sh create-push
+        run: scripts/ci/maintenance/auto-tag-unified.sh create-push

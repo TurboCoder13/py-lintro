@@ -8,11 +8,12 @@ import pytest
 from assertpy import assert_that
 from loguru import logger
 
+from lintro.parsers.markdownlint.markdownlint_issue import MarkdownlintIssue
 from lintro.tools.implementations.tool_markdownlint import MarkdownlintTool
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
-SAMPLE_FILE = "test_samples/markdownlint_violations.md"
+SAMPLE_FILE = "test_samples/tools/config/markdown/markdownlint_violations.md"
 
 
 def find_markdownlint_cmd() -> list[str] | None:
@@ -110,6 +111,8 @@ def test_markdownlint_direct_vs_lintro_parity() -> None:
 
     # Run via lintro
     tool = MarkdownlintTool()
+    # Clear exclude patterns to allow scanning test_samples
+    tool.exclude_patterns = []
     lintro_result = tool.check(paths=[str(sample_path)])
 
     # Compare issue counts (allow some variance due to parsing differences)
@@ -145,6 +148,9 @@ def test_markdownlint_integration_basic() -> None:
     # If there are issues, verify they're properly structured
     if result.issues:
         issue = result.issues[0]
+        # Use isinstance check for type narrowing
+        if not isinstance(issue, MarkdownlintIssue):
+            pytest.fail("issue should be MarkdownlintIssue")
         assert_that(issue.file).is_not_empty()
         assert_that(issue.line).is_greater_than(0)
         assert_that(issue.code).matches(r"^MD\d+$")

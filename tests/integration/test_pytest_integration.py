@@ -3,11 +3,14 @@
 import os
 import shutil
 import tempfile
+from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 from assertpy import assert_that
 from loguru import logger
 
+from lintro.enums.env_bool import EnvBool
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools.implementations.tool_pytest import PytestTool
 
@@ -25,7 +28,7 @@ def pytest_available() -> bool:
         bool: True if pytest is available, False otherwise.
     """
     # In Docker, pytest should always be available since we control the environment
-    if os.environ.get("RUNNING_IN_DOCKER") == "1":
+    if os.environ.get("RUNNING_IN_DOCKER") == EnvBool.TRUE:
         return True
 
     # Check if pytest is on PATH
@@ -64,31 +67,49 @@ def pytest_tool():
     Returns:
         PytestTool: A configured PytestTool instance.
     """
-    return PytestTool()
+    tool = PytestTool()
+    # Remove test_samples from exclude patterns so integration tests can run on sample
+    # files
+    tool.exclude_patterns = [
+        p for p in tool.exclude_patterns if "test_samples" not in p
+    ]
+    return tool
 
 
 @pytest.fixture
-def pytest_clean_file():
-    """Return the path to the static pytest clean file for testing.
+def pytest_clean_file(tmp_path: Path) -> Generator[str]:
+    """Copy pytest clean file to a temp location outside test_samples.
+
+    Args:
+        tmp_path: Pytest tmp_path fixture.
 
     Yields:
-        str: Path to the static pytest_clean.py file.
+        str: Path to the copied pytest_clean.py file.
     """
-    yield os.path.abspath("test_samples/pytest_clean.py")
+    src = os.path.abspath("test_samples/tools/python/pytest/pytest_clean.py")
+    dst = tmp_path / "pytest_clean.py"
+    shutil.copy(src, dst)
+    yield str(dst)
 
 
 @pytest.fixture
-def pytest_failures_file():
-    """Return the path to the static pytest failures file for testing.
+def pytest_failures_file(tmp_path: Path) -> Generator[str]:
+    """Copy pytest failures file to a temp location outside test_samples.
+
+    Args:
+        tmp_path: Pytest tmp_path fixture.
 
     Yields:
-        str: Path to the static pytest_failures.py file.
+        str: Path to the copied pytest_failures.py file.
     """
-    yield os.path.abspath("test_samples/pytest_failures.py")
+    src = os.path.abspath("test_samples/tools/python/pytest/pytest_failures.py")
+    dst = tmp_path / "pytest_failures.py"
+    shutil.copy(src, dst)
+    yield str(dst)
 
 
 @pytest.fixture
-def temp_test_dir(request):
+def temp_test_dir(request: pytest.FixtureRequest) -> Generator[str]:
     """Create a temporary directory with test files.
 
     Args:
@@ -99,12 +120,14 @@ def temp_test_dir(request):
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy pytest_clean.py to temp directory
-        src_clean = os.path.abspath("test_samples/pytest_clean.py")
+        src_clean = os.path.abspath("test_samples/tools/python/pytest/pytest_clean.py")
         dst_clean = os.path.join(tmpdir, "test_clean.py")
         shutil.copy(src_clean, dst_clean)
 
         # Copy pytest_failures.py to temp directory
-        src_failures = os.path.abspath("test_samples/pytest_failures.py")
+        src_failures = os.path.abspath(
+            "test_samples/tools/python/pytest/pytest_failures.py",
+        )
         dst_failures = os.path.join(tmpdir, "test_failures.py")
         shutil.copy(src_failures, dst_failures)
 
@@ -115,7 +138,7 @@ def temp_test_dir(request):
     not pytest_available(),
     reason="pytest not available; skip integration test.",
 )
-def test_tool_initialization(pytest_tool) -> None:
+def test_tool_initialization(pytest_tool: PytestTool) -> None:
     """Test that PytestTool initializes correctly.
 
     Args:
@@ -128,7 +151,7 @@ def test_tool_initialization(pytest_tool) -> None:
     # present if pytest.ini only specifies test_*.py
 
 
-def test_tool_priority(pytest_tool) -> None:
+def test_tool_priority(pytest_tool: PytestTool) -> None:
     """Test that PytestTool has correct priority.
 
     Args:
@@ -137,7 +160,10 @@ def test_tool_priority(pytest_tool) -> None:
     assert_that(pytest_tool.config.priority).is_equal_to(90)
 
 
-def test_run_tests_on_clean_file(pytest_tool, pytest_clean_file) -> None:
+def test_run_tests_on_clean_file(
+    pytest_tool: PytestTool,
+    pytest_clean_file: str,
+) -> None:
     """Test pytest execution on a clean test file.
 
     Args:
@@ -158,8 +184,8 @@ def test_run_tests_on_clean_file(pytest_tool, pytest_clean_file) -> None:
 
 
 def test_run_tests_on_failures_file(
-    pytest_tool,
-    pytest_failures_file,
+    pytest_tool: PytestTool,
+    pytest_failures_file: str,
 ) -> None:
     """Test pytest execution on a file with intentional failures.
 
@@ -175,7 +201,7 @@ def test_run_tests_on_failures_file(
     assert_that(result.issues_count > 0).is_true()
 
 
-def test_run_tests_on_directory(pytest_tool, temp_test_dir) -> None:
+def test_run_tests_on_directory(pytest_tool: PytestTool, temp_test_dir: str) -> None:
     """Test pytest execution on a directory with multiple test files.
 
     Args:
@@ -194,8 +220,8 @@ def test_run_tests_on_directory(pytest_tool, temp_test_dir) -> None:
 
 
 def test_docker_tests_disabled_by_default(
-    pytest_tool,
-    temp_test_dir,
+    pytest_tool: PytestTool,
+    temp_test_dir: str,
 ) -> None:
     """Test that Docker tests are disabled by default.
 
@@ -214,6 +240,9 @@ def test_docker_tests_disabled_by_default(
         assert_that(isinstance(result, ToolResult)).is_true()
         # Should still run, but docker tests should be skipped
         # The output may be in JSON format, so check for both text and JSON formats
+        assert_that(result.output).is_not_none()
+        if result.output is None:
+            pytest.fail("output should not be None")
         output_lower = result.output.lower()
         # Check for skipped tests in either text or JSON output format
         assert_that(
@@ -228,8 +257,8 @@ def test_docker_tests_disabled_by_default(
 
 
 def test_docker_tests_enabled_via_option(
-    pytest_tool,
-    temp_test_dir,
+    pytest_tool: PytestTool,
+    temp_test_dir: str,
 ) -> None:
     """Test that Docker tests can be enabled via option.
 
@@ -255,7 +284,7 @@ def test_docker_tests_enabled_via_option(
 
 
 @pytest.mark.slow
-def test_default_paths(pytest_tool) -> None:
+def test_default_paths(pytest_tool: PytestTool) -> None:
     """Test that default paths work correctly.
 
     Args:
@@ -270,7 +299,7 @@ def test_default_paths(pytest_tool) -> None:
     assert_that(result.name).is_equal_to("pytest")
 
 
-def test_set_options_valid(pytest_tool) -> None:
+def test_set_options_valid(pytest_tool: PytestTool) -> None:
     """Test setting valid options.
 
     Args:
@@ -288,7 +317,7 @@ def test_set_options_valid(pytest_tool) -> None:
     assert_that(pytest_tool.options["maxfail"]).is_equal_to(5)
 
 
-def test_set_options_invalid_tb(pytest_tool) -> None:
+def test_set_options_invalid_tb(pytest_tool: PytestTool) -> None:
     """Test setting invalid traceback format.
 
     Args:
@@ -298,7 +327,7 @@ def test_set_options_invalid_tb(pytest_tool) -> None:
         pytest_tool.set_options(tb="invalid")
 
 
-def test_set_options_invalid_maxfail(pytest_tool) -> None:
+def test_set_options_invalid_maxfail(pytest_tool: PytestTool) -> None:
     """Test setting invalid maxfail value.
 
     Args:
@@ -308,7 +337,7 @@ def test_set_options_invalid_maxfail(pytest_tool) -> None:
         pytest_tool.set_options(maxfail="not_a_number")
 
 
-def test_fix_not_implemented(pytest_tool) -> None:
+def test_fix_not_implemented(pytest_tool: PytestTool) -> None:
     """Test that fix method raises NotImplementedError.
 
     Args:
@@ -318,7 +347,10 @@ def test_fix_not_implemented(pytest_tool) -> None:
         pytest_tool.fix(["test_file.py"])
 
 
-def test_output_contains_summary(pytest_tool, pytest_failures_file) -> None:
+def test_output_contains_summary(
+    pytest_tool: PytestTool,
+    pytest_failures_file: str,
+) -> None:
     """Test that output contains summary information.
 
     Args:
@@ -329,13 +361,16 @@ def test_output_contains_summary(pytest_tool, pytest_failures_file) -> None:
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.output).is_not_empty()
     # Output should contain JSON summary or test results
+    assert_that(result.output).is_not_none()
+    if result.output is None:
+        pytest.fail("output should not be None")
     assert_that(
         "passed" in result.output.lower() or "failed" in result.output.lower(),
     ).is_true()
 
 
 def test_pytest_output_consistency_direct_vs_lintro(
-    pytest_failures_file,
+    pytest_failures_file: str,
 ) -> None:
     """Test that lintro produces consistent results with direct pytest.
 
@@ -351,7 +386,7 @@ def test_pytest_output_consistency_direct_vs_lintro(
 
     # In Docker, pytest is only available as python -m pytest
     # Check if we're in Docker or if pytest is available on PATH
-    if os.environ.get("RUNNING_IN_DOCKER") == "1":
+    if os.environ.get("RUNNING_IN_DOCKER") == EnvBool.TRUE:
         # Use python -m pytest in Docker
         cmd = [
             sys.executable,

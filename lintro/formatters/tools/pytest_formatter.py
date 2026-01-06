@@ -1,26 +1,12 @@
 """Formatter for pytest issues."""
 
+from lintro.formatters.core.format_registry import get_style
 from lintro.formatters.core.table_descriptor import TableDescriptor
-from lintro.formatters.styles.csv import CsvStyle
-from lintro.formatters.styles.grid import GridStyle
-from lintro.formatters.styles.html import HtmlStyle
-from lintro.formatters.styles.json import JsonStyle
-from lintro.formatters.styles.markdown import MarkdownStyle
-from lintro.formatters.styles.plain import PlainStyle
 from lintro.parsers.pytest.pytest_issue import PytestIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 # Maximum message length before truncation (reasonable for terminal widths)
 MAX_MESSAGE_LENGTH: int = 100
-
-FORMAT_MAP = {
-    "plain": PlainStyle(),
-    "grid": GridStyle(),
-    "markdown": MarkdownStyle(),
-    "html": HtmlStyle(),
-    "json": JsonStyle(),
-    "csv": CsvStyle(),
-}
 
 
 class PytestFailuresTableDescriptor(TableDescriptor):
@@ -131,7 +117,7 @@ def format_pytest_failures(
         str: Formatted string with pytest failures table.
     """
     descriptor = PytestFailuresTableDescriptor()
-    formatter = FORMAT_MAP.get(format, GridStyle())
+    formatter = get_style(format)
 
     columns = descriptor.get_columns()
     rows = descriptor.get_rows(issues)
@@ -157,7 +143,7 @@ def format_pytest_skipped(
         str: Formatted string with pytest skipped tests table.
     """
     descriptor = PytestSkippedTableDescriptor()
-    formatter = FORMAT_MAP.get(format, GridStyle())
+    formatter = get_style(format)
 
     columns = descriptor.get_columns()
     rows = descriptor.get_rows(issues)
