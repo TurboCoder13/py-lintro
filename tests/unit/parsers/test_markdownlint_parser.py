@@ -38,7 +38,7 @@ def test_parse_markdownlint_lines() -> None:
     i1 = issues[1]
     assert_that(i1.file).is_equal_to("dir/about.md")
     assert_that(i1.line).is_equal_to(4)
-    assert_that(i1.column).is_none()
+    assert_that(i1.column).is_equal_to(0)  # 0 means unknown/not provided
     assert_that(i1.code).is_equal_to("MD032")
     assert_that(i1.message).contains("Lists should be surrounded")
 
@@ -58,7 +58,7 @@ def test_parse_markdownlint_without_column() -> None:
     i0 = issues[0]
     assert_that(i0.file).is_equal_to("file.md")
     assert_that(i0.line).is_equal_to(5)
-    assert_that(i0.column).is_none()
+    assert_that(i0.column).is_equal_to(0)  # 0 means unknown/not provided
     assert_that(i0.code).is_equal_to("MD041")
     assert_that(i0.message).contains("First line should be a heading")
 
@@ -100,7 +100,7 @@ def test_parse_markdownlint_multiline_messages() -> None:
     i1 = issues[1]
     assert_that(i1.file).is_equal_to("dir/about.md")
     assert_that(i1.line).is_equal_to(4)
-    assert_that(i1.column).is_none()
+    assert_that(i1.column).is_equal_to(0)  # 0 means unknown/not provided
     assert_that(i1.code).is_equal_to("MD032")
     assert_that(i1.message).contains("Lists should be surrounded")
     assert_that(i1.message).contains("by blank lines")
