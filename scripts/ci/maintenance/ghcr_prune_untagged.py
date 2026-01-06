@@ -64,9 +64,21 @@ def list_container_versions(client: httpx.Client, owner: str) -> list[GhcrVersio
     for item in data:
         vid_raw = item.get("id")
         if vid_raw is None:
-            logger.error("API response missing 'id' field for item: {}", item)
+            logger.error(
+                "API response missing 'id' field for item with created_at: {}",
+                item.get("created_at", "unknown"),
+            )
             continue
-        vid = int(vid_raw)
+        try:
+            vid = int(vid_raw)
+        except (ValueError, TypeError) as e:
+            logger.error(
+                "Invalid 'id' value '{}' for item with created_at: {} - {}",
+                vid_raw,
+                item.get("created_at", "unknown"),
+                e,
+            )
+            continue
         tags = list(item.get("metadata", {}).get("container", {}).get("tags", []))
         created_at = str(item.get("created_at", ""))
         versions.append(GhcrVersion(id=vid, tags=tags, created_at=created_at))

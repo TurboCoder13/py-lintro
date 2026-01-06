@@ -230,6 +230,12 @@ def test_prettier_fix_sets_issues_for_table(temp_prettier_file: Path) -> None:
     assert_that(formatted).is_not_empty().described_as(
         "Formatted output should not be empty",
     )
+    # Verify table contains expected content (issues section or file info)
+    assert_that(
+        "Auto-fixable" in formatted or "prettier" in formatted.lower(),
+    ).is_true().described_as(
+        "Formatted output should contain auto-fixable section or tool info",
+    )
 
 
 def test_prettier_respects_prettierignore(tmp_path: Path) -> None:

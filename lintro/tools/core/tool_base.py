@@ -132,6 +132,62 @@ class BaseTool(ABC):
         if not isinstance(self.config.tool_type, ToolType):
             raise ValueError("Tool tool_type must be a ToolType instance")
 
+    def _validate_timeout(
+        self,
+        timeout_opt: object,
+        default_timeout: int,
+    ) -> int:
+        """Validate and normalize a timeout value.
+
+        Handles various input types and edge cases:
+        - Rejects boolean values (bool is a subclass of int in Python)
+        - Rejects non-positive values
+        - Converts string values to int
+        - Falls back to default on invalid input
+
+        Args:
+            timeout_opt: The timeout value to validate (from options or config).
+            default_timeout: The default timeout to use if validation fails.
+
+        Returns:
+            A valid positive integer timeout value.
+        """
+        # Guard against boolean values (bool is a subclass of int in Python)
+        if isinstance(timeout_opt, bool):
+            logger.warning(
+                f"Boolean timeout value '{timeout_opt}' is invalid, "
+                f"using default {default_timeout}s",
+            )
+            return default_timeout
+
+        if isinstance(timeout_opt, int):
+            if timeout_opt <= 0:
+                logger.warning(
+                    f"Non-positive timeout value '{timeout_opt}' is invalid, "
+                    f"using default {default_timeout}s",
+                )
+                return default_timeout
+            return timeout_opt
+
+        if timeout_opt is not None:
+            try:
+                timeout_val = int(str(timeout_opt))
+                if timeout_val <= 0:
+                    logger.warning(
+                        f"Non-positive timeout value '{timeout_opt}' is invalid, "
+                        f"using default {default_timeout}s",
+                    )
+                    return default_timeout
+                return timeout_val
+            except ValueError:
+                logger.warning(
+                    f"Invalid timeout value '{timeout_opt}', "
+                    f"using default {default_timeout}s",
+                )
+                return default_timeout
+
+        return default_timeout
+
     def _find_lintro_ignore(self) -> str | None:
         """Find .lintro-ignore file by searching upward from current directory.
 

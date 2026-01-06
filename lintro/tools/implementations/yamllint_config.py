@@ -547,19 +547,7 @@ class YamllintTool(BaseTool):
         other_execution_failures = 0
 
         timeout_opt = self.options.get("timeout", YAMLLINT_DEFAULT_TIMEOUT)
-        if isinstance(timeout_opt, int):
-            timeout_val = timeout_opt
-        elif timeout_opt is not None:
-            try:
-                timeout_val = int(str(timeout_opt))
-            except ValueError:
-                logger.warning(
-                    f"Invalid timeout value '{timeout_opt}', "
-                    f"using default {YAMLLINT_DEFAULT_TIMEOUT}s",
-                )
-                timeout_val = YAMLLINT_DEFAULT_TIMEOUT
-        else:
-            timeout_val = YAMLLINT_DEFAULT_TIMEOUT
+        timeout_val = self._validate_timeout(timeout_opt, YAMLLINT_DEFAULT_TIMEOUT)
 
         # Load ignore patterns from yamllint config before processing files
         config_file = self._find_yamllint_config(search_dir=paths[0] if paths else None)
