@@ -7,9 +7,9 @@ structured issues, and returns a normalized `ToolResult`.
 
 from __future__ import annotations
 
-import contextlib
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
+from typing import Any
 
 import click
 from loguru import logger
@@ -19,7 +19,6 @@ from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
 
 # Defaults
 ACTIONLINT_DEFAULT_TIMEOUT: int = 30
@@ -39,9 +38,9 @@ class ActionlintTool(BaseTool):
             `ToolType` classification.
     """
 
-    name: str = "actionlint"
-    description: str = "Static checker for GitHub Actions workflows"
-    can_fix: bool = False
+    name: str = field(default="actionlint")
+    description: str = field(default="Static checker for GitHub Actions workflows")
+    can_fix: bool = field(default=False)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=ACTIONLINT_DEFAULT_PRIORITY,
@@ -69,54 +68,38 @@ class ActionlintTool(BaseTool):
         """
         return ["actionlint"]
 
-    def _process_file(
+    def _process_single_file(
         self,
         file_path: str,
-        base_cmd: list[str],
         timeout: int,
-        all_outputs: list[str],
-        all_issues: list,
-        skipped_files: list[str],
-        all_success: bool,
-        execution_failures: int,
-    ) -> tuple[bool, int]:
+        results: dict[str, Any],
+    ) -> None:
         """Process a single file with actionlint.
 
         Args:
             file_path: Path to the file to process.
-            base_cmd: Base command list for actionlint.
             timeout: Timeout in seconds.
-            all_outputs: List to append raw output to.
-            all_issues: List to extend with parsed issues.
-            skipped_files: List to append skipped file paths to.
-            all_success: Current success flag.
-            execution_failures: Current execution failures count.
-
-        Returns:
-            Tuple of (updated_all_success, updated_execution_failures).
+            results: Mutable dict to accumulate results.
         """
-        cmd = base_cmd + [file_path]
+        cmd = self._build_command() + [file_path]
         try:
             success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
             issues = parse_actionlint_output(output)
+
             if not success:
-                all_success = False
-            # Preserve output when subprocess fails even if parsing yields no issues
+                results["all_success"] = False
             if output and (issues or not success):
-                all_outputs.append(output)
+                results["all_outputs"].append(output)
             if issues:
-                all_issues.extend(issues)
+                results["all_issues"].extend(issues)
         except subprocess.TimeoutExpired:
-            skipped_files.append(file_path)
-            all_success = False
-            # Count timeout as an execution failure
-            execution_failures += 1
+            results["skipped_files"].append(file_path)
+            results["all_success"] = False
+            results["execution_failures"] += 1
         except Exception as e:  # pragma: no cover
-            all_success = False
-            all_outputs.append(f"Error checking {file_path}: {e}")
-            # Count execution errors as failures
-            execution_failures += 1
-        return all_success, execution_failures
+            results["all_success"] = False
+            results["all_outputs"].append(f"Error checking {file_path}: {e}")
+            results["execution_failures"] += 1
 
     def check(self, paths: list[str]) -> ToolResult:
         """Check GitHub Actions workflow files with actionlint.
@@ -128,32 +111,18 @@ class ActionlintTool(BaseTool):
             A `ToolResult` containing success status, aggregated output (if any),
             issue count, and parsed issues.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        if not paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-
-        candidate_yaml_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            default_timeout=ACTIONLINT_DEFAULT_TIMEOUT,
         )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
+
         # Restrict to GitHub Actions workflow location
-        workflow_files: list[str] = []
-        for file_path in candidate_yaml_files:
-            norm = file_path.replace("\\", "/")
-            if "/.github/workflows/" in norm:
-                workflow_files.append(file_path)
+        workflow_files: list[str] = [
+            f for f in ctx.files if "/.github/workflows/" in f.replace("\\", "/")
+        ]
         logger.debug(f"Files to check (actionlint): {workflow_files}")
 
         if not workflow_files:
@@ -164,70 +133,65 @@ class ActionlintTool(BaseTool):
                 issues_count=0,
             )
 
-        timeout: int = self.options.get("timeout", ACTIONLINT_DEFAULT_TIMEOUT)
-        all_outputs: list[str] = []
-        all_issues = []
-        all_success = True
-        execution_failures: int = 0
-
-        skipped_files: list[str] = []
-        base_cmd = self._build_command()
+        # Accumulate results across all files
+        results: dict[str, Any] = {
+            "all_outputs": [],
+            "all_issues": [],
+            "all_success": True,
+            "skipped_files": [],
+            "execution_failures": 0,
+        }
 
         # Show progress bar only when processing multiple files
         if len(workflow_files) >= 2:
-            files_to_iterate = click.progressbar(
+            with click.progressbar(
                 workflow_files,
                 label="Processing files",
                 bar_template="%(label)s  %(info)s",
-            )
-            context_mgr = files_to_iterate
+            ) as bar:
+                for file_path in bar:
+                    self._process_single_file(file_path, ctx.timeout, results)
         else:
-            files_to_iterate = workflow_files
-            context_mgr = contextlib.nullcontext()
+            for file_path in workflow_files:
+                self._process_single_file(file_path, ctx.timeout, results)
 
-        with context_mgr:
-            for file_path in files_to_iterate:
-                all_success, execution_failures = self._process_file(
-                    file_path=file_path,
-                    base_cmd=base_cmd,
-                    timeout=timeout,
-                    all_outputs=all_outputs,
-                    all_issues=all_issues,
-                    skipped_files=skipped_files,
-                    all_success=all_success,
-                    execution_failures=execution_failures,
-                )
-
-        combined_output = "\n".join(all_outputs) if all_outputs else None
-        if skipped_files:
+        # Build combined output
+        combined_output = (
+            "\n".join(results["all_outputs"]) if results["all_outputs"] else None
+        )
+        if results["skipped_files"]:
             timeout_msg = (
-                f"Skipped {len(skipped_files)} file(s) due to timeout "
-                f"({timeout}s limit exceeded):"
+                f"Skipped {len(results['skipped_files'])} file(s) due to timeout "
+                f"({ctx.timeout}s limit exceeded):"
             )
-            for file in skipped_files:
+            for file in results["skipped_files"]:
                 timeout_msg += f"\n  - {file}"
-            if combined_output:
-                combined_output = f"{combined_output}\n\n{timeout_msg}"
-            else:
-                combined_output = timeout_msg
-        # Add summary of execution failures (non-timeout errors) if any
-        non_timeout_failures = execution_failures - len(skipped_files)
+            combined_output = (
+                f"{combined_output}\n\n{timeout_msg}"
+                if combined_output
+                else timeout_msg
+            )
+
+        non_timeout_failures = results["execution_failures"] - len(
+            results["skipped_files"],
+        )
         if non_timeout_failures > 0:
             failure_msg = (
                 f"Failed to process {non_timeout_failures} file(s) "
                 "due to execution errors"
             )
-            if combined_output:
-                combined_output = f"{combined_output}\n\n{failure_msg}"
-            else:
-                combined_output = failure_msg
-        # issues_count reflects only linting issues, not execution failures
+            combined_output = (
+                f"{combined_output}\n\n{failure_msg}"
+                if combined_output
+                else failure_msg
+            )
+
         return ToolResult(
             name=self.name,
-            success=all_success,
+            success=results["all_success"],
             output=combined_output,
-            issues_count=len(all_issues),
-            issues=all_issues,
+            issues_count=len(results["all_issues"]),
+            issues=results["all_issues"],
         )
 
     def fix(self, paths: list[str]) -> ToolResult:

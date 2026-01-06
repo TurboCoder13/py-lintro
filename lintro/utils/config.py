@@ -13,6 +13,8 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+from loguru import logger
+
 # Re-export from unified_config for backward compatibility
 from lintro.utils.unified_config import (
     get_effective_line_length,
@@ -62,7 +64,8 @@ def _load_lintro_section() -> dict[str, Any]:
             tool_section.get("lintro", {}) if isinstance(tool_section, dict) else {}
         )
         return lintro_section if isinstance(lintro_section, dict) else {}
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Failed to load Lintro configuration from pyproject.toml: {e}")
         return {}
 
 

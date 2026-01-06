@@ -7,6 +7,7 @@ like listing plugins, collecting tests, listing fixtures, etc.
 
 import re
 import shlex
+from typing import TYPE_CHECKING
 
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools.implementations.pytest.pytest_utils import (
@@ -15,8 +16,11 @@ from lintro.tools.implementations.pytest.pytest_utils import (
     list_installed_plugins,
 )
 
+if TYPE_CHECKING:
+    from lintro.tools.implementations.tool_pytest import PytestTool
 
-def handle_list_plugins(tool) -> ToolResult:
+
+def handle_list_plugins(tool: "PytestTool") -> ToolResult:
     """Handle list plugins mode.
 
     Args:
@@ -46,7 +50,7 @@ def handle_list_plugins(tool) -> ToolResult:
 
 
 def handle_check_plugins(
-    tool,
+    tool: "PytestTool",
     required_plugins: str | None,
 ) -> ToolResult:
     """Handle check plugins mode.
@@ -64,7 +68,7 @@ def handle_check_plugins(
             success=False,
             issues=[],
             output=(
-                "Error: required_plugins must be specified " "when check_plugins=True"
+                "Error: required_plugins must be specified when check_plugins=True"
             ),
             issues_count=0,
         )
@@ -105,7 +109,7 @@ def handle_check_plugins(
 
 
 def handle_collect_only(
-    tool,
+    tool: "PytestTool",
     target_files: list[str],
 ) -> ToolResult:
     """Handle collect-only mode.
@@ -170,7 +174,7 @@ def handle_collect_only(
 
 
 def handle_list_fixtures(
-    tool,
+    tool: "PytestTool",
     target_files: list[str],
 ) -> ToolResult:
     """Handle list fixtures mode.
@@ -215,7 +219,7 @@ def handle_list_fixtures(
 
 
 def handle_fixture_info(
-    tool,
+    tool: "PytestTool",
     fixture_name: str,
     target_files: list[str],
 ) -> ToolResult:
@@ -286,7 +290,7 @@ def handle_fixture_info(
         )
 
 
-def handle_list_markers(tool) -> ToolResult:
+def handle_list_markers(tool: "PytestTool") -> ToolResult:
     """Handle list markers mode.
 
     Args:
@@ -326,7 +330,7 @@ def handle_list_markers(tool) -> ToolResult:
         )
 
 
-def handle_parametrize_help(tool) -> ToolResult:
+def handle_parametrize_help(tool: "PytestTool") -> ToolResult:
     """Handle parametrize help mode.
 
     Args:

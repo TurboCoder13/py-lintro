@@ -2,6 +2,7 @@
 
 import subprocess  # nosec B404 - vetted use via BaseTool._run_subprocess
 from dataclasses import dataclass, field
+from typing import Any
 
 import click
 from loguru import logger
@@ -16,11 +17,12 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.darglint.darglint_issue import DarglintIssue
 from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.tool_utils import walk_files_with_excludes
+from lintro.utils.config_utils import load_darglint_config
 
 # Constants for Darglint configuration
-# Increased from 30 to handle large files with complex docstrings
-DARGLINT_DEFAULT_TIMEOUT: int = 60
+# Reduced to 15s to fail fast on problematic files while allowing
+# normal files to complete. Increase via --tool-options darglint:timeout=N
+DARGLINT_DEFAULT_TIMEOUT: int = 15
 DARGLINT_DEFAULT_PRIORITY: int = 45
 DARGLINT_FILE_PATTERNS: list[str] = ["*.py"]
 DARGLINT_STRICTNESS_LEVELS: tuple[str, ...] = tuple(
@@ -72,7 +74,7 @@ class DarglintTool(BaseTool):
     description: str = (
         "Python docstring linter that checks docstring style and completeness"
     )
-    can_fix: bool = False  # Darglint can only check, not fix
+    can_fix: bool = field(default=False)  # Darglint can only check, not fix
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=DARGLINT_DEFAULT_PRIORITY,  # Lower priority than formatters, \
@@ -95,7 +97,39 @@ class DarglintTool(BaseTool):
         ),
     )
 
-    def set_options(
+    def __post_init__(self) -> None:
+        """Initialize the tool with configuration from pyproject.toml."""
+        super().__post_init__()
+
+        # Load darglint configuration from pyproject.toml
+        darglint_config = load_darglint_config()
+
+        # Apply exclude_dirs as exclude patterns
+        # Use /* instead of /** since path_filtering.should_exclude_path
+        # handles /* patterns but not ** recursive globs
+        if "exclude_dirs" in darglint_config:
+            exclude_dirs = darglint_config["exclude_dirs"]
+            if isinstance(exclude_dirs, list):
+                for exclude_dir in exclude_dirs:
+                    pattern = f"{exclude_dir}/*"
+                    if pattern not in self.exclude_patterns:
+                        self.exclude_patterns.append(pattern)
+
+        # Apply timeout from configuration
+        if "timeout" in darglint_config:
+            timeout_value = darglint_config["timeout"]
+            if isinstance(timeout_value, int) and timeout_value > 0:
+                self.options["timeout"] = timeout_value
+
+        # Apply exclude_files as exclude patterns
+        if "exclude_files" in darglint_config:
+            exclude_files = darglint_config["exclude_files"]
+            if isinstance(exclude_files, list):
+                for exclude_file in exclude_files:
+                    if exclude_file not in self.exclude_patterns:
+                        self.exclude_patterns.append(exclude_file)
+
+    def set_options(  # type: ignore[override]
         self,
         ignore: list[str] | None = None,
         ignore_regex: str | None = None,
@@ -103,7 +137,7 @@ class DarglintTool(BaseTool):
         message_template: str | None = None,
         verbosity: int | None = None,
         strictness: str | DarglintStrictness | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Darglint-specific options.
 
@@ -136,12 +170,12 @@ class DarglintTool(BaseTool):
                     f"{DARGLINT_MAX_VERBOSITY}",
                 )
         if strictness is not None:
-            strict_enum = normalize_darglint_strictness(  # type: ignore[arg-type]
+            strict_enum = normalize_darglint_strictness(
                 strictness,
             )
             strictness = strict_enum.name.lower()
 
-        options: dict = {
+        options: dict[str, object] = {
             "ignore": ignore,
             "ignore_regex": ignore_regex,
             "ignore_syntax": ignore_syntax,
@@ -164,19 +198,23 @@ class DarglintTool(BaseTool):
         cmd: list[str] = self._get_executable_command("darglint")
 
         # Add configuration options
-        if self.options.get("ignore"):
-            cmd.extend(["--ignore", ",".join(self.options["ignore"])])
-        if self.options.get("ignore_regex"):
-            cmd.extend(["--ignore-regex", self.options["ignore_regex"]])
+        ignore_opt = self.options.get("ignore")
+        if ignore_opt is not None and isinstance(ignore_opt, list):
+            cmd.extend(["--ignore", ",".join(str(i) for i in ignore_opt)])
+        ignore_regex_opt = self.options.get("ignore_regex")
+        if ignore_regex_opt is not None:
+            cmd.extend(["--ignore-regex", str(ignore_regex_opt)])
         if self.options.get("ignore_syntax"):
             cmd.append("--ignore-syntax")
         # Remove message_template override to use default output
         # if self.options.get("message_template"):
         #     cmd.extend(["--message-template", self.options["message_template"]])
-        if self.options.get("verbosity"):
-            cmd.extend(["--verbosity", str(self.options["verbosity"])])
-        if self.options.get("strictness"):
-            cmd.extend(["--strictness", self.options["strictness"]])
+        verbosity_opt = self.options.get("verbosity")
+        if verbosity_opt is not None:
+            cmd.extend(["--verbosity", str(verbosity_opt)])
+        strictness_opt = self.options.get("strictness")
+        if strictness_opt is not None:
+            cmd.extend(["--strictness", str(strictness_opt)])
 
         return cmd
 
@@ -252,30 +290,21 @@ class DarglintTool(BaseTool):
         Returns:
             ToolResult: ToolResult instance.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        if not paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-        # Use shared utility for file discovery
-        python_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        # Get timeout from options (configured via pyproject.toml or set_options)
+        configured_timeout_opt = self.options.get("timeout", DARGLINT_DEFAULT_TIMEOUT)
+        configured_timeout = self._validate_timeout(
+            configured_timeout_opt,
+            DARGLINT_DEFAULT_TIMEOUT,
         )
+        ctx = self._prepare_execution(
+            paths,
+            default_timeout=configured_timeout,
+        )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
-        logger.debug(f"Files to check: {python_files}")
-
-        timeout: int = self.options.get("timeout", DARGLINT_DEFAULT_TIMEOUT)
+        logger.debug(f"Files to check: {ctx.files}")
         all_outputs: list[str] = []
         all_issues: list[DarglintIssue] = []
         all_success: bool = True
@@ -284,14 +313,17 @@ class DarglintTool(BaseTool):
         total_issues: int = 0
 
         # Show progress bar only when processing multiple files
-        if len(python_files) >= 2:
+        if len(ctx.files) >= 2:
             with click.progressbar(
-                python_files,
+                ctx.files,
                 label="Processing files",
                 bar_template="%(label)s  %(info)s",
             ) as bar:
                 for file_path in bar:
-                    result = self._process_file(file_path=file_path, timeout=timeout)
+                    result = self._process_file(
+                        file_path=file_path,
+                        timeout=ctx.timeout,
+                    )
                     if not result.success:
                         all_success = False
                     total_issues += result.issues_count
@@ -328,8 +360,8 @@ class DarglintTool(BaseTool):
                         all_issues.append(error_issue)
         else:
             # Process without progress bar for single file or no files
-            for file_path in python_files:
-                result = self._process_file(file_path=file_path, timeout=timeout)
+            for file_path in ctx.files:
+                result = self._process_file(file_path=file_path, timeout=ctx.timeout)
                 if not result.success:
                     all_success = False
                 total_issues += result.issues_count
@@ -369,13 +401,14 @@ class DarglintTool(BaseTool):
         if skipped_files:
             output += (
                 f"\n\nSkipped {len(skipped_files)} file(s) due to timeout "
-                f"({timeout}s limit exceeded):"
+                f"({ctx.timeout}s limit exceeded):"
             )
             for file in skipped_files:
                 output += f"\n  - {file}"
 
+        final_output: str | None = output
         if not output:
-            output = None
+            final_output = None
 
         # Include execution failures (timeouts/errors) in issues_count
         # to properly reflect tool failure status
@@ -384,7 +417,7 @@ class DarglintTool(BaseTool):
         return ToolResult(
             name=self.name,
             success=all_success,
-            output=output,
+            output=final_output,
             issues_count=total_issues_with_failures,
             issues=all_issues,
         )

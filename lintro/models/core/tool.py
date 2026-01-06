@@ -6,6 +6,9 @@ from typing import Protocol, runtime_checkable
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 
+# Re-export for convenience
+__all__ = ["Tool", "ToolConfig", "ToolResult"]
+
 
 @runtime_checkable
 class Tool(Protocol):

@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1234567890,
+    "body": "## Lintro Report\n\n### Summary\n- Total issues: 42\n<!-- lintro-report -->",
+    "created_at": "2023-01-01T10:00:00Z",
+    "updated_at": "2023-01-01T10:00:00Z"
+  },
+  {
+    "id": 67890,
+    "body": "This is a comment without any marker\n\nJust regular PR discussion.",
+    "created_at": "2023-01-02T10:00:00Z",
+    "updated_at": "2023-01-02T10:00:00Z"
+  },
+  {
+    "id": 54321,
+    "body": "<!-- coverage-report -->\n\nThis is the most recent comment with marker\n\n## Coverage Report\n- Line coverage: 95%\n- Branch coverage: 90%",
+    "created_at": "2023-01-03T10:00:00Z",
+    "updated_at": "2023-01-03T10:00:00Z"
+  }
+]

@@ -55,7 +55,7 @@ def _update_pyproject_version(pyproject_path: Path, version: str) -> str:
         Previous version string if present, otherwise empty string.
     """
     data = toml.loads(_read_text(pyproject_path))
-    old = data.get("project", {}).get("version", "")
+    old: str = str(data.get("project", {}).get("version", ""))
     data.setdefault("project", {})["version"] = version
     _write_text(pyproject_path, toml.dumps(data))
     return old

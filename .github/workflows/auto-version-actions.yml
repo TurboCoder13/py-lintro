@@ -47,4 +47,4 @@ jobs:
 
       - name: Auto-version internal actions
         id: version
-        run: scripts/ci/auto-version-actions.sh
+        run: scripts/ci/maintenance/auto-version-actions.sh

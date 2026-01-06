@@ -1,23 +1,10 @@
 """Formatter for actionlint issues."""
 
+from lintro.formatters.core.format_registry import get_style
 from lintro.formatters.core.table_descriptor import TableDescriptor
-from lintro.formatters.styles.csv import CsvStyle
-from lintro.formatters.styles.grid import GridStyle
-from lintro.formatters.styles.html import HtmlStyle
 from lintro.formatters.styles.json import JsonStyle
-from lintro.formatters.styles.markdown import MarkdownStyle
-from lintro.formatters.styles.plain import PlainStyle
 from lintro.parsers.actionlint.actionlint_issue import ActionlintIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
-
-FORMAT_MAP = {
-    "plain": PlainStyle(),
-    "grid": GridStyle(),
-    "markdown": MarkdownStyle(),
-    "html": HtmlStyle(),
-    "json": JsonStyle(),
-    "csv": CsvStyle(),
-}
 
 
 class ActionlintTableDescriptor(TableDescriptor):
@@ -73,7 +60,7 @@ def format_actionlint_issues(
         str: Rendered table content for the chosen style.
     """
     descriptor = ActionlintTableDescriptor()
-    formatter = FORMAT_MAP.get(format, GridStyle())
+    formatter = get_style(format)
     columns = descriptor.get_columns()
     rows = descriptor.get_rows(issues)
     # JsonStyle may accept tool_name but others do not; keep simple

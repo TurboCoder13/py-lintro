@@ -72,24 +72,10 @@ def format_bandit_issues(
     Returns:
         str: Formatted issues string.
     """
-    from lintro.formatters.styles.csv import CsvStyle
-    from lintro.formatters.styles.grid import GridStyle
-    from lintro.formatters.styles.html import HtmlStyle
-    from lintro.formatters.styles.json import JsonStyle
-    from lintro.formatters.styles.markdown import MarkdownStyle
-    from lintro.formatters.styles.plain import PlainStyle
-
-    style_map = {
-        "grid": GridStyle(),
-        "plain": PlainStyle(),
-        "markdown": MarkdownStyle(),
-        "html": HtmlStyle(),
-        "json": JsonStyle(),
-        "csv": CsvStyle(),
-    }
+    from lintro.formatters.core.format_registry import get_style
 
     style_key = (format or "grid").lower()
-    style = style_map.get(style_key, GridStyle())
+    style = get_style(style_key)
     descriptor = BanditTableDescriptor()
 
     columns = descriptor.get_columns()

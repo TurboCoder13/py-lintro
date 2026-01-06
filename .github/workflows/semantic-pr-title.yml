@@ -39,9 +39,8 @@ jobs:
 
       - name: Validate PR title follows Conventional Commits
         id: semantic
-        uses: TurboCoder13/py-lintro/.github/actions/semantic-pr-title-check@actions-v1
-        with:
-          types: |
+        env:
+          TYPES_INPUT: |
             chore
             ci
             docs
@@ -52,8 +51,10 @@ jobs:
             revert
             style
             test
-          require-scope: 'false'
-          comment-on-fail: 'true'
+          REQUIRE_SCOPE: 'false'
+          COMMENT_ON_FAIL: 'true'
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: scripts/ci/github/semantic-pr-title-check.sh
 
       - name: Fail if invalid
         if: steps.semantic.outputs.ok != 'true'

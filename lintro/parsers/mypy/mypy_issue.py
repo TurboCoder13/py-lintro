@@ -2,29 +2,46 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from lintro.parsers.base_issue import BaseIssue
 
 
 @dataclass
-class MypyIssue:
+class MypyIssue(BaseIssue):
     """Represents a mypy type-checking issue.
 
+    This class extends BaseIssue with mypy-specific fields for type checking
+    errors, warnings, and notes. All fields are optional to handle cases where
+    mypy doesn't provide complete location information.
+
     Attributes:
-        file: File path where the issue was found.
-        line: Line number for the issue start.
-        column: Column number for the issue start.
-        code: Mypy error code (e.g., attr-defined, name-defined).
-        message: Human-readable error message.
-        severity: Severity level reported by mypy (e.g., error, note).
-        end_line: Optional end line number.
-        end_column: Optional end column number.
+        code: Mypy error code (e.g., "attr-defined", "name-defined", "type-arg").
+            None if mypy doesn't provide an error code.
+        severity: Severity level reported by mypy (e.g., "error", "warning", "note").
+            None if severity is not specified.
+        end_line: Optional end line number for multi-line issues.
+            None if the issue is on a single line or end position is unknown.
+        end_column: Optional end column number for issues spanning multiple columns.
+            None if the issue is at a single column or end position is unknown.
+
+    Note:
+        All fields are optional to handle cases where mypy doesn't provide
+        complete location information. This is a breaking change from previous
+        versions where some fields were required.
+
+    Examples:
+        >>> issue = MypyIssue(
+        ...     file="src/main.py",
+        ...     line=10,
+        ...     column=5,
+        ...     code="attr-defined",
+        ...     severity="error",
+        ...     message="Module has no attribute 'foo'"
+        ... )
     """
 
-    file: str
-    line: int
-    column: int
-    code: str | None
-    message: str
-    severity: str | None = None
-    end_line: int | None = None
-    end_column: int | None = None
+    code: str | None = field(default=None)
+    severity: str | None = field(default=None)
+    end_line: int | None = field(default=None)
+    end_column: int | None = field(default=None)

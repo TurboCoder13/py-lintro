@@ -4,13 +4,19 @@ This module contains the PytestExecutor class that handles test execution,
 environment management, and subprocess operations.
 """
 
+from __future__ import annotations
+
 import os
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from lintro.tools.implementations.pytest.pytest_config import PytestConfiguration
 from lintro.tools.implementations.pytest.pytest_utils import collect_tests_once
+
+if TYPE_CHECKING:
+    from lintro.tools.implementations.tool_pytest import PytestTool
 
 
 @dataclass
@@ -26,7 +32,7 @@ class PytestExecutor:
     """
 
     config: PytestConfiguration
-    tool: object  # Required: must be set by the parent tool
+    tool: PytestTool | None  # Required: must be set by the parent tool
 
     def prepare_test_execution(
         self,

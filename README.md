@@ -162,11 +162,8 @@ installed tools.
 
 #### From PyPI (Recommended)
 
-⚠️ **Important**: Versions prior to 0.13.2 contain a circular import bug that prevents
-installation as a dependency. Please use version 0.13.2 or later.
-
 ```bash
-pip install lintro>=0.13.2
+pip install lintro
 ```
 
 #### Development Installation

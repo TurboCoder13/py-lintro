@@ -62,7 +62,7 @@ jobs:
       - name: Install bomctl from GitHub Releases (no registries)
         env:
           BOMCTL_VERSION: v0.4.3
-        run: bash scripts/ci/sbom-install-binary-gh.sh
+        run: bash scripts/ci/deployment/sbom-install-binary-gh.sh
       - name: Restore bomctl cache
         uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
         with:
@@ -77,9 +77,9 @@ jobs:
           GITHUB_TOKEN: >-
             ${{ inputs.use-release-token && secrets.RELEASE_TOKEN ||
             secrets.GITHUB_TOKEN }}
-        run: bash scripts/ci/sbom-fetch-github-api.sh
+        run: bash scripts/ci/deployment/sbom-fetch-github-api.sh
       - name: Rename SBOM artifacts with tag/sha for traceability
-        run: bash scripts/ci/sbom-rename-artifacts.sh dist/sbom
+        run: bash scripts/ci/deployment/sbom-rename-artifacts.sh dist/sbom
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
@@ -89,4 +89,4 @@ jobs:
       - name: Attest SBOM artifacts with keyless cosign (optional)
         env:
           COSIGN_EXPERIMENTAL: 1
-        run: bash scripts/ci/sbom-attest-artifacts.sh dist/sbom
+        run: bash scripts/ci/deployment/sbom-attest-artifacts.sh dist/sbom

@@ -1,112 +1,81 @@
-"""Test fixtures for integration tests.
-
-This module provides shared fixtures for integration testing in Lintro.
-"""
+"""Shared fixtures for integration tests."""
 
 import os
 import tempfile
+from collections.abc import Callable, Generator
 from pathlib import Path
 
 import pytest
 
 
 @pytest.fixture
-def skip_config_injection():
-    """Disable Lintro config injection for isolated test execution.
-
-    This fixture sets LINTRO_SKIP_CONFIG_INJECTION=1 to prevent Lintro
-    from injecting configuration during tests, allowing tests to verify
-    specific CLI argument building behavior.
+def temp_project_dir() -> Generator[Path]:
+    """Create a temporary directory structure for integration testing.
 
     Yields:
-        None: This fixture is used for its side effect only.
+        Path: Path to the temporary project directory.
     """
-    original = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
-    os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
-    try:
-        yield
-    finally:
-        if original is None:
-            os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
-        else:
-            os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = original
+    with tempfile.TemporaryDirectory() as tmpdir:
+        project_dir = Path(tmpdir)
+        # Create a basic project structure
+        (project_dir / "pyproject.toml").write_text(
+            """[tool.lintro]
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+""",
+        )
+        (project_dir / "src").mkdir()
+        (project_dir / "tests").mkdir()
+
+        # Change to the temp directory for the test
+        original_cwd = os.getcwd()
+        os.chdir(project_dir)
+        try:
+            yield project_dir
+        finally:
+            os.chdir(original_cwd)
 
 
 @pytest.fixture
-def lintro_test_mode():
-    """Set LINTRO_TEST_MODE=1 and disable config injection for all tests.
+def lintro_test_mode() -> Generator[str]:
+    """Set LINTRO_TEST_MODE=1 environment variable for tests.
 
-    This combined fixture sets both LINTRO_TEST_MODE=1 and disables
-    config injection, which is commonly needed for ruff integration tests.
+    This disables config injection and other test-incompatible features.
 
     Yields:
-        None: This fixture is used for its side effect only.
+        str: The test mode value that was set.
     """
-    old_test_mode = os.environ.get("LINTRO_TEST_MODE")
-    old_skip_injection = os.environ.get("LINTRO_SKIP_CONFIG_INJECTION")
+    original_value = os.environ.get("LINTRO_TEST_MODE")
     os.environ["LINTRO_TEST_MODE"] = "1"
-    os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = "1"
     try:
-        yield
+        yield "1"
     finally:
-        if old_test_mode is not None:
-            os.environ["LINTRO_TEST_MODE"] = old_test_mode
+        if original_value is not None:
+            os.environ["LINTRO_TEST_MODE"] = original_value
         else:
             os.environ.pop("LINTRO_TEST_MODE", None)
 
-        if old_skip_injection is not None:
-            os.environ["LINTRO_SKIP_CONFIG_INJECTION"] = old_skip_injection
-        else:
-            os.environ.pop("LINTRO_SKIP_CONFIG_INJECTION", None)
-
 
 @pytest.fixture
-def test_files_dir():
-    """Provide a directory with test files for integration tests.
-
-    Yields:
-        Path: Path to the temporary directory containing test files.
-    """
-    with tempfile.TemporaryDirectory() as temp_dir:
-        test_dir = Path(temp_dir)
-
-        # Create test files
-        (test_dir / "test.py").write_text("def test_function():\n    pass\n")
-        (test_dir / "test.js").write_text(
-            "function testFunction() {\n    console.log('test');\n}\n",
-        )
-        (test_dir / "test.yml").write_text("key: value\nlist:\n  - item1\n  - item2\n")
-        (test_dir / "Dockerfile").write_text(
-            "FROM python:3.13\nCOPY . .\nRUN pip install -r requirements.txt\n",
-        )
-
-        yield test_dir
-
-
-@pytest.fixture
-def sample_python_file() -> str:
-    """Provide a sample Python file with violations.
+def skip_if_tool_unavailable() -> Callable[[str], None]:
+    """Skip test if required tool is not available in PATH.
 
     Returns:
-        str: Contents of a sample Python file with violations.
+        callable: Function that takes a tool_name (str) parameter and can be used
+        to skip tests for unavailable tools.
     """
-    return """def test_function(param1, param2):
-    \"\"\"Test function.
 
-    Args:
-        param1: First parameter
-    \"\"\"
-    return param1 + param2
-"""
+    def _skip_if_unavailable(tool_name: str) -> None:
+        """Skip the current test if tool is not available.
 
+        Args:
+            tool_name: Name of the tool to check for availability.
+        """
+        import shutil
 
-@pytest.fixture
-def sample_js_file() -> str:
-    """Provide a sample JavaScript file with formatting issues.
+        if not shutil.which(tool_name):
+            pytest.skip(f"Tool '{tool_name}' not available in PATH")
 
-    Returns:
-        str: Contents of a sample JavaScript file with formatting issues.
-    """
-    return """function testFunction(param1,param2){
-return param1+param2;
-}"""
+    return _skip_if_unavailable

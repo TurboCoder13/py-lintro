@@ -5,6 +5,7 @@ maintainability and reduce file size. Functions are organized by command section
 """
 
 import os
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
@@ -13,12 +14,15 @@ from lintro.tools.implementations.pytest.pytest_utils import (
     get_parallel_workers_from_preset,
 )
 
+if TYPE_CHECKING:
+    from lintro.tools.implementations.tool_pytest import PytestTool
+
 # Constants for pytest configuration
 PYTEST_TEST_MODE_ENV: str = "LINTRO_TEST_MODE"
 PYTEST_TEST_MODE_VALUE: str = "1"
 
 
-def build_base_command(tool) -> list[str]:
+def build_base_command(tool: "PytestTool") -> list[str]:
     """Build the base pytest command.
 
     Args:
@@ -30,7 +34,7 @@ def build_base_command(tool) -> list[str]:
     return tool._get_executable_command(tool_name="pytest")
 
 
-def add_verbosity_options(cmd: list[str], options: dict) -> None:
+def add_verbosity_options(cmd: list[str], options: dict[str, Any]) -> None:
     """Add verbosity and traceback options to command.
 
     Args:
@@ -62,7 +66,7 @@ def add_verbosity_options(cmd: list[str], options: dict) -> None:
         cmd.append("--disable-warnings")
 
 
-def add_output_options(cmd: list[str], options: dict) -> str | None:
+def add_output_options(cmd: list[str], options: dict[str, Any]) -> str | None:
     """Add output format options (JSON, JUnit XML, HTML) to command.
 
     Args:
@@ -104,7 +108,7 @@ def add_output_options(cmd: list[str], options: dict) -> str | None:
     return auto_junitxml_path
 
 
-def add_parallel_options(cmd: list[str], options: dict) -> None:
+def add_parallel_options(cmd: list[str], options: dict[str, Any]) -> None:
     """Add parallel execution options to command.
 
     Args:
@@ -125,7 +129,7 @@ def add_parallel_options(cmd: list[str], options: dict) -> None:
         cmd.extend(["-n", str(workers)])
 
 
-def add_coverage_options(cmd: list[str], options: dict) -> None:
+def add_coverage_options(cmd: list[str], options: dict[str, Any]) -> None:
     """Add coverage options to command.
 
     Args:
@@ -206,7 +210,7 @@ def add_test_mode_options(cmd: list[str]) -> None:
         cmd.append("--strict-config")
 
 
-def add_plugin_options(cmd: list[str], options: dict) -> None:
+def add_plugin_options(cmd: list[str], options: dict[str, Any]) -> None:
     """Add plugin-specific options to command.
 
     Args:
@@ -242,7 +246,7 @@ def add_plugin_options(cmd: list[str], options: dict) -> None:
             logger.debug(f"Reruns enabled: {reruns} times")
 
 
-def add_ignore_options(cmd: list[str], tool) -> None:
+def add_ignore_options(cmd: list[str], tool: "PytestTool") -> None:
     """Add ignore options to command for exclude patterns.
 
     Args:
@@ -268,7 +272,7 @@ def add_ignore_options(cmd: list[str], tool) -> None:
 
 
 def build_check_command(
-    tool,
+    tool: "PytestTool",
     files: list[str],
     fix: bool = False,
 ) -> tuple[list[str], str | None]:

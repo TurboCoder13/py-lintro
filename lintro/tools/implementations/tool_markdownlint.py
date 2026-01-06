@@ -5,6 +5,7 @@ import os
 import subprocess  # nosec B404 - used safely with shell disabled
 import tempfile
 from dataclasses import dataclass, field
+from typing import Any
 
 from loguru import logger
 
@@ -12,9 +13,9 @@ from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
+from lintro.tools.core.timeout_utils import create_timeout_result
 from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.config import get_central_line_length
-from lintro.utils.tool_utils import walk_files_with_excludes
 from lintro.utils.unified_config import DEFAULT_TOOL_PRIORITIES
 
 # Constants
@@ -45,7 +46,7 @@ class MarkdownlintTool(BaseTool):
 
     name: str = "markdownlint"
     description: str = "Markdown linter for style checking and best practices"
-    can_fix: bool = False
+    can_fix: bool = field(default=False)
     config: ToolConfig = field(
         default_factory=lambda: ToolConfig(
             priority=MARKDOWNLINT_DEFAULT_PRIORITY,
@@ -94,11 +95,11 @@ class MarkdownlintTool(BaseTool):
             issues_count=0,
         )
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         timeout: int | None = None,
         line_length: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Markdownlint-specific options.
 
@@ -146,7 +147,7 @@ class MarkdownlintTool(BaseTool):
 
         # Use npx to run markdownlint-cli2 (similar to prettier)
         if shutil.which("npx"):
-            return ["npx", "--yes", "markdownlint-cli2"]
+            return ["npx", "markdownlint-cli2"]
         # Fallback to direct executable if npx not found
         return ["markdownlint-cli2"]
 
@@ -214,58 +215,24 @@ class MarkdownlintTool(BaseTool):
 
         Returns:
             ToolResult: Result of the check operation.
-
-        Raises:
-            ValueError: If configured timeout is invalid.
         """
-        # Check version requirements
-        version_result = self._verify_tool_version()
-        if version_result is not None:
-            return version_result
-
-        self._validate_paths(paths=paths)
-        if not paths:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No files to check.",
-                issues_count=0,
-            )
-
-        markdown_files: list[str] = walk_files_with_excludes(
-            paths=paths,
-            file_patterns=self.config.file_patterns,
-            exclude_patterns=self.exclude_patterns,
-            include_venv=self.include_venv,
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            default_timeout=MARKDOWNLINT_DEFAULT_TIMEOUT,
         )
+        if ctx.should_skip:
+            return ctx.early_result  # type: ignore[return-value]
 
         logger.debug(
-            f"[MarkdownlintTool] Discovered {len(markdown_files)} files matching "
+            f"[MarkdownlintTool] Discovered {len(ctx.files)} files matching "
             f"patterns: {self.config.file_patterns}",
         )
-        logger.debug(
-            f"[MarkdownlintTool] Exclude patterns applied: {self.exclude_patterns}",
-        )
-        if markdown_files:
+        if ctx.files:
             logger.debug(
-                f"[MarkdownlintTool] Files to check (first 10): "
-                f"{markdown_files[:10]}",
+                f"[MarkdownlintTool] Files to check (first 10): {ctx.files[:10]}",
             )
-
-        if not markdown_files:
-            return ToolResult(
-                name=self.name,
-                success=True,
-                output="No Markdown files found to check.",
-                issues_count=0,
-            )
-
-        # Use relative paths and set cwd to the common parent
-        cwd: str | None = self.get_cwd(paths=markdown_files)
-        logger.debug(f"[MarkdownlintTool] Working directory: {cwd}")
-        rel_files: list[str] = [
-            os.path.relpath(f, cwd) if cwd else f for f in markdown_files
-        ]
+        logger.debug(f"[MarkdownlintTool] Working directory: {ctx.cwd}")
 
         # Build command
         cmd: list[str] = self._get_markdownlint_command()
@@ -280,41 +247,40 @@ class MarkdownlintTool(BaseTool):
             logger.debug("[MarkdownlintTool] Using Lintro config injection")
         else:
             # Fallback: Apply line_length configuration if set
-            line_length = self.options.get("line_length")
-            if line_length:
+            line_length_opt = self.options.get("line_length")
+            if line_length_opt is not None:
+                line_length_val = (
+                    int(line_length_opt)
+                    if isinstance(line_length_opt, int)
+                    else int(str(line_length_opt))
+                )
                 temp_config_path = self._create_temp_markdownlint_config(
-                    line_length=line_length,
+                    line_length=line_length_val,
                 )
                 if temp_config_path:
                     cmd.extend(["--config", temp_config_path])
 
-        cmd.extend(rel_files)
+        cmd.extend(ctx.rel_files)
 
-        logger.debug(f"[MarkdownlintTool] Running: {' '.join(cmd)} (cwd={cwd})")
+        logger.debug(f"[MarkdownlintTool] Running: {' '.join(cmd)} (cwd={ctx.cwd})")
 
-        timeout_raw = self.options.get("timeout", MARKDOWNLINT_DEFAULT_TIMEOUT)
-        try:
-            timeout_val = float(timeout_raw)
-        except (TypeError, ValueError) as exc:
-            raise ValueError("Timeout must be a number") from exc
         try:
             success, output = self._run_subprocess(
                 cmd=cmd,
-                timeout=timeout_val,
-                cwd=cwd,
+                timeout=ctx.timeout,
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
-            timeout_msg = (
-                f"Markdownlint execution timed out ({timeout_val}s limit exceeded).\n\n"
-                "This may indicate:\n"
-                "  - Large codebase taking too long to process\n"
-                "  - Need to increase timeout via --tool-options markdownlint:timeout=N"
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=ctx.timeout,
+                cmd=cmd,
             )
             return ToolResult(
                 name=self.name,
-                success=False,
-                output=timeout_msg,
-                issues_count=1,
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
             )
         finally:
             # Clean up temp config file if created
@@ -336,13 +302,14 @@ class MarkdownlintTool(BaseTool):
         success_flag: bool = success and issues_count == 0
 
         # Suppress output when no issues found
+        final_output: str | None = output
         if success_flag:
-            output = None
+            final_output = None
 
         return ToolResult(
             name=self.name,
             success=success_flag,
-            output=output,
+            output=final_output,
             issues_count=issues_count,
             issues=issues,
         )
