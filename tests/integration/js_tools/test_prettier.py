@@ -7,6 +7,7 @@ import pytest
 from assertpy import assert_that
 from loguru import logger
 
+from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.tools.implementations.tool_prettier import PrettierTool
 from lintro.utils.tool_utils import format_tool_output
@@ -18,7 +19,7 @@ SAMPLE_FILE = Path("test_samples/tools/javascript/prettier/prettier_violations.j
 
 
 @pytest.fixture
-def temp_prettier_file(tmp_path):
+def temp_prettier_file(tmp_path: Path) -> Path:
     """Create a temp copy of the sample JS file with violations.
 
     Args:
@@ -69,7 +70,7 @@ def run_prettier_directly(
     return success, full_output, issues_count
 
 
-def test_prettier_reports_violations_direct(temp_prettier_file) -> None:
+def test_prettier_reports_violations_direct(temp_prettier_file: Path) -> None:
     """Prettier CLI: Should detect and report violations in a sample file.
 
     Args:
@@ -78,14 +79,20 @@ def test_prettier_reports_violations_direct(temp_prettier_file) -> None:
     logger.info("[TEST] Running Prettier directly on sample file...")
     success, output, issues = run_prettier_directly(temp_prettier_file, check_only=True)
     logger.info(f"[LOG] Prettier found {issues} issues. Output:\n{output}")
-    assert not success, "Prettier should fail when violations are present."
-    assert issues > 0, "Prettier should report at least one issue."
+    assert_that(success).is_false().described_as(
+        "Prettier should fail when violations are present.",
+    )
+    assert_that(issues).is_greater_than(0).described_as(
+        "Prettier should report at least one issue.",
+    )
     # Check for warning indicators (handles both plain and ANSI-coded output)
     has_warnings = "[warn]" in output or "warn" in output
-    assert has_warnings, "Prettier output should contain warning indicators."
+    assert_that(has_warnings).is_true().described_as(
+        "Prettier output should contain warning indicators.",
+    )
 
 
-def test_prettier_reports_violations_through_lintro(temp_prettier_file) -> None:
+def test_prettier_reports_violations_through_lintro(temp_prettier_file: Path) -> None:
     """Lintro PrettierTool: Should detect and report violations in a sample file.
 
     Args:
@@ -99,18 +106,21 @@ def test_prettier_reports_violations_through_lintro(temp_prettier_file) -> None:
         f"[LOG] Lintro PrettierTool found {result.issues_count} issues. "
         f"Output:\n{result.output}",
     )
-    assert (
-        not result.success
-    ), "Lintro PrettierTool should fail when violations are present."
-    assert (
-        result.issues_count > 0
-    ), "Lintro PrettierTool should report at least one issue."
+    assert_that(result.success).is_false().described_as(
+        "Lintro PrettierTool should fail when violations are present.",
+    )
+    assert_that(result.issues_count).is_greater_than(0).described_as(
+        "Lintro PrettierTool should report at least one issue.",
+    )
     # Check for warning indicators (handles both plain and ANSI-coded output)
-    has_warnings = "[warn]" in result.output or "warn" in result.output
-    assert has_warnings, "Lintro PrettierTool output should contain warning indicators."
+    output = result.output or ""
+    has_warnings = "[warn]" in output or "warn" in output
+    assert_that(has_warnings).is_true().described_as(
+        "Lintro PrettierTool output should contain warning indicators.",
+    )
 
 
-def test_prettier_fix_method(temp_prettier_file) -> None:
+def test_prettier_fix_method(temp_prettier_file: Path) -> None:
     """Lintro PrettierTool: Should fix formatting issues.
 
     Args:
@@ -126,8 +136,12 @@ def test_prettier_fix_method(temp_prettier_file) -> None:
         f"[LOG] Before fix: {pre_result.issues_count} issues. "
         f"Output:\n{pre_result.output}",
     )
-    assert not pre_result.success, "Should have issues before fixing"
-    assert pre_result.issues_count > 0, "Should have issues before fixing"
+    assert_that(pre_result.success).is_false().described_as(
+        "Should have issues before fixing",
+    )
+    assert_that(pre_result.issues_count).is_greater_than(0).described_as(
+        "Should have issues before fixing",
+    )
 
     # Fix issues
     post_result = tool.fix([str(temp_prettier_file)])
@@ -135,8 +149,10 @@ def test_prettier_fix_method(temp_prettier_file) -> None:
         f"[LOG] After fix: {post_result.issues_count} issues. "
         f"Output:\n{post_result.output}",
     )
-    assert post_result.success, "Should fix all issues"
-    assert_that(post_result.issues_count).is_equal_to(0), "Should fix all issues"
+    assert_that(post_result.success).is_true().described_as("Should fix all issues")
+    assert_that(post_result.issues_count).is_equal_to(0).described_as(
+        "Should fix all issues",
+    )
 
     # Verify no issues remain
     final_result = tool.check([str(temp_prettier_file)])
@@ -144,14 +160,15 @@ def test_prettier_fix_method(temp_prettier_file) -> None:
         f"[LOG] Final check: {final_result.issues_count} issues. "
         f"Output:\n{final_result.output}",
     )
-    assert final_result.success, "Should have no issues after fixing"
-    (
-        assert_that(final_result.issues_count).is_equal_to(0),
+    assert_that(final_result.success).is_true().described_as(
+        "Should have no issues after fixing",
+    )
+    assert_that(final_result.issues_count).is_equal_to(0).described_as(
         "Should have no issues after fixing",
     )
 
 
-def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file) -> None:
+def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file: Path) -> None:
     """Prettier CLI vs Lintro: Should produce consistent results for the same file.
 
     Args:
@@ -173,19 +190,16 @@ def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file) -> Non
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
-    assert (
-        direct_success == result.success
-    ), "Success/failure mismatch between CLI and Lintro."
-    (
-        assert_that(direct_issues).is_equal_to(result.issues_count),
-        (
-            f"Issue count mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
-            f"CLI Output:\n{direct_output}\nLintro Output:\n{result.output}"
-        ),
+    assert_that(direct_success).is_equal_to(result.success).described_as(
+        "Success/failure mismatch between CLI and Lintro.",
+    )
+    assert_that(direct_issues).is_equal_to(result.issues_count).described_as(
+        f"Issue count mismatch: CLI={direct_issues}, Lintro={result.issues_count}\n"
+        f"CLI Output:\n{direct_output}\nLintro Output:\n{result.output}",
     )
 
 
-def test_prettier_fix_sets_issues_for_table(temp_prettier_file) -> None:
+def test_prettier_fix_sets_issues_for_table(temp_prettier_file: Path) -> None:
     """PrettierTool.fix should populate issues for table rendering.
 
     Args:
@@ -196,26 +210,27 @@ def test_prettier_fix_sets_issues_for_table(temp_prettier_file) -> None:
 
     # Ensure there are initial issues
     pre_result = tool.check([str(temp_prettier_file)])
-    assert pre_result.issues_count > 0
+    assert_that(pre_result.issues_count).is_greater_than(0)
 
     # Run fix and assert issues are provided for table formatting
     fix_result = tool.fix([str(temp_prettier_file)])
     assert_that(fix_result.success).is_true()
     assert_that(fix_result.remaining_issues_count).is_equal_to(0)
     assert_that(fix_result.issues).is_not_none()
-    assert len(fix_result.issues) == pre_result.issues_count
+    assert_that(fix_result.issues).is_length(pre_result.issues_count)
 
     # Verify that formatted output renders a table section for auto-fixables
+    issues_list = list(fix_result.issues) if fix_result.issues else []
     formatted = format_tool_output(
         tool_name="prettier",
         output=fix_result.output or "",
         output_format="grid",
-        issues=fix_result.issues,
+        issues=issues_list,
     )
-    assert "Auto-fixable issues" in formatted or formatted
+    assert_that("Auto-fixable issues" in formatted or bool(formatted)).is_true()
 
 
-def test_prettier_respects_prettierignore(tmp_path) -> None:
+def test_prettier_respects_prettierignore(tmp_path: Path) -> None:
     """PrettierTool: Should respect .prettierignore file.
 
     Args:
@@ -246,9 +261,12 @@ def test_prettier_respects_prettierignore(tmp_path) -> None:
     # Should find issues in checked.js but not ignored.js
     # Since we're checking the directory, prettier should respect .prettierignore
     # and only report issues for checked.js
-    assert result.issues_count > 0, "Should find issues in checked.js"
+    assert_that(result.issues_count).is_greater_than(0).described_as(
+        "Should find issues in checked.js",
+    )
     # Verify ignored.js is not in the issues
-    issue_files = [issue.file for issue in result.issues]
-    assert "ignored.js" not in " ".join(
-        issue_files,
-    ), "ignored.js should not appear in issues when .prettierignore excludes it"
+    issues = result.issues if result.issues is not None else []
+    issue_files = [issue.file for issue in issues if isinstance(issue, PrettierIssue)]
+    assert_that(" ".join(issue_files)).does_not_contain("ignored.js").described_as(
+        "ignored.js should not appear in issues when .prettierignore excludes it",
+    )

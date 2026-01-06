@@ -8,6 +8,7 @@ import pytest
 from assertpy import assert_that
 from loguru import logger
 
+from lintro.parsers.markdownlint.markdownlint_issue import MarkdownlintIssue
 from lintro.tools.implementations.tool_markdownlint import MarkdownlintTool
 
 logger.remove()
@@ -147,6 +148,9 @@ def test_markdownlint_integration_basic() -> None:
     # If there are issues, verify they're properly structured
     if result.issues:
         issue = result.issues[0]
+        assert_that(isinstance(issue, MarkdownlintIssue)).is_true()
+        if not isinstance(issue, MarkdownlintIssue):
+            pytest.fail("issue should be MarkdownlintIssue")
         assert_that(issue.file).is_not_empty()
         assert_that(issue.line).is_greater_than(0)
         assert_that(issue.code).matches(r"^MD\d+$")

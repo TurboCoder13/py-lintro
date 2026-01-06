@@ -6,7 +6,6 @@ import shutil
 import tempfile
 
 import pytest
-from assertpy import assert_that
 from loguru import logger
 
 from lintro.tools.implementations.tool_ruff import RuffTool
@@ -100,50 +99,3 @@ def temp_python_file(request):
 
     request.addfinalizer(cleanup)
     yield file_path
-
-    def test_sim_simplify_fixing(self, ruff_tool) -> None:
-        """Test SIM (flake8-simplify) rule fixing.
-
-        Args:
-            self: Test instance.
-            ruff_tool: RuffTool fixture instance.
-        """
-        import os
-        import tempfile
-
-        # Create a temporary file with SIM violations
-        content = """
-def test_function():
-    x = 5
-    # SIM101: Unnecessary if-else
-    if x > 0:
-        result = True
-    else:
-        result = False
-    return result
-"""
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(content)
-            f.flush()
-            temp_file = f.name
-
-        try:
-            # Check initial issues
-            ruff_tool.set_options(select=["SIM"], unsafe_fixes=True)
-            initial_result = ruff_tool.check([temp_file])
-            initial_count = initial_result.issues_count
-
-            # Apply fixes
-            fix_result = ruff_tool.fix([temp_file])
-            assert_that(fix_result.success).is_true()
-
-            # Check remaining issues
-            final_result = ruff_tool.check([temp_file])
-            final_count = final_result.issues_count
-
-            # Should have fewer issues after fixing
-            assert_that(final_count).is_less_than_or_equal_to(initial_count)
-
-        finally:
-            os.unlink(temp_file)

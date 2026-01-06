@@ -3,6 +3,8 @@
 import os
 import shutil
 import tempfile
+from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 from assertpy import assert_that
@@ -75,7 +77,7 @@ def pytest_tool():
 
 
 @pytest.fixture
-def pytest_clean_file(tmp_path):
+def pytest_clean_file(tmp_path: Path) -> Generator[str]:
     """Copy pytest clean file to a temp location outside test_samples.
 
     Args:
@@ -91,7 +93,7 @@ def pytest_clean_file(tmp_path):
 
 
 @pytest.fixture
-def pytest_failures_file(tmp_path):
+def pytest_failures_file(tmp_path: Path) -> Generator[str]:
     """Copy pytest failures file to a temp location outside test_samples.
 
     Args:
@@ -107,7 +109,7 @@ def pytest_failures_file(tmp_path):
 
 
 @pytest.fixture
-def temp_test_dir(request):
+def temp_test_dir(request: pytest.FixtureRequest) -> Generator[str]:
     """Create a temporary directory with test files.
 
     Args:
@@ -136,7 +138,7 @@ def temp_test_dir(request):
     not pytest_available(),
     reason="pytest not available; skip integration test.",
 )
-def test_tool_initialization(pytest_tool) -> None:
+def test_tool_initialization(pytest_tool: PytestTool) -> None:
     """Test that PytestTool initializes correctly.
 
     Args:
@@ -149,7 +151,7 @@ def test_tool_initialization(pytest_tool) -> None:
     # present if pytest.ini only specifies test_*.py
 
 
-def test_tool_priority(pytest_tool) -> None:
+def test_tool_priority(pytest_tool: PytestTool) -> None:
     """Test that PytestTool has correct priority.
 
     Args:
@@ -158,7 +160,10 @@ def test_tool_priority(pytest_tool) -> None:
     assert_that(pytest_tool.config.priority).is_equal_to(90)
 
 
-def test_run_tests_on_clean_file(pytest_tool, pytest_clean_file) -> None:
+def test_run_tests_on_clean_file(
+    pytest_tool: PytestTool,
+    pytest_clean_file: str,
+) -> None:
     """Test pytest execution on a clean test file.
 
     Args:
@@ -179,8 +184,8 @@ def test_run_tests_on_clean_file(pytest_tool, pytest_clean_file) -> None:
 
 
 def test_run_tests_on_failures_file(
-    pytest_tool,
-    pytest_failures_file,
+    pytest_tool: PytestTool,
+    pytest_failures_file: str,
 ) -> None:
     """Test pytest execution on a file with intentional failures.
 
@@ -196,7 +201,7 @@ def test_run_tests_on_failures_file(
     assert_that(result.issues_count > 0).is_true()
 
 
-def test_run_tests_on_directory(pytest_tool, temp_test_dir) -> None:
+def test_run_tests_on_directory(pytest_tool: PytestTool, temp_test_dir: str) -> None:
     """Test pytest execution on a directory with multiple test files.
 
     Args:
@@ -215,8 +220,8 @@ def test_run_tests_on_directory(pytest_tool, temp_test_dir) -> None:
 
 
 def test_docker_tests_disabled_by_default(
-    pytest_tool,
-    temp_test_dir,
+    pytest_tool: PytestTool,
+    temp_test_dir: str,
 ) -> None:
     """Test that Docker tests are disabled by default.
 
@@ -235,6 +240,9 @@ def test_docker_tests_disabled_by_default(
         assert_that(isinstance(result, ToolResult)).is_true()
         # Should still run, but docker tests should be skipped
         # The output may be in JSON format, so check for both text and JSON formats
+        assert_that(result.output).is_not_none()
+        if result.output is None:
+            pytest.fail("output should not be None")
         output_lower = result.output.lower()
         # Check for skipped tests in either text or JSON output format
         assert_that(
@@ -249,8 +257,8 @@ def test_docker_tests_disabled_by_default(
 
 
 def test_docker_tests_enabled_via_option(
-    pytest_tool,
-    temp_test_dir,
+    pytest_tool: PytestTool,
+    temp_test_dir: str,
 ) -> None:
     """Test that Docker tests can be enabled via option.
 
@@ -276,7 +284,7 @@ def test_docker_tests_enabled_via_option(
 
 
 @pytest.mark.slow
-def test_default_paths(pytest_tool) -> None:
+def test_default_paths(pytest_tool: PytestTool) -> None:
     """Test that default paths work correctly.
 
     Args:
@@ -291,7 +299,7 @@ def test_default_paths(pytest_tool) -> None:
     assert_that(result.name).is_equal_to("pytest")
 
 
-def test_set_options_valid(pytest_tool) -> None:
+def test_set_options_valid(pytest_tool: PytestTool) -> None:
     """Test setting valid options.
 
     Args:
@@ -309,7 +317,7 @@ def test_set_options_valid(pytest_tool) -> None:
     assert_that(pytest_tool.options["maxfail"]).is_equal_to(5)
 
 
-def test_set_options_invalid_tb(pytest_tool) -> None:
+def test_set_options_invalid_tb(pytest_tool: PytestTool) -> None:
     """Test setting invalid traceback format.
 
     Args:
@@ -319,7 +327,7 @@ def test_set_options_invalid_tb(pytest_tool) -> None:
         pytest_tool.set_options(tb="invalid")
 
 
-def test_set_options_invalid_maxfail(pytest_tool) -> None:
+def test_set_options_invalid_maxfail(pytest_tool: PytestTool) -> None:
     """Test setting invalid maxfail value.
 
     Args:
@@ -329,7 +337,7 @@ def test_set_options_invalid_maxfail(pytest_tool) -> None:
         pytest_tool.set_options(maxfail="not_a_number")
 
 
-def test_fix_not_implemented(pytest_tool) -> None:
+def test_fix_not_implemented(pytest_tool: PytestTool) -> None:
     """Test that fix method raises NotImplementedError.
 
     Args:
@@ -339,7 +347,10 @@ def test_fix_not_implemented(pytest_tool) -> None:
         pytest_tool.fix(["test_file.py"])
 
 
-def test_output_contains_summary(pytest_tool, pytest_failures_file) -> None:
+def test_output_contains_summary(
+    pytest_tool: PytestTool,
+    pytest_failures_file: str,
+) -> None:
     """Test that output contains summary information.
 
     Args:
@@ -350,13 +361,16 @@ def test_output_contains_summary(pytest_tool, pytest_failures_file) -> None:
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.output).is_not_empty()
     # Output should contain JSON summary or test results
+    assert_that(result.output).is_not_none()
+    if result.output is None:
+        pytest.fail("output should not be None")
     assert_that(
         "passed" in result.output.lower() or "failed" in result.output.lower(),
     ).is_true()
 
 
 def test_pytest_output_consistency_direct_vs_lintro(
-    pytest_failures_file,
+    pytest_failures_file: str,
 ) -> None:
     """Test that lintro produces consistent results with direct pytest.
 

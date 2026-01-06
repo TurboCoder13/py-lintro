@@ -12,7 +12,7 @@ import pytest
 from lintro.tools.implementations.tool_mypy import MypyTool
 
 
-@pytest.fixture(autouse=True)  # type: ignore[untyped-decorator]
+@pytest.fixture(autouse=True)
 def set_lintro_test_mode_env(lintro_test_mode: object) -> Iterator[None]:
     """Disable config injection for predictable CLI args in tests.
 
@@ -43,7 +43,7 @@ def working_directory(path: Path) -> Iterator[None]:
         os.chdir(prev_cwd)
 
 
-@pytest.fixture  # type: ignore[untyped-decorator]
+@pytest.fixture
 def mypy_tool() -> MypyTool:
     """Create a MypyTool instance for testing.
 
@@ -53,7 +53,7 @@ def mypy_tool() -> MypyTool:
     return MypyTool()
 
 
-@pytest.fixture  # type: ignore[untyped-decorator]
+@pytest.fixture
 def mypy_violation_file() -> Iterator[str]:
     """Copy the mypy_violations.py sample to a temp directory for testing.
 
@@ -68,7 +68,7 @@ def mypy_violation_file() -> Iterator[str]:
         yield dst
 
 
-@pytest.fixture  # type: ignore[untyped-decorator]
+@pytest.fixture
 def mypy_clean_file() -> Iterator[str]:
     """Create a temporary clean Python file for mypy.
 

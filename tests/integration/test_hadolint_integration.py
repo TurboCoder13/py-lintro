@@ -85,7 +85,7 @@ def test_hadolint_available() -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_reports_violations_direct(tmp_path) -> None:
+def test_hadolint_reports_violations_direct(tmp_path: Path) -> None:
     """Hadolint CLI: Should detect and report violations in a sample file.
 
     Args:
@@ -119,7 +119,7 @@ def test_hadolint_reports_violations_direct(tmp_path) -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_reports_violations_through_lintro(tmp_path) -> None:
+def test_hadolint_reports_violations_through_lintro(tmp_path: Path) -> None:
     """Lintro HadolintTool: Should detect and report violations in a sample file.
 
     Args:
@@ -143,6 +143,9 @@ def test_hadolint_reports_violations_through_lintro(tmp_path) -> None:
     assert_that(result.issues_count).is_greater_than(0).described_as(
         "Lintro HadolintTool should report at least one issue.",
     )
+    assert_that(result.output).is_not_none()
+    if result.output is None:
+        pytest.fail("output should not be None")
     assert_that(
         any(code in result.output for code in ["DL", "SC"]),
     ).is_true().described_as(
@@ -151,7 +154,7 @@ def test_hadolint_reports_violations_through_lintro(tmp_path) -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_output_consistency_direct_vs_lintro(tmp_path) -> None:
+def test_hadolint_output_consistency_direct_vs_lintro(tmp_path: Path) -> None:
     """Hadolint CLI vs Lintro: Should produce consistent results for the same file.
 
     Args:
@@ -190,7 +193,7 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path) -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_with_ignore_rules(tmp_path) -> None:
+def test_hadolint_with_ignore_rules(tmp_path: Path) -> None:
     """Lintro HadolintTool: Should properly ignore specified rules.
 
     Args:
@@ -212,7 +215,7 @@ def test_hadolint_with_ignore_rules(tmp_path) -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_fix_method_not_implemented(tmp_path) -> None:
+def test_hadolint_fix_method_not_implemented(tmp_path: Path) -> None:
     """Lintro HadolintTool: .fix() should raise NotImplementedError.
 
     Args:
@@ -231,7 +234,7 @@ def test_hadolint_fix_method_not_implemented(tmp_path) -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_empty_directory(tmp_path) -> None:
+def test_hadolint_empty_directory(tmp_path: Path) -> None:
     """Lintro HadolintTool: Should handle empty directories gracefully.
 
     Args:
@@ -253,7 +256,7 @@ def test_hadolint_empty_directory(tmp_path) -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_parser_validation(tmp_path) -> None:
+def test_hadolint_parser_validation(tmp_path: Path) -> None:
     """Test that hadolint parser correctly parses output.
 
     Args:

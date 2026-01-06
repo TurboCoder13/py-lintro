@@ -18,7 +18,7 @@ SAMPLE_FILE = Path("test_samples/tools/javascript/biome/biome_violations.js")
 
 
 @pytest.fixture
-def temp_biome_file(tmp_path):
+def temp_biome_file(tmp_path: Path) -> Path:
     """Create a temp copy of the sample JS file with violations.
 
     Args:
@@ -75,7 +75,7 @@ def run_biome_directly(
     return success, full_output, issues_count
 
 
-def test_biome_reports_violations_direct(temp_biome_file) -> None:
+def test_biome_reports_violations_direct(temp_biome_file: Path) -> None:
     """Biome CLI: Should detect and report violations in a sample file.
 
     Args:
@@ -90,7 +90,7 @@ def test_biome_reports_violations_direct(temp_biome_file) -> None:
     )
 
 
-def test_biome_reports_violations_through_lintro(temp_biome_file) -> None:
+def test_biome_reports_violations_through_lintro(temp_biome_file: Path) -> None:
     """Lintro BiomeTool: Should detect and report violations in a sample file.
 
     Args:
@@ -114,7 +114,7 @@ def test_biome_reports_violations_through_lintro(temp_biome_file) -> None:
     )
 
 
-def test_biome_fix_method(temp_biome_file) -> None:
+def test_biome_fix_method(temp_biome_file: Path) -> None:
     """Lintro BiomeTool: Should fix auto-fixable issues.
 
     Args:
@@ -155,7 +155,7 @@ def test_biome_fix_method(temp_biome_file) -> None:
     ).described_as("Should have same or fewer issues after fixing")
 
 
-def test_biome_output_consistency_direct_vs_lintro(temp_biome_file) -> None:
+def test_biome_output_consistency_direct_vs_lintro(temp_biome_file: Path) -> None:
     """Biome CLI vs Lintro: Should produce consistent results for the same file.
 
     Args:
@@ -186,7 +186,7 @@ def test_biome_output_consistency_direct_vs_lintro(temp_biome_file) -> None:
     )
 
 
-def test_biome_fix_sets_issues_for_table(temp_biome_file) -> None:
+def test_biome_fix_sets_issues_for_table(temp_biome_file: Path) -> None:
     """BiomeTool.fix should populate issues for table rendering.
 
     Args:
@@ -207,16 +207,17 @@ def test_biome_fix_sets_issues_for_table(temp_biome_file) -> None:
     assert_that(fix_result.issues).is_length(fix_result.remaining_issues_count)
 
     # Verify that formatted output renders correctly
+    issues_list = list(fix_result.issues) if fix_result.issues else []
     formatted = format_tool_output(
         tool_name="biome",
         output=fix_result.output or "",
         output_format="grid",
-        issues=fix_result.issues,
+        issues=issues_list,
     )
     assert_that(formatted).is_true()  # Should produce some output
 
 
-def test_biome_respects_biomeignore(tmp_path) -> None:
+def test_biome_respects_biomeignore(tmp_path: Path) -> None:
     """BiomeTool: Should respect .biomeignore file.
 
     Args:
