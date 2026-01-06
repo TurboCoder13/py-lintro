@@ -181,7 +181,7 @@ jobs:
         run: |
           export COVERAGE_PERCENTAGE
           export JOB_RESULT
-          ./scripts/ci/coverage-pr-comment.sh
+          ./scripts/ci/github/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
         uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@actions-v1
