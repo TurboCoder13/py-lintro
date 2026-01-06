@@ -3,8 +3,15 @@
 Functions for parsing tool lists and tool-specific options from command line arguments.
 """
 
+from __future__ import annotations
 
-def parse_tool_list(tools_str: str | None) -> list:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from lintro.tools.tool_enum import ToolEnum
+
+
+def parse_tool_list(tools_str: str | None) -> list[ToolEnum]:
     """Parse a comma-separated list of core names into ToolEnum members.
 
     Args:
@@ -21,7 +28,7 @@ def parse_tool_list(tools_str: str | None) -> list:
     # Import ToolEnum here to avoid circular import at module level
     from lintro.tools.tool_enum import ToolEnum
 
-    result: list[str] = []
+    result: list[ToolEnum] = []
     for t in tools_str.split(","):
         t = t.strip()
         if not t:

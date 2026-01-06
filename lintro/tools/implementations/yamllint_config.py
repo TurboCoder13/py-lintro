@@ -39,7 +39,7 @@ YAMLLINT_FORMATS: tuple[str, ...] = tuple(m.name.lower() for m in YamllintFormat
 _yamllint_parser: object | None = None
 
 
-def _get_yamllint_parser():
+def _get_yamllint_parser() -> Any | None:
     """Get the yamllint parser function, caching the import result.
 
     Returns:
@@ -102,7 +102,7 @@ class YamllintTool(BaseTool):
         """Initialize the tool."""
         super().__post_init__()
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         format: str | YamllintFormat | None = None,
         config_file: str | None = None,
@@ -110,7 +110,7 @@ class YamllintTool(BaseTool):
         strict: bool | None = None,
         relaxed: bool | None = None,
         no_warnings: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Yamllint-specific options.
 
@@ -176,8 +176,9 @@ class YamllintTool(BaseTool):
             3. Auto-discovered config files (.yamllint, .yamllint.yml, etc.)
         """
         # If config_file is explicitly set, use it
-        if self.options.get("config_file"):
-            return self.options.get("config_file")
+        config_file = self.options.get("config_file")
+        if config_file:
+            return str(config_file)
 
         # If config_data is set, don't search for config file
         # (inline config takes precedence over file-based discovery)
@@ -323,16 +324,16 @@ class YamllintTool(BaseTool):
             list[str]: Command arguments for yamllint.
         """
         cmd: list[str] = self._get_executable_command("yamllint")
-        format_option: str = self.options.get("format", YAMLLINT_FORMATS[0])
+        format_option = str(self.options.get("format", YAMLLINT_FORMATS[0]))
         cmd.extend(["--format", format_option])
         # Note: Config file discovery happens per-file in _process_yaml_file
         # since yamllint discovers configs relative to each file
-        config_file: str | None = self.options.get("config_file")
-        if config_file:
-            cmd.extend(["--config-file", config_file])
-        config_data: str | None = self.options.get("config_data")
-        if config_data:
-            cmd.extend(["--config-data", config_data])
+        config_file_opt = self.options.get("config_file")
+        if config_file_opt:
+            cmd.extend(["--config-file", str(config_file_opt)])
+        config_data_opt = self.options.get("config_data")
+        if config_data_opt:
+            cmd.extend(["--config-data", str(config_data_opt)])
         if self.options.get("strict", False):
             cmd.append("--strict")
         if self.options.get("relaxed", False):
@@ -344,7 +345,7 @@ class YamllintTool(BaseTool):
         self,
         file_path: str,
         timeout: int,
-    ) -> tuple[int, list, bool, bool, bool, bool]:
+    ) -> tuple[int, list[Any], bool, bool, bool, bool]:
         """Process a single YAML file with yamllint.
 
         Args:
@@ -364,11 +365,12 @@ class YamllintTool(BaseTool):
         # Use absolute path; run with the file's parent as cwd so that
         # yamllint discovers any local .yamllint config beside the file.
         abs_file: str = os.path.abspath(file_path)
-        file_cwd: str = self.get_cwd(paths=[abs_file])
+        cwd_result = self.get_cwd(paths=[abs_file])
+        file_cwd: str = cwd_result if cwd_result is not None else os.getcwd()
         file_dir: str = os.path.dirname(abs_file)
         # Build command and discover config relative to file's directory
         cmd: list[str] = self._get_executable_command("yamllint")
-        format_option: str = self.options.get("format", "parsable")
+        format_option = str(self.options.get("format", "parsable"))
         cmd.extend(["--format", format_option])
         # Discover config file relative to the file being checked
         config_file: str | None = self._find_yamllint_config(search_dir=file_dir)
@@ -381,9 +383,9 @@ class YamllintTool(BaseTool):
                 f"[YamllintTool] Using config file: {abs_config_file} "
                 f"(original: {config_file})",
             )
-        config_data: str | None = self.options.get("config_data")
-        if config_data:
-            cmd.extend(["--config-data", config_data])
+        config_data_opt = self.options.get("config_data")
+        if config_data_opt:
+            cmd.extend(["--config-data", str(config_data_opt)])
         if self.options.get("strict", False):
             cmd.append("--strict")
         if self.options.get("relaxed", False):
@@ -440,18 +442,18 @@ class YamllintTool(BaseTool):
     def _process_yaml_file_result(
         self,
         issues_count: int,
-        issues: list,
+        issues: list[Any],
         skipped_flag: bool,
         execution_failure_flag: bool,
         success_flag: bool,
         file_path: str,
         all_success: bool,
-        all_issues: list,
+        all_issues: list[Any],
         skipped_files: list[str],
         timeout_skipped_count: int,
         other_execution_failures: int,
         total_issues: int,
-    ) -> tuple[bool, list, list[str], int, int, int]:
+    ) -> tuple[bool, list[Any], list[str], int, int, int]:
         """Process the result of processing a single YAML file.
 
         Args:
@@ -544,7 +546,13 @@ class YamllintTool(BaseTool):
         timeout_skipped_count = 0
         other_execution_failures = 0
 
-        timeout = self.options.get("timeout", YAMLLINT_DEFAULT_TIMEOUT)
+        timeout_opt = self.options.get("timeout", YAMLLINT_DEFAULT_TIMEOUT)
+        if timeout_opt is not None and not isinstance(timeout_opt, int):
+            timeout_val = int(str(timeout_opt))
+        elif isinstance(timeout_opt, int):
+            timeout_val = timeout_opt
+        else:
+            timeout_val = YAMLLINT_DEFAULT_TIMEOUT
 
         # Load ignore patterns from yamllint config before processing files
         config_file = self._find_yamllint_config(search_dir=paths[0] if paths else None)
@@ -565,7 +573,7 @@ class YamllintTool(BaseTool):
                 execution_failure_flag,
                 success_flag,
                 should_continue,
-            ) = self._process_yaml_file(file_path=file_path, timeout=timeout)
+            ) = self._process_yaml_file(file_path=file_path, timeout=timeout_val)
 
             if should_continue:
                 continue
@@ -599,7 +607,7 @@ class YamllintTool(BaseTool):
             if timeout_skipped_count > 0:
                 output_lines.append(
                     f"Skipped {timeout_skipped_count} file(s) due to timeout "
-                    f"({timeout}s limit exceeded):",
+                    f"({timeout_val}s limit exceeded):",
                 )
                 for file in skipped_files:
                     output_lines.append(f"  - {file}")

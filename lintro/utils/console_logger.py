@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -106,13 +107,13 @@ class ConsoleLogger:
     def print_execution_summary(
         self,
         action: Action,
-        tool_results: list[object],
+        tool_results: Sequence[object],
     ) -> None:
         """Print the execution summary for all tools.
 
         Args:
             action: Action: The action being performed.
-            tool_results: list[object]: The list of tool results.
+            tool_results: Sequence[object]: The list of tool results.
         """
         # Add separation before Execution Summary
         self.console_output(text="")
@@ -202,13 +203,13 @@ class ConsoleLogger:
     def _print_summary_table(
         self,
         action: Action | str,
-        tool_results: list[object],
+        tool_results: Sequence[object],
     ) -> None:
         """Print the summary table for the run.
 
         Args:
             action: Action | str: The action being performed.
-            tool_results: list[object]: The list of tool results.
+            tool_results: Sequence[object]: The list of tool results.
         """
         # Convert to Action enum if string provided
         action_enum = normalize_action(action)

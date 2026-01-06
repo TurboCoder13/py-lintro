@@ -3,7 +3,7 @@
 Handles formatting and display of execution summary tables with tabulate.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from lintro.enums.action import Action
@@ -45,14 +45,14 @@ def _safe_cast(
 def print_summary_table(
     console_output_func: Callable[..., None],
     action: Action,
-    tool_results: list[object],
+    tool_results: Sequence[object],
 ) -> None:
     """Print the summary table for the run.
 
     Args:
         console_output_func: Function to output text to console
         action: The action being performed.
-        tool_results: The list of tool results.
+        tool_results: Sequence of tool results.
     """
     try:
         from tabulate import tabulate

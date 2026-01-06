@@ -64,14 +64,14 @@ class PrettierTool(BaseTool):
         # rather than loading into lintro's exclude patterns, to ensure prettier's
         # native ignore logic is used consistently
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         exclude_patterns: list[str] | None = None,
         include_venv: bool = False,
         timeout: int | None = None,
         verbose_fix_output: bool | None = None,
         line_length: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set options for the core.
 
@@ -220,7 +220,7 @@ class PrettierTool(BaseTool):
     def _create_timeout_result(
         self,
         timeout_val: int,
-        initial_issues: list | None = None,
+        initial_issues: list[Any] | None = None,
         initial_count: int = 0,
     ) -> ToolResult:
         """Create a ToolResult for timeout scenarios.
@@ -348,14 +348,15 @@ class PrettierTool(BaseTool):
         success: bool = issues_count == 0
         # Standardize: suppress Prettier's informational output when no issues
         # so the unified logger prints a single, consistent success line.
+        final_output: str | None = output
         if success:
-            output = None
+            final_output = None
 
         # Return full ToolResult so table rendering can use parsed issues
         return ToolResult(
             name=self.name,
             success=success,
-            output=output,
+            output=final_output,
             issues_count=issues_count,
             issues=issues,
         )

@@ -51,7 +51,8 @@ def _extract_bandit_json(raw_text: str) -> dict[str, Any]:
 
     # Quick path: if the entire text is JSON
     if text.startswith("{") and text.endswith("}"):
-        return json.loads(text)
+        result: dict[str, Any] = json.loads(text)
+        return result
 
     start: int = text.find("{")
     end: int = text.rfind("}")
@@ -59,7 +60,8 @@ def _extract_bandit_json(raw_text: str) -> dict[str, Any]:
         raise ValueError("Could not locate JSON object in Bandit output")
 
     json_str: str = text[start : end + 1]
-    return json.loads(json_str)
+    parsed: dict[str, Any] = json.loads(json_str)
+    return parsed
 
 
 @dataclass
@@ -152,9 +154,12 @@ class BanditTool(BaseTool):
                     value = normalize_bandit_confidence_level(
                         value,
                     ).value  # Normalize and convert to string
+                # Convert lists to comma-separated strings for skips/tests
+                elif config_key in ("skips", "tests") and isinstance(value, list):
+                    value = ",".join(value)
                 self.options[option_key] = value
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         severity: str | None = None,
         confidence: str | None = None,
@@ -167,7 +172,7 @@ class BanditTool(BaseTool):
         aggregate: str | None = None,
         verbose: bool | None = None,
         quiet: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Bandit-specific options.
 
@@ -239,8 +244,9 @@ class BanditTool(BaseTool):
         cmd: list[str] = exec_cmd + ["-r"]
 
         # Add configuration options
-        if self.options.get("severity"):
-            severity = normalize_bandit_severity_level(self.options["severity"])
+        severity_opt = self.options.get("severity")
+        if severity_opt is not None:
+            severity = normalize_bandit_severity_level(str(severity_opt))
             if severity == BanditSeverityLevel.LOW:
                 cmd.append("-l")
             elif severity == BanditSeverityLevel.MEDIUM:
@@ -248,8 +254,9 @@ class BanditTool(BaseTool):
             elif severity == BanditSeverityLevel.HIGH:
                 cmd.extend(["-lll"])
 
-        if self.options.get("confidence"):
-            confidence = normalize_bandit_confidence_level(self.options["confidence"])
+        confidence_opt = self.options.get("confidence")
+        if confidence_opt is not None:
+            confidence = normalize_bandit_confidence_level(str(confidence_opt))
             if confidence == BanditConfidenceLevel.LOW:
                 cmd.append("-i")
             elif confidence == BanditConfidenceLevel.MEDIUM:
@@ -257,26 +264,32 @@ class BanditTool(BaseTool):
             elif confidence == BanditConfidenceLevel.HIGH:
                 cmd.extend(["-iii"])
 
-        if self.options.get("tests"):
-            cmd.extend(["-t", self.options["tests"]])
+        tests_opt = self.options.get("tests")
+        if tests_opt is not None:
+            cmd.extend(["-t", str(tests_opt)])
 
-        if self.options.get("skips"):
-            cmd.extend(["-s", self.options["skips"]])
+        skips_opt = self.options.get("skips")
+        if skips_opt is not None:
+            cmd.extend(["-s", str(skips_opt)])
 
-        if self.options.get("profile"):
-            cmd.extend(["-p", self.options["profile"]])
+        profile_opt = self.options.get("profile")
+        if profile_opt is not None:
+            cmd.extend(["-p", str(profile_opt)])
 
-        if self.options.get("configfile"):
-            cmd.extend(["-c", self.options["configfile"]])
+        configfile_opt = self.options.get("configfile")
+        if configfile_opt is not None:
+            cmd.extend(["-c", str(configfile_opt)])
 
-        if self.options.get("baseline"):
-            cmd.extend(["-b", self.options["baseline"]])
+        baseline_opt = self.options.get("baseline")
+        if baseline_opt is not None:
+            cmd.extend(["-b", str(baseline_opt)])
 
         if self.options.get("ignore_nosec"):
             cmd.append("--ignore-nosec")
 
-        if self.options.get("aggregate"):
-            cmd.extend(["-a", self.options["aggregate"]])
+        aggregate_opt = self.options.get("aggregate")
+        if aggregate_opt is not None:
+            cmd.extend(["-a", str(aggregate_opt)])
 
         if self.options.get("verbose"):
             cmd.append("-v")

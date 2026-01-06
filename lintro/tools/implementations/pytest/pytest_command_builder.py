@@ -246,7 +246,7 @@ def add_plugin_options(cmd: list[str], options: dict[str, Any]) -> None:
             logger.debug(f"Reruns enabled: {reruns} times")
 
 
-def add_ignore_options(cmd: list[str], tool) -> None:
+def add_ignore_options(cmd: list[str], tool: "PytestTool") -> None:
     """Add ignore options to command for exclude patterns.
 
     Args:
@@ -272,7 +272,7 @@ def add_ignore_options(cmd: list[str], tool) -> None:
 
 
 def build_check_command(
-    tool,
+    tool: "PytestTool",
     files: list[str],
     fix: bool = False,
 ) -> tuple[list[str], str | None]:

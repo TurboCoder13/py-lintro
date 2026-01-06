@@ -5,6 +5,7 @@ import os
 import subprocess  # nosec B404 - used safely with shell disabled
 import tempfile
 from dataclasses import dataclass, field
+from typing import Any
 
 from loguru import logger
 
@@ -94,11 +95,11 @@ class MarkdownlintTool(BaseTool):
             issues_count=0,
         )
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         timeout: int | None = None,
         line_length: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Markdownlint-specific options.
 
@@ -246,10 +247,15 @@ class MarkdownlintTool(BaseTool):
             logger.debug("[MarkdownlintTool] Using Lintro config injection")
         else:
             # Fallback: Apply line_length configuration if set
-            line_length = self.options.get("line_length")
-            if line_length:
+            line_length_opt = self.options.get("line_length")
+            if line_length_opt is not None:
+                line_length_val = (
+                    int(line_length_opt)
+                    if isinstance(line_length_opt, int)
+                    else int(str(line_length_opt))
+                )
                 temp_config_path = self._create_temp_markdownlint_config(
-                    line_length=line_length,
+                    line_length=line_length_val,
                 )
                 if temp_config_path:
                     cmd.extend(["--config", temp_config_path])
@@ -296,13 +302,14 @@ class MarkdownlintTool(BaseTool):
         success_flag: bool = success and issues_count == 0
 
         # Suppress output when no issues found
+        final_output: str | None = output
         if success_flag:
-            output = None
+            final_output = None
 
         return ToolResult(
             name=self.name,
             success=success_flag,
-            output=output,
+            output=final_output,
             issues_count=issues_count,
             issues=issues,
         )

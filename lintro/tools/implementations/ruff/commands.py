@@ -13,7 +13,15 @@ if TYPE_CHECKING:
 
 
 def _get_list_option(options: dict[str, Any], key: str) -> list[str]:
-    """Get a list option from options dict, returning empty list if not set."""
+    """Get a list option from options dict, returning empty list if not set.
+
+    Args:
+        options: dict[str, Any]: Dictionary of options to retrieve from.
+        key: str: Key to look up in the options dictionary.
+
+    Returns:
+        list[str]: List of string values, or empty list if key not found.
+    """
     value = options.get(key)
     if value is None:
         return []
@@ -23,7 +31,15 @@ def _get_list_option(options: dict[str, Any], key: str) -> list[str]:
 
 
 def _get_set_option(options: dict[str, Any], key: str) -> set[str]:
-    """Get a set option from options dict, returning empty set if not set."""
+    """Get a set option from options dict, returning empty set if not set.
+
+    Args:
+        options: dict[str, Any]: Dictionary of options to retrieve from.
+        key: str: Key to look up in the options dictionary.
+
+    Returns:
+        set[str]: Set of string values, or empty set if key not found.
+    """
     return set(_get_list_option(options, key))
 
 

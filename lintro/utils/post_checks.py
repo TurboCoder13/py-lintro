@@ -3,6 +3,10 @@
 Handles optional post-check tools that run after primary linting tools.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from lintro.enums.action import Action
 from lintro.enums.group_by import normalize_group_by
 from lintro.enums.output_format import OutputFormat, normalize_output_format
@@ -11,6 +15,10 @@ from lintro.tools.tool_enum import ToolEnum
 from lintro.utils.config import load_post_checks_config
 from lintro.utils.output_formatting import format_tool_output
 from lintro.utils.unified_config import UnifiedConfigManager
+
+if TYPE_CHECKING:
+    from lintro.models.core.tool_result import ToolResult
+    from lintro.utils.console_logger import ConsoleLogger
 
 
 def _get_tool_display_name(tool_enum: ToolEnum) -> str:
@@ -45,8 +53,8 @@ def execute_post_checks(
     output_format: str,
     verbose: bool,
     raw_output: bool,
-    logger,
-    all_results: list,
+    logger: ConsoleLogger,
+    all_results: list[ToolResult],
     total_issues: int,
     total_fixed: int,
     total_remaining: int,
@@ -193,7 +201,9 @@ def execute_post_checks(
                             console_output_func=logger.console_output,
                             success_func=success_func,
                             tool_name=tool_name,
-                            output=formatted_output if not raw_output else output,
+                            output=(
+                                formatted_output if not raw_output else (output or "")
+                            ),
                             issues_count=issues_count,
                             raw_output_for_meta=output,
                             action=action,

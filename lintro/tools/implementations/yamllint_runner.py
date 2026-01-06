@@ -4,7 +4,6 @@ This module provides an alternative implementation of YamllintTool
 with per-file processing and progress tracking.
 """
 
-import contextlib
 import os
 import subprocess  # nosec B404 - used safely with shell disabled
 from typing import Any
@@ -33,7 +32,7 @@ class YamllintRunner(YamllintTool):
         self,
         file_path: str,
         timeout: int,
-    ) -> tuple[int, list, bool, bool, bool, bool]:
+    ) -> tuple[int, list[Any], bool, bool, bool, bool]:
         """Process a single YAML file with yamllint.
 
         Args:
@@ -53,11 +52,11 @@ class YamllintRunner(YamllintTool):
         # Use absolute path; run with the file's parent as cwd so that
         # yamllint discovers any local .yamllint config beside the file.
         abs_file: str = os.path.abspath(file_path)
-        file_cwd: str = self.get_cwd(paths=[abs_file])
+        file_cwd: str | None = self.get_cwd(paths=[abs_file])
         file_dir: str = os.path.dirname(abs_file)
         # Build command and discover config relative to file's directory
         cmd: list[str] = self._get_executable_command("yamllint")
-        format_option: str = self.options.get("format", YAMLLINT_FORMATS[0])
+        format_option = str(self.options.get("format", YAMLLINT_FORMATS[0]))
         cmd.extend(["--format", format_option])
         # Discover config file relative to the file being checked
         config_file: str | None = self._find_yamllint_config(search_dir=file_dir)
@@ -70,9 +69,9 @@ class YamllintRunner(YamllintTool):
                 f"[YamllintTool] Using config file: {abs_config_file} "
                 f"(original: {config_file})",
             )
-        config_data: str | None = self.options.get("config_data")
-        if config_data:
-            cmd.extend(["--config-data", config_data])
+        config_data_opt = self.options.get("config_data")
+        if config_data_opt:
+            cmd.extend(["--config-data", str(config_data_opt)])
         if self.options.get("strict", False):
             cmd.append("--strict")
         if self.options.get("relaxed", False):
@@ -144,18 +143,18 @@ class YamllintRunner(YamllintTool):
     def _process_yaml_file_result(
         self,
         issues_count: int,
-        issues: list,
+        issues: list[Any],
         skipped_flag: bool,
         execution_failure_flag: bool,
         success_flag: bool,
         file_path: str,
         all_success: bool,
-        all_issues: list,
+        all_issues: list[Any],
         skipped_files: list[str],
         timeout_skipped_count: int,
         other_execution_failures: int,
         total_issues: int,
-    ) -> tuple[bool, list, list[str], int, int, int]:
+    ) -> tuple[bool, list[Any], list[str], int, int, int]:
         """Process a single file's result and update accumulators.
 
         Args:
@@ -252,7 +251,7 @@ class YamllintRunner(YamllintTool):
         found_config = None
         config_file_option = self.options.get("config_file")
         if config_file_option:
-            found_config = os.path.abspath(config_file_option)
+            found_config = os.path.abspath(str(config_file_option))
             logger.debug(
                 f"[YamllintTool] Using explicit config file: {found_config}",
             )
@@ -290,7 +289,13 @@ class YamllintRunner(YamllintTool):
                     f"yamllint ignore patterns: {ignore_patterns}",
                 )
         logger.debug(f"Files to check: {yaml_files}")
-        timeout: int = self.options.get("timeout", YAMLLINT_DEFAULT_TIMEOUT)
+        timeout_opt = self.options.get("timeout", YAMLLINT_DEFAULT_TIMEOUT)
+        if isinstance(timeout_opt, int):
+            timeout = timeout_opt
+        elif timeout_opt is not None:
+            timeout = int(str(timeout_opt))
+        else:
+            timeout = YAMLLINT_DEFAULT_TIMEOUT
         # Aggregate parsed issues across files and rely on table renderers upstream
         all_success: bool = True
         all_issues: list[Any] = []
@@ -299,20 +304,11 @@ class YamllintRunner(YamllintTool):
         other_execution_failures: int = 0
         total_issues: int = 0
 
-        # Show progress bar only when processing multiple files
-        if len(yaml_files) >= 2:
-            files_to_iterate = click.progressbar(
-                yaml_files,
-                label="Processing files",
-                bar_template="%(label)s  %(info)s",
-            )
-            context_mgr = files_to_iterate
-        else:
-            files_to_iterate = yaml_files
-            context_mgr = contextlib.nullcontext()
-
-        with context_mgr:
-            for file_path in files_to_iterate:
+        # Process files (with progress bar for 2+ files)
+        def process_files(files_iter: Any) -> None:
+            nonlocal all_success, all_issues, skipped_files
+            nonlocal timeout_skipped_count, other_execution_failures, total_issues
+            for file_path in files_iter:
                 (
                     issues_count,
                     issues,
@@ -344,6 +340,17 @@ class YamllintRunner(YamllintTool):
                     other_execution_failures=other_execution_failures,
                     total_issues=total_issues,
                 )
+
+        # Show progress bar only when processing multiple files
+        if len(yaml_files) >= 2:
+            with click.progressbar(
+                yaml_files,
+                label="Processing files",
+                bar_template="%(label)s  %(info)s",
+            ) as progress_iter:
+                process_files(progress_iter)
+        else:
+            process_files(yaml_files)
         # Build output message if there are skipped files or execution failures
         output: str | None = None
         if timeout_skipped_count > 0 or other_execution_failures > 0:

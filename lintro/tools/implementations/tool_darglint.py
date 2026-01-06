@@ -2,6 +2,7 @@
 
 import subprocess  # nosec B404 - vetted use via BaseTool._run_subprocess
 from dataclasses import dataclass, field
+from typing import Any
 
 import click
 from loguru import logger
@@ -114,7 +115,21 @@ class DarglintTool(BaseTool):
                     if pattern not in self.exclude_patterns:
                         self.exclude_patterns.append(pattern)
 
-    def set_options(
+        # Apply timeout from configuration
+        if "timeout" in darglint_config:
+            timeout_value = darglint_config["timeout"]
+            if isinstance(timeout_value, int) and timeout_value > 0:
+                self.options["timeout"] = timeout_value
+
+        # Apply exclude_files as exclude patterns
+        if "exclude_files" in darglint_config:
+            exclude_files = darglint_config["exclude_files"]
+            if isinstance(exclude_files, list):
+                for exclude_file in exclude_files:
+                    if exclude_file not in self.exclude_patterns:
+                        self.exclude_patterns.append(exclude_file)
+
+    def set_options(  # type: ignore[override]
         self,
         ignore: list[str] | None = None,
         ignore_regex: str | None = None,
@@ -122,7 +137,7 @@ class DarglintTool(BaseTool):
         message_template: str | None = None,
         verbosity: int | None = None,
         strictness: str | DarglintStrictness | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Darglint-specific options.
 
@@ -183,19 +198,23 @@ class DarglintTool(BaseTool):
         cmd: list[str] = self._get_executable_command("darglint")
 
         # Add configuration options
-        if self.options.get("ignore"):
-            cmd.extend(["--ignore", ",".join(self.options["ignore"])])
-        if self.options.get("ignore_regex"):
-            cmd.extend(["--ignore-regex", self.options["ignore_regex"]])
+        ignore_opt = self.options.get("ignore")
+        if ignore_opt is not None and isinstance(ignore_opt, list):
+            cmd.extend(["--ignore", ",".join(str(i) for i in ignore_opt)])
+        ignore_regex_opt = self.options.get("ignore_regex")
+        if ignore_regex_opt is not None:
+            cmd.extend(["--ignore-regex", str(ignore_regex_opt)])
         if self.options.get("ignore_syntax"):
             cmd.append("--ignore-syntax")
         # Remove message_template override to use default output
         # if self.options.get("message_template"):
         #     cmd.extend(["--message-template", self.options["message_template"]])
-        if self.options.get("verbosity"):
-            cmd.extend(["--verbosity", str(self.options["verbosity"])])
-        if self.options.get("strictness"):
-            cmd.extend(["--strictness", self.options["strictness"]])
+        verbosity_opt = self.options.get("verbosity")
+        if verbosity_opt is not None:
+            cmd.extend(["--verbosity", str(verbosity_opt)])
+        strictness_opt = self.options.get("strictness")
+        if strictness_opt is not None:
+            cmd.extend(["--strictness", str(strictness_opt)])
 
         return cmd
 
@@ -272,9 +291,17 @@ class DarglintTool(BaseTool):
             ToolResult: ToolResult instance.
         """
         # Use shared preparation for version check, path validation, file discovery
+        # Get timeout from options (configured via pyproject.toml or set_options)
+        configured_timeout_opt = self.options.get("timeout", DARGLINT_DEFAULT_TIMEOUT)
+        if isinstance(configured_timeout_opt, int):
+            configured_timeout = configured_timeout_opt
+        elif configured_timeout_opt is not None:
+            configured_timeout = int(str(configured_timeout_opt))
+        else:
+            configured_timeout = DARGLINT_DEFAULT_TIMEOUT
         ctx = self._prepare_execution(
             paths,
-            default_timeout=DARGLINT_DEFAULT_TIMEOUT,
+            default_timeout=configured_timeout,
         )
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
@@ -381,8 +408,9 @@ class DarglintTool(BaseTool):
             for file in skipped_files:
                 output += f"\n  - {file}"
 
+        final_output: str | None = output
         if not output:
-            output = None
+            final_output = None
 
         # Include execution failures (timeouts/errors) in issues_count
         # to properly reflect tool failure status
@@ -391,7 +419,7 @@ class DarglintTool(BaseTool):
         return ToolResult(
             name=self.name,
             success=all_success,
-            output=output,
+            output=final_output,
             issues_count=total_issues_with_failures,
             issues=all_issues,
         )

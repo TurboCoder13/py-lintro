@@ -72,7 +72,7 @@ class ActionlintTool(BaseTool):
         self,
         file_path: str,
         timeout: int,
-        results: dict,
+        results: dict[str, Any],
     ) -> None:
         """Process a single file with actionlint.
 

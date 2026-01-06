@@ -5,8 +5,10 @@ processing, summary generation, and ToolResult building.
 """
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from lintro.models.core.tool_result import ToolResult
+from lintro.parsers.pytest.pytest_issue import PytestIssue
 from lintro.tools.implementations.pytest.pytest_config import PytestConfiguration
 from lintro.tools.implementations.pytest.pytest_output_processor import (
     build_output_with_failures,
@@ -36,11 +38,11 @@ class PytestResultProcessor:
         self,
         output: str,
         return_code: int,
-        issues: list,
+        issues: list[PytestIssue],
         total_available_tests: int,
         docker_test_count: int,
         run_docker_tests: bool,
-    ) -> tuple[dict, list]:
+    ) -> tuple[dict[str, Any], list[PytestIssue]]:
         """Process test results and generate summary.
 
         Args:
@@ -79,8 +81,8 @@ class PytestResultProcessor:
     def build_result(
         self,
         success: bool,
-        summary_data: dict,
-        all_issues: list,
+        summary_data: dict[str, Any],
+        all_issues: list[PytestIssue],
     ) -> ToolResult:
         """Build final ToolResult from processed data.
 

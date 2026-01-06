@@ -30,7 +30,7 @@ DEFAULT_EXIT_CODE_FAILURE: int = 1
 
 def create_json_output(
     action: str | Action,
-    results: list,
+    results: list[ToolResult],
     total_issues: int,
     total_fixed: int,
     total_remaining: int,
@@ -178,7 +178,7 @@ def run_lint_tools_with_json(
         run_dir_path.mkdir(parents=True, exist_ok=True)
         output_manager.run_dir = run_dir_path
 
-    logger = create_logger(run_dir=run_dir)
+    logger = create_logger(run_dir=Path(run_dir))
 
     logger.debug(f"Starting {action} command")
     logger.debug(f"Paths: {paths}")

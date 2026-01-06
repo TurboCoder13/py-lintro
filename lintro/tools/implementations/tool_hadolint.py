@@ -77,7 +77,7 @@ class HadolintTool(BaseTool):
         ),
     )
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         format: str | HadolintFormat | None = None,
         failure_threshold: str | HadolintFailureThreshold | None = None,
@@ -87,7 +87,7 @@ class HadolintTool(BaseTool):
         strict_labels: bool | None = None,
         no_fail: bool | None = None,
         no_color: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Hadolint-specific options.
 
@@ -160,34 +160,45 @@ class HadolintTool(BaseTool):
         cmd: list[str] = ["hadolint"]
 
         # Add format option
-        format_option: str = self.options.get("format", HADOLINT_DEFAULT_FORMAT)
+        format_opt = self.options.get("format", HADOLINT_DEFAULT_FORMAT)
+        format_option = (
+            str(format_opt) if format_opt is not None else HADOLINT_DEFAULT_FORMAT
+        )
         cmd.extend(["--format", format_option])
 
         # Add failure threshold
-        failure_threshold: str = self.options.get(
+        threshold_opt = self.options.get(
             "failure_threshold",
             HADOLINT_DEFAULT_FAILURE_THRESHOLD,
+        )
+        failure_threshold = (
+            str(threshold_opt)
+            if threshold_opt is not None
+            else HADOLINT_DEFAULT_FAILURE_THRESHOLD
         )
         cmd.extend(["--failure-threshold", failure_threshold])
 
         # Add ignore rules
-        ignore_rules: list[str] | None = self.options.get("ignore")
-        if ignore_rules is None:
-            ignore_rules = []
+        ignore_opt = self.options.get("ignore")
+        ignore_rules: list[str] = []
+        if ignore_opt is not None and isinstance(ignore_opt, list):
+            ignore_rules = [str(r) for r in ignore_opt]
         for rule in ignore_rules:
             cmd.extend(["--ignore", rule])
 
         # Add trusted registries
-        trusted_registries: list[str] | None = self.options.get("trusted_registries")
-        if trusted_registries is None:
-            trusted_registries = []
+        registries_opt = self.options.get("trusted_registries")
+        trusted_registries: list[str] = []
+        if registries_opt is not None and isinstance(registries_opt, list):
+            trusted_registries = [str(r) for r in registries_opt]
         for registry in trusted_registries:
             cmd.extend(["--trusted-registry", registry])
 
         # Add required labels
-        require_labels: list[str] | None = self.options.get("require_labels")
-        if require_labels is None:
-            require_labels = []
+        labels_opt = self.options.get("require_labels")
+        require_labels: list[str] = []
+        if labels_opt is not None and isinstance(labels_opt, list):
+            require_labels = [str(lbl) for lbl in labels_opt]
         for label in require_labels:
             cmd.extend(["--require-label", label])
 
@@ -209,7 +220,7 @@ class HadolintTool(BaseTool):
         self,
         file_path: str,
         timeout: int,
-        results: dict,
+        results: dict[str, Any],
     ) -> None:
         """Process a single Dockerfile with hadolint.
 
@@ -309,13 +320,14 @@ class HadolintTool(BaseTool):
                     "due to execution errors"
                 )
 
+        final_output: str | None = output
         if not output.strip():
-            output = None
+            final_output = None
 
         return ToolResult(
             name=self.name,
             success=results["all_success"],
-            output=output,
+            output=final_output,
             issues_count=results["total_issues"],
             issues=results["all_issues"],
         )

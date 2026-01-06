@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
+from typing import Any
 
 from loguru import logger
 
@@ -49,14 +50,14 @@ class BlackTool(BaseTool):
         ),
     )
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         line_length: int | None = None,
         target_version: str | None = None,
         fast: bool | None = None,
         preview: bool | None = None,
         diff: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Black-specific options with validation.
 
@@ -148,11 +149,24 @@ class BlackTool(BaseTool):
         from lintro.tools.core.line_length_checker import check_line_length_violations
 
         # Use the shared utility to check for E501 violations
+        line_length_opt = self.options.get("line_length")
+        timeout_opt = self.options.get("timeout", BLACK_DEFAULT_TIMEOUT)
+        line_length_val: int | None = None
+        if isinstance(line_length_opt, int):
+            line_length_val = line_length_opt
+        elif line_length_opt is not None:
+            line_length_val = int(str(line_length_opt))
+        if isinstance(timeout_opt, int):
+            timeout_val = timeout_opt
+        elif timeout_opt is not None:
+            timeout_val = int(str(timeout_opt))
+        else:
+            timeout_val = BLACK_DEFAULT_TIMEOUT
         violations = check_line_length_violations(
             files=files,
             cwd=cwd,
-            line_length=self.options.get("line_length"),
-            timeout=self.options.get("timeout", BLACK_DEFAULT_TIMEOUT),
+            line_length=line_length_val,
+            timeout=timeout_val,
         )
 
         # Convert LineLengthViolation objects to BlackIssue objects

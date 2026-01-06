@@ -258,8 +258,17 @@ class MypyTool(BaseTool):
             default_timeout=MYPY_DEFAULT_TIMEOUT,
             exclude_patterns=effective_excludes,
         )
-        if ctx.should_skip:
+        if ctx.should_skip and ctx.early_result is not None:
             return ctx.early_result
+
+        # Safety check: if should_skip but no early_result, create one
+        if ctx.should_skip:
+            return ToolResult(
+                name=self.name,
+                success=True,
+                output="No files to check.",
+                issues_count=0,
+            )
 
         logger.debug("Mypy discovered {} python file(s)", len(ctx.files))
 

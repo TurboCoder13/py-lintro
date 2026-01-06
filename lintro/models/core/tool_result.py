@@ -7,6 +7,7 @@ fixed vs remaining counts for fix-capable tools.
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -38,6 +39,9 @@ class ToolResult:
     initial_issues_count: int | None = field(default=None)
     fixed_issues_count: int | None = field(default=None)
     remaining_issues_count: int | None = field(default=None)
+
+    # Optional pytest-specific summary data for display
+    pytest_summary: dict[str, Any] | None = field(default=None)
 
     def __post_init__(self) -> None:
         """Validate that the issue counts are consistent.

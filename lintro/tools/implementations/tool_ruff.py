@@ -2,6 +2,7 @@
 
 import os
 from dataclasses import dataclass, field
+from typing import Any
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_config import ToolConfig
@@ -111,7 +112,7 @@ class RuffTool(BaseTool):
         if env_unsafe_fixes in ("true", "1", "yes", "on"):
             self.options["unsafe_fixes"] = True
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         select: list[str] | None = None,
         ignore: list[str] | None = None,
@@ -125,7 +126,7 @@ class RuffTool(BaseTool):
         format: bool | None = None,
         lint_fix: bool | None = None,
         format_check: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set Ruff-specific options.
 

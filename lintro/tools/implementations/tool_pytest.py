@@ -2,6 +2,7 @@
 
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass, field
+from typing import Any
 
 from loguru import logger
 
@@ -99,7 +100,7 @@ class PytestTool(BaseTool):
         self.result_processor = PytestResultProcessor(self.pytest_config, self.name)
         self.error_handler = PytestErrorHandler(self.name)
 
-    def set_options(self, **kwargs) -> None:
+    def set_options(self, **kwargs: Any) -> None:
         """Set pytest-specific options.
 
         Args:
@@ -151,7 +152,7 @@ class PytestTool(BaseTool):
         return_code: int,
         junitxml_path: str | None = None,
         subprocess_start_time: float | None = None,
-    ) -> list:
+    ) -> list[Any]:
         """Parse pytest output into issues.
 
         Backward compatibility method that delegates to
@@ -212,7 +213,7 @@ class PytestTool(BaseTool):
 
         return None
 
-    def check(
+    def check(  # type: ignore[override]
         self,
         files: list[str] | None = None,
         paths: list[str] | None = None,
@@ -296,7 +297,13 @@ class PytestTool(BaseTool):
             return self.result_processor.build_result(success, summary_data, all_issues)
 
         except subprocess.TimeoutExpired:
-            timeout_val = self.options.get("timeout", self._default_timeout)
+            timeout_opt = self.options.get("timeout", self._default_timeout)
+            if isinstance(timeout_opt, int):
+                timeout_val = timeout_opt
+            elif timeout_opt is not None:
+                timeout_val = int(str(timeout_opt))
+            else:
+                timeout_val = self._default_timeout
             return self.error_handler.handle_timeout_error(
                 timeout_val,
                 cmd,

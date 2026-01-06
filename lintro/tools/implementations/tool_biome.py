@@ -57,14 +57,14 @@ class BiomeTool(BaseTool):
         # Note: Biome config files (.biome.json, biome.jsonc) are also
         # discovered natively
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
         exclude_patterns: list[str] | None = None,
         include_venv: bool = False,
         timeout: int | None = None,
         verbose_fix_output: bool | None = None,
         use_vcs_ignore: bool | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Set options for the tool.
 
@@ -89,7 +89,7 @@ class BiomeTool(BaseTool):
     def _create_timeout_result(
         self,
         timeout_val: int,
-        initial_issues: list | None = None,
+        initial_issues: list[Any] | None = None,
         initial_count: int = 0,
     ) -> ToolResult:
         """Create a ToolResult for timeout scenarios.
@@ -199,13 +199,14 @@ class BiomeTool(BaseTool):
 
         # Standardize: suppress Biome's informational output when no issues
         # so the unified logger prints a single, consistent success line.
+        final_output: str | None = output
         if success:
-            output = None
+            final_output = None
 
         return ToolResult(
             name=self.name,
             success=success,
-            output=output,
+            output=final_output,
             issues_count=issues_count,
             issues=issues,
         )
