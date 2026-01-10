@@ -4,10 +4,9 @@ Handles typical Prettier CLI output for --check and --write modes,
 including ANSI-colored lines produced in CI environments.
 """
 
-import re
-
 from loguru import logger
 
+from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 
 
@@ -33,8 +32,7 @@ def parse_prettier_output(output: str) -> list[PrettierIssue]:
     # Normalize output by stripping ANSI escape sequences to make matching robust
     # across different terminals and CI runners.
     # Example: "[\x1b[33mwarn\x1b[39m] file.js" -> "[warn] file.js"
-    ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
-    normalized_output = ansi_escape.sub("", output)
+    normalized_output = strip_ansi_codes(output)
 
     lines = normalized_output.splitlines()
 

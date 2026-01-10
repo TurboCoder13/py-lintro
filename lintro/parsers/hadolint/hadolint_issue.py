@@ -1,6 +1,7 @@
 """Hadolint issue model."""
 
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 from lintro.parsers.base_issue import BaseIssue
 
@@ -15,6 +16,10 @@ class HadolintIssue(BaseIssue):
         column: Column number where the issue occurs (if available)
     """
 
+    DISPLAY_FIELD_MAP: ClassVar[dict[str, str]] = {
+        **BaseIssue.DISPLAY_FIELD_MAP,
+        "severity": "level",
+    }
+
     level: str = field(default="error")
     code: str = field(default="")
-    # Note: column is inherited from BaseIssue

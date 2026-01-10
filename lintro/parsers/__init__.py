@@ -6,6 +6,13 @@ from importlib import import_module
 from typing import TYPE_CHECKING
 
 from .base_issue import BaseIssue
+from .streaming import (
+    StreamingParser,
+    collect_streaming_results,
+    stream_json_array_fallback,
+    stream_json_lines,
+    stream_text_lines,
+)
 
 if TYPE_CHECKING:
     # Type checking imports
@@ -26,10 +33,12 @@ if TYPE_CHECKING:
 
 __all__ = [
     "BaseIssue",
+    "StreamingParser",
     "actionlint",
     "bandit",
     "biome",
     "black",
+    "collect_streaming_results",
     "darglint",
     "hadolint",
     "markdownlint",
@@ -37,6 +46,9 @@ __all__ = [
     "prettier",
     "pytest",
     "ruff",
+    "stream_json_array_fallback",
+    "stream_json_lines",
+    "stream_text_lines",
     "yamllint",
 ]
 

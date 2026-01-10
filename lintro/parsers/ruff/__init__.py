@@ -1,6 +1,7 @@
 """Ruff parser module."""
 
-from lintro.parsers.ruff.ruff_issue import RuffFormatIssue, RuffIssue
+from lintro.parsers.ruff.ruff_format_issue import RuffFormatIssue
+from lintro.parsers.ruff.ruff_issue import RuffIssue
 from lintro.parsers.ruff.ruff_parser import (
     parse_ruff_format_check_output,
     parse_ruff_output,

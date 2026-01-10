@@ -15,4 +15,3 @@ class MarkdownlintIssue(BaseIssue):
     """
 
     code: str = field(default="")
-    # Note: column is inherited from BaseIssue

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 from lintro.parsers.base_issue import BaseIssue
 
@@ -17,6 +18,12 @@ class PytestIssue(BaseIssue):
         duration: Duration of the test in seconds.
         node_id: Full node ID of the test.
     """
+
+    DISPLAY_FIELD_MAP: ClassVar[dict[str, str]] = {
+        **BaseIssue.DISPLAY_FIELD_MAP,
+        "code": "test_name",
+        "severity": "test_status",
+    }
 
     test_name: str = field(default="")
     test_status: str = field(default="")

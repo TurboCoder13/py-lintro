@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 from lintro.parsers.base_issue import BaseIssue
 
@@ -17,6 +18,11 @@ class ClippyIssue(BaseIssue):
         end_line: Optional end line number.
         end_column: Optional end column number.
     """
+
+    DISPLAY_FIELD_MAP: ClassVar[dict[str, str]] = {
+        **BaseIssue.DISPLAY_FIELD_MAP,
+        "severity": "level",
+    }
 
     code: str | None = field(default=None)
     level: str | None = field(default=None)

@@ -2,7 +2,20 @@
 
 import re
 
+from lintro.parsers.base_parser import collect_continuation_lines
 from lintro.parsers.darglint.darglint_issue import DarglintIssue
+
+
+def _is_darglint_continuation(line: str) -> bool:
+    """Check if a line is a continuation of a darglint message.
+
+    Args:
+        line: The line to check.
+
+    Returns:
+        True if the line is a continuation (indented or colon-prefixed).
+    """
+    return line.strip().startswith(":") or line.startswith("    ")
 
 
 def parse_darglint_output(output: str) -> list[DarglintIssue]:
@@ -28,11 +41,10 @@ def parse_darglint_output(output: str) -> list[DarglintIssue]:
         match: re.Match[str] | None = pattern.match(line)
         if match:
             file: str
-            obj: str
             line_num: str
             code: str
             message: str
-            file, obj, line_num, code, message = match.groups()
+            file, _, line_num, code, message = match.groups()
         else:
             match = alt_pattern.match(line)
             if match:
@@ -40,16 +52,15 @@ def parse_darglint_output(output: str) -> list[DarglintIssue]:
             else:
                 i += 1
                 continue
-        # Capture all subsequent indented or colon-prefixed lines as part of the message
-        message_lines: list[str] = [message]
-        j: int = i + 1
-        while j < len(lines) and (
-            lines[j].strip().startswith(":") or lines[j].startswith("    ")
-        ):
-            # Remove leading colon and whitespace
-            message_lines.append(lines[j].strip().lstrip(": "))
-            j += 1
-        full_message: str = " ".join(message_lines)
+
+        # Capture continuation lines using the shared utility
+        continuation, next_idx = collect_continuation_lines(
+            lines,
+            i + 1,
+            _is_darglint_continuation,
+        )
+        full_message = f"{message} {continuation}".strip() if continuation else message
+
         issues.append(
             DarglintIssue(
                 file=file,
@@ -58,5 +69,5 @@ def parse_darglint_output(output: str) -> list[DarglintIssue]:
                 message=full_message,
             ),
         )
-        i = j
+        i = next_idx
     return issues
