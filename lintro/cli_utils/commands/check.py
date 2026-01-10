@@ -66,6 +66,7 @@ DEFAULT_ACTION: str = "check"
 )
 @click.option(
     "--verbose",
+    "-v",
     is_flag=True,
     help="Show verbose output",
 )
@@ -78,6 +79,26 @@ DEFAULT_ACTION: str = "check"
     "--raw-output",
     is_flag=True,
     help="Show raw tool output instead of formatted output",
+)
+@click.option(
+    "--incremental",
+    is_flag=True,
+    help="Only check files that have changed since the last run",
+)
+@click.option(
+    "--no-cache",
+    is_flag=True,
+    help="Clear incremental cache before running (forces full check)",
+)
+@click.option(
+    "--stream/--no-stream",
+    default=False,
+    help="Stream tool output in real-time (useful for long operations)",
+)
+@click.option(
+    "--debug",
+    is_flag=True,
+    help="Enable debug output on console",
 )
 def check_command(
     paths: tuple[str, ...],
@@ -92,6 +113,10 @@ def check_command(
     verbose: bool,
     no_log: bool,
     raw_output: bool,
+    incremental: bool,
+    no_cache: bool,
+    stream: bool,
+    debug: bool,
 ) -> None:
     """Check files for issues using the specified tools.
 
@@ -108,10 +133,20 @@ def check_command(
         verbose: bool: Whether to show verbose output during execution.
         no_log: bool: Whether to disable logging to file.
         raw_output: bool: Whether to show raw tool output instead of formatted output.
+        incremental: bool: Whether to only check files changed since last run.
+        no_cache: bool: Whether to clear the incremental cache before running.
+        stream: bool: Whether to stream tool output in real-time.
+        debug: bool: Whether to enable debug output on console.
 
     Raises:
         SystemExit: Process exit with the aggregated exit code from tools.
     """
+    # Handle cache clearing
+    if no_cache:
+        from lintro.utils.file_cache import clear_all_caches
+
+        clear_all_caches()
+
     # Add default paths if none provided
     path_list: list[str] = list(paths) if paths else list(DEFAULT_PATHS)
 
@@ -138,6 +173,8 @@ def check_command(
         verbose=verbose,
         raw_output=raw_output,
         output_file=output,
+        incremental=incremental,
+        debug=debug,
     )
 
     # Exit with code only; CLI uses this as process exit code and avoids any

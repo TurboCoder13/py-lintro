@@ -42,6 +42,11 @@ DEFAULT_ACTION: str = "fmt"
     help="How to group issues in output.",
 )
 @click.option(
+    "--output",
+    type=click.Path(),
+    help="Output file path for writing results.",
+)
+@click.option(
     "--output-format",
     default="grid",
     type=click.Choice(["plain", "grid", "markdown", "html", "json", "csv"]),
@@ -55,10 +60,26 @@ DEFAULT_ACTION: str = "fmt"
     help="Enable verbose output with debug information.",
 )
 @click.option(
+    "--no-log",
+    is_flag=True,
+    default=False,
+    help="Disable logging to file.",
+)
+@click.option(
     "--raw-output",
     is_flag=True,
     default=False,
     help="Show raw tool output instead of formatted output.",
+)
+@click.option(
+    "--stream/--no-stream",
+    default=False,
+    help="Stream tool output in real-time (useful for long operations)",
+)
+@click.option(
+    "--debug",
+    is_flag=True,
+    help="Enable debug output on console",
 )
 def format_command(
     ctx: click.Context,
@@ -67,10 +88,14 @@ def format_command(
     tool_options: str | None,
     exclude: str | None,
     include_venv: bool,
+    output: str | None,
     group_by: str,
     output_format: str,
     verbose: bool,
+    no_log: bool,
     raw_output: bool,
+    stream: bool,
+    debug: bool,
 ) -> None:
     """Format code using configured formatting tools.
 
@@ -85,11 +110,14 @@ def format_command(
         tool_options: str | None: Tool-specific configuration options.
         exclude: str | None: Patterns to exclude from formatting.
         include_venv: bool: Whether to include virtual environment directories.
+        output: str | None: Path to output file for results.
         group_by: str: How to group issues in the output display.
         output_format: str: Format for displaying results.
         verbose: bool: Enable detailed debug output.
-        raw_output: bool:
-            Show raw tool output instead of formatted output.
+        no_log: bool: Whether to disable logging to file.
+        raw_output: bool: Show raw tool output instead of formatted output.
+        stream: bool: Whether to stream tool output in real-time.
+        debug: bool: Whether to enable debug output on console.
     """
     # Default to current directory if no paths provided
     normalized_paths: list[str] = list(paths) if paths else list(DEFAULT_PATHS)
@@ -106,6 +134,8 @@ def format_command(
         output_format=output_format,
         verbose=verbose,
         raw_output=raw_output,
+        output_file=output,
+        debug=debug,
     )
 
     # Exit with code from tool execution
