@@ -1,21 +1,16 @@
-#!/bin/bash
-
-# Exit on any error
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # update-coverage-badge.sh - Update coverage badge locally
-# 
+#
 # This script updates the coverage badge based on the current coverage.xml file.
 
-# Color codes for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../utils/utils.sh
+source "$SCRIPT_DIR/../utils/utils.sh"
 
 # Show help if requested
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
     echo "Usage: $0 [--help]"
     echo ""
     echo "Update Coverage Badge Script"

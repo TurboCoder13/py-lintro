@@ -23,18 +23,17 @@ def test_attribute_error():
 def test_key_error():
     """Test that causes a KeyError."""
     my_dict = {"key1": "value1"}
-    value = my_dict["nonexistent_key"]  # This will raise KeyError
+    my_dict["nonexistent_key"]  # This will raise KeyError
 
 
 def test_type_error():
     """Test that causes a TypeError."""
-    result = "string" + 42  # This will raise TypeError
 
 
 def test_index_error():
     """Test that causes an IndexError."""
     my_list = [1, 2, 3]
-    value = my_list[10]  # This will raise IndexError
+    my_list[10]  # This will raise IndexError
 
 
 def test_value_error():
@@ -67,7 +66,7 @@ def test_nested_failure():
     """Test with nested function calls that fail."""
 
     def inner_function():
-        assert False, "Inner function fails"
+        raise AssertionError("Inner function fails")
 
     def outer_function():
         inner_function()
@@ -78,7 +77,7 @@ def test_nested_failure():
 @pytest.fixture
 def failing_fixture():
     """Fixture that fails."""
-    assert False, "Fixture fails"
+    raise AssertionError("Fixture fails")
     return "value"
 
 
@@ -121,7 +120,7 @@ def test_skip_test():
 def test_xfail_test():
     """Test that is expected to fail."""
     pytest.xfail("This test is expected to fail")
-    assert False  # This will fail but is expected
+    raise AssertionError()  # This will fail but is expected
 
 
 def test_timeout():

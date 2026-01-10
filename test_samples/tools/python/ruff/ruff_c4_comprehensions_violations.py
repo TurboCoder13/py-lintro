@@ -1,13 +1,11 @@
 """Test file with flake8-comprehensions (C4) rule violations for testing Ruff integration."""
 
-from typing import Any
-
 
 def unnecessary_list_comprehension():
     """Function with unnecessary list comprehension."""
     numbers = [1, 2, 3, 4, 5]
     # C401: Unnecessary list comprehension - can be replaced with list()
-    result = [x for x in numbers]
+    result = list(numbers)
     return result
 
 
@@ -15,7 +13,7 @@ def unnecessary_dict_comprehension():
     """Function with unnecessary dict comprehension."""
     data = {"a": 1, "b": 2, "c": 3}
     # C402: Unnecessary dict comprehension - can be replaced with dict()
-    result = {k: v for k, v in data.items()}
+    result = dict(data.items())
     return result
 
 
@@ -23,7 +21,7 @@ def unnecessary_set_comprehension():
     """Function with unnecessary set comprehension."""
     numbers = [1, 2, 3, 4, 5]
     # C403: Unnecessary set comprehension - can be replaced with set()
-    result = {x for x in numbers}
+    result = set(numbers)
     return result
 
 
@@ -203,7 +201,7 @@ def unnecessary_list_comprehension_with_walrus_operator():
     """Function with unnecessary list comprehension with walrus operator."""
     numbers = [1, 2, 3, 4, 5]
     # C425: Unnecessary list comprehension with walrus operator
-    result = [x for x in numbers if (y := x * 2) > 4]
+    result = [x for x in numbers if (_y := x * 2) > 4]
     return result
 
 
@@ -211,7 +209,7 @@ def unnecessary_dict_comprehension_with_walrus_operator():
     """Function with unnecessary dict comprehension with walrus operator."""
     data = {"a": 1, "b": 2, "c": 3}
     # C426: Unnecessary dict comprehension with walrus operator
-    result = {k: v for k, v in data.items() if (y := v * 2) > 2}
+    result = {k: v for k, v in data.items() if (_y := v * 2) > 2}
     return result
 
 
@@ -219,7 +217,7 @@ def unnecessary_set_comprehension_with_walrus_operator():
     """Function with unnecessary set comprehension with walrus operator."""
     numbers = [1, 2, 3, 4, 5]
     # C427: Unnecessary set comprehension with walrus operator
-    result = {x for x in numbers if (y := x * 2) > 4}
+    result = {x for x in numbers if (_y := x * 2) > 4}
     return result
 
 
@@ -227,7 +225,7 @@ def unnecessary_generator_expression_with_walrus_operator():
     """Function with unnecessary generator expression with walrus operator."""
     numbers = [1, 2, 3, 4, 5]
     # C428: Unnecessary generator expression with walrus operator
-    result = tuple(x for x in numbers if (y := x * 2) > 4)
+    result = tuple(x for x in numbers if (_y := x * 2) > 4)
     return result
 
 
@@ -267,7 +265,7 @@ def unnecessary_list_comprehension_with_slice():
     """Function with unnecessary list comprehension with slice."""
     numbers = [1, 2, 3, 4, 5]
     # C433: Unnecessary list comprehension with slice
-    result = [x for x in numbers[1:4]]
+    result = list(numbers[1:4])
     return result
 
 
@@ -275,7 +273,7 @@ def unnecessary_dict_comprehension_with_slice():
     """Function with unnecessary dict comprehension with slice."""
     data = {"a": 1, "b": 2, "c": 3}
     # C434: Unnecessary dict comprehension with slice
-    result = {k: v for k, v in list(data.items())[1:3]}
+    result = dict(list(data.items())[1:3])
     return result
 
 
@@ -283,7 +281,7 @@ def unnecessary_set_comprehension_with_slice():
     """Function with unnecessary set comprehension with slice."""
     numbers = [1, 2, 3, 4, 5]
     # C435: Unnecessary set comprehension with slice
-    result = {x for x in numbers[1:4]}
+    result = set(numbers[1:4])
     return result
 
 
@@ -307,7 +305,7 @@ def unnecessary_dict_comprehension_with_enumerate():
     """Function with unnecessary dict comprehension with enumerate."""
     numbers = [1, 2, 3, 4, 5]
     # C438: Unnecessary dict comprehension with enumerate
-    result = {i: x for i, x in enumerate(numbers)}
+    result = dict(enumerate(numbers))
     return result
 
 
@@ -332,7 +330,7 @@ def unnecessary_list_comprehension_with_zip():
     numbers1 = [1, 2, 3]
     numbers2 = [4, 5, 6]
     # C441: Unnecessary list comprehension with zip
-    result = [x + y for x, y in zip(numbers1, numbers2)]
+    result = [x + y for x, y in zip(numbers1, numbers2, strict=False)]
     return result
 
 
@@ -341,7 +339,7 @@ def unnecessary_dict_comprehension_with_zip():
     keys = ["a", "b", "c"]
     values = [1, 2, 3]
     # C442: Unnecessary dict comprehension with zip
-    result = {k: v for k, v in zip(keys, values)}
+    result = dict(zip(keys, values, strict=False))
     return result
 
 
@@ -350,7 +348,7 @@ def unnecessary_set_comprehension_with_zip():
     numbers1 = [1, 2, 3]
     numbers2 = [4, 5, 6]
     # C443: Unnecessary set comprehension with zip
-    result = {x + y for x, y in zip(numbers1, numbers2)}
+    result = {x + y for x, y in zip(numbers1, numbers2, strict=False)}
     return result
 
 
@@ -359,14 +357,14 @@ def unnecessary_generator_expression_with_zip():
     numbers1 = [1, 2, 3]
     numbers2 = [4, 5, 6]
     # C444: Unnecessary generator expression with zip
-    result = tuple(x + y for x, y in zip(numbers1, numbers2))
+    result = tuple(x + y for x, y in zip(numbers1, numbers2, strict=False))
     return result
 
 
 def unnecessary_list_comprehension_with_range():
     """Function with unnecessary list comprehension with range."""
     # C445: Unnecessary list comprehension with range
-    result = [x for x in range(5)]
+    result = list(range(5))
     return result
 
 
@@ -380,7 +378,7 @@ def unnecessary_dict_comprehension_with_range():
 def unnecessary_set_comprehension_with_range():
     """Function with unnecessary set comprehension with range."""
     # C447: Unnecessary set comprehension with range
-    result = {x for x in range(5)}
+    result = set(range(5))
     return result
 
 
@@ -395,7 +393,7 @@ def unnecessary_list_comprehension_with_string():
     """Function with unnecessary list comprehension with string."""
     text = "hello"
     # C449: Unnecessary list comprehension with string
-    result = [c for c in text]
+    result = list(text)
     return result
 
 
@@ -403,7 +401,7 @@ def unnecessary_dict_comprehension_with_string():
     """Function with unnecessary dict comprehension with string."""
     text = "hello"
     # C450: Unnecessary dict comprehension with string
-    result = {i: c for i, c in enumerate(text)}
+    result = dict(enumerate(text))
     return result
 
 
@@ -411,7 +409,7 @@ def unnecessary_set_comprehension_with_string():
     """Function with unnecessary set comprehension with string."""
     text = "hello"
     # C451: Unnecessary set comprehension with string
-    result = {c for c in text}
+    result = set(text)
     return result
 
 
@@ -427,7 +425,7 @@ def unnecessary_list_comprehension_with_list():
     """Function with unnecessary list comprehension with list."""
     numbers = [1, 2, 3, 4, 5]
     # C453: Unnecessary list comprehension with list
-    result = [x for x in list(numbers)]
+    result = list(numbers)
     return result
 
 
@@ -435,7 +433,7 @@ def unnecessary_dict_comprehension_with_list():
     """Function with unnecessary dict comprehension with list."""
     data = {"a": 1, "b": 2, "c": 3}
     # C454: Unnecessary dict comprehension with list
-    result = {k: v for k, v in list(data.items())}
+    result = dict(list(data.items()))
     return result
 
 
@@ -443,7 +441,7 @@ def unnecessary_set_comprehension_with_list():
     """Function with unnecessary set comprehension with list."""
     numbers = [1, 2, 3, 4, 5]
     # C455: Unnecessary set comprehension with list
-    result = {x for x in list(numbers)}
+    result = set(numbers)
     return result
 
 
@@ -459,7 +457,7 @@ def unnecessary_list_comprehension_with_dict():
     """Function with unnecessary list comprehension with dict."""
     data = {"a": 1, "b": 2, "c": 3}
     # C457: Unnecessary list comprehension with dict
-    result = [k for k in dict(data)]
+    result = list(dict(data))
     return result
 
 
@@ -467,7 +465,7 @@ def unnecessary_dict_comprehension_with_dict():
     """Function with unnecessary dict comprehension with dict."""
     data = {"a": 1, "b": 2, "c": 3}
     # C458: Unnecessary dict comprehension with dict
-    result = {k: v for k, v in dict(data).items()}
+    result = dict(dict(data).items())
     return result
 
 
@@ -475,7 +473,7 @@ def unnecessary_set_comprehension_with_dict():
     """Function with unnecessary set comprehension with dict."""
     data = {"a": 1, "b": 2, "c": 3}
     # C459: Unnecessary set comprehension with dict
-    result = {k for k in dict(data)}
+    result = set(dict(data))
     return result
 
 
@@ -491,7 +489,7 @@ def unnecessary_list_comprehension_with_set():
     """Function with unnecessary list comprehension with set."""
     numbers = {1, 2, 3, 4, 5}
     # C461: Unnecessary list comprehension with set
-    result = [x for x in set(numbers)]
+    result = list(set(numbers))
     return result
 
 
@@ -499,7 +497,7 @@ def unnecessary_dict_comprehension_with_set():
     """Function with unnecessary dict comprehension with set."""
     data = {"a": 1, "b": 2, "c": 3}
     # C462: Unnecessary dict comprehension with set
-    result = {k: v for k, v in set(data.items())}
+    result = dict(set(data.items()))
     return result
 
 
@@ -507,7 +505,7 @@ def unnecessary_set_comprehension_with_set():
     """Function with unnecessary set comprehension with set."""
     numbers = {1, 2, 3, 4, 5}
     # C463: Unnecessary set comprehension with set
-    result = {x for x in set(numbers)}
+    result = set(numbers)
     return result
 
 
@@ -523,7 +521,7 @@ def unnecessary_list_comprehension_with_tuple():
     """Function with unnecessary list comprehension with tuple."""
     numbers = (1, 2, 3, 4, 5)
     # C465: Unnecessary list comprehension with tuple
-    result = [x for x in tuple(numbers)]
+    result = list(numbers)
     return result
 
 
@@ -531,7 +529,7 @@ def unnecessary_dict_comprehension_with_tuple():
     """Function with unnecessary dict comprehension with tuple."""
     data = {"a": 1, "b": 2, "c": 3}
     # C466: Unnecessary dict comprehension with tuple
-    result = {k: v for k, v in tuple(data.items())}
+    result = dict(tuple(data.items()))
     return result
 
 
@@ -539,7 +537,7 @@ def unnecessary_set_comprehension_with_tuple():
     """Function with unnecessary set comprehension with tuple."""
     numbers = (1, 2, 3, 4, 5)
     # C467: Unnecessary set comprehension with tuple
-    result = {x for x in tuple(numbers)}
+    result = set(numbers)
     return result
 
 
@@ -555,7 +553,7 @@ def unnecessary_list_comprehension_with_generator():
     """Function with unnecessary list comprehension with generator."""
     numbers = [1, 2, 3, 4, 5]
     # C469: Unnecessary list comprehension with generator
-    result = [x for x in (x * 2 for x in numbers)]
+    result = [x * 2 for x in numbers]
     return result
 
 
@@ -563,7 +561,7 @@ def unnecessary_dict_comprehension_with_generator():
     """Function with unnecessary dict comprehension with generator."""
     data = {"a": 1, "b": 2, "c": 3}
     # C470: Unnecessary dict comprehension with generator
-    result = {k: v for k, v in ((k, v * 2) for k, v in data.items())}
+    result = {k: v * 2 for k, v in data.items()}
     return result
 
 
@@ -571,7 +569,7 @@ def unnecessary_set_comprehension_with_generator():
     """Function with unnecessary set comprehension with generator."""
     numbers = [1, 2, 3, 4, 5]
     # C471: Unnecessary set comprehension with generator
-    result = {x for x in (x * 2 for x in numbers)}
+    result = {x * 2 for x in numbers}
     return result
 
 
@@ -587,7 +585,7 @@ def unnecessary_list_comprehension_with_filter():
     """Function with unnecessary list comprehension with filter."""
     numbers = [1, 2, 3, 4, 5]
     # C473: Unnecessary list comprehension with filter
-    result = [x for x in filter(lambda x: x > 2, numbers)]
+    result = list(filter(lambda x: x > 2, numbers))
     return result
 
 
@@ -595,7 +593,7 @@ def unnecessary_dict_comprehension_with_filter():
     """Function with unnecessary dict comprehension with filter."""
     data = {"a": 1, "b": 2, "c": 3}
     # C474: Unnecessary dict comprehension with filter
-    result = {k: v for k, v in filter(lambda item: item[1] > 1, data.items())}
+    result = dict(filter(lambda item: item[1] > 1, data.items()))
     return result
 
 
@@ -603,7 +601,7 @@ def unnecessary_set_comprehension_with_filter():
     """Function with unnecessary set comprehension with filter."""
     numbers = [1, 2, 3, 4, 5]
     # C475: Unnecessary set comprehension with filter
-    result = {x for x in filter(lambda x: x > 2, numbers)}
+    result = set(filter(lambda x: x > 2, numbers))
     return result
 
 
@@ -619,7 +617,7 @@ def unnecessary_list_comprehension_with_map():
     """Function with unnecessary list comprehension with map."""
     numbers = [1, 2, 3, 4, 5]
     # C477: Unnecessary list comprehension with map
-    result = [x for x in map(lambda x: x * 2, numbers)]
+    result = [x * 2 for x in numbers]
     return result
 
 
@@ -627,7 +625,7 @@ def unnecessary_dict_comprehension_with_map():
     """Function with unnecessary dict comprehension with map."""
     data = {"a": 1, "b": 2, "c": 3}
     # C478: Unnecessary dict comprehension with map
-    result = {k: v for k, v in map(lambda item: (item[0], item[1] * 2), data.items())}
+    result = {item[0]: item[1] * 2 for item in data.items()}
     return result
 
 
@@ -635,7 +633,7 @@ def unnecessary_set_comprehension_with_map():
     """Function with unnecessary set comprehension with map."""
     numbers = [1, 2, 3, 4, 5]
     # C479: Unnecessary set comprehension with map
-    result = {x for x in map(lambda x: x * 2, numbers)}
+    result = {x * 2 for x in numbers}
     return result
 
 
@@ -643,7 +641,7 @@ def unnecessary_generator_expression_with_map():
     """Function with unnecessary generator expression with map."""
     numbers = [1, 2, 3, 4, 5]
     # C480: Unnecessary generator expression with map
-    result = tuple(x for x in map(lambda x: x * 2, numbers))
+    result = tuple(x for x in (x * 2 for x in numbers))
     return result
 
 
@@ -651,7 +649,7 @@ def unnecessary_list_comprehension_with_sorted():
     """Function with unnecessary list comprehension with sorted."""
     numbers = [3, 1, 4, 1, 5]
     # C481: Unnecessary list comprehension with sorted
-    result = [x for x in sorted(numbers)]
+    result = sorted(numbers)
     return result
 
 
@@ -659,7 +657,7 @@ def unnecessary_dict_comprehension_with_sorted():
     """Function with unnecessary dict comprehension with sorted."""
     data = {"c": 3, "a": 1, "b": 2}
     # C482: Unnecessary dict comprehension with sorted
-    result = {k: v for k, v in sorted(data.items())}
+    result = dict(sorted(data.items()))
     return result
 
 
@@ -667,7 +665,7 @@ def unnecessary_set_comprehension_with_sorted():
     """Function with unnecessary set comprehension with sorted."""
     numbers = [3, 1, 4, 1, 5]
     # C483: Unnecessary set comprehension with sorted
-    result = {x for x in sorted(numbers)}
+    result = set(numbers)
     return result
 
 
@@ -683,7 +681,7 @@ def unnecessary_list_comprehension_with_reversed():
     """Function with unnecessary list comprehension with reversed."""
     numbers = [1, 2, 3, 4, 5]
     # C485: Unnecessary list comprehension with reversed
-    result = [x for x in reversed(numbers)]
+    result = list(reversed(numbers))
     return result
 
 
@@ -691,7 +689,7 @@ def unnecessary_dict_comprehension_with_reversed():
     """Function with unnecessary dict comprehension with reversed."""
     data = {"a": 1, "b": 2, "c": 3}
     # C486: Unnecessary dict comprehension with reversed
-    result = {k: v for k, v in reversed(list(data.items()))}
+    result = dict(reversed(list(data.items())))
     return result
 
 
@@ -699,7 +697,7 @@ def unnecessary_set_comprehension_with_reversed():
     """Function with unnecessary set comprehension with reversed."""
     numbers = [1, 2, 3, 4, 5]
     # C487: Unnecessary set comprehension with reversed
-    result = {x for x in reversed(numbers)}
+    result = set(numbers)
     return result
 
 

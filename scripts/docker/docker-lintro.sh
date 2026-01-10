@@ -1,30 +1,8 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # docker-lintro.sh - Run lintro in a Docker container
-
-# Show help if requested
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    echo "Usage: $0 [--help] [lintro arguments...]"
-    echo ""
-    echo "Docker Lintro Runner"
-    echo "Run Lintro in a Docker container without installing dependencies locally."
-    echo ""
-    echo "Features:"
-    echo "  - Builds Docker image if not exists"
-    echo "  - Mounts current directory to /code in container"
-    echo "  - Uses Docker entrypoint directly for consistent execution"
-    echo ""
-    echo "Examples:"
-    echo "  $0 check"
-    echo "  $0 check --tools ruff,prettier"
-    echo "  $0 format --tools ruff"
-    echo "  $0 list-tools"
-    echo ""
-    echo "This script allows running lintro without installing all dependencies locally."
-    exit 0
-fi
-# 
+#
 # This script allows running lintro without installing all the dependencies locally.
 # It uses the Docker entrypoint directly for consistent execution across all workflows.
 #
@@ -33,12 +11,33 @@ fi
 #   ./docker-lintro.sh format --tools ruff [PATH]
 #   ./docker-lintro.sh list-tools
 
-# Color output for better readability
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../utils/utils.sh
+source "$SCRIPT_DIR/../utils/utils.sh"
+
+# Show help if requested
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    cat <<'EOF'
+Usage: docker-lintro.sh [--help] [lintro arguments...]
+
+Docker Lintro Runner
+Run Lintro in a Docker container without installing dependencies locally.
+
+Features:
+  - Builds Docker image if not exists
+  - Mounts current directory to /code in container
+  - Uses Docker entrypoint directly for consistent execution
+
+Examples:
+  docker-lintro.sh check
+  docker-lintro.sh check --tools ruff,prettier
+  docker-lintro.sh format --tools ruff
+  docker-lintro.sh list-tools
+
+This script allows running lintro without installing all dependencies locally.
+EOF
+    exit 0
+fi
 
 echo -e "${BLUE}=== Docker Lintro Runner ===${NC}"
 

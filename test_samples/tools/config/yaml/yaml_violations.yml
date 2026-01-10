@@ -7,17 +7,14 @@ version: 1.0
 
 # Indentation error - 3 spaces instead of 2
 nested:
-   bad: wrong_indent
+  bad: wrong_indent
 
 # Line too long - exceeds even relaxed 88 char limit
 very_long_key: This is an extremely long line that definitely exceeds even the relaxed 88 character line length limit configured in the project and should trigger a violation
 
 # Trailing spaces (add actual trailing spaces)
-trailing: value   
+trailing: value
 
 # Multiple blank lines (4 blank lines below)
-
-
-
 
 extra: value

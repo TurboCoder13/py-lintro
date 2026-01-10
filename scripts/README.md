@@ -8,8 +8,10 @@ navigation.
 
 ```text
 scripts/
+├── build/        # Build and distribution scripts
 ├── ci/           # CI/CD and GitHub Actions scripts
 ├── docker/       # Docker-related scripts
+├── homebrew/     # Homebrew formula templates
 ├── local/        # Local development scripts
 └── utils/        # Utility scripts and shared functions
 ```
@@ -49,6 +51,22 @@ scripts/
 ```
 
 ## 📋 Script Categories
+
+### 📦 Build Scripts (`build/`)
+
+Scripts for building standalone binaries and distribution packages.
+
+| Script           | Purpose                                  | Usage                                        |
+| ---------------- | ---------------------------------------- | -------------------------------------------- |
+| `build_macos.py` | Build macOS binary using Nuitka compiler | `uv run python scripts/build/build_macos.py` |
+
+### 🍺 Homebrew Templates (`homebrew/`)
+
+Homebrew formula templates for binary distribution.
+
+| File            | Purpose                                       |
+| --------------- | --------------------------------------------- |
+| `lintro-bin.rb` | Homebrew formula template for binary releases |
 
 ### 🔧 CI/CD Scripts (`ci/`)
 
@@ -101,6 +119,18 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `test-venv-setup.sh`                | Create isolated Python 3.13 virtual environment          | `./scripts/ci/test-venv-setup.sh`                                                     |
 | `test-verify-cli.sh`                | Verify lintro CLI entry points in installed package      | `./scripts/ci/test-verify-cli.sh`                                                     |
 | `test-verify-imports.sh`            | Verify critical package imports in installed lintro      | `./scripts/ci/test-verify-imports.sh wheel`                                           |
+| `extract-version-from-tag.sh`       | Extract version from git tag (strips v prefix)           | `./scripts/ci/extract-version-from-tag.sh`                                            |
+| `git-commit-push.sh`                | Stage, commit, and push with github-actions[bot]         | `./scripts/ci/git-commit-push.sh <pattern> <message>`                                 |
+
+#### Homebrew Scripts (`ci/homebrew/`)
+
+Scripts for generating and updating Homebrew formulas.
+
+| Script                       | Purpose                                      | Usage                                                      |
+| ---------------------------- | -------------------------------------------- | ---------------------------------------------------------- |
+| `wait-for-pypi.sh`           | Poll PyPI until package version is available | `./scripts/ci/homebrew/wait-for-pypi.sh lintro 1.0.0`      |
+| `generate-pypi-formula.sh`   | Generate lintro.rb formula from PyPI         | `./scripts/ci/homebrew/generate-pypi-formula.sh 1.0.0 out` |
+| `generate-binary-formula.sh` | Generate lintro-bin.rb formula for binaries  | `./scripts/ci/homebrew/generate-binary-formula.sh ...`     |
 
 ### 🐳 Docker Scripts (`docker/`)
 
@@ -400,21 +430,43 @@ Installs all external tools required by Lintro.
 
 #### `utils.sh`
 
-Shared utilities used by multiple scripts.
+Shared utilities used by multiple scripts. See
+[Shell Script Style Guide](../docs/SHELL-SCRIPT-STYLE-GUIDE.md) for usage patterns.
 
-**Features:**
+**Logging Functions:**
 
-- Common logging functions (log_info, log_success, etc.)
-- PR comment generation
-- Coverage status determination
-- File/directory checking utilities
-- Common environment variables
+| Function      | Purpose               | Example                      |
+| ------------- | --------------------- | ---------------------------- |
+| `log_info`    | Blue info message     | `log_info "Processing..."`   |
+| `log_success` | Green success message | `log_success "Done!"`        |
+| `log_warning` | Yellow warning        | `log_warning "File missing"` |
+| `log_error`   | Red error message     | `log_error "Failed"`         |
+| `log_verbose` | Debug (VERBOSE=1)     | `log_verbose "Details..."`   |
+
+**GitHub Actions Helpers:**
+
+| Function                | Purpose                  | Example                               |
+| ----------------------- | ------------------------ | ------------------------------------- |
+| `set_github_output`     | Set workflow output      | `set_github_output "version" "1.0.0"` |
+| `set_github_env`        | Set environment variable | `set_github_env "MY_VAR" "value"`     |
+| `configure_git_ci_user` | Set github-actions[bot]  | `configure_git_ci_user`               |
+
+**Utility Functions:**
+
+| Function                  | Purpose               | Example                             |
+| ------------------------- | --------------------- | ----------------------------------- |
+| `create_temp_dir`         | Temp dir with cleanup | `tmpdir=$(create_temp_dir)`         |
+| `show_help`               | Display help message  | `show_help "script" "desc" "usage"` |
+| `get_coverage_percentage` | Extract from XML      | `pct=$(get_coverage_percentage)`    |
+| `check_file_exists`       | Check and log         | `check_file_exists "$f" "Config"`   |
+| `check_dir_exists`        | Check and log         | `check_dir_exists "$d" "Output"`    |
 
 **Usage:**
 
 ```bash
 # Source in other scripts
-source "$(dirname "$0")/utils.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../utils/utils.sh"
 ```
 
 ## 🔧 Script Dependencies
@@ -482,11 +534,13 @@ uv sync --dev
 
 When adding new scripts:
 
-1. **Place in appropriate subdirectory**
-2. **Add help documentation** with `--help` flag
-3. **Use shared utilities** from `utils.sh`
-4. **Add to this README** with purpose and usage
-5. **Test in both local and Docker environments**
+1. **Follow the style guide**: See
+   [Shell Script Style Guide](../docs/SHELL-SCRIPT-STYLE-GUIDE.md)
+2. **Use standard preamble**: `set -euo pipefail` and source `utils.sh`
+3. **Add help documentation** with `--help` flag
+4. **Use shared utilities** from `utils.sh` (don't duplicate logging, colors, etc.)
+5. **Add to this README** with purpose and usage
+6. **Test in both local and Docker environments**
 
 ## 🔗 Related Documentation
 

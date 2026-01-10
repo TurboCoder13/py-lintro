@@ -20,6 +20,7 @@ Examples:
 from __future__ import annotations
 
 import argparse
+import tomllib
 from pathlib import Path
 
 
@@ -38,8 +39,6 @@ def _load_toml_bytes(path: Path) -> bytes:
 def _read_version_from_toml_bytes(data: bytes) -> str:
     """Parse TOML bytes and extract ``project.version``.
 
-    Prefer stdlib ``tomllib`` when available; fall back to ``toml``.
-
     Args:
         data: The TOML file contents as bytes.
 
@@ -49,22 +48,14 @@ def _read_version_from_toml_bytes(data: bytes) -> str:
     Raises:
         SystemExit: If parsing fails or the version key is missing/invalid.
     """
-    # Prefer stdlib tomllib (Python 3.11+); fall back to 'toml' if present
     try:
-        import tomllib
-
         parsed = tomllib.loads(data.decode("utf-8"))
-    except Exception:  # pragma: no cover - fallback path for older envs
-        try:
-            import toml
-
-            parsed = toml.loads(data.decode("utf-8"))
-        except Exception as exc:  # pragma: no cover
-            raise SystemExit(f"Failed to parse TOML: {exc}") from None
+    except tomllib.TOMLDecodeError as exc:
+        raise SystemExit(f"Failed to parse TOML: {exc}") from None
 
     try:
         version = parsed["project"]["version"]
-    except Exception as exc:
+    except KeyError as exc:
         raise SystemExit(f"Missing project.version in TOML: {exc}") from None
     if not isinstance(version, str) or not version:
         raise SystemExit("Invalid project.version value")

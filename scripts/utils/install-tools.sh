@@ -2,47 +2,54 @@
 set -euo pipefail
 
 # install-tools.sh - Simplified tool installer for lintro
-# 
+#
 # This script installs all external tools required by lintro.
 # It uses consistent installation methods and is optimized for Docker environments.
 #
 # Usage:
 #   ./scripts/install-tools.sh [--help] [--dry-run] [--verbose] [--local|--docker]
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=utils.sh
+source "$SCRIPT_DIR/utils.sh"
+
 # Show help if requested
-if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-    echo "Usage: $0 [--help] [--dry-run] [--verbose] [--local|--docker]"
-    echo ""
-    echo "Tool Installation Script"
-    echo "Installs all required linting and formatting tools."
-    echo ""
-    echo "Options:"
-    echo "  --help, -h     Show this help message"
-    echo "  --dry-run      Show what would be done without executing"
-    echo "  --verbose      Enable verbose output"
-    echo "  --local        Install tools locally (default)"
-    echo "  --docker       Install tools system-wide for Docker"
-    echo ""
-    echo "This script installs:"
-    echo "  - Ruff (Python linter and formatter)"
-    echo "  - Darglint (docstring linter)"
-    echo "  - Black (Python formatter; runs as a post-check in Lintro)"
-    echo "  - Prettier (code formatter)"
-    echo "  - Markdownlint-cli2 (Markdown linter)"
-    echo "  - Yamllint (YAML linter)"
-    echo "  - Hadolint (Dockerfile linter)"
-    echo "  - Actionlint (GitHub Actions workflow linter)"
-    echo "  - Bandit (Python security linter)"
-    echo "  - Mypy (Python static type checker)"
-    echo "  - Clippy (Rust linter; requires Rust toolchain)"
-    echo ""
-    echo "Use this script to set up a complete development environment."
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    cat <<'EOF'
+Usage: install-tools.sh [--help] [--dry-run] [--verbose] [--local|--docker]
+
+Tool Installation Script
+Installs all required linting and formatting tools.
+
+Options:
+  --help, -h     Show this help message
+  --dry-run      Show what would be done without executing
+  --verbose      Enable verbose output
+  --local        Install tools locally (default)
+  --docker       Install tools system-wide for Docker
+
+This script installs:
+  - Ruff (Python linter and formatter)
+  - Darglint (docstring linter)
+  - Black (Python formatter; runs as a post-check in Lintro)
+  - Prettier (code formatter)
+  - Markdownlint-cli2 (Markdown linter)
+  - Yamllint (YAML linter)
+  - Hadolint (Dockerfile linter)
+  - Actionlint (GitHub Actions workflow linter)
+  - Bandit (Python security linter)
+  - Mypy (Python static type checker)
+  - Clippy (Rust linter; requires Rust toolchain)
+
+Use this script to set up a complete development environment.
+EOF
     exit 0
 fi
 
 # Global flags
 DRY_RUN=0
-VERBOSE=0
+# Note: VERBOSE may already be set by utils.sh, so use default
+VERBOSE="${VERBOSE:-0}"
 
 # Parse flags and collect positional args
 POSITIONAL=()
@@ -66,18 +73,10 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-set -- "${POSITIONAL[@]}"
+set -- "${POSITIONAL[@]:-}"
 
-# Logging helpers
-log_info() { echo "[install-tools] $*"; }
-log_verbose() { [ $VERBOSE -eq 1 ] && echo "[install-tools] [verbose] $*" || true; }
-
-# Color output for better readability
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Script-specific logging (prefixed)
+install_log() { echo "[install-tools] $*"; }
 
 # Helper function to ensure npm is installed
 # Returns 0 on success, non-zero on failure (does not call exit)
