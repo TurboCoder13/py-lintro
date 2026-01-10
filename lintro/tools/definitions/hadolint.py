@@ -1,7 +1,14 @@
-"""Hadolint Dockerfile linter integration."""
+"""Hadolint tool definition.
+
+Hadolint is a Dockerfile linter that helps you build best practice Docker images.
+It parses the Dockerfile into an AST and performs rules on top of the AST.
+It also uses ShellCheck to lint the Bash code inside RUN instructions.
+"""
+
+from __future__ import annotations
 
 import subprocess  # nosec B404 - used safely with shell disabled
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import click
@@ -13,10 +20,16 @@ from lintro.enums.hadolint_enums import (
     normalize_hadolint_threshold,
 )
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
-from lintro.tools.core.tool_base import BaseTool
+from lintro.plugins.base import BaseToolPlugin
+from lintro.plugins.protocol import ToolDefinition
+from lintro.plugins.registry import register_tool
+from lintro.tools.core.option_validators import (
+    filter_none_options,
+    validate_bool,
+    validate_list,
+)
 
 # Constants for Hadolint configuration
 HADOLINT_DEFAULT_TIMEOUT: int = 30
@@ -25,57 +38,50 @@ HADOLINT_FILE_PATTERNS: list[str] = ["Dockerfile", "Dockerfile.*"]
 HADOLINT_DEFAULT_FORMAT: str = "tty"
 HADOLINT_DEFAULT_FAILURE_THRESHOLD: str = "info"
 HADOLINT_DEFAULT_NO_COLOR: bool = True
-HADOLINT_FORMATS: tuple[str, ...] = tuple(m.name.lower() for m in HadolintFormat)
-HADOLINT_FAILURE_THRESHOLDS: tuple[str, ...] = tuple(
-    m.name.lower() for m in HadolintFailureThreshold
-)
 
 
+@register_tool
 @dataclass
-class HadolintTool(BaseTool):
-    """Hadolint Dockerfile linter integration.
+class HadolintPlugin(BaseToolPlugin):
+    """Hadolint Dockerfile linter plugin.
 
-    Hadolint is a Dockerfile linter that helps you build best practice Docker images.
-    It parses the Dockerfile into an AST and performs rules on top of the AST.
-    It also uses ShellCheck to lint the Bash code inside RUN instructions.
-
-    Attributes:
-        name: str: Tool name.
-        description: str: Tool description.
-        can_fix: bool: Whether the tool can fix issues (hadolint cannot fix issues).
-        config: ToolConfig: Tool configuration.
-        exclude_patterns: list[str]: List of patterns to exclude.
-        include_venv: bool: Whether to include virtual environment files.
+    This plugin integrates Hadolint with Lintro for checking Dockerfiles
+    against best practices.
     """
 
-    name: str = "hadolint"
-    description: str = (
-        "Dockerfile linter that helps you build best practice Docker images"
-    )
-    can_fix: bool = field(default=False)  # Hadolint can only check, not fix
-    config: ToolConfig = field(
-        default_factory=lambda: ToolConfig(
-            priority=HADOLINT_DEFAULT_PRIORITY,  # Medium priority for \
-            # infrastructure linting
-            conflicts_with=[],  # No direct conflicts
-            file_patterns=HADOLINT_FILE_PATTERNS,
+    @property
+    def definition(self) -> ToolDefinition:
+        """Return the tool definition.
+
+        Returns:
+            ToolDefinition containing tool metadata.
+        """
+        return ToolDefinition(
+            name="hadolint",
+            description=(
+                "Dockerfile linter that helps you build best practice Docker images"
+            ),
+            can_fix=False,
             tool_type=ToolType.LINTER | ToolType.INFRASTRUCTURE,
-            options={
-                "timeout": HADOLINT_DEFAULT_TIMEOUT,  # Default timeout in seconds
-                "format": HADOLINT_DEFAULT_FORMAT,  # Output format (tty, json, \
-                # checkstyle, etc.)
-                "failure_threshold": HADOLINT_DEFAULT_FAILURE_THRESHOLD,  # \
-                # Threshold for failure (error, warning, info, style)
-                "ignore": None,  # List of rule codes to ignore
-                "trusted_registries": None,  # List of trusted Docker registries
-                "require_labels": None,  # List of required labels with schemas
-                "strict_labels": False,  # Whether to use strict label checking
-                "no_fail": False,  # Whether to suppress exit codes
-                "no_color": HADOLINT_DEFAULT_NO_COLOR,  # Disable color output \
-                # for parsing
+            file_patterns=HADOLINT_FILE_PATTERNS,
+            priority=HADOLINT_DEFAULT_PRIORITY,
+            conflicts_with=[],
+            native_configs=[".hadolint.yaml", ".hadolint.yml"],
+            version_command=["hadolint", "--version"],
+            min_version="2.12.0",
+            default_options={
+                "timeout": HADOLINT_DEFAULT_TIMEOUT,
+                "format": HADOLINT_DEFAULT_FORMAT,
+                "failure_threshold": HADOLINT_DEFAULT_FAILURE_THRESHOLD,
+                "ignore": None,
+                "trusted_registries": None,
+                "require_labels": None,
+                "strict_labels": False,
+                "no_fail": False,
+                "no_color": HADOLINT_DEFAULT_NO_COLOR,
             },
-        ),
-    )
+            default_timeout=HADOLINT_DEFAULT_TIMEOUT,
+        )
 
     def set_options(  # type: ignore[override]
         self,
@@ -92,70 +98,49 @@ class HadolintTool(BaseTool):
         """Set Hadolint-specific options.
 
         Args:
-            format: str | None: Output format (tty, json, checkstyle, codeclimate, \
-                etc.).
-            failure_threshold: str | None: Exit with failure only when rules with \
+            format: Output format (tty, json, checkstyle, codeclimate, etc.).
+            failure_threshold: Exit with failure only when rules with
                 severity >= threshold.
-            ignore: list[str] | None: List of rule codes to ignore (e.g., \
-                ['DL3006', 'SC2086']).
-            trusted_registries: list[str] | None: List of trusted Docker registries.
-            require_labels: list[str] | None: List of required labels with schemas \
-                (e.g., ['version:semver']).
-            strict_labels: bool | None: Whether to use strict label checking.
-            no_fail: bool | None: Whether to suppress exit codes.
-            no_color: bool | None: Whether to disable color output.
+            ignore: List of rule codes to ignore (e.g., ['DL3006', 'SC2086']).
+            trusted_registries: List of trusted Docker registries.
+            require_labels: List of required labels with schemas.
+            strict_labels: Whether to use strict label checking.
+            no_fail: Whether to suppress exit codes.
+            no_color: Whether to disable color output.
             **kwargs: Other tool options.
-
-        Raises:
-            ValueError: If an option value is invalid.
         """
         if format is not None:
             fmt_enum = normalize_hadolint_format(format)
             format = fmt_enum.name.lower()
 
         if failure_threshold is not None:
-            thr_enum = normalize_hadolint_threshold(
-                failure_threshold,
-            )
+            thr_enum = normalize_hadolint_threshold(failure_threshold)
             failure_threshold = thr_enum.name.lower()
 
-        if ignore is not None and not isinstance(ignore, list):
-            raise ValueError("ignore must be a list of rule codes")
+        validate_list(ignore, "ignore")
+        validate_list(trusted_registries, "trusted_registries")
+        validate_list(require_labels, "require_labels")
+        validate_bool(strict_labels, "strict_labels")
+        validate_bool(no_fail, "no_fail")
+        validate_bool(no_color, "no_color")
 
-        if trusted_registries is not None and not isinstance(trusted_registries, list):
-            raise ValueError("trusted_registries must be a list of registry URLs")
-
-        if require_labels is not None and not isinstance(require_labels, list):
-            raise ValueError("require_labels must be a list of label schemas")
-
-        if strict_labels is not None and not isinstance(strict_labels, bool):
-            raise ValueError("strict_labels must be a boolean")
-
-        if no_fail is not None and not isinstance(no_fail, bool):
-            raise ValueError("no_fail must be a boolean")
-
-        if no_color is not None and not isinstance(no_color, bool):
-            raise ValueError("no_color must be a boolean")
-
-        options: dict[str, object] = {
-            "format": format,
-            "failure_threshold": failure_threshold,
-            "ignore": ignore,
-            "trusted_registries": trusted_registries,
-            "require_labels": require_labels,
-            "strict_labels": strict_labels,
-            "no_fail": no_fail,
-            "no_color": no_color,
-        }
-        # Remove None values
-        options = {k: v for k, v in options.items() if v is not None}
+        options = filter_none_options(
+            format=format,
+            failure_threshold=failure_threshold,
+            ignore=ignore,
+            trusted_registries=trusted_registries,
+            require_labels=require_labels,
+            strict_labels=strict_labels,
+            no_fail=no_fail,
+            no_color=no_color,
+        )
         super().set_options(**options, **kwargs)
 
     def _build_command(self) -> list[str]:
         """Build the hadolint command.
 
         Returns:
-            list[str]: List of command arguments.
+            List of command arguments.
         """
         cmd: list[str] = ["hadolint"]
 
@@ -180,27 +165,21 @@ class HadolintTool(BaseTool):
 
         # Add ignore rules
         ignore_opt = self.options.get("ignore")
-        ignore_rules: list[str] = []
         if ignore_opt is not None and isinstance(ignore_opt, list):
-            ignore_rules = [str(r) for r in ignore_opt]
-        for rule in ignore_rules:
-            cmd.extend(["--ignore", rule])
+            for rule in ignore_opt:
+                cmd.extend(["--ignore", str(rule)])
 
         # Add trusted registries
         registries_opt = self.options.get("trusted_registries")
-        trusted_registries: list[str] = []
         if registries_opt is not None and isinstance(registries_opt, list):
-            trusted_registries = [str(r) for r in registries_opt]
-        for registry in trusted_registries:
-            cmd.extend(["--trusted-registry", registry])
+            for registry in registries_opt:
+                cmd.extend(["--trusted-registry", str(registry)])
 
         # Add required labels
         labels_opt = self.options.get("require_labels")
-        require_labels: list[str] = []
         if labels_opt is not None and isinstance(labels_opt, list):
-            require_labels = [str(lbl) for lbl in labels_opt]
-        for label in require_labels:
-            cmd.extend(["--require-label", label])
+            for label in labels_opt:
+                cmd.extend(["--require-label", str(label)])
 
         # Add strict labels
         if self.options.get("strict_labels", False):
@@ -225,11 +204,11 @@ class HadolintTool(BaseTool):
         """Process a single Dockerfile with hadolint.
 
         Args:
-            file_path: Path to the Dockerfile.
-            timeout: Timeout in seconds.
-            results: Mutable dict to accumulate results.
+            file_path: Path to the Dockerfile to process.
+            timeout: Timeout in seconds for the hadolint command.
+            results: Dictionary to accumulate results across files.
         """
-        cmd: list[str] = self._build_command() + [str(file_path)]
+        cmd = self._build_command() + [str(file_path)]
         try:
             success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
             issues = parse_hadolint_output(output=output)
@@ -247,33 +226,27 @@ class HadolintTool(BaseTool):
             results["skipped_files"].append(file_path)
             results["all_success"] = False
             results["execution_failures"] += 1
-        except Exception as e:
-            results["all_outputs"].append(f"Error processing {file_path}: {str(e)}")
+        except (OSError, ValueError, RuntimeError) as e:
+            results["all_outputs"].append(f"Error processing {file_path}: {e!s}")
             results["all_success"] = False
             results["execution_failures"] += 1
 
-    def check(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
+    def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with Hadolint.
 
         Args:
-            paths: list[str]: List of file or directory paths to check.
+            paths: List of file or directory paths to check.
+            options: Runtime options that override defaults.
 
         Returns:
-            ToolResult: ToolResult instance.
+            ToolResult with check results.
         """
         # Use shared preparation for version check, path validation, file discovery
-        ctx = self._prepare_execution(
-            paths,
-            default_timeout=HADOLINT_DEFAULT_TIMEOUT,
-        )
+        ctx = self._prepare_execution(paths, options)
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
 
         # Hadolint processes files one at a time (doesn't support batch mode)
-        # Use files directly since hadolint needs absolute paths
         dockerfile_files = ctx.files
 
         # Accumulate results across all files
@@ -320,29 +293,25 @@ class HadolintTool(BaseTool):
                     "due to execution errors"
                 )
 
-        final_output: str | None = output
-        if not output.strip():
-            final_output = None
+        final_output: str | None = output if output.strip() else None
 
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=results["all_success"],
             output=final_output,
             issues_count=results["total_issues"],
             issues=results["all_issues"],
         )
 
-    def fix(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
+    def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Hadolint cannot fix issues, only report them.
 
         Args:
-            paths: list[str]: List of file or directory paths to fix.
+            paths: List of file or directory paths to fix.
+            options: Tool-specific options.
 
         Raises:
-            NotImplementedError: As Hadolint does not support fixing issues.
+            NotImplementedError: Hadolint does not support fixing issues.
         """
         raise NotImplementedError(
             "Hadolint cannot automatically fix issues. Run 'lintro check' to see "

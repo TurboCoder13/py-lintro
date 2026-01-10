@@ -9,24 +9,24 @@ from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
-from lintro.tools.implementations.pytest.pytest_utils import (
-    check_plugin_installed,
+from lintro.tools.implementations.pytest.collection import (
     get_parallel_workers_from_preset,
 )
+from lintro.tools.implementations.pytest.markers import check_plugin_installed
 
 if TYPE_CHECKING:
-    from lintro.tools.implementations.tool_pytest import PytestTool
+    from lintro.tools.definitions.pytest import PytestPlugin
 
 # Constants for pytest configuration
 PYTEST_TEST_MODE_ENV: str = "LINTRO_TEST_MODE"
 PYTEST_TEST_MODE_VALUE: str = "1"
 
 
-def build_base_command(tool: "PytestTool") -> list[str]:
+def build_base_command(tool: "PytestPlugin") -> list[str]:
     """Build the base pytest command.
 
     Args:
-        tool: PytestTool instance.
+        tool: PytestPlugin instance.
 
     Returns:
         list[str]: Base command list starting with pytest executable.
@@ -116,7 +116,7 @@ def add_parallel_options(cmd: list[str], options: dict[str, Any]) -> None:
         options: Options dictionary.
     """
     # Add pytest-xdist parallel execution
-    # Priority: parallel_preset > workers
+    # Priority: parallel_preset > workers > default (auto)
     workers = options.get("workers")
     parallel_preset = options.get("parallel_preset")
     if parallel_preset:
@@ -125,7 +125,10 @@ def add_parallel_options(cmd: list[str], options: dict[str, Any]) -> None:
         logger.debug(
             f"Using parallel preset '{parallel_preset}' -> workers={workers}",
         )
-    if workers:
+    # Default to auto if not explicitly disabled (workers=0 or workers="0")
+    if workers is None:
+        workers = "auto"
+    if workers and str(workers) != "0":
         cmd.extend(["-n", str(workers)])
 
 
@@ -145,6 +148,7 @@ def add_coverage_options(cmd: list[str], options: dict[str, Any]) -> None:
     coverage_html = options.get("coverage_html")
     coverage_xml = options.get("coverage_xml")
     coverage_report = options.get("coverage_report", False)
+    coverage_term_missing = options.get("coverage_term_missing", False)
 
     # If coverage_report is True, generate both HTML and XML
     if coverage_report:
@@ -154,7 +158,10 @@ def add_coverage_options(cmd: list[str], options: dict[str, Any]) -> None:
             coverage_xml = "coverage.xml"
 
     # Add coverage collection if any coverage options are specified
-    if coverage_html or coverage_xml or coverage_threshold is not None:
+    needs_coverage = (
+        coverage_html or coverage_xml or coverage_term_missing or coverage_threshold
+    )
+    if needs_coverage:
         # Add --cov flag to enable coverage collection
         # Default to current directory, but can be overridden
         cmd.append("--cov=.")
@@ -196,6 +203,11 @@ def add_coverage_options(cmd: list[str], options: dict[str, Any]) -> None:
             else:
                 cmd.append("--cov-report=xml")
         logger.debug(f"Coverage XML report enabled: {coverage_xml}")
+
+    # Add terminal coverage report with missing lines
+    if coverage_term_missing:
+        cmd.append("--cov-report=term-missing")
+        logger.debug("Coverage terminal report with missing lines enabled")
 
 
 def add_test_mode_options(cmd: list[str]) -> None:
@@ -246,15 +258,24 @@ def add_plugin_options(cmd: list[str], options: dict[str, Any]) -> None:
             logger.debug(f"Reruns enabled: {reruns} times")
 
 
-def add_ignore_options(cmd: list[str], tool: "PytestTool") -> None:
+def add_ignore_options(cmd: list[str], tool: "PytestPlugin") -> None:
     """Add ignore options to command for exclude patterns.
 
     Args:
         cmd: Command list to modify.
-        tool: PytestTool instance.
+        tool: PytestPlugin instance.
     """
+    # Glob characters that pytest --ignore doesn't support
+    # These patterns should be skipped as they can't be used with --ignore
+    glob_chars = frozenset({"*", "?", "[", "]"})
+
     # Add --ignore flags for each exclude pattern
     for pattern in tool.exclude_patterns:
+        # Skip patterns containing glob characters - pytest --ignore only works
+        # with exact directory/file paths, not glob patterns
+        if any(char in pattern for char in glob_chars):
+            continue
+
         # pytest --ignore expects directory paths, not glob patterns
         # Convert glob patterns to directory paths where possible
         if pattern.endswith("/*"):
@@ -272,14 +293,14 @@ def add_ignore_options(cmd: list[str], tool: "PytestTool") -> None:
 
 
 def build_check_command(
-    tool: "PytestTool",
+    tool: "PytestPlugin",
     files: list[str],
     fix: bool = False,
 ) -> tuple[list[str], str | None]:
     """Build the pytest command.
 
     Args:
-        tool: PytestTool instance.
+        tool: PytestPlugin instance.
         files: list[str]: List of files to test.
         fix: bool: Ignored for pytest (not applicable).
 

@@ -48,6 +48,7 @@ class PytestConfiguration:
         coverage_html: Path for HTML coverage report (requires pytest-cov).
         coverage_xml: Path for XML coverage report (requires pytest-cov).
         coverage_report: Generate both HTML and XML coverage reports.
+        coverage_term_missing: Show coverage report in terminal with missing lines.
         collect_only: List tests without executing them.
         list_fixtures: List all available fixtures.
         fixture_info: Show detailed information about a specific fixture.
@@ -93,6 +94,7 @@ class PytestConfiguration:
     coverage_html: str | None = field(default=None)
     coverage_xml: str | None = field(default=None)
     coverage_report: bool | None = field(default=None)
+    coverage_term_missing: bool | None = field(default=None)
     collect_only: bool | None = field(default=None)
     list_fixtures: bool | None = field(default=None)
     fixture_info: str | None = field(default=None)

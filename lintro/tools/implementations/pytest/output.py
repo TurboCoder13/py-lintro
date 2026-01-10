@@ -7,6 +7,7 @@ maintainability and reduce file size.
 
 from __future__ import annotations
 
+import configparser
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -14,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 from loguru import logger
 
 if TYPE_CHECKING:
-    from lintro.tools.implementations.tool_pytest import PytestTool
+    from lintro.tools.definitions.pytest import PytestPlugin
 
 from lintro.tools.implementations.pytest.collection import (
     PYTEST_FLAKY_CACHE_FILE,
@@ -137,7 +138,7 @@ def load_pytest_config() -> dict[str, Any]:
                     # Fall back to direct pytest config (backward compatibility)
                     elif isinstance(pytest_tool_data, dict):
                         config = pytest_tool_data
-        except Exception as e:
+        except (OSError, KeyError, TypeError, ValueError) as e:
             logger.warning(
                 f"Failed to load pytest configuration from pyproject.toml: {e}",
             )
@@ -145,8 +146,6 @@ def load_pytest_config() -> dict[str, Any]:
     # Check pytest.ini (lowest priority, updates existing config)
     if pytest_ini_path.exists():
         try:
-            import configparser
-
             parser = configparser.ConfigParser()
             parser.read(pytest_ini_path)
             if "pytest" in parser:
@@ -155,7 +154,7 @@ def load_pytest_config() -> dict[str, Any]:
                 for key, value in ini_config.items():
                     if key not in config:
                         config[key] = value
-        except Exception as e:
+        except (OSError, configparser.Error) as e:
             logger.warning(f"Failed to load pytest configuration from pytest.ini: {e}")
 
     # Cache the result
@@ -196,14 +195,14 @@ def load_file_patterns_from_config(
         return []
 
 
-def initialize_pytest_tool_config(tool: PytestTool) -> None:
+def initialize_pytest_tool_config(tool: PytestPlugin) -> None:
     """Initialize pytest tool configuration from config files.
 
     Loads pytest config, file patterns, and default options.
-    Updates tool.config.file_patterns and tool.options.
+    Updates tool._file_patterns_from_config and tool.options.
 
     Args:
-        tool: PytestTool instance to initialize.
+        tool: PytestPlugin instance to initialize.
     """
     # Load pytest configuration
     pytest_config = load_pytest_config()
@@ -212,7 +211,7 @@ def initialize_pytest_tool_config(tool: PytestTool) -> None:
     config_file_patterns = load_file_patterns_from_config(pytest_config)
     if config_file_patterns:
         # Override default patterns with config patterns
-        tool.config.file_patterns = config_file_patterns
+        tool._file_patterns_from_config = config_file_patterns
 
     # Apply any additional config options from pytest_config
     # Merge pytest_config options into tool.options with safe defaults

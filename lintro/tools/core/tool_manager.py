@@ -1,21 +1,30 @@
-"""Tool manager for Lintro."""
+"""Tool manager for Lintro.
+
+This module provides the ToolManager class for managing tool registration,
+conflict resolution, and execution ordering using the plugin registry system.
+"""
+
+from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
-from lintro.models.core.tool import Tool
-from lintro.tools.tool_enum import ToolEnum
+from lintro.plugins.discovery import discover_all_tools
+from lintro.plugins.registry import ToolRegistry
 from lintro.utils.unified_config import get_ordered_tools
+
+if TYPE_CHECKING:
+    from lintro.plugins.base import BaseToolPlugin
 
 
 @dataclass
 class ToolManager:
-    """Manager for core registration and execution.
+    """Manager for tool registration and execution.
 
     This class is responsible for:
-    - Tool registration
+    - Tool discovery and registration via plugin registry
     - Tool conflict resolution
     - Tool execution order (priority-based, alphabetical, or custom)
     - Tool configuration management
@@ -24,65 +33,33 @@ class ToolManager:
     - "priority" (default): Formatters run before linters based on priority values
     - "alphabetical": Tools run in alphabetical order by name
     - "custom": Tools run in order specified by [tool.lintro].tool_order_custom
-
-    Attributes:
-        _tools: Dictionary mapping core names to core classes
-        _check_tools: Dictionary mapping core names to core classes that can check
-        _fix_tools: Dictionary mapping core names to core classes that can fix
     """
 
-    _tools: dict[ToolEnum, type[Tool]] = field(default_factory=dict)
-    _check_tools: dict[ToolEnum, type[Tool]] = field(default_factory=dict)
-    _fix_tools: dict[ToolEnum, type[Tool]] = field(default_factory=dict)
+    _initialized: bool = field(default=False, init=False)
 
-    def register_tool(
-        self,
-        tool_class: type[Tool],
-    ) -> None:
-        """Register a core class.
+    def _ensure_initialized(self) -> None:
+        """Ensure tools are discovered and registered."""
+        if not self._initialized:
+            discover_all_tools()
+            self._initialized = True
 
-        Args:
-            tool_class: The core class to register.
-
-        Raises:
-            ValueError: If the tool class is not found in ToolEnum.
-        """
-        tool = tool_class()
-        # Find the ToolEnum member for this class
-        tool_enum = next((e for e in ToolEnum if e.value is tool_class), None)
-        if tool_enum is None:
-            raise ValueError(f"Tool class {tool_class} not found in ToolEnum")
-        self._tools[tool_enum] = tool_class
-        # All tools can check (they all inherit from BaseTool with check method)
-        self._check_tools[tool_enum] = tool_class
-        # Only tools with can_fix=True can actually fix issues
-        if tool.can_fix:
-            self._fix_tools[tool_enum] = tool_class
-
-    def get_tool(
-        self,
-        name: ToolEnum,
-    ) -> Tool:
-        """Get a core instance by name.
+    def get_tool(self, name: str) -> BaseToolPlugin:
+        """Get a tool instance by name.
 
         Args:
-            name: The name of the core to get
+            name: The name of the tool (case-insensitive).
 
         Returns:
-            The core instance
-
-        Raises:
-            ValueError: If the core is not found
+            The tool/plugin instance.
         """
-        if name not in self._tools:
-            raise ValueError(f"Tool {name} not found")
-        return self._tools[name]()
+        self._ensure_initialized()
+        return ToolRegistry.get(name)
 
     def get_tool_execution_order(
         self,
-        tool_list: list[ToolEnum],
+        tool_names: list[str],
         ignore_conflicts: bool = False,
-    ) -> list[ToolEnum]:
+    ) -> list[str]:
         """Get the order in which tools should be executed.
 
         Tool ordering is controlled by [tool.lintro].tool_order in pyproject.toml:
@@ -94,88 +71,73 @@ class ToolManager:
         - Tool conflicts (unless ignore_conflicts is True)
 
         Args:
-            tool_list: List of tools to order.
+            tool_names: List of tool names to order.
             ignore_conflicts: If True, skip conflict checking.
 
         Returns:
-            List of ToolEnum members in execution order based on configured strategy.
+            List of tool names in execution order based on configured strategy.
 
         Raises:
-            ValueError: If duplicate tools are found in tool_list.
+            ValueError: If duplicate tools are found in tool_names.
         """
-        if not tool_list:
+        if not tool_names:
             return []
 
-        # Get core instances
-        tools: dict[ToolEnum, Tool] = {name: self.get_tool(name) for name in tool_list}
+        # Normalize names to lowercase
+        normalized_names = [name.lower() for name in tool_names]
+
+        # Get tool instances
+        tools: dict[str, BaseToolPlugin] = {
+            name: self.get_tool(name) for name in normalized_names
+        }
 
         # Validate for duplicate tools
         seen_names: set[str] = set()
         duplicates: list[str] = []
-        for tool in tool_list:
-            tool_name_lower = tool.name.lower()
-            if tool_name_lower in seen_names:
-                duplicates.append(tool.name)
+        for name in normalized_names:
+            if name in seen_names:
+                duplicates.append(name)
             else:
-                seen_names.add(tool_name_lower)
+                seen_names.add(name)
         if duplicates:
             raise ValueError(
-                f"Duplicate tools found in tool_list: {', '.join(duplicates)}",
+                f"Duplicate tools found in tool_names: {', '.join(duplicates)}",
             )
 
-        # Convert ToolEnum to tool names for unified config ordering
-        tool_names = [t.name.lower() for t in tool_list]
-        ordered_names = get_ordered_tools(tool_names)
-
-        # Map back to ToolEnum in the ordered sequence
-        name_to_enum = {t.name.lower(): t for t in tool_list}
-        sorted_tools = [
-            name_to_enum[name] for name in ordered_names if name in name_to_enum
-        ]
+        # Get ordered tool names from unified config
+        ordered_names = get_ordered_tools(normalized_names)
 
         # Validate that all requested tools are preserved
-        original_names = {t.name.lower() for t in tool_list}
-        sorted_names = {t.name.lower() for t in sorted_tools}
-        missing_tools = original_names - sorted_names
+        original_set = set(normalized_names)
+        sorted_set = set(ordered_names)
+        missing_tools = original_set - sorted_set
         if missing_tools:
             # Append missing tools in their original order
-            missing_enums = [t for t in tool_list if t.name.lower() in missing_tools]
-            sorted_tools.extend(missing_enums)
+            missing_list = [n for n in normalized_names if n in missing_tools]
+            ordered_names.extend(missing_list)
             logger.warning(
                 f"Some tools were not found in ordered list and appended: "
-                f"{[t.name for t in missing_enums]}",
+                f"{missing_list}",
             )
 
         if ignore_conflicts:
-            return sorted_tools
+            return ordered_names
 
         # Build conflict graph
-        conflict_graph: dict[ToolEnum, set[ToolEnum]] = {
-            name: set() for name in tool_list
-        }
-        # Create mapping from tool name strings to ToolEnum members
-        # Handle both lowercase strings and ToolEnum members in conflicts_with
-        name_to_enum_map = {t.name.lower(): t for t in ToolEnum}
-        for tool_enum_value in tool_list:
-            tool_instance: Tool = tools[tool_enum_value]
-            for conflict in tool_instance.config.conflicts_with:
-                # Convert conflict string to ToolEnum if needed
-                conflict_enum: ToolEnum | None = None
-                if isinstance(conflict, str):
-                    # Look up by lowercase name
-                    conflict_enum = name_to_enum_map.get(conflict.lower())
-                elif isinstance(conflict, ToolEnum):
-                    # Already a ToolEnum member
-                    conflict_enum = conflict
-                # Only add to conflict graph if conflict_enum is in tool_list
-                if conflict_enum is not None and conflict_enum in tool_list:
-                    conflict_graph[tool_enum_value].add(conflict_enum)
-                    conflict_graph[conflict_enum].add(tool_enum_value)
+        conflict_graph: dict[str, set[str]] = {name: set() for name in normalized_names}
+        for tool_name in normalized_names:
+            tool_instance = tools[tool_name]
+            for conflict in tool_instance.definition.conflicts_with:
+                conflict_lower = conflict.lower()
+                # Only add to conflict graph if conflict is in our tool list
+                if conflict_lower in normalized_names:
+                    conflict_graph[tool_name].add(conflict_lower)
+                    conflict_graph[conflict_lower].add(tool_name)
 
         # Resolve conflicts by keeping the first tool in ordered sequence
-        result: list[ToolEnum] = []
-        for tool_name in sorted_tools:
-            # Check if this core conflicts with any already selected tools
+        result: list[str] = []
+        for tool_name in ordered_names:
+            # Check if this tool conflicts with any already selected tools
             conflicts = conflict_graph[tool_name] & set(result)
             if not conflicts:
                 result.append(tool_name)
@@ -184,38 +146,62 @@ class ToolManager:
 
     def set_tool_options(
         self,
-        name: ToolEnum,
+        name: str,
         **options: Any,
     ) -> None:
-        """Set options for a core.
+        """Set options for a tool.
 
         Args:
-            name: The name of the core
-            **options: The options to set
+            name: The name of the tool.
+            **options: The options to set.
         """
         tool = self.get_tool(name)
         tool.set_options(**options)
 
-    def get_available_tools(self) -> dict[ToolEnum, Tool]:
-        """Get all available tools.
+    def get_all_tools(self) -> dict[str, BaseToolPlugin]:
+        """Get all registered tools.
 
         Returns:
-            Dictionary mapping core names to core classes
+            Dictionary mapping tool names to plugin instances.
         """
-        return {name: tool_class() for name, tool_class in self._tools.items()}
+        self._ensure_initialized()
+        return ToolRegistry.get_all()
 
-    def get_check_tools(self) -> dict[ToolEnum, Tool]:
+    def get_check_tools(self) -> dict[str, BaseToolPlugin]:
         """Get all tools that can check files.
 
         Returns:
-            Dictionary mapping core names to core instances
+            Dictionary mapping tool names to plugin instances.
         """
-        return {name: tool_class() for name, tool_class in self._check_tools.items()}
+        self._ensure_initialized()
+        return ToolRegistry.get_check_tools()
 
-    def get_fix_tools(self) -> dict[ToolEnum, Tool]:
+    def get_fix_tools(self) -> dict[str, BaseToolPlugin]:
         """Get all tools that can fix files.
 
         Returns:
-            Dictionary mapping core names to core instances
+            Dictionary mapping tool names to plugin instances.
         """
-        return {name: tool_class() for name, tool_class in self._fix_tools.items()}
+        self._ensure_initialized()
+        return ToolRegistry.get_fix_tools()
+
+    def get_tool_names(self) -> list[str]:
+        """Get all registered tool names.
+
+        Returns:
+            Sorted list of tool names.
+        """
+        self._ensure_initialized()
+        return ToolRegistry.get_names()
+
+    def is_tool_registered(self, name: str) -> bool:
+        """Check if a tool is registered.
+
+        Args:
+            name: Tool name (case-insensitive).
+
+        Returns:
+            True if the tool is registered.
+        """
+        self._ensure_initialized()
+        return ToolRegistry.is_registered(name)

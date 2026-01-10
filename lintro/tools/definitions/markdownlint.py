@@ -1,67 +1,78 @@
-"""Markdownlint-cli2 Markdown linter integration."""
+"""Markdownlint tool definition.
+
+Markdownlint-cli2 is a linter for Markdown files that checks for style
+issues and best practices. It helps maintain consistent formatting
+across documentation.
+"""
+
+from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess  # nosec B404 - used safely with shell disabled
 import tempfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
+from lintro.plugins.base import BaseToolPlugin
+from lintro.plugins.protocol import ToolDefinition
+from lintro.plugins.registry import register_tool
+from lintro.tools.core.option_validators import validate_positive_int
 from lintro.tools.core.timeout_utils import create_timeout_result
-from lintro.tools.core.tool_base import BaseTool
 from lintro.utils.config import get_central_line_length
 from lintro.utils.unified_config import DEFAULT_TOOL_PRIORITIES
 
-# Constants
+# Constants for Markdownlint configuration
 MARKDOWNLINT_DEFAULT_TIMEOUT: int = 30
-# Use centralized priority from unified_config.py for consistency
 MARKDOWNLINT_DEFAULT_PRIORITY: int = DEFAULT_TOOL_PRIORITIES.get("markdownlint", 30)
-MARKDOWNLINT_FILE_PATTERNS: list[str] = [
-    "*.md",
-    "*.markdown",
-]
+MARKDOWNLINT_FILE_PATTERNS: list[str] = ["*.md", "*.markdown"]
 
 
+@register_tool
 @dataclass
-class MarkdownlintTool(BaseTool):
-    """Markdownlint-cli2 Markdown linter integration.
+class MarkdownlintPlugin(BaseToolPlugin):
+    """Markdownlint Markdown linter plugin.
 
-    Markdownlint-cli2 is a linter for Markdown files that checks for style
-    issues and best practices.
-
-    Attributes:
-        name: Tool name
-        description: Tool description
-        can_fix: Whether the tool can fix issues
-        config: Tool configuration
-        exclude_patterns: List of patterns to exclude
-        include_venv: Whether to include virtual environment files
+    This plugin integrates markdownlint-cli2 with Lintro for checking
+    Markdown files for style and formatting issues.
     """
 
-    name: str = "markdownlint"
-    description: str = "Markdown linter for style checking and best practices"
-    can_fix: bool = field(default=False)
-    config: ToolConfig = field(
-        default_factory=lambda: ToolConfig(
+    @property
+    def definition(self) -> ToolDefinition:
+        """Return the tool definition.
+
+        Returns:
+            ToolDefinition containing tool metadata.
+        """
+        return ToolDefinition(
+            name="markdownlint",
+            description=("Markdown linter for style checking and best practices"),
+            can_fix=False,
+            tool_type=ToolType.LINTER,
+            file_patterns=MARKDOWNLINT_FILE_PATTERNS,
             priority=MARKDOWNLINT_DEFAULT_PRIORITY,
             conflicts_with=[],
-            file_patterns=MARKDOWNLINT_FILE_PATTERNS,
-            tool_type=ToolType.LINTER,
-            options={
+            native_configs=[
+                ".markdownlint.json",
+                ".markdownlint.yaml",
+                ".markdownlint.yml",
+                ".markdownlint-cli2.jsonc",
+                ".markdownlint-cli2.yaml",
+            ],
+            version_command=["markdownlint-cli2", "--help"],
+            min_version="0.10.0",
+            default_options={
                 "timeout": MARKDOWNLINT_DEFAULT_TIMEOUT,
+                "line_length": None,
             },
-        ),
-    )
-
-    def __post_init__(self) -> None:
-        """Initialize the tool."""
-        super().__post_init__()
+            default_timeout=MARKDOWNLINT_DEFAULT_TIMEOUT,
+        )
 
     def _verify_tool_version(self) -> ToolResult | None:
         """Verify that markdownlint-cli2 meets minimum version requirements.
@@ -70,26 +81,26 @@ class MarkdownlintTool(BaseTool):
 
         Returns:
             Optional[ToolResult]: None if version check passes, or a skip result
-                if it fails
+                if it fails.
         """
         from lintro.tools.core.version_requirements import check_tool_version
 
         # Use the correct command for markdownlint-cli2
         command = self._get_markdownlint_command()
-        version_info = check_tool_version(self.name, command)
+        version_info = check_tool_version(self.definition.name, command)
 
         if version_info.version_check_passed:
             return None  # Version check passed
 
         # Version check failed - return skip result with warning
         skip_message = (
-            f"Skipping {self.name}: {version_info.error_message}. "
+            f"Skipping {self.definition.name}: {version_info.error_message}. "
             f"Minimum required: {version_info.min_version}. "
             f"{version_info.install_hint}"
         )
 
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=True,  # Not an error, just skipping
             output=skip_message,
             issues_count=0,
@@ -104,35 +115,24 @@ class MarkdownlintTool(BaseTool):
         """Set Markdownlint-specific options.
 
         Args:
-            timeout: Timeout in seconds per file (default: 30)
+            timeout: Timeout in seconds (default: 30).
             line_length: Line length for MD013 rule. If not provided, uses
                 central line_length from [tool.lintro] or falls back to Ruff's
                 line-length setting.
-            **kwargs: Other tool options
-
-        Raises:
-            ValueError: If timeout is not an integer or is not positive, or
-                if line_length is not an integer or is not positive
+            **kwargs: Other tool options.
         """
-        set_kwargs = dict(kwargs)
+        validate_positive_int(timeout, "timeout")
 
+        set_kwargs = dict(kwargs)
         if timeout is not None:
-            if not isinstance(timeout, int):
-                raise ValueError("timeout must be an integer")
-            if timeout <= 0:
-                raise ValueError("timeout must be positive")
             set_kwargs["timeout"] = timeout
 
         # Use provided line_length, or get from central config
         if line_length is None:
             line_length = get_central_line_length()
 
+        validate_positive_int(line_length, "line_length")
         if line_length is not None:
-            if not isinstance(line_length, int):
-                raise ValueError("line_length must be an integer")
-            if line_length <= 0:
-                raise ValueError("line_length must be positive")
-            # Store for use in check() method
             self.options["line_length"] = line_length
 
         super().set_options(**set_kwargs)
@@ -141,10 +141,8 @@ class MarkdownlintTool(BaseTool):
         """Get the command to run markdownlint-cli2.
 
         Returns:
-            list[str]: Command arguments for markdownlint-cli2.
+            Command arguments for markdownlint-cli2.
         """
-        import shutil
-
         # Use npx to run markdownlint-cli2 (similar to prettier)
         if shutil.which("npx"):
             return ["npx", "markdownlint-cli2"]
@@ -178,10 +176,6 @@ class MarkdownlintTool(BaseTool):
 
         try:
             # Create a temp file that persists until explicitly deleted
-            # Using delete=False so it survives the subprocess call
-            # markdownlint-cli2 requires config files to follow specific naming
-            # conventions - the file must end with ".markdownlint-cli2.jsonc"
-            # or be named ".markdownlint-cli2.jsonc"
             with tempfile.NamedTemporaryFile(
                 mode="w",
                 suffix=".markdownlint-cli2.jsonc",
@@ -193,46 +187,41 @@ class MarkdownlintTool(BaseTool):
                 temp_path = f.name
 
             logger.debug(
-                f"[MarkdownlintTool] Created temp config at {temp_path} "
+                f"[MarkdownlintPlugin] Created temp config at {temp_path} "
                 f"with line_length={line_length}",
             )
             return temp_path
 
         except (PermissionError, OSError) as e:
             logger.warning(
-                f"[MarkdownlintTool] Could not create temp config file: {e}",
+                f"[MarkdownlintPlugin] Could not create temp config file: {e}",
             )
             return None
 
-    def check(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
+    def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with Markdownlint.
 
         Args:
             paths: List of file or directory paths to check.
+            options: Runtime options that override defaults.
 
         Returns:
-            ToolResult: Result of the check operation.
+            ToolResult with check results.
         """
         # Use shared preparation for version check, path validation, file discovery
-        ctx = self._prepare_execution(
-            paths,
-            default_timeout=MARKDOWNLINT_DEFAULT_TIMEOUT,
-        )
+        ctx = self._prepare_execution(paths, options)
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
 
         logger.debug(
-            f"[MarkdownlintTool] Discovered {len(ctx.files)} files matching "
-            f"patterns: {self.config.file_patterns}",
+            f"[MarkdownlintPlugin] Discovered {len(ctx.files)} files matching "
+            f"patterns: {self.definition.file_patterns}",
         )
         if ctx.files:
             logger.debug(
-                f"[MarkdownlintTool] Files to check (first 10): {ctx.files[:10]}",
+                f"[MarkdownlintPlugin] Files to check (first 10): {ctx.files[:10]}",
             )
-        logger.debug(f"[MarkdownlintTool] Working directory: {ctx.cwd}")
+        logger.debug(f"[MarkdownlintPlugin] Working directory: {ctx.cwd}")
 
         # Build command
         cmd: list[str] = self._get_markdownlint_command()
@@ -244,7 +233,7 @@ class MarkdownlintTool(BaseTool):
         config_args = self._build_config_args()
         if config_args:
             cmd.extend(config_args)
-            logger.debug("[MarkdownlintTool] Using Lintro config injection")
+            logger.debug("[MarkdownlintPlugin] Using Lintro config injection")
         else:
             # Fallback: Apply line_length configuration if set
             line_length_opt = self.options.get("line_length")
@@ -262,7 +251,9 @@ class MarkdownlintTool(BaseTool):
 
         cmd.extend(ctx.rel_files)
 
-        logger.debug(f"[MarkdownlintTool] Running: {' '.join(cmd)} (cwd={ctx.cwd})")
+        logger.debug(
+            f"[MarkdownlintPlugin] Running: {' '.join(cmd)} (cwd={ctx.cwd})",
+        )
 
         try:
             success, output = self._run_subprocess(
@@ -277,7 +268,7 @@ class MarkdownlintTool(BaseTool):
                 cmd=cmd,
             )
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=timeout_result.success,
                 output=timeout_result.output,
                 issues_count=timeout_result.issues_count,
@@ -288,12 +279,12 @@ class MarkdownlintTool(BaseTool):
                 try:
                     os.unlink(temp_config_path)
                     logger.debug(
-                        "[MarkdownlintTool] Cleaned up temp config: "
+                        "[MarkdownlintPlugin] Cleaned up temp config: "
                         f"{temp_config_path}",
                     )
                 except OSError as e:
                     logger.debug(
-                        f"[MarkdownlintTool] Failed to clean up temp config: {e}",
+                        f"[MarkdownlintPlugin] Failed to clean up temp config: {e}",
                     )
 
         # Parse output
@@ -307,21 +298,19 @@ class MarkdownlintTool(BaseTool):
             final_output = None
 
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=success_flag,
             output=final_output,
             issues_count=issues_count,
             issues=issues,
         )
 
-    def fix(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
+    def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Markdownlint cannot fix issues, only report them.
 
         Args:
             paths: List of file or directory paths to fix.
+            options: Runtime options that override defaults.
 
         Raises:
             NotImplementedError: Markdownlint is a linter only and cannot fix issues.

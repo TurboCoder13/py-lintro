@@ -50,7 +50,7 @@ def run_subprocess_with_timeout(
     Raises:
         TimeoutExpired: If command times out (re-raised from subprocess).
     """
-    tool_name = tool_name or tool.name
+    tool_name = tool_name or tool.definition.name
 
     try:
         success, output = tool._run_subprocess(cmd=cmd, timeout=timeout, cwd=cwd)
@@ -108,7 +108,7 @@ def create_timeout_result(
     Returns:
         TimeoutResult: Result dataclass with timeout information.
     """
-    tool_name = tool_name or tool.name
+    tool_name = tool_name or tool.definition.name
 
     return TimeoutResult(
         success=False,

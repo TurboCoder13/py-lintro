@@ -22,7 +22,7 @@ from lintro.utils.path_filtering import walk_files_with_excludes
 
 if TYPE_CHECKING:
     from lintro.models.core.tool_result import ToolResult
-    from lintro.tools.implementations.tool_ruff import RuffTool
+    from lintro.tools.definitions.ruff import RuffPlugin
 
 # Constants from tool_ruff.py
 RUFF_DEFAULT_TIMEOUT: int = 30
@@ -31,7 +31,7 @@ DEFAULT_REMAINING_ISSUES_DISPLAY: int = 5
 
 @contextmanager
 def _temporary_option(
-    tool: "RuffTool",
+    tool: "RuffPlugin",
     option_key: str,
     option_value: object,
 ) -> Generator[None]:
@@ -70,7 +70,7 @@ def _temporary_option(
 
 
 def execute_ruff_fix(
-    tool: "RuffTool",
+    tool: "RuffPlugin",
     paths: list[str],
 ) -> "ToolResult":
     """Execute ruff fix command and process results.
@@ -96,7 +96,7 @@ def execute_ruff_fix(
     tool._validate_paths(paths=paths)
     if not paths:
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=True,
             output="No files to fix.",
             issues_count=0,
@@ -105,14 +105,14 @@ def execute_ruff_fix(
     # Use shared utility for file discovery
     python_files: list[str] = walk_files_with_excludes(
         paths=paths,
-        file_patterns=tool.config.file_patterns,
+        file_patterns=tool.definition.file_patterns,
         exclude_patterns=tool.exclude_patterns,
         include_venv=tool.include_venv,
     )
 
     if not python_files:
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=True,
             output="No Python files found to fix.",
             issues_count=0,
@@ -144,7 +144,7 @@ def execute_ruff_fix(
             cmd=cmd_check,
         )
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=timeout_result.success,
             output=timeout_result.output,
             issues_count=timeout_result.issues_count,
@@ -180,7 +180,7 @@ def execute_ruff_fix(
                 "  - Need to increase timeout via --tool-options ruff:timeout=N"
             )
             return ToolResult(
-                name=tool.name,
+                name=tool.definition.name,
                 success=False,
                 output=timeout_msg,
                 issues_count=1,  # Count timeout as execution failure
@@ -217,7 +217,7 @@ def execute_ruff_fix(
                 "  - Need to increase timeout via --tool-options ruff:timeout=N"
             )
             return ToolResult(
-                name=tool.name,
+                name=tool.definition.name,
                 success=False,
                 output=timeout_msg,
                 issues_count=1,  # Count timeout as execution failure
@@ -303,7 +303,7 @@ def execute_ruff_fix(
                 "  - Need to increase timeout via --tool-options ruff:timeout=N"
             )
             return ToolResult(
-                name=tool.name,
+                name=tool.definition.name,
                 success=False,
                 output=timeout_msg,
                 issues_count=1,  # Count timeout as execution failure
@@ -334,7 +334,7 @@ def execute_ruff_fix(
     )
 
     return ToolResult(
-        name=tool.name,
+        name=tool.definition.name,
         success=overall_success,
         output=final_output,
         # For fix operations, issues_count represents remaining issues

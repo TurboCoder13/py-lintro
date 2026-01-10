@@ -1,8 +1,15 @@
-"""Bandit security linter integration."""
+"""Bandit tool definition.
+
+Bandit is a security linter designed to find common security issues in Python code.
+It processes Python files, builds an AST, and runs security plugins against the
+AST nodes to identify potential vulnerabilities.
+"""
+
+from __future__ import annotations
 
 import json
-import subprocess  # nosec B404 - deliberate, shell disabled
-from dataclasses import dataclass, field
+import subprocess  # nosec B404 - used safely with shell disabled
+from dataclasses import dataclass
 from typing import Any
 
 from loguru import logger
@@ -14,11 +21,12 @@ from lintro.enums.bandit_levels import (
     normalize_bandit_severity_level,
 )
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
-from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.config_utils import load_bandit_config
+from lintro.plugins.base import BaseToolPlugin
+from lintro.plugins.protocol import ToolDefinition
+from lintro.plugins.registry import register_tool
+from lintro.utils.config import load_bandit_config
 
 # Constants for Bandit configuration
 BANDIT_DEFAULT_TIMEOUT: int = 30
@@ -35,10 +43,10 @@ def _extract_bandit_json(raw_text: str) -> dict[str, Any]:
     closing brace and attempts to parse the enclosed JSON object.
 
     Args:
-        raw_text: str: Combined stdout+stderr text from Bandit.
+        raw_text: Combined stdout+stderr text from Bandit.
 
     Returns:
-        dict[str, Any]: Parsed JSON object.
+        Parsed JSON object.
 
     Raises:
         JSONDecodeError: If JSON cannot be parsed.
@@ -64,53 +72,54 @@ def _extract_bandit_json(raw_text: str) -> dict[str, Any]:
     return parsed
 
 
+@register_tool
 @dataclass
-class BanditTool(BaseTool):
-    """Bandit security linter integration.
+class BanditPlugin(BaseToolPlugin):
+    """Bandit security linter plugin.
 
-    Bandit is a security linter designed to find common security issues in Python code.
-    It processes Python files, builds an AST, and runs security plugins against the
-    AST nodes. Bandit does not support auto-fixing of issues.
-
-    Attributes:
-        name: str: Tool name.
-        description: str: Tool description.
-        can_fix: bool: Whether the tool can fix issues.
-        config: ToolConfig: Tool configuration.
-        exclude_patterns: list[str]: List of patterns to exclude.
-        include_venv: bool: Whether to include virtual environment files.
+    This plugin integrates Bandit with Lintro for finding common security
+    issues in Python code.
     """
 
-    name: str = field(default="bandit")
-    description: str = field(
-        default="Security linter that finds common security issues in Python code",
-    )
-    can_fix: bool = field(default=False)  # Bandit does not support auto-fixing
-    config: ToolConfig = field(
-        default_factory=lambda: ToolConfig(
-            priority=BANDIT_DEFAULT_PRIORITY,  # High priority for security
-            conflicts_with=[],  # Can work alongside other tools
-            file_patterns=BANDIT_FILE_PATTERNS,  # Python files only
-            tool_type=ToolType.SECURITY,  # Security-focused tool
-            options={
-                "timeout": BANDIT_DEFAULT_TIMEOUT,  # Default timeout in seconds
-                "severity": None,  # Minimum severity level (LOW, MEDIUM, HIGH)
-                "confidence": None,  # Minimum confidence level (LOW, MEDIUM, HIGH)
-                "tests": None,  # Comma-separated list of test IDs to run
-                "skips": None,  # Comma-separated list of test IDs to skip
-                "profile": None,  # Profile to use
-                "configfile": None,  # Path to config file
-                "baseline": None,  # Path to baseline report for comparison
-                "ignore_nosec": False,  # Ignore # nosec comments
-                "aggregate": "vuln",  # Aggregate by vulnerability or file
-                "verbose": False,  # Verbose output
-                "quiet": False,  # Quiet mode
+    @property
+    def definition(self) -> ToolDefinition:
+        """Return the tool definition.
+
+        Returns:
+            ToolDefinition containing tool metadata.
+        """
+        return ToolDefinition(
+            name="bandit",
+            description=(
+                "Security linter that finds common security issues in Python code"
+            ),
+            can_fix=False,
+            tool_type=ToolType.SECURITY,
+            file_patterns=BANDIT_FILE_PATTERNS,
+            priority=BANDIT_DEFAULT_PRIORITY,
+            conflicts_with=[],
+            native_configs=["pyproject.toml", ".bandit", "bandit.yaml"],
+            version_command=["bandit", "--version"],
+            min_version="1.7.0",
+            default_options={
+                "timeout": BANDIT_DEFAULT_TIMEOUT,
+                "severity": None,
+                "confidence": None,
+                "tests": None,
+                "skips": None,
+                "profile": None,
+                "configfile": None,
+                "baseline": None,
+                "ignore_nosec": False,
+                "aggregate": "vuln",
+                "verbose": False,
+                "quiet": False,
             },
-        ),
-    )
+            default_timeout=BANDIT_DEFAULT_TIMEOUT,
+        )
 
     def __post_init__(self) -> None:
-        """Initialize the tool with default configuration."""
+        """Initialize the tool with configuration from pyproject.toml."""
         super().__post_init__()
 
         # Load bandit configuration from pyproject.toml
@@ -118,16 +127,12 @@ class BanditTool(BaseTool):
 
         # Apply configuration overrides
         if "exclude_dirs" in bandit_config:
-            # Convert exclude_dirs to exclude patterns
-            # Add both /* for immediate children and /**/* for nested subdirectories
             exclude_dirs = bandit_config["exclude_dirs"]
             if isinstance(exclude_dirs, list):
                 for exclude_dir in exclude_dirs:
-                    # Pattern for immediate children
                     pattern = f"{exclude_dir}/*"
                     if pattern not in self.exclude_patterns:
                         self.exclude_patterns.append(pattern)
-                    # Pattern for nested subdirectories (recursive)
                     recursive_pattern = f"{exclude_dir}/**/*"
                     if recursive_pattern not in self.exclude_patterns:
                         self.exclude_patterns.append(recursive_pattern)
@@ -141,7 +146,6 @@ class BanditTool(BaseTool):
             "baseline": "baseline",
             "ignore_nosec": "ignore_nosec",
             "aggregate": "aggregate",
-            # Newly mapped options from pyproject
             "severity": "severity",
             "confidence": "confidence",
         }
@@ -149,16 +153,10 @@ class BanditTool(BaseTool):
         for config_key, option_key in config_mapping.items():
             if config_key in bandit_config:
                 value = bandit_config[config_key]
-                # Validate and normalize severity/confidence early to fail fast
                 if config_key == "severity" and value is not None:
-                    value = normalize_bandit_severity_level(
-                        value,
-                    ).value  # Normalize and convert to string
+                    value = normalize_bandit_severity_level(value).value
                 elif config_key == "confidence" and value is not None:
-                    value = normalize_bandit_confidence_level(
-                        value,
-                    ).value  # Normalize and convert to string
-                # Convert lists to comma-separated strings for skips/tests
+                    value = normalize_bandit_confidence_level(value).value
                 elif config_key in ("skips", "tests") and isinstance(value, list):
                     value = ",".join(value)
                 self.options[option_key] = value
@@ -181,31 +179,28 @@ class BanditTool(BaseTool):
         """Set Bandit-specific options.
 
         Args:
-            severity: str | None: Minimum severity level (LOW, MEDIUM, HIGH).
-            confidence: str | None: Minimum confidence level (LOW, MEDIUM, HIGH).
-            tests: str | None: Comma-separated list of test IDs to run.
-            skips: str | None: Comma-separated list of test IDs to skip.
-            profile: str | None: Profile to use.
-            configfile: str | None: Path to config file.
-            baseline: str | None: Path to baseline report for comparison.
-            ignore_nosec: bool | None: Ignore # nosec comments.
-            aggregate: str | None: Aggregate by vulnerability or file.
-            verbose: bool | None: Verbose output.
-            quiet: bool | None: Quiet mode.
+            severity: Minimum severity level (LOW, MEDIUM, HIGH).
+            confidence: Minimum confidence level (LOW, MEDIUM, HIGH).
+            tests: Comma-separated list of test IDs to run.
+            skips: Comma-separated list of test IDs to skip.
+            profile: Profile to use.
+            configfile: Path to config file.
+            baseline: Path to baseline report for comparison.
+            ignore_nosec: Ignore # nosec comments.
+            aggregate: Aggregate by vulnerability or file.
+            verbose: Verbose output.
+            quiet: Quiet mode.
             **kwargs: Other tool options.
 
         Raises:
             ValueError: If an option value is invalid.
         """
-        # Validate severity level using enum normalization
         if severity is not None:
             severity = normalize_bandit_severity_level(severity).value
 
-        # Validate confidence level using enum normalization
         if confidence is not None:
             confidence = normalize_bandit_confidence_level(confidence).value
 
-        # Validate aggregate option
         if aggregate is not None:
             valid_aggregates = ["vuln", "file"]
             if aggregate not in valid_aggregates:
@@ -224,30 +219,20 @@ class BanditTool(BaseTool):
             "verbose": verbose,
             "quiet": quiet,
         }
-        # Remove None values
         options = {k: v for k, v in options.items() if v is not None}
         super().set_options(**options, **kwargs)
 
-    def _build_check_command(
-        self,
-        files: list[str],
-    ) -> list[str]:
+    def _build_check_command(self, files: list[str]) -> list[str]:
         """Build the bandit check command.
 
         Args:
-            files: list[str]: List of files to check.
+            files: List of files to check.
 
         Returns:
-            list[str]: List of command arguments.
+            List of command arguments.
         """
-        # Resolve executable via BaseTool preferences to ensure reliable
-        # execution inside the active environment (prefers 'uv run bandit' when
-        # available), falling back to a direct executable.
-        exec_cmd: list[str] = self._get_executable_command("bandit")
+        cmd: list[str] = self._get_executable_command("bandit") + ["-r"]
 
-        cmd: list[str] = exec_cmd + ["-r"]
-
-        # Add configuration options
         severity_opt = self.options.get("severity")
         if severity_opt is not None:
             severity = normalize_bandit_severity_level(str(severity_opt))
@@ -304,8 +289,7 @@ class BanditTool(BaseTool):
         # Output format
         cmd.extend(["-f", BANDIT_OUTPUT_FORMAT])
 
-        # Add quiet flag (once) to suppress log messages that interfere with JSON
-        # parsing. Guard against duplicates when quiet=True already added it.
+        # Add quiet flag to suppress log messages that interfere with JSON parsing
         if "-q" not in cmd:
             cmd.append("-q")
 
@@ -314,24 +298,22 @@ class BanditTool(BaseTool):
 
         return cmd
 
-    def check(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
+    def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with Bandit for security issues.
 
         Args:
-            paths: list[str]: List of file or directory paths to check.
+            paths: List of file or directory paths to check.
+            options: Runtime options that override defaults.
 
         Returns:
-            ToolResult: ToolResult instance.
+            ToolResult with check results.
         """
-        # Use shared preparation to handle version check, path validation,
-        # file discovery, and cwd computation
-        ctx = self._prepare_execution(
-            paths,
-            default_timeout=BANDIT_DEFAULT_TIMEOUT,
-        )
+        # Merge runtime options
+        merged_options = dict(self.options)
+        merged_options.update(options)
+
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(paths, options)
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
 
@@ -339,8 +321,6 @@ class BanditTool(BaseTool):
 
         output: str
         execution_failure: bool = False
-        # Run Bandit via the shared safe runner in BaseTool. This enforces
-        # argument validation and consistent subprocess handling across tools.
         try:
             success, combined = self._run_subprocess(
                 cmd=cmd,
@@ -348,51 +328,44 @@ class BanditTool(BaseTool):
                 cwd=ctx.cwd,
             )
             output = (combined or "").strip()
-            rc: int = 0 if success else 1
         except subprocess.TimeoutExpired:
-            # Handle timeout gracefully using shared utility
-            from lintro.tools.core.timeout_utils import create_timeout_result
-
-            timeout_result = create_timeout_result(
-                tool=self,
-                timeout=ctx.timeout,
-                cmd=cmd,
+            timeout_msg = (
+                f"Bandit execution timed out ({ctx.timeout}s limit exceeded).\n\n"
+                "This may indicate:\n"
+                "  - Large codebase taking too long to process\n"
+                "  - Need to increase timeout via --tool-options bandit:timeout=N"
             )
             return ToolResult(
-                name=self.name,
-                success=timeout_result.success,
-                output=timeout_result.output,
-                issues_count=timeout_result.issues_count,
+                name=self.definition.name,
+                success=False,
+                output=timeout_msg,
+                issues_count=0,
             )
-        except Exception as e:
+        except (OSError, ValueError, RuntimeError) as e:
             logger.error(f"Failed to run Bandit: {e}")
             output = f"Bandit failed: {e}"
             execution_failure = True
-            rc = 1
 
         # Parse the JSON output
         try:
-            # If command failed and no obvious JSON present, surface error cleanly
-            if ("{" not in output or "}" not in output) and rc != 0:
+            if ("{" not in output or "}" not in output) and execution_failure:
                 return ToolResult(
-                    name=self.name,
+                    name=self.definition.name,
                     success=False,
                     output=output,
                     issues_count=0,
                 )
 
-            # Attempt robust JSON extraction from mixed output
             bandit_data = _extract_bandit_json(raw_text=output)
             issues = parse_bandit_output(bandit_data)
             issues_count = len(issues)
 
-            # Bandit returns 0 if no issues; 1 if issues found (still successful run)
             execution_success = (
                 len(bandit_data.get("errors", [])) == 0 and not execution_failure
             )
 
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=execution_success,
                 output=output if execution_failure else None,
                 issues_count=issues_count,
@@ -402,26 +375,23 @@ class BanditTool(BaseTool):
         except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to parse bandit output: {e}")
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=False,
                 output=(output or f"Failed to parse bandit output: {str(e)}"),
                 issues_count=0,
             )
 
-    def fix(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
-        """Fix issues in files with Bandit.
-
-        Note: Bandit does not support auto-fixing of security issues.
-        This method raises NotImplementedError.
+    def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
+        """Bandit cannot fix issues, only report them.
 
         Args:
-            paths: list[str]: List of file or directory paths to fix.
+            paths: List of file or directory paths to fix.
+            options: Tool-specific options.
 
         Raises:
-            NotImplementedError: Always raised since Bandit doesn't support fixing.
+            NotImplementedError: Bandit does not support fixing issues.
         """
-        # Bandit cannot auto-fix issues; explicitly signal this.
-        raise NotImplementedError("Bandit does not support auto-fixing.")
+        raise NotImplementedError(
+            "Bandit cannot automatically fix security issues. Run 'lintro check' to "
+            "see issues.",
+        )

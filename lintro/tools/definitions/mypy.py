@@ -1,22 +1,29 @@
-"""Mypy static type checker integration."""
+"""Mypy tool definition.
+
+Mypy is a static type checker for Python that helps catch type-related
+bugs before runtime. It uses type annotations (PEP 484) to verify that
+your code is type-safe.
+"""
 
 from __future__ import annotations
 
-import subprocess  # nosec B404 - subprocess used safely with shell=False
-from dataclasses import dataclass, field
+import subprocess  # nosec B404 - used safely with shell disabled
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.mypy.mypy_parser import parse_mypy_output
+from lintro.plugins.base import BaseToolPlugin
+from lintro.plugins.protocol import ToolDefinition
+from lintro.plugins.registry import register_tool
 from lintro.tools.core.timeout_utils import create_timeout_result
-from lintro.tools.core.tool_base import BaseTool
-from lintro.utils.config_utils import load_mypy_config
+from lintro.utils.config import load_mypy_config
 
+# Constants for Mypy configuration
 MYPY_DEFAULT_TIMEOUT: int = 60
 MYPY_DEFAULT_PRIORITY: int = 82
 MYPY_FILE_PATTERNS: list[str] = ["*.py", "*.pyi"]
@@ -70,20 +77,38 @@ def _regex_to_glob(pattern: str) -> str:
     return cleaned
 
 
+@register_tool
 @dataclass
-class MypyTool(BaseTool):
-    """Mypy static type checker integration."""
+class MypyPlugin(BaseToolPlugin):
+    """Mypy static type checker plugin.
 
-    name: str = "mypy"
-    description: str = "Static type checker for Python"
-    can_fix: bool = field(default=False)
-    config: ToolConfig = field(
-        default_factory=lambda: ToolConfig(
+    This plugin integrates Mypy with Lintro for static type checking
+    of Python files.
+    """
+
+    # Internal state for config
+    _config_data: dict[str, Any] | None = None
+    _config_path: Path | None = None
+
+    @property
+    def definition(self) -> ToolDefinition:
+        """Return the tool definition.
+
+        Returns:
+            ToolDefinition containing tool metadata.
+        """
+        return ToolDefinition(
+            name="mypy",
+            description="Static type checker for Python",
+            can_fix=False,
+            tool_type=ToolType.LINTER | ToolType.TYPE_CHECKER,
+            file_patterns=MYPY_FILE_PATTERNS,
             priority=MYPY_DEFAULT_PRIORITY,
             conflicts_with=[],
-            file_patterns=MYPY_FILE_PATTERNS,
-            tool_type=ToolType.LINTER | ToolType.TYPE_CHECKER,
-            options={
+            native_configs=["mypy.ini", ".mypy.ini", "pyproject.toml", "setup.cfg"],
+            version_command=["mypy", "--version"],
+            min_version="1.0.0",
+            default_options={
                 "timeout": MYPY_DEFAULT_TIMEOUT,
                 "strict": True,
                 "ignore_missing_imports": True,
@@ -91,33 +116,31 @@ class MypyTool(BaseTool):
                 "config_file": None,
                 "cache_dir": None,
             },
-        ),
-    )
+            default_timeout=MYPY_DEFAULT_TIMEOUT,
+        )
 
-    def __post_init__(self) -> None:
-        """Initialize base tool settings."""
-        super().__post_init__()
-        self._config_data: dict[str, Any]
-        self._config_path: Path | None
-
-    def set_options(self, **kwargs: object) -> None:
-        """Set mypy-specific options.
+    def set_options(  # type: ignore[override]
+        self,
+        strict: bool | None = None,
+        ignore_missing_imports: bool | None = None,
+        python_version: str | None = None,
+        config_file: str | None = None,
+        cache_dir: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Set Mypy-specific options.
 
         Args:
-            **kwargs: Additional options forwarded to ``BaseTool.set_options``.
-                Supported keys include ``strict``, ``ignore_missing_imports``,
-                ``python_version``, ``config_file``, and ``cache_dir``.
+            strict: Enable strict mode for more rigorous type checking.
+            ignore_missing_imports: Ignore missing imports.
+            python_version: Python version target (e.g., "3.10").
+            config_file: Path to mypy config file.
+            cache_dir: Path to mypy cache directory.
+            **kwargs: Other tool options.
 
         Raises:
             ValueError: If any provided option is of an unexpected type.
         """
-        kwargs_copy = dict(kwargs)
-        strict = kwargs_copy.pop("strict", None)
-        ignore_missing_imports = kwargs_copy.pop("ignore_missing_imports", None)
-        python_version = kwargs_copy.pop("python_version", None)
-        config_file = kwargs_copy.pop("config_file", None)
-        cache_dir = kwargs_copy.pop("cache_dir", None)
-
         if strict is not None and not isinstance(strict, bool):
             raise ValueError("strict must be a boolean")
         if ignore_missing_imports is not None and not isinstance(
@@ -132,7 +155,7 @@ class MypyTool(BaseTool):
         if cache_dir is not None and not isinstance(cache_dir, str):
             raise ValueError("cache_dir must be a string path")
 
-        options = {
+        options: dict[str, object] = {
             "strict": strict,
             "ignore_missing_imports": ignore_missing_imports,
             "python_version": python_version,
@@ -140,7 +163,7 @@ class MypyTool(BaseTool):
             "cache_dir": cache_dir,
         }
         options = {k: v for k, v in options.items() if v is not None}
-        super().set_options(**options, **kwargs_copy)
+        super().set_options(**options, **kwargs)
 
     def _build_command(self, files: list[str]) -> list[str]:
         """Build the mypy invocation command.
@@ -218,18 +241,20 @@ class MypyTool(BaseTool):
 
         return effective_excludes
 
-    def check(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
-        """Run mypy type checking.
+    def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
+        """Check files with Mypy.
 
         Args:
-            paths: Paths or files to type-check.
+            paths: List of file or directory paths to check.
+            options: Runtime options that override defaults.
 
         Returns:
-            A ``ToolResult`` describing the check outcome.
+            ToolResult with check results.
         """
+        # Merge runtime options
+        merged_options = dict(self.options)
+        merged_options.update(options)
+
         # Load mypy config first (needed to determine paths and excludes)
         base_dir = Path.cwd()
         config_data, config_path = load_mypy_config(base_dir=base_dir)
@@ -252,19 +277,27 @@ class MypyTool(BaseTool):
         effective_excludes = self._build_effective_excludes(config_data.get("exclude"))
         logger.debug("Effective mypy exclude patterns: {}", effective_excludes)
 
+        # Temporarily update exclude patterns for file discovery
+        original_excludes = self.exclude_patterns
+        self.exclude_patterns = effective_excludes
+
         # Use shared preparation with custom excludes
         ctx = self._prepare_execution(
             target_paths,
-            default_timeout=MYPY_DEFAULT_TIMEOUT,
-            exclude_patterns=effective_excludes,
+            merged_options,
+            no_files_message="No files to check.",
         )
+
+        # Restore original exclude patterns
+        self.exclude_patterns = original_excludes
+
         if ctx.should_skip and ctx.early_result is not None:
             return ctx.early_result
 
         # Safety check: if should_skip but no early_result, create one
         if ctx.should_skip:
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=True,
                 output="No files to check.",
                 issues_count=0,
@@ -296,7 +329,7 @@ class MypyTool(BaseTool):
                 cmd=cmd,
             )
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=timeout_result.success,
                 output=timeout_result.output,
                 issues_count=timeout_result.issues_count,
@@ -309,30 +342,31 @@ class MypyTool(BaseTool):
         if not success and issues_count == 0:
             # Execution failed but no structured issues were parsed; surface raw output
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=False,
                 output=output or "mypy execution failed.",
                 issues_count=0,
             )
 
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=issues_count == 0,
             output=None,
             issues_count=issues_count,
             issues=issues,
         )
 
-    def fix(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
+    def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Mypy does not support auto-fixing.
 
         Args:
             paths: Paths or files passed for completeness.
+            options: Runtime options (unused).
 
         Raises:
             NotImplementedError: Always, because mypy cannot fix issues.
         """
-        raise NotImplementedError("mypy does not support auto-fixing")
+        raise NotImplementedError(
+            "Mypy cannot automatically fix issues. Run 'lintro check' to see "
+            "type errors that need manual correction.",
+        )

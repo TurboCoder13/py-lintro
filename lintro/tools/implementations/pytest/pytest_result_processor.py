@@ -83,6 +83,7 @@ class PytestResultProcessor:
         success: bool,
         summary_data: dict[str, Any],
         all_issues: list[PytestIssue],
+        raw_output: str | None = None,
     ) -> ToolResult:
         """Build final ToolResult from processed data.
 
@@ -90,6 +91,7 @@ class PytestResultProcessor:
             success: Whether tests passed.
             summary_data: Summary data dictionary.
             all_issues: List of all test issues (failures, errors, skips).
+            raw_output: Optional raw pytest output for coverage report extraction.
 
         Returns:
             ToolResult: Final result object.
@@ -99,7 +101,7 @@ class PytestResultProcessor:
             issue for issue in all_issues if issue.test_status in ("FAILED", "ERROR")
         ]
 
-        output_text = build_output_with_failures(summary_data, all_issues)
+        output_text = build_output_with_failures(summary_data, all_issues, raw_output)
 
         result = ToolResult(
             name=self.tool_name,

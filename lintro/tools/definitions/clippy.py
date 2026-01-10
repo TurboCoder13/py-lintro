@@ -1,22 +1,34 @@
-"""Clippy Rust linter integration."""
+"""Clippy tool definition.
+
+Clippy is Rust's official linter with hundreds of lint rules for correctness,
+style, complexity, and performance. It runs via `cargo clippy` and requires
+a Cargo.toml file in the project.
+"""
 
 from __future__ import annotations
 
 import os
-import subprocess  # nosec B404 - subprocess used safely with shell=False
-from dataclasses import dataclass, field
+import subprocess  # nosec B404 - used safely with shell disabled
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.clippy.clippy_parser import parse_clippy_output
+from lintro.plugins.base import BaseToolPlugin
+from lintro.plugins.protocol import ToolDefinition
+from lintro.plugins.registry import register_tool
+from lintro.tools.core.option_validators import (
+    filter_none_options,
+    validate_positive_int,
+)
 from lintro.tools.core.timeout_utils import (
     create_timeout_result,
     run_subprocess_with_timeout,
 )
-from lintro.tools.core.tool_base import BaseTool
 
+# Constants for Clippy configuration
 CLIPPY_DEFAULT_TIMEOUT: int = 120
 CLIPPY_DEFAULT_PRIORITY: int = 85
 CLIPPY_FILE_PATTERNS: list[str] = ["*.rs", "Cargo.toml"]
@@ -82,42 +94,38 @@ def _build_clippy_command(fix: bool = False) -> list[str]:
     return cmd
 
 
+@register_tool
 @dataclass
-class ClippyTool(BaseTool):
-    """Rust Clippy linter integration.
+class ClippyPlugin(BaseToolPlugin):
+    """Clippy Rust linter plugin.
 
-    Clippy is Rust's official linter with hundreds of lint rules for correctness,
-    style, complexity, and performance.
-
-    Attributes:
-        name: str: Tool name.
-        description: str: Tool description.
-        can_fix: bool: Whether the tool can fix issues.
-        config: ToolConfig: Tool configuration.
-        exclude_patterns: list[str]: List of patterns to exclude.
-        include_venv: bool: Whether to include virtual environment files.
+    This plugin integrates Rust's Clippy linter with Lintro for checking
+    Rust code for correctness, style, and performance issues.
     """
 
-    name: str = field(default="clippy")
-    description: str = field(
-        default="Rust linter for correctness, style, and performance",
-    )
-    can_fix: bool = field(default=True)
-    config: ToolConfig = field(
-        default_factory=lambda: ToolConfig(
+    @property
+    def definition(self) -> ToolDefinition:
+        """Return the tool definition.
+
+        Returns:
+            ToolDefinition containing tool metadata.
+        """
+        return ToolDefinition(
+            name="clippy",
+            description=("Rust linter for correctness, style, and performance"),
+            can_fix=True,
+            tool_type=ToolType.LINTER,
+            file_patterns=CLIPPY_FILE_PATTERNS,
             priority=CLIPPY_DEFAULT_PRIORITY,
             conflicts_with=[],
-            file_patterns=CLIPPY_FILE_PATTERNS,
-            tool_type=ToolType.LINTER,
-            options={
+            native_configs=["clippy.toml", ".clippy.toml"],
+            version_command=["rustc", "--version"],
+            min_version="1.70.0",
+            default_options={
                 "timeout": CLIPPY_DEFAULT_TIMEOUT,
             },
-        ),
-    )
-
-    def __post_init__(self) -> None:
-        """Initialize base tool settings."""
-        super().__post_init__()
+            default_timeout=CLIPPY_DEFAULT_TIMEOUT,
+        )
 
     def _verify_tool_version(self) -> ToolResult | None:
         """Verify that Rust toolchain meets minimum version requirements.
@@ -126,13 +134,11 @@ class ClippyTool(BaseTool):
 
         Returns:
             Optional[ToolResult]: None if version check passes, or a skip result
-                if it fails
+                if it fails.
         """
         from lintro.tools.core.version_requirements import check_tool_version
 
         # Check Rust version instead of clippy version
-        # rustc --version outputs: "rustc 1.92.0 (ded5c06cf 2025-12-08)"
-        # Note: check_tool_version adds --version automatically
         version_info = check_tool_version("clippy", ["rustc"])
 
         if version_info.version_check_passed:
@@ -140,35 +146,49 @@ class ClippyTool(BaseTool):
 
         # Version check failed - return skip result with warning
         skip_message = (
-            f"Skipping {self.name}: {version_info.error_message}. "
+            f"Skipping {self.definition.name}: {version_info.error_message}. "
             f"Minimum required: {version_info.min_version}. "
             f"{version_info.install_hint}"
         )
 
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=True,  # Not an error, just skipping
             output=skip_message,
             issues_count=0,
         )
 
-    def check(
+    def set_options(  # type: ignore[override]
         self,
-        paths: list[str],
-    ) -> ToolResult:
+        timeout: int | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Set Clippy-specific options.
+
+        Args:
+            timeout: Timeout in seconds (default: 120).
+            **kwargs: Additional options.
+        """
+        validate_positive_int(timeout, "timeout")
+
+        options = filter_none_options(timeout=timeout)
+        super().set_options(**options, **kwargs)
+
+    def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Run `cargo clippy` and parse linting issues.
 
         Args:
             paths: List of file or directory paths to check.
+            options: Runtime options that override defaults.
 
         Returns:
-            ToolResult: ToolResult instance.
+            ToolResult with check results.
         """
         # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(
             paths,
+            options,
             no_files_message="No Rust files found to check.",
-            default_timeout=CLIPPY_DEFAULT_TIMEOUT,
         )
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
@@ -176,7 +196,7 @@ class ClippyTool(BaseTool):
         cargo_root = _find_cargo_root(ctx.files)
         if cargo_root is None:
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=True,
                 output="No Cargo.toml found; skipping clippy.",
                 issues_count=0,
@@ -200,7 +220,7 @@ class ClippyTool(BaseTool):
                 tool_name="clippy",
             )
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=timeout_result.success,
                 output=timeout_result.output,
                 issues_count=timeout_result.issues_count,
@@ -211,30 +231,28 @@ class ClippyTool(BaseTool):
         issues_count = len(issues)
 
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=bool(success_cmd),
             output=None,
             issues_count=issues_count,
             issues=issues,
         )
 
-    def fix(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
+    def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Run `cargo clippy --fix` then re-check for remaining issues.
 
         Args:
             paths: List of file or directory paths to fix.
+            options: Runtime options that override defaults.
 
         Returns:
-            ToolResult: ToolResult instance.
+            ToolResult with fix results.
         """
         # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(
             paths,
+            options,
             no_files_message="No Rust files found to fix.",
-            default_timeout=CLIPPY_DEFAULT_TIMEOUT,
         )
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
@@ -242,7 +260,7 @@ class ClippyTool(BaseTool):
         cargo_root = _find_cargo_root(ctx.files)
         if cargo_root is None:
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=True,
                 output="No Cargo.toml found; skipping clippy.",
                 issues_count=0,
@@ -270,7 +288,7 @@ class ClippyTool(BaseTool):
                 tool_name="clippy",
             )
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=timeout_result.success,
                 output=timeout_result.output,
                 issues_count=timeout_result.issues_count,
@@ -301,7 +319,7 @@ class ClippyTool(BaseTool):
                 tool_name="clippy",
             )
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=timeout_result.success,
                 output=timeout_result.output,
                 issues_count=timeout_result.issues_count,
@@ -328,7 +346,7 @@ class ClippyTool(BaseTool):
                 tool_name="clippy",
             )
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=timeout_result.success,
                 output=timeout_result.output,
                 issues_count=timeout_result.issues_count,
@@ -343,7 +361,7 @@ class ClippyTool(BaseTool):
         fixed_count = max(0, initial_count - remaining_count)
 
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=remaining_count == 0,
             output=None,
             issues_count=remaining_count,

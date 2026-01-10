@@ -38,9 +38,9 @@ When adding a new tool to lintro, follow these steps:
 3. Add version extraction logic in _extract_version_from_output() if needed.
 
 ### Implementation Steps:
-1. Create tool implementation class in lintro/tools/implementations/
-2. Add version checking in the tool's check() and fix() methods
-3. Update ToolEnum in lintro/tools/tool_enum.py
+1. Create tool plugin class in lintro/tools/definitions/
+2. Use @register_tool decorator from lintro.plugins.registry
+3. Inherit from BaseToolPlugin in lintro.plugins.base
 4. Add tool to tool_commands dict in this file
 5. Test with `lintro versions` command
 

@@ -1,16 +1,28 @@
-"""Biome linter integration."""
+"""Biome tool definition.
+
+Biome is a fast linter and formatter for JavaScript, TypeScript, JSON, and CSS.
+It provides detailed diagnostics and safe fixes for code issues.
+"""
+
+from __future__ import annotations
 
 import subprocess  # nosec B404 - used safely with shell disabled
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from loguru import logger
-
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool import ToolConfig, ToolResult
+from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.biome.biome_issue import BiomeIssue
 from lintro.parsers.biome.biome_parser import parse_biome_output
-from lintro.tools.core.tool_base import BaseTool
+from lintro.plugins.base import BaseToolPlugin
+from lintro.plugins.protocol import ToolDefinition
+from lintro.plugins.registry import register_tool
+from lintro.tools.core.option_validators import (
+    filter_none_options,
+    validate_bool,
+    validate_list,
+    validate_positive_int,
+)
 
 # Constants for Biome configuration
 BIOME_DEFAULT_TIMEOUT: int = 30
@@ -27,35 +39,49 @@ BIOME_FILE_PATTERNS: list[str] = [
 ]
 
 
+@register_tool
 @dataclass
-class BiomeTool(BaseTool):
-    """Biome linter integration.
+class BiomePlugin(BaseToolPlugin):
+    """Biome JavaScript/TypeScript linter and formatter plugin.
 
-    A fast linter for JavaScript, TypeScript, JSON, and CSS.
+    This plugin integrates Biome with Lintro for linting and formatting
+    JavaScript, TypeScript, JSON, and CSS files.
     """
 
-    name: str = field(default="biome")
-    description: str = field(
-        default="Fast linter for JavaScript, TypeScript, JSON, and CSS that "
-        "provides detailed diagnostics and safe fixes",
-    )
-    can_fix: bool = field(default=True)
-    config: ToolConfig = field(
-        default_factory=lambda: ToolConfig(
-            priority=BIOME_DEFAULT_PRIORITY,
-            conflicts_with=[],  # No direct conflicts
+    @property
+    def definition(self) -> ToolDefinition:
+        """Return the tool definition.
+
+        Returns:
+            ToolDefinition containing tool metadata.
+        """
+        return ToolDefinition(
+            name="biome",
+            description=(
+                "Fast linter for JavaScript, TypeScript, JSON, and CSS that "
+                "provides detailed diagnostics and safe fixes"
+            ),
+            can_fix=True,
+            tool_type=ToolType.LINTER | ToolType.FORMATTER,
             file_patterns=BIOME_FILE_PATTERNS,
-            tool_type=ToolType.LINTER,
-        ),
-    )
+            priority=BIOME_DEFAULT_PRIORITY,
+            conflicts_with=[],
+            native_configs=["biome.json", "biome.jsonc"],
+            version_command=["biome", "--version"],
+            min_version="1.0.0",
+            default_options={
+                "timeout": BIOME_DEFAULT_TIMEOUT,
+                "use_vcs_ignore": True,
+                "verbose_fix_output": False,
+            },
+            default_timeout=BIOME_DEFAULT_TIMEOUT,
+        )
 
     def __post_init__(self) -> None:
-        """Initialize biome tool."""
+        """Initialize the tool with default options."""
         super().__post_init__()
         # Enable VCS ignore by default to respect .gitignore patterns
         self.options.setdefault("use_vcs_ignore", True)
-        # Note: Biome config files (.biome.json, biome.jsonc) are also
-        # discovered natively
 
     def set_options(  # type: ignore[override]
         self,
@@ -66,25 +92,32 @@ class BiomeTool(BaseTool):
         use_vcs_ignore: bool | None = None,
         **kwargs: Any,
     ) -> None:
-        """Set options for the tool.
+        """Set Biome-specific options.
 
         Args:
-            exclude_patterns: List of patterns to exclude
-            include_venv: Whether to include virtual environment directories
-            timeout: Timeout in seconds per file (default: 30)
-            verbose_fix_output: If True, include raw Biome output in fix()
-            use_vcs_ignore: If True, use VCS ignore file (.gitignore) to exclude files
-            **kwargs: Additional options (ignored for compatibility)
+            exclude_patterns: List of patterns to exclude.
+            include_venv: Whether to include virtual environment directories.
+            timeout: Timeout in seconds (default: 30).
+            verbose_fix_output: If True, include raw Biome output in fix().
+            use_vcs_ignore: If True, use VCS ignore file (.gitignore).
+            **kwargs: Additional options (ignored for compatibility).
         """
+        validate_list(exclude_patterns, "exclude_patterns")
+        validate_positive_int(timeout, "timeout")
+        validate_bool(verbose_fix_output, "verbose_fix_output")
+        validate_bool(use_vcs_ignore, "use_vcs_ignore")
+
         if exclude_patterns is not None:
             self.exclude_patterns = exclude_patterns.copy()
         self.include_venv = include_venv
-        if timeout is not None:
-            self.options["timeout"] = timeout
-        if verbose_fix_output is not None:
-            self.options["verbose_fix_output"] = verbose_fix_output
-        if use_vcs_ignore is not None:
-            self.options["use_vcs_ignore"] = use_vcs_ignore
+
+        options = filter_none_options(
+            timeout=timeout,
+            verbose_fix_output=verbose_fix_output,
+            use_vcs_ignore=use_vcs_ignore,
+        )
+        for key, value in options.items():
+            self.options[key] = value
 
     def _create_timeout_result(
         self,
@@ -118,49 +151,35 @@ class BiomeTool(BaseTool):
             fixable=False,
         )
         combined_issues = (initial_issues or []) + [timeout_issue]
+        remaining_count = len(combined_issues)
+        # Ensure consistency: if initial was 0, set it to remaining_count
+        # so that initial = fixed + remaining holds (0 + remaining = remaining)
+        effective_initial = initial_count if initial_count > 0 else remaining_count
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=False,
             output=timeout_msg,
-            issues_count=len(combined_issues),
+            issues_count=remaining_count,
             issues=combined_issues,
-            initial_issues_count=initial_count,
+            initial_issues_count=effective_initial,
             fixed_issues_count=0,
-            remaining_issues_count=len(combined_issues),
+            remaining_issues_count=remaining_count,
         )
 
-    def check(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
+    def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with Biome without making changes.
 
         Args:
-            paths: List of file or directory paths to check
+            paths: List of file or directory paths to check.
+            options: Runtime options that override defaults.
 
         Returns:
-            ToolResult instance
+            ToolResult with check results.
         """
         # Use shared preparation for version check, path validation, file discovery
-        ctx = self._prepare_execution(
-            paths,
-            default_timeout=BIOME_DEFAULT_TIMEOUT,
-        )
+        ctx = self._prepare_execution(paths, options)
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
-
-        logger.debug(
-            f"[BiomeTool] Discovered {len(ctx.files)} files matching patterns: "
-            f"{self.config.file_patterns}",
-        )
-        logger.debug(
-            f"[BiomeTool] Exclude patterns applied: {self.exclude_patterns}",
-        )
-        if ctx.files:
-            logger.debug(
-                f"[BiomeTool] Files to check (first 10): {ctx.files[:10]}",
-            )
-        logger.debug(f"[BiomeTool] Working directory: {ctx.cwd}")
 
         # Build Biome command with JSON reporter
         cmd: list[str] = self._get_executable_command(tool_name="biome") + [
@@ -173,17 +192,13 @@ class BiomeTool(BaseTool):
         config_args = self._build_config_args()
         if config_args:
             cmd.extend(config_args)
-            logger.debug(
-                "[BiomeTool] Using Lintro config injection",
-            )
 
         # Add VCS ignore option if enabled
         if self.options.get("use_vcs_ignore", False):
             cmd.extend(["--vcs-use-ignore-file", "true"])
-            logger.debug("[BiomeTool] Using VCS ignore file")
 
         cmd.extend(ctx.rel_files)
-        logger.debug(f"[BiomeTool] Running: {' '.join(cmd)} (cwd={ctx.cwd})")
+
         try:
             result = self._run_subprocess(
                 cmd=cmd,
@@ -192,33 +207,31 @@ class BiomeTool(BaseTool):
             )
         except subprocess.TimeoutExpired:
             return self._create_timeout_result(timeout_val=ctx.timeout)
+
         output: str = result[1]
         issues: list[Any] = parse_biome_output(output=output)
         issues_count: int = len(issues)
         success: bool = issues_count == 0
 
         # Standardize: suppress Biome's informational output when no issues
-        # so the unified logger prints a single, consistent success line.
         final_output: str | None = output
         if success:
             final_output = None
 
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=success,
             output=final_output,
             issues_count=issues_count,
             issues=issues,
         )
 
-    def fix(
-        self,
-        paths: list[str],
-    ) -> ToolResult:
+    def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Fix auto-fixable issues in files with Biome.
 
         Args:
-            paths: List of file or directory paths to fix
+            paths: List of file or directory paths to fix.
+            options: Runtime options that override defaults.
 
         Returns:
             ToolResult: Result object with counts and messages.
@@ -226,8 +239,8 @@ class BiomeTool(BaseTool):
         # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(
             paths,
+            options,
             no_files_message="No files to fix.",
-            default_timeout=BIOME_DEFAULT_TIMEOUT,
         )
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
@@ -235,7 +248,7 @@ class BiomeTool(BaseTool):
         # Get Lintro config injection args if available
         config_args = self._build_config_args()
 
-        # Check for issues first
+        # Build check command for counting issues
         check_cmd: list[str] = self._get_executable_command(tool_name="biome") + [
             "lint",
             "--reporter",
@@ -243,11 +256,11 @@ class BiomeTool(BaseTool):
         ]
         if config_args:
             check_cmd.extend(config_args)
-        # Add VCS ignore option if enabled
         if self.options.get("use_vcs_ignore", False):
             check_cmd.extend(["--vcs-use-ignore-file", "true"])
         check_cmd.extend(ctx.rel_files)
-        logger.debug(f"[BiomeTool] Checking: {' '.join(check_cmd)} (cwd={ctx.cwd})")
+
+        # Check for initial issues
         try:
             check_result = self._run_subprocess(
                 cmd=check_cmd,
@@ -256,9 +269,8 @@ class BiomeTool(BaseTool):
             )
         except subprocess.TimeoutExpired:
             return self._create_timeout_result(timeout_val=ctx.timeout)
-        check_output: str = check_result[1]
 
-        # Parse initial issues
+        check_output: str = check_result[1]
         initial_issues: list[Any] = parse_biome_output(output=check_output)
         initial_count: int = len(initial_issues)
 
@@ -269,11 +281,10 @@ class BiomeTool(BaseTool):
         ]
         if config_args:
             fix_cmd.extend(config_args)
-        # Add VCS ignore option if enabled
         if self.options.get("use_vcs_ignore", False):
             fix_cmd.extend(["--vcs-use-ignore-file", "true"])
         fix_cmd.extend(ctx.rel_files)
-        logger.debug(f"[BiomeTool] Fixing: {' '.join(fix_cmd)} (cwd={ctx.cwd})")
+
         try:
             fix_result = self._run_subprocess(
                 cmd=fix_cmd,
@@ -301,6 +312,7 @@ class BiomeTool(BaseTool):
                 initial_issues=initial_issues,
                 initial_count=initial_count,
             )
+
         final_check_output: str = final_check_result[1]
         remaining_issues: list[Any] = parse_biome_output(output=final_check_output)
         remaining_count: int = len(remaining_issues)
@@ -321,9 +333,6 @@ class BiomeTool(BaseTool):
                 output_lines.append(f"  {issue.file} - {issue.message}")
             if len(remaining_issues) > 5:
                 output_lines.append(f"  ... and {len(remaining_issues) - 5} more")
-
-        # If there were no initial issues, rely on the logger's unified
-        # success line (avoid duplicate "No issues found" lines here)
         elif remaining_count == 0 and fixed_count > 0:
             output_lines.append("All issues were successfully auto-fixed")
 
@@ -340,19 +349,12 @@ class BiomeTool(BaseTool):
         # Success means no remaining issues
         success: bool = remaining_count == 0
 
-        # Use only remaining issues (post-fix list) to avoid duplicates
-        # The formatter relies on metadata counters (initial_issues_count,
-        # fixed_issues_count, remaining_issues_count) for summaries
-        all_issues = remaining_issues or []
-
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=success,
             output=final_output,
-            # For fix operations, issues_count represents remaining for summaries
             issues_count=remaining_count,
-            # Provide both initial (fixed) and remaining issues for display
-            issues=all_issues,
+            issues=remaining_issues or [],
             initial_issues_count=initial_count,
             fixed_issues_count=fixed_count,
             remaining_issues_count=remaining_count,

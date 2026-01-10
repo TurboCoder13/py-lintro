@@ -1,58 +1,74 @@
-"""Actionlint integration for lintro.
+"""Actionlint tool definition.
 
-This module wires the `actionlint` CLI into Lintro's tool system. It discovers
-GitHub Actions workflow files, executes `actionlint`, parses its output into
-structured issues, and returns a normalized `ToolResult`.
+Actionlint is a static checker for GitHub Actions workflow files.
+It validates workflow syntax, checks for common issues, and helps
+maintain best practices in CI/CD workflows.
 """
 
 from __future__ import annotations
 
 import subprocess  # nosec B404 - used safely with shell disabled
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import click
-from loguru import logger
 
 from lintro.enums.tool_type import ToolType
-from lintro.models.core.tool_config import ToolConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output
-from lintro.tools.core.tool_base import BaseTool
+from lintro.plugins.base import BaseToolPlugin
+from lintro.plugins.protocol import ToolDefinition
+from lintro.plugins.registry import register_tool
 
-# Defaults
+# Constants for Actionlint configuration
 ACTIONLINT_DEFAULT_TIMEOUT: int = 30
 ACTIONLINT_DEFAULT_PRIORITY: int = 40
 ACTIONLINT_FILE_PATTERNS: list[str] = ["*.yml", "*.yaml"]
 
 
+@register_tool
 @dataclass
-class ActionlintTool(BaseTool):
-    """GitHub Actions workflow linter (actionlint).
+class ActionlintPlugin(BaseToolPlugin):
+    """GitHub Actions workflow linter plugin.
 
-    Attributes:
-        name: Tool name used across the system.
-        description: Human-readable description for listings/help.
-        can_fix: Whether the tool can apply fixes (actionlint cannot).
-        config: `ToolConfig` with defaults for priority, file patterns, and
-            `ToolType` classification.
+    This plugin integrates actionlint with Lintro for checking GitHub Actions
+    workflow files against common issues and best practices.
     """
 
-    name: str = field(default="actionlint")
-    description: str = field(default="Static checker for GitHub Actions workflows")
-    can_fix: bool = field(default=False)
-    config: ToolConfig = field(
-        default_factory=lambda: ToolConfig(
+    @property
+    def definition(self) -> ToolDefinition:
+        """Return the tool definition.
+
+        Returns:
+            ToolDefinition containing tool metadata.
+        """
+        return ToolDefinition(
+            name="actionlint",
+            description="Static checker for GitHub Actions workflows",
+            can_fix=False,
+            tool_type=ToolType.LINTER | ToolType.INFRASTRUCTURE,
+            file_patterns=ACTIONLINT_FILE_PATTERNS,
             priority=ACTIONLINT_DEFAULT_PRIORITY,
             conflicts_with=[],
-            file_patterns=ACTIONLINT_FILE_PATTERNS,
-            tool_type=ToolType.LINTER | ToolType.INFRASTRUCTURE,
-            options={
+            native_configs=[],
+            version_command=["actionlint", "--version"],
+            min_version="1.6.0",
+            default_options={
                 "timeout": ACTIONLINT_DEFAULT_TIMEOUT,
-                # Option placeholders for future extension (e.g., color, format)
             },
-        ),
-    )
+            default_timeout=ACTIONLINT_DEFAULT_TIMEOUT,
+        )
+
+    def set_options(
+        self,
+        **kwargs: Any,
+    ) -> None:
+        """Set Actionlint-specific options.
+
+        Args:
+            **kwargs: Other tool options.
+        """
+        super().set_options(**kwargs)
 
     def _build_command(self) -> list[str]:
         """Build the base actionlint command.
@@ -96,26 +112,23 @@ class ActionlintTool(BaseTool):
             results["skipped_files"].append(file_path)
             results["all_success"] = False
             results["execution_failures"] += 1
-        except Exception as e:  # pragma: no cover
+        except (OSError, ValueError, RuntimeError) as e:  # pragma: no cover
             results["all_success"] = False
             results["all_outputs"].append(f"Error checking {file_path}: {e}")
             results["execution_failures"] += 1
 
-    def check(self, paths: list[str]) -> ToolResult:
+    def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check GitHub Actions workflow files with actionlint.
 
         Args:
-            paths: File or directory paths to search for workflow files.
+            paths: List of file or directory paths to check.
+            options: Runtime options that override defaults.
 
         Returns:
-            A `ToolResult` containing success status, aggregated output (if any),
-            issue count, and parsed issues.
+            ToolResult with check results.
         """
         # Use shared preparation for version check, path validation, file discovery
-        ctx = self._prepare_execution(
-            paths,
-            default_timeout=ACTIONLINT_DEFAULT_TIMEOUT,
-        )
+        ctx = self._prepare_execution(paths, options)
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
 
@@ -123,11 +136,10 @@ class ActionlintTool(BaseTool):
         workflow_files: list[str] = [
             f for f in ctx.files if "/.github/workflows/" in f.replace("\\", "/")
         ]
-        logger.debug(f"Files to check (actionlint): {workflow_files}")
 
         if not workflow_files:
             return ToolResult(
-                name=self.name,
+                name=self.definition.name,
                 success=True,
                 output="No GitHub workflow files found to check.",
                 issues_count=0,
@@ -187,20 +199,24 @@ class ActionlintTool(BaseTool):
             )
 
         return ToolResult(
-            name=self.name,
+            name=self.definition.name,
             success=results["all_success"],
             output=combined_output,
             issues_count=len(results["all_issues"]),
             issues=results["all_issues"],
         )
 
-    def fix(self, paths: list[str]) -> ToolResult:
-        """Raise since actionlint cannot apply automatic fixes.
+    def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
+        """Actionlint cannot fix issues, only report them.
 
         Args:
-            paths: File or directory paths (ignored).
+            paths: List of file or directory paths to fix.
+            options: Tool-specific options.
 
         Raises:
-            NotImplementedError: Actionlint does not support auto-fixing.
+            NotImplementedError: Actionlint does not support fixing issues.
         """
-        raise NotImplementedError("actionlint cannot automatically fix issues.")
+        raise NotImplementedError(
+            "Actionlint cannot automatically fix issues. Run 'lintro check' to see "
+            "issues.",
+        )

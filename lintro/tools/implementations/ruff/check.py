@@ -7,7 +7,7 @@ import os
 import subprocess  # nosec B404 - subprocess used safely to execute ruff commands with controlled input
 from typing import TYPE_CHECKING
 
-from lintro.parsers.ruff.ruff_issue import RuffFormatIssue
+from lintro.parsers.ruff.ruff_format_issue import RuffFormatIssue
 from lintro.parsers.ruff.ruff_parser import (
     parse_ruff_format_check_output,
     parse_ruff_output,
@@ -21,14 +21,14 @@ from lintro.utils.path_filtering import walk_files_with_excludes
 
 if TYPE_CHECKING:
     from lintro.models.core.tool_result import ToolResult
-    from lintro.tools.implementations.tool_ruff import RuffTool
+    from lintro.tools.definitions.ruff import RuffPlugin
 
 # Default timeout for Ruff operations
 RUFF_DEFAULT_TIMEOUT: int = 30
 
 
 def execute_ruff_check(
-    tool: "RuffTool",
+    tool: "RuffPlugin",
     paths: list[str],
 ) -> "ToolResult":
     """Execute ruff check command and process results.
@@ -54,7 +54,7 @@ def execute_ruff_check(
     tool._validate_paths(paths=paths)
     if not paths:
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=True,
             output="No files to check.",
             issues_count=0,
@@ -63,14 +63,14 @@ def execute_ruff_check(
     # Use shared utility for file discovery
     python_files: list[str] = walk_files_with_excludes(
         paths=paths,
-        file_patterns=tool.config.file_patterns,
+        file_patterns=tool.definition.file_patterns,
         exclude_patterns=tool.exclude_patterns,
         include_venv=tool.include_venv,
     )
 
     if not python_files:
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=True,
             output="No Python files found to check.",
             issues_count=0,
@@ -79,7 +79,7 @@ def execute_ruff_check(
     # Ensure Ruff discovers the correct configuration by setting the
     # working directory to the common parent of the target files and by
     # passing file paths relative to that directory.
-    cwd: str | None = tool.get_cwd(paths=python_files)
+    cwd: str | None = tool._get_cwd(paths=python_files)
     rel_files: list[str] = []
     for f in python_files:
         if cwd:
@@ -115,7 +115,7 @@ def execute_ruff_check(
             cmd=cmd,
         )
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=timeout_result.success,
             output=timeout_result.output,
             issues_count=timeout_result.issues_count,
@@ -150,7 +150,7 @@ def execute_ruff_check(
                 cmd=format_cmd,
             )
             return ToolResult(
-                name=tool.name,
+                name=tool.definition.name,
                 success=timeout_result.success,
                 output=timeout_result.output,
                 issues_count=lint_issues_count + timeout_result.issues_count,
@@ -180,7 +180,7 @@ def execute_ruff_check(
     all_issues = lint_issues + format_issues
 
     return ToolResult(
-        name=tool.name,
+        name=tool.definition.name,
         success=success,
         output=output_summary,
         issues_count=issues_count,

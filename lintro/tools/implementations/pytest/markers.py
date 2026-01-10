@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 if TYPE_CHECKING:
-    from lintro.tools.implementations.tool_pytest import PytestTool
+    from lintro.tools.definitions.pytest import PytestPlugin
 
 
 def check_plugin_installed(plugin_name: str) -> bool:
@@ -73,9 +73,9 @@ def list_installed_plugins() -> list[dict[str, str]]:
 
     # Filter for pytest plugins
     for dist in distributions:
-        dist_name = dist.metadata.get("Name", "")
+        dist_name = dist.metadata["Name"] or ""
         if dist_name.startswith("pytest-") or dist_name.startswith("pytest_"):
-            version = dist.metadata.get("Version", "unknown")
+            version = dist.metadata["Version"] or "unknown"
             plugins.append({"name": dist_name, "version": version})
 
     # Sort by name
@@ -109,12 +109,13 @@ def get_pytest_version_info() -> str:
             check=False,
         )
         return result.stdout.strip()
-    except Exception:
+    except (OSError, subprocess.SubprocessError) as e:
+        logger.debug(f"Failed to get pytest version: {e}")
         return "pytest version information unavailable"
 
 
 def collect_tests_once(
-    tool: PytestTool,
+    tool: PytestPlugin,
     target_files: list[str],
 ) -> tuple[int, int]:
     """Collect tests once and return both total count and docker test count.
@@ -202,13 +203,13 @@ def collect_tests_once(
                 docker_test_count += 1
 
         return (total_count, docker_test_count)
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         logger.debug(f"Failed to collect tests: {e}")
         return (0, 0)
 
 
 def get_total_test_count(
-    tool: PytestTool,
+    tool: PytestPlugin,
     target_files: list[str],
 ) -> int:
     """Get total count of all available tests (including deselected ones).
@@ -238,7 +239,7 @@ def get_total_test_count(
 
 
 def count_docker_tests(
-    tool: PytestTool,
+    tool: PytestPlugin,
     target_files: list[str],
 ) -> int:
     """Count docker tests that would be skipped.
