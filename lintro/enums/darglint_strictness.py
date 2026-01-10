@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from enum import StrEnum, auto
 
+from loguru import logger
+
 
 class DarglintStrictness(StrEnum):
     """Strictness levels recognized by Darglint checks."""
@@ -28,5 +30,8 @@ def normalize_darglint_strictness(
         return value
     try:
         return DarglintStrictness[value.upper()]
-    except Exception:
+    except (KeyError, AttributeError) as e:
+        logger.debug(
+            f"Invalid DarglintStrictness value '{value}': {e}. Defaulting to FULL.",
+        )
         return DarglintStrictness.FULL
