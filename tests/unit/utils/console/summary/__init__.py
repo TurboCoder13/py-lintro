@@ -1,0 +1,1 @@
+"""Console summary test package."""
