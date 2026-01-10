@@ -9,7 +9,7 @@ import tempfile
 import pytest
 from assertpy import assert_that
 
-from lintro.tools.implementations.tool_ruff import RuffTool
+from lintro.plugins import ToolRegistry
 
 
 @pytest.fixture(autouse=True)
@@ -34,9 +34,9 @@ def test_pep8_naming_rules_detected() -> None:
         test_file = os.path.join(tmp, "ruff_naming_case.py")
         shutil.copy(sample, test_file)
 
-        ruff = RuffTool()
+        ruff = ToolRegistry.get("ruff")
         ruff.set_options(select=["N"])  # only N rules
-        result = ruff.check([test_file])
+        result = ruff.check([test_file], {})
 
         assert_that(result.success).is_false()
         codes = [getattr(i, "code", "") for i in (result.issues or [])]

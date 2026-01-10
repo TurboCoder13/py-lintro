@@ -8,7 +8,7 @@ from assertpy import assert_that
 from loguru import logger
 
 from lintro.parsers.biome.biome_parser import parse_biome_output
-from lintro.tools.implementations.tool_biome import BiomeTool
+from lintro.plugins import ToolRegistry
 from lintro.utils.tool_utils import format_tool_output
 
 logger.remove()
@@ -97,9 +97,9 @@ def test_biome_reports_violations_through_lintro(temp_biome_file: Path) -> None:
         temp_biome_file: Pytest fixture providing a temporary file with violations.
     """
     logger.info("[TEST] Running BiomeTool through lintro on sample file...")
-    tool = BiomeTool()
+    tool = ToolRegistry.get("biome")
     tool.set_options()
-    result = tool.check([str(temp_biome_file)])
+    result = tool.check([str(temp_biome_file)], {})
     logger.info(
         f"[LOG] Lintro BiomeTool found {result.issues_count} issues. "
         f"Output:\n{result.output}",
@@ -121,11 +121,11 @@ def test_biome_fix_method(temp_biome_file: Path) -> None:
         temp_biome_file: Pytest fixture providing a temporary file with violations.
     """
     logger.info("[TEST] Running BiomeTool.fix() on sample file...")
-    tool = BiomeTool()
+    tool = ToolRegistry.get("biome")
     tool.set_options()
 
     # Check before fixing
-    pre_result = tool.check([str(temp_biome_file)])
+    pre_result = tool.check([str(temp_biome_file)], {})
     logger.info(
         f"[LOG] Before fix: {pre_result.issues_count} issues. "
         f"Output:\n{pre_result.output}",
@@ -133,7 +133,7 @@ def test_biome_fix_method(temp_biome_file: Path) -> None:
     initial_count = pre_result.issues_count
 
     # Fix issues
-    post_result = tool.fix([str(temp_biome_file)])
+    post_result = tool.fix([str(temp_biome_file)], {})
     logger.info(
         f"[LOG] After fix: {post_result.remaining_issues_count} remaining issues. "
         f"Output:\n{post_result.output}",
@@ -145,7 +145,7 @@ def test_biome_fix_method(temp_biome_file: Path) -> None:
     ).described_as("Should fix at least some issues or have same count")
 
     # Verify no issues remain or fewer remain
-    final_result = tool.check([str(temp_biome_file)])
+    final_result = tool.check([str(temp_biome_file)], {})
     logger.info(
         f"[LOG] Final check: {final_result.issues_count} issues. "
         f"Output:\n{final_result.output}",
@@ -162,7 +162,7 @@ def test_biome_output_consistency_direct_vs_lintro(temp_biome_file: Path) -> Non
         temp_biome_file: Pytest fixture providing a temporary file with violations.
     """
     logger.info("[TEST] Comparing Biome CLI and Lintro BiomeTool outputs...")
-    tool = BiomeTool()
+    tool = ToolRegistry.get("biome")
     tool.set_options()
 
     # Run biome directly
@@ -172,7 +172,7 @@ def test_biome_output_consistency_direct_vs_lintro(temp_biome_file: Path) -> Non
     )
 
     # Run through lintro
-    result = tool.check([str(temp_biome_file)])
+    result = tool.check([str(temp_biome_file)], {})
 
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
@@ -192,16 +192,16 @@ def test_biome_fix_sets_issues_for_table(temp_biome_file: Path) -> None:
     Args:
         temp_biome_file: Pytest fixture providing a temporary file with violations.
     """
-    tool = BiomeTool()
+    tool = ToolRegistry.get("biome")
     tool.set_options()
 
     # Ensure there are initial issues
-    pre_result = tool.check([str(temp_biome_file)])
+    pre_result = tool.check([str(temp_biome_file)], {})
     if pre_result.issues_count == 0:
         pytest.skip("No issues found in test file")
 
     # Run fix and assert issues are provided for table formatting
-    fix_result = tool.fix([str(temp_biome_file)])
+    fix_result = tool.fix([str(temp_biome_file)], {})
     assert_that(fix_result.issues).is_not_none()
     assert_that(fix_result.issues).is_instance_of(list)
     assert_that(fix_result.issues).is_length(fix_result.remaining_issues_count)
@@ -236,11 +236,11 @@ def test_biome_respects_biomeignore(tmp_path: Path) -> None:
     biomeignore.write_text("ignored.js\n")
 
     logger.info("[TEST] Testing biome with .biomeignore...")
-    tool = BiomeTool()
+    tool = ToolRegistry.get("biome")
     tool.set_options()
 
     # Check both files - ignored.js should be ignored, checked.js should be checked
-    result = tool.check([str(tmp_path)])
+    result = tool.check([str(tmp_path)], {})
     logger.info(
         f"[LOG] Biome found {result.issues_count} issues. Output:\n{result.output}",
     )

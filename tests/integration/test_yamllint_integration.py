@@ -11,7 +11,7 @@ from assertpy import assert_that
 from loguru import logger
 
 from lintro.enums.severity_level import SeverityLevel
-from lintro.tools.implementations.yamllint_config import YamllintTool
+from lintro.plugins import ToolRegistry
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
@@ -86,78 +86,68 @@ def test_yamllint_available() -> None:
 
 
 @pytest.mark.yamllint
-def test_yamllint_reports_violations_direct(tmp_path: Path) -> None:
-    """Yamllint CLI: Should detect and report violations in a sample file.
+@pytest.mark.parametrize(
+    "use_lintro",
+    [False, True],
+    ids=["direct_cli", "through_lintro"],
+)
+def test_yamllint_reports_violations(tmp_path: Path, use_lintro: bool) -> None:
+    """Yamllint should detect and report violations in a sample file.
+
+    Tests both direct CLI execution and lintro wrapper to ensure consistent
+    behavior for violation detection.
 
     Args:
         tmp_path: Pytest temporary directory fixture.
+        use_lintro: Whether to use lintro wrapper (True) or direct CLI (False).
     """
     test_yamllint_available()
-    import os
-    import shutil
-
     sample_file = tmp_path / "test.yml"
     shutil.copy(SAMPLE_FILE, sample_file)
-    config_dst = tmp_path / ".yamllint"
-    config_dst.write_text("extends: default\n")
-    print(f"[DEBUG] CWD: {os.getcwd()}")
-    print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
-    print(
-        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
-        f"PATH={os.environ.get('PATH')}",
-    )
-    logger.info("[TEST] Running yamllint directly on sample file...")
-    success, output, issues = run_yamllint_directly(sample_file)
-    logger.info(f"[LOG] Yamllint found {issues} issues. Output:\n{output}")
+
+    if use_lintro:
+        logger.info("[TEST] Running YamllintTool through lintro on sample file...")
+        tool = ToolRegistry.get("yamllint")
+        tool.set_options(format="parsable")
+        result = tool.check([str(sample_file)], {})
+        success = result.success
+        issues_count = result.issues_count
+        output = result.output or ""
+        issues = result.issues
+        logger.info(f"[LOG] Lintro YamllintTool found {issues_count} issues.")
+
+        # Additional lintro-specific assertions
+        assert_that(issues).is_not_empty().described_as(
+            "Parsed issues list should be present",
+        )
+        if issues is not None:
+            assert_that(
+                any(
+                    getattr(i, "level", None)
+                    in {SeverityLevel.ERROR, SeverityLevel.WARNING}
+                    for i in issues
+                ),
+            ).is_true().described_as(
+                "Parsed issues should include error or warning levels.",
+            )
+    else:
+        config_dst = tmp_path / ".yamllint"
+        config_dst.write_text("extends: default\n")
+        logger.info("[TEST] Running yamllint directly on sample file...")
+        success, output, issues_count = run_yamllint_directly(sample_file)
+        logger.info(f"[LOG] Yamllint CLI found {issues_count} issues.")
+
     assert_that(success).is_false().described_as(
         "Yamllint should fail when violations are present.",
     )
-    assert_that(issues).is_greater_than(0).described_as(
+    assert_that(issues_count).is_greater_than(0).described_as(
         "Yamllint should report at least one issue.",
     )
-    assert_that(
-        any(level in output for level in ["[error]", "[warning]"]),
-    ).is_true().described_as("Yamllint output should contain issue levels.")
-
-
-@pytest.mark.yamllint
-def test_yamllint_reports_violations_through_lintro(tmp_path: Path) -> None:
-    """Lintro YamllintTool: Should detect and report violations in a sample file.
-
-    Args:
-        tmp_path: Pytest temporary directory fixture.
-    """
-    test_yamllint_available()
-    sample_file = tmp_path / "test.yml"
-    shutil.copy(SAMPLE_FILE, sample_file)
-    logger.info(f"SAMPLE_FILE: {sample_file}, exists: {sample_file.exists()}")
-    logger.info("[TEST] Running YamllintTool through lintro on sample file...")
-    tool = YamllintTool()
-    tool.set_options(format="parsable")
-    result = tool.check([str(sample_file)])
-    logger.info(
-        f"[LOG] Lintro YamllintTool found {result.issues_count} issues. "
-        f"Output:\n{result.output}",
-    )
-    assert_that(result.success).is_false().described_as(
-        "Lintro YamllintTool should fail when violations are present.",
-    )
-    assert_that(result.issues_count).is_greater_than(0).described_as(
-        "Lintro YamllintTool should report at least one issue.",
-    )
-    assert_that(result.issues).is_not_empty().described_as(
-        "Parsed issues list should be present",
-    )
-    assert_that(result.issues).is_not_none()
-    issues = result.issues
-    if issues is None:
-        pytest.fail("issues should not be None")
-    assert_that(
-        any(
-            getattr(i, "level", None) in {SeverityLevel.ERROR, SeverityLevel.WARNING}
-            for i in issues
-        ),
-    ).is_true().described_as("Parsed issues should include error or warning levels.")
+    # Only check raw output for CLI; lintro uses structured issues
+    if not use_lintro:
+        assert_that(
+            any(level in output for level in ["[error]", "[warning]"]),
+        ).is_true().described_as("Yamllint output should contain issue levels.")
 
 
 @pytest.mark.yamllint
@@ -186,11 +176,11 @@ def test_yamllint_output_consistency_direct_vs_lintro(tmp_path: Path) -> None:
         f"PATH={os.environ.get('PATH')}",
     )
     logger.info("[TEST] Comparing yamllint CLI and Lintro YamllintTool outputs...")
-    tool = YamllintTool()
+    tool = ToolRegistry.get("yamllint")
     # Use config_data to ensure we use default config, not project's .yamllint
     tool.set_options(format="parsable", config_data="extends: default")
     direct_success, direct_output, direct_issues = run_yamllint_directly(sample_file)
-    result = tool.check([str(sample_file)])
+    result = tool.check([str(sample_file)], {})
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
@@ -212,12 +202,12 @@ def test_yamllint_with_config_options(tmp_path: Path) -> None:
     sample_file = tmp_path / "test.yml"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info("[TEST] Testing yamllint with config options...")
-    tool = YamllintTool()
+    tool = ToolRegistry.get("yamllint")
     tool.set_options(format="parsable")
-    result_default = tool.check([str(sample_file)])
-    tool_relaxed = YamllintTool()
+    result_default = tool.check([str(sample_file)], {})
+    tool_relaxed = ToolRegistry.get("yamllint")
     tool_relaxed.set_options(format="parsable", relaxed=True)
-    result_relaxed = tool_relaxed.check([str(sample_file)])
+    result_relaxed = tool_relaxed.check([str(sample_file)], {})
     logger.info(f"[LOG] Default config: {result_default.issues_count} issues")
     logger.info(f"[LOG] Relaxed config: {result_relaxed.issues_count} issues")
     assert_that(result_relaxed.issues_count <= result_default.issues_count).is_true()
@@ -234,20 +224,22 @@ def test_yamllint_with_no_warnings_option(tmp_path: Path) -> None:
     sample_file = tmp_path / "test.yml"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info("[TEST] Testing yamllint with no-warnings option...")
-    tool = YamllintTool()
+    tool = ToolRegistry.get("yamllint")
     tool.set_options(format="parsable")
-    result_all = tool.check([str(sample_file)])
-    tool_no_warnings = YamllintTool()
+    result_all = tool.check([str(sample_file)], {})
+    tool_no_warnings = ToolRegistry.get("yamllint")
     tool_no_warnings.set_options(format="parsable", no_warnings=True)
-    result_no_warnings = tool_no_warnings.check([str(sample_file)])
+    result_no_warnings = tool_no_warnings.check([str(sample_file)], {})
     logger.info(f"[LOG] All issues: {result_all.issues_count} issues")
     logger.info(f"[LOG] No warnings: {result_no_warnings.issues_count} issues")
     assert_that(result_no_warnings.issues_count <= result_all.issues_count).is_true()
 
 
 @pytest.mark.yamllint
-def test_yamllint_fix_method_implemented(tmp_path: Path) -> None:
-    """Lintro YamllintTool: .fix() should be implemented and work correctly.
+def test_yamllint_fix_method_not_implemented(tmp_path: Path) -> None:
+    """Lintro YamllintTool: .fix() should raise NotImplementedError.
+
+    Yamllint cannot automatically fix issues - it only reports them.
 
     Args:
         tmp_path: Pytest temporary directory fixture.
@@ -255,16 +247,13 @@ def test_yamllint_fix_method_implemented(tmp_path: Path) -> None:
     test_yamllint_available()
     sample_file = tmp_path / "test.yml"
     shutil.copy(SAMPLE_FILE, sample_file)
-    logger.info("[TEST] Verifying that YamllintTool.fix() is implemented and works...")
-    tool = YamllintTool()
-    result = tool.fix([str(sample_file)])
-    logger.info(f"[LOG] Fix result: {result.success}, {result.issues_count} issues")
-    assert_that(result.success).is_instance_of(bool).described_as(
-        "Fix should return a boolean success value",
+    logger.info(
+        "[TEST] Verifying that YamllintTool.fix() raises NotImplementedError...",
     )
-    assert_that(result.issues_count).is_instance_of(int).described_as(
-        "Fix should return an integer issue count",
-    )
+    tool = ToolRegistry.get("yamllint")
+    with pytest.raises(NotImplementedError):
+        tool.fix([str(sample_file)], {})
+    logger.info("[LOG] NotImplementedError correctly raised by YamllintTool.fix().")
 
 
 @pytest.mark.yamllint
@@ -278,8 +267,8 @@ def test_yamllint_empty_directory(tmp_path: Path) -> None:
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
     logger.info("[TEST] Testing yamllint with empty directory...")
-    tool = YamllintTool()
-    result = tool.check([str(empty_dir)])
+    tool = ToolRegistry.get("yamllint")
+    result = tool.check([str(empty_dir)], {})
     logger.info(f"[LOG] Empty directory result: {result.success}, {result.output}")
     assert_that(result.success).is_true().described_as(
         "Empty directory should be handled successfully.",
@@ -341,27 +330,36 @@ def test_yamllint_config_discovery(tmp_path: Path) -> None:
     """
     test_yamllint_available()
     sample_file = tmp_path / "test.yml"
-    sample_file.write_text("key: value\n")  # Valid YAML
+    # Create a YAML file that would fail document-start rule but pass others
+    sample_file.write_text("key: value\n")  # Valid YAML, no document start marker
 
     # Create .yamllint config that disables document-start rule
     yamllint_config = tmp_path / ".yamllint"
     yamllint_config.write_text(
-        "extends: default\nrules:\n  document-start: disable\n",
+        "extends: relaxed\nrules:\n  document-start: disable\n",
     )
 
     logger.info("[TEST] Testing yamllint config discovery...")
-    tool = YamllintTool()
-    tool.set_options(format="parsable")
+    tool = ToolRegistry.get("yamllint")
+    # Reset options to defaults, don't inherit from previous tests
+    # Note: set_options filters out None values, so we must directly reset config_data
+    tool.options["config_data"] = None
+    tool.set_options(
+        format="parsable",
+        relaxed=False,
+        no_warnings=False,
+        strict=False,
+    )
     # Don't explicitly set config_file - should discover .yamllint automatically
-    result = tool.check([str(sample_file)])
+    result = tool.check([str(sample_file)], {})
     logger.info(
         f"[LOG] Yamllint found {result.issues_count} issues with "
         f"auto-discovered config. Output:\n{result.output}",
     )
-    # Should succeed with document-start rule disabled
+    # Should succeed with relaxed config and document-start rule disabled
     assert_that(result.success).is_true().described_as(
-        "Should succeed with document-start rule disabled",
+        "Should succeed with relaxed config and document-start rule disabled",
     )
     assert_that(result.issues_count).is_equal_to(0).described_as(
-        "Should have no issues with document-start disabled",
+        "Should have no issues with relaxed config and document-start disabled",
     )

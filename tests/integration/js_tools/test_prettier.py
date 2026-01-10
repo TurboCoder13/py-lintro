@@ -9,7 +9,7 @@ from loguru import logger
 
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
 from lintro.parsers.prettier.prettier_parser import parse_prettier_output
-from lintro.tools.implementations.tool_prettier import PrettierTool
+from lintro.plugins import ToolRegistry
 from lintro.utils.tool_utils import format_tool_output
 
 logger.remove()
@@ -46,7 +46,7 @@ def run_prettier_directly(
     Returns:
         tuple[bool, str, int]: Tuple of (success, output, issues_count).
     """
-    cmd = PrettierTool()._get_executable_command("prettier") + [
+    cmd = ToolRegistry.get("prettier")._get_executable_command("prettier") + [
         "--check" if check_only else "--write",
         file_path.name,
     ]
@@ -99,9 +99,9 @@ def test_prettier_reports_violations_through_lintro(temp_prettier_file: Path) ->
         temp_prettier_file: Pytest fixture providing a temporary file with violations.
     """
     logger.info("[TEST] Running PrettierTool through lintro on sample file...")
-    tool = PrettierTool()
+    tool = ToolRegistry.get("prettier")
     tool.set_options()
-    result = tool.check([str(temp_prettier_file)])
+    result = tool.check([str(temp_prettier_file)], {})
     logger.info(
         f"[LOG] Lintro PrettierTool found {result.issues_count} issues. "
         f"Output:\n{result.output}",
@@ -127,11 +127,11 @@ def test_prettier_fix_method(temp_prettier_file: Path) -> None:
         temp_prettier_file: Pytest fixture providing a temporary file with violations.
     """
     logger.info("[TEST] Running PrettierTool.fix() on sample file...")
-    tool = PrettierTool()
+    tool = ToolRegistry.get("prettier")
     tool.set_options()
 
     # Check before fixing
-    pre_result = tool.check([str(temp_prettier_file)])
+    pre_result = tool.check([str(temp_prettier_file)], {})
     logger.info(
         f"[LOG] Before fix: {pre_result.issues_count} issues. "
         f"Output:\n{pre_result.output}",
@@ -144,7 +144,7 @@ def test_prettier_fix_method(temp_prettier_file: Path) -> None:
     )
 
     # Fix issues
-    post_result = tool.fix([str(temp_prettier_file)])
+    post_result = tool.fix([str(temp_prettier_file)], {})
     logger.info(
         f"[LOG] After fix: {post_result.issues_count} issues. "
         f"Output:\n{post_result.output}",
@@ -155,7 +155,7 @@ def test_prettier_fix_method(temp_prettier_file: Path) -> None:
     )
 
     # Verify no issues remain
-    final_result = tool.check([str(temp_prettier_file)])
+    final_result = tool.check([str(temp_prettier_file)], {})
     logger.info(
         f"[LOG] Final check: {final_result.issues_count} issues. "
         f"Output:\n{final_result.output}",
@@ -175,7 +175,7 @@ def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file: Path) 
         temp_prettier_file: Pytest fixture providing a temporary file with violations.
     """
     logger.info("[TEST] Comparing prettier CLI and Lintro PrettierTool outputs...")
-    tool = PrettierTool()
+    tool = ToolRegistry.get("prettier")
     tool.set_options()
 
     # Run prettier directly
@@ -185,7 +185,7 @@ def test_prettier_output_consistency_direct_vs_lintro(temp_prettier_file: Path) 
     )
 
     # Run through lintro
-    result = tool.check([str(temp_prettier_file)])
+    result = tool.check([str(temp_prettier_file)], {})
 
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
@@ -205,15 +205,15 @@ def test_prettier_fix_sets_issues_for_table(temp_prettier_file: Path) -> None:
     Args:
         temp_prettier_file: Pytest fixture providing a temporary file with violations.
     """
-    tool = PrettierTool()
+    tool = ToolRegistry.get("prettier")
     tool.set_options()
 
     # Ensure there are initial issues
-    pre_result = tool.check([str(temp_prettier_file)])
+    pre_result = tool.check([str(temp_prettier_file)], {})
     assert_that(pre_result.issues_count).is_greater_than(0)
 
     # Run fix and assert issues are provided for table formatting
-    fix_result = tool.fix([str(temp_prettier_file)])
+    fix_result = tool.fix([str(temp_prettier_file)], {})
     assert_that(fix_result.success).is_true()
     assert_that(fix_result.remaining_issues_count).is_equal_to(0)
     assert_that(fix_result.issues).is_not_none()
@@ -257,11 +257,11 @@ def test_prettier_respects_prettierignore(tmp_path: Path) -> None:
     prettierignore.write_text("ignored.js\n")
 
     logger.info("[TEST] Testing prettier with .prettierignore...")
-    tool = PrettierTool()
+    tool = ToolRegistry.get("prettier")
     tool.set_options()
 
     # Check both files - ignored.js should be ignored, checked.js should be checked
-    result = tool.check([str(tmp_path)])
+    result = tool.check([str(tmp_path)], {})
     logger.info(
         f"[LOG] Prettier found {result.issues_count} issues. Output:\n{result.output}",
     )

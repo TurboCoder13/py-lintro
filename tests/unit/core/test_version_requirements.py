@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from assertpy import assert_that
+from packaging.version import Version
 
 if TYPE_CHECKING:
     pass
@@ -26,18 +27,19 @@ from lintro.tools.core.version_requirements import get_all_tool_versions
 @pytest.mark.parametrize(
     "version_str,expected",
     [
-        ("1.2.3", (1, 2, 3)),
-        ("0.14.0", (0, 14, 0)),
-        ("2.0", (2, 0)),
-        ("1.0.0-alpha", (1, 0, 0)),  # Should handle pre-release
+        ("1.2.3", Version("1.2.3")),
+        ("0.14.0", Version("0.14.0")),
+        ("2.0", Version("2.0")),
+        ("1.0.0-alpha", Version("1.0.0")),  # Pre-release suffix stripped
+        ("v1.5.0", Version("1.5.0")),  # Handle leading 'v'
     ],
 )
-def test_parse_version(version_str: str, expected: tuple[int, ...]) -> None:
-    """Test version string parsing.
+def test_parse_version(version_str: str, expected: Version) -> None:
+    """Test version string parsing using packaging.version.
 
     Args:
         version_str: Version string to parse.
-        expected: Expected parsed version tuple.
+        expected: Expected parsed Version object.
     """
     assert_that(parse_version(version_str)).is_equal_to(expected)
 
@@ -81,6 +83,11 @@ def test_compare_versions(version1: str, version2: str, expected: int) -> None:
         ("darglint", "1.8.1", "1.8.1"),
         ("ruff", "ruff 0.14.4", "0.14.4"),
         ("yamllint", "yamllint 1.37.1", "1.37.1"),
+        # Clippy: rustc output should extract Rust version directly
+        ("clippy", "rustc 1.92.0 (ded5c06cf 2025-12-08)", "1.92.0"),
+        # Clippy: clippy output should convert 0.1.X to 1.X.0
+        ("clippy", "clippy 0.1.92 (ded5c06cf2 2025-12-08)", "1.92.0"),
+        ("clippy", "clippy 0.1.75 (abcdef123 2024-01-01)", "1.75.0"),
     ],
 )
 def test_extract_version_from_output(

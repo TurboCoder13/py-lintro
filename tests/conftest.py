@@ -18,6 +18,7 @@ from _pytest.nodes import Item
 from click.testing import CliRunner
 
 from lintro.enums.env_bool import EnvBool
+from lintro.plugins.discovery import discover_all_tools
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 # Ensure stable docker builds under pytest-xdist by disabling BuildKit, which
@@ -34,6 +35,16 @@ def _ensure_test_docker_images_built() -> None:
     while avoiding any build work inside pytest processes.
     """
     return
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _discover_tools() -> None:
+    """Discover and register all tool plugins before tests run.
+
+    This ensures that ToolRegistry.get() works in all tests by loading
+    the builtin tool definitions and any external plugins.
+    """
+    discover_all_tools()
 
 
 def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:

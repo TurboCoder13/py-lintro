@@ -9,8 +9,7 @@ import tempfile
 import pytest
 from assertpy import assert_that
 
-from lintro.tools.implementations.tool_black import BlackTool
-from lintro.tools.implementations.tool_ruff import RuffTool
+from lintro.plugins import ToolRegistry
 
 
 @pytest.fixture(autouse=True)
@@ -52,10 +51,10 @@ def test_com812_reported_by_ruff_with_black_present() -> None:
         file_path = os.path.join(tmp, "com812_case.py")
         _write(file_path, content)
 
-        ruff = RuffTool()
+        ruff = ToolRegistry.get("ruff")
         # Ensure COM rules selected and formatting check off for lint-only
         ruff.set_options(select=["COM"], format_check=False)
-        result = ruff.check([file_path])
+        result = ruff.check([file_path], {})
         assert_that(result.success).is_false()
         # Ensure COM812 is among reported issues
         codes = [getattr(i, "code", "") for i in (result.issues or [])]
@@ -76,9 +75,9 @@ def test_e501_wrapped_by_black_then_clean_under_ruff() -> None:
         shutil.copy(src, file_path)
 
         # Verify Ruff detects formatting issue (long line) before Black
-        ruff = RuffTool()
+        ruff = ToolRegistry.get("ruff")
         ruff.set_options(select=["E"], format_check=True, line_length=88)
-        pre = ruff.check([file_path])
+        pre = ruff.check([file_path], {})
         # RuffFormatIssue does not have code; verify via issue type and count
         assert_that(
             any(
@@ -88,11 +87,11 @@ def test_e501_wrapped_by_black_then_clean_under_ruff() -> None:
         ).is_true()
 
         # Apply Black formatting (do not rely on fixed count across platforms)
-        black = BlackTool()
-        _ = black.fix([file_path])
+        black = ToolRegistry.get("black")
+        _ = black.fix([file_path], {})
 
         # After Black, Ruff should no longer report formatting issue for this case
-        post = ruff.check([file_path])
+        post = ruff.check([file_path], {})
         # After formatting, there should be no RuffFormatIssue entries
         assert_that(
             any(

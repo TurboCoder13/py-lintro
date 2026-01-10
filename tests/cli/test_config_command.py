@@ -53,202 +53,204 @@ def mock_config() -> LintroConfig:
     )
 
 
-class TestConfigCommandJsonOutput:
-    """Tests for JSON output mode of config command."""
-
-    @patch("lintro.cli_utils.commands.config.get_config")
-    @patch("lintro.cli_utils.commands.config.validate_config_consistency")
-    @patch("lintro.cli_utils.commands.config.is_tool_injectable")
-    def test_json_output_is_valid_json(
-        self,
-        mock_injectable: MagicMock,
-        mock_validate: MagicMock,
-        mock_get_config: MagicMock,
-        mock_config: LintroConfig,
-        cli_runner: CliRunner,
-    ) -> None:
-        """JSON output is valid JSON.
-
-        Args:
-            mock_injectable: Mock for is_tool_injectable function.
-            mock_validate: Mock for validate_config_consistency function.
-            mock_get_config: Mock for get_config function.
-            mock_config: Mock LintroConfig instance.
-            cli_runner: Click test runner instance.
-        """
-        mock_get_config.return_value = mock_config
-        mock_validate.return_value = []
-        mock_injectable.return_value = True
-
-        result = cli_runner.invoke(cli, ["config", "--json"])
-
-        assert_that(result.exit_code).is_equal_to(0)
-        # Should be valid JSON
-        data = json.loads(result.output)
-        assert_that(data).contains("global_settings")
-        assert_that(data).contains("tool_configs")
-
-    @patch("lintro.cli_utils.commands.config.get_config")
-    @patch("lintro.cli_utils.commands.config.validate_config_consistency")
-    @patch("lintro.cli_utils.commands.config.is_tool_injectable")
-    def test_json_output_includes_line_length(
-        self,
-        mock_injectable: MagicMock,
-        mock_validate: MagicMock,
-        mock_get_config: MagicMock,
-        mock_config: LintroConfig,
-        cli_runner: CliRunner,
-    ) -> None:
-        """JSON output includes line length in global settings.
-
-        Args:
-            mock_injectable: Mock for is_tool_injectable function.
-            mock_validate: Mock for validate_config_consistency function.
-            mock_get_config: Mock for get_config function.
-            mock_config: Mock LintroConfig instance.
-            cli_runner: Click test runner instance.
-        """
-        mock_get_config.return_value = mock_config
-        mock_validate.return_value = []
-        mock_injectable.return_value = True
-
-        result = cli_runner.invoke(cli, ["config", "--json"])
-
-        data = json.loads(result.output)
-        assert_that(data["global_settings"]["line_length"]).is_equal_to(88)
-
-    @patch("lintro.cli_utils.commands.config.get_config")
-    @patch("lintro.cli_utils.commands.config.validate_config_consistency")
-    @patch("lintro.cli_utils.commands.config.is_tool_injectable")
-    def test_json_output_includes_tool_order(
-        self,
-        mock_injectable: MagicMock,
-        mock_validate: MagicMock,
-        mock_get_config: MagicMock,
-        mock_config: LintroConfig,
-        cli_runner: CliRunner,
-    ) -> None:
-        """JSON output includes tool execution order.
-
-        Args:
-            mock_injectable: Mock for is_tool_injectable function.
-            mock_validate: Mock for validate_config_consistency function.
-            mock_get_config: Mock for get_config function.
-            mock_config: Mock LintroConfig instance.
-            cli_runner: Click test runner instance.
-        """
-        mock_get_config.return_value = mock_config
-        mock_validate.return_value = []
-        mock_injectable.return_value = True
-
-        result = cli_runner.invoke(cli, ["config", "--json"])
-
-        data = json.loads(result.output)
-        # Should have tools in priority order (prettier before ruff)
-        assert_that(data).contains("tool_execution_order")
-        tool_names = [t["tool"] for t in data["tool_execution_order"]]
-        assert_that(tool_names).contains("prettier")
-        # Verify prettier comes before ruff (lower priority = runs first)
-        assert_that(tool_names).contains("ruff")
-        assert_that(tool_names.index("prettier")).is_less_than(tool_names.index("ruff"))
-
-    @patch("lintro.cli_utils.commands.config.get_config")
-    @patch("lintro.cli_utils.commands.config.validate_config_consistency")
-    @patch("lintro.cli_utils.commands.config.is_tool_injectable")
-    def test_json_output_includes_warnings(
-        self,
-        mock_injectable: MagicMock,
-        mock_validate: MagicMock,
-        mock_get_config: MagicMock,
-        mock_config: LintroConfig,
-        cli_runner: CliRunner,
-    ) -> None:
-        """JSON output includes configuration warnings.
-
-        Args:
-            mock_injectable: Mock for is_tool_injectable function.
-            mock_validate: Mock for validate_config_consistency function.
-            mock_get_config: Mock for get_config function.
-            mock_config: Mock LintroConfig instance.
-            cli_runner: Click test runner instance.
-        """
-        mock_get_config.return_value = mock_config
-        mock_validate.return_value = ["prettier: Native config differs"]
-        mock_injectable.return_value = True
-
-        result = cli_runner.invoke(cli, ["config", "--json"])
-
-        data = json.loads(result.output)
-        assert_that(data).contains("warnings")
-        assert_that(len(data["warnings"])).is_greater_than(0)
-        assert_that(data["warnings"][0]).contains("prettier")
-
-    @patch("lintro.cli_utils.commands.config.get_config")
-    @patch("lintro.cli_utils.commands.config.validate_config_consistency")
-    @patch("lintro.cli_utils.commands.config.is_tool_injectable")
-    def test_json_output_includes_config_source(
-        self,
-        mock_injectable: MagicMock,
-        mock_validate: MagicMock,
-        mock_get_config: MagicMock,
-        mock_config: LintroConfig,
-        cli_runner: CliRunner,
-    ) -> None:
-        """JSON output includes config_source field.
-
-        Args:
-            mock_injectable: Mock for is_tool_injectable function.
-            mock_validate: Mock for validate_config_consistency function.
-            mock_get_config: Mock for get_config function.
-            mock_config: Mock LintroConfig instance.
-            cli_runner: Click test runner instance.
-        """
-        mock_get_config.return_value = mock_config
-        mock_validate.return_value = []
-        mock_injectable.return_value = True
-
-        result = cli_runner.invoke(cli, ["config", "--json"])
-
-        data = json.loads(result.output)
-        assert_that(data).contains("config_source")
-        assert_that(data["config_source"]).contains(".lintro-config.yaml")
+# =============================================================================
+# Tests for JSON output mode of config command
+# =============================================================================
 
 
-class TestConfigCommandVerbose:
-    """Tests for verbose mode of config command."""
+@patch("lintro.cli_utils.commands.config.get_config")
+@patch("lintro.cli_utils.commands.config.validate_config_consistency")
+@patch("lintro.cli_utils.commands.config.is_tool_injectable")
+def test_json_output_is_valid_json(
+    mock_injectable: MagicMock,
+    mock_validate: MagicMock,
+    mock_get_config: MagicMock,
+    mock_config: LintroConfig,
+    cli_runner: CliRunner,
+) -> None:
+    """JSON output is valid JSON.
 
-    @patch("lintro.cli_utils.commands.config.get_config")
-    @patch("lintro.cli_utils.commands.config.validate_config_consistency")
-    @patch("lintro.cli_utils.commands.config.is_tool_injectable")
-    @patch("lintro.cli_utils.commands.config._load_native_tool_config")
-    def test_verbose_shows_native_config(
-        self,
-        mock_native_config: MagicMock,
-        mock_injectable: MagicMock,
-        mock_validate: MagicMock,
-        mock_get_config: MagicMock,
-        mock_config: LintroConfig,
-        cli_runner: CliRunner,
-    ) -> None:
-        """Verbose mode shows native config column.
+    Args:
+        mock_injectable: Mock for is_tool_injectable function.
+        mock_validate: Mock for validate_config_consistency function.
+        mock_get_config: Mock for get_config function.
+        mock_config: Mock LintroConfig instance.
+        cli_runner: Click test runner instance.
+    """
+    mock_get_config.return_value = mock_config
+    mock_validate.return_value = []
+    mock_injectable.return_value = True
 
-        Args:
-            mock_native_config: Mock for _load_native_tool_config function.
-            mock_injectable: Mock for is_tool_injectable function.
-            mock_validate: Mock for validate_config_consistency function.
-            mock_get_config: Mock for get_config function.
-            mock_config: Mock LintroConfig instance.
-            cli_runner: Click test runner instance.
-        """
-        mock_get_config.return_value = mock_config
-        mock_validate.return_value = []
-        mock_injectable.return_value = False
-        mock_native_config.return_value = {"printWidth": 100}
+    result = cli_runner.invoke(cli, ["config", "--json"])
 
-        result = cli_runner.invoke(cli, ["config", "--verbose"])
+    assert_that(result.exit_code).is_equal_to(0)
+    # Should be valid JSON
+    data = json.loads(result.output)
+    assert_that(data).contains("global_settings")
+    assert_that(data).contains("tool_configs")
 
-        assert_that(result.exit_code).is_equal_to(0)
-        # Verbose should show Native Config column
-        assert_that(
-            "Native" in result.output or "native" in result.output.lower(),
-        ).is_true()
+
+@patch("lintro.cli_utils.commands.config.get_config")
+@patch("lintro.cli_utils.commands.config.validate_config_consistency")
+@patch("lintro.cli_utils.commands.config.is_tool_injectable")
+def test_json_output_includes_line_length(
+    mock_injectable: MagicMock,
+    mock_validate: MagicMock,
+    mock_get_config: MagicMock,
+    mock_config: LintroConfig,
+    cli_runner: CliRunner,
+) -> None:
+    """JSON output includes line length in global settings.
+
+    Args:
+        mock_injectable: Mock for is_tool_injectable function.
+        mock_validate: Mock for validate_config_consistency function.
+        mock_get_config: Mock for get_config function.
+        mock_config: Mock LintroConfig instance.
+        cli_runner: Click test runner instance.
+    """
+    mock_get_config.return_value = mock_config
+    mock_validate.return_value = []
+    mock_injectable.return_value = True
+
+    result = cli_runner.invoke(cli, ["config", "--json"])
+
+    data = json.loads(result.output)
+    assert_that(data["global_settings"]["line_length"]).is_equal_to(88)
+
+
+@patch("lintro.cli_utils.commands.config.get_config")
+@patch("lintro.cli_utils.commands.config.validate_config_consistency")
+@patch("lintro.cli_utils.commands.config.is_tool_injectable")
+def test_json_output_includes_tool_order(
+    mock_injectable: MagicMock,
+    mock_validate: MagicMock,
+    mock_get_config: MagicMock,
+    mock_config: LintroConfig,
+    cli_runner: CliRunner,
+) -> None:
+    """JSON output includes tool execution order.
+
+    Args:
+        mock_injectable: Mock for is_tool_injectable function.
+        mock_validate: Mock for validate_config_consistency function.
+        mock_get_config: Mock for get_config function.
+        mock_config: Mock LintroConfig instance.
+        cli_runner: Click test runner instance.
+    """
+    mock_get_config.return_value = mock_config
+    mock_validate.return_value = []
+    mock_injectable.return_value = True
+
+    result = cli_runner.invoke(cli, ["config", "--json"])
+
+    data = json.loads(result.output)
+    # Should have tools in priority order (prettier before ruff)
+    assert_that(data).contains("tool_execution_order")
+    tool_names = [t["tool"] for t in data["tool_execution_order"]]
+    assert_that(tool_names).contains("prettier")
+    # Verify prettier comes before ruff (lower priority = runs first)
+    assert_that(tool_names).contains("ruff")
+    assert_that(tool_names.index("prettier")).is_less_than(tool_names.index("ruff"))
+
+
+@patch("lintro.cli_utils.commands.config.get_config")
+@patch("lintro.cli_utils.commands.config.validate_config_consistency")
+@patch("lintro.cli_utils.commands.config.is_tool_injectable")
+def test_json_output_includes_warnings(
+    mock_injectable: MagicMock,
+    mock_validate: MagicMock,
+    mock_get_config: MagicMock,
+    mock_config: LintroConfig,
+    cli_runner: CliRunner,
+) -> None:
+    """JSON output includes configuration warnings.
+
+    Args:
+        mock_injectable: Mock for is_tool_injectable function.
+        mock_validate: Mock for validate_config_consistency function.
+        mock_get_config: Mock for get_config function.
+        mock_config: Mock LintroConfig instance.
+        cli_runner: Click test runner instance.
+    """
+    mock_get_config.return_value = mock_config
+    mock_validate.return_value = ["prettier: Native config differs"]
+    mock_injectable.return_value = True
+
+    result = cli_runner.invoke(cli, ["config", "--json"])
+
+    data = json.loads(result.output)
+    assert_that(data).contains("warnings")
+    assert_that(len(data["warnings"])).is_greater_than(0)
+    assert_that(data["warnings"][0]).contains("prettier")
+
+
+@patch("lintro.cli_utils.commands.config.get_config")
+@patch("lintro.cli_utils.commands.config.validate_config_consistency")
+@patch("lintro.cli_utils.commands.config.is_tool_injectable")
+def test_json_output_includes_config_source(
+    mock_injectable: MagicMock,
+    mock_validate: MagicMock,
+    mock_get_config: MagicMock,
+    mock_config: LintroConfig,
+    cli_runner: CliRunner,
+) -> None:
+    """JSON output includes config_source field.
+
+    Args:
+        mock_injectable: Mock for is_tool_injectable function.
+        mock_validate: Mock for validate_config_consistency function.
+        mock_get_config: Mock for get_config function.
+        mock_config: Mock LintroConfig instance.
+        cli_runner: Click test runner instance.
+    """
+    mock_get_config.return_value = mock_config
+    mock_validate.return_value = []
+    mock_injectable.return_value = True
+
+    result = cli_runner.invoke(cli, ["config", "--json"])
+
+    data = json.loads(result.output)
+    assert_that(data).contains("config_source")
+    assert_that(data["config_source"]).contains(".lintro-config.yaml")
+
+
+# =============================================================================
+# Tests for verbose mode of config command
+# =============================================================================
+
+
+@patch("lintro.cli_utils.commands.config.get_config")
+@patch("lintro.cli_utils.commands.config.validate_config_consistency")
+@patch("lintro.cli_utils.commands.config.is_tool_injectable")
+@patch("lintro.cli_utils.commands.config._load_native_tool_config")
+def test_verbose_shows_native_config(
+    mock_native_config: MagicMock,
+    mock_injectable: MagicMock,
+    mock_validate: MagicMock,
+    mock_get_config: MagicMock,
+    mock_config: LintroConfig,
+    cli_runner: CliRunner,
+) -> None:
+    """Verbose mode shows native config column.
+
+    Args:
+        mock_native_config: Mock for _load_native_tool_config function.
+        mock_injectable: Mock for is_tool_injectable function.
+        mock_validate: Mock for validate_config_consistency function.
+        mock_get_config: Mock for get_config function.
+        mock_config: Mock LintroConfig instance.
+        cli_runner: Click test runner instance.
+    """
+    mock_get_config.return_value = mock_config
+    mock_validate.return_value = []
+    mock_injectable.return_value = False
+    mock_native_config.return_value = {"printWidth": 100}
+
+    result = cli_runner.invoke(cli, ["config", "--verbose"])
+
+    assert_that(result.exit_code).is_equal_to(0)
+    # Verbose should show Native Config column
+    assert_that(
+        "Native" in result.output or "native" in result.output.lower(),
+    ).is_true()

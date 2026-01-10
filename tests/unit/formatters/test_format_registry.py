@@ -1,5 +1,6 @@
 """Unit tests for the centralized format style registry."""
 
+import pytest
 from assertpy import assert_that
 
 from lintro.enums.output_format import OutputFormat
@@ -16,164 +17,174 @@ from lintro.formatters.styles.json import JsonStyle
 from lintro.formatters.styles.markdown import MarkdownStyle
 from lintro.formatters.styles.plain import PlainStyle
 
-
-class TestGetStyle:
-    """Tests for the get_style function."""
-
-    def test_get_style_with_enum_plain(self) -> None:
-        """Test getting PlainStyle with OutputFormat enum."""
-        style = get_style(OutputFormat.PLAIN)
-        assert_that(style).is_instance_of(PlainStyle)
-
-    def test_get_style_with_enum_grid(self) -> None:
-        """Test getting GridStyle with OutputFormat enum."""
-        style = get_style(OutputFormat.GRID)
-        assert_that(style).is_instance_of(GridStyle)
-
-    def test_get_style_with_enum_markdown(self) -> None:
-        """Test getting MarkdownStyle with OutputFormat enum."""
-        style = get_style(OutputFormat.MARKDOWN)
-        assert_that(style).is_instance_of(MarkdownStyle)
-
-    def test_get_style_with_enum_html(self) -> None:
-        """Test getting HtmlStyle with OutputFormat enum."""
-        style = get_style(OutputFormat.HTML)
-        assert_that(style).is_instance_of(HtmlStyle)
-
-    def test_get_style_with_enum_json(self) -> None:
-        """Test getting JsonStyle with OutputFormat enum."""
-        style = get_style(OutputFormat.JSON)
-        assert_that(style).is_instance_of(JsonStyle)
-
-    def test_get_style_with_enum_csv(self) -> None:
-        """Test getting CsvStyle with OutputFormat enum."""
-        style = get_style(OutputFormat.CSV)
-        assert_that(style).is_instance_of(CsvStyle)
-
-    def test_get_style_with_string_plain(self) -> None:
-        """Test getting PlainStyle with string key."""
-        style = get_style("plain")
-        assert_that(style).is_instance_of(PlainStyle)
-
-    def test_get_style_with_string_grid(self) -> None:
-        """Test getting GridStyle with string key."""
-        style = get_style("grid")
-        assert_that(style).is_instance_of(GridStyle)
-
-    def test_get_style_with_string_markdown(self) -> None:
-        """Test getting MarkdownStyle with string key."""
-        style = get_style("markdown")
-        assert_that(style).is_instance_of(MarkdownStyle)
-
-    def test_get_style_with_string_html(self) -> None:
-        """Test getting HtmlStyle with string key."""
-        style = get_style("html")
-        assert_that(style).is_instance_of(HtmlStyle)
-
-    def test_get_style_with_string_json(self) -> None:
-        """Test getting JsonStyle with string key."""
-        style = get_style("json")
-        assert_that(style).is_instance_of(JsonStyle)
-
-    def test_get_style_with_string_csv(self) -> None:
-        """Test getting CsvStyle with string key."""
-        style = get_style("csv")
-        assert_that(style).is_instance_of(CsvStyle)
-
-    def test_get_style_string_case_insensitive(self) -> None:
-        """Test that string keys are case insensitive."""
-        style_lower = get_style("grid")
-        style_upper = get_style("GRID")
-        style_mixed = get_style("Grid")
-
-        assert_that(style_lower).is_instance_of(GridStyle)
-        assert_that(style_upper).is_instance_of(GridStyle)
-        assert_that(style_mixed).is_instance_of(GridStyle)
-
-    def test_get_style_unknown_string_falls_back_to_grid(self) -> None:
-        """Test that unknown format string falls back to GridStyle."""
-        style = get_style("unknown_format")
-        assert_that(style).is_instance_of(GridStyle)
-
-    def test_get_style_empty_string_falls_back_to_grid(self) -> None:
-        """Test that empty string falls back to GridStyle."""
-        style = get_style("")
-        assert_that(style).is_instance_of(GridStyle)
-
-    def test_styles_are_cached(self) -> None:
-        """Test that style instances are cached and reused."""
-        style1 = get_style(OutputFormat.GRID)
-        style2 = get_style(OutputFormat.GRID)
-
-        # Same instance should be returned (cached)
-        assert_that(style1).is_same_as(style2)
+# =============================================================================
+# Tests for get_style function
+# =============================================================================
 
 
-class TestGetFormatMap:
-    """Tests for the get_format_map function."""
+@pytest.mark.parametrize(
+    ("output_format", "expected_style"),
+    [
+        pytest.param(OutputFormat.PLAIN, PlainStyle, id="enum-plain"),
+        pytest.param(OutputFormat.GRID, GridStyle, id="enum-grid"),
+        pytest.param(OutputFormat.MARKDOWN, MarkdownStyle, id="enum-markdown"),
+        pytest.param(OutputFormat.HTML, HtmlStyle, id="enum-html"),
+        pytest.param(OutputFormat.JSON, JsonStyle, id="enum-json"),
+        pytest.param(OutputFormat.CSV, CsvStyle, id="enum-csv"),
+    ],
+)
+def test_get_style_with_enum(output_format: OutputFormat, expected_style: type) -> None:
+    """Test getting style with OutputFormat enum.
 
-    def test_returns_all_formats(self) -> None:
-        """Test that get_format_map returns all output formats."""
-        format_map = get_format_map()
-
-        assert_that(format_map).contains_key(OutputFormat.PLAIN)
-        assert_that(format_map).contains_key(OutputFormat.GRID)
-        assert_that(format_map).contains_key(OutputFormat.MARKDOWN)
-        assert_that(format_map).contains_key(OutputFormat.HTML)
-        assert_that(format_map).contains_key(OutputFormat.JSON)
-        assert_that(format_map).contains_key(OutputFormat.CSV)
-
-    def test_format_map_values_are_styles(self) -> None:
-        """Test that format_map values are the correct style types."""
-        format_map = get_format_map()
-
-        assert_that(format_map[OutputFormat.PLAIN]).is_instance_of(PlainStyle)
-        assert_that(format_map[OutputFormat.GRID]).is_instance_of(GridStyle)
-        assert_that(format_map[OutputFormat.MARKDOWN]).is_instance_of(MarkdownStyle)
-        assert_that(format_map[OutputFormat.HTML]).is_instance_of(HtmlStyle)
-        assert_that(format_map[OutputFormat.JSON]).is_instance_of(JsonStyle)
-        assert_that(format_map[OutputFormat.CSV]).is_instance_of(CsvStyle)
-
-    def test_format_map_length(self) -> None:
-        """Test that format_map contains exactly 6 formats."""
-        format_map = get_format_map()
-        assert_that(format_map).is_length(6)
+    Args:
+        output_format: The OutputFormat enum value to test.
+        expected_style: The expected style class type.
+    """
+    style = get_style(output_format)
+    assert_that(style).is_instance_of(expected_style)
 
 
-class TestGetStringFormatMap:
-    """Tests for the get_string_format_map function."""
+@pytest.mark.parametrize(
+    ("format_string", "expected_style"),
+    [
+        pytest.param("plain", PlainStyle, id="string-plain"),
+        pytest.param("grid", GridStyle, id="string-grid"),
+        pytest.param("markdown", MarkdownStyle, id="string-markdown"),
+        pytest.param("html", HtmlStyle, id="string-html"),
+        pytest.param("json", JsonStyle, id="string-json"),
+        pytest.param("csv", CsvStyle, id="string-csv"),
+    ],
+)
+def test_get_style_with_string(format_string: str, expected_style: type) -> None:
+    """Test getting style with string key.
 
-    def test_returns_string_keys(self) -> None:
-        """Test that get_string_format_map uses string keys."""
-        string_map = get_string_format_map()
-
-        assert_that(string_map).contains_key("plain")
-        assert_that(string_map).contains_key("grid")
-        assert_that(string_map).contains_key("markdown")
-        assert_that(string_map).contains_key("html")
-        assert_that(string_map).contains_key("json")
-        assert_that(string_map).contains_key("csv")
-
-    def test_string_map_values_are_styles(self) -> None:
-        """Test that string_map values are the correct style types."""
-        string_map = get_string_format_map()
-
-        assert_that(string_map["plain"]).is_instance_of(PlainStyle)
-        assert_that(string_map["grid"]).is_instance_of(GridStyle)
-        assert_that(string_map["markdown"]).is_instance_of(MarkdownStyle)
-        assert_that(string_map["html"]).is_instance_of(HtmlStyle)
-        assert_that(string_map["json"]).is_instance_of(JsonStyle)
-        assert_that(string_map["csv"]).is_instance_of(CsvStyle)
-
-    def test_string_map_length(self) -> None:
-        """Test that string_map contains exactly 6 formats."""
-        string_map = get_string_format_map()
-        assert_that(string_map).is_length(6)
+    Args:
+        format_string: The string format key to test.
+        expected_style: The expected style class type.
+    """
+    style = get_style(format_string)
+    assert_that(style).is_instance_of(expected_style)
 
 
-class TestDefaultFormat:
-    """Tests for the DEFAULT_FORMAT constant."""
+@pytest.mark.parametrize(
+    "format_string",
+    [
+        pytest.param("grid", id="lowercase"),
+        pytest.param("GRID", id="uppercase"),
+        pytest.param("Grid", id="mixed-case"),
+    ],
+)
+def test_get_style_string_case_insensitive(format_string: str) -> None:
+    """Test that string keys are case insensitive.
 
-    def test_default_format_is_grid(self) -> None:
-        """Test that the default format is GRID."""
-        assert_that(DEFAULT_FORMAT).is_equal_to(OutputFormat.GRID)
+    Args:
+        format_string: The format string with varying case to test.
+    """
+    style = get_style(format_string)
+    assert_that(style).is_instance_of(GridStyle)
+
+
+@pytest.mark.parametrize(
+    "format_string",
+    [
+        pytest.param("unknown_format", id="unknown"),
+        pytest.param("", id="empty"),
+    ],
+)
+def test_get_style_unknown_format_falls_back_to_grid(format_string: str) -> None:
+    """Test that unknown or empty format string falls back to GridStyle.
+
+    Args:
+        format_string: The unknown or empty format string to test.
+    """
+    style = get_style(format_string)
+    assert_that(style).is_instance_of(GridStyle)
+
+
+def test_get_style_caches_instances() -> None:
+    """Test that style instances are cached and reused."""
+    style1 = get_style(OutputFormat.GRID)
+    style2 = get_style(OutputFormat.GRID)
+
+    # Same instance should be returned (cached)
+    assert_that(style1).is_same_as(style2)
+
+
+# =============================================================================
+# Tests for get_format_map function
+# =============================================================================
+
+
+def test_get_format_map_returns_all_formats() -> None:
+    """Test that get_format_map returns all output formats."""
+    format_map = get_format_map()
+
+    assert_that(format_map).contains_key(OutputFormat.PLAIN)
+    assert_that(format_map).contains_key(OutputFormat.GRID)
+    assert_that(format_map).contains_key(OutputFormat.MARKDOWN)
+    assert_that(format_map).contains_key(OutputFormat.HTML)
+    assert_that(format_map).contains_key(OutputFormat.JSON)
+    assert_that(format_map).contains_key(OutputFormat.CSV)
+
+
+def test_get_format_map_values_are_correct_styles() -> None:
+    """Test that format_map values are the correct style types."""
+    format_map = get_format_map()
+
+    assert_that(format_map[OutputFormat.PLAIN]).is_instance_of(PlainStyle)
+    assert_that(format_map[OutputFormat.GRID]).is_instance_of(GridStyle)
+    assert_that(format_map[OutputFormat.MARKDOWN]).is_instance_of(MarkdownStyle)
+    assert_that(format_map[OutputFormat.HTML]).is_instance_of(HtmlStyle)
+    assert_that(format_map[OutputFormat.JSON]).is_instance_of(JsonStyle)
+    assert_that(format_map[OutputFormat.CSV]).is_instance_of(CsvStyle)
+
+
+def test_get_format_map_length() -> None:
+    """Test that format_map contains exactly 6 formats."""
+    format_map = get_format_map()
+    assert_that(format_map).is_length(6)
+
+
+# =============================================================================
+# Tests for get_string_format_map function
+# =============================================================================
+
+
+def test_get_string_format_map_returns_string_keys() -> None:
+    """Test that get_string_format_map uses string keys."""
+    string_map = get_string_format_map()
+
+    assert_that(string_map).contains_key("plain")
+    assert_that(string_map).contains_key("grid")
+    assert_that(string_map).contains_key("markdown")
+    assert_that(string_map).contains_key("html")
+    assert_that(string_map).contains_key("json")
+    assert_that(string_map).contains_key("csv")
+
+
+def test_get_string_format_map_values_are_correct_styles() -> None:
+    """Test that string_map values are the correct style types."""
+    string_map = get_string_format_map()
+
+    assert_that(string_map["plain"]).is_instance_of(PlainStyle)
+    assert_that(string_map["grid"]).is_instance_of(GridStyle)
+    assert_that(string_map["markdown"]).is_instance_of(MarkdownStyle)
+    assert_that(string_map["html"]).is_instance_of(HtmlStyle)
+    assert_that(string_map["json"]).is_instance_of(JsonStyle)
+    assert_that(string_map["csv"]).is_instance_of(CsvStyle)
+
+
+def test_get_string_format_map_length() -> None:
+    """Test that string_map contains exactly 6 formats."""
+    string_map = get_string_format_map()
+    assert_that(string_map).is_length(6)
+
+
+# =============================================================================
+# Tests for DEFAULT_FORMAT constant
+# =============================================================================
+
+
+def test_default_format_is_grid() -> None:
+    """Test that the default format is GRID."""
+    assert_that(DEFAULT_FORMAT).is_equal_to(OutputFormat.GRID)

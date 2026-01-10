@@ -9,7 +9,7 @@ import tempfile
 import pytest
 from assertpy import assert_that
 
-from lintro.tools.implementations.tool_ruff import RuffTool
+from lintro.plugins import ToolRegistry
 
 
 @pytest.fixture(autouse=True)
@@ -37,9 +37,9 @@ def test_annotations_rules_detected() -> None:
         test_file = os.path.join(tmp, "ruff_annotations_case.py")
         shutil.copy(sample, test_file)
 
-        ruff = RuffTool()
-        ruff.set_options(select=["ANN"])  # only ANN rules
-        result = ruff.check([test_file])
+        ruff = ToolRegistry.get("ruff")
+        ruff.set_options(select=["ANN"], ignore=[])  # only ANN rules, clear any ignore
+        result = ruff.check([test_file], {})
 
         assert_that(result.success).is_false()
         codes = [getattr(i, "code", "") for i in (result.issues or [])]
@@ -62,9 +62,9 @@ def test_annotations_rules_with_other_rules() -> None:
         test_file = os.path.join(tmp, "ruff_annotations_mixed.py")
         shutil.copy(sample, test_file)
 
-        ruff = RuffTool()
-        ruff.set_options(select=["ANN", "F"])  # ANN + pyflakes errors
-        result = ruff.check([test_file])
+        ruff = ToolRegistry.get("ruff")
+        ruff.set_options(select=["ANN", "F"], ignore=[])  # ANN + pyflakes, clear ignore
+        result = ruff.check([test_file], {})
 
         assert_that(result.success).is_false()
         codes = [getattr(i, "code", "") for i in (result.issues or [])]
@@ -81,18 +81,18 @@ def test_annotations_rules_fix_capability() -> None:
         test_file = os.path.join(tmp, "ruff_annotations_fix.py")
         shutil.copy(sample, test_file)
 
-        ruff = RuffTool()
-        ruff.set_options(select=["ANN"])
+        ruff = ToolRegistry.get("ruff")
+        ruff.set_options(select=["ANN"], ignore=[])
 
         # Check initial issues
-        initial_result = ruff.check([test_file])
+        initial_result = ruff.check([test_file], {})
         initial_count = len(initial_result.issues or [])
 
         # Apply fixes
-        ruff.fix([test_file])
+        ruff.fix([test_file], {})
 
         # Check remaining issues after fix
-        final_result = ruff.check([test_file])
+        final_result = ruff.check([test_file], {})
         final_count = len(final_result.issues or [])
 
         # Some issues should be fixed (though ANN rules are often not auto-fixable)

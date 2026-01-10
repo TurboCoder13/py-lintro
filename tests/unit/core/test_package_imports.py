@@ -95,11 +95,11 @@ def test_tools_import_chain() -> None:
     This simulates what happens when lintro is used as a CLI or library,
     ensuring the tool -> parser import chain works without circular deps.
     """
-    from lintro.tools.implementations.tool_actionlint import ActionlintTool
+    from lintro.plugins import ToolRegistry
 
-    tool = ActionlintTool()
+    tool = ToolRegistry.get("actionlint")
     assert_that(tool).is_not_none()
-    assert_that(tool.name).is_equal_to("actionlint")
+    assert_that(tool.definition.name).is_equal_to("actionlint")
 
 
 def test_cli_import_chain() -> None:
@@ -144,13 +144,13 @@ def test_cross_package_imports() -> None:
     dependency, where multiple packages are imported in various orders.
     """
     # Import in various orders to catch potential circular deps
-    from lintro.formatters.tools.bandit_formatter import BanditTableDescriptor
+    from lintro.formatters.formatter import format_issues
     from lintro.parsers import bandit
-    from lintro.tools.implementations.tool_bandit import BanditTool
+    from lintro.plugins import ToolRegistry
 
     assert_that(bandit).is_not_none()
-    assert_that(BanditTool).is_not_none()
-    assert_that(BanditTableDescriptor).is_not_none()
+    assert_that(ToolRegistry.get("bandit")).is_not_none()
+    assert_that(format_issues).is_not_none()
 
 
 def test_bandit_parser_direct_import() -> None:

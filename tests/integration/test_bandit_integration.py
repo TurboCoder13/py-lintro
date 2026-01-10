@@ -10,7 +10,7 @@ from assertpy import assert_that
 from loguru import logger
 
 from lintro.models.core.tool_result import ToolResult
-from lintro.tools.implementations.tool_bandit import BanditTool
+from lintro.plugins import ToolRegistry
 
 
 @pytest.mark.skipif(
@@ -19,12 +19,12 @@ from lintro.tools.implementations.tool_bandit import BanditTool
 )
 def test_bandit_detects_issues_on_sample_file() -> None:
     """Run BanditTool against a known vulnerable sample and expect findings."""
-    tool = BanditTool()
+    tool = ToolRegistry.get("bandit")
     # Clear exclude patterns to allow scanning test_samples
     tool.exclude_patterns = []
     sample = os.path.abspath("test_samples/tools/python/bandit/bandit_violations.py")
     assert_that(os.path.exists(sample)).is_true()
-    result: ToolResult = tool.check([sample])
+    result: ToolResult = tool.check([sample], {})
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.name).is_equal_to("bandit")
     assert_that(result.issues_count > 0).is_true()
@@ -37,13 +37,13 @@ def test_bandit_detects_issues_on_sample_file() -> None:
 )
 def test_bandit_no_crash_on_clean_temp_file() -> None:
     """Bandit should handle a trivial (clean) temp file gracefully."""
-    tool = BanditTool()
+    tool = ToolRegistry.get("bandit")
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write("def ok():\n    return 0\n")
         f.flush()
         path = f.name
     try:
-        result: ToolResult = tool.check([path])
+        result: ToolResult = tool.check([path], {})
         assert_that(isinstance(result, ToolResult)).is_true()
         assert_that(result.name).is_equal_to("bandit")
         assert_that(result.issues_count >= 0).is_true()

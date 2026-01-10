@@ -8,7 +8,7 @@ import pytest
 from assertpy import assert_that
 
 from lintro.enums.action import Action
-from lintro.utils.console_logger import create_logger, get_tool_emoji
+from lintro.utils.console import create_logger, get_tool_emoji
 
 
 def test_get_tool_emoji_default() -> None:

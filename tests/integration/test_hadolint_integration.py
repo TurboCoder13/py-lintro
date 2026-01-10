@@ -10,7 +10,7 @@ import pytest
 from assertpy import assert_that
 from loguru import logger
 
-from lintro.tools.implementations.tool_hadolint import HadolintTool
+from lintro.plugins import ToolRegistry
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
@@ -85,71 +85,47 @@ def test_hadolint_available() -> None:
 
 
 @pytest.mark.hadolint
-def test_hadolint_reports_violations_direct(tmp_path: Path) -> None:
-    """Hadolint CLI: Should detect and report violations in a sample file.
+@pytest.mark.parametrize(
+    "use_lintro",
+    [False, True],
+    ids=["direct_cli", "through_lintro"],
+)
+def test_hadolint_reports_violations(tmp_path: Path, use_lintro: bool) -> None:
+    """Hadolint should detect and report violations in a sample file.
+
+    Tests both direct CLI execution and lintro wrapper to ensure consistent
+    behavior for violation detection.
 
     Args:
         tmp_path: Pytest temporary directory fixture.
-    """
-    test_hadolint_available()
-    import os
-    import shutil
-    from pathlib import Path
-
-    sample_file = tmp_path / "Dockerfile"
-    shutil.copy(Path(SAMPLE_FILE), sample_file)
-    print(f"[DEBUG] CWD: {os.getcwd()}")
-    print(f"[DEBUG] Temp dir contents: {os.listdir(tmp_path)}")
-    print(
-        f"[DEBUG] Environment: HOME={os.environ.get('HOME')}, "
-        f"PATH={os.environ.get('PATH')}",
-    )
-    logger.info("[TEST] Running hadolint directly on sample file...")
-    success, output, issues = run_hadolint_directly(sample_file)
-    logger.info(f"[LOG] Hadolint found {issues} issues. Output:\n{output}")
-    assert_that(success).is_false().described_as(
-        "Hadolint should fail when violations are present.",
-    )
-    assert_that(issues).is_greater_than(0).described_as(
-        "Hadolint should report at least one issue.",
-    )
-    assert_that(any(code in output for code in ["DL", "SC"])).is_true().described_as(
-        "Hadolint output should contain error codes.",
-    )
-
-
-@pytest.mark.hadolint
-def test_hadolint_reports_violations_through_lintro(tmp_path: Path) -> None:
-    """Lintro HadolintTool: Should detect and report violations in a sample file.
-
-    Args:
-        tmp_path: Pytest temporary directory fixture.
+        use_lintro: Whether to use lintro wrapper (True) or direct CLI (False).
     """
     test_hadolint_available()
     sample_file = tmp_path / "Dockerfile"
     shutil.copy(SAMPLE_FILE, sample_file)
-    logger.info(f"SAMPLE_FILE: {sample_file}, exists: {sample_file.exists()}")
-    logger.info("[TEST] Running HadolintTool through lintro on sample file...")
-    tool = HadolintTool()
-    tool.set_options(no_color=True, format="tty")
-    result = tool.check([str(sample_file)])
-    logger.info(
-        f"[LOG] Lintro HadolintTool found {result.issues_count} issues. "
-        f"Output:\n{result.output}",
+
+    if use_lintro:
+        logger.info("[TEST] Running HadolintTool through lintro on sample file...")
+        tool = ToolRegistry.get("hadolint")
+        tool.set_options(no_color=True, format="tty")
+        result = tool.check([str(sample_file)], {})
+        success = result.success
+        issues_count = result.issues_count
+        output = result.output or ""
+        logger.info(f"[LOG] Lintro HadolintTool found {issues_count} issues.")
+    else:
+        logger.info("[TEST] Running hadolint directly on sample file...")
+        success, output, issues_count = run_hadolint_directly(sample_file)
+        logger.info(f"[LOG] Hadolint CLI found {issues_count} issues.")
+
+    assert_that(success).is_false().described_as(
+        "Hadolint should fail when violations are present.",
     )
-    assert_that(result.success).is_false().described_as(
-        "Lintro HadolintTool should fail when violations are present.",
+    assert_that(issues_count).is_greater_than(0).described_as(
+        "Hadolint should report at least one issue.",
     )
-    assert_that(result.issues_count).is_greater_than(0).described_as(
-        "Lintro HadolintTool should report at least one issue.",
-    )
-    assert_that(result.output).is_not_none()
-    if result.output is None:
-        pytest.fail("output should not be None")
-    assert_that(
-        any(code in result.output for code in ["DL", "SC"]),
-    ).is_true().described_as(
-        "Lintro HadolintTool output should contain error codes.",
+    assert_that(any(code in output for code in ["DL", "SC"])).is_true().described_as(
+        "Hadolint output should contain error codes.",
     )
 
 
@@ -172,10 +148,10 @@ def test_hadolint_output_consistency_direct_vs_lintro(tmp_path: Path) -> None:
         f"PATH={os.environ.get('PATH')}",
     )
     logger.info("[TEST] Comparing hadolint CLI and Lintro HadolintTool outputs...")
-    tool = HadolintTool()
+    tool = ToolRegistry.get("hadolint")
     tool.set_options(no_color=True, format="tty")
     direct_success, direct_output, direct_issues = run_hadolint_directly(sample_file)
-    result = tool.check([str(sample_file)])
+    result = tool.check([str(sample_file)], {})
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
@@ -203,12 +179,12 @@ def test_hadolint_with_ignore_rules(tmp_path: Path) -> None:
     sample_file = tmp_path / "Dockerfile"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info("[TEST] Testing hadolint with ignore rules...")
-    tool = HadolintTool()
+    tool = ToolRegistry.get("hadolint")
     tool.set_options(no_color=True, format="tty")
-    result_all = tool.check([str(sample_file)])
-    tool_ignore = HadolintTool()
+    result_all = tool.check([str(sample_file)], {})
+    tool_ignore = ToolRegistry.get("hadolint")
     tool_ignore.set_options(no_color=True, format="tty", ignore=["DL3007", "DL3003"])
-    result_ignore = tool_ignore.check([str(sample_file)])
+    result_ignore = tool_ignore.check([str(sample_file)], {})
     logger.info(f"[LOG] Without ignore: {result_all.issues_count} issues")
     logger.info(f"[LOG] With ignore: {result_ignore.issues_count} issues")
     assert_that(result_ignore.issues_count <= result_all.issues_count).is_true()
@@ -227,9 +203,9 @@ def test_hadolint_fix_method_not_implemented(tmp_path: Path) -> None:
     logger.info(
         "[TEST] Verifying that HadolintTool.fix() raises NotImplementedError...",
     )
-    tool = HadolintTool()
+    tool = ToolRegistry.get("hadolint")
     with pytest.raises(NotImplementedError):
-        tool.fix([str(sample_file)])
+        tool.fix([str(sample_file)], {})
     logger.info("[LOG] NotImplementedError correctly raised by HadolintTool.fix().")
 
 
@@ -244,8 +220,8 @@ def test_hadolint_empty_directory(tmp_path: Path) -> None:
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
     logger.info("[TEST] Testing hadolint with empty directory...")
-    tool = HadolintTool()
-    result = tool.check([str(empty_dir)])
+    tool = ToolRegistry.get("hadolint")
+    result = tool.check([str(empty_dir)], {})
     logger.info(f"[LOG] Empty directory result: {result.success}, {result.output}")
     assert_that(result.success).is_true().described_as(
         "Empty directory should be handled successfully.",

@@ -12,7 +12,8 @@ from loguru import logger
 
 from lintro.enums.env_bool import EnvBool
 from lintro.models.core.tool_result import ToolResult
-from lintro.tools.implementations.tool_pytest import PytestTool
+from lintro.plugins import ToolRegistry
+from lintro.plugins.base import BaseToolPlugin
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
@@ -45,29 +46,23 @@ def pytest_available() -> bool:
 
 
 @pytest.fixture(autouse=True)
-def set_lintro_test_mode_env():
+def set_lintro_test_mode_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Set LINTRO_TEST_MODE=1 for all tests in this module.
 
-    Yields:
-        None: This fixture is used for its side effect only.
+    Args:
+        monkeypatch: Pytest monkeypatch fixture for environment manipulation.
     """
-    old = os.environ.get("LINTRO_TEST_MODE")
-    os.environ["LINTRO_TEST_MODE"] = "1"
-    yield
-    if old is not None:
-        os.environ["LINTRO_TEST_MODE"] = old
-    else:
-        os.environ.pop("LINTRO_TEST_MODE", None)
+    monkeypatch.setenv("LINTRO_TEST_MODE", "1")
 
 
 @pytest.fixture
-def pytest_tool():
+def pytest_tool() -> BaseToolPlugin:
     """Create a PytestTool instance for testing.
 
     Returns:
-        PytestTool: A configured PytestTool instance.
+        BaseToolPlugin: A configured PytestTool instance.
     """
-    tool = PytestTool()
+    tool = ToolRegistry.get("pytest")
     # Remove test_samples from exclude patterns so integration tests can run on sample
     # files
     tool.exclude_patterns = [
@@ -138,40 +133,40 @@ def temp_test_dir(request: pytest.FixtureRequest) -> Generator[str]:
     not pytest_available(),
     reason="pytest not available; skip integration test.",
 )
-def test_tool_initialization(pytest_tool: PytestTool) -> None:
+def test_tool_initialization(pytest_tool: BaseToolPlugin) -> None:
     """Test that PytestTool initializes correctly.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
     """
-    assert_that(pytest_tool.name).is_equal_to("pytest")
-    assert_that(pytest_tool.can_fix is False).is_true()
-    assert_that(pytest_tool.config.file_patterns).contains("test_*.py")
+    assert_that(pytest_tool.definition.name).is_equal_to("pytest")
+    assert_that(pytest_tool.definition.can_fix is False).is_true()
+    assert_that(pytest_tool.definition.file_patterns).contains("test_*.py")
     # Note: pytest.ini may override default patterns, so *_test.py may not be
     # present if pytest.ini only specifies test_*.py
 
 
-def test_tool_priority(pytest_tool: PytestTool) -> None:
+def test_tool_priority(pytest_tool: BaseToolPlugin) -> None:
     """Test that PytestTool has correct priority.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
     """
-    assert_that(pytest_tool.config.priority).is_equal_to(90)
+    assert_that(pytest_tool.definition.priority).is_equal_to(90)
 
 
 def test_run_tests_on_clean_file(
-    pytest_tool: PytestTool,
+    pytest_tool: BaseToolPlugin,
     pytest_clean_file: str,
 ) -> None:
     """Test pytest execution on a clean test file.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
         pytest_clean_file: Path to the static clean pytest file.
     """
     # Ensure pytest only runs the specific file, not other tests in the directory
-    result = pytest_tool.check(files=[pytest_clean_file])
+    result = pytest_tool.check([pytest_clean_file], {})
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.name).is_equal_to("pytest")
     # Clean file should have passing tests - allow for some skipped tests if they
@@ -184,16 +179,16 @@ def test_run_tests_on_clean_file(
 
 
 def test_run_tests_on_failures_file(
-    pytest_tool: PytestTool,
+    pytest_tool: BaseToolPlugin,
     pytest_failures_file: str,
 ) -> None:
     """Test pytest execution on a file with intentional failures.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
         pytest_failures_file: Path to the static pytest failures file.
     """
-    result = pytest_tool.check(files=[pytest_failures_file])
+    result = pytest_tool.check([pytest_failures_file], {})
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.name).is_equal_to("pytest")
     # Failures file should have failing tests
@@ -201,14 +196,17 @@ def test_run_tests_on_failures_file(
     assert_that(result.issues_count > 0).is_true()
 
 
-def test_run_tests_on_directory(pytest_tool: PytestTool, temp_test_dir: str) -> None:
+def test_run_tests_on_directory(
+    pytest_tool: BaseToolPlugin,
+    temp_test_dir: str,
+) -> None:
     """Test pytest execution on a directory with multiple test files.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
         temp_test_dir: Temporary directory with test files.
     """
-    result = pytest_tool.check(paths=[temp_test_dir])
+    result = pytest_tool.check([temp_test_dir], {})
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.name).is_equal_to("pytest")
     # Directory contains pytest_failures.py with intentional failures
@@ -220,90 +218,81 @@ def test_run_tests_on_directory(pytest_tool: PytestTool, temp_test_dir: str) -> 
 
 
 def test_docker_tests_disabled_by_default(
-    pytest_tool: PytestTool,
+    pytest_tool: BaseToolPlugin,
     temp_test_dir: str,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that Docker tests are disabled by default.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
         temp_test_dir: Temporary directory with test files.
+        monkeypatch: Pytest monkeypatch fixture for environment manipulation.
     """
     # Ensure docker tests are disabled
-    original_env = os.environ.get("LINTRO_RUN_DOCKER_TESTS")
-    if "LINTRO_RUN_DOCKER_TESTS" in os.environ:
-        del os.environ["LINTRO_RUN_DOCKER_TESTS"]
+    monkeypatch.delenv("LINTRO_RUN_DOCKER_TESTS", raising=False)
 
-    try:
-        pytest_tool.set_options(run_docker_tests=False)
-        result = pytest_tool.check(paths=[temp_test_dir])
-        assert_that(isinstance(result, ToolResult)).is_true()
-        # Should still run, but docker tests should be skipped
-        # The output may be in JSON format, so check for both text and JSON formats
-        assert_that(result.output).is_not_none()
-        if result.output is None:
-            pytest.fail("output should not be None")
-        output_lower = result.output.lower()
-        # Check for skipped tests in either text or JSON output format
-        assert_that(
-            "docker tests disabled" in output_lower
-            or "docker tests not collected" in output_lower
-            or "not collected" in output_lower
-            or '"skipped"' in output_lower,  # JSON format
-        ).is_true()
-    finally:
-        if original_env is not None:
-            os.environ["LINTRO_RUN_DOCKER_TESTS"] = original_env
+    pytest_tool.set_options(run_docker_tests=False)
+    result = pytest_tool.check([temp_test_dir], {})
+    assert_that(isinstance(result, ToolResult)).is_true()
+    # Should still run, but docker tests should be skipped
+    # The output may be in JSON format, so check for both text and JSON formats
+    assert_that(result.output).is_not_none()
+    if result.output is None:
+        pytest.fail("output should not be None")
+    output_lower = result.output.lower()
+    # Check for skipped tests in either text or JSON output format
+    assert_that(
+        "docker tests disabled" in output_lower
+        or "docker tests not collected" in output_lower
+        or "not collected" in output_lower
+        or '"skipped"' in output_lower,  # JSON format
+    ).is_true()
 
 
 def test_docker_tests_enabled_via_option(
-    pytest_tool: PytestTool,
+    pytest_tool: BaseToolPlugin,
     temp_test_dir: str,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that Docker tests can be enabled via option.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
         temp_test_dir: Temporary directory with test files.
+        monkeypatch: Pytest monkeypatch fixture for environment manipulation.
     """
     # Ensure docker tests are enabled
-    original_env = os.environ.get("LINTRO_RUN_DOCKER_TESTS")
-    os.environ["LINTRO_RUN_DOCKER_TESTS"] = "1"
+    monkeypatch.setenv("LINTRO_RUN_DOCKER_TESTS", "1")
 
-    try:
-        pytest_tool.set_options(run_docker_tests=True)
-        result = pytest_tool.check(paths=[temp_test_dir])
-        assert_that(isinstance(result, ToolResult)).is_true()
-        # Should still run successfully
-        assert_that(result.name).is_equal_to("pytest")
-    finally:
-        if original_env is not None:
-            os.environ["LINTRO_RUN_DOCKER_TESTS"] = original_env
-        elif "LINTRO_RUN_DOCKER_TESTS" in os.environ:
-            del os.environ["LINTRO_RUN_DOCKER_TESTS"]
+    pytest_tool.set_options(run_docker_tests=True)
+    result = pytest_tool.check([temp_test_dir], {})
+    assert_that(isinstance(result, ToolResult)).is_true()
+    # Should still run successfully
+    assert_that(result.name).is_equal_to("pytest")
 
 
 @pytest.mark.slow
-def test_default_paths(pytest_tool: PytestTool) -> None:
+def test_default_paths(pytest_tool: BaseToolPlugin) -> None:
     """Test that default paths work correctly.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
     """
     # When no paths are provided, should default to "tests"
     # Use a timeout to prevent hanging if tests take too long
     pytest_tool.set_options(timeout=120)
     # Just test discovery works, not full test run
-    result = pytest_tool.check(paths=["tests/unit/test_pytest_tool.py"])
+    result = pytest_tool.check(["tests/unit/test_pytest_tool.py"], {})
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.name).is_equal_to("pytest")
 
 
-def test_set_options_valid(pytest_tool: PytestTool) -> None:
+def test_set_options_valid(pytest_tool: BaseToolPlugin) -> None:
     """Test setting valid options.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
     """
     pytest_tool.set_options(
         verbose=True,
@@ -317,47 +306,47 @@ def test_set_options_valid(pytest_tool: PytestTool) -> None:
     assert_that(pytest_tool.options["maxfail"]).is_equal_to(5)
 
 
-def test_set_options_invalid_tb(pytest_tool: PytestTool) -> None:
+def test_set_options_invalid_tb(pytest_tool: BaseToolPlugin) -> None:
     """Test setting invalid traceback format.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
     """
     with pytest.raises(ValueError, match="tb must be one of"):
         pytest_tool.set_options(tb="invalid")
 
 
-def test_set_options_invalid_maxfail(pytest_tool: PytestTool) -> None:
+def test_set_options_invalid_maxfail(pytest_tool: BaseToolPlugin) -> None:
     """Test setting invalid maxfail value.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
     """
     with pytest.raises(ValueError, match="maxfail must be a positive integer"):
         pytest_tool.set_options(maxfail="not_a_number")
 
 
-def test_fix_not_implemented(pytest_tool: PytestTool) -> None:
+def test_fix_not_implemented(pytest_tool: BaseToolPlugin) -> None:
     """Test that fix method raises NotImplementedError.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
     """
     with pytest.raises(NotImplementedError):
-        pytest_tool.fix(["test_file.py"])
+        pytest_tool.fix(["test_file.py"], {})
 
 
 def test_output_contains_summary(
-    pytest_tool: PytestTool,
+    pytest_tool: BaseToolPlugin,
     pytest_failures_file: str,
 ) -> None:
     """Test that output contains summary information.
 
     Args:
-        pytest_tool: PytestTool fixture instance.
+        pytest_tool: BaseToolPlugin fixture instance.
         pytest_failures_file: Path to the static pytest failures file.
     """
-    result = pytest_tool.check(files=[pytest_failures_file])
+    result = pytest_tool.check([pytest_failures_file], {})
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.output).is_not_empty()
     # Output should contain JSON summary or test results
@@ -381,7 +370,7 @@ def test_pytest_output_consistency_direct_vs_lintro(
     import sys
 
     logger.info("[TEST] Comparing pytest CLI and Lintro PytestTool outputs...")
-    tool = PytestTool()
+    tool = ToolRegistry.get("pytest")
     tool.set_options(verbose=True, tb="short")
 
     # In Docker, pytest is only available as python -m pytest
@@ -412,7 +401,7 @@ def test_pytest_output_consistency_direct_vs_lintro(
     )
 
     # Run via lintro
-    lintro_result = tool.check(files=[pytest_failures_file])
+    lintro_result = tool.check([pytest_failures_file], {})
 
     # Both should detect failures
     assert_that(direct_result.returncode != 0).is_true()

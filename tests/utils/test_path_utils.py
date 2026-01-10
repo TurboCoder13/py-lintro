@@ -1,5 +1,6 @@
 """Tests for the path utilities module."""
 
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -71,7 +72,11 @@ def test_normalize_file_path_for_display_already_relative() -> None:
 @pytest.mark.utils
 def test_normalize_file_path_for_display_error() -> None:
     """Test handling errors in path normalization."""
-    with patch("os.path.abspath", side_effect=ValueError("Invalid path")):
+    with patch.object(
+        Path,
+        "resolve",
+        side_effect=ValueError("Invalid path"),
+    ):
         result = normalize_file_path_for_display("invalid/path")
     assert_that(result).is_equal_to("invalid/path")
 

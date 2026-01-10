@@ -5,7 +5,7 @@ import tempfile
 
 import pytest
 
-from lintro.tools.implementations.tool_ruff import RuffTool
+from lintro.plugins import ToolRegistry
 
 
 @pytest.fixture(autouse=True)
@@ -32,7 +32,7 @@ def ruff_tool():
     Yields:
         RuffTool: A configured RuffTool instance.
     """
-    yield RuffTool()
+    yield ToolRegistry.get("ruff")
 
 
 @pytest.fixture

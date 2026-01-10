@@ -39,23 +39,19 @@ line-length = 88
 
 
 @pytest.fixture
-def lintro_test_mode() -> Generator[str]:
+def lintro_test_mode(monkeypatch: pytest.MonkeyPatch) -> str:
     """Set LINTRO_TEST_MODE=1 environment variable for tests.
 
     This disables config injection and other test-incompatible features.
 
-    Yields:
+    Args:
+        monkeypatch: Pytest monkeypatch fixture for environment manipulation.
+
+    Returns:
         str: The test mode value that was set.
     """
-    original_value = os.environ.get("LINTRO_TEST_MODE")
-    os.environ["LINTRO_TEST_MODE"] = "1"
-    try:
-        yield "1"
-    finally:
-        if original_value is not None:
-            os.environ["LINTRO_TEST_MODE"] = original_value
-        else:
-            os.environ.pop("LINTRO_TEST_MODE", None)
+    monkeypatch.setenv("LINTRO_TEST_MODE", "1")
+    return "1"
 
 
 @pytest.fixture
@@ -79,3 +75,40 @@ def skip_if_tool_unavailable() -> Callable[[str], None]:
             pytest.skip(f"Tool '{tool_name}' not available in PATH")
 
     return _skip_if_unavailable
+
+
+@pytest.fixture
+def get_plugin(lintro_test_mode: str) -> Callable[[str], object]:
+    """Factory fixture to get a fresh plugin instance by name.
+
+    This fixture ensures LINTRO_TEST_MODE is set before getting the plugin,
+    which disables config injection and other test-incompatible features.
+
+    Creates a fresh instance to avoid test pollution from shared state.
+
+    Args:
+        lintro_test_mode: The test mode fixture (dependency).
+
+    Returns:
+        callable: Function that takes a tool name and returns a fresh plugin instance.
+    """
+    from lintro.plugins.registry import ToolRegistry
+
+    def _get_plugin(name: str) -> object:
+        """Get a fresh plugin instance by name.
+
+        Args:
+            name: Name of the tool to get.
+
+        Returns:
+            A fresh plugin instance (not the cached singleton).
+        """
+        name_lower = name.lower()
+        # Get the class from the registry and create a new instance
+        # to avoid test pollution from modified options on the cached instance
+        if name_lower not in ToolRegistry._tools:
+            ToolRegistry._ensure_discovered()
+        plugin_class = ToolRegistry._tools[name_lower]
+        return plugin_class()
+
+    return _get_plugin
