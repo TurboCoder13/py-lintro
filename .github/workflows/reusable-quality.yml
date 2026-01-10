@@ -50,6 +50,9 @@ jobs:
       - name: Sync dependencies
         run: uv sync --dev --no-progress
 
+      - name: Security audit dependencies
+        run: uv run pip-audit --strict --progress-spinner=off
+
       - name: Quality gate
         id: version
         run: scripts/ci/testing/reusable-quality-entry.sh

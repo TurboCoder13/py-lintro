@@ -116,6 +116,55 @@ Example:
     path: _site
 ```
 
+## .github/actions/extract-version
+
+- Purpose: Extract version from git tag reference, stripping the 'v' prefix
+- Inputs:
+  - strip-prefix (string, default 'true'): whether to strip the 'v' prefix
+- Outputs:
+  - version: the extracted version (without 'v' prefix if strip-prefix is true)
+  - tag: the original tag name
+
+Example:
+
+```yaml
+- name: Extract version from tag
+  id: version
+  uses: ./.github/actions/extract-version
+
+- name: Use version
+  run: echo "Version is ${{ steps.version.outputs.version }}"
+```
+
+## .github/actions/harden-runner-preset
+
+- Purpose: Apply step-security/harden-runner with predefined endpoint presets
+- Note: This action requires checkout first, so it cannot be the first step. For maximum
+  security, use direct harden-runner calls as the first step.
+- Inputs:
+  - preset (string, required): endpoint preset to use
+    - python: PyPI and GitHub
+    - docker: Python + container registries
+    - codecov: Python + Codecov
+    - sigstore: Python + Sigstore services
+    - homebrew: Python + Homebrew tap
+    - full: All common endpoints
+  - policy (string, default 'block'): egress policy (block or audit)
+  - extra-endpoints (string, optional): additional endpoints to allow
+
+Example:
+
+```yaml
+- name: Checkout
+  uses: actions/checkout@v4
+
+- name: Harden Runner
+  uses: ./.github/actions/harden-runner-preset
+  with:
+    preset: python
+    extra-endpoints: 'custom.example.com:443'
+```
+
 Notes:
 
 - Workflows must remain in .github/workflows/ (no subdirectories supported).

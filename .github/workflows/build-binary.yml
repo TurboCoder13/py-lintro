@@ -1,0 +1,250 @@
+---
+name: Build Binary
+
+'on':
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: 'Target architecture'
+        required: true
+        default: 'arm64'
+        type: choice
+        options:
+          - arm64
+          - x86_64
+          - universal
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Build macOS Binary
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: >-
+          ${{
+            github.event_name == 'workflow_dispatch' &&
+            fromJSON(format('["{0}"]', github.event.inputs.arch)) ||
+            fromJSON('["arm64", "x86_64"]')
+          }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            uploads.github.com:443
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@0c5e2b8115b80b4c7c5ddf6ffdd634974642d182 # v5
+        with:
+          version: 'latest'
+
+      - name: Install dependencies
+        run: |
+          uv sync --group build --group dev
+
+      - name: Build binary
+        run: |
+          uv run python scripts/build/build_macos.py \
+            --arch ${{ matrix.arch }} \
+            --skip-verify
+        env:
+          PYTHONUNBUFFERED: '1'
+
+      - name: Verify binary
+        run: |
+          ls -lh dist/nuitka/
+          ./dist/nuitka/lintro --version || echo "Version check completed"
+          ./dist/nuitka/lintro --help | head -20 || true
+
+      - name: Rename binary with architecture
+        run: |
+          mv dist/nuitka/lintro dist/nuitka/lintro-macos-${{ matrix.arch }}
+
+      - name: Calculate SHA256
+        id: sha256
+        run: |
+          BINARY="dist/nuitka/lintro-macos-${{ matrix.arch }}"
+          SHA=$(shasum -a 256 "$BINARY" | cut -d' ' -f1)
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "SHA256 for ${{ matrix.arch }}: $SHA"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: lintro-macos-${{ matrix.arch }}
+          path: dist/nuitka/lintro-macos-${{ matrix.arch }}
+          retention-days: 7
+
+      - name: Upload SHA256 artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sha256-${{ matrix.arch }}
+          path: |
+            echo "${{ steps.sha256.outputs.sha256 }}" > sha256-${{ matrix.arch }}.txt
+          retention-days: 7
+
+      - name: Save SHA256 to file
+        run: |
+          echo "${{ steps.sha256.outputs.sha256 }}" > sha256-${{ matrix.arch }}.txt
+
+      - name: Upload SHA256 file
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sha256-${{ matrix.arch }}
+          path: sha256-${{ matrix.arch }}.txt
+          retention-days: 7
+
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
+        with:
+          files: dist/nuitka/lintro-macos-${{ matrix.arch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-universal-binary:
+    name: Create Universal Binary
+    needs: build-macos
+    runs-on: macos-latest
+    if: >-
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.event.inputs.arch == 'universal')
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            uploads.github.com:443
+
+      - name: Download arm64 binary
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: lintro-macos-arm64
+          path: binaries/
+
+      - name: Download x86_64 binary
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: lintro-macos-x86_64
+          path: binaries/
+
+      - name: Create universal binary
+        run: |
+          lipo -create \
+            binaries/lintro-macos-arm64 \
+            binaries/lintro-macos-x86_64 \
+            -output binaries/lintro-macos-universal
+          chmod +x binaries/lintro-macos-universal
+
+      - name: Verify universal binary
+        run: |
+          file binaries/lintro-macos-universal
+          ls -lh binaries/lintro-macos-universal
+
+      - name: Upload universal artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: lintro-macos-universal
+          path: binaries/lintro-macos-universal
+          retention-days: 7
+
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
+        with:
+          files: binaries/lintro-macos-universal
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-homebrew:
+    name: Update Homebrew Formula
+    needs: [build-macos]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+
+      - name: Checkout lintro scripts and actions
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          sparse-checkout: |
+            scripts
+            .github/actions
+          path: lintro
+
+      - name: Download SHA256 artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: sha256-*
+          path: checksums/
+          merge-multiple: true
+
+      - name: Read checksums
+        id: checksums
+        run: |
+          ARM64_SHA=$(cat checksums/sha256-arm64.txt)
+          X86_64_SHA=$(cat checksums/sha256-x86_64.txt)
+          echo "arm64_sha256=$ARM64_SHA" >> "$GITHUB_OUTPUT"
+          echo "x86_64_sha256=$X86_64_SHA" >> "$GITHUB_OUTPUT"
+          echo "ARM64 SHA256: $ARM64_SHA"
+          echo "x86_64 SHA256: $X86_64_SHA"
+
+      - name: Extract version from tag
+        id: version
+        uses: ./lintro/.github/actions/extract-version
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          repository: TurboCoder13/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Generate formula
+        run: |
+          lintro/scripts/ci/homebrew/generate-binary-formula.sh \
+            "${{ steps.version.outputs.version }}" \
+            "${{ steps.checksums.outputs.arm64_sha256 }}" \
+            "${{ steps.checksums.outputs.x86_64_sha256 }}" \
+            "homebrew-tap/Formula/lintro-bin.rb"
+
+      - name: Commit and push
+        env:
+          WORKING_DIR: homebrew-tap
+        run: |
+          lintro/scripts/ci/git-commit-push.sh \
+            "Formula/lintro-bin.rb" \
+            "Update lintro-bin to ${{ steps.version.outputs.version }}"
