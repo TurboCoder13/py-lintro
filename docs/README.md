@@ -28,6 +28,17 @@ configuring, and contributing to Lintro.
 - **[Contributing Guide](contributing.md)** - Development setup and contribution
   guidelines
 
+**Architecture & Vision:**
+
+- **[Architecture Overview](architecture/)** - Project vision, technical architecture,
+  and roadmap
+- **[Vision & Principles](architecture/VISION.md)** - Core principles (DRY, SOLID) and
+  success criteria
+- **[Technical Architecture](architecture/ARCHITECTURE.md)** - Design decisions and
+  component relationships
+- **[Roadmap](architecture/ROADMAP.md)** - Prioritized improvements and development
+  phases
+
 **Reference Documentation:**
 
 - **[Style Guide](style-guide.md)** - Coding standards and best practices
@@ -38,14 +49,16 @@ configuring, and contributing to Lintro.
 
 ### Most Common Tasks
 
-| Task                 | Documentation                                                             |
-| -------------------- | ------------------------------------------------------------------------- |
-| **Install Lintro**   | [Main README → Installation](../README.md#installation)                   |
-| **First time usage** | [Main README → Quick Start](../README.md#quick-start)                     |
-| **Docker setup**     | [Docker Usage → Quick Start](docker.md#quick-start)                       |
-| **GitHub Actions**   | [GitHub Integration → Quick Setup](github-integration.md#quick-setup)     |
-| **Configure tools**  | [Configuration → Tool Configuration](configuration.md#tool-configuration) |
-| **Add new tool**     | [Contributing → How to Add a Tool](contributing.md#how-to-add-a-new-tool) |
+| Task                    | Documentation                                                             |
+| ----------------------- | ------------------------------------------------------------------------- |
+| **Install Lintro**      | [Main README → Installation](../README.md#installation)                   |
+| **First time usage**    | [Main README → Quick Start](../README.md#quick-start)                     |
+| **Docker setup**        | [Docker Usage → Quick Start](docker.md#quick-start)                       |
+| **GitHub Actions**      | [GitHub Integration → Quick Setup](github-integration.md#quick-setup)     |
+| **Configure tools**     | [Configuration → Tool Configuration](configuration.md#tool-configuration) |
+| **Add new tool**        | [Contributing → How to Add a Tool](contributing.md#how-to-add-a-new-tool) |
+| **Project vision**      | [Architecture → Vision](architecture/VISION.md)                           |
+| **Development roadmap** | [Architecture → Roadmap](architecture/ROADMAP.md)                         |
 
 ### By Use Case
 

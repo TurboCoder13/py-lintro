@@ -9,6 +9,29 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased] - 2025-01-15
 
+### Breaking Changes
+
+- **Plugin Architecture Migration**: Complete migration from tool-specific classes to
+  unified plugin system
+  - **API Changes**:
+    - Old: `from lintro.tools.implementations.tool_ruff import RuffTool` and
+      `RuffTool()`
+    - New: `from lintro.plugins import ToolRegistry` and `ToolRegistry.get("ruff")`
+    - Tool instances now expose `tool.definition.name` instead of `tool.name`
+  - **Deleted Modules**:
+    - All `lintro/tools/implementations/tool_*.py` files (12 files)
+    - `lintro/tools/core/tool_base.py`
+    - `lintro/models/core/tool.py` and `tool_config.py`
+    - All `lintro/formatters/tools/*_formatter.py` files (13 files)
+    - `lintro/tools/implementations/yamllint_config.py` and `yamllint_runner.py`
+  - **New Plugin System**:
+    - Tool definitions now in `lintro/tools/definitions/*.py`
+    - Plugins use `lintro.plugins.BaseToolPlugin` base class
+    - Unified formatter at `lintro/formatters/unified.py` replaces per-tool formatters
+    - `ToolRegistry.get("tool_name")` to get tool instances
+- **Python Version**: Lowered minimum Python version from 3.13 to 3.11
+  - `pyproject.toml` updated with classifiers for 3.11, 3.12, 3.13
+
 ### Fixed
 
 - **Critical**: Fixed circular import bug in `lintro.parsers` module
