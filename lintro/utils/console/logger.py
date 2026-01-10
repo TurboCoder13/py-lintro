@@ -1,8 +1,13 @@
-"""Console logger for lintro output formatting."""
+"""Thread-safe console logger for formatted output display.
+
+This module provides the ThreadSafeConsoleLogger class for console output
+with thread-safe message tracking for parallel execution.
+"""
 
 from __future__ import annotations
 
 import re
+import threading
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -12,7 +17,7 @@ from loguru import logger
 
 from lintro.enums.action import Action, normalize_action
 from lintro.enums.tool_name import ToolName
-from lintro.utils.console_formatting import (
+from lintro.utils.console.constants import (
     BORDER_LENGTH,
     RE_CANNOT_AUTOFIX,
     RE_REMAINING_OR_CANNOT,
@@ -23,86 +28,128 @@ from lintro.utils.display_helpers import (
     print_final_status,
     print_final_status_format,
 )
-from lintro.utils.summary_tables import print_summary_table
-
-# Re-export for backwards compatibility
-__all__ = ["ConsoleLogger", "get_tool_emoji"]
 
 
-class ConsoleLogger:
-    """Logger for console output formatting and display."""
+class ThreadSafeConsoleLogger:
+    """Thread-safe logger for console output formatting and display.
+
+    This class handles both console output and message tracking with proper
+    thread synchronization for parallel tool execution.
+    """
 
     def __init__(self, run_dir: Path | None = None) -> None:
-        """Initialize the ConsoleLogger.
+        """Initialize the ThreadSafeConsoleLogger.
 
         Args:
             run_dir: Optional run directory path for output location display.
         """
         self.run_dir = run_dir
+        self._messages: list[str] = []
+        self._lock = threading.Lock()
 
     def console_output(self, text: str, color: str | None = None) -> None:
-        """Display text on console.
+        """Display text on console and track for console.log.
+
+        Thread-safe: Uses lock when appending to message list.
 
         Args:
-            text: str: Text to display.
-            color: str | None: Optional color for the text.
+            text: Text to display.
+            color: Optional color for the text.
         """
         if color:
             click.echo(click.style(text, fg=color))
         else:
             click.echo(text)
 
-    def info(self, message: str) -> None:
-        """Log an info message.
+        # Track for console.log (thread-safe)
+        with self._lock:
+            self._messages.append(text)
+
+    def info(self, message: str, **kwargs: Any) -> None:
+        """Log an info message to the console.
 
         Args:
-            message: str: Message to log.
+            message: The message to log.
+            **kwargs: Additional keyword arguments for logger formatting.
         """
         self.console_output(message)
+        logger.info(message, **kwargs)
+
+    def info_blue(self, message: str, **kwargs: Any) -> None:
+        """Log an info message to the console in blue color.
+
+        Args:
+            message: The message to log.
+            **kwargs: Additional keyword arguments for formatting.
+        """
+        self.console_output(message, color="cyan")
+        logger.info(message, **kwargs)
 
     def debug(self, message: str) -> None:
         """Log a debug message (only shown when debug logging is enabled).
 
         Args:
-            message: str: Message to log.
+            message: Message to log.
         """
         logger.debug(message)
 
-    def warning(self, message: str) -> None:
-        """Log a warning message.
+    def warning(self, message: str, **kwargs: Any) -> None:
+        """Log a warning message to the console.
 
         Args:
-            message: str: Message to log.
+            message: The message to log.
+            **kwargs: Additional keyword arguments for logger formatting.
         """
-        self.console_output(message, color="yellow")
+        warning_text = f"WARNING: {message}"
+        self.console_output(warning_text, color="yellow")
+        logger.warning(message, **kwargs)
 
-    def error(self, message: str) -> None:
-        """Log an error message.
+    def error(self, message: str, **kwargs: Any) -> None:
+        """Log an error message to the console.
 
         Args:
-            message: str: Message to log.
+            message: The message to log.
+            **kwargs: Additional keyword arguments for logger formatting.
         """
-        self.console_output(message, color="red")
+        error_text = f"ERROR: {message}"
+        click.echo(click.style(error_text, fg="red", bold=True))
+        with self._lock:
+            self._messages.append(error_text)
+        logger.error(message, **kwargs)
 
-    def success(self, message: str) -> None:
-        """Log a success message.
+    def success(self, message: str, **kwargs: Any) -> None:
+        """Log a success message to the console.
 
         Args:
-            message: str: Message to log.
+            message: The message to log.
+            **kwargs: Additional keyword arguments for logger formatting.
         """
-        self.console_output(f"✅ {message}", color="green")
+        self.console_output(text=f"✅ {message}", color="green")
+        logger.info(f"SUCCESS: {message}", **kwargs)
 
-    def save_console_log(self) -> None:
-        """Create a console log file marker in the run directory.
+    def save_console_log(self, run_dir: str | Path | None = None) -> None:
+        """Save tracked console messages to console.log.
 
-        Note: Currently creates an empty file as a placeholder.
+        Thread-safe: Uses lock when reading message list.
+
+        Args:
+            run_dir: Directory to save the console log. If None, uses self.run_dir.
         """
-        if self.run_dir:
-            try:
-                log_file = self.run_dir / "console.log"
-                log_file.touch()
-            except (OSError, PermissionError) as e:
-                logger.warning(f"Failed to create console.log: {e}")
+        target_dir = Path(run_dir) if run_dir else self.run_dir
+        if not target_dir:
+            return
+
+        console_log_path = target_dir / "console.log"
+        try:
+            with self._lock:
+                messages = list(self._messages)
+
+            with open(console_log_path, "w", encoding="utf-8") as f:
+                for message in messages:
+                    f.write(f"{message}\n")
+            logger.debug(f"Saved console output to {console_log_path}")
+        except OSError as e:
+            logger.error(f"Failed to save console log to {console_log_path}: {e}")
 
     def print_execution_summary(
         self,
@@ -112,8 +159,8 @@ class ConsoleLogger:
         """Print the execution summary for all tools.
 
         Args:
-            action: Action: The action being performed.
-            tool_results: Sequence[object]: The list of tool results.
+            action: The action being performed.
+            tool_results: The list of tool results.
         """
         # Add separation before Execution Summary
         self.console_output(text="")
@@ -131,7 +178,6 @@ class ConsoleLogger:
         # Totals line and ASCII art
         if action == Action.FIX:
             # For format commands, track both fixed and remaining issues
-            # Use standardized counts when provided by tools
             total_fixed: int = 0
             total_remaining: int = 0
             for result in tool_results:
@@ -145,18 +191,11 @@ class ConsoleLogger:
                     total_fixed += getattr(result, "issues_count", 0)
 
                 if remaining_std is not None:
-                    # Skip sentinel values when calculating totals
                     if isinstance(remaining_std, int):
                         total_remaining += remaining_std
-                    # If remaining_std is a string sentinel, don't add to total
                 elif not success:
-                    # Tool failed - treat as having remaining issues
-                    # This covers execution errors, config errors, timeouts, etc.
-                    # Use sentinel for individual display, but don't add to
-                    # numeric total
-                    pass  # Skip adding sentinel to total_remaining
+                    pass
                 else:
-                    # Fallback to parsing when standardized remaining isn't provided
                     output = getattr(result, "output", "")
                     if output and (
                         "remaining" in output.lower()
@@ -170,7 +209,6 @@ class ConsoleLogger:
                         if remaining_match:
                             total_remaining += int(remaining_match.group(1))
 
-            # Show totals line then ASCII art
             totals_line: str = (
                 f"Totals: fixed={total_fixed}, remaining={total_remaining}"
             )
@@ -181,7 +219,6 @@ class ConsoleLogger:
                 f"{total_remaining} remaining",
             )
         else:
-            # For check commands, use total issues; treat any tool failure as failure
             total_issues: int = sum(
                 (getattr(result, "issues_count", 0) for result in tool_results),
             )
@@ -191,7 +228,6 @@ class ConsoleLogger:
             total_for_art: int = (
                 total_issues if not any_failed else max(1, total_issues)
             )
-            # Show totals line then ASCII art
             totals_line_chk: str = f"Total issues: {total_issues}"
             self.console_output(text=click.style(totals_line_chk, fg="cyan"))
             self._print_ascii_art(total_issues=total_for_art)
@@ -208,10 +244,11 @@ class ConsoleLogger:
         """Print the summary table for the run.
 
         Args:
-            action: Action | str: The action being performed.
-            tool_results: Sequence[object]: The list of tool results.
+            action: The action being performed.
+            tool_results: The list of tool results.
         """
-        # Convert to Action enum if string provided
+        from lintro.utils.summary_tables import print_summary_table
+
         action_enum = normalize_action(action)
         print_summary_table(
             console_output_func=self.console_output,
@@ -227,8 +264,8 @@ class ConsoleLogger:
         """Print the final status for the run.
 
         Args:
-            action: Action | str: The action being performed.
-            total_issues: int: The total number of issues found.
+            action: The action being performed.
+            total_issues: The total number of issues found.
         """
         action_enum = normalize_action(action)
         print_final_status(
@@ -245,8 +282,8 @@ class ConsoleLogger:
         """Print the final status for format operations.
 
         Args:
-            total_fixed: int: The total number of issues fixed.
-            total_remaining: int: The total number of remaining issues.
+            total_fixed: The total number of issues fixed.
+            total_remaining: The total number of remaining issues.
         """
         print_final_status_format(
             console_output_func=self.console_output,
@@ -261,7 +298,7 @@ class ConsoleLogger:
         """Print ASCII art based on the number of issues.
 
         Args:
-            total_issues: int: The total number of issues found.
+            total_issues: The total number of issues found.
         """
         print_ascii_art(
             console_output_func=self.console_output,
@@ -285,8 +322,8 @@ class ConsoleLogger:
         """Print a formatted header for a tool execution.
 
         Args:
-            tool_name: str: Name of the tool.
-            action: str: The action being performed ("check" or "fmt").
+            tool_name: Name of the tool.
+            action: The action being performed ("check" or "fmt").
         """
         emoji: str = get_tool_emoji(tool_name)
         border: str = "=" * BORDER_LENGTH
@@ -312,38 +349,31 @@ class ConsoleLogger:
         """Print the result of a tool execution.
 
         Args:
-            tool_name: str: Name of the tool.
-            output: str: Tool output to display.
-            issues_count: int: Number of issues found.
-            raw_output_for_meta: str | None: Raw output for metadata parsing.
-            action: Action | None: Action being performed.
-            success: bool: Whether the tool execution was successful.
+            tool_name: Name of the tool.
+            output: Tool output to display.
+            issues_count: Number of issues found.
+            raw_output_for_meta: Raw output for metadata parsing.
+            action: Action being performed.
+            success: Whether the tool execution was successful.
         """
         if output:
             self.console_output(text=output)
             self.console_output(text="")
 
-        # Parse raw output for additional metadata messages
         if raw_output_for_meta and action == Action.CHECK:
             self._print_metadata_messages(raw_output_for_meta)
 
-        # Special handling for test results
         if action == Action.TEST and tool_name == ToolName.PYTEST.value:
             self._print_pytest_results(output, success)
 
     def _print_metadata_messages(self, raw_output: str) -> None:
         """Print metadata messages parsed from raw tool output.
 
-        Uses consistent message format with standardized prefixes for all output.
-
         Args:
-            raw_output: str: Raw tool output to parse for metadata.
+            raw_output: Raw tool output to parse for metadata.
         """
-        # Pattern-to-message mapping for consistent formatting
-        # Order matters: more specific patterns should be checked first
         output_lower = raw_output.lower()
 
-        # Look for fixable issues with count
         fixable_match = re.search(r"(\d+)\s*fixable", output_lower)
         if fixable_match:
             fixable_count = int(fixable_match.group(1))
@@ -355,30 +385,26 @@ class ConsoleLogger:
                 self.console_output(text="Info: No issues found")
             return
 
-        # Check for non-fixable issues
         if "cannot be auto-fixed" in output_lower:
             self.console_output(text="Info: Found issues that cannot be auto-fixed")
             return
 
-        # Check for formatting suggestions
         if "would reformat" in output_lower:
             self.console_output(text="Info: Files would be reformatted")
             return
 
-        # Check for fixed issues
         if "fixed" in output_lower:
             self.console_output(text="Info: Issues were fixed")
             return
 
-        # Default: no specific patterns found
         self.console_output(text="Info: No issues found")
 
     def _print_pytest_results(self, output: str, success: bool) -> None:
         """Print formatted pytest results.
 
         Args:
-            output: str: Pytest output.
-            success: bool: Whether tests passed.
+            output: Pytest output.
+            success: Whether tests passed.
         """
         self.console_output(text="")
         self.console_output(text="📋 Test Results", color="cyan")
@@ -397,7 +423,6 @@ class ConsoleLogger:
         self,
     ) -> None:
         """Print a distinct header separating the post-checks phase."""
-        # Use a heavy unicode border and magenta coloring to stand out
         border_char: str = "━"
         border: str = border_char * BORDER_LENGTH
         title_styled: str = click.style(
@@ -416,20 +441,3 @@ class ConsoleLogger:
         self.console_output(text=subtitle_styled)
         self.console_output(text=border_styled)
         self.console_output(text="")
-
-
-def create_logger(run_dir: Path | None = None, **kwargs: Any) -> ConsoleLogger:
-    """Create a new ConsoleLogger instance.
-
-    Args:
-        run_dir: Path | None: Optional run directory path for output location display.
-        **kwargs: Additional arguments (ignored for backward compatibility).
-
-    Returns:
-        ConsoleLogger: A new instance of ConsoleLogger.
-    """
-    return ConsoleLogger(run_dir=run_dir)
-
-
-# Backward compatibility alias
-SimpleLintroLogger = ConsoleLogger

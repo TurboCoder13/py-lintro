@@ -1,13 +1,18 @@
-"""Console formatting utilities for Lintro.
+"""Console constants and helper functions.
 
-This module contains formatting helpers extracted from console_logger.py
-to improve maintainability and reduce file size.
+This module contains shared constants and utility functions used by
+console output classes.
 """
+
+from __future__ import annotations
 
 import re
 from typing import Any
 
-# Constants
+# =============================================================================
+# Emoji and Formatting Constants
+# =============================================================================
+
 TOOL_EMOJIS: dict[str, str] = {
     "ruff": "🦀",
     "prettier": "💅",
@@ -26,15 +31,22 @@ BORDER_LENGTH: int = 70
 INFO_BORDER_LENGTH: int = 70
 DEFAULT_REMAINING_COUNT: str = "?"
 
+# =============================================================================
+# Regex Patterns
+# =============================================================================
+
 # Regex patterns used to parse tool outputs for remaining issue counts
-# Centralized to avoid repeated long literals and to keep matching logic
-# consistent across the module.
 RE_CANNOT_AUTOFIX: re.Pattern[str] = re.compile(
     r"Found\s+(\d+)\s+issue(?:s)?\s+that\s+cannot\s+be\s+auto-fixed",
 )
 RE_REMAINING_OR_CANNOT: re.Pattern[str] = re.compile(
     r"(\d+)\s+(?:issue\(s\)\s+)?(?:that\s+cannot\s+be\s+auto-fixed|remaining)",
 )
+
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
 
 
 def get_tool_emoji(tool_name: str) -> str:

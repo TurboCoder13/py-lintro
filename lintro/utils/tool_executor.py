@@ -2,161 +2,48 @@
 
 Clean, straightforward approach using Loguru with rich formatting:
 1. OutputManager - handles structured output files only
-2. SimpleLintroLogger - handles console display AND logging with Loguru + rich
-   formatting
+2. ThreadSafeConsoleLogger - handles console display with thread-safe message
+   tracking for parallel execution
 3. No tee, no stream redirection, no complex state management
+
+Supports parallel execution when enabled via configuration.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from lintro.enums.action import Action, normalize_action
-from lintro.enums.tool_name import ToolName
-from lintro.enums.tools_value import ToolsValue
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools import tool_manager
-from lintro.tools.tool_enum import ToolEnum
 from lintro.utils.config import load_post_checks_config
-from lintro.utils.output_manager import OutputManager
+from lintro.utils.execution.exit_codes import (
+    DEFAULT_EXIT_CODE_FAILURE,
+    DEFAULT_EXIT_CODE_SUCCESS,
+    DEFAULT_REMAINING_COUNT,
+    aggregate_tool_results,
+    determine_exit_code,
+)
+from lintro.utils.execution.parallel_executor import run_tools_parallel
+from lintro.utils.execution.tool_configuration import (
+    configure_tool_for_execution,
+    get_tool_display_name,
+    get_tools_to_run,
+)
+from lintro.utils.output import OutputManager
 from lintro.utils.post_checks import execute_post_checks
 from lintro.utils.unified_config import UnifiedConfigManager
 
-# Constants
-DEFAULT_EXIT_CODE_SUCCESS: int = 0
-DEFAULT_EXIT_CODE_FAILURE: int = 1
-DEFAULT_REMAINING_COUNT: str = "?"
+if TYPE_CHECKING:
+    pass
 
-# Mapping from ToolEnum to canonical display names
-_TOOL_DISPLAY_NAMES: dict[ToolEnum, str] = {
-    ToolEnum.BLACK: "black",
-    ToolEnum.DARGLINT: "darglint",
-    ToolEnum.HADOLINT: "hadolint",
-    ToolEnum.PRETTIER: "prettier",
-    ToolEnum.PYTEST: "pytest",
-    ToolEnum.RUFF: "ruff",
-    ToolEnum.YAMLLINT: "yamllint",
-    ToolEnum.ACTIONLINT: "actionlint",
-    ToolEnum.BANDIT: "bandit",
-}
-
-
-def _get_tool_display_name(tool_enum: ToolEnum) -> str:
-    """Get the canonical display name for a tool enum.
-
-    This function provides a consistent mapping from ToolEnum to user-friendly
-    display names. It first attempts to get the tool instance to use its canonical
-    name, but falls back to a predefined mapping if the tool cannot be instantiated.
-
-    Args:
-        tool_enum: The ToolEnum instance.
-
-    Returns:
-        str: The canonical display name for the tool.
-    """
-    # Try to get the tool instance to use its canonical name
-    try:
-        tool = tool_manager.get_tool(tool_enum)
-        return str(tool.name)
-    except Exception:
-        # Fall back to predefined mapping if tool cannot be instantiated
-        return str(_TOOL_DISPLAY_NAMES.get(tool_enum, tool_enum.name.lower()))
-
-
-def _get_tool_lookup_keys(tool_enum: ToolEnum, tool_name: str) -> set[str]:
-    """Get all possible lookup keys for a tool in tool_option_dict.
-
-    This includes the tool's display name and enum name (both lowercased).
-
-    Args:
-        tool_enum: The ToolEnum instance.
-        tool_name: The canonical display name for the tool.
-
-    Returns:
-        set[str]: Set of lowercase keys to check in tool_option_dict.
-    """
-    return {tool_name.lower(), tool_enum.name.lower()}
-
-
-def _get_tools_to_run(
-    tools: str | ToolsValue | None,
-    action: str | Action,
-) -> list[ToolEnum]:
-    """Get the list of tools to run based on the tools string and action.
-
-    Args:
-        tools: str | None: Comma-separated tool names, "all", or None.
-        action: str: "check", "fmt", or "test".
-
-    Returns:
-        list[ToolEnum]: List of ToolEnum instances to run.
-
-    Raises:
-        ValueError: If unknown tool names are provided.
-    """
-    action = normalize_action(action)
-    if action == Action.TEST:
-        # Test action only supports pytest
-        if tools and tools.lower() != "pytest":
-            raise ValueError(
-                (
-                    "Only 'pytest' is supported for the test action; "
-                    "run 'lintro test' without --tools or "
-                    "use '--tools pytest'"
-                ),
-            )
-        try:
-            return [ToolEnum["PYTEST"]]
-        except KeyError:
-            raise ValueError(
-                "pytest tool is not available",
-            ) from None
-
-    if (
-        tools is None
-        or tools == ToolsValue.ALL
-        or (isinstance(tools, str) and tools.lower() == "all")
-    ):
-        # Get all available tools for the action
-        if action == Action.FIX:
-            available_tools = tool_manager.get_fix_tools()
-        else:  # check
-            available_tools = tool_manager.get_check_tools()
-        # Filter out pytest for check/fmt actions
-        return [t for t in available_tools if t.name.upper() != "PYTEST"]
-
-    # Parse specific tools
-    tool_names: list[str] = [name.strip().upper() for name in tools.split(",")]
-    tools_to_run: list[ToolEnum] = []
-
-    for name in tool_names:
-        # Reject pytest for check/fmt actions
-        if name == ToolName.PYTEST.value.upper():
-            raise ValueError(
-                "pytest tool is not available for check/fmt actions. "
-                "Use 'lintro test' instead.",
-            )
-        try:
-            tool_enum = ToolEnum[name]
-            # Verify the tool supports the requested action
-            if action == Action.FIX:
-                tool_instance = tool_manager.get_tool(tool_enum)
-                if not tool_instance.can_fix:
-                    raise ValueError(
-                        f"Tool '{name.lower()}' does not support formatting",
-                    )
-            tools_to_run.append(tool_enum)
-        except KeyError:
-            available_names: list[str] = [
-                e.name.lower() for e in ToolEnum if e.name.upper() != "PYTEST"
-            ]
-            raise ValueError(
-                f"Unknown tool '{name.lower()}'. Available tools: {available_names}",
-            ) from None
-
-    return tools_to_run
-
-
-# Tool options parsing moved to tool_options.py
-
-
-# Output writing functionality moved to output_writers.py
+# Re-export constants for backwards compatibility
+__all__ = [
+    "DEFAULT_EXIT_CODE_FAILURE",
+    "DEFAULT_EXIT_CODE_SUCCESS",
+    "DEFAULT_REMAINING_COUNT",
+    "run_lint_tools_simple",
+]
 
 
 def run_lint_tools_simple(
@@ -172,30 +59,38 @@ def run_lint_tools_simple(
     verbose: bool,
     raw_output: bool = False,
     output_file: str | None = None,
+    incremental: bool = False,
+    debug: bool = False,
 ) -> int:
     """Simplified runner using Loguru-based logging with rich formatting.
 
     Clean approach with beautiful output:
-    - SimpleLintroLogger handles ALL console output and file logging with rich
-      formatting
+    - ThreadSafeConsoleLogger handles ALL console output with thread-safe
+      message tracking
     - OutputManager handles structured output files
     - No tee, no complex state management
 
     Args:
-        action: str | Action: Action to perform ("check", "fmt", "test").
-        paths: list[str]: List of paths to check.
-        tools: str | None: Comma-separated list of tools to run.
-        tool_options: str | None: Additional tool options.
-        exclude: str | None: Patterns to exclude.
-        include_venv: bool: Whether to include virtual environments.
-        group_by: str: How to group results.
-        output_format: str: Output format for results.
-        verbose: bool: Whether to enable verbose output.
-        raw_output: bool: Whether to show raw tool output instead of formatted output.
-        output_file: str | None: Optional file path to write results to.
+        action: Action to perform ("check", "fmt", "test").
+        paths: List of paths to check.
+        tools: Comma-separated list of tools to run.
+        tool_options: Additional tool options.
+        exclude: Patterns to exclude.
+        include_venv: Whether to include virtual environments.
+        group_by: How to group results.
+        output_format: Output format for results.
+        verbose: Whether to enable verbose output.
+        raw_output: Whether to show raw tool output instead of formatted output.
+        output_file: Optional file path to write results to.
+        incremental: Whether to only check files changed since last run.
+        debug: Whether to show DEBUG messages on console.
 
     Returns:
-        int: Exit code (0 for success, 1 for failures).
+        Exit code (0 for success, 1 for failures).
+
+    Raises:
+        TypeError: If a programming error occurs during tool execution.
+        AttributeError: If a programming error occurs during tool execution.
     """
     # Normalize action to enum
     action = normalize_action(action)
@@ -204,18 +99,18 @@ def run_lint_tools_simple(
     output_manager = OutputManager()
 
     # Initialize Loguru logging (must happen before any logger.debug() calls)
-    from lintro.utils.logger_setup import setup_loguru
+    from lintro.utils.logger_setup import setup_execution_logging
 
-    setup_loguru(output_manager.run_dir)
+    setup_execution_logging(output_manager.run_dir, debug=debug)
 
     # Create simplified logger with rich formatting
-    from lintro.utils.console_logger import create_logger
+    from lintro.utils.console import create_logger
 
     logger = create_logger(run_dir=output_manager.run_dir)
 
     # Get tools to run
     try:
-        tools_to_run = _get_tools_to_run(tools, action)
+        tools_to_run = get_tools_to_run(tools, action)
     except ValueError as e:
         logger.console_output(f"Error: {e}")
         return 1
@@ -235,9 +130,7 @@ def run_lint_tools_simple(
 
     # Filter out post-check tools from main phase
     if post_tools_early:
-        tools_to_run = [
-            t for t in tools_to_run if t.name.lower() not in post_tools_early
-        ]
+        tools_to_run = [t for t in tools_to_run if t.lower() not in post_tools_early]
 
     # If early post-check filtering removed all tools from the main phase,
     # that's okay - post-checks will still run. Just log the situation.
@@ -254,8 +147,15 @@ def run_lint_tools_simple(
     # Print main header with output directory information
     logger.print_lintro_header()
 
+    # Show incremental mode message
+    if incremental:
+        logger.console_output(
+            text="Incremental mode: only checking files changed since last run",
+            color="cyan",
+        )
+
     # Execute tools and collect results
-    all_results = []
+    all_results: list[ToolResult] = []
     exit_code = 0
     total_issues = 0
     total_fixed = 0
@@ -266,106 +166,75 @@ def run_lint_tools_simple(
 
     tool_option_dict = parse_tool_options(tool_options)
 
-    # Create UnifiedConfigManager once before the loop to avoid repeated initialization
+    # Create UnifiedConfigManager once before the loop
     config_manager = UnifiedConfigManager()
 
-    # Define success_func once before the loop to avoid repeated function creation
+    # Check if parallel execution is enabled
+    from lintro.config.config_loader import get_config
+
+    lintro_config = get_config()
+    use_parallel = lintro_config.execution.parallel and len(tools_to_run) > 1
+
+    # Define success_func once before the loop
     def success_func(message: str) -> None:
         logger.console_output(text=message, color="green")
 
-    for tool_enum in tools_to_run:
-        try:
-            tool = tool_manager.get_tool(tool_enum)
-            tool_name = _get_tool_display_name(tool_enum)
+    # Use parallel execution if enabled
+    if use_parallel:
+        logger.console_output(
+            text=f"Running {len(tools_to_run)} tools in parallel "
+            f"(max {lintro_config.execution.max_workers} workers)",
+        )
+        all_results = run_tools_parallel(
+            tools_to_run=tools_to_run,
+            paths=paths,
+            action=action,
+            config_manager=config_manager,
+            tool_option_dict=tool_option_dict,
+            exclude=exclude,
+            include_venv=include_venv,
+            post_tools=post_tools_early,
+            max_workers=lintro_config.execution.max_workers,
+            incremental=incremental,
+        )
 
-            # Print tool header before execution
-            logger.print_tool_header(tool_name=tool_name, action=action)
+        # Calculate totals from parallel results using helper
+        total_issues, total_fixed, total_remaining = aggregate_tool_results(
+            all_results,
+            action,
+        )
+        # Check for failures in parallel results
+        if any(not result.success for result in all_results):
+            exit_code = 1
 
-            # Configure tool options using UnifiedConfigManager
-            # Priority: CLI --tool-options > [tool.lintro.<tool>] > global settings
-            # Build CLI overrides from --tool-options
-            cli_overrides: dict[str, object] = {}
-            lookup_keys = _get_tool_lookup_keys(tool_enum, tool_name)
-            for option_key in lookup_keys:
-                overrides = tool_option_dict.get(option_key)
-                if overrides:
-                    cli_overrides.update(overrides)
+        # Display results for parallel execution
+        for result in all_results:
+            # Print tool header like sequential mode does
+            display_name = get_tool_display_name(result.name)
+            logger.print_tool_header(tool_name=display_name, action=action)
 
-            # Apply unified config with CLI overrides
-            config_manager.apply_config_to_tool(
-                tool=tool,
-                cli_overrides=cli_overrides if cli_overrides else None,
-            )
-
-            # Set common options
-            if exclude:
-                exclude_patterns: list[str] = [
-                    pattern.strip() for pattern in exclude.split(",")
-                ]
-                tool.set_options(exclude_patterns=exclude_patterns)
-
-            tool.set_options(include_venv=include_venv)
-
-            # If Black is configured as a post-check, avoid double formatting by
-            # disabling Ruff's formatting stages unless explicitly overridden via
-            # CLI or config. This keeps Ruff focused on lint fixes while Black
-            # handles formatting.
-            if "black" in post_tools_early and tool_name == ToolName.RUFF.value:
-                # Get tool config from manager to check for explicit overrides
-                tool_config = config_manager.get_tool_config(tool_name)
-                lintro_tool_cfg = tool_config.lintro_tool_config or {}
-                if action == Action.FIX:
-                    if (
-                        "format" not in cli_overrides
-                        and "format" not in lintro_tool_cfg
-                    ):
-                        tool.set_options(format=False)
-                else:  # check
-                    if (
-                        "format_check" not in cli_overrides
-                        and "format_check" not in lintro_tool_cfg
-                    ):
-                        tool.set_options(format_check=False)
-
-            # Execute the tool
-            result = tool.fix(paths) if action == Action.FIX else tool.check(paths)
-
-            all_results.append(result)
-
-            # Update totals
-            total_issues += getattr(result, "issues_count", 0)
-            if action == Action.FIX:
-                fixed_count = getattr(result, "fixed_issues_count", None)
-                total_fixed += fixed_count if fixed_count is not None else 0
-                remaining_count = getattr(result, "remaining_issues_count", None)
-                total_remaining += remaining_count if remaining_count is not None else 0
-
-            # Use formatted_output if available, otherwise format from issues or output
             display_output: str | None = None
             if result.formatted_output:
                 display_output = result.formatted_output
-            elif result.issues:
-                # Format issues using the tool formatter
-                from lintro.utils.output_formatting import format_tool_output
+            elif result.issues or result.output:
+                from lintro.utils.output import format_tool_output
 
                 display_output = format_tool_output(
-                    tool_name=tool_name,
+                    tool_name=result.name,
                     output=result.output or "",
                     output_format=output_format,
-                    issues=list(result.issues),
+                    issues=list(result.issues) if result.issues else None,
                 )
-            elif result.output and raw_output:
-                # Use raw output when raw_output flag is True
+            if result.output and raw_output:
                 display_output = result.output
 
-            # Display the formatted output if available
             if display_output and display_output.strip():
                 from lintro.utils.result_formatters import print_tool_result
 
                 print_tool_result(
                     console_output_func=logger.console_output,
                     success_func=success_func,
-                    tool_name=tool_name,
+                    tool_name=result.name,
                     output=display_output,
                     issues_count=result.issues_count,
                     raw_output_for_meta=result.output,
@@ -373,31 +242,120 @@ def run_lint_tools_simple(
                     success=result.success,
                 )
             elif result.issues_count == 0 and result.success:
-                # Show success message when no issues found and no output
-                logger.console_output(text="Processing files")
-                logger.console_output(text="✓ No issues found.", color="green")
-                logger.console_output(text="")
+                logger.console_output(
+                    text="✓ No issues found.",
+                    color="green",
+                )
 
-            # Set exit code based on success
-            if not result.success:
+    else:
+        # Sequential execution (original behavior)
+        for tool_name in tools_to_run:
+            try:
+                tool = tool_manager.get_tool(tool_name)
+                display_name = get_tool_display_name(tool_name)
+
+                # Print tool header before execution
+                logger.print_tool_header(tool_name=display_name, action=action)
+
+                # Configure tool using shared helper
+                configure_tool_for_execution(
+                    tool=tool,
+                    tool_name=tool_name,
+                    config_manager=config_manager,
+                    tool_option_dict=tool_option_dict,
+                    exclude=exclude,
+                    include_venv=include_venv,
+                    incremental=incremental,
+                    action=action,
+                    post_tools=post_tools_early,
+                )
+
+                # Execute the tool
+                result = (
+                    tool.fix(paths, {})
+                    if action == Action.FIX
+                    else tool.check(paths, {})
+                )
+
+                all_results.append(result)
+
+                # Update totals
+                total_issues += getattr(result, "issues_count", 0)
+                if action == Action.FIX:
+                    fixed_count = getattr(result, "fixed_issues_count", None)
+                    total_fixed += fixed_count if fixed_count is not None else 0
+                    remaining_count = getattr(result, "remaining_issues_count", None)
+                    total_remaining += (
+                        remaining_count if remaining_count is not None else 0
+                    )
+
+                # Use formatted_output if available, otherwise format from issues
+                display_output = None
+                if result.formatted_output:
+                    display_output = result.formatted_output
+                elif result.issues or result.output:
+                    # Format issues using the tool formatter
+                    # Also format when there's output (e.g., coverage) even with no
+                    # issues
+                    from lintro.utils.output import format_tool_output
+
+                    display_output = format_tool_output(
+                        tool_name=tool_name,
+                        output=result.output or "",
+                        output_format=output_format,
+                        issues=list(result.issues) if result.issues else None,
+                    )
+                if result.output and raw_output:
+                    # Use raw output when raw_output flag is True (overrides formatted)
+                    display_output = result.output
+
+                # Display the formatted output if available
+                if display_output and display_output.strip():
+                    from lintro.utils.result_formatters import print_tool_result
+
+                    print_tool_result(
+                        console_output_func=logger.console_output,
+                        success_func=success_func,
+                        tool_name=tool_name,
+                        output=display_output,
+                        issues_count=result.issues_count,
+                        raw_output_for_meta=result.output,
+                        action=action,
+                        success=result.success,
+                    )
+                elif result.issues_count == 0 and result.success:
+                    # Show success message when no issues found and no output
+                    logger.console_output(text="Processing files")
+                    logger.console_output(text="✓ No issues found.", color="green")
+                    logger.console_output(text="")
+
+                # Set exit code based on success
+                if not result.success:
+                    exit_code = 1
+
+            except (TypeError, AttributeError):
+                # Programming errors should be re-raised for debugging
+                from loguru import logger as loguru_logger
+
+                loguru_logger.exception(f"Programming error running {tool_name}")
+                raise
+            except (OSError, ValueError, RuntimeError) as e:
+                from loguru import logger as loguru_logger
+
+                # Log full exception with traceback to debug.log via loguru
+                loguru_logger.exception(f"Error running {tool_name}")
+                # Show user-friendly error message on console
+                logger.console_output(f"Error running {tool_name}: {e}")
+
+                # Create a failed result for this tool
+                failed_result = ToolResult(
+                    name=tool_name,
+                    success=False,
+                    output=f"Failed to initialize tool: {e}",
+                    issues_count=0,
+                )
+                all_results.append(failed_result)
                 exit_code = 1
-
-        except Exception as e:
-            import traceback
-
-            tool_name = tool_enum.name.lower()
-            logger.console_output(f"Error running {tool_name}: {e}")
-            logger.console_output(f"Traceback: {traceback.format_exc()}")
-
-            # Create a failed result for this tool
-            failed_result = ToolResult(
-                name=tool_name,
-                success=False,
-                output=f"Failed to initialize tool: {e}",
-                issues_count=0,
-            )
-            all_results.append(failed_result)
-            exit_code = 1
 
     # Execute post-checks if configured
     total_issues, total_fixed, total_remaining = execute_post_checks(
@@ -439,25 +397,15 @@ def run_lint_tools_simple(
         # Write report files (markdown, html, csv)
         try:
             output_manager.write_reports_from_results(all_results)
-        except Exception as e:
+        except (OSError, ValueError, TypeError) as e:
             logger.console_output(f"Warning: Failed to write reports: {e}")
             # Continue execution - report writing failures should not stop the tool
 
-    # Determine final exit code
-    # Check for tool failures first (applies to all actions)
-    if any(not getattr(r, "success", True) for r in all_results):
-        exit_code = 1
-
-    # Then check for issues based on action
-    if action == Action.FIX:
-        if total_remaining > 0:
-            exit_code = 1
-    else:  # check
-        if total_issues > 0:
-            exit_code = 1
-
-    # If all tools were filtered to post-checks but nothing ran, return failure
-    if main_phase_empty_due_to_filter and not all_results:
-        exit_code = 1
-
-    return exit_code
+    # Determine final exit code using helper
+    return determine_exit_code(
+        action=action,
+        all_results=all_results,
+        total_issues=total_issues,
+        total_remaining=total_remaining,
+        main_phase_empty_due_to_filter=main_phase_empty_due_to_filter,
+    )

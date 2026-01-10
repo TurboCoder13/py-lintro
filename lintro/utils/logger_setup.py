@@ -1,6 +1,6 @@
 """Loguru logger configuration for Lintro.
 
-Handles setup of logging handlers and configuration.
+Provides centralized logging setup for both CLI and tool execution contexts.
 """
 
 import sys
@@ -9,25 +9,40 @@ from pathlib import Path
 from loguru import logger
 
 
-def setup_loguru(run_dir: Path) -> None:
-    """Configure Loguru with clean, simple handlers.
+def setup_cli_logging() -> None:
+    """Configure minimal logging for CLI commands (help, version, etc.).
 
-    Args:
-        run_dir: Directory for log files.
+    Only shows WARNING and ERROR level messages on console.
+    No file logging - this is for lightweight CLI operations.
     """
-    # Remove default handler
     logger.remove()
-
-    # Add console handler (for immediate display)
-    # Only capture WARNING and ERROR for console
     logger.add(
         sys.stderr,
-        level="WARNING",  # Only show warnings and errors
-        format="{message}",  # Simple format without timestamps/log levels
+        level="WARNING",
+        format="<level>{message}</level>",
         colorize=True,
     )
 
-    # Add debug.log handler (captures everything)
+
+def setup_execution_logging(run_dir: Path, debug: bool = False) -> None:
+    """Configure full logging for tool execution.
+
+    Args:
+        run_dir: Directory for log files.
+        debug: If True, show DEBUG messages on console. Otherwise only WARNING+.
+    """
+    logger.remove()
+
+    # Console handler - DEBUG if flag set, else WARNING only
+    console_level = "DEBUG" if debug else "WARNING"
+    logger.add(
+        sys.stderr,
+        level=console_level,
+        format="{message}",
+        colorize=True,
+    )
+
+    # File handler with rotation (captures everything)
     run_dir.mkdir(parents=True, exist_ok=True)
     debug_log_path: Path = run_dir / "debug.log"
     logger.add(
@@ -37,5 +52,6 @@ def setup_loguru(run_dir: Path) -> None:
             "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | "
             "{name}:{function}:{line} | {message}"
         ),
-        rotation=None,  # Append to same debug.log file across runs
+        rotation="100 MB",
+        retention=5,
     )

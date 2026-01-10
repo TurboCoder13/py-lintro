@@ -1,48 +1,31 @@
-"""Output manager for Lintro auto-generated results.
+"""Output manager for timestamped run directories.
 
-Handles creation of timestamped output directories and writing all required formats.
+This module provides the OutputManager class for managing output
+directories and result files for Lintro runs.
 """
+
+from __future__ import annotations
 
 import csv
 import datetime
-import html
+import json
 import os
 import shutil
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from lintro.models.core.tool_result import ToolResult
+from lintro.utils.output.constants import (
+    DEFAULT_BASE_DIR,
+    DEFAULT_KEEP_LAST,
+    DEFAULT_RUN_PREFIX,
+    DEFAULT_TEMP_PREFIX,
+    DEFAULT_TIMESTAMP_FORMAT,
+)
+from lintro.utils.output.helpers import html_escape, markdown_escape
 
-# Constants
-DEFAULT_BASE_DIR: str = ".lintro"
-DEFAULT_KEEP_LAST: int = 10
-DEFAULT_TIMESTAMP_FORMAT: str = "%Y%m%d-%H%M%S"
-DEFAULT_RUN_PREFIX: str = "run-"
-DEFAULT_TEMP_PREFIX: str = ".lintro"
-
-
-def _markdown_escape(text: str) -> str:
-    """Escape text for Markdown formatting.
-
-    Args:
-        text: str: Text to escape.
-
-    Returns:
-        str: Escaped text safe for Markdown.
-    """
-    return text.replace("|", r"\|").replace("\n", " ")
-
-
-def _html_escape(text: str) -> str:
-    """Escape text for HTML formatting.
-
-    Args:
-        text: str: Text to escape.
-
-    Returns:
-        str: Escaped text safe for HTML.
-    """
-    return html.escape(text)
+if TYPE_CHECKING:
+    from lintro.models.core.tool_result import ToolResult
 
 
 class OutputManager:
@@ -111,8 +94,6 @@ class OutputManager:
             data: object: The data to serialize as JSON.
             filename: str: The output filename (default: results.json).
         """
-        import json
-
         with open(self.run_dir / filename, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
@@ -162,7 +143,7 @@ class OutputManager:
 
     def write_reports_from_results(
         self,
-        results: list["ToolResult"],
+        results: list[ToolResult],
     ) -> None:
         """Generate and write Markdown, HTML, and CSV reports from tool results.
 
@@ -175,7 +156,7 @@ class OutputManager:
 
     def _write_markdown_report(
         self,
-        results: list["ToolResult"],
+        results: list[ToolResult],
     ) -> None:
         """Write a Markdown report summarizing all tool results and issues.
 
@@ -196,10 +177,10 @@ class OutputManager:
                 lines.append("| File | Line | Code | Message |")
                 lines.append("|------|------|------|---------|")
                 for issue in r.issues:
-                    file: str = _markdown_escape(getattr(issue, "file", ""))
+                    file: str = markdown_escape(getattr(issue, "file", ""))
                     line = getattr(issue, "line", "")
-                    code: str = _markdown_escape(getattr(issue, "code", ""))
-                    msg: str = _markdown_escape(getattr(issue, "message", ""))
+                    code: str = markdown_escape(getattr(issue, "code", ""))
+                    msg: str = markdown_escape(getattr(issue, "message", ""))
                     lines.append(f"| {file} | {line} | {code} | {msg} |")
                 lines.append("")
             else:
@@ -208,7 +189,7 @@ class OutputManager:
 
     def _write_html_report(
         self,
-        results: list["ToolResult"],
+        results: list[ToolResult],
     ) -> None:
         """Write an HTML report summarizing all tool results and issues.
 
@@ -216,40 +197,44 @@ class OutputManager:
             results: list["ToolResult"]: List of ToolResult objects from the linting
                 run.
         """
-        html: list[str] = ["<html><head><title>Lintro Report</title></head><body>"]
-        html.append("<h1>Lintro Report</h1>")
-        html.append("<h2>Summary</h2>")
-        html.append("<table border='1'><tr><th>Tool</th><th>Issues</th></tr>")
+        html_content: list[str] = [
+            "<html><head><title>Lintro Report</title></head><body>",
+        ]
+        html_content.append("<h1>Lintro Report</h1>")
+        html_content.append("<h2>Summary</h2>")
+        html_content.append("<table border='1'><tr><th>Tool</th><th>Issues</th></tr>")
         for r in results:
-            html.append(
-                f"<tr><td>{_html_escape(r.name)}</td><td>{r.issues_count}</td></tr>",
+            html_content.append(
+                f"<tr><td>{html_escape(r.name)}</td><td>{r.issues_count}</td></tr>",
             )
-        html.append("</table>")
+        html_content.append("</table>")
         for r in results:
-            html.append(f"<h3>{_html_escape(r.name)} ({r.issues_count} issues)</h3>")
+            html_content.append(
+                f"<h3>{html_escape(r.name)} ({r.issues_count} issues)</h3>",
+            )
             if hasattr(r, "issues") and r.issues:
-                html.append(
+                html_content.append(
                     "<table border='1'><tr><th>File</th><th>Line</th><th>Code</th>"
                     "<th>Message</th></tr>",
                 )
                 for issue in r.issues:
-                    file: str = _html_escape(getattr(issue, "file", ""))
+                    file: str = html_escape(getattr(issue, "file", ""))
                     line = getattr(issue, "line", "")
-                    code: str = _html_escape(getattr(issue, "code", ""))
-                    msg: str = _html_escape(getattr(issue, "message", ""))
-                    html.append(
+                    code: str = html_escape(getattr(issue, "code", ""))
+                    msg: str = html_escape(getattr(issue, "message", ""))
+                    html_content.append(
                         f"<tr><td>{file}</td><td>{line}</td><td>{code}</td>"
                         f"<td>{msg}</td></tr>",
                     )
-                html.append("</table>")
+                html_content.append("</table>")
             else:
-                html.append("<p>No issues found.</p>")
-        html.append("</body></html>")
-        self.write_html(content="\n".join(html))
+                html_content.append("<p>No issues found.</p>")
+        html_content.append("</body></html>")
+        self.write_html(content="\n".join(html_content))
 
     def _write_csv_summary(
         self,
-        results: list["ToolResult"],
+        results: list[ToolResult],
     ) -> None:
         """Write a CSV summary of all tool results and issues.
 

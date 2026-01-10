@@ -3,12 +3,13 @@
 Handles formatting and display of execution summary tables with tabulate.
 """
 
+import contextlib
 from collections.abc import Callable, Sequence
 from typing import Any
 
 from lintro.enums.action import Action
-from lintro.enums.tool_name import ToolName
-from lintro.utils.console_formatting import (
+from lintro.enums.tool_name import ToolName, normalize_tool_name
+from lintro.utils.console import (
     RE_CANNOT_AUTOFIX,
     RE_REMAINING_OR_CANNOT,
     get_summary_value,
@@ -67,7 +68,12 @@ def print_summary_table(
             tool_display: str = f"{emoji} {tool_name}"
 
             # Special handling for pytest/test action
-            if action == Action.TEST and tool_name == ToolName.PYTEST.value:
+            # Safely check if this is pytest by normalizing the tool name
+            is_pytest = False
+            with contextlib.suppress(ValueError):
+                is_pytest = normalize_tool_name(tool_name) == ToolName.PYTEST
+
+            if action == Action.TEST and is_pytest:
                 pytest_summary = getattr(result, "pytest_summary", None)
                 if pytest_summary:
                     # Use pytest summary data for more detailed display

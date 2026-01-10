@@ -1,0 +1,199 @@
+"""Register all parsers at module load time.
+
+This module registers all tool parsers with the ParserRegistry,
+providing O(1) lookup for parser dispatch and fixability predicates.
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any
+
+from loguru import logger
+
+from lintro.enums.tool_name import ToolName
+from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output
+from lintro.parsers.bandit.bandit_parser import parse_bandit_output
+from lintro.parsers.biome.biome_issue import BiomeIssue
+from lintro.parsers.biome.biome_parser import parse_biome_output
+from lintro.parsers.black.black_issue import BlackIssue
+from lintro.parsers.black.black_parser import parse_black_output
+from lintro.parsers.clippy.clippy_parser import parse_clippy_output
+from lintro.parsers.darglint.darglint_parser import parse_darglint_output
+from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
+from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
+from lintro.parsers.mypy.mypy_parser import parse_mypy_output
+from lintro.parsers.prettier.prettier_issue import PrettierIssue
+from lintro.parsers.prettier.prettier_parser import parse_prettier_output
+from lintro.parsers.ruff.ruff_format_issue import RuffFormatIssue
+from lintro.parsers.ruff.ruff_issue import RuffIssue
+from lintro.parsers.ruff.ruff_parser import parse_ruff_output
+from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
+from lintro.utils.output.parser_registry import ParserRegistry
+
+# -----------------------------------------------------------------------------
+# Fixability Predicates
+# -----------------------------------------------------------------------------
+
+
+def _ruff_is_fixable(issue: object) -> bool:
+    """Check if a Ruff issue is fixable.
+
+    Args:
+        issue: The issue object to check.
+
+    Returns:
+        True if the issue is fixable (format issue or has fixable attribute).
+    """
+    return isinstance(issue, RuffFormatIssue) or (
+        isinstance(issue, RuffIssue) and getattr(issue, "fixable", False)
+    )
+
+
+def _black_is_fixable(issue: object) -> bool:
+    """Check if a Black issue is fixable.
+
+    Args:
+        issue: The issue object to check.
+
+    Returns:
+        True if the issue is a BlackIssue (all Black issues are fixable).
+    """
+    return isinstance(issue, BlackIssue) and getattr(issue, "fixable", True)
+
+
+def _prettier_is_fixable(issue: object) -> bool:
+    """Check if a Prettier issue is fixable.
+
+    Args:
+        issue: The issue object to check.
+
+    Returns:
+        True if the issue is a PrettierIssue (all Prettier issues are fixable).
+    """
+    return isinstance(issue, PrettierIssue)
+
+
+def _biome_is_fixable(issue: object) -> bool:
+    """Check if a Biome issue is fixable.
+
+    Args:
+        issue: The issue object to check.
+
+    Returns:
+        True if the issue is a BiomeIssue with fixable=True.
+    """
+    return isinstance(issue, BiomeIssue) and getattr(issue, "fixable", False)
+
+
+# -----------------------------------------------------------------------------
+# Special Parsers
+# -----------------------------------------------------------------------------
+
+
+def _parse_bandit_output(output: str) -> list[Any]:
+    """Parse Bandit output, handling JSON format.
+
+    Args:
+        output: Raw Bandit output (expected to be JSON).
+
+    Returns:
+        List of parsed Bandit issues.
+    """
+    try:
+        return parse_bandit_output(bandit_data=json.loads(output))
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        logger.error(f"Failed to parse Bandit output: {e}")
+        return []
+
+
+# -----------------------------------------------------------------------------
+# Registration
+# -----------------------------------------------------------------------------
+
+
+def register_all_parsers() -> None:
+    """Register all tool parsers with the registry.
+
+    This function should be called once during application initialization
+    to populate the ParserRegistry with all available tool parsers.
+    """
+    # Ruff - Python linter/formatter
+    ParserRegistry.register(
+        ToolName.RUFF.value,
+        parse_ruff_output,
+        is_fixable=_ruff_is_fixable,
+    )
+
+    # Black - Python formatter
+    ParserRegistry.register(
+        ToolName.BLACK.value,
+        parse_black_output,
+        is_fixable=_black_is_fixable,
+    )
+
+    # Prettier - Multi-language formatter
+    ParserRegistry.register(
+        ToolName.PRETTIER.value,
+        parse_prettier_output,
+        is_fixable=_prettier_is_fixable,
+    )
+
+    # Biome - JavaScript/TypeScript linter/formatter
+    ParserRegistry.register(
+        ToolName.BIOME.value,
+        parse_biome_output,
+        is_fixable=_biome_is_fixable,
+    )
+
+    # Mypy - Python type checker
+    ParserRegistry.register(
+        ToolName.MYPY.value,
+        parse_mypy_output,
+    )
+
+    # Darglint - Docstring linter
+    ParserRegistry.register(
+        ToolName.DARGLINT.value,
+        parse_darglint_output,
+    )
+
+    # Actionlint - GitHub Actions linter
+    ParserRegistry.register(
+        ToolName.ACTIONLINT.value,
+        parse_actionlint_output,
+    )
+
+    # Hadolint - Dockerfile linter
+    ParserRegistry.register(
+        ToolName.HADOLINT.value,
+        parse_hadolint_output,
+    )
+
+    # Yamllint - YAML linter
+    ParserRegistry.register(
+        ToolName.YAMLLINT.value,
+        parse_yamllint_output,
+    )
+
+    # Markdownlint - Markdown linter
+    ParserRegistry.register(
+        ToolName.MARKDOWNLINT.value,
+        parse_markdownlint_output,
+    )
+
+    # Bandit - Python security linter (special JSON handling)
+    ParserRegistry.register(
+        ToolName.BANDIT.value,
+        _parse_bandit_output,
+    )
+
+    # Clippy - Rust linter
+    ParserRegistry.register(
+        ToolName.CLIPPY.value,
+        parse_clippy_output,
+    )
+
+
+# Auto-register parsers when module is imported
+register_all_parsers()

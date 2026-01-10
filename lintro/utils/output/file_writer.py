@@ -1,36 +1,39 @@
-"""Output writers for different file formats.
+"""File writing and output formatting functions.
 
-Handles writing lintro results to various output formats (JSON, CSV, Markdown,
-HTML, Plain).
+This module provides functions for writing tool results to files
+and formatting tool output for display.
 """
+
+from __future__ import annotations
 
 import csv
 import datetime
 import html
 import json
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+# Import parser_registration to auto-register all parsers
+import lintro.utils.output.parser_registration  # noqa: F401
 from lintro.enums.action import Action
-from lintro.enums.output_format import OutputFormat
-from lintro.models.core.tool_result import ToolResult
+from lintro.enums.output_format import OutputFormat, normalize_output_format
+from lintro.enums.tool_name import ToolName
+from lintro.formatters.formatter import format_issues, format_issues_with_sections
+from lintro.parsers.base_issue import BaseIssue
+from lintro.utils.output.helpers import sanitize_csv_value
+from lintro.utils.output.parser_registry import ParserRegistry
 
+try:
+    import tabulate as _tabulate_module  # noqa: F401
 
-def _sanitize_csv_value(value: str) -> str:
-    """Sanitize CSV cell value to prevent formula injection.
+    TABULATE_AVAILABLE = True
+    del _tabulate_module
+except ImportError:
+    TABULATE_AVAILABLE = False
 
-    Prefixes values starting with '=', '+', '-', or '@' with a single quote
-    to prevent spreadsheet applications from interpreting them as formulas.
-
-    Args:
-        value: str: The value to sanitize.
-
-    Returns:
-        str: Sanitized value with leading quote if needed.
-    """
-    if value and value.startswith(("=", "+", "-", "@")):
-        return "'" + value
-    return value
+if TYPE_CHECKING:
+    from lintro.models.core.tool_result import ToolResult
 
 
 def write_output_file(
@@ -99,21 +102,21 @@ def write_output_file(
                 for issue in result.issues:
                     rows.append(
                         [
-                            _sanitize_csv_value(result.name),
-                            _sanitize_csv_value(
+                            sanitize_csv_value(result.name),
+                            sanitize_csv_value(
                                 str(getattr(result, "issues_count", 0)),
                             ),
-                            _sanitize_csv_value(str(getattr(issue, "file", ""))),
-                            _sanitize_csv_value(str(getattr(issue, "line", ""))),
-                            _sanitize_csv_value(str(getattr(issue, "code", ""))),
-                            _sanitize_csv_value(str(getattr(issue, "message", ""))),
+                            sanitize_csv_value(str(getattr(issue, "file", ""))),
+                            sanitize_csv_value(str(getattr(issue, "line", ""))),
+                            sanitize_csv_value(str(getattr(issue, "code", ""))),
+                            sanitize_csv_value(str(getattr(issue, "message", ""))),
                         ],
                     )
             else:
                 rows.append(
                     [
-                        _sanitize_csv_value(result.name),
-                        _sanitize_csv_value(str(getattr(result, "issues_count", 0))),
+                        sanitize_csv_value(result.name),
+                        sanitize_csv_value(str(getattr(result, "issues_count", 0))),
                         "",
                         "",
                         "",
@@ -207,3 +210,59 @@ def write_output_file(
         if action == Action.FIX:
             lines.append(f"Total Fixed: {total_fixed}")
         output_file.write_text("\n".join(lines), encoding="utf-8")
+
+
+def format_tool_output(
+    tool_name: str,
+    output: str,
+    output_format: str | OutputFormat = "grid",
+    issues: Sequence[BaseIssue] | None = None,
+) -> str:
+    """Format tool output using the specified format.
+
+    Args:
+        tool_name: str: Name of the tool that generated the output.
+        output: str: Raw output from the tool.
+        output_format: str: Output format (plain, grid, markdown, html, json, csv).
+        issues: Sequence[BaseIssue] | None: List of parsed issue objects (optional).
+
+    Returns:
+        str: Formatted output string.
+    """
+    output_format = normalize_output_format(output_format)
+
+    # Pytest output is already formatted by build_output_with_failures
+    # in pytest_output_processor.py, so return it directly
+    if tool_name == ToolName.PYTEST:
+        return output if output else ""
+
+    # If parsed issues are provided, use the unified formatter
+    if issues:
+        # Get fixability predicate from registry (O(1) lookup)
+        is_fixable = ParserRegistry.get_fixability_predicate(tool_name)
+
+        if output_format != "json" and is_fixable is not None and TABULATE_AVAILABLE:
+            # Use unified formatter with built-in fixable grouping
+            return format_issues_with_sections(
+                issues=issues,
+                output_format=output_format,
+                group_by_fixable=True,
+                tool_name=tool_name,
+            )
+
+        # Use unified formatter for all issues
+        return format_issues(issues=issues, output_format=output_format)
+
+    if not output or not output.strip():
+        return "No issues found."
+
+    # Try to parse the output using registered parser (O(1) lookup)
+    # Note: pytest output is already formatted by build_output_with_failures
+    # in pytest_output_processor.py, so we skip re-parsing here
+    parsed_issues = ParserRegistry.parse(tool_name, output)
+
+    if parsed_issues:
+        return format_issues(issues=parsed_issues, output_format=output_format)
+
+    # Fallback: return the raw output
+    return output
