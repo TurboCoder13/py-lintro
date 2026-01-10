@@ -1,6 +1,17 @@
-"""Pytest configuration for yamllint tool unit tests.
+"""Shared fixtures for yamllint plugin tests."""
 
-Tests in this directory focus on yamllint YAML linting tool functionality.
-"""
+from __future__ import annotations
 
-# Add any yamllint-specific fixtures here in the future
+import pytest
+
+from lintro.tools.definitions.yamllint import YamllintPlugin
+
+
+@pytest.fixture
+def yamllint_plugin() -> YamllintPlugin:
+    """Provide a YamllintPlugin instance for testing.
+
+    Returns:
+        YamllintPlugin: A fresh YamllintPlugin instance.
+    """
+    return YamllintPlugin()

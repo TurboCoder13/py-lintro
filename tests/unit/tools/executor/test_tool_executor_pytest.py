@@ -8,75 +8,75 @@ import pytest
 from assertpy import assert_that
 
 from lintro.models.core.tool_result import ToolResult
-from lintro.tools.tool_enum import ToolEnum
-from lintro.utils.tool_executor import _get_tools_to_run, run_lint_tools_simple
+from lintro.utils.execution.tool_configuration import get_tools_to_run
+from lintro.utils.tool_executor import run_lint_tools_simple
 
 
-def test_get_tools_to_run_test_action_with_pytest() -> None:
-    """Test _get_tools_to_run with test action returns pytest."""
-    result = _get_tools_to_run(tools="pytest", action="test")
+def testget_tools_to_run_test_action_with_pytest() -> None:
+    """Test get_tools_to_run with test action returns pytest."""
+    result = get_tools_to_run(tools="pytest", action="test")
     assert_that(result).is_length(1)
-    assert_that(result[0]).is_equal_to(ToolEnum.PYTEST)
+    assert_that(result[0]).is_equal_to("pytest")
 
 
-def test_get_tools_to_run_test_action_with_pytest_full_name() -> None:
-    """Test _get_tools_to_run with test action using full pytest name."""
-    result = _get_tools_to_run(tools="pytest", action="test")
+def testget_tools_to_run_test_action_with_pytest_full_name() -> None:
+    """Test get_tools_to_run with test action using full pytest name."""
+    result = get_tools_to_run(tools="pytest", action="test")
     assert_that(result).is_length(1)
-    assert_that(result[0]).is_equal_to(ToolEnum.PYTEST)
+    assert_that(result[0]).is_equal_to("pytest")
 
 
-def test_get_tools_to_run_test_action_with_none_tools() -> None:
-    """Test _get_tools_to_run with test action and None tools."""
-    result = _get_tools_to_run(tools=None, action="test")
+def testget_tools_to_run_test_action_with_none_tools() -> None:
+    """Test get_tools_to_run with test action and None tools."""
+    result = get_tools_to_run(tools=None, action="test")
     assert_that(result).is_length(1)
-    assert_that(result[0]).is_equal_to(ToolEnum.PYTEST)
+    assert_that(result[0]).is_equal_to("pytest")
 
 
-def test_get_tools_to_run_test_action_with_invalid_tool() -> None:
-    """Test _get_tools_to_run raises error with invalid tool for test action."""
+def testget_tools_to_run_test_action_with_invalid_tool() -> None:
+    """Test get_tools_to_run raises error with invalid tool for test action."""
     with pytest.raises(ValueError, match="(?i)only.*pytest.*supported"):
-        _get_tools_to_run(tools="ruff", action="test")
+        get_tools_to_run(tools="ruff", action="test")
 
 
-def test_get_tools_to_run_test_action_with_multiple_tools() -> None:
-    """Test _get_tools_to_run raises error with multiple tools for test action."""
+def testget_tools_to_run_test_action_with_multiple_tools() -> None:
+    """Test get_tools_to_run raises error with multiple tools for test action."""
     with pytest.raises(ValueError, match="(?i)only.*pytest.*supported"):
-        _get_tools_to_run(tools="pytest,ruff", action="test")
+        get_tools_to_run(tools="pytest,ruff", action="test")
 
 
-def test_get_tools_to_run_check_action_rejects_pytest() -> None:
-    """Test _get_tools_to_run rejects pytest for check action."""
+def testget_tools_to_run_check_action_rejects_pytest() -> None:
+    """Test get_tools_to_run rejects pytest for check action."""
     with pytest.raises(ValueError, match="not available for check"):
-        _get_tools_to_run(tools="pytest", action="check")
+        get_tools_to_run(tools="pytest", action="check")
 
 
-def test_get_tools_to_run_format_action_rejects_pytest() -> None:
-    """Test _get_tools_to_run rejects pytest for format action."""
+def testget_tools_to_run_format_action_rejects_pytest() -> None:
+    """Test get_tools_to_run rejects pytest for format action."""
     with pytest.raises(ValueError, match="not available for check/fmt"):
-        _get_tools_to_run(tools="pytest", action="fmt")
+        get_tools_to_run(tools="pytest", action="fmt")
 
 
-def test_get_tools_to_run_test_action_unavailable() -> None:
-    """Test _get_tools_to_run with test action ensures PYTEST is available."""
-    # Verify that pytest is available in ToolEnum
-    result = _get_tools_to_run(tools=None, action="test")
+def testget_tools_to_run_test_action_unavailable() -> None:
+    """Test get_tools_to_run with test action ensures pytest is available."""
+    # Verify that pytest is available in the registry
+    result = get_tools_to_run(tools=None, action="test")
     assert_that(result).is_not_empty()
-    assert_that(result[0].name).is_equal_to("PYTEST")
+    assert_that(result[0]).is_equal_to("pytest")
 
 
-def test_get_tools_to_run_check_action_filters_out_pytest() -> None:
-    """Test _get_tools_to_run filters pytest out for check action."""
-    result = _get_tools_to_run(tools="all", action="check")
-    # Should not contain pytest
-    assert_that([t.name for t in result]).does_not_contain("PYTEST")
+def testget_tools_to_run_check_action_filters_out_pytest() -> None:
+    """Test get_tools_to_run filters pytest out for check action."""
+    result = get_tools_to_run(tools="all", action="check")
+    # Should not contain pytest (now result is list of strings)
+    assert_that(result).does_not_contain("pytest")
 
 
-def test_get_tools_to_run_format_action_filters_out_pytest() -> None:
-    """Test _get_tools_to_run filters pytest out for format action."""
-    result = _get_tools_to_run(tools="all", action="fmt")
-    # Should not contain pytest
-    assert_that([t.name for t in result]).does_not_contain("PYTEST")
+def testget_tools_to_run_format_action_filters_out_pytest() -> None:
+    """Test get_tools_to_run filters pytest out for format action."""
+    result = get_tools_to_run(tools="all", action="fmt")
+    # Should not contain pytest (now result is list of strings)
+    assert_that(result).does_not_contain("pytest")
 
 
 def test_run_lint_tools_simple_test_action_basic() -> None:
@@ -85,7 +85,7 @@ def test_run_lint_tools_simple_test_action_basic() -> None:
         tempfile.TemporaryDirectory() as tmpdir,
         patch("lintro.utils.tool_executor.tool_manager") as mock_manager,
         patch("lintro.utils.tool_executor.OutputManager") as mock_output,
-        patch("lintro.utils.console_logger.create_logger") as mock_logger,
+        patch("lintro.utils.console.create_logger") as mock_logger,
     ):
         mock_logger_inst = Mock()
         mock_logger.return_value = mock_logger_inst
@@ -126,7 +126,7 @@ def test_run_lint_tools_simple_test_action_with_failures() -> None:
         tempfile.TemporaryDirectory() as tmpdir,
         patch("lintro.utils.tool_executor.tool_manager") as mock_manager,
         patch("lintro.utils.tool_executor.OutputManager") as mock_output,
-        patch("lintro.utils.console_logger.create_logger") as mock_logger,
+        patch("lintro.utils.console.create_logger") as mock_logger,
     ):
         mock_logger_inst = Mock()
         mock_logger.return_value = mock_logger_inst
@@ -136,10 +136,11 @@ def test_run_lint_tools_simple_test_action_with_failures() -> None:
 
         mock_pytest_tool = Mock()
         mock_pytest_tool.name = "pytest"
-        mock_pytest_tool.check.return_value = Mock(
+        mock_pytest_tool.check.return_value = ToolResult(
+            name="pytest",
             success=False,
             issues_count=2,
-            issues=[Mock(), Mock()],
+            issues=[],
             output="2 test failures",
         )
         mock_manager.get_tool.return_value = mock_pytest_tool
@@ -165,7 +166,7 @@ def test_run_lint_tools_simple_test_action_invalid_tool() -> None:
     with (
         tempfile.TemporaryDirectory() as tmpdir,
         patch("lintro.utils.tool_executor.OutputManager") as mock_output,
-        patch("lintro.utils.console_logger.create_logger") as mock_logger,
+        patch("lintro.utils.console.create_logger") as mock_logger,
     ):
         mock_logger_inst = Mock()
         mock_logger.return_value = mock_logger_inst
@@ -196,7 +197,7 @@ def test_run_lint_tools_simple_test_action_with_tool_options() -> None:
         tempfile.TemporaryDirectory() as tmpdir,
         patch("lintro.utils.tool_executor.tool_manager") as mock_manager,
         patch("lintro.utils.tool_executor.OutputManager") as mock_output,
-        patch("lintro.utils.console_logger.create_logger") as mock_logger,
+        patch("lintro.utils.console.create_logger") as mock_logger,
     ):
         mock_logger_inst = Mock()
         mock_logger.return_value = mock_logger_inst
@@ -206,9 +207,11 @@ def test_run_lint_tools_simple_test_action_with_tool_options() -> None:
 
         mock_pytest_tool = Mock()
         mock_pytest_tool.name = "pytest"
-        mock_pytest_tool.check.return_value = Mock(
+        mock_pytest_tool.check.return_value = ToolResult(
+            name="pytest",
             success=True,
             issues=[],
+            issues_count=0,
             output="All tests passed",
         )
         mock_manager.get_tool.return_value = mock_pytest_tool
@@ -227,7 +230,7 @@ def test_run_lint_tools_simple_test_action_with_tool_options() -> None:
         )
 
         # Should call set_options on the tool
-        assert_that(mock_pytest_tool.set_options.called).is_true()
+        mock_pytest_tool.set_options.assert_called()
 
 
 def test_run_lint_tools_simple_test_action_exclude_patterns() -> None:
@@ -236,7 +239,7 @@ def test_run_lint_tools_simple_test_action_exclude_patterns() -> None:
         tempfile.TemporaryDirectory() as tmpdir,
         patch("lintro.utils.tool_executor.tool_manager") as mock_manager,
         patch("lintro.utils.tool_executor.OutputManager") as mock_output,
-        patch("lintro.utils.console_logger.create_logger") as mock_logger,
+        patch("lintro.utils.console.create_logger") as mock_logger,
     ):
         mock_logger_inst = Mock()
         mock_logger.return_value = mock_logger_inst
@@ -246,9 +249,11 @@ def test_run_lint_tools_simple_test_action_exclude_patterns() -> None:
 
         mock_pytest_tool = Mock()
         mock_pytest_tool.name = "pytest"
-        mock_pytest_tool.check.return_value = Mock(
+        mock_pytest_tool.check.return_value = ToolResult(
+            name="pytest",
             success=True,
             issues=[],
+            issues_count=0,
             output="All tests passed",
         )
         mock_manager.get_tool.return_value = mock_pytest_tool
@@ -267,7 +272,7 @@ def test_run_lint_tools_simple_test_action_exclude_patterns() -> None:
         )
 
         # Should set exclude patterns on tool
-        assert_that(mock_pytest_tool.check.called).is_true()
+        mock_pytest_tool.check.assert_called_once()
 
 
 def test_run_lint_tools_simple_test_action_verbose() -> None:
@@ -276,7 +281,7 @@ def test_run_lint_tools_simple_test_action_verbose() -> None:
         tempfile.TemporaryDirectory() as tmpdir,
         patch("lintro.utils.tool_executor.tool_manager") as mock_manager,
         patch("lintro.utils.tool_executor.OutputManager") as mock_output,
-        patch("lintro.utils.console_logger.create_logger") as mock_logger,
+        patch("lintro.utils.console.create_logger") as mock_logger,
     ):
         mock_logger_inst = Mock()
         mock_logger.return_value = mock_logger_inst
@@ -286,9 +291,11 @@ def test_run_lint_tools_simple_test_action_verbose() -> None:
 
         mock_pytest_tool = Mock()
         mock_pytest_tool.name = "pytest"
-        mock_pytest_tool.check.return_value = Mock(
+        mock_pytest_tool.check.return_value = ToolResult(
+            name="pytest",
             success=True,
             issues=[],
+            issues_count=0,
             output="All tests passed",
         )
         mock_manager.get_tool.return_value = mock_pytest_tool
@@ -306,5 +313,5 @@ def test_run_lint_tools_simple_test_action_verbose() -> None:
             raw_output=False,
         )
 
-        # Logger should be called with verbose=True
-        assert_that(mock_logger.called).is_true()
+        # Logger factory should be called
+        mock_logger.assert_called_once()

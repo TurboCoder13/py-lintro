@@ -1,0 +1,267 @@
+"""Unit tests for command_builders module."""
+
+from __future__ import annotations
+
+from collections.abc import Generator
+from unittest.mock import patch
+
+import pytest
+from assertpy import assert_that
+
+from lintro.enums.tool_name import ToolName
+from lintro.tools.core.command_builders import (
+    CargoBuilder,
+    CommandBuilder,
+    CommandBuilderRegistry,
+    NodeJSBuilder,
+    PytestBuilder,
+    PythonBundledBuilder,
+    StandaloneBuilder,
+)
+
+
+@pytest.fixture(autouse=True)
+def reset_registry() -> Generator[None, None, None]:
+    """Reset the command builder registry before and after each test.
+
+    Yields:
+        None after clearing the registry and before restoring.
+    """
+    original_builders = CommandBuilderRegistry._builders.copy()
+    yield
+    CommandBuilderRegistry._builders = original_builders
+
+
+# =============================================================================
+# PythonBundledBuilder tests
+# =============================================================================
+
+
+def test_python_bundled_builder_handles_ruff() -> None:
+    """PythonBundledBuilder can handle ruff."""
+    builder = PythonBundledBuilder()
+    assert_that(builder.can_handle(ToolName.RUFF)).is_true()
+
+
+def test_python_bundled_builder_handles_black() -> None:
+    """PythonBundledBuilder can handle black."""
+    builder = PythonBundledBuilder()
+    assert_that(builder.can_handle(ToolName.BLACK)).is_true()
+
+
+def test_python_bundled_builder_handles_mypy() -> None:
+    """PythonBundledBuilder can handle mypy."""
+    builder = PythonBundledBuilder()
+    assert_that(builder.can_handle(ToolName.MYPY)).is_true()
+
+
+def test_python_bundled_builder_does_not_handle_prettier() -> None:
+    """PythonBundledBuilder does not handle Node.js tools."""
+    builder = PythonBundledBuilder()
+    assert_that(builder.can_handle(ToolName.PRETTIER)).is_false()
+
+
+def test_python_bundled_builder_returns_python_module_command() -> None:
+    """PythonBundledBuilder returns python -m command in normal mode."""
+    builder = PythonBundledBuilder()
+    with patch(
+        "lintro.tools.core.command_builders._is_compiled_binary",
+        return_value=False,
+    ):
+        cmd = builder.get_command("ruff", ToolName.RUFF)
+        # Should return [python_exe, "-m", "ruff"]
+        assert_that(cmd).is_length(3)
+        assert_that(cmd[1]).is_equal_to("-m")
+        assert_that(cmd[2]).is_equal_to("ruff")
+
+
+# =============================================================================
+# PytestBuilder tests
+# =============================================================================
+
+
+def test_pytest_builder_handles_pytest() -> None:
+    """PytestBuilder can handle pytest."""
+    builder = PytestBuilder()
+    assert_that(builder.can_handle(ToolName.PYTEST)).is_true()
+
+
+def test_pytest_builder_does_not_handle_ruff() -> None:
+    """PytestBuilder does not handle ruff."""
+    builder = PytestBuilder()
+    assert_that(builder.can_handle(ToolName.RUFF)).is_false()
+
+
+def test_pytest_builder_returns_python_module_command() -> None:
+    """PytestBuilder returns python -m pytest command in normal mode."""
+    builder = PytestBuilder()
+    with patch(
+        "lintro.tools.core.command_builders._is_compiled_binary",
+        return_value=False,
+    ):
+        cmd = builder.get_command("pytest", ToolName.PYTEST)
+        # Should return [python_exe, "-m", "pytest"]
+        assert_that(cmd).is_length(3)
+        assert_that(cmd[1]).is_equal_to("-m")
+        assert_that(cmd[2]).is_equal_to("pytest")
+
+
+# =============================================================================
+# NodeJSBuilder tests
+# =============================================================================
+
+
+def test_nodejs_builder_handles_prettier() -> None:
+    """NodeJSBuilder can handle prettier."""
+    builder = NodeJSBuilder()
+    assert_that(builder.can_handle(ToolName.PRETTIER)).is_true()
+
+
+def test_nodejs_builder_handles_biome() -> None:
+    """NodeJSBuilder can handle biome."""
+    builder = NodeJSBuilder()
+    assert_that(builder.can_handle(ToolName.BIOME)).is_true()
+
+
+def test_nodejs_builder_handles_markdownlint() -> None:
+    """NodeJSBuilder can handle markdownlint."""
+    builder = NodeJSBuilder()
+    assert_that(builder.can_handle(ToolName.MARKDOWNLINT)).is_true()
+
+
+def test_nodejs_builder_does_not_handle_ruff() -> None:
+    """NodeJSBuilder does not handle Python tools."""
+    builder = NodeJSBuilder()
+    assert_that(builder.can_handle(ToolName.RUFF)).is_false()
+
+
+def test_nodejs_builder_uses_npx_when_available() -> None:
+    """NodeJSBuilder uses npx when available."""
+    builder = NodeJSBuilder()
+    with patch("shutil.which", return_value="/usr/local/bin/npx"):
+        cmd = builder.get_command("prettier", ToolName.PRETTIER)
+        assert_that(cmd).is_equal_to(["npx", "prettier"])
+
+
+def test_nodejs_builder_falls_back_to_tool_name() -> None:
+    """NodeJSBuilder falls back to tool name when npx not available."""
+    builder = NodeJSBuilder()
+    with patch("shutil.which", return_value=None):
+        cmd = builder.get_command("prettier", ToolName.PRETTIER)
+        assert_that(cmd).is_equal_to(["prettier"])
+
+
+# =============================================================================
+# CargoBuilder tests
+# =============================================================================
+
+
+def test_cargo_builder_handles_clippy() -> None:
+    """CargoBuilder can handle clippy."""
+    builder = CargoBuilder()
+    assert_that(builder.can_handle(ToolName.CLIPPY)).is_true()
+
+
+def test_cargo_builder_does_not_handle_ruff() -> None:
+    """CargoBuilder does not handle Python tools."""
+    builder = CargoBuilder()
+    assert_that(builder.can_handle(ToolName.RUFF)).is_false()
+
+
+def test_cargo_builder_returns_cargo_clippy() -> None:
+    """CargoBuilder returns ['cargo', 'clippy'] command."""
+    builder = CargoBuilder()
+    cmd = builder.get_command("clippy", ToolName.CLIPPY)
+    assert_that(cmd).is_equal_to(["cargo", "clippy"])
+
+
+# =============================================================================
+# StandaloneBuilder tests
+# =============================================================================
+
+
+def test_standalone_builder_handles_hadolint() -> None:
+    """StandaloneBuilder can handle hadolint."""
+    builder = StandaloneBuilder()
+    assert_that(builder.can_handle(ToolName.HADOLINT)).is_true()
+
+
+def test_standalone_builder_handles_actionlint() -> None:
+    """StandaloneBuilder can handle actionlint."""
+    builder = StandaloneBuilder()
+    assert_that(builder.can_handle(ToolName.ACTIONLINT)).is_true()
+
+
+def test_standalone_builder_handles_darglint() -> None:
+    """StandaloneBuilder can handle darglint."""
+    builder = StandaloneBuilder()
+    assert_that(builder.can_handle(ToolName.DARGLINT)).is_true()
+
+
+def test_standalone_builder_does_not_handle_ruff() -> None:
+    """StandaloneBuilder does not handle Python bundled tools."""
+    builder = StandaloneBuilder()
+    assert_that(builder.can_handle(ToolName.RUFF)).is_false()
+
+
+def test_standalone_builder_returns_tool_name() -> None:
+    """StandaloneBuilder returns just the tool name."""
+    builder = StandaloneBuilder()
+    cmd = builder.get_command("hadolint", ToolName.HADOLINT)
+    assert_that(cmd).is_equal_to(["hadolint"])
+
+
+# =============================================================================
+# CommandBuilderRegistry tests
+# =============================================================================
+
+
+def test_registry_uses_first_matching_builder() -> None:
+    """Registry returns command from first builder that can_handle()."""
+    CommandBuilderRegistry.clear()
+
+    # Register a custom builder that handles ruff
+    class CustomRuffBuilder(CommandBuilder):
+        def can_handle(self, tool_name_enum: ToolName | None) -> bool:
+            return tool_name_enum == ToolName.RUFF
+
+        def get_command(
+            self,
+            tool_name: str,
+            tool_name_enum: ToolName | None,
+        ) -> list[str]:
+            return ["custom-ruff"]
+
+    CommandBuilderRegistry.register(CustomRuffBuilder())
+    CommandBuilderRegistry.register(PythonBundledBuilder())
+
+    cmd = CommandBuilderRegistry.get_command("ruff", ToolName.RUFF)
+    assert_that(cmd).is_equal_to(["custom-ruff"])
+
+
+def test_registry_fallback_to_tool_name() -> None:
+    """Registry falls back to [tool_name] if no builder matches."""
+    CommandBuilderRegistry.clear()
+
+    cmd = CommandBuilderRegistry.get_command("unknown_tool", None)
+    assert_that(cmd).is_equal_to(["unknown_tool"])
+
+
+def test_registry_is_registered() -> None:
+    """Registry can check if a builder exists for a tool."""
+    CommandBuilderRegistry.clear()
+    CommandBuilderRegistry.register(PythonBundledBuilder())
+
+    assert_that(CommandBuilderRegistry.is_registered(ToolName.RUFF)).is_true()
+    assert_that(CommandBuilderRegistry.is_registered(ToolName.PRETTIER)).is_false()
+
+
+def test_registry_clear() -> None:
+    """Registry clear removes all builders."""
+    CommandBuilderRegistry.clear()
+    CommandBuilderRegistry.register(PythonBundledBuilder())
+
+    assert_that(CommandBuilderRegistry._builders).is_length(1)
+
+    CommandBuilderRegistry.clear()
+    assert_that(CommandBuilderRegistry._builders).is_empty()

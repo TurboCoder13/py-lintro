@@ -1,6 +1,17 @@
-"""Pytest configuration for black tool unit tests.
+"""Shared fixtures for black plugin tests."""
 
-Tests in this directory focus on black code formatting tool functionality.
-"""
+from __future__ import annotations
 
-# Add any black-specific fixtures here in the future
+import pytest
+
+from lintro.tools.definitions.black import BlackPlugin
+
+
+@pytest.fixture
+def black_plugin() -> BlackPlugin:
+    """Provide a BlackPlugin instance for testing.
+
+    Returns:
+        BlackPlugin: A new BlackPlugin instance.
+    """
+    return BlackPlugin()

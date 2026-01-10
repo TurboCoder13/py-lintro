@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Never
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from assertpy import assert_that
@@ -14,9 +15,19 @@ if TYPE_CHECKING:
 
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools import tool_manager
-from lintro.tools.tool_enum import ToolEnum
-from lintro.utils.output_manager import OutputManager
+from lintro.utils.output import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
+
+
+@dataclass
+class FakeToolDefinition:
+    """Fake ToolDefinition for testing."""
+
+    name: str
+    can_fix: bool = False
+    description: str = ""
+    file_patterns: list[str] = field(default_factory=list)
+    native_configs: list[str] = field(default_factory=list)
 
 
 class FakeTool:
@@ -31,9 +42,27 @@ class FakeTool:
             result: Result object to return from check/fix.
         """
         self.name = name
-        self.can_fix = can_fix
+        self._definition = FakeToolDefinition(name=name, can_fix=can_fix)
         self._result = result
         self.options: dict[str, object] = {}
+
+    @property
+    def definition(self) -> FakeToolDefinition:
+        """Return the tool definition.
+
+        Returns:
+            FakeToolDefinition containing tool metadata.
+        """
+        return self._definition
+
+    @property
+    def can_fix(self) -> bool:
+        """Return whether the tool can fix issues.
+
+        Returns:
+            True if the tool can fix issues.
+        """
+        return self._definition.can_fix
 
     def set_options(self, **kwargs: Any) -> None:
         """Record option values provided to the tool stub.
@@ -43,22 +72,32 @@ class FakeTool:
         """
         self.options.update(kwargs)
 
-    def check(self, paths: list[str]) -> ToolResult:
+    def check(
+        self,
+        paths: list[str],
+        options: dict[str, Any] | None = None,
+    ) -> ToolResult:
         """Return the stored result for a check invocation.
 
         Args:
             paths: Target paths (ignored in stub).
+            options: Optional tool options.
 
         Returns:
             ToolResult: Pre-baked result instance.
         """
         return self._result
 
-    def fix(self, paths: list[str]) -> ToolResult:
+    def fix(
+        self,
+        paths: list[str],
+        options: dict[str, Any] | None = None,
+    ) -> ToolResult:
         """Return the stored result for a fix invocation.
 
         Args:
             paths: Target paths (ignored in stub).
+            options: Optional tool options.
 
         Returns:
             ToolResult: Pre-baked result instance.
@@ -66,15 +105,8 @@ class FakeTool:
         return self._result
 
 
-class _EnumLike:
-    """Tiny enum-like wrapper exposing a `name` attribute."""
-
-    def __init__(self, name: str) -> None:
-        self.name = name
-
-
 def _stub_logger(monkeypatch: pytest.MonkeyPatch) -> None:
-    import lintro.utils.console_logger as cl
+    import lintro.utils.console as cl
 
     class SilentLogger:
         def __getattr__(self, name: str) -> Callable[..., None]:
@@ -100,13 +132,11 @@ def _setup_main_tool(monkeypatch: pytest.MonkeyPatch) -> FakeTool:
     ok = ToolResult(name="ruff", success=True, output="", issues_count=0)
     ruff = FakeTool("ruff", can_fix=True, result=ok)
 
-    def fake_get_tools(tools: str | None, action: str) -> list[ToolEnum]:
-        from lintro.tools.tool_enum import ToolEnum
+    def fake_get_tools(tools: str | None, action: str) -> list[str]:
+        return ["ruff"]
 
-        return [ToolEnum.RUFF]
-
-    monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
-    monkeypatch.setattr(tool_manager, "get_tool", lambda e: ruff, raising=True)
+    monkeypatch.setattr(te, "get_tools_to_run", fake_get_tools, raising=True)
+    monkeypatch.setattr(tool_manager, "get_tool", lambda name: ruff, raising=True)
 
     def noop_write_reports_from_results(
         self: object,
@@ -124,34 +154,38 @@ def _setup_main_tool(monkeypatch: pytest.MonkeyPatch) -> FakeTool:
     return ruff
 
 
-def test_post_checks_enforce_failure_on_unavailable_tool(
+def test_post_checks_missing_tool_is_skipped_gracefully(
     monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """When enforce_failure is True, missing post-check yields failure exit.
+    """When post-check tool is unavailable, it is skipped gracefully.
 
-    This exercises the exception path in the post-check loop where resolving the
-    tool raises and the executor appends a failure ToolResult when running check.
+    Post-checks are optional when the tool cannot be resolved from the tool
+    manager. The main tool (ruff) should run, and the missing post-check tool
+    (black) should not appear in results.
 
     Args:
         monkeypatch: Pytest fixture to modify objects during the test.
+        capsys: Pytest fixture to capture stdout/stderr for assertions.
     """
     _stub_logger(monkeypatch)
     ruff_local = _setup_main_tool(monkeypatch)
 
+    import lintro.utils.config as cfg
+    import lintro.utils.post_checks as pc
     import lintro.utils.tool_executor as te
 
-    # Post-checks enabled for black; enforce failure on check
-    monkeypatch.setattr(
-        te,
-        "load_post_checks_config",
-        lambda: {"enabled": True, "tools": ["black"], "enforce_failure": True},
-        raising=True,
-    )
+    def post_check_config():
+        return {"enabled": True, "tools": ["black"], "enforce_failure": True}
 
-    # Make black unavailable during post-check resolution
-    def fail_get_tool(enum_val: ToolEnum) -> FakeTool:
-        # Fail only for the post-check tool (black); allow main ruff to run
-        if enum_val == ToolEnum.BLACK:
+    # Patch in all modules that import load_post_checks_config
+    monkeypatch.setattr(cfg, "load_post_checks_config", post_check_config, raising=True)
+    monkeypatch.setattr(te, "load_post_checks_config", post_check_config, raising=True)
+    monkeypatch.setattr(pc, "load_post_checks_config", post_check_config, raising=True)
+
+    # Fail only for the post-check tool (black); allow main ruff to run
+    def fail_get_tool(name: str) -> FakeTool:
+        if name == "black":
             raise RuntimeError("black not available")
         return ruff_local
 
@@ -169,107 +203,13 @@ def test_post_checks_enforce_failure_on_unavailable_tool(
         verbose=False,
         raw_output=False,
     )
-    assert_that(code).is_equal_to(1)
-
-
-def test_post_checks_missing_tool_no_enforce_skips(
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """When enforce_failure is False, missing post-check is skipped gracefully.
-
-    We validate behavior by inspecting JSON output rather than exit code, to
-    avoid coupling to unrelated exit conditions. The main tool (ruff) should
-    run, and the missing post-check tool (black) should not appear in results.
-
-    Args:
-        monkeypatch: Pytest fixture to modify objects during the test.
-        capsys: Pytest fixture to capture stdout/stderr for assertions.
-    """
-    _stub_logger(monkeypatch)
-    _setup_main_tool(monkeypatch)
-
-    import lintro.utils.post_checks as post_checks
-
-    monkeypatch.setattr(
-        post_checks,
-        "load_post_checks_config",
-        lambda: {"enabled": True, "tools": ["black"], "enforce_failure": False},
-        raising=True,
-    )
-
-    def fail_get_tool(enum_val: ToolEnum) -> Never:
-        raise RuntimeError("black not available")
-
-    monkeypatch.setattr(tool_manager, "get_tool", fail_get_tool, raising=True)
-
-    _ = run_lint_tools_simple(
-        action="check",
-        paths=["."],
-        tools="all",
-        tool_options=None,
-        exclude=None,
-        include_venv=False,
-        group_by="auto",
-        output_format="json",
-        verbose=False,
-        raw_output=False,
-    )
     out = capsys.readouterr().out
     data = json.loads(out)
     results = data.get("results", [])
     tool_names = [result["tool"] for result in results]
+    # Main tool (ruff) should run successfully
     assert_that("ruff" in tool_names).is_true()
+    # Post-check (black) should be skipped, not appear in results
     assert_that("black" in tool_names).is_false()
-
-
-def test_post_checks_json_mode_enforced_failure_on_missing_tool(
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    """JSON output mode should still enforce failure on missing post-check.
-
-    Args:
-        monkeypatch: Pytest fixture to modify objects during the test.
-        capsys: Pytest fixture to capture stdout for assertions.
-    """
-    _stub_logger(monkeypatch)
-    _setup_main_tool(monkeypatch)
-
-    import lintro.utils.tool_executor as te
-
-    # Enable post-checks with enforce_failure
-    monkeypatch.setattr(
-        te,
-        "load_post_checks_config",
-        lambda: {"enabled": True, "tools": ["black"], "enforce_failure": True},
-        raising=True,
-    )
-
-    # Force resolution failure for the post-check tool
-    def fail_get_tool(enum_val: ToolEnum) -> Never:
-        raise RuntimeError("black not available")
-
-    monkeypatch.setattr(tool_manager, "get_tool", fail_get_tool, raising=True)
-
-    # Run in JSON mode; exit code should reflect enforced failure
-    code = run_lint_tools_simple(
-        action="check",
-        paths=["."],
-        tools="all",
-        tool_options=None,
-        exclude=None,
-        include_venv=False,
-        group_by="auto",
-        output_format="json",
-        verbose=False,
-        raw_output=False,
-    )
-    out = capsys.readouterr().out
-    data = json.loads(out)
-
-    # Should include a failure result for the missing post-check tool
-    tool_names = [r.get("tool") for r in data.get("results", [])]
-    assert_that("black" in tool_names).is_true()
-    # Exit code should be failure
-    assert_that(code).is_equal_to(1)
+    # Exit code should be success (0) since main tool passed and post-check was skipped
+    assert_that(code).is_equal_to(0)

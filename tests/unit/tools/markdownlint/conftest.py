@@ -1,6 +1,17 @@
-"""Pytest configuration for markdownlint tool unit tests.
+"""Shared fixtures for markdownlint plugin tests."""
 
-Tests in this directory focus on markdownlint markdown linting tool functionality.
-"""
+from __future__ import annotations
 
-# Add any markdownlint-specific fixtures here in the future
+import pytest
+
+from lintro.tools.definitions.markdownlint import MarkdownlintPlugin
+
+
+@pytest.fixture
+def markdownlint_plugin() -> MarkdownlintPlugin:
+    """Provide a MarkdownlintPlugin instance for testing.
+
+    Returns:
+        A MarkdownlintPlugin instance.
+    """
+    return MarkdownlintPlugin()

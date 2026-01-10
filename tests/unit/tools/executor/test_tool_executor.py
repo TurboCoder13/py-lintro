@@ -3,17 +3,29 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Never
 
 import pytest
 from assertpy import assert_that
 
+import lintro.utils.tool_executor as te
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools import tool_manager
-from lintro.utils import tool_executor as te
-from lintro.utils.output_manager import OutputManager
+from lintro.utils.output import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
+
+
+@dataclass
+class FakeToolDefinition:
+    """Fake ToolDefinition for testing."""
+
+    name: str
+    can_fix: bool = False
+    description: str = ""
+    file_patterns: list[str] = field(default_factory=list)
+    native_configs: list[str] = field(default_factory=list)
 
 
 class FakeTool:
@@ -28,9 +40,27 @@ class FakeTool:
             result: Result object to return from check/fix.
         """
         self.name = name
-        self.can_fix = can_fix
+        self._definition = FakeToolDefinition(name=name, can_fix=can_fix)
         self._result = result
         self.options: dict[str, Any] = {}
+
+    @property
+    def definition(self) -> FakeToolDefinition:
+        """Return the tool definition.
+
+        Returns:
+            FakeToolDefinition containing tool metadata.
+        """
+        return self._definition
+
+    @property
+    def can_fix(self) -> bool:
+        """Return whether the tool can fix issues.
+
+        Returns:
+            True if the tool can fix issues.
+        """
+        return self._definition.can_fix
 
     def set_options(self, **kwargs: Any) -> None:
         """Record option values provided to the tool stub.
@@ -40,34 +70,37 @@ class FakeTool:
         """
         self.options.update(kwargs)
 
-    def check(self, paths: list[str]) -> ToolResult:
+    def check(
+        self,
+        paths: list[str],
+        options: dict[str, Any] | None = None,
+    ) -> ToolResult:
         """Return the stored result for a check invocation.
 
         Args:
             paths: Target paths (ignored in stub).
+            options: Optional tool options.
 
         Returns:
             ToolResult: Pre-baked result instance.
         """
         return self._result
 
-    def fix(self, paths: list[str]) -> ToolResult:
+    def fix(
+        self,
+        paths: list[str],
+        options: dict[str, Any] | None = None,
+    ) -> ToolResult:
         """Return the stored result for a fix invocation.
 
         Args:
             paths: Target paths (ignored in stub).
+            options: Optional tool options.
 
         Returns:
             ToolResult: Pre-baked result instance.
         """
         return self._result
-
-
-class _EnumLike:
-    """Tiny enum-like wrapper exposing a `name` attribute."""
-
-    def __init__(self, name: str) -> None:
-        self.name = name
 
 
 def _setup_tool_manager(
@@ -80,18 +113,18 @@ def _setup_tool_manager(
         monkeypatch: Pytest monkeypatch fixture.
         tools: Mapping of tool name to FakeTool instance.
     """
+    tools_dict = tools
 
     def fake_get_tools(
         tools: str | None,
         action: str,
-    ) -> list[_EnumLike]:
-        return [_EnumLike(name.upper()) for name in tools_dict]
+    ) -> list[str]:
+        return list(tools_dict.keys())
 
-    tools_dict = tools
-    monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
+    monkeypatch.setattr(te, "get_tools_to_run", fake_get_tools, raising=True)
 
-    def fake_get_tool(enum_val: _EnumLike) -> FakeTool:
-        return tools_dict[enum_val.name.lower()]
+    def fake_get_tool(name: str) -> FakeTool:
+        return tools_dict[name.lower()]
 
     monkeypatch.setattr(tool_manager, "get_tool", fake_get_tool, raising=True)
 
@@ -116,7 +149,7 @@ def _stub_logger(monkeypatch: pytest.MonkeyPatch, fake_logger: Any) -> None:
         monkeypatch: Pytest monkeypatch fixture.
         fake_logger: FakeLogger fixture instance.
     """
-    import lintro.utils.console_logger as cl
+    import lintro.utils.console as cl
 
     monkeypatch.setattr(cl, "create_logger", lambda **k: fake_logger, raising=True)
 
@@ -352,7 +385,7 @@ def test_executor_unknown_tool(
     def raise_value_error(tools: str | None, action: str) -> Never:
         raise ValueError("unknown tool")
 
-    monkeypatch.setattr(te, "_get_tools_to_run", raise_value_error, raising=True)
+    monkeypatch.setattr(te, "get_tools_to_run", raise_value_error, raising=True)
     code = run_lint_tools_simple(
         action="check",
         paths=["."],
