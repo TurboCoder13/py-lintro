@@ -1,76 +1,17 @@
-"""Lintro configuration dataclasses.
+"""Main Lintro configuration model."""
 
-This module defines the configuration structure for .lintro-config.yaml.
-The configuration follows a 4-tier model:
-
-1. EXECUTION: What tools run and how (Lintro's core responsibility)
-2. ENFORCE: Cross-cutting settings injected via CLI flags (overrides native configs)
-3. DEFAULTS: Fallback config when no native config exists for a tool
-4. TOOLS: Per-tool enable/disable and config source
-"""
-
-from dataclasses import dataclass, field
 from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field
 
-@dataclass
-class EnforceConfig:
-    """Cross-cutting settings enforced across all tools via CLI flags.
+from lintro.config.enforce_config import EnforceConfig
+from lintro.config.execution_config import ExecutionConfig
+from lintro.config.tool_config import LintroToolConfig
 
-    These settings override native tool configs to ensure consistency
-    across different tools for shared concerns.
-
-    Attributes:
-        line_length: Line length limit injected via CLI flags.
-            Injected as: --line-length (ruff, black), --print-width (prettier)
-        target_python: Python version target (e.g., "py313").
-            Injected as: --target-version (ruff, black)
-    """
-
-    line_length: int | None = field(default=None)
-    target_python: str | None = field(default=None)
+__all__ = ["EnforceConfig", "ExecutionConfig", "LintroConfig", "LintroToolConfig"]
 
 
-@dataclass
-class ExecutionConfig:
-    """Execution control settings.
-
-    Attributes:
-        enabled_tools: List of tool names to run. If empty/None, all tools run.
-        tool_order: Execution order strategy. One of:
-            - "priority": Use default priority (formatters before linters)
-            - "alphabetical": Alphabetical order
-            - list[str]: Custom order as explicit list
-        fail_fast: Stop on first tool failure.
-        parallel: Run tools in parallel where possible (future).
-    """
-
-    enabled_tools: list[str] = field(default_factory=list)
-    tool_order: str | list[str] = field(default="priority")
-    fail_fast: bool = field(default=False)
-    parallel: bool = field(default=False)
-
-
-@dataclass
-class LintroToolConfig:
-    """Configuration for a single tool.
-
-    In the tiered model, tools use their native configs by default.
-    Lintro only controls whether tools run and optionally specifies
-    an explicit config source path.
-
-    Attributes:
-        enabled: Whether the tool is enabled.
-        config_source: Optional explicit path to native config file.
-            If not set, tool uses its own config discovery.
-    """
-
-    enabled: bool = field(default=True)
-    config_source: str | None = field(default=None)
-
-
-@dataclass
-class LintroConfig:
+class LintroConfig(BaseModel):
     """Main Lintro configuration container.
 
     This is the root configuration object loaded from .lintro-config.yaml.
@@ -89,11 +30,13 @@ class LintroConfig:
         config_path: Path to the config file (set by loader).
     """
 
-    execution: ExecutionConfig = field(default_factory=ExecutionConfig)
-    enforce: EnforceConfig = field(default_factory=EnforceConfig)
-    defaults: dict[str, dict[str, Any]] = field(default_factory=dict)
-    tools: dict[str, LintroToolConfig] = field(default_factory=dict)
-    config_path: str | None = field(default=None)
+    model_config = ConfigDict(frozen=False, extra="forbid")
+
+    execution: ExecutionConfig = Field(default_factory=ExecutionConfig)
+    enforce: EnforceConfig = Field(default_factory=EnforceConfig)
+    defaults: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    tools: dict[str, LintroToolConfig] = Field(default_factory=dict)
+    config_path: str | None = None
 
     def get_tool_config(self, tool_name: str) -> LintroToolConfig:
         """Get configuration for a specific tool.
@@ -131,7 +74,7 @@ class LintroConfig:
 
         # Check tool-specific enabled flag
         tool_config = self.get_tool_config(tool_lower)
-        return tool_config.enabled
+        return bool(tool_config.enabled)
 
     def get_tool_defaults(self, tool_name: str) -> dict[str, Any]:
         """Get default configuration for a tool.
@@ -158,7 +101,8 @@ class LintroConfig:
         Returns:
             int | None: Enforced line length or None.
         """
-        return self.enforce.line_length
+        line_length: int | None = self.enforce.line_length
+        return line_length
 
     def get_effective_target_python(self, tool_name: str) -> str | None:
         """Get effective Python target version for a specific tool.
@@ -172,4 +116,5 @@ class LintroConfig:
         Returns:
             str | None: Enforced target version or None.
         """
-        return self.enforce.target_python
+        target_python: str | None = self.enforce.target_python
+        return target_python
