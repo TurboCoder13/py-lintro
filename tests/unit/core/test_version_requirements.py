@@ -134,7 +134,7 @@ def test_get_install_hints() -> None:
     assert_that(hints).contains_key("ruff")
     assert_that(hints).contains_key("prettier")
     assert_that(hints["ruff"]).contains("Install via:")
-    assert_that(hints["prettier"]).contains("npm install")
+    assert_that(hints["prettier"]).contains("bun add")
 
 
 def test_version_caching() -> None:

@@ -148,11 +148,11 @@ enforce_failure = true
 
 [tool.lintro.versions]
 pytest = "8.0.0"
-prettier = "3.7.0"
+prettier = "3.7.3"
 biome = "2.3.9"
 hadolint = "2.12.0"
-actionlint = "1.7.0"
-markdownlint = "0.16.0"
+actionlint = "1.7.5"
+markdownlint = "0.17.2"
 clippy = "1.92.0"
 
 [tool.pytest.ini_options]

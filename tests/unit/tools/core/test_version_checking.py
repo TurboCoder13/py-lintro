@@ -323,17 +323,17 @@ def test_get_install_hints_pip_for_python_tools(
         assert_that("uv add" in result.get("ruff", "")).is_true()
 
 
-def test_get_install_hints_npm_for_node_tools(
+def test_get_install_hints_bun_for_node_tools(
     mock_minimum_versions: Callable[[dict[str, str]], _patch[Any]],
 ) -> None:
-    """Node.js tools have npm install hints.
+    """Node.js tools have bun install hints.
 
     Args:
         mock_minimum_versions: Factory fixture for mocking versions.
     """
     with mock_minimum_versions({"prettier": "3.7.0"}):
         result = get_install_hints()
-        assert_that("npm install" in result.get("prettier", "")).is_true()
+        assert_that("bun add" in result.get("prettier", "")).is_true()
 
 
 def test_get_install_hints_external_tools(

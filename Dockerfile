@@ -24,10 +24,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     build-essential \
     git \
-    npm \
+    unzip \
     jq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install bun (JavaScript runtime and package manager)
+RUN curl -fsSL https://bun.sh/install | bash && \
+    mv /root/.bun/bin/bun /usr/local/bin/bun && \
+    chmod +x /usr/local/bin/bun
 
 # Install uv (Python package manager)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
@@ -74,8 +79,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Install minimal runtime dependencies
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    npm && \
+    git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -90,7 +94,7 @@ COPY --from=builder /usr/local/bin/actionlint /usr/local/bin/
 COPY --from=builder /usr/local/bin/cargo /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustc /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustup /usr/local/bin/
-COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=builder /root/.bun/install/global/node_modules /usr/local/lib/node_modules
 COPY --from=builder /root/.cargo /home/lintro/.cargo
 COPY --from=builder /root/.rustup /home/lintro/.rustup
 
@@ -98,9 +102,10 @@ COPY --from=builder /root/.rustup /home/lintro/.rustup
 ENV CARGO_HOME=/home/lintro/.cargo \
     RUSTUP_HOME=/home/lintro/.rustup
 
-# Create symlinks for npm global packages
+# Create symlinks for bun global packages
 RUN (ln -sf /usr/local/lib/node_modules/prettier/bin/prettier.cjs /usr/local/bin/prettier || true) && \
-    (ln -sf /usr/local/lib/node_modules/markdownlint-cli2/markdownlint-cli2.mjs /usr/local/bin/markdownlint-cli2 || true)
+    (ln -sf /usr/local/lib/node_modules/markdownlint-cli2/markdownlint-cli2.mjs /usr/local/bin/markdownlint-cli2 || true) && \
+    (ln -sf /usr/local/lib/node_modules/@biomejs/biome/bin/biome /usr/local/bin/biome || true)
 
 # Copy Python virtual environment and application from builder
 COPY --from=builder /app/.venv /app/.venv

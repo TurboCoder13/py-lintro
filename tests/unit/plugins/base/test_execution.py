@@ -330,24 +330,24 @@ def test_get_executable_command_python_bundled_tools(
         assert_that(result).contains(item)
 
 
-def test_get_executable_command_nodejs_tool_with_npx(
+def test_get_executable_command_nodejs_tool_with_bunx(
     fake_tool_plugin: FakeToolPlugin,
 ) -> None:
-    """Verify Node.js tools return npx command when npx is available.
+    """Verify Node.js tools return bunx command when bunx is available.
 
     Args:
         fake_tool_plugin: Fixture providing a FakeToolPlugin instance.
     """
-    with patch("shutil.which", return_value="/usr/bin/npx"):
+    with patch("shutil.which", return_value="/usr/bin/bunx"):
         result = fake_tool_plugin._get_executable_command("prettier")
 
-        assert_that(result).contains("npx", "prettier")
+        assert_that(result).contains("bunx", "prettier")
 
 
-def test_get_executable_command_nodejs_tool_without_npx(
+def test_get_executable_command_nodejs_tool_without_bunx(
     fake_tool_plugin: FakeToolPlugin,
 ) -> None:
-    """Verify Node.js tools return tool name when npx is not available.
+    """Verify Node.js tools return tool name when bunx is not available.
 
     Args:
         fake_tool_plugin: Fixture providing a FakeToolPlugin instance.

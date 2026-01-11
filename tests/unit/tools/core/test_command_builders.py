@@ -135,16 +135,16 @@ def test_nodejs_builder_does_not_handle_ruff() -> None:
     assert_that(builder.can_handle(ToolName.RUFF)).is_false()
 
 
-def test_nodejs_builder_uses_npx_when_available() -> None:
-    """NodeJSBuilder uses npx when available."""
+def test_nodejs_builder_uses_bunx_when_available() -> None:
+    """NodeJSBuilder uses bunx when available."""
     builder = NodeJSBuilder()
-    with patch("shutil.which", return_value="/usr/local/bin/npx"):
+    with patch("shutil.which", return_value="/usr/local/bin/bunx"):
         cmd = builder.get_command("prettier", ToolName.PRETTIER)
-        assert_that(cmd).is_equal_to(["npx", "prettier"])
+        assert_that(cmd).is_equal_to(["bunx", "prettier"])
 
 
 def test_nodejs_builder_falls_back_to_tool_name() -> None:
-    """NodeJSBuilder falls back to tool name when npx not available."""
+    """NodeJSBuilder falls back to tool name when bunx not available."""
     builder = NodeJSBuilder()
     with patch("shutil.which", return_value=None):
         cmd = builder.get_command("prettier", ToolName.PRETTIER)

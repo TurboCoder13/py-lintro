@@ -78,49 +78,40 @@ set -- "${POSITIONAL[@]:-}"
 # Script-specific logging (prefixed)
 install_log() { echo "[install-tools] $*"; }
 
-# Helper function to ensure npm is installed
+# Helper function to ensure bun is installed
 # Returns 0 on success, non-zero on failure (does not call exit)
-ensure_npm_installed() {
-    if command -v npm &> /dev/null; then
+ensure_bun_installed() {
+    if command -v bun &> /dev/null; then
         return 0
     fi
-    
-    echo -e "${YELLOW}npm not found, trying to install Node.js...${NC}"
-    
-    # Try to install Node.js based on platform
-    if command -v apt-get &> /dev/null && [ "$(id -u)" = "0" ]; then
-        # Debian/Ubuntu with root privileges (no curl|bash installers)
-        if [ $DRY_RUN -eq 1 ]; then
-            log_info "[DRY-RUN] Would install nodejs/npm via apt-get"
-            return 0
-        else
-            apt-get update
-            apt-get install -y --no-install-recommends nodejs npm || \
-            apt-get install -y --no-install-recommends nodejs
-            return $?
-        fi
-    elif command -v brew &> /dev/null; then
-        # macOS with Homebrew
-        if [ $DRY_RUN -eq 1 ]; then
-            log_info "[DRY-RUN] Would install node via brew"
-            return 0
-        else
-            brew install node
-            return $?
-        fi
-    elif command -v yum &> /dev/null && [ "$(id -u)" = "0" ]; then
-        # RHEL/CentOS with root privileges (no curl|bash installers)
-        if [ $DRY_RUN -eq 1 ]; then
-            log_info "[DRY-RUN] Would install nodejs/npm via yum"
-            return 0
-        else
-            yum install -y nodejs npm || yum install -y nodejs
-            return $?
-        fi
-    else
-        echo -e "${RED}✗ Cannot install Node.js automatically. Please install Node.js manually.${NC}"
-        return 1
+
+    echo -e "${YELLOW}bun not found, trying to install...${NC}"
+
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install bun via curl"
+        return 0
     fi
+
+    # Install bun via official installer (works on Linux and macOS)
+    if curl -fsSL https://bun.sh/install | bash; then
+        # Source bun environment
+        if [ -f "$HOME/.bun/bin/bun" ]; then
+            export BUN_INSTALL="$HOME/.bun"
+            export PATH="$BUN_INSTALL/bin:$PATH"
+        fi
+        return 0
+    fi
+
+    # Try Homebrew on macOS as fallback
+    if command -v brew &> /dev/null; then
+        echo -e "${YELLOW}Trying Homebrew for bun...${NC}"
+        if brew install oven-sh/bun/bun; then
+            return 0
+        fi
+    fi
+
+    echo -e "${RED}✗ Cannot install bun automatically. Please install bun manually: https://bun.sh${NC}"
+    return 1
 }
 
 # Simple downloader with retries/backoff
@@ -322,9 +313,7 @@ install_system_deps() {
             git \
             gnupg
         
-        # Install Node.js/npm from distribution repositories (no curl|bash)
-        apt-get install -y --no-install-recommends nodejs npm || \
-            apt-get install -y --no-install-recommends nodejs
+        # Note: bun will be installed via ensure_bun_installed() when needed
         
         # Install Python packages via apt (more reliable in Docker)
         apt-get install -y --no-install-recommends \
@@ -492,56 +481,87 @@ main() {
         exit 1
     fi
 
-    # Install prettier via npm (JavaScript/JSON formatting)
+    # Install prettier via bun (JavaScript/JSON formatting)
     echo -e "${BLUE}Installing prettier...${NC}"
-    
-    # Ensure npm is available
-    if ! ensure_npm_installed; then
+
+    # Ensure bun is available
+    if ! ensure_bun_installed; then
         exit 1
     fi
-    
+
     # Read prettier version from package.json if it exists
     # Check devDependencies first, then dependencies, then fall back to latest
     if [ -f "package.json" ]; then
         PRETTIER_VERSION=$(jq -r '.devDependencies.prettier // .dependencies.prettier // "latest"' package.json 2>/dev/null || echo "latest")
+        # Strip caret prefix if present (e.g., "^3.7.3" -> "3.7.3")
+        PRETTIER_VERSION="${PRETTIER_VERSION#^}"
     else
         PRETTIER_VERSION="latest"
     fi
-    
+
     if [ $DRY_RUN -eq 1 ]; then
-        log_info "[DRY-RUN] Would install prettier@${PRETTIER_VERSION} globally via npm"
-    elif npm install -g "prettier@${PRETTIER_VERSION}"; then
+        log_info "[DRY-RUN] Would install prettier@${PRETTIER_VERSION} globally via bun"
+    elif bun add -g "prettier@${PRETTIER_VERSION}"; then
         echo -e "${GREEN}✓ prettier@${PRETTIER_VERSION} installed successfully${NC}"
     else
         echo -e "${RED}✗ Failed to install prettier${NC}"
         exit 1
     fi
     
-    # Install markdownlint-cli2 via npm (Markdown linting)
+    # Install markdownlint-cli2 via bun (Markdown linting)
     echo -e "${BLUE}Installing markdownlint-cli2...${NC}"
-    
-    # Ensure npm is available (should already be installed for prettier)
-    if ! ensure_npm_installed; then
+
+    # Ensure bun is available (should already be installed for prettier)
+    if ! ensure_bun_installed; then
         exit 1
     fi
-    
+
     # Read markdownlint-cli2 version from package.json if it exists
     # Check devDependencies first, then dependencies, then fall back to latest
     if [ -f "package.json" ]; then
         MARKDOWNLINT_VERSION=$(jq -r '.devDependencies."markdownlint-cli2" // .dependencies."markdownlint-cli2" // "latest"' package.json 2>/dev/null || echo "latest")
+        # Strip caret prefix if present (e.g., "^0.17.2" -> "0.17.2")
+        MARKDOWNLINT_VERSION="${MARKDOWNLINT_VERSION#^}"
     else
         MARKDOWNLINT_VERSION="latest"
     fi
-    
+
     if [ $DRY_RUN -eq 1 ]; then
-        log_info "[DRY-RUN] Would install markdownlint-cli2@${MARKDOWNLINT_VERSION} globally via npm"
-    elif npm install -g "markdownlint-cli2@${MARKDOWNLINT_VERSION}"; then
+        log_info "[DRY-RUN] Would install markdownlint-cli2@${MARKDOWNLINT_VERSION} globally via bun"
+    elif bun add -g "markdownlint-cli2@${MARKDOWNLINT_VERSION}"; then
         echo -e "${GREEN}✓ markdownlint-cli2@${MARKDOWNLINT_VERSION} installed successfully${NC}"
     else
         echo -e "${RED}✗ Failed to install markdownlint-cli2${NC}"
         exit 1
     fi
-    
+
+    # Install biome via bun (JavaScript/TypeScript linting and formatting)
+    echo -e "${BLUE}Installing biome...${NC}"
+
+    # Ensure bun is available (should already be installed for prettier)
+    if ! ensure_bun_installed; then
+        exit 1
+    fi
+
+    # Read biome version from package.json if it exists
+    # Check devDependencies first, then dependencies, then fall back to latest
+    if [ -f "package.json" ]; then
+        BIOME_VERSION=$(jq -r '.devDependencies."@biomejs/biome" // .dependencies."@biomejs/biome" // "latest"' package.json 2>/dev/null || echo "latest")
+        # Strip caret prefix if present (e.g., "^2.3.9" -> "2.3.9")
+        BIOME_VERSION="${BIOME_VERSION#^}"
+    else
+        BIOME_VERSION="latest"
+    fi
+
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install @biomejs/biome@${BIOME_VERSION} globally via bun"
+    elif bun add -g "@biomejs/biome@${BIOME_VERSION}"; then
+        echo -e "${GREEN}✓ @biomejs/biome@${BIOME_VERSION} installed successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to install biome${NC}"
+        exit 1
+    fi
+
     # Install yamllint (Python package)
     echo -e "${BLUE}Installing yamllint...${NC}"
     
@@ -613,6 +633,7 @@ main() {
     echo -e "${YELLOW}Installed tools:${NC}"
     echo "  - actionlint (GitHub Actions linting)"
     echo "  - bandit (Python security checks)"
+    echo "  - biome (JavaScript/TypeScript linting and formatting)"
     echo "  - black (Python formatting)"
     echo "  - clippy (Rust linting)"
     echo "  - darglint (Python docstring validation)"
@@ -627,7 +648,7 @@ main() {
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("actionlint" "bandit" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint" "mypy")
+    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint" "mypy")
     for tool in "${tools_to_verify[@]}"; do
         if [ "$tool" = "clippy" ]; then
             # Clippy is invoked through cargo
