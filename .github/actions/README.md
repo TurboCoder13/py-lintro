@@ -7,10 +7,9 @@ inputs in its action.yml.
 
 Internal actions use **semantic version tags** with the `actions-` prefix (e.g.,
 `actions-v1.0.0`, `actions-v1.0.1`) instead of commit SHAs. Workflows reference actions
-using the major version pointer `@actions-v1`, which automatically resolves to the
-latest patch version tag. This approach:
+using explicit version tags like `@actions-v1.0.10`. This approach:
 
-- Eliminates dependency update loops
+- Provides explicit, reproducible builds
 - Provides clear versioning for action stability
 - Separates action versions from lintro PyPI release versions
 - Follows industry best practices for monorepos
@@ -18,15 +17,23 @@ latest patch version tag. This approach:
 ### Automatic Versioning
 
 The `auto-version-actions.yml` workflow automatically creates new patch version tags
-when actions or reusable workflows are modified. You don't need to manually create tags.
+when actions or reusable workflows are modified.
 
 **How it works:**
 
 1. Modify an action file (e.g., `.github/actions/setup-env/action.yml`)
 2. Commit and push to main
 3. Workflow automatically creates `actions-v1.0.0` (first run) or the next patch version
-   (e.g., `actions-v1.0.1`)
-4. All workflows using `@actions-v1` automatically use the new version
+   (e.g., `actions-v1.0.11`)
+4. Update workflow references to use the new version tag
+
+### Updating Workflow References
+
+After a new action version is created, update workflow references:
+
+1. Check the latest tag: `git tag -l 'actions-v1.*' | sort -V | tail -1`
+2. Update all workflow files referencing `@actions-v1.x.x` to the new version
+3. Commit and push the updated workflows
 
 ### Manual Versioning (Breaking Changes Only)
 
@@ -40,12 +47,7 @@ For major version changes (breaking changes), manually create a new major versio
    git push origin actions-v2.0.0
    ```
 
-3. **Update workflow references** from `@actions-v1` to `@actions-v2`
-
-### Current Action Versions
-
-All actions are currently at `actions-v1.0.0`. Patch versions are automatically managed
-by the `auto-version-actions` workflow.
+3. **Update workflow references** to use `@actions-v2.0.0`
 
 ## .github/actions/setup-docker
 

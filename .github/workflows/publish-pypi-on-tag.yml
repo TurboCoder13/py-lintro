@@ -26,20 +26,20 @@ jobs:
   quality:
     # Skip workflow if triggered by internal action version tags
     if: ${{ !startsWith(github.ref_name, 'actions-v') }}
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@actions-v1
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@actions-v1.0.10
     permissions:
       contents: read
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@actions-v1
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@actions-v1.0.10
     permissions:
       contents: read
 
   sbom:
     name: Generate and verify SBOM
     needs: [build, quality]
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@actions-v1
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-sbom.yml@actions-v1.0.10
     permissions:
       contents: read
       actions: read
@@ -79,7 +79,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1.0.10
         with:
           python-version: '3.13'
       - name: Ensure tag points to a commit on main
