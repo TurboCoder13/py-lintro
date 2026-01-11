@@ -50,7 +50,7 @@ RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
 # Copy project files and install Python dependencies
 COPY pyproject.toml /app/
 COPY lintro/ /app/lintro/
-RUN uv sync --dev --no-progress && uv cache clean || true
+RUN uv sync --dev --no-progress && (uv cache clean || true)
 
 # =============================================================================
 # Stage 2: Runtime - Minimal image with only what's needed to run
@@ -91,8 +91,12 @@ COPY --from=builder /usr/local/bin/cargo /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustc /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustup /usr/local/bin/
 COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=builder /root/.cargo /root/.cargo
-COPY --from=builder /root/.rustup /root/.rustup
+COPY --from=builder /root/.cargo /home/lintro/.cargo
+COPY --from=builder /root/.rustup /home/lintro/.rustup
+
+# Set Rust environment for lintro user
+ENV CARGO_HOME=/home/lintro/.cargo \
+    RUSTUP_HOME=/home/lintro/.rustup
 
 # Create symlinks for npm global packages
 RUN ln -sf /usr/local/lib/node_modules/prettier/bin/prettier.cjs /usr/local/bin/prettier && \
@@ -108,8 +112,8 @@ COPY scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY scripts/docker/fix-permissions.sh /usr/local/bin/fix-permissions.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/fix-permissions.sh
 
-# Create /code directory for volume mounts
-RUN mkdir -p /code && chown -R lintro:lintro /app /code
+# Create /code directory for volume mounts and fix Rust directory ownership
+RUN mkdir -p /code && chown -R lintro:lintro /app /code /home/lintro/.cargo /home/lintro/.rustup
 
 # Health check to verify lintro is working
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

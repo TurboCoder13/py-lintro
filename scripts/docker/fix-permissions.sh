@@ -36,7 +36,7 @@ fi
 # Fix permissions for /code if it exists
 if [ -d "/code" ]; then
     # Ensure current user can write to /code
-    chown -R "$(whoami):$(whoami)" /code 2>/dev/null || true
+    chown -R "$(id -u):$(id -g)" /code 2>/dev/null || true
     chmod -R 755 /code 2>/dev/null || true
 fi
 

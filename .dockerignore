@@ -57,6 +57,5 @@ output/
 test_sample.py
 .lintro/
 coverage.xml
-htmlcov/
 .mypy_cache/
-.ruff_cache/ 
+.ruff_cache/
