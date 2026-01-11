@@ -43,9 +43,10 @@ def get_effective_timeout(
 
     # Warn about invalid timeout value
     if raw_timeout is not None:
+        type_name = type(raw_timeout).__name__
         logger.warning(
-            f"Invalid timeout value {raw_timeout!r} (type {type(raw_timeout).__name__}), "
-            f"using default {default_timeout}s"
+            f"Invalid timeout value {raw_timeout!r} (type {type_name}), "
+            f"using default {default_timeout}s",
         )
     return float(default_timeout)
 

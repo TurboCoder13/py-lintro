@@ -48,7 +48,9 @@ runs:
         # Strip v prefix if requested (case-insensitive boolean check)
         STRIP_PREFIX="${{ inputs.strip-prefix }}"
         STRIP_PREFIX_LOWER=$(echo "$STRIP_PREFIX" | tr '[:upper:]' '[:lower:]')
-        if [[ "$STRIP_PREFIX_LOWER" == "true" || "$STRIP_PREFIX_LOWER" == "yes" || "$STRIP_PREFIX_LOWER" == "1" ]]; then
+        if [[ "$STRIP_PREFIX_LOWER" == "true" ]] \
+            || [[ "$STRIP_PREFIX_LOWER" == "yes" ]] \
+            || [[ "$STRIP_PREFIX_LOWER" == "1" ]]; then
           VERSION="${TAG#v}"
         else
           VERSION="$TAG"

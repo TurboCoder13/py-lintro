@@ -56,7 +56,7 @@ def parse_coverage_summary(raw_output: str) -> dict[str, Any] | None:
     if not total_line:
         return None
 
-    # Parse TOTAL line: "TOTAL    20731  12738    39%" or "TOTAL    20731  12738    39.5%"
+    # Parse TOTAL line: "TOTAL  20731  12738  39%" or "TOTAL  20731  12738  39.5%"
     # Split by whitespace and extract values (support decimal percentages)
     match = re.search(r"TOTAL\s+(\d+)\s+(\d+)\s+(\d+(?:\.\d+)?)%", total_line)
     if not match:

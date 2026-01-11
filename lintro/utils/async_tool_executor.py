@@ -49,8 +49,12 @@ class AsyncToolExecutor:
         """Initialize the thread pool executor."""
         self._executor = ThreadPoolExecutor(max_workers=self.max_workers)
 
-    def __enter__(self) -> "AsyncToolExecutor":
-        """Enter context manager."""
+    def __enter__(self) -> AsyncToolExecutor:
+        """Enter context manager.
+
+        Returns:
+            AsyncToolExecutor: This executor instance.
+        """
         return self
 
     def __exit__(
@@ -59,7 +63,13 @@ class AsyncToolExecutor:
         exc_val: BaseException | None,
         exc_tb: Any,
     ) -> None:
-        """Exit context manager and cleanup resources."""
+        """Exit context manager and cleanup resources.
+
+        Args:
+            exc_type: Exception type if an exception was raised.
+            exc_val: Exception instance if an exception was raised.
+            exc_tb: Traceback if an exception was raised.
+        """
         self.shutdown()
 
     async def run_tool_async(
@@ -79,6 +89,9 @@ class AsyncToolExecutor:
 
         Returns:
             ToolResult: The result of tool execution.
+
+        Raises:
+            RuntimeError: If the executor has been shut down.
         """
         from lintro.enums.action import Action
 

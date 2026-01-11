@@ -5,6 +5,7 @@ This module provides safe subprocess execution with validation and streaming.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import subprocess  # nosec B404 - subprocess used safely with shell=False
 import sys
@@ -237,10 +238,9 @@ def run_subprocess_streaming(
         if reader_thread.is_alive():
             # Timeout occurred during reading - kill the process
             process.kill()
-            try:
-                process.wait(timeout=1.0)  # Brief timeout for cleanup
-            except subprocess.TimeoutExpired:
-                pass  # Process didn't die cleanly, but we've done our best
+            # Brief timeout for cleanup; ignore if process doesn't die cleanly
+            with contextlib.suppress(subprocess.TimeoutExpired):
+                process.wait(timeout=1.0)
             raise subprocess.TimeoutExpired(
                 cmd=cmd,
                 timeout=timeout,
@@ -250,14 +250,14 @@ def run_subprocess_streaming(
         # Reading completed, now wait for process to finish
         try:
             returncode = process.wait(timeout=timeout)
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
             process.kill()
             process.wait(timeout=1.0)
             raise subprocess.TimeoutExpired(
                 cmd=cmd,
                 timeout=timeout,
                 output="\n".join(output_lines),
-            )
+            ) from e
         return returncode == 0, "\n".join(output_lines)
 
     except FileNotFoundError as e:

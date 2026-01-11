@@ -183,7 +183,8 @@ chmod +x lintro
 ```
 
 **Note:** The standalone binary still requires the external tools it wraps (ruff, black,
-mypy, etc.) to be installed separately. Use `lintro versions` to check tool availability.
+mypy, etc.) to be installed separately. Use `lintro versions` to check tool
+availability.
 
 #### Development Installation
 

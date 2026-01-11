@@ -14,10 +14,11 @@ from __future__ import annotations
 import importlib
 import importlib.metadata
 from pathlib import Path
+from typing import cast
 
 from loguru import logger
 
-from lintro.plugins.protocol import LintroPlugin
+from lintro.plugins.base import BaseToolPlugin
 from lintro.plugins.registry import ToolRegistry
 
 # Path to builtin tool definitions
@@ -105,8 +106,10 @@ def discover_external_plugins() -> int:
                 continue
 
             # Check if it implements LintroPlugin protocol (without instantiating)
-            # LintroPlugin is @runtime_checkable, so issubclass works
-            if not issubclass(plugin_class, LintroPlugin):
+            # Check for required attributes since Protocol with properties
+            # can't use issubclass reliably
+            required_attrs = ("definition", "check", "fix", "set_options")
+            if not all(hasattr(plugin_class, attr) for attr in required_attrs):
                 logger.warning(
                     f"Entry point {ep.name!r} class does not implement LintroPlugin, "
                     "skipping",
@@ -115,7 +118,7 @@ def discover_external_plugins() -> int:
 
             # Register the plugin if not already registered
             if not ToolRegistry.is_registered(ep.name):
-                ToolRegistry.register(plugin_class)
+                ToolRegistry.register(cast(type[BaseToolPlugin], plugin_class))
                 logger.info(f"Loaded external plugin: {ep.name}")
                 loaded_count += 1
             else:
