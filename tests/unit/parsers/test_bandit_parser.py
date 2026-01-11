@@ -160,6 +160,7 @@ def test_bandit_check_parses_mixed_output_json(
 
     monkeypatch.setattr("subprocess.run", fake_run)
     tool = ToolRegistry.get("bandit")
+    assert_that(tool).is_not_none()
     result: ToolResult = tool.check([str(p)], {})
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.name).is_equal_to("bandit")
@@ -220,6 +221,7 @@ def test_bandit_check_handles_nonzero_rc_with_errors_array(
 
     monkeypatch.setattr("subprocess.run", fake_run)
     tool = ToolRegistry.get("bandit")
+    assert_that(tool).is_not_none()
     result: ToolResult = tool.check([str(p)], {})
     assert_that(result.success).is_false()
     assert_that(result.issues_count).is_equal_to(1)
@@ -253,6 +255,7 @@ def test_bandit_check_handles_unparseable_output(
 
     monkeypatch.setattr("subprocess.run", fake_run)
     tool = ToolRegistry.get("bandit")
+    assert_that(tool).is_not_none()
     result: ToolResult = tool.check([str(p)], {})
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.name).is_equal_to("bandit")
