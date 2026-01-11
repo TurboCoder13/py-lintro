@@ -143,10 +143,13 @@ class MarkdownlintPlugin(BaseToolPlugin):
         Returns:
             Command arguments for markdownlint-cli2.
         """
-        # Use npx to run markdownlint-cli2 (similar to prettier)
-        if shutil.which("npx"):
-            return ["npx", "markdownlint-cli2"]
-        # Fallback to direct executable if npx not found
+        # Prefer direct executable if available (works better in Docker)
+        if shutil.which("markdownlint-cli2"):
+            return ["markdownlint-cli2"]
+        # Fallback to bunx if direct executable not found
+        if shutil.which("bunx"):
+            return ["bunx", "markdownlint-cli2"]
+        # Last resort - hope markdownlint-cli2 is in PATH
         return ["markdownlint-cli2"]
 
     def _create_temp_markdownlint_config(

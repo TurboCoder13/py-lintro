@@ -271,16 +271,16 @@ def get_install_hints() -> dict[str, str]:
                 f"or uv add pytest>={pytest_version}"
             ),
             "prettier": (
-                f"Install via: npm install --save-dev "
-                f"prettier>={versions.get('prettier', '3.7.0')}"
+                f"Install via: bun add -d "
+                f"prettier@>={versions.get('prettier', '3.7.0')}"
             ),
             "biome": (
-                f"Install via: npm install --save-dev "
-                f"@biomejs/biome>={versions.get('biome', '2.3.8')}"
+                f"Install via: bun add -d "
+                f"@biomejs/biome@>={versions.get('biome', '2.3.8')}"
             ),
             "markdownlint": (
-                f"Install via: npm install --save-dev "
-                f"markdownlint-cli2>={versions.get('markdownlint', '0.16.0')}"
+                f"Install via: bun add -d "
+                f"markdownlint-cli2@>={versions.get('markdownlint', '0.16.0')}"
             ),
             "hadolint": (
                 f"Install via: https://github.com/hadolint/hadolint/releases "

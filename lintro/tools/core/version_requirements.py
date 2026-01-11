@@ -46,7 +46,7 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "mypy": ["python", "-m", "mypy"],
         "pytest": ["python", "-m", "pytest"],
         # Node.js tools
-        # Note: Users must install these tools explicitly via npm/npx
+        # Note: Users must install these tools explicitly via bun
         "prettier": ["prettier"],
         "biome": ["biome"],
         "markdownlint": ["markdownlint-cli2"],

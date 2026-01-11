@@ -302,18 +302,18 @@ class PytestBuilder(CommandBuilder):
 class NodeJSBuilder(CommandBuilder):
     """Builder for Node.js tools (Prettier, Biome, Markdownlint).
 
-    Uses npx to run Node.js tools when available, falling back to
-    direct tool invocation if npx is not found.
+    Uses bunx to run Node.js tools when available, falling back to
+    direct tool invocation if bunx is not found.
     """
 
     _package_names: dict[ToolName, str] | None = None
 
     @property
     def package_names(self) -> dict[ToolName, str]:
-        """Get mapping of tools to npm package names.
+        """Get mapping of tools to package names.
 
         Returns:
-            Dictionary mapping ToolName to npm package name.
+            Dictionary mapping ToolName to package name.
         """
         if self._package_names is None:
             from lintro.enums.tool_name import ToolName
@@ -348,11 +348,11 @@ class NodeJSBuilder(CommandBuilder):
             tool_name_enum: Tool name enum.
 
         Returns:
-            Command list to execute the tool via npx or directly.
+            Command list to execute the tool via bunx or directly.
         """
         package_name = self.package_names.get(tool_name_enum, tool_name)  # type: ignore[arg-type]
-        if shutil.which("npx"):
-            return ["npx", package_name]
+        if shutil.which("bunx"):
+            return ["bunx", package_name]
         return [tool_name]
 
 

@@ -84,7 +84,7 @@ class PrettierPlugin(BaseToolPlugin):
                 ".prettierrc.yml",
                 "prettier.config.js",
             ],
-            version_command=["npx", "prettier", "--version"],
+            version_command=["prettier", "--version"],
             min_version="2.0.0",
             default_options={
                 "timeout": PRETTIER_DEFAULT_TIMEOUT,
