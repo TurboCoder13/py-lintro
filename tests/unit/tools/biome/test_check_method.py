@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pathlib
+from pathlib import Path
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, patch
 
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     from lintro.tools.definitions.biome import BiomePlugin
 
 
-def test_check_with_issues(biome_plugin: BiomePlugin, tmp_path: str) -> None:
+def test_check_with_issues(biome_plugin: BiomePlugin, tmp_path: Path) -> None:
     """Check returns issues when found.
 
     Args:

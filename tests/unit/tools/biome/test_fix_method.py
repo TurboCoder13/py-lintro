@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pathlib
+from pathlib import Path
 import subprocess
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from lintro.tools.definitions.biome import BiomePlugin
 
 
-def test_fix_success_all_fixed(biome_plugin: BiomePlugin, tmp_path: str) -> None:
+def test_fix_success_all_fixed(biome_plugin: BiomePlugin, tmp_path: Path) -> None:
     """Fix returns success when all issues fixed.
 
     Args:
@@ -83,7 +84,7 @@ def test_fix_success_all_fixed(biome_plugin: BiomePlugin, tmp_path: str) -> None
         assert_that(result.remaining_issues_count).is_equal_to(0)
 
 
-def test_fix_partial_fix(biome_plugin: BiomePlugin, tmp_path: str) -> None:
+def test_fix_partial_fix(biome_plugin: BiomePlugin, tmp_path: Path) -> None:
     """Fix returns remaining issues when not all can be fixed.
 
     Args:
@@ -176,7 +177,7 @@ def test_fix_partial_fix(biome_plugin: BiomePlugin, tmp_path: str) -> None:
 
 def test_fix_timeout_on_initial_check(
     biome_plugin: BiomePlugin,
-    tmp_path: str,
+    tmp_path: Path,
 ) -> None:
     """Fix handles timeout on initial check.
 

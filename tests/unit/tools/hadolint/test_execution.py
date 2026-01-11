@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from typing import cast
 from unittest.mock import MagicMock, patch
 
@@ -16,7 +18,7 @@ from lintro.tools.definitions.hadolint import HadolintPlugin
 # =============================================================================
 
 
-def test_check_with_issues(hadolint_plugin: HadolintPlugin, tmp_path: str) -> None:
+def test_check_with_issues(hadolint_plugin: HadolintPlugin, tmp_path: Path) -> None:
     """Check returns issues when found.
 
     Args:
@@ -53,7 +55,7 @@ def test_check_with_issues(hadolint_plugin: HadolintPlugin, tmp_path: str) -> No
         assert_that(issue.code).is_equal_to("DL3006")
 
 
-def test_check_multiple_files(hadolint_plugin: HadolintPlugin, tmp_path: str) -> None:
+def test_check_multiple_files(hadolint_plugin: HadolintPlugin, tmp_path: Path) -> None:
     """Check handles multiple Dockerfiles.
 
     Args:
@@ -91,7 +93,7 @@ def test_check_multiple_files(hadolint_plugin: HadolintPlugin, tmp_path: str) ->
 # =============================================================================
 
 
-def test_parse_single_issue(hadolint_plugin: HadolintPlugin, tmp_path: str) -> None:
+def test_parse_single_issue(hadolint_plugin: HadolintPlugin, tmp_path: Path) -> None:
     """Parse single issue from hadolint output.
 
     Args:
@@ -132,7 +134,7 @@ def test_parse_single_issue(hadolint_plugin: HadolintPlugin, tmp_path: str) -> N
         assert_that(issue.message).contains("tag the version")
 
 
-def test_parse_multiple_issues(hadolint_plugin: HadolintPlugin, tmp_path: str) -> None:
+def test_parse_multiple_issues(hadolint_plugin: HadolintPlugin, tmp_path: Path) -> None:
     """Parse multiple issues from hadolint output.
 
     Args:

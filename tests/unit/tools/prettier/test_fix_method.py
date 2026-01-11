@@ -77,7 +77,7 @@ def test_fix_success_with_fixes_applied(
         result = prettier_plugin.fix(["/tmp/test.js"], {})
 
         assert_that(result.success).is_true()
-        assert_that(result.fixed_issues_count).is_greater_than_or_equal_to(0)
+        assert_that(result.fixed_issues_count).is_greater_than_or_equal_to(1)
 
 
 def test_fix_timeout_during_check(

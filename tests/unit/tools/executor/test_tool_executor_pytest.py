@@ -12,52 +12,52 @@ from lintro.utils.execution.tool_configuration import get_tools_to_run
 from lintro.utils.tool_executor import run_lint_tools_simple
 
 
-def testget_tools_to_run_test_action_with_pytest() -> None:
+def test_get_tools_to_run_test_action_with_pytest() -> None:
     """Test get_tools_to_run with test action returns pytest."""
     result = get_tools_to_run(tools="pytest", action="test")
     assert_that(result).is_length(1)
     assert_that(result[0]).is_equal_to("pytest")
 
 
-def testget_tools_to_run_test_action_with_pytest_full_name() -> None:
+def test_get_tools_to_run_test_action_with_pytest_full_name() -> None:
     """Test get_tools_to_run with test action using full pytest name."""
     result = get_tools_to_run(tools="pytest", action="test")
     assert_that(result).is_length(1)
     assert_that(result[0]).is_equal_to("pytest")
 
 
-def testget_tools_to_run_test_action_with_none_tools() -> None:
+def test_get_tools_to_run_test_action_with_none_tools() -> None:
     """Test get_tools_to_run with test action and None tools."""
     result = get_tools_to_run(tools=None, action="test")
     assert_that(result).is_length(1)
     assert_that(result[0]).is_equal_to("pytest")
 
 
-def testget_tools_to_run_test_action_with_invalid_tool() -> None:
+def test_get_tools_to_run_test_action_with_invalid_tool() -> None:
     """Test get_tools_to_run raises error with invalid tool for test action."""
     with pytest.raises(ValueError, match="(?i)only.*pytest.*supported"):
         get_tools_to_run(tools="ruff", action="test")
 
 
-def testget_tools_to_run_test_action_with_multiple_tools() -> None:
+def test_get_tools_to_run_test_action_with_multiple_tools() -> None:
     """Test get_tools_to_run raises error with multiple tools for test action."""
     with pytest.raises(ValueError, match="(?i)only.*pytest.*supported"):
         get_tools_to_run(tools="pytest,ruff", action="test")
 
 
-def testget_tools_to_run_check_action_rejects_pytest() -> None:
+def test_get_tools_to_run_check_action_rejects_pytest() -> None:
     """Test get_tools_to_run rejects pytest for check action."""
     with pytest.raises(ValueError, match="not available for check"):
         get_tools_to_run(tools="pytest", action="check")
 
 
-def testget_tools_to_run_format_action_rejects_pytest() -> None:
+def test_get_tools_to_run_format_action_rejects_pytest() -> None:
     """Test get_tools_to_run rejects pytest for format action."""
     with pytest.raises(ValueError, match="not available for check/fmt"):
         get_tools_to_run(tools="pytest", action="fmt")
 
 
-def testget_tools_to_run_test_action_unavailable() -> None:
+def test_get_tools_to_run_test_action_unavailable() -> None:
     """Test get_tools_to_run with test action ensures pytest is available."""
     # Verify that pytest is available in the registry
     result = get_tools_to_run(tools=None, action="test")
@@ -65,14 +65,14 @@ def testget_tools_to_run_test_action_unavailable() -> None:
     assert_that(result[0]).is_equal_to("pytest")
 
 
-def testget_tools_to_run_check_action_filters_out_pytest() -> None:
+def test_get_tools_to_run_check_action_filters_out_pytest() -> None:
     """Test get_tools_to_run filters pytest out for check action."""
     result = get_tools_to_run(tools="all", action="check")
     # Should not contain pytest (now result is list of strings)
     assert_that(result).does_not_contain("pytest")
 
 
-def testget_tools_to_run_format_action_filters_out_pytest() -> None:
+def test_get_tools_to_run_format_action_filters_out_pytest() -> None:
     """Test get_tools_to_run filters pytest out for format action."""
     result = get_tools_to_run(tools="all", action="fmt")
     # Should not contain pytest (now result is list of strings)
