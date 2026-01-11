@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -11,16 +12,28 @@ from assertpy import assert_that
 if TYPE_CHECKING:
     pass
 
+from lintro.enums.tool_name import ToolName
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools import tool_manager
-from lintro.utils.output_manager import OutputManager
+from lintro.utils.output import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
+
+
+@dataclass
+class FakeToolDefinition:
+    """Fake ToolDefinition for testing."""
+
+    name: str
+    can_fix: bool = False
+    description: str = ""
+    file_patterns: list[str] = field(default_factory=list)
+    native_configs: list[str] = field(default_factory=list)
 
 
 class FakeTool:
     """Simple stub representing a tool with check/fix capability."""
 
-    def __init__(self, name: str, can_fix: bool) -> None:
+    def __init__(self, name: ToolName, can_fix: bool) -> None:
         """Initialize stub tool.
 
         Args:
@@ -28,8 +41,26 @@ class FakeTool:
             can_fix: Whether the tool can apply fixes.
         """
         self.name = name
-        self.can_fix = can_fix
+        self._definition = FakeToolDefinition(name=str(name), can_fix=can_fix)
         self.options: dict[str, Any] = {}
+
+    @property
+    def definition(self) -> FakeToolDefinition:
+        """Return the tool definition.
+
+        Returns:
+            FakeToolDefinition containing tool metadata.
+        """
+        return self._definition
+
+    @property
+    def can_fix(self) -> bool:
+        """Return whether the tool can fix issues.
+
+        Returns:
+            True if the tool can fix issues.
+        """
+        return self._definition.can_fix
 
     def set_options(self, **kwargs: Any) -> None:
         """Record provided options for later assertions.
@@ -39,34 +70,37 @@ class FakeTool:
         """
         self.options.update(kwargs)
 
-    def check(self, paths: list[str]) -> ToolResult:
+    def check(
+        self,
+        paths: list[str],
+        options: dict[str, Any] | None = None,
+    ) -> ToolResult:
         """Return a successful empty result for lint checks.
 
         Args:
             paths: Target file or directory paths to check.
+            options: Optional tool options.
 
         Returns:
             ToolResult indicating success with zero issues.
         """
         return ToolResult(name=self.name, success=True, output="", issues_count=0)
 
-    def fix(self, paths: list[str]) -> ToolResult:
+    def fix(
+        self,
+        paths: list[str],
+        options: dict[str, Any] | None = None,
+    ) -> ToolResult:
         """Return a successful empty result for fixes.
 
         Args:
             paths: Target file or directory paths to fix.
+            options: Optional tool options.
 
         Returns:
             ToolResult indicating success with zero issues.
         """
         return ToolResult(name=self.name, success=True, output="", issues_count=0)
-
-
-class _EnumLike:
-    """Tiny stand-in for enum entries returned by tool discovery."""
-
-    def __init__(self, name: str) -> None:
-        self.name = name
 
 
 def _stub_logger(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -75,7 +109,7 @@ def _stub_logger(monkeypatch: pytest.MonkeyPatch) -> None:
     Args:
         monkeypatch: Pytest monkeypatch fixture for patching objects.
     """
-    import lintro.utils.console_logger as cl
+    import lintro.utils.console as cl
 
     class SilentLogger:
         def __getattr__(self, name: str) -> Callable[..., None]:
@@ -98,24 +132,29 @@ def _setup_tools(monkeypatch: pytest.MonkeyPatch) -> tuple[FakeTool, FakeTool]:
     """
     import lintro.utils.tool_executor as te
 
-    ruff = FakeTool("ruff", can_fix=True)
-    black = FakeTool("black", can_fix=True)
-    tool_map = {"ruff": ruff, "black": black}
+    ruff = FakeTool(ToolName.RUFF, can_fix=True)
+    black = FakeTool(ToolName.BLACK, can_fix=True)
+    tool_map = {ToolName.RUFF: ruff, ToolName.BLACK: black}
 
-    def fake_get_tools(tools: str | None, action: str) -> list[_EnumLike]:
-        """Return enum-like entries for ruff and black in order.
+    def fake_get_tools(tools: str | None, action: str) -> list[str]:
+        """Return tool names for ruff and black in order.
 
         Args:
             tools: Optional tool selection string (ignored in tests).
             action: Runner action being executed (e.g., "fmt" or "check").
 
         Returns:
-            list[_EnumLike]: Entries representing Ruff then Black.
+            list[str]: Tool names representing Ruff then Black.
         """
-        return [_EnumLike("RUFF"), _EnumLike("BLACK")]
+        return [ToolName.RUFF, ToolName.BLACK]
 
-    monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
-    monkeypatch.setattr(tool_manager, "get_tool", lambda e: tool_map[e.name.lower()])
+    # Patch get_tools_to_run in the tool_executor module where it's imported
+    monkeypatch.setattr(te, "get_tools_to_run", fake_get_tools)
+    monkeypatch.setattr(
+        tool_manager,
+        "get_tool",
+        lambda name: tool_map[ToolName(name.lower())],
+    )
 
     def noop_write_reports_from_results(
         self: object,

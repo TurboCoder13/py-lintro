@@ -68,7 +68,7 @@ def test_invoke_single_command_execution() -> None:
         mock_run.return_value = 0
         result = runner.invoke(cli, ["check", "."])
         assert_that(result.exit_code).is_equal_to(0)
-        assert_that(mock_run.called).is_true()
+        mock_run.assert_called_once()
 
 
 def test_invoke_with_comma_separated_commands() -> None:
@@ -83,9 +83,9 @@ def test_invoke_with_comma_separated_commands() -> None:
         result = runner.invoke(cli, ["check", ".", ",", "format", "."])
         # Verify exit code is success
         assert_that(result.exit_code).is_equal_to(0)
-        # Both commands should have been called
-        assert_that(mock_check.call_count).is_greater_than_or_equal_to(1)
-        assert_that(mock_fmt.call_count).is_greater_than_or_equal_to(1)
+        # Both commands should have been called exactly once
+        assert_that(mock_check.call_count).is_equal_to(1)
+        assert_that(mock_fmt.call_count).is_equal_to(1)
         # Verify both commands were called with the expected path argument
         mock_check.assert_any_call(
             action="check",
@@ -99,6 +99,10 @@ def test_invoke_with_comma_separated_commands() -> None:
             verbose=False,
             raw_output=False,
             output_file=None,
+            incremental=False,
+            debug=False,
+            stream=False,
+            no_log=False,
         )
         mock_fmt.assert_any_call(
             action="fmt",
@@ -111,13 +115,17 @@ def test_invoke_with_comma_separated_commands() -> None:
             output_format="grid",
             verbose=False,
             raw_output=False,
+            output_file=None,
+            debug=False,
+            stream=False,
+            no_log=False,
         )
 
 
 def test_invoke_aggregates_exit_codes_success() -> None:
     """Test that invoke aggregates exit codes from chained commands."""
     runner = CliRunner()
-    with patch("lintro.tools.tool_manager.get_available_tools") as mock_get:
+    with patch("lintro.tools.tool_manager.get_all_tools") as mock_get:
         mock_get.return_value = {}
         result = runner.invoke(cli, ["list-tools"])
         # Should return 0 when command succeeds
@@ -215,9 +223,9 @@ def test_invoke_with_realistic_comma_separated_inputs() -> None:
         # Test realistic input: fmt,chk (comma-separated in single token)
         result = runner.invoke(cli, ["fmt,chk", "."])
         assert_that(result.exit_code).is_equal_to(0)
-        # Both commands should have been called
-        assert_that(mock_fmt.call_count).is_greater_than_or_equal_to(1)
-        assert_that(mock_check.call_count).is_greater_than_or_equal_to(1)
+        # Both commands should have been called exactly once
+        assert_that(mock_fmt.call_count).is_equal_to(1)
+        assert_that(mock_check.call_count).is_equal_to(1)
 
 
 def test_invoke_with_chk_tst_input() -> None:
@@ -232,9 +240,9 @@ def test_invoke_with_chk_tst_input() -> None:
         # Test realistic input: chk,tst (comma-separated in single token)
         result = runner.invoke(cli, ["chk,tst", "."])
         assert_that(result.exit_code).is_equal_to(0)
-        # Both commands should have been called
-        assert_that(mock_check.call_count).is_greater_than_or_equal_to(1)
-        assert_that(mock_test.call_count).is_greater_than_or_equal_to(1)
+        # Both commands should have been called exactly once
+        assert_that(mock_check.call_count).is_equal_to(1)
+        assert_that(mock_test.call_count).is_equal_to(1)
 
 
 def test_invoke_handles_system_exit() -> None:
@@ -269,4 +277,4 @@ def test_invoke_with_exception_in_command() -> None:
         # Should handle exceptions gracefully with non-zero exit code
         assert_that(result.exit_code).is_not_equal_to(0)
         # Verify the mocked function was called
-        assert_that(mock_run.called).is_true()
+        mock_run.assert_called_once()

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from assertpy import assert_that
@@ -32,7 +33,7 @@ def test_extract_version_from_repo_root(tmp_path: Path) -> None:
     dst = tmp_path / "pyproject.toml"
     dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
     script = repo_root / "scripts" / "utils" / "extract-version.py"
-    result = run(["python", str(script)], cwd=tmp_path)
+    result = run([sys.executable, str(script)], cwd=tmp_path)
     assert_that(result.returncode).is_equal_to(0), result.stderr
     assert_that(result.stdout.startswith("version=")).is_true()
     assert_that(len(result.stdout.strip().split("=", 1)[1]) > 0).is_true()
@@ -48,6 +49,6 @@ def test_extract_version_with_custom_file(tmp_path: Path) -> None:
     toml.write_text('\n[project]\nversion = "9.9.9"\n'.strip(), encoding="utf-8")
     repo_root = Path(__file__).resolve().parents[2]
     script = repo_root / "scripts" / "utils" / "extract-version.py"
-    result = run(["python", str(script), "--file", str(toml)], cwd=tmp_path)
+    result = run([sys.executable, str(script), "--file", str(toml)], cwd=tmp_path)
     assert_that(result.returncode).is_equal_to(0), result.stderr
     assert_that(result.stdout.strip()).is_equal_to("version=9.9.9")

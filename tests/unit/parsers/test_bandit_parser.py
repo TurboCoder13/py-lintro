@@ -12,7 +12,7 @@ from assertpy import assert_that
 
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
-from lintro.tools.implementations.tool_bandit import BanditTool
+from lintro.plugins import ToolRegistry
 
 
 def test_parse_bandit_valid_output() -> None:
@@ -159,8 +159,9 @@ def test_bandit_check_parses_mixed_output_json(
         return SimpleNamespace(stdout=mixed_stdout, stderr=mixed_stderr, returncode=0)
 
     monkeypatch.setattr("subprocess.run", fake_run)
-    tool = BanditTool()
-    result: ToolResult = tool.check([str(p)])
+    tool = ToolRegistry.get("bandit")
+    assert_that(tool).is_not_none()
+    result: ToolResult = tool.check([str(p)], {})
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.name).is_equal_to("bandit")
     assert_that(result.success is True).is_true()
@@ -219,8 +220,9 @@ def test_bandit_check_handles_nonzero_rc_with_errors_array(
         return NS(stdout=json.dumps(sample), stderr="", returncode=1)
 
     monkeypatch.setattr("subprocess.run", fake_run)
-    tool = BanditTool()
-    result: ToolResult = tool.check([str(p)])
+    tool = ToolRegistry.get("bandit")
+    assert_that(tool).is_not_none()
+    result: ToolResult = tool.check([str(p)], {})
     assert_that(result.success).is_false()
     assert_that(result.issues_count).is_equal_to(1)
 
@@ -252,8 +254,9 @@ def test_bandit_check_handles_unparseable_output(
         return SimpleNamespace(stdout="nonsense", stderr="also nonsense", returncode=1)
 
     monkeypatch.setattr("subprocess.run", fake_run)
-    tool = BanditTool()
-    result: ToolResult = tool.check([str(p)])
+    tool = ToolRegistry.get("bandit")
+    assert_that(tool).is_not_none()
+    result: ToolResult = tool.check([str(p)], {})
     assert_that(isinstance(result, ToolResult)).is_true()
     assert_that(result.name).is_equal_to("bandit")
     assert_that(result.success is False).is_true()

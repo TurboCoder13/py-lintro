@@ -1,18 +1,88 @@
-"""Centralized format style registry for all formatters.
+"""Core formatting abstractions and style registry.
 
-This module provides a shared registry of output format styles, eliminating
-the duplicate FORMAT_MAP definitions across individual formatter modules.
+This module provides:
+- OutputStyle: Abstract base class for output style renderers
+- TableDescriptor: Interface for describing table columns and rows
+- Style registry functions for looking up format styles
 """
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from lintro.enums.output_format import OutputFormat
 
 if TYPE_CHECKING:
-    from lintro.formatters.core.output_style import OutputStyle
+    pass
+
+
+# =============================================================================
+# Abstract Base Classes
+# =============================================================================
+
+
+class OutputStyle(ABC):
+    """Abstract base class for output style renderers.
+
+    Implementations convert tabular data into a concrete textual
+    representation (e.g., grid, markdown, plain).
+    """
+
+    @abstractmethod
+    def format(
+        self,
+        columns: list[str],
+        rows: list[list[Any]],
+        tool_name: str | None = None,
+        **kwargs: Any,
+    ) -> str:
+        """Format a table given columns and rows.
+
+        Args:
+            columns: List of column header names.
+            rows: List of rows, where each row is a list of values.
+            tool_name: Optional tool name for metadata-rich formats.
+            **kwargs: Additional renderer-specific context.
+
+        Returns:
+            str: Formatted table as a string.
+        """
+        pass
+
+
+class TableDescriptor(ABC):
+    """Describe how to extract tabular data for a tool's issues.
+
+    Concrete implementations define column ordering and how to map issue
+    objects into a list of column values.
+    """
+
+    @abstractmethod
+    def get_columns(self) -> list[str]:
+        """Return the list of column names in order."""
+        pass
+
+    @abstractmethod
+    def get_rows(
+        self,
+        issues: list[Any],
+    ) -> list[list[Any]]:
+        """Return the values for each column for a list of issues.
+
+        Args:
+            issues: List of issue objects to extract data from.
+
+        Returns:
+            list[list]: Nested list representing table rows and columns.
+        """
+        pass
+
+
+# =============================================================================
+# Style Registry
+# =============================================================================
 
 
 @lru_cache(maxsize=1)

@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from assertpy import assert_that
 
-from lintro.utils.output_manager import OutputManager
+from lintro.utils.output import OutputManager
 
 
 @pytest.fixture

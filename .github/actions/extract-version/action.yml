@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+name: Extract Version from Tag
+description: >-
+  Extract version from git tag reference.
+  Strips the 'v' prefix if present and outputs both version and original tag.
+
+inputs:
+  strip-prefix:
+    description: Strip the 'v' prefix from version (default true)
+    required: false
+    default: 'true'
+
+outputs:
+  version:
+    description: Extracted version (without v prefix if strip-prefix is true)
+    value: ${{ steps.extract.outputs.version }}
+  tag:
+    description: Original tag name
+    value: ${{ steps.extract.outputs.tag }}
+
+runs:
+  using: composite
+  steps:
+    - name: Extract version from tag
+      id: extract
+      shell: bash
+      run: |
+        # Validate this is a tag reference
+        if [[ -n "${GITHUB_REF:-}" && ! "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
+          echo "::warning::GITHUB_REF '${GITHUB_REF}' is not a tag reference"
+        fi
+
+        # Get the tag name from GITHUB_REF_NAME or GITHUB_REF
+        if [[ -n "${GITHUB_REF_NAME:-}" ]]; then
+          TAG="${GITHUB_REF_NAME}"
+        elif [[ -n "${GITHUB_REF:-}" ]]; then
+          TAG="${GITHUB_REF#refs/tags/}"
+        else
+          echo "::error::Neither GITHUB_REF nor GITHUB_REF_NAME is set"
+          exit 1
+        fi
+
+        echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+        echo "Original tag: $TAG"
+
+        # Strip v prefix if requested (case-insensitive boolean check)
+        STRIP_PREFIX="${{ inputs.strip-prefix }}"
+        STRIP_PREFIX_LOWER=$(echo "$STRIP_PREFIX" | tr '[:upper:]' '[:lower:]')
+        if [[ "$STRIP_PREFIX_LOWER" == "true" ]] \
+            || [[ "$STRIP_PREFIX_LOWER" == "yes" ]] \
+            || [[ "$STRIP_PREFIX_LOWER" == "1" ]]; then
+          VERSION="${TAG#v}"
+        else
+          VERSION="$TAG"
+        fi
+
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "Extracted version: $VERSION"

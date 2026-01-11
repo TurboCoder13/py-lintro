@@ -7,8 +7,11 @@ from pathlib import Path
 import pytest
 from assertpy import assert_that
 
-from lintro.utils.config import load_lintro_tool_config
-from lintro.utils.config_loaders import _find_pyproject, load_pyproject
+from lintro.utils.config import (
+    _find_pyproject,
+    load_lintro_tool_config,
+    load_pyproject,
+)
 
 
 def test_load_lintro_tool_config(

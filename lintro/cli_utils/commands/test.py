@@ -64,6 +64,7 @@ def _ensure_pytest_prefix(option_fragment: str) -> str:
 )
 @click.option(
     "--verbose",
+    "-v",
     is_flag=True,
     help="Show verbose output",
 )
@@ -76,12 +77,6 @@ def _ensure_pytest_prefix(option_fragment: str) -> str:
     "--tool-options",
     type=str,
     help="Tool-specific options in the format option=value,option=value",
-)
-@click.option(
-    "--enable-docker",
-    is_flag=True,
-    default=False,
-    help="Enable Docker-specific tests",
 )
 @click.option(
     "--list-plugins",
@@ -128,6 +123,17 @@ def _ensure_pytest_prefix(option_fragment: str) -> str:
     default=False,
     help="Show help for parametrized tests",
 )
+@click.option(
+    "--coverage",
+    is_flag=True,
+    default=False,
+    help="Generate test coverage report with missing lines shown in terminal",
+)
+@click.option(
+    "--debug",
+    is_flag=True,
+    help="Enable debug output on console",
+)
 def test_command(
     paths: tuple[str, ...],
     exclude: str | None,
@@ -138,7 +144,6 @@ def test_command(
     verbose: bool,
     raw_output: bool,
     tool_options: str | None,
-    enable_docker: bool,
     list_plugins: bool,
     check_plugins: bool,
     collect_only: bool,
@@ -146,27 +151,13 @@ def test_command(
     fixture_info: str | None,
     markers: bool,
     parametrize_help: bool,
+    coverage: bool,
+    debug: bool,
 ) -> None:
     """Run tests using pytest.
 
-    Args:
-        paths: tuple: List of file/directory paths to test.
-        exclude: str | None: Comma-separated patterns of files/dirs to exclude.
-        include_venv: bool: Whether to include virtual environment directories.
-        output: str | None: Path to output file for results.
-        output_format: str: Format for displaying results (grid, json, etc).
-        group_by: str: How to group issues in output (file, code, etc).
-        verbose: bool: Whether to show verbose output during execution.
-        raw_output: bool: Whether to show raw tool output instead of formatted output.
-        tool_options: str | None: Tool-specific options.
-        enable_docker: bool: Whether to enable Docker-specific tests.
-        list_plugins: bool: Whether to list installed pytest plugins.
-        check_plugins: bool: Whether to check required plugins.
-        collect_only: bool: Whether to list tests without executing.
-        fixtures: bool: Whether to list available fixtures.
-        fixture_info: str | None: Name of fixture to get info for.
-        markers: bool: Whether to list available markers.
-        parametrize_help: bool: Whether to show parametrization help.
+    This CLI command wraps pytest with lintro's output formatting.
+    See --help for argument descriptions.
 
     Raises:
         SystemExit: Process exit with the aggregated exit code.
@@ -177,10 +168,6 @@ def test_command(
     # Build tool options with pytest prefix
     tool_option_parts: list[str] = []
 
-    # Add Docker enable option if flag is set
-    if enable_docker:
-        tool_option_parts.append("pytest:run_docker_tests=True")
-
     # Add special mode flags
     boolean_flags: list[tuple[bool, str]] = [
         (list_plugins, "pytest:list_plugins=True"),
@@ -189,6 +176,7 @@ def test_command(
         (fixtures, "pytest:list_fixtures=True"),
         (markers, "pytest:list_markers=True"),
         (parametrize_help, "pytest:parametrize_help=True"),
+        (coverage, "pytest:coverage_term_missing=True"),
     ]
 
     for flag_value, option_string in boolean_flags:
@@ -249,6 +237,7 @@ def test_command(
         verbose=verbose,
         raw_output=raw_output,
         output_file=output,
+        debug=debug,
     )
 
     # Exit with code only

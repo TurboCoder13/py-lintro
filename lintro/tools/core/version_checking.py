@@ -38,10 +38,10 @@ When adding a new tool to lintro, follow these steps:
 3. Add version extraction logic in _extract_version_from_output() if needed.
 
 ### Implementation Steps:
-1. Create tool implementation class in lintro/tools/implementations/
-2. Add version checking in the tool's check() and fix() methods
-3. Update ToolEnum in lintro/tools/tool_enum.py
-4. Add tool to tool_commands dict in this file
+1. Create tool plugin class in lintro/tools/definitions/
+2. Use @register_tool decorator from lintro.plugins.registry
+3. Inherit from BaseToolPlugin in lintro.plugins.base
+4. Set version_command in the ToolDefinition (e.g., ["newtool", "--version"])
 5. Test with `lintro versions` command
 
 The version system automatically reads from pyproject.toml, so Renovate and other
@@ -271,16 +271,16 @@ def get_install_hints() -> dict[str, str]:
                 f"or uv add pytest>={pytest_version}"
             ),
             "prettier": (
-                f"Install via: npm install --save-dev "
-                f"prettier>={versions.get('prettier', '3.7.0')}"
+                f"Install via: bun add -d "
+                f"prettier@>={versions.get('prettier', '3.7.0')}"
             ),
             "biome": (
-                f"Install via: npm install --save-dev "
-                f"@biomejs/biome>={versions.get('biome', '2.3.8')}"
+                f"Install via: bun add -d "
+                f"@biomejs/biome@>={versions.get('biome', '2.3.8')}"
             ),
             "markdownlint": (
-                f"Install via: npm install --save-dev "
-                f"markdownlint-cli2>={versions.get('markdownlint', '0.16.0')}"
+                f"Install via: bun add -d "
+                f"markdownlint-cli2@>={versions.get('markdownlint', '0.16.0')}"
             ),
             "hadolint": (
                 f"Install via: https://github.com/hadolint/hadolint/releases "

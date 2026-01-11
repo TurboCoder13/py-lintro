@@ -2,7 +2,8 @@
 
 from assertpy import assert_that
 
-from lintro.config.lintro_config import EnforceConfig, LintroConfig
+from lintro.config.enforce_config import EnforceConfig
+from lintro.config.lintro_config import LintroConfig
 from lintro.config.tool_config_generator import (
     _convert_python_version_for_mypy,
     get_defaults_injection_args,

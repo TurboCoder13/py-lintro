@@ -3,12 +3,13 @@
 Handles formatting and display of execution summary tables with tabulate.
 """
 
+import contextlib
 from collections.abc import Callable, Sequence
 from typing import Any
 
 from lintro.enums.action import Action
-from lintro.enums.tool_name import ToolName
-from lintro.utils.console_formatting import (
+from lintro.enums.tool_name import ToolName, normalize_tool_name
+from lintro.utils.console import (
     RE_CANNOT_AUTOFIX,
     RE_REMAINING_OR_CANNOT,
     get_summary_value,
@@ -67,19 +68,18 @@ def print_summary_table(
             tool_display: str = f"{emoji} {tool_name}"
 
             # Special handling for pytest/test action
-            if action == Action.TEST and tool_name == ToolName.PYTEST.value:
+            # Safely check if this is pytest by normalizing the tool name
+            is_pytest = False
+            with contextlib.suppress(ValueError):
+                is_pytest = normalize_tool_name(tool_name) == ToolName.PYTEST
+
+            if action == Action.TEST and is_pytest:
                 pytest_summary = getattr(result, "pytest_summary", None)
                 if pytest_summary:
                     # Use pytest summary data for more detailed display
                     passed = _safe_cast(pytest_summary, "passed", 0, int)
                     failed = _safe_cast(pytest_summary, "failed", 0, int)
                     skipped = _safe_cast(pytest_summary, "skipped", 0, int)
-                    docker_skipped = _safe_cast(
-                        pytest_summary,
-                        "docker_skipped",
-                        0,
-                        int,
-                    )
                     duration = _safe_cast(pytest_summary, "duration", 0.0, float)
                     total = _safe_cast(pytest_summary, "total", 0, int)
 
@@ -93,12 +93,6 @@ def print_summary_table(
                     # Format duration with proper units
                     duration_str = f"{duration:.2f}s"
 
-                    # Format skipped count to include docker skipped info
-                    if docker_skipped > 0:
-                        skipped_display = f"{skipped} ({docker_skipped} docker)"
-                    else:
-                        skipped_display = str(skipped)
-
                     # Create row with separate columns for each metric
                     summary_data.append(
                         [
@@ -106,7 +100,7 @@ def print_summary_table(
                             status_display,
                             str(passed),
                             str(failed),
-                            skipped_display,
+                            str(skipped),
                             str(total),
                             duration_str,
                         ],

@@ -161,6 +161,6 @@ def check_line_length_violations(
     except FileNotFoundError:
         logger.debug("Ruff executable not found")
         return []
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         logger.debug(f"Failed to check line length violations: {e}")
         return []

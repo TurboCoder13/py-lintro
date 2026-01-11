@@ -1,0 +1,48 @@
+"""Helper functions for output formatting.
+
+This module contains escape and sanitization helpers used by
+output writing classes and functions.
+"""
+
+import html
+
+
+def markdown_escape(text: str) -> str:
+    """Escape text for Markdown formatting.
+
+    Args:
+        text: str: Text to escape.
+
+    Returns:
+        str: Escaped text safe for Markdown.
+    """
+    return text.replace("|", r"\|").replace("\n", " ")
+
+
+def html_escape(text: str) -> str:
+    """Escape text for HTML formatting.
+
+    Args:
+        text: str: Text to escape.
+
+    Returns:
+        str: Escaped text safe for HTML.
+    """
+    return html.escape(text)
+
+
+def sanitize_csv_value(value: str) -> str:
+    """Sanitize CSV cell value to prevent formula injection.
+
+    Prefixes values starting with '=', '+', '-', or '@' with a single quote
+    to prevent spreadsheet applications from interpreting them as formulas.
+
+    Args:
+        value: str: The value to sanitize.
+
+    Returns:
+        str: Sanitized value with leading quote if needed.
+    """
+    if value and value.startswith(("=", "+", "-", "@")):
+        return "'" + value
+    return value

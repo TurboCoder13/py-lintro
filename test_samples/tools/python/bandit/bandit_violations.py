@@ -1,8 +1,7 @@
 """Sample Python file with security violations for testing Bandit integration."""
 
-import subprocess
 import pickle
-import os
+import subprocess
 
 # Hardcoded password (B105)
 password = "secret123"

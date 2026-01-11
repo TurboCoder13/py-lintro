@@ -46,7 +46,7 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "mypy": ["python", "-m", "mypy"],
         "pytest": ["python", "-m", "pytest"],
         # Node.js tools
-        # Note: Users must install these tools explicitly via npm/npx
+        # Note: Users must install these tools explicitly via bun
         "prettier": ["prettier"],
         "biome": ["biome"],
         "markdownlint": ["markdownlint-cli2"],
@@ -64,7 +64,7 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
     for tool_name, command in tool_commands.items():
         try:
             results[tool_name] = check_tool_version(tool_name, command)
-        except Exception as e:
+        except (OSError, ValueError, RuntimeError) as e:
             logger.debug(f"Failed to check version for {tool_name}: {e}")
             min_version = minimum_versions.get(tool_name, "unknown")
             install_hint = install_hints.get(tool_name, f"Install {tool_name}")

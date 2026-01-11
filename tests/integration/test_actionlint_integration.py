@@ -9,7 +9,7 @@ import pytest
 from assertpy import assert_that
 from loguru import logger
 
-from lintro.tools.implementations.tool_actionlint import ActionlintTool
+from lintro.plugins import ToolRegistry
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
@@ -64,8 +64,9 @@ def test_actionlint_reports_violations(tmp_path: Path) -> None:
     logger.info(f"[LOG] actionlint stdout+stderr:\n{direct_out}")
 
     assert_that(proc.returncode).is_not_equal_to(0)
-    tool = ActionlintTool()
-    result = tool.check([str(tmp_path)])
+    tool = ToolRegistry.get("actionlint")
+    assert_that(tool).is_not_none()
+    result = tool.check([str(tmp_path)], {})
     logger.info(f"[LOG] lintro actionlint issues: {result.issues_count}")
     assert_that(result.issues_count > 0).is_true()
     assert_that(result.success).is_false()
@@ -82,7 +83,8 @@ def test_actionlint_no_files(tmp_path: Path) -> None:
         pytest.skip("actionlint not available")
     empty = tmp_path / "empty"
     empty.mkdir()
-    tool = ActionlintTool()
-    result = tool.check([str(empty)])
+    tool = ToolRegistry.get("actionlint")
+    assert_that(tool).is_not_none()
+    result = tool.check([str(empty)], {})
     assert_that(result.success).is_true()
     assert_that(result.issues_count).is_equal_to(0)

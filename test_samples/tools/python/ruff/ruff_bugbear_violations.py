@@ -1,7 +1,6 @@
 """Test file with flake8-bugbear (B) rule violations for testing Ruff integration."""
 
 import os
-from typing import Any
 
 
 def mutable_default_argument(
@@ -23,7 +22,6 @@ def dictionary_comprehension_with_unused_loop_variable():
 
 def assert_without_message():
     """Function using assert without message."""
-    x = 5
     # B011: Do not use assert False since Python -O removes these calls
     raise AssertionError("This should not happen")
 
@@ -57,7 +55,7 @@ def main():
 
     # B009: Do not call getattr with a constant attribute name
     obj = {"attr": "value"}
-    result = getattr(obj, "attr", None)
+    getattr(obj, "attr", None)
 
     # B010: Do not call setattr with a constant attribute name
     obj.new_attr = "new_value"
@@ -70,12 +68,11 @@ def main():
         pass
 
     # B013: A length-one tuple literal is redundant
-    single_item = (1,)  # Should be just 1
 
     # B014: Convert namedtuple to dataclass
     from collections import namedtuple
 
-    Point = namedtuple("Point", ["x", "y"])  # B014
+    namedtuple("Point", ["x", "y"])  # B014
 
     # B015: Do not use assert in a loop
     for i in range(3):
@@ -104,7 +101,7 @@ def main():
 
     # B021: f-string used as docstring
     def f_string_docstring():
-        f"""This is an f-string docstring."""  # B021
+        """This is an f-string docstring."""  # B021
         pass
 
     # B022: No arguments passed to contextlib.suppress
@@ -162,7 +159,6 @@ def main():
         pass
 
     # B032: Possible hardcoded password
-    password = "secret123"  # B032
 
     # B033: Do not use assert in a loop
     for i in range(3):

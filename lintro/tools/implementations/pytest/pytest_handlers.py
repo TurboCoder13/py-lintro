@@ -9,18 +9,20 @@ import re
 import shlex
 from typing import TYPE_CHECKING
 
+from loguru import logger
+
 from lintro.models.core.tool_result import ToolResult
-from lintro.tools.implementations.pytest.pytest_utils import (
+from lintro.tools.implementations.pytest.markers import (
     check_plugin_installed,
     get_pytest_version_info,
     list_installed_plugins,
 )
 
 if TYPE_CHECKING:
-    from lintro.tools.implementations.tool_pytest import PytestTool
+    from lintro.tools.definitions.pytest import PytestPlugin
 
 
-def handle_list_plugins(tool: "PytestTool") -> ToolResult:
+def handle_list_plugins(tool: "PytestPlugin") -> ToolResult:
     """Handle list plugins mode.
 
     Args:
@@ -41,7 +43,7 @@ def handle_list_plugins(tool: "PytestTool") -> ToolResult:
         output_lines.append("No pytest plugins found.")
 
     return ToolResult(
-        name=tool.name,
+        name=tool.definition.name,
         success=True,
         issues=[],
         output="\n".join(output_lines),
@@ -50,7 +52,7 @@ def handle_list_plugins(tool: "PytestTool") -> ToolResult:
 
 
 def handle_check_plugins(
-    tool: "PytestTool",
+    tool: "PytestPlugin",
     required_plugins: str | None,
 ) -> ToolResult:
     """Handle check plugins mode.
@@ -64,7 +66,7 @@ def handle_check_plugins(
     """
     if not required_plugins:
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=False,
             issues=[],
             output=(
@@ -100,7 +102,7 @@ def handle_check_plugins(
     success = len(missing_plugins) == 0
 
     return ToolResult(
-        name=tool.name,
+        name=tool.definition.name,
         success=success,
         issues=[],
         output="\n".join(output_lines) if output_lines else "No plugins specified.",
@@ -109,7 +111,7 @@ def handle_check_plugins(
 
 
 def handle_collect_only(
-    tool: "PytestTool",
+    tool: "PytestPlugin",
     target_files: list[str],
 ) -> ToolResult:
     """Handle collect-only mode.
@@ -129,7 +131,7 @@ def handle_collect_only(
         success, output = tool._run_subprocess(collect_cmd)
         if not success:
             return ToolResult(
-                name=tool.name,
+                name=tool.definition.name,
                 success=False,
                 issues=[],
                 output=output,
@@ -157,24 +159,25 @@ def handle_collect_only(
             output_lines.append(f"  - {test}")
 
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=True,
             issues=[],
             output="\n".join(output_lines),
             issues_count=0,
         )
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
+        logger.exception(f"Error collecting tests: {e}")
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=False,
             issues=[],
-            output=f"Error collecting tests: {e}",
+            output=f"Error collecting tests: {type(e).__name__}: {e}",
             issues_count=0,
         )
 
 
 def handle_list_fixtures(
-    tool: "PytestTool",
+    tool: "PytestPlugin",
     target_files: list[str],
 ) -> ToolResult:
     """Handle list fixtures mode.
@@ -194,7 +197,7 @@ def handle_list_fixtures(
         success, output = tool._run_subprocess(fixtures_cmd)
         if not success:
             return ToolResult(
-                name=tool.name,
+                name=tool.definition.name,
                 success=False,
                 issues=[],
                 output=output,
@@ -202,24 +205,25 @@ def handle_list_fixtures(
             )
 
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=True,
             issues=[],
             output=output,
             issues_count=0,
         )
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
+        logger.exception(f"Error listing fixtures: {e}")
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=False,
             issues=[],
-            output=f"Error listing fixtures: {e}",
+            output=f"Error listing fixtures: {type(e).__name__}: {e}",
             issues_count=0,
         )
 
 
 def handle_fixture_info(
-    tool: "PytestTool",
+    tool: "PytestPlugin",
     fixture_name: str,
     target_files: list[str],
 ) -> ToolResult:
@@ -241,7 +245,7 @@ def handle_fixture_info(
         success, output = tool._run_subprocess(fixtures_cmd)
         if not success:
             return ToolResult(
-                name=tool.name,
+                name=tool.definition.name,
                 success=False,
                 issues=[],
                 output=output,
@@ -274,23 +278,24 @@ def handle_fixture_info(
             output_text = f"Fixture '{fixture_name}' not found."
 
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=len(fixture_info_lines) > 0,
             issues=[],
             output=output_text,
             issues_count=0,
         )
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
+        logger.exception(f"Error getting fixture info: {e}")
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=False,
             issues=[],
-            output=f"Error getting fixture info: {e}",
+            output=f"Error getting fixture info: {type(e).__name__}: {e}",
             issues_count=0,
         )
 
 
-def handle_list_markers(tool: "PytestTool") -> ToolResult:
+def handle_list_markers(tool: "PytestPlugin") -> ToolResult:
     """Handle list markers mode.
 
     Args:
@@ -306,7 +311,7 @@ def handle_list_markers(tool: "PytestTool") -> ToolResult:
         success, output = tool._run_subprocess(markers_cmd)
         if not success:
             return ToolResult(
-                name=tool.name,
+                name=tool.definition.name,
                 success=False,
                 issues=[],
                 output=output,
@@ -314,23 +319,24 @@ def handle_list_markers(tool: "PytestTool") -> ToolResult:
             )
 
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=True,
             issues=[],
             output=output,
             issues_count=0,
         )
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
+        logger.exception(f"Error listing markers: {e}")
         return ToolResult(
-            name=tool.name,
+            name=tool.definition.name,
             success=False,
             issues=[],
-            output=f"Error listing markers: {e}",
+            output=f"Error listing markers: {type(e).__name__}: {e}",
             issues_count=0,
         )
 
 
-def handle_parametrize_help(tool: "PytestTool") -> ToolResult:
+def handle_parametrize_help(tool: "PytestPlugin") -> ToolResult:
     """Handle parametrize help mode.
 
     Args:
@@ -371,7 +377,7 @@ For detailed examples and advanced usage, see:
 https://docs.pytest.org/en/stable/how-to/parametrize.html
 """
     return ToolResult(
-        name=tool.name,
+        name=tool.definition.name,
         success=True,
         issues=[],
         output=help_text,

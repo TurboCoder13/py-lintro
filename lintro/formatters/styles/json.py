@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from typing import Any
 
-from lintro.formatters.core.output_style import OutputStyle
+from lintro.formatters.core.format_registry import OutputStyle
 
 
 class JsonStyle(OutputStyle):

@@ -124,7 +124,7 @@ check_file_exists() {
 check_dir_exists() {
     local dir="$1"
     local description="$2"
-    
+
     if [ -d "$dir" ]; then
         log_success "$description found"
         echo "Files in $dir:"
@@ -133,5 +133,78 @@ check_dir_exists() {
     else
         log_warning "$description not found"
         return 1
+    fi
+}
+
+# =============================================================================
+# GitHub Actions Integration Functions
+# =============================================================================
+
+# Configure git user for CI commits (github-actions[bot])
+configure_git_ci_user() {
+    git config user.name "github-actions[bot]"
+    git config user.email "github-actions[bot]@users.noreply.github.com"
+}
+
+# Set a GitHub Actions output variable
+# Usage: set_github_output "key" "value"
+set_github_output() {
+    local key="$1"
+    local value="$2"
+    if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+        echo "$key=$value" >> "$GITHUB_OUTPUT"
+    fi
+}
+
+# Set a GitHub Actions environment variable
+# Usage: set_github_env "key" "value"
+set_github_env() {
+    local key="$1"
+    local value="$2"
+    if [[ -n "${GITHUB_ENV:-}" ]]; then
+        echo "$key=$value" >> "$GITHUB_ENV"
+    fi
+}
+
+# =============================================================================
+# Utility Functions
+# =============================================================================
+
+# Create a temporary directory with automatic cleanup on exit
+# Usage: tmpdir=$(create_temp_dir)
+create_temp_dir() {
+    local tmpdir
+    tmpdir=$(mktemp -d)
+    trap "rm -rf '$tmpdir'" EXIT
+    echo "$tmpdir"
+}
+
+# Display standardized help message
+# Usage: show_help "script_name" "description" "usage_pattern"
+show_help() {
+    local script_name="$1"
+    local description="$2"
+    local usage="${3:-}"
+    cat << EOF
+Usage: $script_name $usage
+
+$description
+
+Options:
+  --help, -h    Show this help message
+EOF
+}
+
+# Extract coverage percentage from coverage.xml
+# Usage: percentage=$(get_coverage_percentage "coverage.xml")
+get_coverage_percentage() {
+    local coverage_file="${1:-coverage.xml}"
+    if [[ -f "$coverage_file" ]]; then
+        # Extract line-rate attribute and convert to percentage
+        local line_rate
+        line_rate=$(grep -oP 'line-rate="\K[^"]+' "$coverage_file" 2>/dev/null || echo "0")
+        awk -v lr="$line_rate" 'BEGIN { printf "%.2f", lr * 100 }'
+    else
+        echo "0.00"
     fi
 } 

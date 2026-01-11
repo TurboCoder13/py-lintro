@@ -160,7 +160,7 @@ def _parse_execution_config(data: dict[str, Any]) -> ExecutionConfig:
         enabled_tools=enabled_tools,
         tool_order=tool_order,
         fail_fast=data.get("fail_fast", False),
-        parallel=data.get("parallel", False),
+        parallel=data.get("parallel", True),
     )
 
 
@@ -243,11 +243,23 @@ def _convert_pyproject_to_config(data: dict[str, Any]) -> dict[str, Any]:
     }
 
     # Known tool names to separate from enforce settings
-    # Lazy import to avoid circular dependency
-    from lintro.tools.tool_enum import ToolEnum
-
-    # Derived from ToolEnum to stay synchronized with implementations
-    known_tools = {t.name.lower() for t in ToolEnum}
+    # Hardcoded list of supported tools for reliable config parsing
+    # (ToolRegistry may not be populated yet during config loading)
+    known_tools = {
+        "actionlint",
+        "bandit",
+        "biome",
+        "black",
+        "clippy",
+        "darglint",
+        "hadolint",
+        "markdownlint",
+        "mypy",
+        "prettier",
+        "pytest",
+        "ruff",
+        "yamllint",
+    }
     # Add common aliases for tools
     tool_aliases = {"markdownlint-cli2": "markdownlint"}
     known_tools.update(tool_aliases.keys())

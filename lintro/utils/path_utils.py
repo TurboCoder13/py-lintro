@@ -1,12 +1,48 @@
 """Path utilities for Lintro.
 
-Small helpers to normalize paths for display consistency.
+Small helpers to normalize paths for display consistency and path safety validation.
 """
 
-import os
 from pathlib import Path
 
 from loguru import logger
+
+
+def validate_safe_path(path: str | Path, base_dir: Path | None = None) -> bool:
+    """Validate that a path doesn't escape the project boundaries.
+
+    This function prevents path traversal attacks by ensuring the resolved path
+    stays within the specified base directory (or current working directory).
+
+    Args:
+        path: The path to validate (can be absolute or relative).
+        base_dir: The base directory that paths must stay within.
+                  Defaults to current working directory if not specified.
+
+    Returns:
+        True if the path is safe (within boundaries), False otherwise.
+
+    Examples:
+        >>> validate_safe_path("./src/file.py")  # Safe relative path
+        True
+        >>> validate_safe_path("../../../etc/passwd")  # Escapes project
+        False
+        >>> validate_safe_path("/absolute/path/outside")  # Outside project
+        False
+    """
+    try:
+        base = (base_dir or Path.cwd()).resolve()
+        resolved = Path(path).resolve()
+
+        # Check if resolved path is within base directory
+        resolved.relative_to(base)
+        return True
+    except ValueError:
+        # Path escapes the base directory
+        return False
+    except OSError:
+        # Invalid path (e.g., too long, invalid characters on some systems)
+        return False
 
 
 def find_lintro_ignore() -> Path | None:
@@ -67,7 +103,7 @@ def load_lintro_ignore() -> list[str]:
                     if not line_stripped or line_stripped.startswith("#"):
                         continue
                     ignore_patterns.append(line_stripped)
-        except Exception as e:
+        except (OSError, UnicodeDecodeError) as e:
             logger.warning(f"Failed to load .lintro-ignore: {e}")
 
     return ignore_patterns
@@ -89,20 +125,50 @@ def normalize_file_path_for_display(file_path: str) -> str:
     # Fast-path: empty or whitespace-only input
     if not file_path or not str(file_path).strip():
         return file_path
+
     try:
-        # Get the current working directory (project root)
-        project_root: str = os.getcwd()
+        project_root = Path.cwd().resolve()
+        abs_path = Path(file_path).resolve()
 
-        # Convert to absolute path first, then make relative to project root
-        abs_path: str = os.path.abspath(file_path)
-        rel_path: str = os.path.relpath(abs_path, project_root)
+        # Attempt to make path relative to project root
+        try:
+            rel_path = abs_path.relative_to(project_root)
+            rel_path_str = str(rel_path)
 
-        # Ensure it starts with "./" for consistency (like darglint format)
-        if not rel_path.startswith("./") and not rel_path.startswith("../"):
-            rel_path = "./" + rel_path
+            # Ensure it starts with "./" for consistency
+            if not rel_path_str.startswith("./"):
+                rel_path_str = "./" + rel_path_str
 
-        return rel_path
+            return rel_path_str
 
-    except (ValueError, OSError):
+        except ValueError:
+            # Path is outside project root - log warning and return with ../
+            logger.debug(f"Path '{file_path}' is outside project root")
+            # Use the original behavior for paths outside project
+            # Calculate relative path that may include ../
+            try:
+                # Find common ancestor and build relative path
+                rel_parts: list[str] = []
+                # Walk up from project_root to find common ancestor
+                project_parts = project_root.parts
+                path_parts = abs_path.parts
+
+                # Find common prefix length
+                common_len = 0
+                for p1, p2 in zip(project_parts, path_parts, strict=False):
+                    if p1 == p2:
+                        common_len += 1
+                    else:
+                        break
+
+                # Build relative path
+                ups = len(project_parts) - common_len
+                rel_parts = [".."] * ups + list(path_parts[common_len:])
+                return "/".join(rel_parts) if rel_parts else "."
+
+            except (ValueError, IndexError):
+                return file_path
+
+    except (OSError, ValueError):
         # If path normalization fails, return the original path
         return file_path

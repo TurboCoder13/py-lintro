@@ -7,15 +7,16 @@ name = "lintro"
 version = "0.22.0"
 description = "A unified CLI tool for code formatting, linting, and quality assurance"
 keywords = [ "linting", "formatting", "code-quality", "cli", "python", "javascript", "yaml", "docker",]
-classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
-requires-python = ">=3.13"
-dependencies = [ "click==8.1.8", "coverage-badge==1.1.2", "darglint==1.8.1", "loguru==0.7.3", "tabulate==0.9.0", "yamllint==1.37.1", "httpx==0.28.1", "toml==0.10.2", "defusedxml==0.7.1", "ruff>=0.14.0", "black>=25.0.0", "bandit>=1.8.0", "mypy>=1.14.1",]
+classifiers = [ "Development Status :: 4 - Beta", "Intended Audience :: Developers", "Operating System :: OS Independent", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Topic :: Software Development :: Quality Assurance", "Topic :: Software Development :: Libraries :: Python Modules", "Topic :: Utilities",]
+requires-python = ">=3.11"
+dependencies = [ "click==8.1.8", "coverage-badge==1.1.2", "darglint==1.8.1", "loguru==0.7.3", "pathspec>=0.12.0", "pydantic>=2.10.0", "tabulate==0.9.0", "yamllint==1.37.1", "httpx==0.28.1", "defusedxml==0.7.1", "ruff>=0.14.0", "black>=25.0.0", "bandit>=1.8.0", "mypy>=1.14.1",]
 [[project.authors]]
 name = "TurboCoder13"
 email = "turbocoder13@gmail.com"
 
 [dependency-groups]
-dev = [ "build==1.3.0", "pytest==9.0.2", "pytest-cov==7.0.0", "pytest-xdist==3.8.0", "twine==6.2.0", "assertpy==1.1", "pytest-mock==3.15.1", "darglint==1.8.1", "bandit==1.9.2", "black==25.12.0", "ruff==0.14.10", "yamllint==1.37.1", "pytest-timeout==2.4.0", "mypy==1.19.1", "types-PyYAML>=6.0.12.20241230", "types-tabulate==0.9.0.20241207", "types-toml==0.10.8.20240310", "types-defusedxml>=0.7.0.20250822",]
+dev = [ "build==1.3.0", "pytest==9.0.2", "pytest-cov==7.0.0", "pytest-xdist==3.8.0", "twine==6.2.0", "assertpy==1.1", "pytest-mock==3.15.1", "darglint==1.8.1", "bandit==1.9.2", "black==25.12.0", "ruff==0.14.10", "yamllint==1.37.1", "pytest-timeout==2.4.0", "mypy==1.19.1", "types-PyYAML>=6.0.12.20241230", "types-tabulate==0.9.0.20241207", "types-defusedxml>=0.7.0.20250822", "tomli-w>=1.0.0", "pip-audit>=2.7.0",]
+build = [ "nuitka>=2.0.0", "ordered-set>=4.1.0", "zstandard>=0.21.0",]
 
 [project.license]
 file = "LICENSE"
@@ -37,8 +38,13 @@ Homepage = "https://github.com/TurboCoder13/py-lintro"
 Documentation = "https://github.com/TurboCoder13/py-lintro/docs"
 Source = "https://github.com/TurboCoder13/py-lintro"
 
+[project.entry-points."lintro.plugins"]
+# External plugins can register here via their own pyproject.toml:
+# [project.entry-points."lintro.plugins"]
+# my-tool = "my_package.plugin:MyToolPlugin"
+
 [tool.setuptools]
-packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.config", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.formatters.tools", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.actionlint", "lintro.parsers.bandit", "lintro.parsers.biome", "lintro.parsers.black", "lintro.parsers.clippy", "lintro.parsers.darglint", "lintro.parsers.hadolint", "lintro.parsers.markdownlint", "lintro.parsers.prettier", "lintro.parsers.pytest", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.parsers.mypy", "lintro.tools", "lintro.tools.core", "lintro.tools.implementations", "lintro.tools.implementations.pytest", "lintro.utils",]
+packages = [ "lintro", "lintro.cli_utils", "lintro.cli_utils.commands", "lintro.config", "lintro.enums", "lintro.exceptions", "lintro.formatters", "lintro.formatters.core", "lintro.formatters.styles", "lintro.models", "lintro.models.core", "lintro.parsers", "lintro.parsers.actionlint", "lintro.parsers.bandit", "lintro.parsers.biome", "lintro.parsers.black", "lintro.parsers.clippy", "lintro.parsers.darglint", "lintro.parsers.hadolint", "lintro.parsers.markdownlint", "lintro.parsers.prettier", "lintro.parsers.pytest", "lintro.parsers.ruff", "lintro.parsers.yamllint", "lintro.parsers.mypy", "lintro.plugins", "lintro.tools", "lintro.tools.core", "lintro.tools.definitions", "lintro.tools.implementations", "lintro.tools.implementations.pytest", "lintro.tools.implementations.ruff", "lintro.utils",]
 
 [tool.semantic_release]
 branch = "main"
@@ -52,17 +58,36 @@ major_on_zero = false
 
 [tool.ruff]
 line-length = 88
-target-version = "py313"
+target-version = "py311"
 unsafe-fixes = false
 exclude = [ ".venv", "venv", "env", "build", "dist", "__pycache__", "test_samples",]
+
+[tool.black]
+line-length = 88
+target-version = ["py311", "py312", "py313"]
+exclude = '''
+/(
+    \.git
+    | \.venv
+    | venv
+    | build
+    | dist
+    | __pycache__
+    | test_samples
+    | node_modules
+)/
+'''
 
 [tool.bandit]
 exclude_dirs = [ "test_samples",]
 skips = [ "B101", "B404", "B603", "B607", "B108",]
 
 [tool.darglint]
-exclude_dirs = [ "test_samples",]
+# CLI commands use Click decorators for argument docs, not docstrings
+# tests excluded - test docstrings don't require full Args/Returns documentation
+exclude_dirs = [ "lintro/cli_utils/commands",]
 timeout = 60
+# This file has complex docstrings that cause timeout
 exclude_files = [ "*pytest_option_validators.py",]
 
 [tool.lintro]
@@ -70,7 +95,7 @@ line_length = 88
 tool_order = "priority"
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.11"
 strict = true
 ignore_missing_imports = false
 warn_unused_ignores = true
@@ -102,6 +127,18 @@ skip-magic-trailing-comma = false
 select = [ "E", "F", "W", "I", "COM", "N", "D", "UP", "ANN", "B", "C4", "SIM",]
 ignore = [ "ANN",]
 
+[tool.ruff.lint.per-file-ignores]
+# Allow longer lines in test files (XML fixtures, long assertions)
+# Allow nested with statements (common in test mocking patterns)
+# Allow try-except-pass for SystemExit handling in CLI tests
+"tests/**/*.py" = ["E501", "SIM117", "SIM105"]
+# Allow longer lines in analysis scripts
+".lintro/**/*.py" = ["E501"]
+# Allow missing docstrings in __init__.py files
+"**/__init__.py" = ["D104"]
+# Test samples are intentional fixtures - ignore all lint rules
+"test_samples/**/*.py" = ["ALL"]
+
 [tool.lintro.post_checks]
 enabled = true
 tools = [ "black",]
@@ -111,11 +148,11 @@ enforce_failure = true
 
 [tool.lintro.versions]
 pytest = "8.0.0"
-prettier = "3.7.0"
+prettier = "3.7.3"
 biome = "2.3.9"
 hadolint = "2.12.0"
-actionlint = "1.7.0"
-markdownlint = "0.16.0"
+actionlint = "1.7.5"
+markdownlint = "0.17.2"
 clippy = "1.92.0"
 
 [tool.pytest.ini_options]

@@ -12,9 +12,9 @@ from assertpy import assert_that
 from lintro.enums.action import Action
 from lintro.enums.output_format import OutputFormat
 from lintro.models.core.tool_result import ToolResult
-from lintro.utils.output_writers import _sanitize_csv_value, write_output_file
+from lintro.utils.output import sanitize_csv_value, write_output_file
 
-# --- _sanitize_csv_value tests ---
+# --- sanitize_csv_value tests ---
 
 
 @pytest.mark.parametrize(
@@ -38,7 +38,7 @@ def test_sanitize_csv_value(input_value: str, expected: str) -> None:
         input_value: The input value to sanitize.
         expected: The expected sanitized output.
     """
-    result = _sanitize_csv_value(input_value)
+    result = sanitize_csv_value(input_value)
     assert_that(result).is_equal_to(expected)
 
 

@@ -1,6 +1,5 @@
 """Shared fixtures for CI script tests."""
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -21,10 +20,13 @@ def temp_script_dir():
 
 
 @pytest.fixture
-def mock_github_env():
+def mock_github_env(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
     """Mock GitHub Actions environment variables.
 
-    Yields:
+    Args:
+        monkeypatch: Pytest monkeypatch fixture for environment manipulation.
+
+    Returns:
         dict: Dictionary of mocked environment variables.
     """
     env_vars = {
@@ -35,16 +37,7 @@ def mock_github_env():
         "GITHUB_SHA": "abc123def456",
     }
 
-    original_env = {}
     for key, value in env_vars.items():
-        original_env[key] = os.environ.get(key)
-        os.environ[key] = value
+        monkeypatch.setenv(key, value)
 
-    try:
-        yield env_vars
-    finally:
-        for key, original_value in original_env.items():
-            if original_value is not None:
-                os.environ[key] = original_value
-            else:
-                os.environ.pop(key, None)
+    return env_vars

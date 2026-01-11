@@ -8,7 +8,18 @@ def hello(name: str = "World"):  # Missing spaces around operators
 
 
 def bad_function(  # Too many arguments
-    arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12
+    arg1,
+    arg2,
+    arg3,
+    arg4,
+    arg5,
+    arg6,
+    arg7,
+    arg8,
+    arg9,
+    arg10,
+    arg11,
+    arg12,
 ):
     """Function with too many arguments."""
     pass
@@ -25,5 +36,5 @@ if __name__ == "__main__":  # Missing spaces around operators
     hello()
     print(
         "This line is too long and should trigger a line length violation "
-        "because it exceeds the maximum allowed line length for this project"
+        "because it exceeds the maximum allowed line length for this project",
     )

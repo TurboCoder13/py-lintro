@@ -1,51 +1,96 @@
-"""Shared fixtures for CLI unit tests."""
+"""Shared fixtures for CLI tests."""
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from collections.abc import Generator
+from typing import TYPE_CHECKING
+from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
 
+from tests.constants import EXIT_SUCCESS
 
-@pytest.fixture
-def mock_tool_manager() -> MagicMock:
-    """Provide a mock tool manager for CLI tests.
-
-    Returns:
-        MagicMock: Mock tool manager instance.
-    """
-    mock_manager = MagicMock()
-    mock_manager.get_available_tools.return_value = ["ruff", "yamllint", "prettier"]
-    mock_manager.run_tools.return_value = []
-    return mock_manager
+if TYPE_CHECKING:
+    pass
 
 
 @pytest.fixture
-def mock_format_output() -> MagicMock:
-    """Provide a mock format output function.
+def isolated_cli_runner() -> CliRunner:
+    """Click CLI test runner with isolated filesystem.
 
     Returns:
-        MagicMock: Mock format output function.
+        A CliRunner instance with isolated filesystem.
     """
-    return MagicMock(return_value="formatted output")
+    return CliRunner(mix_stderr=False)
 
 
 @pytest.fixture
-def mock_print_summary() -> MagicMock:
-    """Provide a mock print summary function.
+def mock_run_lint_tools_simple() -> Generator[MagicMock, None, None]:
+    """Mock the run_lint_tools_simple function used by check/format commands.
 
-    Returns:
-        MagicMock: Mock print summary function.
+    Yields:
+        A MagicMock instance for the mocked function.
     """
-    return MagicMock()
+    with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock_check:
+        with patch(
+            "lintro.cli_utils.commands.format.run_lint_tools_simple",
+        ) as mock_format:
+            # Configure both mocks to return 0 by default
+            mock_check.return_value = EXIT_SUCCESS
+            mock_format.return_value = EXIT_SUCCESS
+            yield mock_check
 
 
 @pytest.fixture
-def cli_runner() -> CliRunner:
-    """Provide a Click CLI runner for testing.
+def mock_run_lint_tools_check() -> Generator[MagicMock, None, None]:
+    """Mock run_lint_tools_simple specifically for check command.
 
-    Returns:
-        CliRunner: Click CLI test runner instance.
+    Yields:
+        A MagicMock instance for the mocked check function.
     """
-    return CliRunner()
+    with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock:
+        mock.return_value = EXIT_SUCCESS
+        yield mock
+
+
+@pytest.fixture
+def mock_run_lint_tools_format() -> Generator[MagicMock, None, None]:
+    """Mock run_lint_tools_simple specifically for format command.
+
+    Yields:
+        A MagicMock instance for the mocked format function.
+    """
+    with patch("lintro.cli_utils.commands.format.run_lint_tools_simple") as mock:
+        mock.return_value = EXIT_SUCCESS
+        yield mock
+
+
+@pytest.fixture
+def mock_tool_registry() -> Generator[MagicMock, None, None]:
+    """Mock ToolRegistry with common tools.
+
+    Yields:
+        A MagicMock instance for the ToolRegistry.
+    """
+    with patch("lintro.plugins.registry.ToolRegistry") as mock:
+        mock.get_names.return_value = ["ruff", "black", "mypy", "pytest"]
+        mock.is_registered.return_value = True
+        mock.get.return_value = MagicMock()
+        yield mock
+
+
+@pytest.fixture
+def mock_subprocess_success() -> Generator[MagicMock, None, None]:
+    """Mock successful subprocess execution.
+
+    Yields:
+        A MagicMock instance for subprocess.run.
+    """
+    with patch("subprocess.run") as mock:
+        mock.return_value = MagicMock(
+            returncode=EXIT_SUCCESS,
+            stdout="",
+            stderr="",
+        )
+        yield mock

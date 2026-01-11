@@ -29,7 +29,6 @@ class PytestConfiguration:
         disable_warnings: Disable warnings.
         json_report: Enable JSON report output.
         junitxml: Path for JUnit XML output.
-        run_docker_tests: Enable Docker tests (default: False).
         slow_test_threshold: Duration threshold in seconds for slow test warning
             (default: 1.0).
         total_time_warning: Total execution time threshold in seconds for warning
@@ -48,6 +47,7 @@ class PytestConfiguration:
         coverage_html: Path for HTML coverage report (requires pytest-cov).
         coverage_xml: Path for XML coverage report (requires pytest-cov).
         coverage_report: Generate both HTML and XML coverage reports.
+        coverage_term_missing: Show coverage report in terminal with missing lines.
         collect_only: List tests without executing them.
         list_fixtures: List all available fixtures.
         fixture_info: Show detailed information about a specific fixture.
@@ -76,7 +76,6 @@ class PytestConfiguration:
     disable_warnings: bool | None = field(default=None)
     json_report: bool | None = field(default=None)
     junitxml: str | None = field(default=None)
-    run_docker_tests: bool | None = field(default=None)
     slow_test_threshold: float | None = field(default=None)
     total_time_warning: float | None = field(default=None)
     workers: str | None = field(default=None)
@@ -93,6 +92,7 @@ class PytestConfiguration:
     coverage_html: str | None = field(default=None)
     coverage_xml: str | None = field(default=None)
     coverage_report: bool | None = field(default=None)
+    coverage_term_missing: bool | None = field(default=None)
     collect_only: bool | None = field(default=None)
     list_fixtures: bool | None = field(default=None)
     fixture_info: str | None = field(default=None)

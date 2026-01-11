@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from assertpy import assert_that
 
-from lintro.utils.output_manager import OutputManager
+from lintro.utils.output import OutputManager
 
 
 class DummyIssue:

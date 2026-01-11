@@ -73,9 +73,9 @@ if [ "$DISTRIBUTION_TYPE" = "wheel" ] || [ "$DISTRIBUTION_TYPE" = "both" ]; then
     exit 1
   fi
 
-  log_info "Test 5: Actionlint tool import (wheel distribution)"
-  if ! "$PYTHON_BIN" -c "from lintro.tools.implementations.tool_actionlint import ActionlintTool"; then
-    echo "[test-verify-imports] ERROR: Failed to import ActionlintTool" >&2
+  log_info "Test 5: Actionlint tool via plugin registry (wheel distribution)"
+  if ! "$PYTHON_BIN" -c "from lintro.plugins.registry import ToolRegistry; from lintro.plugins.discovery import discover_all_tools; discover_all_tools(); ToolRegistry.get('actionlint')"; then
+    echo "[test-verify-imports] ERROR: Failed to load actionlint via ToolRegistry" >&2
     exit 1
   fi
 fi

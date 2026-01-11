@@ -3,7 +3,7 @@
 This module provides the core logic for the 'list_tools' command.
 """
 
-from typing import Any
+import json as json_lib
 
 import click
 from rich.console import Console
@@ -11,37 +11,32 @@ from rich.panel import Panel
 from rich.table import Table
 
 from lintro.enums.action import Action
+from lintro.plugins.base import BaseToolPlugin
 from lintro.tools import tool_manager
-from lintro.tools.tool_enum import ToolEnum
-from lintro.utils.console_logger import get_tool_emoji
+from lintro.utils.console import get_tool_emoji
 from lintro.utils.unified_config import get_tool_priority, is_tool_injectable
 
 
 def _resolve_conflicts(
-    tool_config: Any,
-    name_to_enum_map: dict[str, ToolEnum],
-    available_tools: dict[ToolEnum, Any],
+    plugin: BaseToolPlugin,
+    available_tools: dict[str, BaseToolPlugin],
 ) -> list[str]:
     """Resolve conflict names for a tool.
 
     Args:
-        tool_config: Tool configuration object.
-        name_to_enum_map: Mapping of tool names to ToolEnum.
+        plugin: The plugin instance.
         available_tools: Dictionary of available tools.
 
     Returns:
         List of conflict tool names.
     """
     conflict_names: list[str] = []
-    if hasattr(tool_config, "conflicts_with") and tool_config.conflicts_with:
-        for conflict in tool_config.conflicts_with:
-            conflict_enum: ToolEnum | None = None
-            if isinstance(conflict, str):
-                conflict_enum = name_to_enum_map.get(conflict.lower())
-            elif isinstance(conflict, ToolEnum):
-                conflict_enum = conflict
-            if conflict_enum is not None and conflict_enum in available_tools:
-                conflict_names.append(conflict_enum.name.lower())
+    conflicts_with = plugin.definition.conflicts_with
+    if conflicts_with:
+        for conflict in conflicts_with:
+            conflict_lower = conflict.lower()
+            if conflict_lower in available_tools:
+                conflict_names.append(conflict_lower)
     return conflict_names
 
 
@@ -56,33 +51,92 @@ def _resolve_conflicts(
     is_flag=True,
     help="Show potential conflicts between tools",
 )
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    help="Output tool list as JSON",
+)
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show verbose output including file extensions and patterns",
+)
 def list_tools_command(
     output: str | None,
     show_conflicts: bool,
+    json_output: bool,
+    verbose: bool,
 ) -> None:
     """List all available tools and their configurations.
 
     Args:
         output: Path to output file for writing results.
         show_conflicts: Whether to show potential conflicts between tools.
+        json_output: Output tool list as JSON.
+        verbose: Show verbose output including file extensions and patterns.
     """
-    list_tools(output=output, show_conflicts=show_conflicts)
+    list_tools(
+        output=output,
+        show_conflicts=show_conflicts,
+        json_output=json_output,
+        verbose=verbose,
+    )
 
 
 def list_tools(
     output: str | None,
     show_conflicts: bool,
+    json_output: bool = False,
+    verbose: bool = False,
 ) -> None:
     """List all available tools.
 
     Args:
         output: Output file path.
         show_conflicts: Whether to show potential conflicts between tools.
+        json_output: Output tool list as JSON.
+        verbose: Show verbose output including file extensions and patterns.
     """
-    console = Console()
-    available_tools = tool_manager.get_available_tools()
+    available_tools = tool_manager.get_all_tools()
     check_tools = tool_manager.get_check_tools()
     fix_tools = tool_manager.get_fix_tools()
+
+    # JSON output mode
+    if json_output:
+        tools_data: dict[str, dict[str, object]] = {}
+        for tool_name, plugin in available_tools.items():
+            capabilities: list[str] = []
+            if tool_name in check_tools:
+                capabilities.append("check")
+            if tool_name in fix_tools:
+                capabilities.append("fix")
+
+            tool_info: dict[str, object] = {
+                "description": plugin.definition.description,
+                "capabilities": capabilities,
+                "priority": get_tool_priority(tool_name),
+                "syncable": is_tool_injectable(tool_name),
+            }
+
+            # Only include file_patterns in verbose mode (consistent with table output)
+            if verbose:
+                tool_info["file_patterns"] = plugin.definition.file_patterns
+
+            if show_conflicts:
+                conflict_names = _resolve_conflicts(
+                    plugin=plugin,
+                    available_tools=available_tools,
+                )
+                tool_info["conflicts_with"] = conflict_names
+
+            tools_data[tool_name] = tool_info
+
+        click.echo(json_lib.dumps(tools_data, indent=2))
+        return
+
+    console = Console()
 
     # Header panel
     console.print(
@@ -101,28 +155,23 @@ def list_tools(
     table.add_column("Priority", justify="center", style="yellow")
     table.add_column("Type", style="magenta")
 
+    if verbose:
+        table.add_column("Extensions", style="dim", max_width=30)
+
     if show_conflicts:
         table.add_column("Conflicts", style="red")
 
-    # Build name-to-enum map for conflict resolution
-    name_to_enum_map = {t.name.lower(): t for t in ToolEnum}
-
-    for tool_enum, tool in available_tools.items():
-        tool_name = tool_enum.name.lower()
-        tool_description = getattr(
-            tool.config,
-            "description",
-            tool.__class__.__name__,
-        )
+    for tool_name, plugin in available_tools.items():
+        tool_description = plugin.definition.description
         emoji = get_tool_emoji(tool_name)
 
         # Capabilities
-        capabilities: list[str] = []
-        if tool_enum in check_tools:
-            capabilities.append("check")
-        if tool_enum in fix_tools:
-            capabilities.append("fix")
-        caps_display = ", ".join(capabilities) if capabilities else "-"
+        tool_capabilities: list[str] = []
+        if tool_name in check_tools:
+            tool_capabilities.append("check")
+        if tool_name in fix_tools:
+            tool_capabilities.append("fix")
+        caps_display = ", ".join(tool_capabilities) if tool_capabilities else "-"
 
         # Priority and type
         priority = get_tool_priority(tool_name)
@@ -137,11 +186,18 @@ def list_tools(
             tool_type,
         ]
 
+        # File patterns (verbose mode)
+        if verbose:
+            patterns = plugin.definition.file_patterns or []
+            pat_display = ", ".join(patterns[:5])
+            if len(patterns) > 5:
+                pat_display += f" (+{len(patterns) - 5})"
+            row.append(pat_display if patterns else "-")
+
         # Conflicts
         if show_conflicts:
             conflict_names = _resolve_conflicts(
-                tool_config=tool.config,
-                name_to_enum_map=name_to_enum_map,
+                plugin=plugin,
                 available_tools=available_tools,
             )
             row.append(", ".join(conflict_names) if conflict_names else "-")
@@ -185,9 +241,9 @@ def list_tools(
 
 
 def _generate_plain_text_output(
-    available_tools: dict[ToolEnum, Any],
-    check_tools: dict[ToolEnum, Any],
-    fix_tools: dict[ToolEnum, Any],
+    available_tools: dict[str, BaseToolPlugin],
+    check_tools: dict[str, BaseToolPlugin],
+    fix_tools: dict[str, BaseToolPlugin],
     show_conflicts: bool,
 ) -> list[str]:
     """Generate plain text output for file writing.
@@ -209,21 +265,14 @@ def _generate_plain_text_output(
     output_lines.append(border)
     output_lines.append("")
 
-    name_to_enum_map = {t.name.lower(): t for t in ToolEnum}
-
-    for tool_enum, tool in available_tools.items():
-        tool_name = tool_enum.name.lower()
-        tool_description = getattr(
-            tool.config,
-            "description",
-            tool.__class__.__name__,
-        )
+    for tool_name, plugin in available_tools.items():
+        tool_description = plugin.definition.description
         emoji = get_tool_emoji(tool_name)
 
         capabilities: list[str] = []
-        if tool_enum in check_tools:
+        if tool_name in check_tools:
             capabilities.append(Action.CHECK.value)
-        if tool_enum in fix_tools:
+        if tool_name in fix_tools:
             capabilities.append(Action.FIX.value)
 
         capabilities_display = ", ".join(capabilities) if capabilities else "-"
@@ -233,8 +282,7 @@ def _generate_plain_text_output(
 
         if show_conflicts:
             conflict_names = _resolve_conflicts(
-                tool_config=tool.config,
-                name_to_enum_map=name_to_enum_map,
+                plugin=plugin,
                 available_tools=available_tools,
             )
             if conflict_names:

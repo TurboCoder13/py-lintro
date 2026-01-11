@@ -100,7 +100,7 @@ def parse_black_output(output: str) -> list[BlackIssue]:
                                 message="Formatting change detected",
                             ),
                         )
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, IndexError) as e:
         logger.debug(f"Error parsing black output: {e}")
 
     return issues

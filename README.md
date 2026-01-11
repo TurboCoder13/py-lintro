@@ -166,6 +166,26 @@ installed tools.
 pip install lintro
 ```
 
+#### Standalone Binary (macOS)
+
+For a lightweight installation that doesn't require Python:
+
+```bash
+# Via Homebrew (binary version) - recommended
+brew tap TurboCoder13/tap
+brew install lintro-bin
+
+# Or download directly from GitHub Releases (auto-detects architecture)
+ARCH=$(uname -m | sed 's/x86_64/x86_64/;s/arm64/arm64/;s/aarch64/arm64/')
+curl -L "https://github.com/TurboCoder13/py-lintro/releases/latest/download/lintro-macos-${ARCH}" -o lintro
+chmod +x lintro
+./lintro --version
+```
+
+**Note:** The standalone binary still requires the external tools it wraps (ruff, black,
+mypy, etc.) to be installed separately. Use `lintro versions` to check tool
+availability.
+
 #### Development Installation
 
 ```bash

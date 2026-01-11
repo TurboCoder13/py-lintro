@@ -15,9 +15,10 @@ from __future__ import annotations
 
 import re
 import sys
+import tomllib
 from pathlib import Path
 
-import toml
+import tomli_w
 
 VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:[a-zA-Z0-9._-]+)?$")
 
@@ -54,10 +55,12 @@ def _update_pyproject_version(pyproject_path: Path, version: str) -> str:
     Returns:
         Previous version string if present, otherwise empty string.
     """
-    data = toml.loads(_read_text(pyproject_path))
+    with pyproject_path.open("rb") as f:
+        data = tomllib.load(f)
     old: str = str(data.get("project", {}).get("version", ""))
     data.setdefault("project", {})["version"] = version
-    _write_text(pyproject_path, toml.dumps(data))
+    with pyproject_path.open("wb") as f:
+        tomli_w.dump(data, f)
     return old
 
 

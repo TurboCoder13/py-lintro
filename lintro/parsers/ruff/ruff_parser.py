@@ -3,11 +3,69 @@
 This module provides functions to parse both:
 - ruff check --output-format json (linting issues)
 - ruff format --check (plain text: files needing formatting)
+
+Supports both batch and streaming parsing modes.
 """
 
-import json
+from __future__ import annotations
 
+import json
+from collections.abc import Generator, Iterable
+
+from loguru import logger
+
+from lintro.parsers.base_parser import (
+    extract_dict_field,
+    extract_int_field,
+    extract_str_field,
+    safe_parse_items,
+)
 from lintro.parsers.ruff.ruff_issue import RuffIssue
+from lintro.parsers.streaming import stream_json_array_fallback
+
+
+def _parse_ruff_item(item: dict[str, object]) -> RuffIssue | None:
+    """Parse a single Ruff issue item into a RuffIssue object.
+
+    Args:
+        item: Dictionary containing issue data from Ruff JSON output.
+
+    Returns:
+        RuffIssue object if parsing succeeds, None otherwise.
+    """
+    filename = extract_str_field(item, ["filename", "file"])
+    loc = extract_dict_field(item, ["location", "start"])
+    end_loc = extract_dict_field(item, ["end_location", "end"])
+
+    line = extract_int_field(loc, ["row", "line"], default=0) or 0
+    column = extract_int_field(loc, ["column", "col"], default=0) or 0
+    end_line = extract_int_field(end_loc, ["row", "line"], default=line) or line
+    end_column = extract_int_field(end_loc, ["column", "col"], default=column) or column
+
+    code = extract_str_field(item, ["code", "rule"])
+    message = extract_str_field(item, ["message"])
+    url_candidate = item.get("url")
+    url: str | None = url_candidate if isinstance(url_candidate, str) else None
+
+    fix = extract_dict_field(item, ["fix"])
+    fixable: bool = bool(fix)
+    fix_applicability_raw = fix.get("applicability") if fix else None
+    fix_applicability: str | None = (
+        fix_applicability_raw if isinstance(fix_applicability_raw, str) else None
+    )
+
+    return RuffIssue(
+        file=filename,
+        line=line,
+        column=column,
+        code=code,
+        message=message,
+        url=url,
+        end_line=end_line,
+        end_column=end_column,
+        fixable=fixable,
+        fix_applicability=fix_applicability,
+    )
 
 
 def parse_ruff_output(output: str) -> list[RuffIssue]:
@@ -30,66 +88,8 @@ def parse_ruff_output(output: str) -> list[RuffIssue]:
     Returns:
         list[RuffIssue]: Parsed issues.
     """
-    issues: list[RuffIssue] = []
-
     if not output or output.strip() in ("[]", "{}"):
-        return issues
-
-    def _int_from(
-        d: dict[str, object],
-        candidates: list[str],
-    ) -> int | None:
-        for key in candidates:
-            val = d.get(key)
-            if isinstance(val, int):
-                return val
-        return None
-
-    def _parse_item(item: dict[str, object]) -> RuffIssue | None:
-        try:
-            raw_filename = item.get("filename") or item.get("file")
-            filename: str = raw_filename if isinstance(raw_filename, str) else ""
-
-            loc_raw = item.get("location") or item.get("start") or {}
-            loc: dict[str, object] = loc_raw if isinstance(loc_raw, dict) else {}
-            end_loc_raw = item.get("end_location") or item.get("end") or {}
-            end_loc: dict[str, object] = (
-                end_loc_raw if isinstance(end_loc_raw, dict) else {}
-            )
-
-            line = _int_from(loc, ["row", "line"]) or 0
-            column = _int_from(loc, ["column", "col"]) or 0
-            end_line = _int_from(end_loc, ["row", "line"]) or line
-            end_column = _int_from(end_loc, ["column", "col"]) or column
-
-            raw_code = item.get("code") or item.get("rule")
-            code: str = raw_code if isinstance(raw_code, str) else ""
-            raw_message = item.get("message")
-            message: str = raw_message if isinstance(raw_message, str) else ""
-            url_candidate = item.get("url")
-            url: str | None = url_candidate if isinstance(url_candidate, str) else None
-
-            fix_raw = item.get("fix") or {}
-            fix = fix_raw if isinstance(fix_raw, dict) else {}
-            fixable: bool = bool(fix)
-            fix_applicability = (
-                fix.get("applicability") if isinstance(fix, dict) else None
-            )
-
-            return RuffIssue(
-                file=filename,
-                line=line,
-                column=column,
-                code=code,
-                message=message,
-                url=url,
-                end_line=end_line,
-                end_column=end_column,
-                fixable=fixable,
-                fix_applicability=fix_applicability,
-            )
-        except Exception:
-            return None
+        return []
 
     # First try JSON array (with possible trailing non-JSON data)
     try:
@@ -101,18 +101,13 @@ def parse_ruff_output(output: str) -> list[RuffIssue]:
             ruff_data = json.loads(output)
 
         if isinstance(ruff_data, list):
-            for item in ruff_data:
-                if not isinstance(item, dict):
-                    continue
-                parsed = _parse_item(item)
-                if parsed is not None:
-                    issues.append(parsed)
-            return issues
-    except (json.JSONDecodeError, TypeError):
+            return safe_parse_items(ruff_data, _parse_ruff_item, "ruff")
+    except (json.JSONDecodeError, TypeError) as e:
         # Fall back to JSON Lines parsing below
-        pass
+        logger.debug(f"Ruff array JSON parsing failed, falling back to JSON Lines: {e}")
 
     # Fallback: parse JSON Lines (each line is a JSON object)
+    items: list[object] = []
     for line in output.splitlines():
         line_str = line.strip()
         if not line_str or not line_str.startswith("{"):
@@ -120,13 +115,12 @@ def parse_ruff_output(output: str) -> list[RuffIssue]:
         try:
             item = json.loads(line_str)
             if isinstance(item, dict):
-                parsed = _parse_item(item)
-                if parsed is not None:
-                    issues.append(parsed)
-        except json.JSONDecodeError:
+                items.append(item)
+        except json.JSONDecodeError as e:
+            logger.debug(f"Failed to parse ruff JSON line '{line_str[:50]}': {e}")
             continue
 
-    return issues
+    return safe_parse_items(items, _parse_ruff_item, "ruff")
 
 
 def parse_ruff_format_check_output(output: str) -> list[str]:
@@ -138,15 +132,14 @@ def parse_ruff_format_check_output(output: str) -> list[str]:
     Returns:
         List of file paths that would be reformatted
     """
+    from lintro.parsers.base_parser import strip_ansi_codes
+
     if not output:
         return []
     files = []
-    import re
-
-    ansi_re = re.compile(r"\x1b\[[0-9;]*m")
     for raw in output.splitlines():
         # Strip ANSI color codes for stable parsing across environments
-        line = ansi_re.sub("", raw).strip()
+        line = strip_ansi_codes(raw).strip()
         # Ruff format --check output: 'Would reformat: path/to/file.py' or
         # 'Would reformat path/to/file.py'
         if line.startswith("Would reformat: "):
@@ -154,3 +147,67 @@ def parse_ruff_format_check_output(output: str) -> list[str]:
         elif line.startswith("Would reformat "):
             files.append(line[len("Would reformat ") :])
     return files
+
+
+# ---------------------------------------------------------------------------
+# Streaming parser variants
+# ---------------------------------------------------------------------------
+
+
+def stream_ruff_output(
+    output: str | Iterable[str],
+) -> Generator[RuffIssue, None, None]:
+    """Stream Ruff JSON output, yielding issues as they are parsed.
+
+    Supports both JSON array and JSON Lines formats. For large outputs,
+    this is more memory-efficient than parse_ruff_output() as it yields
+    issues incrementally rather than building a full list.
+
+    Args:
+        output: Raw output from `ruff check --output-format json`, either
+            as a complete string or as an iterable of lines.
+
+    Yields:
+        RuffIssue: Parsed issues one at a time.
+
+    Examples:
+        >>> for issue in stream_ruff_output(ruff_output):
+        ...     print(f"{issue.file}:{issue.line}: {issue.message}")
+    """
+    if isinstance(output, str):
+        # Use fallback parser that handles both JSON array and JSON Lines
+        yield from stream_json_array_fallback(output, _parse_ruff_item, "ruff")
+    else:
+        # Iterable of lines - stream JSON Lines directly
+        from lintro.parsers.streaming import stream_json_lines
+
+        yield from stream_json_lines(output, _parse_ruff_item, "ruff")
+
+
+def stream_ruff_format_output(
+    output: str | Iterable[str],
+) -> Generator[str, None, None]:
+    """Stream ruff format --check output, yielding file paths incrementally.
+
+    Args:
+        output: Raw output from `ruff format --check`, either as a complete
+            string or as an iterable of lines.
+
+    Yields:
+        str: File paths that would be reformatted.
+
+    Examples:
+        >>> for filepath in stream_ruff_format_output(format_output):
+        ...     print(f"Needs formatting: {filepath}")
+    """
+    from lintro.parsers.base_parser import strip_ansi_codes
+
+    lines: Iterable[str]
+    lines = output.splitlines() if isinstance(output, str) else output
+
+    for raw_line in lines:
+        line = strip_ansi_codes(raw_line).strip()
+        if line.startswith("Would reformat: "):
+            yield line[len("Would reformat: ") :]
+        elif line.startswith("Would reformat "):
+            yield line[len("Would reformat ") :]

@@ -1,34 +1,33 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # docker-test.sh - Run tests in a Docker container
-
-# Show help if requested
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    echo "Usage: $0 [--help]"
-    echo ""
-    echo "Docker Integration Test Runner"
-    echo "Run integration tests in Docker container with all tools pre-installed."
-    echo ""
-    echo "Features:"
-    echo "  - Uses Docker Compose for test environment"
-    echo "  - All tools pre-installed in container"
-    echo "  - Delegates to run-tests.sh inside container"
-    echo "  - Provides clear success/failure output"
-    echo ""
-    echo "This script runs the full test suite in a containerized environment."
-    exit 0
-fi
-# 
+#
 # This script runs the full test suite in a containerized environment
 # where all tools are pre-installed. It delegates to run-tests.sh inside the container.
 
-# Color output for better readability
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../utils/utils.sh
+source "$SCRIPT_DIR/../utils/utils.sh"
+
+# Show help if requested
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    cat <<'EOF'
+Usage: docker-test.sh [--help]
+
+Docker Integration Test Runner
+Run integration tests in Docker container with all tools pre-installed.
+
+Features:
+  - Uses Docker Compose for test environment
+  - All tools pre-installed in container
+  - Delegates to run-tests.sh inside container
+  - Provides clear success/failure output
+
+This script runs the full test suite in a containerized environment.
+EOF
+    exit 0
+fi
 
 echo -e "${BLUE}=== Docker Integration Test Runner ===${NC}"
 

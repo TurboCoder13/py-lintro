@@ -9,7 +9,7 @@ from assertpy import assert_that
 from loguru import logger
 
 from lintro.parsers.markdownlint.markdownlint_issue import MarkdownlintIssue
-from lintro.tools.implementations.tool_markdownlint import MarkdownlintTool
+from lintro.plugins import ToolRegistry
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
@@ -110,10 +110,11 @@ def test_markdownlint_direct_vs_lintro_parity() -> None:
     )
 
     # Run via lintro
-    tool = MarkdownlintTool()
+    tool = ToolRegistry.get("markdownlint")
+    assert_that(tool).is_not_none()
     # Clear exclude patterns to allow scanning test_samples
     tool.exclude_patterns = []
-    lintro_result = tool.check(paths=[str(sample_path)])
+    lintro_result = tool.check([str(sample_path)], {})
 
     # Compare issue counts (allow some variance due to parsing differences)
     # Direct count may include lines we don't parse, so lintro count <= direct
@@ -138,8 +139,9 @@ def test_markdownlint_integration_basic() -> None:
     if not sample_path.exists():
         pytest.skip(f"Sample file {SAMPLE_FILE} not found")
 
-    tool = MarkdownlintTool()
-    result = tool.check(paths=[str(sample_path)])
+    tool = ToolRegistry.get("markdownlint")
+    assert_that(tool).is_not_none()
+    result = tool.check([str(sample_path)], {})
 
     assert_that(result).is_not_none()
     assert_that(result.name).is_equal_to("markdownlint")

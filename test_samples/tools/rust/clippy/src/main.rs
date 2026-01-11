@@ -9,7 +9,7 @@ fn add(a: i32, b: i32) -> i32 {
 }
 
 fn greet(name: &str) {
-    println!("Hello, {}!", name);
+    println!("Hello, {name}!");
 }
 
 struct Person {

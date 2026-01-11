@@ -3,20 +3,26 @@
 from typing import Any, cast
 
 import click
-from loguru import logger
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
 from lintro import __version__
-from lintro.cli_utils.commands.check import check_command
-from lintro.cli_utils.commands.config import config_command
-from lintro.cli_utils.commands.format import format_command
-from lintro.cli_utils.commands.init import init_command
-from lintro.cli_utils.commands.list_tools import list_tools_command
-from lintro.cli_utils.commands.test import test_command
-from lintro.cli_utils.commands.versions import versions_command
+from lintro.cli_utils.command_chainer import CommandChainer
+from lintro.utils.logger_setup import setup_cli_logging
+
+# Configure loguru for CLI commands (help, version, etc.)
+# Only WARNING and above will show. DEBUG logs go to file when tool_executor runs.
+setup_cli_logging()
+
+from lintro.cli_utils.commands.check import check_command  # noqa: E402
+from lintro.cli_utils.commands.config import config_command  # noqa: E402
+from lintro.cli_utils.commands.format import format_command  # noqa: E402
+from lintro.cli_utils.commands.init import init_command  # noqa: E402
+from lintro.cli_utils.commands.list_tools import list_tools_command  # noqa: E402
+from lintro.cli_utils.commands.test import test_command  # noqa: E402
+from lintro.cli_utils.commands.versions import versions_command  # noqa: E402
 
 
 class LintroGroup(click.Group):
@@ -134,115 +140,20 @@ class LintroGroup(click.Group):
             int: Exit code from command execution.
 
         Raises:
-            KeyboardInterrupt: If the user interrupts command execution.
             SystemExit: If a command exits with a non-zero exit code.
         """
         all_args = ctx.protected_args + ctx.args
+
         if all_args:
-            # Get set of known command names/aliases
-            command_names = set(self.list_commands(ctx))
-            normalized_args: list[str] = []
-            saw_separator = False
+            chainer = CommandChainer(self)
 
-            for arg in all_args:
-                if arg == ",":
-                    normalized_args.append(arg)
-                    saw_separator = True
-                    continue
+            if chainer.should_chain(all_args):
+                # Normalize arguments and group into command chains
+                normalized = chainer.normalize_args(all_args)
+                groups = chainer.group_commands(normalized)
 
-                if "," in arg:
-                    # Check if this looks like comma-separated commands
-                    raw_parts = [part.strip() for part in arg.split(",")]
-                    # Filter out empty fragments after splitting
-                    fragments = [part for part in raw_parts if part]
-                    # Only split if all parts are known commands
-                    if fragments and all(part in command_names for part in fragments):
-                        # Split into separate tokens
-                        for idx, part in enumerate(fragments):
-                            if part:
-                                normalized_args.append(part)
-                            if idx < len(fragments) - 1:
-                                normalized_args.append(",")
-                                saw_separator = True
-                        continue
-                    # Not all parts are commands, keep as-is (e.g., --tools ruff,bandit)
-                    normalized_args.append(arg)
-                    continue
-
-                normalized_args.append(arg)
-
-            if saw_separator:
-                # Parse chained commands from normalized args
-                command_groups: list[list[str]] = []
-                current_group: list[str] = []
-
-                for arg in normalized_args:
-                    if arg == ",":
-                        if current_group:
-                            command_groups.append(current_group)
-                            current_group = []
-                        continue
-                    current_group.append(arg)
-
-                if current_group:
-                    command_groups.append(current_group)
-
-                # Execute each command group
-                exit_codes: list[int] = []
-                for cmd_args in command_groups:
-                    if not cmd_args:
-                        continue
-                    # Create a new context for each command
-                    ctx_copy = self.make_context(
-                        ctx.info_name,
-                        cmd_args,
-                        parent=ctx,
-                        allow_extra_args=True,
-                        allow_interspersed_args=False,
-                    )
-                    # Invoke the command
-                    with ctx_copy.scope() as subctx:
-                        try:
-                            result = super().invoke(subctx)
-                            exit_codes.append(result if isinstance(result, int) else 0)
-                        except SystemExit as e:
-                            exit_codes.append(
-                                (
-                                    e.code
-                                    if isinstance(e.code, int)
-                                    else (0 if e.code is None else 1)
-                                ),
-                            )
-                        except KeyboardInterrupt:
-                            # Re-raise KeyboardInterrupt to allow normal interruption
-                            raise
-                        except Exception as e:
-                            # Catch all other exceptions to allow command chain to
-                            # continue
-                            exit_code = getattr(e, "exit_code", 1)
-                            exit_codes.append(exit_code)
-                            # Log the exception with full traceback
-                            logger.exception(
-                                (
-                                    f"Error executing command "
-                                    f"'{' '.join(cmd_args)}': {type(e).__name__}: {e}"
-                                ),
-                            )
-                            # Also echo to stderr for immediate user feedback
-                            click.echo(
-                                click.style(
-                                    (
-                                        f"Error executing command "
-                                        f"'{' '.join(cmd_args)}': "
-                                        f"{type(e).__name__}: {e}"
-                                    ),
-                                    fg="red",
-                                ),
-                                err=True,
-                            )
-
-                # Return aggregated exit code (0 only if all succeeded)
-                final_exit_code = max(exit_codes) if exit_codes else 0
+                # Execute command chain
+                final_exit_code = chainer.execute_chain(ctx, groups)
                 if final_exit_code != 0:
                     raise SystemExit(final_exit_code)
                 return 0
