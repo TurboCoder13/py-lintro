@@ -61,6 +61,8 @@ def run_lint_tools_simple(
     output_file: str | None = None,
     incremental: bool = False,
     debug: bool = False,
+    stream: bool = False,
+    no_log: bool = False,
 ) -> int:
     """Simplified runner using Loguru-based logging with rich formatting.
 
@@ -84,6 +86,8 @@ def run_lint_tools_simple(
         output_file: Optional file path to write results to.
         incremental: Whether to only check files changed since last run.
         debug: Whether to show DEBUG messages on console.
+        stream: Whether to stream output in real-time (not yet implemented).
+        no_log: Whether to disable file logging (not yet implemented).
 
     Returns:
         Exit code (0 for success, 1 for failures).

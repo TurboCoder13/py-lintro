@@ -175,6 +175,8 @@ def check_command(
         output_file=output,
         incremental=incremental,
         debug=debug,
+        stream=stream,
+        no_log=no_log,
     )
 
     # Exit with code only; CLI uses this as process exit code and avoids any

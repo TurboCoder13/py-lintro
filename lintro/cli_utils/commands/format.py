@@ -136,6 +136,8 @@ def format_command(
         raw_output=raw_output,
         output_file=output,
         debug=debug,
+        stream=stream,
+        no_log=no_log,
     )
 
     # Exit with code from tool execution

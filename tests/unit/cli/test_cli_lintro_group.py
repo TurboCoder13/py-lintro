@@ -101,6 +101,8 @@ def test_invoke_with_comma_separated_commands() -> None:
             output_file=None,
             incremental=False,
             debug=False,
+            stream=False,
+            no_log=False,
         )
         mock_fmt.assert_any_call(
             action="fmt",
@@ -115,6 +117,8 @@ def test_invoke_with_comma_separated_commands() -> None:
             raw_output=False,
             output_file=None,
             debug=False,
+            stream=False,
+            no_log=False,
         )
 
 

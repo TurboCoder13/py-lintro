@@ -118,8 +118,11 @@ def list_tools(
                 "capabilities": capabilities,
                 "priority": get_tool_priority(tool_name),
                 "syncable": is_tool_injectable(tool_name),
-                "file_patterns": plugin.definition.file_patterns,
             }
+
+            # Only include file_patterns in verbose mode (consistent with table output)
+            if verbose:
+                tool_info["file_patterns"] = plugin.definition.file_patterns
 
             if show_conflicts:
                 conflict_names = _resolve_conflicts(
