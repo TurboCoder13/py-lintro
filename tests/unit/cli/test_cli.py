@@ -254,8 +254,9 @@ def test_lintro_group_invoke_normalizes_comma_separated_commands() -> None:
             mock_fmt.return_value = 0
             # Test comma-separated command detection
             runner.invoke(cli, ["fmt", ",", "chk"])
-            # Both commands should have been invoked
-            assert_that(mock_fmt.called or mock_check.called).is_true()
+            # Both commands should have been invoked for chained execution
+            assert_that(mock_fmt.called).is_true()
+            assert_that(mock_check.called).is_true()
 
 
 def test_lintro_group_invoke_single_command() -> None:

@@ -52,7 +52,7 @@ def test_should_not_chain_comma_in_argument(mock_group: click.Group) -> None:
     assert_that(chainer.should_chain(["fmt", "--tools", "ruff,bandit"])).is_false()
 
 
-def test_should_chain_empty_args(mock_group: click.Group) -> None:
+def test_should_not_chain_empty_args(mock_group: click.Group) -> None:
     """Test that empty args do not trigger chaining.
 
     Args:
