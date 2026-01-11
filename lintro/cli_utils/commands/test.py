@@ -79,12 +79,6 @@ def _ensure_pytest_prefix(option_fragment: str) -> str:
     help="Tool-specific options in the format option=value,option=value",
 )
 @click.option(
-    "--enable-docker",
-    is_flag=True,
-    default=False,
-    help="Enable Docker-specific tests",
-)
-@click.option(
     "--list-plugins",
     is_flag=True,
     default=False,
@@ -150,7 +144,6 @@ def test_command(
     verbose: bool,
     raw_output: bool,
     tool_options: str | None,
-    enable_docker: bool,
     list_plugins: bool,
     check_plugins: bool,
     collect_only: bool,
@@ -174,10 +167,6 @@ def test_command(
 
     # Build tool options with pytest prefix
     tool_option_parts: list[str] = []
-
-    # Add Docker enable option if flag is set
-    if enable_docker:
-        tool_option_parts.append("pytest:run_docker_tests=True")
 
     # Add special mode flags
     boolean_flags: list[tuple[bool, str]] = [

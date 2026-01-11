@@ -177,15 +177,6 @@ run_tests() {
         tool_opts="${tool_opts},pytest:verbose=True"
     fi
     
-    # Add Docker test enablement and coverage options
-    # Set a longer timeout (600s = 10 minutes) since tests are more comprehensive
-    if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" = "1" ]; then
-        echo -e "${YELLOW}Including Docker tests (LINTRO_RUN_DOCKER_TESTS=1)${NC}"
-        tool_opts="${tool_opts},pytest:run_docker_tests=True"
-    else
-        echo -e "${YELLOW}Docker-specific tests will be auto-skipped by pytest config${NC}"
-    fi
-
     # Add pytest-sugar for enhanced CI output (if available)
     if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
         if python -c "import pytest_sugar" 2>/dev/null; then
@@ -216,7 +207,6 @@ show_tips() {
     echo -e "${YELLOW}=== Helpful Tips ===${NC}"
     echo -e "${BLUE}• Install missing tools: ./scripts/local/local-lintro.sh --install${NC}"
     echo -e "${BLUE}• Run specific tests: uv run lintro tst tests/ --tool-options pytest:workers=auto${NC}"
-    echo -e "${BLUE}• Include Docker tests: LINTRO_RUN_DOCKER_TESTS=1 $0${NC}"
     echo -e "${BLUE}• Run with verbose output: $0 --verbose${NC}"
     echo -e "${BLUE}• Check tool installation: ./scripts/utils/install-tools.sh --local${NC}"
     echo ""

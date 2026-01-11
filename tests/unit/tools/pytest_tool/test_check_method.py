@@ -42,13 +42,12 @@ def test_check_success_with_mocked_subprocess(
         patch.object(
             sample_pytest_plugin.executor,
             "prepare_test_execution",
-            return_value=(10, 0, None),
+            return_value=10,
         ),
         patch.object(
             sample_pytest_plugin.executor,
             "execute_tests",
         ) as mock_execute,
-        patch.object(sample_pytest_plugin.executor, "restore_environment"),
     ):
         mock_execute.return_value = (True, "10 passed in 0.12s", 0)
 
@@ -91,13 +90,12 @@ def test_check_failure_with_mocked_subprocess(
         patch.object(
             sample_pytest_plugin.executor,
             "prepare_test_execution",
-            return_value=(10, 0, None),
+            return_value=10,
         ),
         patch.object(
             sample_pytest_plugin.executor,
             "execute_tests",
         ) as mock_execute,
-        patch.object(sample_pytest_plugin.executor, "restore_environment"),
     ):
         mock_execute.return_value = (False, "2 failed, 8 passed in 0.15s", 1)
 
@@ -147,7 +145,7 @@ def test_check_handles_result_processor_not_initialized(
         patch.object(
             sample_pytest_plugin.executor,
             "prepare_test_execution",
-            return_value=(10, 0, None),
+            return_value=10,
         ),
         patch.object(
             sample_pytest_plugin.executor,
@@ -155,7 +153,6 @@ def test_check_handles_result_processor_not_initialized(
             return_value=(True, "10 passed", 0),
         ),
         patch.object(sample_pytest_plugin, "_parse_output", return_value=[]),
-        patch.object(sample_pytest_plugin.executor, "restore_environment"),
     ):
         result = sample_pytest_plugin.check(["tests"], {})
 

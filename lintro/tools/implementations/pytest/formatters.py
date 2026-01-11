@@ -21,8 +21,6 @@ def process_test_summary(
     output: str,
     issues: list[PytestIssue],
     total_available_tests: int,
-    docker_test_count: int,
-    run_docker_tests: bool,
 ) -> dict[str, Any]:
     """Process test summary and calculate skipped tests.
 
@@ -30,8 +28,6 @@ def process_test_summary(
         output: Raw output from pytest.
         issues: Parsed test issues.
         total_available_tests: Total number of available tests.
-        docker_test_count: Number of docker tests.
-        run_docker_tests: Whether docker tests were enabled.
 
     Returns:
         dict: Summary data dictionary.
@@ -47,15 +43,6 @@ def process_test_summary(
     # Use actual failed issues count, not summary count
     # (in case parsing is inconsistent)
     actual_failures = len(failed_issues)
-
-    # Calculate docker skipped tests
-    # If docker tests are disabled and we have some,
-    # they should show as skipped in the output
-    docker_skipped = 0
-    if not run_docker_tests and docker_test_count > 0:
-        # When Docker tests are disabled, they are deselected by pytest
-        # so they won't appear in summary.skipped
-        docker_skipped = docker_test_count
 
     # Calculate actual skipped tests (tests that exist but weren't run)
     # This includes deselected tests that pytest doesn't report in summary
@@ -79,17 +66,10 @@ def process_test_summary(
         f"error={summary.error}",
     )
     logger.debug(f"Actual skipped: {actual_skipped}")
-    logger.debug(f"Docker skipped: {docker_skipped}")
 
     # Use the larger of summary.skipped or actual_skipped
     # (summary.skipped is runtime skips, actual_skipped includes deselected)
-    # But ensure docker_skipped is included in the total
     total_skipped = max(summary.skipped, actual_skipped)
-
-    # Ensure docker_skipped is included in the total skipped count
-    # This makes Docker tests show as skipped when --enable-docker is not used
-    if docker_skipped > 0 and total_skipped < docker_skipped:
-        total_skipped = docker_skipped
 
     summary_data = {
         "passed": summary.passed,
@@ -97,7 +77,6 @@ def process_test_summary(
         "failed": actual_failures,
         "skipped": total_skipped,
         "error": summary.error,
-        "docker_skipped": docker_skipped,
         "duration": summary.duration,
         "total": total_available_tests,
     }

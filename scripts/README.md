@@ -141,6 +141,8 @@ Scripts for containerized development and testing.
 | `docker-build-test.sh` | Build and test Docker image     | `./scripts/docker/docker-build-test.sh`   |
 | `docker-lintro.sh`     | Run Lintro in Docker container  | `./scripts/docker/docker-lintro.sh check` |
 | `docker-test.sh`       | Run integration tests in Docker | `./scripts/docker/docker-test.sh`         |
+| `entrypoint.sh`        | Docker container entrypoint     | Internal use by Dockerfile                |
+| `fix-permissions.sh`   | Fix mounted volume permissions  | Internal use by Dockerfile                |
 
 ### 💻 Local Development Scripts (`local/`)
 

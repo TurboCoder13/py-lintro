@@ -249,7 +249,6 @@ def test_pytest_with_summary(
             "passed": 10,
             "failed": 2,
             "skipped": 1,
-            "docker_skipped": 0,
             "duration": 1.5,
             "total": 13,
         },
@@ -263,37 +262,6 @@ def test_pytest_with_summary(
     assert_that(combined).contains("Failed")
     assert_that(combined).contains("Skipped")
     assert_that(combined).contains("Duration")
-
-
-def test_pytest_with_docker_skipped(
-    console_capture: tuple[Callable[[str], None], list[str]],
-    fake_tool_result_factory: Callable[..., FakeToolResult],
-) -> None:
-    """Display docker skipped count in parentheses when docker tests are skipped.
-
-    Args:
-        console_capture: Mock console output capture.
-        fake_tool_result_factory: Factory for creating fake tool results.
-    """
-    capture, output = console_capture
-    result = fake_tool_result_factory(
-        name="pytest",
-        success=True,
-        issues_count=0,
-        pytest_summary={
-            "passed": 8,
-            "failed": 0,
-            "skipped": 5,
-            "docker_skipped": 3,
-            "duration": 2.0,
-            "total": 13,
-        },
-    )
-
-    print_summary_table(capture, Action.TEST, [result])
-
-    combined = "".join(output)
-    assert_that(combined).contains("docker")
 
 
 def test_non_pytest_test_tool(

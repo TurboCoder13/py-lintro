@@ -1,34 +1,31 @@
-FROM python:3.13-slim@sha256:05b118ecc93ea09e30569706568fb251c71b77d2a3908d338b77be033e162b59
+# =============================================================================
+# Stage 1: Builder - Install all tools and dependencies
+# =============================================================================
+FROM python:3.13-slim@sha256:05b118ecc93ea09e30569706568fb251c71b77d2a3908d338b77be033e162b59 AS builder
+
+# Tool versions as build args for easy updates
+ARG HADOLINT_VERSION=2.12.0
+ARG ACTIONLINT_VERSION=1.7.5
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app \
     PATH="/usr/local/bin:/root/.cargo/bin:${PATH}"
 
 # Set shell options for pipefail before using pipes
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Add Docker labels
-LABEL maintainer="turbocoder13"
-LABEL org.opencontainers.image.source="https://github.com/turbocoder13/py-lintro"
-LABEL org.opencontainers.image.description="Making Linters Play Nice... Mostly."
-LABEL org.opencontainers.image.licenses="MIT"
-
-# Create a non-root user early
-RUN useradd -m lintro
-
-# Set up working directory
 WORKDIR /app
 
-# Install system dependencies and external tools
+# Install system dependencies
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     build-essential \
     git \
-    npm && \
+    npm \
+    jq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -36,12 +33,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     mv /root/.local/bin/uv /usr/local/bin/uv
 
-# Copy scripts directory and package.json (needed for prettier version)
+# Copy scripts and package.json for tool installation
 COPY scripts/ /app/scripts/
 COPY package.json /app/package.json
-RUN find /app/scripts -type f -name "*.sh" -print -exec chmod +x {} \; && \
+
+# Install external tools and copy Rust tools to system-wide location
+RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
     /app/scripts/utils/install-tools.sh --docker && \
-    # Copy Rust tools to system-wide location for non-root user access
     if [ -d "/root/.cargo/bin" ]; then \
         cp -p /root/.cargo/bin/cargo /usr/local/bin/cargo 2>/dev/null || true; \
         cp -p /root/.cargo/bin/rustc /usr/local/bin/rustc 2>/dev/null || true; \
@@ -49,57 +47,77 @@ RUN find /app/scripts -type f -name "*.sh" -print -exec chmod +x {} \; && \
         chmod +x /usr/local/bin/cargo /usr/local/bin/rustc /usr/local/bin/rustup 2>/dev/null || true; \
     fi
 
-# Copy pyproject.toml and lintro package first for better caching
+# Copy project files and install Python dependencies
 COPY pyproject.toml /app/
 COPY lintro/ /app/lintro/
+RUN uv sync --dev --no-progress && uv cache clean || true
 
-# Ensure project files are owned by non-root before creating the venv
-RUN chown -R lintro:lintro /app
+# =============================================================================
+# Stage 2: Runtime - Minimal image with only what's needed to run
+# =============================================================================
+FROM python:3.13-slim@sha256:05b118ecc93ea09e30569706568fb251c71b77d2a3908d338b77be033e162b59 AS runtime
 
-# Install dependencies as the non-root user so the venv is accessible
-USER lintro
-RUN uv sync --dev --no-progress
-RUN uv cache clean || true
-USER root
+# Add Docker labels
+LABEL maintainer="turbocoder13"
+LABEL org.opencontainers.image.source="https://github.com/turbocoder13/py-lintro"
+LABEL org.opencontainers.image.description="Making Linters Play Nice... Mostly."
+LABEL org.opencontainers.image.licenses="MIT"
 
-# Copy the rest of the project
-COPY . .
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PATH="/usr/local/bin:/app/.venv/bin:${PATH}"
 
-# Set ownership and permissions
-RUN chown -R lintro:lintro /app && \
-    mkdir -p /code && \
-    chown -R lintro:lintro /code
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Create a script to fix permissions on mounted volumes
-RUN echo '#!/bin/bash' > /usr/local/bin/fix-permissions.sh && \
-    echo '# Fix permissions for mounted volumes' >> /usr/local/bin/fix-permissions.sh && \
-    echo 'if [ -d "/code" ]; then' >> /usr/local/bin/fix-permissions.sh && \
-    echo '    # Ensure current user can write to /code' >> /usr/local/bin/fix-permissions.sh && \
-    echo "    chown -R \$(whoami):\$(whoami) /code 2>/dev/null || true" >> /usr/local/bin/fix-permissions.sh && \
-    echo '    chmod -R 755 /code 2>/dev/null || true' >> /usr/local/bin/fix-permissions.sh && \
-    echo 'fi' >> /usr/local/bin/fix-permissions.sh && \
-    echo "exec \"\$@\"" >> /usr/local/bin/fix-permissions.sh
-RUN chmod +x /usr/local/bin/fix-permissions.sh
+# Install minimal runtime dependencies
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    npm && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Create a flexible entrypoint that supports either `lintro ...` or
-# `python -m lintro ...` while ensuring the venv interpreter is used.
-# hadolint ignore=SC2016
-RUN echo '#!/bin/bash' > /usr/local/bin/entrypoint.sh && \
-    echo 'set -e' >> /usr/local/bin/entrypoint.sh && \
-    echo 'if [ "$1" = "lintro" ]; then' >> /usr/local/bin/entrypoint.sh && \
-    echo '  shift' >> /usr/local/bin/entrypoint.sh && \
-    echo '  exec /app/.venv/bin/python -m lintro "$@"' >> /usr/local/bin/entrypoint.sh && \
-    echo 'elif [ "$1" = "python" ]; then' >> /usr/local/bin/entrypoint.sh && \
-    echo '  shift' >> /usr/local/bin/entrypoint.sh && \
-    echo '  exec /app/.venv/bin/python "$@"' >> /usr/local/bin/entrypoint.sh && \
-    echo 'else' >> /usr/local/bin/entrypoint.sh && \
-    echo '  exec /app/.venv/bin/python -m lintro "$@"' >> /usr/local/bin/entrypoint.sh && \
-    echo 'fi' >> /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+# Create non-root user
+RUN useradd -m lintro
 
-# Default to lintro user for security, but allow override
+WORKDIR /app
+
+# Copy installed tools from builder
+COPY --from=builder /usr/local/bin/hadolint /usr/local/bin/
+COPY --from=builder /usr/local/bin/actionlint /usr/local/bin/
+COPY --from=builder /usr/local/bin/cargo /usr/local/bin/
+COPY --from=builder /usr/local/bin/rustc /usr/local/bin/
+COPY --from=builder /usr/local/bin/rustup /usr/local/bin/
+COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=builder /root/.cargo /root/.cargo
+COPY --from=builder /root/.rustup /root/.rustup
+
+# Create symlinks for npm global packages
+RUN ln -sf /usr/local/lib/node_modules/prettier/bin/prettier.cjs /usr/local/bin/prettier && \
+    ln -sf /usr/local/lib/node_modules/markdownlint-cli2/markdownlint-cli2.mjs /usr/local/bin/markdownlint-cli2 || true
+
+# Copy Python virtual environment and application from builder
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/lintro /app/lintro
+COPY --from=builder /app/pyproject.toml /app/
+
+# Copy entrypoint scripts
+COPY scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY scripts/docker/fix-permissions.sh /usr/local/bin/fix-permissions.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/fix-permissions.sh
+
+# Create /code directory for volume mounts
+RUN mkdir -p /code && chown -R lintro:lintro /app /code
+
+# Health check to verify lintro is working
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD /app/.venv/bin/python -m lintro --version || exit 1
+
+# Default to lintro user for security
 USER lintro
 
 # Use the flexible entrypoint
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["lintro", "--help"] 
+CMD ["--help"]

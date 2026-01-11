@@ -1,16 +1,13 @@
 """Pytest execution logic.
 
-This module contains the PytestExecutor class that handles test execution,
-environment management, and subprocess operations.
+This module contains the PytestExecutor class that handles test execution
+and subprocess operations.
 """
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
-
-from loguru import logger
 
 from lintro.tools.implementations.pytest.collection import get_cpu_count
 from lintro.tools.implementations.pytest.markers import collect_tests_once
@@ -22,10 +19,10 @@ if TYPE_CHECKING:
 
 @dataclass
 class PytestExecutor:
-    """Handles pytest test execution and environment management.
+    """Handles pytest test execution.
 
-    This class encapsulates the logic for executing pytest tests, managing
-    Docker test environment variables, and handling subprocess operations.
+    This class encapsulates the logic for executing pytest tests
+    and handling subprocess operations.
 
     Attributes:
         config: PytestConfiguration instance with test execution options.
@@ -38,8 +35,8 @@ class PytestExecutor:
     def prepare_test_execution(
         self,
         target_files: list[str],
-    ) -> tuple[int, int, str | None]:
-        """Prepare test execution by collecting tests and setting up environment.
+    ) -> int:
+        """Prepare test execution by collecting tests.
 
         Args:
             target_files: Files or directories to test.
@@ -48,49 +45,18 @@ class PytestExecutor:
             ValueError: If tool reference is not set.
 
         Returns:
-            Tuple[int, int, str | None]: Tuple of (total_available_tests,
-                docker_test_count, original_docker_env).
+            int: Total number of available tests.
         """
         if self.tool is None:
             raise ValueError("Tool reference not set on executor")
 
-        # Docker tests are disabled by default and must be explicitly enabled
-        run_docker_tests = self.config.run_docker_tests or False
-
-        # Store original environment state for cleanup
-        original_docker_env = os.environ.get("LINTRO_RUN_DOCKER_TESTS")
-
-        # Collect tests once and get both total count and docker test count
-        # This avoids duplicate pytest --collect-only calls
-        total_available_tests, docker_test_count = collect_tests_once(
+        # Collect tests to get total count
+        total_available_tests = collect_tests_once(
             self.tool,
             target_files,
         )
 
-        if run_docker_tests:
-            # Set environment variable to enable Docker tests
-            os.environ["LINTRO_RUN_DOCKER_TESTS"] = "1"
-            # Log that Docker tests are enabled (may take longer) in blue format
-            docker_msg = (
-                f"[LINTRO] Docker tests enabled ({docker_test_count} tests) - "
-                "this may take longer than usual."
-            )
-            logger.info(f"\033[36;1m{docker_msg}\033[0m")
-        else:
-            # Explicitly unset the environment variable to disable Docker tests
-            if "LINTRO_RUN_DOCKER_TESTS" in os.environ:
-                del os.environ["LINTRO_RUN_DOCKER_TESTS"]
-
-            if docker_test_count > 0:
-                # Log that Docker tests are disabled in blue format
-                docker_msg = (
-                    f"[LINTRO] Docker tests disabled "
-                    f"({docker_test_count} tests not collected). "
-                    "Use --enable-docker to include them."
-                )
-                logger.info(f"\033[36;1m{docker_msg}\033[0m")
-
-        return (total_available_tests, docker_test_count, original_docker_env)
+        return total_available_tests
 
     def execute_tests(
         self,
@@ -115,18 +81,6 @@ class PytestExecutor:
         # (pytest returns non-zero on failures)
         return_code = 0 if success else 1
         return (success, output, return_code)
-
-    def restore_environment(self, original_docker_env: str | None) -> None:
-        """Restore the original environment state.
-
-        Args:
-            original_docker_env: Original value of LINTRO_RUN_DOCKER_TESTS env var.
-        """
-        # Restore original environment state
-        if original_docker_env is not None:
-            os.environ["LINTRO_RUN_DOCKER_TESTS"] = original_docker_env
-        elif "LINTRO_RUN_DOCKER_TESTS" in os.environ:
-            del os.environ["LINTRO_RUN_DOCKER_TESTS"]
 
     def display_run_config(
         self,

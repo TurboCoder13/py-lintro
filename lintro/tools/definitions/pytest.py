@@ -131,7 +131,6 @@ class PytestPlugin(BaseToolPlugin):
                 "exitfirst": False,
                 "last_failed": False,
                 "collect_only": False,
-                "run_docker_tests": False,
             },
             default_timeout=PYTEST_DEFAULT_TIMEOUT,
         )
@@ -272,10 +271,7 @@ class PytestPlugin(BaseToolPlugin):
                 issues_count=0,
             )
 
-        total_available_tests, docker_test_count, original_docker_env = (
-            self.executor.prepare_test_execution(target_files)
-        )
-        run_docker_tests = self.pytest_config.run_docker_tests or False
+        total_available_tests = self.executor.prepare_test_execution(target_files)
 
         # Display run configuration summary
         self.executor.display_run_config(total_available_tests, target_files)
@@ -311,8 +307,6 @@ class PytestPlugin(BaseToolPlugin):
                 return_code=return_code,
                 issues=issues,
                 total_available_tests=total_available_tests,
-                docker_test_count=docker_test_count,
-                run_docker_tests=run_docker_tests,
             )
 
             # Build result using result processor
@@ -354,10 +348,6 @@ class PytestPlugin(BaseToolPlugin):
                     issues_count=0,
                 )
             return self.error_handler.handle_execution_error(e, cmd)
-        finally:
-            # Restore original environment state
-            if self.executor is not None:
-                self.executor.restore_environment(original_docker_env)
 
     def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Pytest does not support fixing issues.

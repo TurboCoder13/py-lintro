@@ -80,12 +80,6 @@ def print_summary_table(
                     passed = _safe_cast(pytest_summary, "passed", 0, int)
                     failed = _safe_cast(pytest_summary, "failed", 0, int)
                     skipped = _safe_cast(pytest_summary, "skipped", 0, int)
-                    docker_skipped = _safe_cast(
-                        pytest_summary,
-                        "docker_skipped",
-                        0,
-                        int,
-                    )
                     duration = _safe_cast(pytest_summary, "duration", 0.0, float)
                     total = _safe_cast(pytest_summary, "total", 0, int)
 
@@ -99,12 +93,6 @@ def print_summary_table(
                     # Format duration with proper units
                     duration_str = f"{duration:.2f}s"
 
-                    # Format skipped count to include docker skipped info
-                    if docker_skipped > 0:
-                        skipped_display = f"{skipped} ({docker_skipped} docker)"
-                    else:
-                        skipped_display = str(skipped)
-
                     # Create row with separate columns for each metric
                     summary_data.append(
                         [
@@ -112,7 +100,7 @@ def print_summary_table(
                             status_display,
                             str(passed),
                             str(failed),
-                            skipped_display,
+                            str(skipped),
                             str(total),
                             duration_str,
                         ],

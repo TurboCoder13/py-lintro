@@ -1,8 +1,4 @@
-"""Global test configuration for pytest.
-
-Adds an optional gate for Docker tests to avoid spurious local failures.
-Enable by setting environment variable `LINTRO_RUN_DOCKER_TESTS=1`.
-"""
+"""Global test configuration for pytest."""
 
 from __future__ import annotations
 
@@ -13,28 +9,14 @@ from collections.abc import Generator, Iterator
 from pathlib import Path
 
 import pytest
-from _pytest.config import Config
-from _pytest.nodes import Item
 from click.testing import CliRunner
 
-from lintro.enums.env_bool import EnvBool
 from lintro.plugins.discovery import discover_all_tools
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 # Ensure stable docker builds under pytest-xdist by disabling BuildKit, which
 # can be flaky with concurrent builds/tags on some local setups.
 os.environ.setdefault("DOCKER_BUILDKIT", "0")
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _ensure_test_docker_images_built() -> None:
-    """No-op placeholder to document Docker image provisioning.
-
-    Images are now built by CI/scripts (e.g., scripts/docker/docker-test.sh)
-    before tests run. Keeping a session autouse fixture maintains compatibility
-    while avoiding any build work inside pytest processes.
-    """
-    return
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -45,29 +27,6 @@ def _discover_tools() -> None:
     the builtin tool definitions and any external plugins.
     """
     discover_all_tools()
-
-
-def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
-    """Optionally skip docker tests locally unless explicitly enabled.
-
-    If `LINTRO_RUN_DOCKER_TESTS` is not set to "1", skip tests marked with
-    `@pytest.mark.docker_only`. CI can set the env var to run them.
-
-    Args:
-        config: Pytest configuration object.
-        items: Collected test items that may be modified.
-    """
-    if os.getenv("LINTRO_RUN_DOCKER_TESTS") == EnvBool.TRUE:
-        return
-
-    skip_marker = pytest.mark.skip(
-        reason="Docker tests disabled locally; set LINTRO_RUN_DOCKER_TESTS=1",
-    )
-
-    for item in items:
-        # Marker-based detection for docker_only tests
-        if item.get_closest_marker("docker_only"):
-            item.add_marker(skip_marker)
 
 
 """Shared fixtures used across tests in this repository."""

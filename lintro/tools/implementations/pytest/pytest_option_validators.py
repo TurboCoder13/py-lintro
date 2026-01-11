@@ -17,7 +17,6 @@ def validate_pytest_options(
     disable_warnings: bool | None = None,
     json_report: bool | None = None,
     junitxml: str | None = None,
-    run_docker_tests: bool | None = None,
     slow_test_threshold: float | None = None,
     total_time_warning: float | None = None,
     workers: str | None = None,
@@ -55,7 +54,6 @@ def validate_pytest_options(
         disable_warnings: Disable warnings.
         json_report: Enable JSON report output.
         junitxml: Path for JUnit XML output.
-        run_docker_tests: Enable Docker tests (default: False).
         slow_test_threshold: Duration threshold in seconds for slow test warning
             (default: 1.0).
         total_time_warning: Total execution time threshold in seconds for warning
@@ -108,9 +106,6 @@ def validate_pytest_options(
 
     if junitxml is not None and not isinstance(junitxml, str):
         raise ValueError("junitxml must be a string")
-
-    if run_docker_tests is not None and not isinstance(run_docker_tests, bool):
-        raise ValueError("run_docker_tests must be a boolean")
 
     if slow_test_threshold is not None and (
         not isinstance(slow_test_threshold, (int, float)) or slow_test_threshold < 0

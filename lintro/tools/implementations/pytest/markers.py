@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import subprocess  # nosec B404 - subprocess used safely with shell=False
 from typing import TYPE_CHECKING
 
@@ -117,14 +116,10 @@ def get_pytest_version_info() -> str:
 def collect_tests_once(
     tool: PytestPlugin,
     target_files: list[str],
-) -> tuple[int, int]:
-    """Collect tests once and return both total count and docker test count.
+) -> int:
+    """Collect tests and return total count.
 
-    This function optimizes test collection by running pytest --collect-only
-    once and extracting both metrics from the same output, avoiding the
-    overhead of duplicate collection calls. It parses the collection output
-    to count total tests and specifically identifies docker tests by tracking
-    directory structure in the output.
+    This function runs pytest --collect-only to count all available tests.
 
     Args:
         tool: PytestTool instance with _get_executable_command and _run_subprocess
@@ -133,15 +128,12 @@ def collect_tests_once(
             These are passed directly to pytest --collect-only.
 
     Returns:
-        tuple[int, int]: Tuple containing:
-            - total_test_count: Total number of tests found (including docker tests)
-            - docker_test_count: Number of tests in docker directories
-        Returns (0, 0) if collection fails or no tests are found.
+        int: Total number of tests found. Returns 0 if collection fails.
 
     Examples:
         >>> tool = PytestTool(...)
-        >>> total, docker = collect_tests_once(tool, ["tests/"])
-        >>> total >= docker
+        >>> total = collect_tests_once(tool, ["tests/"])
+        >>> total >= 0
         True
     """
     import re
@@ -152,13 +144,9 @@ def collect_tests_once(
         collect_cmd.append("--collect-only")
         collect_cmd.extend(target_files)
 
-        # Enable all tests to see total count via subprocess environment
-        env = os.environ.copy()
-        env["LINTRO_RUN_DOCKER_TESTS"] = "1"
-
-        success, output = tool._run_subprocess(collect_cmd, env=env)
+        success, output = tool._run_subprocess(collect_cmd)
         if not success:
-            return (0, 0)
+            return 0
 
         # Extract the total count from collection output
         # Format: "XXXX tests collected in Y.YYs" or "1 test collected"
@@ -167,56 +155,19 @@ def collect_tests_once(
         if match:
             total_count = int(match.group(1))
 
-        # Count docker tests from the same output
-        # Track when we're inside the docker directory and count Function items
-        docker_test_count = 0
-        in_docker_dir = False
-        depth = 0
-
-        for line in output.splitlines():
-            # Stop counting when we hit coverage section
-            if "coverage:" in line or "TOTAL" in line:
-                break
-
-            stripped = line.strip()
-
-            # Check if we're entering the docker directory
-            if "<Dir docker>" in line or "<Package docker>" in line:
-                in_docker_dir = True
-                depth = len(line) - len(stripped)  # Track indentation level
-                continue
-
-            # Check if we're leaving the docker directory
-            # (next directory at same or higher level)
-            if in_docker_dir and stripped.startswith("<"):
-                current_depth = len(line) - len(stripped)
-                if current_depth <= depth and not stripped.startswith(
-                    "<Function",
-                ):
-                    # We've left the docker directory
-                    # (backed up to same or higher level)
-                    in_docker_dir = False
-                    continue
-
-            # Count Function items while inside docker directory
-            if in_docker_dir and "<Function" in line:
-                docker_test_count += 1
-
-        return (total_count, docker_test_count)
+        return total_count
     except (OSError, ValueError, RuntimeError) as e:
         logger.debug(f"Failed to collect tests: {e}")
-        return (0, 0)
+        return 0
 
 
 def get_total_test_count(
     tool: PytestPlugin,
     target_files: list[str],
 ) -> int:
-    """Get total count of all available tests (including deselected ones).
+    """Get total count of all available tests.
 
-    This function is kept for backward compatibility but delegates to
-    collect_tests_once() for efficiency. Consider using collect_tests_once()
-    directly if you also need docker test count.
+    This function delegates to collect_tests_once().
 
     Args:
         tool: PytestTool instance with _get_executable_command and _run_subprocess
@@ -225,7 +176,7 @@ def get_total_test_count(
             These are passed directly to pytest --collect-only.
 
     Returns:
-        int: Total number of tests that exist (including docker tests).
+        int: Total number of tests that exist.
             Returns 0 if collection fails or no tests are found.
 
     Examples:
@@ -234,35 +185,4 @@ def get_total_test_count(
         >>> count >= 0
         True
     """
-    total_count, _ = collect_tests_once(tool, target_files)
-    return total_count
-
-
-def count_docker_tests(
-    tool: PytestPlugin,
-    target_files: list[str],
-) -> int:
-    """Count docker tests that would be skipped.
-
-    This function is kept for backward compatibility but delegates to
-    collect_tests_once() for efficiency. Consider using collect_tests_once()
-    directly if you also need total test count.
-
-    Args:
-        tool: PytestTool instance with _get_executable_command and _run_subprocess
-            methods. Must support running pytest commands.
-        target_files: List of file paths or directory paths to check for tests.
-            These are passed directly to pytest --collect-only.
-
-    Returns:
-        int: Number of docker tests found in docker directories.
-            Returns 0 if collection fails or no docker tests are found.
-
-    Examples:
-        >>> tool = PytestTool(...)
-        >>> docker_count = count_docker_tests(tool, ["tests/"])
-        >>> docker_count >= 0
-        True
-    """
-    _, docker_count = collect_tests_once(tool, target_files)
-    return docker_count
+    return collect_tests_once(tool, target_files)

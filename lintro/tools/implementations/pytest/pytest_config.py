@@ -29,7 +29,6 @@ class PytestConfiguration:
         disable_warnings: Disable warnings.
         json_report: Enable JSON report output.
         junitxml: Path for JUnit XML output.
-        run_docker_tests: Enable Docker tests (default: False).
         slow_test_threshold: Duration threshold in seconds for slow test warning
             (default: 1.0).
         total_time_warning: Total execution time threshold in seconds for warning
@@ -77,7 +76,6 @@ class PytestConfiguration:
     disable_warnings: bool | None = field(default=None)
     json_report: bool | None = field(default=None)
     junitxml: str | None = field(default=None)
-    run_docker_tests: bool | None = field(default=None)
     slow_test_threshold: float | None = field(default=None)
     total_time_warning: float | None = field(default=None)
     workers: str | None = field(default=None)

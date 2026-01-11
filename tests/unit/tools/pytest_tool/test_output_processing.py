@@ -29,8 +29,6 @@ def test_process_test_summary_all_passed(
         output=mock_test_success_output,
         issues=[],
         total_available_tests=10,
-        docker_test_count=0,
-        run_docker_tests=False,
     )
     assert_that(summary["passed"]).is_equal_to(10)
     assert_that(summary["failed"]).is_equal_to(0)
@@ -54,8 +52,6 @@ def test_process_test_summary_with_failures(
         output=mock_test_failure_output,
         issues=failed_issues,
         total_available_tests=10,
-        docker_test_count=0,
-        run_docker_tests=False,
     )
     assert_that(summary["failed"]).is_equal_to(2)
 

@@ -40,8 +40,6 @@ class PytestResultProcessor:
         return_code: int,
         issues: list[PytestIssue],
         total_available_tests: int,
-        docker_test_count: int,
-        run_docker_tests: bool,
     ) -> tuple[dict[str, Any], list[PytestIssue]]:
         """Process test results and generate summary.
 
@@ -50,8 +48,6 @@ class PytestResultProcessor:
             return_code: Return code from pytest.
             issues: Parsed test issues.
             total_available_tests: Total number of available tests.
-            docker_test_count: Number of docker tests.
-            run_docker_tests: Whether docker tests were enabled.
 
         Returns:
             Tuple[Dict, List]: Tuple of (summary_data, all_issues).
@@ -61,8 +57,6 @@ class PytestResultProcessor:
             output=output,
             issues=issues,
             total_available_tests=total_available_tests,
-            docker_test_count=docker_test_count,
-            run_docker_tests=run_docker_tests,
         )
 
         # Performance warnings (uses all issues including passed for duration info)

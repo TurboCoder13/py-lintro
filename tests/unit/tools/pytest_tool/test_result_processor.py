@@ -31,7 +31,6 @@ def test_build_result_success(
         "error": 0,
         "duration": 0.12,
         "total": 10,
-        "docker_skipped": 0,
     }
     result = result_processor.build_result(
         success=True,
@@ -60,7 +59,6 @@ def test_build_result_failure(
         "error": 1,
         "duration": 1.50,
         "total": 10,
-        "docker_skipped": 0,
     }
     result = result_processor.build_result(
         success=False,
@@ -89,7 +87,6 @@ def test_build_result_filters_skipped(
         "error": 1,
         "duration": 1.50,
         "total": 10,
-        "docker_skipped": 0,
     }
     result = result_processor.build_result(
         success=False,
@@ -119,7 +116,6 @@ def test_build_result_has_pytest_summary(
         "error": 0,
         "duration": 0.12,
         "total": 10,
-        "docker_skipped": 0,
     }
     result = result_processor.build_result(
         success=True,

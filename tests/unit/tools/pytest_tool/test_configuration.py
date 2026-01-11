@@ -21,7 +21,6 @@ def test_default_values(sample_pytest_config: PytestConfiguration) -> None:
     assert_that(sample_pytest_config.verbose).is_none()
     assert_that(sample_pytest_config.tb).is_none()
     assert_that(sample_pytest_config.maxfail).is_none()
-    assert_that(sample_pytest_config.run_docker_tests).is_none()
 
 
 def test_set_options(sample_pytest_config: PytestConfiguration) -> None:
