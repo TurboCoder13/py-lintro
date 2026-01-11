@@ -151,9 +151,17 @@ def run_subprocess(
         # Preserve partial output from the original exception
         partial_output = ""
         if e.output:
-            partial_output = e.output if isinstance(e.output, str) else e.output.decode()
+            partial_output = (
+                e.output
+                if isinstance(e.output, str)
+                else e.output.decode(errors="replace")
+            )
         if e.stderr:
-            stderr = e.stderr if isinstance(e.stderr, str) else e.stderr.decode()
+            stderr = (
+                e.stderr
+                if isinstance(e.stderr, str)
+                else e.stderr.decode(errors="replace")
+            )
             partial_output = partial_output + stderr if partial_output else stderr
         raise subprocess.TimeoutExpired(
             cmd=cmd,
@@ -229,7 +237,10 @@ def run_subprocess_streaming(
         if reader_thread.is_alive():
             # Timeout occurred during reading - kill the process
             process.kill()
-            process.wait()
+            try:
+                process.wait(timeout=1.0)  # Brief timeout for cleanup
+            except subprocess.TimeoutExpired:
+                pass  # Process didn't die cleanly, but we've done our best
             raise subprocess.TimeoutExpired(
                 cmd=cmd,
                 timeout=timeout,
@@ -237,7 +248,16 @@ def run_subprocess_streaming(
             )
 
         # Reading completed, now wait for process to finish
-        returncode = process.wait()
+        try:
+            returncode = process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=1.0)
+            raise subprocess.TimeoutExpired(
+                cmd=cmd,
+                timeout=timeout,
+                output="\n".join(output_lines),
+            )
         return returncode == 0, "\n".join(output_lines)
 
     except FileNotFoundError as e:

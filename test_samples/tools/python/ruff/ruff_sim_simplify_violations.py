@@ -1,6 +1,12 @@
 """Test file with flake8-simplify (SIM) rule violations for testing Ruff integration."""
 
 
+class TestClass:
+    """Test class for SIM rule violations."""
+
+    pass
+
+
 def unnecessary_if_else():
     """Function with unnecessary if-else."""
     x = 5

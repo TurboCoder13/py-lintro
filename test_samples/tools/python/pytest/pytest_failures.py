@@ -28,6 +28,7 @@ def test_key_error():
 
 def test_type_error():
     """Test that causes a TypeError."""
+    result = "string" + 5  # This will raise TypeError
 
 
 def test_index_error():
