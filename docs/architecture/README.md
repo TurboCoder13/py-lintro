@@ -24,11 +24,11 @@ This directory contains the foundational documents that guide Lintro's developme
 
 ### Quality Standards
 
-| Metric           | Minimum   | Target    |
+| Metric           | Threshold | Target    |
 | ---------------- | --------- | --------- |
-| Test Coverage    | 70%       | 90%       |
-| Type Annotations | 95%       | 100%      |
-| Max File Length  | 500 lines | 300 lines |
+| Test Coverage    | ≥ 70%     | 90%       |
+| Type Annotations | ≥ 95%     | 100%      |
+| File Length      | ≤ 500     | 300 lines |
 
 ### Current Priorities
 
