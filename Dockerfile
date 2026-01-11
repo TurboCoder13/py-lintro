@@ -99,8 +99,8 @@ ENV CARGO_HOME=/home/lintro/.cargo \
     RUSTUP_HOME=/home/lintro/.rustup
 
 # Create symlinks for npm global packages
-RUN ln -sf /usr/local/lib/node_modules/prettier/bin/prettier.cjs /usr/local/bin/prettier && \
-    ln -sf /usr/local/lib/node_modules/markdownlint-cli2/markdownlint-cli2.mjs /usr/local/bin/markdownlint-cli2 || true
+RUN (ln -sf /usr/local/lib/node_modules/prettier/bin/prettier.cjs /usr/local/bin/prettier || true) && \
+    (ln -sf /usr/local/lib/node_modules/markdownlint-cli2/markdownlint-cli2.mjs /usr/local/bin/markdownlint-cli2 || true)
 
 # Copy Python virtual environment and application from builder
 COPY --from=builder /app/.venv /app/.venv

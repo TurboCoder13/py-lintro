@@ -171,7 +171,7 @@ run_tests() {
     
     # Add verbose flag if requested
     local tool_opts="pytest:coverage_report=True,pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml,pytest:timeout=600"
-    if [ "$VERBOSE" = "1" ] || [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
+    if [ "$VERBOSE" = "1" ] || [ "${1:-}" = "--verbose" ] || [ "${1:-}" = "-v" ]; then
         echo -e "${YELLOW}Running tests in verbose mode${NC}"
         tst_args+=("--verbose")
         tool_opts="${tool_opts},pytest:verbose=True"
@@ -226,7 +226,7 @@ main() {
     
     # Handle command line arguments
     local verbose=false
-    if [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
+    if [ "${1:-}" = "--verbose" ] || [ "${1:-}" = "-v" ]; then
         verbose=true
         VERBOSE=1
         echo -e "${YELLOW}Verbose mode enabled${NC}"
@@ -342,7 +342,7 @@ show_usage() {
 }
 
 # Handle help request or docker delegate
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
     show_usage
     echo ""
     echo "Options:" 
@@ -351,7 +351,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 
 # Delegate to Docker-based test runner when requested
-if [ "$1" = "--docker" ]; then
+if [ "${1:-}" = "--docker" ]; then
     SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
     DOCKER_SCRIPT="${SCRIPT_DIR%/local}/docker/docker-test.sh"
     if [ ! -x "$DOCKER_SCRIPT" ]; then
