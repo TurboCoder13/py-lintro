@@ -53,8 +53,8 @@ jobs:
 
       - name: Security audit dependencies
         run: |
-          uv export --no-emit-project --no-hashes > /tmp/requirements.txt
-          uv run pip-audit --strict --progress-spinner=off --no-deps --disable-pip -r /tmp/requirements.txt
+          uv export --no-emit-project > /tmp/requirements.txt
+          uv run pip-audit --strict --progress-spinner=off -r /tmp/requirements.txt
 
       - name: Quality gate
         id: version
