@@ -35,8 +35,8 @@ def test_validate_config_consistency_detects_mismatch() -> None:
     ):
         result = validate_config_consistency()
         # Should contain at least one warning about the mismatch
-        # The exact count depends on which tools have native configs
         assert_that(result).is_instance_of(list)
+        assert_that(result).is_not_empty()
 
 
 def test_validate_config_consistency_returns_list() -> None:

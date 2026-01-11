@@ -90,13 +90,21 @@ def test_get_effective_line_length_from_ruff_config_underscore_key() -> None:
         assert_that(result).is_equal_to(95)
 
 
-def test_get_effective_line_length_returns_none_when_no_config(
-    mock_empty_configs: Any,
-) -> None:
-    """Verify None is returned when no line length is configured anywhere.
-
-    Args:
-        mock_empty_configs: Mock for empty config loaders.
-    """
-    result = get_effective_line_length("unknown_tool")
-    assert_that(result).is_none()
+def test_get_effective_line_length_returns_none_when_no_config() -> None:
+    """Verify None is returned when no line length is configured anywhere."""
+    with (
+        patch(
+            "lintro.utils.config_priority.load_lintro_tool_config",
+            return_value={},
+        ),
+        patch(
+            "lintro.utils.config_priority.load_lintro_global_config",
+            return_value={},
+        ),
+        patch(
+            "lintro.utils.config_priority.load_pyproject",
+            return_value={},
+        ),
+    ):
+        result = get_effective_line_length("unknown_tool")
+        assert_that(result).is_none()
