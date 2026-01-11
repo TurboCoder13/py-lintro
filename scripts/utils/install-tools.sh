@@ -340,8 +340,9 @@ main() {
     
     # Install hadolint (Docker linting)
     # hadolint with checksum verification when available
+    HADOLINT_VERSION="2.12.0"
     install_tool_curl "hadolint" \
-        "https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint"
+        "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint"
 
     # Install actionlint (GitHub Actions workflow linter)
     # Prebuilt binaries: https://github.com/rhysd/actionlint/releases

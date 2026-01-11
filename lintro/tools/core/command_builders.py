@@ -351,8 +351,11 @@ class NodeJSBuilder(CommandBuilder):
             Command list to execute the tool via bunx or directly.
         """
         package_name = self.package_names.get(tool_name_enum, tool_name)  # type: ignore[arg-type]
+        # Prefer bunx (bun), fall back to npx (npm), then direct tool invocation
         if shutil.which("bunx"):
             return ["bunx", package_name]
+        if shutil.which("npx"):
+            return ["npx", package_name]
         return [tool_name]
 
 
