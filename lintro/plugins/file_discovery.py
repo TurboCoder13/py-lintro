@@ -134,9 +134,24 @@ def get_cwd(paths: list[str]) -> str | None:
     Returns:
         Common parent directory path, or None if not applicable.
     """
-    if paths:
-        parent_dirs = {os.path.dirname(os.path.abspath(p)) for p in paths}
-        if len(parent_dirs) == 1:
-            return parent_dirs.pop()
+    if not paths:
+        return None
+
+    # Get the parent directory for each path
+    # For files: use dirname; for directories: use the path itself
+    parent_dirs: set[str] = set()
+    for p in paths:
+        abs_path = os.path.abspath(p)
+        if os.path.isdir(abs_path):
+            parent_dirs.add(abs_path)
+        else:
+            parent_dirs.add(os.path.dirname(abs_path))
+
+    if len(parent_dirs) == 1:
+        return parent_dirs.pop()
+
+    try:
         return os.path.commonpath(list(parent_dirs))
-    return None
+    except ValueError:
+        # Can happen on Windows with paths on different drives
+        return None

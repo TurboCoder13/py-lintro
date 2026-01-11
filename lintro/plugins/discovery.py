@@ -104,8 +104,9 @@ def discover_external_plugins() -> int:
                 )
                 continue
 
-            # Check if it implements LintroPlugin protocol
-            if not isinstance(plugin_class(), LintroPlugin):
+            # Check if it implements LintroPlugin protocol (without instantiating)
+            # LintroPlugin is @runtime_checkable, so issubclass works
+            if not issubclass(plugin_class, LintroPlugin):
                 logger.warning(
                     f"Entry point {ep.name!r} class does not implement LintroPlugin, "
                     "skipping",
@@ -156,7 +157,7 @@ def discover_all_tools(force: bool = False) -> int:
     # Discover builtin tools first
     builtin_count = discover_builtin_tools()
 
-    # Then discover external plugins (they can override builtins if needed)
+    # Then discover external plugins (skips already-registered tool names)
     external_count = discover_external_plugins()
 
     total = builtin_count + external_count

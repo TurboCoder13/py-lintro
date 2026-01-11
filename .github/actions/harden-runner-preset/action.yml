@@ -60,14 +60,18 @@ runs:
             ;;
           homebrew)
             PRESET_ENDPOINTS="pypi.org:443 files.pythonhosted.org:443"
+            PRESET_ENDPOINTS+=" formulae.brew.sh:443 homebrew.bintray.com:443"
+            PRESET_ENDPOINTS+=" ghcr.io:443"
             ;;
           full)
             PRESET_ENDPOINTS="pypi.org:443 files.pythonhosted.org:443"
             PRESET_ENDPOINTS+=" ghcr.io:443 docker.io:443"
-            PRESET_ENDPOINTS+=" registry-1.docker.io:443"
+            PRESET_ENDPOINTS+=" registry-1.docker.io:443 auth.docker.io:443"
+            PRESET_ENDPOINTS+=" production.cloudflare.docker.com:443"
             PRESET_ENDPOINTS+=" codecov.io:443 uploader.codecov.io:443"
             PRESET_ENDPOINTS+=" storage.googleapis.com:443"
             PRESET_ENDPOINTS+=" fulcio.sigstore.dev:443 rekor.sigstore.dev:443"
+            PRESET_ENDPOINTS+=" tuf-repo-cdn.sigstore.dev:443"
             PRESET_ENDPOINTS+=" uploads.github.com:443 codeload.github.com:443"
             PRESET_ENDPOINTS+=" objects.githubusercontent.com:443"
             ;;

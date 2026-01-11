@@ -185,6 +185,7 @@ class ToolRegistry:
             True if the tool is registered, False otherwise.
         """
         with cls._lock:
+            cls._ensure_discovered()
             return name.lower() in cls._tools
 
     @classmethod

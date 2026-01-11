@@ -13,11 +13,8 @@ Core Components:
 Example:
     Creating a custom tool plugin:
 
-    >>> from lintro.plugins import (
-    ...     BaseToolPlugin,
-    ...     ToolDefinition,
-    ...     register_tool,
-    ... )
+    >>> from lintro.plugins import ToolDefinition, register_tool
+    >>> from lintro.plugins.base import BaseToolPlugin
     >>> from lintro.enums.tool_type import ToolType
     >>> from lintro.models.core.tool_result import ToolResult
     >>>

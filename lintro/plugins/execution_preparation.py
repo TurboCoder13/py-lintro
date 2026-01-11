@@ -40,6 +40,13 @@ def get_effective_timeout(
     raw_timeout = options.get("timeout", default_timeout)
     if isinstance(raw_timeout, (int, float)):
         return float(raw_timeout)
+
+    # Warn about invalid timeout value
+    if raw_timeout is not None:
+        logger.warning(
+            f"Invalid timeout value {raw_timeout!r} (type {type(raw_timeout).__name__}), "
+            f"using default {default_timeout}s"
+        )
     return float(default_timeout)
 
 
@@ -178,14 +185,12 @@ def prepare_execution(
     cwd = get_cwd(files)
     rel_files = [os.path.relpath(f, cwd) if cwd else f for f in files]
 
-    # Step 5: Get timeout
+    # Step 5: Get timeout (keep as float to preserve precision)
     timeout_value = merged_options.get("timeout")
-    timeout = int(
-        get_effective_timeout(
-            timeout_value if isinstance(timeout_value, (int, float)) else None,
-            merged_options,
-            definition.default_timeout,
-        ),
+    timeout = get_effective_timeout(
+        timeout_value if isinstance(timeout_value, (int, float)) else None,
+        merged_options,
+        definition.default_timeout,
     )
 
     return {

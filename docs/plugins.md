@@ -80,6 +80,8 @@ class MyToolPlugin(BaseToolPlugin):
 
         return ToolResult(
             name=self.definition.name,
+            # success=True means the check passed (tool ran AND no issues found)
+            # If you want success to only reflect tool execution, use just `success`
             success=success and len(issues) == 0,
             output=output if not success else None,
             issues_count=len(issues),
@@ -148,11 +150,21 @@ Create a parser module to convert tool output into structured issues:
 
 ```python
 # lintro/parsers/my_tool/my_tool_parser.py
+import re
+
 from lintro.parsers.base_issue import BaseIssue
 
 
-def parse_my_tool_output(output: str) -> list[BaseIssue]:
+class MyToolIssue(BaseIssue):
+    """Issue class for my-tool output."""
+
+    pass  # Inherits all fields from BaseIssue
+
+
+def parse_my_tool_output(output: str) -> list[MyToolIssue]:
     """Parse my-tool output into issues.
+
+    Assumes output format: filename:line:column: level: message [CODE]
 
     Args:
         output: Raw tool output.
@@ -160,18 +172,35 @@ def parse_my_tool_output(output: str) -> list[BaseIssue]:
     Returns:
         List of parsed issues.
     """
-    issues = []
+    issues: list[MyToolIssue] = []
+
+    if not output.strip():
+        return issues
+
+    # Pattern for: file:line:col: level: message [CODE]
+    pattern = re.compile(
+        r"^(.+?):(\d+):(\d+):\s*(error|warning|info):\s*(.+?)\s*\[(\w+)\]$"
+    )
+
     for line in output.splitlines():
-        # Parse each line into an issue
-        issue = MyToolIssue(
-            file=parsed_file,
-            line=parsed_line,
-            column=parsed_column,
-            message=parsed_message,
-            code=parsed_code,
-            level=SeverityLevel.ERROR,
-        )
-        issues.append(issue)
+        line = line.strip()
+        if not line:
+            continue
+
+        match = pattern.match(line)
+        if match:
+            file, line_num, col, level, message, code = match.groups()
+            issues.append(
+                MyToolIssue(
+                    file=file,
+                    line=int(line_num),
+                    column=int(col),
+                    message=message,
+                    code=code,
+                    level=level,
+                )
+            )
+
     return issues
 ```
 

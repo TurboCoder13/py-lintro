@@ -27,6 +27,11 @@ runs:
       id: extract
       shell: bash
       run: |
+        # Validate this is a tag reference
+        if [[ -n "${GITHUB_REF:-}" && ! "${GITHUB_REF}" =~ ^refs/tags/ ]]; then
+          echo "::warning::GITHUB_REF '${GITHUB_REF}' is not a tag reference"
+        fi
+
         # Get the tag name from GITHUB_REF_NAME or GITHUB_REF
         if [[ -n "${GITHUB_REF_NAME:-}" ]]; then
           TAG="${GITHUB_REF_NAME}"
@@ -40,8 +45,10 @@ runs:
         echo "tag=$TAG" >> "$GITHUB_OUTPUT"
         echo "Original tag: $TAG"
 
-        # Strip v prefix if requested
-        if [[ "${{ inputs.strip-prefix }}" == "true" ]]; then
+        # Strip v prefix if requested (case-insensitive boolean check)
+        STRIP_PREFIX="${{ inputs.strip-prefix }}"
+        STRIP_PREFIX_LOWER=$(echo "$STRIP_PREFIX" | tr '[:upper:]' '[:lower:]')
+        if [[ "$STRIP_PREFIX_LOWER" == "true" || "$STRIP_PREFIX_LOWER" == "yes" || "$STRIP_PREFIX_LOWER" == "1" ]]; then
           VERSION="${TAG#v}"
         else
           VERSION="$TAG"

@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import subprocess  # nosec B404 - subprocess used safely with shell=False
 import sys
+import threading
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -147,10 +148,17 @@ def run_subprocess(
         )
         return result.returncode == 0, result.stdout + result.stderr
     except subprocess.TimeoutExpired as e:
+        # Preserve partial output from the original exception
+        partial_output = ""
+        if e.output:
+            partial_output = e.output if isinstance(e.output, str) else e.output.decode()
+        if e.stderr:
+            stderr = e.stderr if isinstance(e.stderr, str) else e.stderr.decode()
+            partial_output = partial_output + stderr if partial_output else stderr
         raise subprocess.TimeoutExpired(
             cmd=cmd,
             timeout=timeout,
-            output=str(e),
+            output=partial_output,
         ) from e
     except FileNotFoundError as e:
         raise FileNotFoundError(
@@ -170,6 +178,9 @@ def run_subprocess_streaming(
 
     This function allows real-time output processing by calling the line_handler
     callback for each line of output as it is produced by the subprocess.
+
+    The timeout is enforced during both output reading and process completion,
+    preventing indefinite blocking on slow or hanging processes.
 
     Args:
         cmd: Command and arguments to run.
@@ -200,8 +211,9 @@ def run_subprocess_streaming(
         )
 
         output_lines: list[str] = []
-        try:
-            # Read stdout line by line
+
+        def read_output() -> None:
+            """Read output lines in a separate thread."""
             if process.stdout:
                 for line in process.stdout:
                     stripped = line.rstrip("\n")
@@ -209,17 +221,24 @@ def run_subprocess_streaming(
                     if line_handler:
                         line_handler(stripped)
 
-            returncode = process.wait(timeout=timeout)
-            return returncode == 0, "\n".join(output_lines)
+        # Use a thread to read output so we can enforce timeout
+        reader_thread = threading.Thread(target=read_output, daemon=True)
+        reader_thread.start()
+        reader_thread.join(timeout=timeout)
 
-        except subprocess.TimeoutExpired as e:
+        if reader_thread.is_alive():
+            # Timeout occurred during reading - kill the process
             process.kill()
             process.wait()
             raise subprocess.TimeoutExpired(
                 cmd=cmd,
                 timeout=timeout,
                 output="\n".join(output_lines),
-            ) from e
+            )
+
+        # Reading completed, now wait for process to finish
+        returncode = process.wait()
+        return returncode == 0, "\n".join(output_lines)
 
     except FileNotFoundError as e:
         raise FileNotFoundError(

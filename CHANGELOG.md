@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-01-15
+## [Unreleased]
 
 ### Breaking Changes
 
@@ -76,8 +76,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   darglint, prettier, yamllint, hadolint) that integration tests require
 - **Impact**: All tests now pass in PyPI publication workflow, enabling successful
   package distribution
-
-## [Unreleased]
+- CI script path references for coverage comments
+- Package metadata and classifiers
+- Logo display in README for PyPI compatibility
 
 ### Added
 
@@ -85,12 +86,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - PyPI package configuration
 - MANIFEST.in file for asset inclusion
 - CHANGELOG.md for version tracking
-
-### Fixed
-
-- CI script path references for coverage comments
-- Package metadata and classifiers
-- Logo display in README for PyPI compatibility
 
 ## [0.1.0] - 2024-07-26
 

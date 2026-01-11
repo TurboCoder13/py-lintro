@@ -28,6 +28,7 @@ jobs:
         arch: >-
           ${{
             github.event_name == 'workflow_dispatch' &&
+            github.event.inputs.arch != 'universal' &&
             fromJSON(format('["{0}"]', github.event.inputs.arch)) ||
             fromJSON('["arm64", "x86_64"]')
           }}
@@ -74,8 +75,10 @@ jobs:
       - name: Verify binary
         run: |
           ls -lh dist/nuitka/
-          ./dist/nuitka/lintro --version || echo "Version check completed"
-          ./dist/nuitka/lintro --help | head -20 || true
+          # Fail if binary can't execute --version (required for valid build)
+          ./dist/nuitka/lintro --version
+          # Show help output for debugging (non-fatal)
+          ./dist/nuitka/lintro --help | head -20 || echo "Help output truncated"
 
       - name: Rename binary with architecture
         run: |
@@ -94,14 +97,6 @@ jobs:
         with:
           name: lintro-macos-${{ matrix.arch }}
           path: dist/nuitka/lintro-macos-${{ matrix.arch }}
-          retention-days: 7
-
-      - name: Upload SHA256 artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: sha256-${{ matrix.arch }}
-          path: |
-            echo "${{ steps.sha256.outputs.sha256 }}" > sha256-${{ matrix.arch }}.txt
           retention-days: 7
 
       - name: Save SHA256 to file
