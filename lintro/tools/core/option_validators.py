@@ -56,7 +56,7 @@ def validate_int(
     if value is None:
         return
 
-    if not isinstance(value, int):
+    if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(f"{name} must be an integer")
 
     if min_value is not None and value < min_value:
@@ -77,7 +77,7 @@ def validate_positive_int(value: Any, name: str) -> None:
         ValueError: If value is not None and not a positive integer.
     """
     if value is not None:
-        if not isinstance(value, int):
+        if not isinstance(value, int) or isinstance(value, bool):
             raise ValueError(f"{name} must be an integer")
         if value <= 0:
             raise ValueError(f"{name} must be positive")
@@ -115,6 +115,8 @@ def normalize_str_or_list(value: Any, name: str) -> list[str] | None:
     if isinstance(value, str):
         return [value]
     if isinstance(value, list):
+        if not all(isinstance(item, str) for item in value):
+            raise ValueError(f"{name} must be a string or list of strings")
         return value
     raise ValueError(f"{name} must be a string or list")
 

@@ -41,7 +41,7 @@ When adding a new tool to lintro, follow these steps:
 1. Create tool plugin class in lintro/tools/definitions/
 2. Use @register_tool decorator from lintro.plugins.registry
 3. Inherit from BaseToolPlugin in lintro.plugins.base
-4. Add tool to tool_commands dict in this file
+4. Set version_command in the ToolDefinition (e.g., ["newtool", "--version"])
 5. Test with `lintro versions` command
 
 The version system automatically reads from pyproject.toml, so Renovate and other

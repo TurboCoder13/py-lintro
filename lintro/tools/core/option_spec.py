@@ -97,14 +97,12 @@ class OptionSpec(Generic[T]):
                 )
         elif self.option_type == OptionType.LIST:
             validate_list(value, self.name)
-        elif (
-            self.option_type == OptionType.ENUM
-            and self.choices
-            and value not in self.choices
-        ):
-            raise ValueError(
-                f"{self.name} must be one of: {', '.join(self.choices)}",
-            )
+        elif self.option_type == OptionType.ENUM:
+            validate_str(value, self.name)
+            if self.choices and value not in self.choices:
+                raise ValueError(
+                    f"{self.name} must be one of: {', '.join(self.choices)}",
+                )
 
     def to_cli_args(self, value: Any) -> list[str]:
         """Convert a value to CLI arguments.

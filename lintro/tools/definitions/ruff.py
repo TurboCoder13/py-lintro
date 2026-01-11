@@ -156,6 +156,7 @@ class RuffPlugin(BaseToolPlugin):
         validate_bool(unsafe_fixes, "unsafe_fixes")
         validate_bool(show_fixes, "show_fixes")
         validate_bool(format, "format")
+        validate_bool(lint_fix, "lint_fix")
         validate_bool(format_check, "format_check")
 
         options = filter_none_options(
@@ -184,9 +185,9 @@ class RuffPlugin(BaseToolPlugin):
         Returns:
             ToolResult with check results.
         """
-        # Merge runtime options
-        merged_options = dict(self.options)
-        merged_options.update(options)
+        # Apply runtime options to self.options before execution
+        if options:
+            self.options.update(options)
 
         from lintro.tools.implementations.ruff.check import execute_ruff_check
 
@@ -202,9 +203,9 @@ class RuffPlugin(BaseToolPlugin):
         Returns:
             ToolResult with fix results.
         """
-        # Merge runtime options
-        merged_options = dict(self.options)
-        merged_options.update(options)
+        # Apply runtime options to self.options before execution
+        if options:
+            self.options.update(options)
 
         from lintro.tools.implementations.ruff.fix import execute_ruff_fix
 

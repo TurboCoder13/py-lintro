@@ -21,6 +21,7 @@ def parse_coverage_summary(raw_output: str) -> dict[str, Any] | None:
         dict | None: Coverage summary with keys:
             - total_stmts: Total number of statements
             - missing_stmts: Number of missing statements
+            - covered_stmts: Number of covered statements
             - coverage_pct: Coverage percentage
             - files_count: Number of files in coverage report
         Returns None if no coverage data found.
@@ -55,15 +56,15 @@ def parse_coverage_summary(raw_output: str) -> dict[str, Any] | None:
     if not total_line:
         return None
 
-    # Parse TOTAL line: "TOTAL    20731  12738    39%"
-    # Split by whitespace and extract values
-    match = re.search(r"TOTAL\s+(\d+)\s+(\d+)\s+(\d+)%", total_line)
+    # Parse TOTAL line: "TOTAL    20731  12738    39%" or "TOTAL    20731  12738    39.5%"
+    # Split by whitespace and extract values (support decimal percentages)
+    match = re.search(r"TOTAL\s+(\d+)\s+(\d+)\s+(\d+(?:\.\d+)?)%", total_line)
     if not match:
         return None
 
     total_stmts = int(match.group(1))
     missing_stmts = int(match.group(2))
-    coverage_pct = int(match.group(3))
+    coverage_pct = float(match.group(3))
 
     return {
         "total_stmts": total_stmts,

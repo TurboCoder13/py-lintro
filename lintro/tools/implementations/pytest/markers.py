@@ -73,9 +73,9 @@ def list_installed_plugins() -> list[dict[str, str]]:
 
     # Filter for pytest plugins
     for dist in distributions:
-        dist_name = dist.metadata["Name"] or ""
+        dist_name = dist.metadata.get("Name", "") or ""
         if dist_name.startswith("pytest-") or dist_name.startswith("pytest_"):
-            version = dist.metadata["Version"] or "unknown"
+            version = dist.metadata.get("Version", "unknown") or "unknown"
             plugins.append({"name": dist_name, "version": version})
 
     # Sort by name

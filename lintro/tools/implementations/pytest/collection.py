@@ -72,7 +72,13 @@ def extract_all_test_results_from_junit(junitxml_path: str) -> dict[str, str] | 
             test_results[node_id] = status
 
         return test_results
-    except (OSError, xml.etree.ElementTree.ParseError, KeyError, AttributeError) as e:
+    except (
+        ImportError,
+        OSError,
+        xml.etree.ElementTree.ParseError,
+        KeyError,
+        AttributeError,
+    ) as e:
         logger.debug(f"Failed to parse JUnit XML for all tests: {e}")
         return None
 
