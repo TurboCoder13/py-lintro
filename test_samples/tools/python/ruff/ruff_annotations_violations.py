@@ -9,8 +9,6 @@ Intentionally violates several ANN-rules, such as:
 - ANN003: missing type annotation for **kwargs
 """
 
-from typing import Any
-
 
 class SampleClass:
     """Sample class with annotation violations."""

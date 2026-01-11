@@ -16,4 +16,3 @@ class PrettierIssue(BaseIssue):
     """
 
     code: str = field(default="")
-    # Note: line and column are inherited from BaseIssue

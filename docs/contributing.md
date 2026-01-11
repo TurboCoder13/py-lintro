@@ -129,13 +129,13 @@ consistent UX and maintainable implementation.
 
 1. Core code
 
-- Create a tool class in `lintro/tools/implementations/` (subclass `BaseTool`).
+- Create a tool plugin in `lintro/tools/definitions/` (subclass `BaseToolPlugin`, use
+  `@register_tool`).
+- Implement `definition` property returning `ToolDefinition`.
 - Implement `check()` (and `fix()` only if the tool supports auto-fixes).
 - Add a parser module in `lintro/parsers/<tool>/` for the tool's default output.
-- Add a formatter in `lintro/formatters/tools/` with a `TableDescriptor`.
-- Register the tool in `lintro/tools/tool_enum.py`.
-- Register the table formatter in `TOOL_TABLE_FORMATTERS` within
-  `lintro/utils/tool_utils.py`.
+- Use unified formatter in `lintro/formatters/unified` (no tool-specific formatter
+  needed).
 
 2. Tests
 

@@ -13,6 +13,7 @@ execution:
   enabled_tools: []
   tool_order: 'priority'
   fail_fast: false
+  parallel: true
 
 # Fallback configurations for tools without native config files.
 # These are used when no native config (e.g., .prettierrc, .yamllint) is found.

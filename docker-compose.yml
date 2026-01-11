@@ -1,5 +1,7 @@
 ---
 services:
+  # Main lintro service for running linting on your code
+  # Usage: docker compose run --rm lintro check --tools ruff,prettier /code
   lintro:
     build:
       context: .
@@ -10,10 +12,13 @@ services:
         max-size: '10m'
         max-file: '3'
     volumes:
-      - ${PWD:-./}:/app
-      # The command will be overridden when running docker compose
-      # Example: docker compose run --rm lintro check --format grid
-      #          --tools ruff,darglint .
+      # Mount current directory to /code (not /app to avoid overwriting the app)
+      - ${PWD:-./}:/code
+    working_dir: /code
+
+  # Integration test runner - mounts source for development testing
+  # Usage: docker compose run --rm test-integration
+  # Note: This service mounts to /app for testing the current source code
   test-integration:
     build: .
     image: py-lintro-test:latest
@@ -24,8 +29,9 @@ services:
         max-file: '3'
     working_dir: /app
     volumes:
+      # Mount source to /app for testing against current code
+      # This intentionally overwrites the built app for development
       - ${PWD:-./}:/app
-      # Mount current directory to /app so tests run against current source
     command:
       - /app/scripts/local/run-tests.sh
     entrypoint:
@@ -34,7 +40,6 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
       - RUNNING_IN_DOCKER=1
-      - LINTRO_RUN_DOCKER_TESTS=1
       - DOCKER_BUILDKIT=0
       - COVERAGE_OUTPUT_DIR=/app
     user: root

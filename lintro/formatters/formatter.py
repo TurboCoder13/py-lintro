@@ -1,0 +1,273 @@
+"""Unified formatter for all tool issues.
+
+This module provides a unified formatting approach that works with any
+tool's issues by using the BaseIssue.to_display_row() method.
+
+Instead of having tool-specific formatters, this module allows any issue
+that inherits from BaseIssue to be formatted consistently.
+
+Example:
+    >>> from lintro.formatters.formatter import format_issues
+    >>> from lintro.parsers.ruff.ruff_issue import RuffIssue
+    >>>
+    >>> issue = RuffIssue(file="foo.py", line=1, code="E501", message="Long")
+    >>> issues = [issue]
+    >>> output = format_issues(issues, output_format="grid")
+    >>> print(output)
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
+
+from lintro.enums.output_format import OutputFormat, normalize_output_format
+from lintro.formatters.core.format_registry import TableDescriptor, get_style
+from lintro.parsers.base_issue import BaseIssue
+from lintro.utils.path_utils import normalize_file_path_for_display
+
+if TYPE_CHECKING:
+    pass
+
+
+# Standard columns for display (basic)
+STANDARD_COLUMNS = ["File", "Line", "Col", "Code", "Message"]
+
+# Extended columns including severity and fixable status
+EXTENDED_COLUMNS = ["File", "Line", "Col", "Code", "Severity", "Fixable", "Message"]
+
+
+class UnifiedTableDescriptor(TableDescriptor):
+    """Table descriptor that works with any BaseIssue subclass.
+
+    Uses the to_display_row() method to extract data, making it
+    compatible with all issue types.
+    """
+
+    def __init__(
+        self,
+        columns: list[str] | None = None,
+        *,
+        include_severity: bool = False,
+        include_fixable: bool = False,
+    ) -> None:
+        """Initialize the descriptor.
+
+        Args:
+            columns: Custom column list, or None to use defaults.
+            include_severity: Include severity column.
+            include_fixable: Include fixable column.
+        """
+        if columns is not None:
+            self._columns = columns
+        elif include_severity or include_fixable:
+            self._columns = EXTENDED_COLUMNS
+        else:
+            self._columns = STANDARD_COLUMNS
+
+        self._include_severity = include_severity
+        self._include_fixable = include_fixable
+
+    def get_columns(self) -> list[str]:
+        """Return the column names.
+
+        Returns:
+            List of column header names.
+        """
+        return self._columns
+
+    def get_rows(self, issues: Sequence[BaseIssue]) -> list[list[str]]:
+        """Extract row data from issues using to_display_row().
+
+        Args:
+            issues: List of issues (any BaseIssue subclass).
+
+        Returns:
+            List of rows, each row being a list of column values.
+        """
+        rows: list[list[str]] = []
+
+        # Map column names to row dict keys
+        column_key_map = {
+            "File": "file",
+            "Line": "line",
+            "Col": "column",
+            "Column": "column",
+            "Code": "code",
+            "Message": "message",
+            "Severity": "severity",
+            "Fixable": "fixable",
+        }
+
+        for issue in issues:
+            display_data = issue.to_display_row()
+
+            # Normalize file path for display
+            if "file" in display_data and display_data["file"]:
+                display_data["file"] = normalize_file_path_for_display(
+                    display_data["file"],
+                )
+
+            row = []
+            for col in self._columns:
+                key = column_key_map.get(col, col.lower())
+                value = display_data.get(key, "")
+                row.append(str(value) if value else "")
+
+            rows.append(row)
+
+        return rows
+
+
+def format_issues(
+    issues: Sequence[BaseIssue],
+    output_format: OutputFormat | str = OutputFormat.GRID,
+    *,
+    columns: list[str] | None = None,
+    tool_name: str | None = None,
+    include_severity: bool = False,
+    include_fixable: bool = False,
+) -> str:
+    """Format any issues using unified display.
+
+    This function can format issues from any tool that uses BaseIssue,
+    replacing the need for tool-specific formatters.
+
+    Args:
+        issues: List of issues (any BaseIssue subclass).
+        output_format: Output format (grid, json, plain, etc.).
+        columns: Custom column list (defaults to STANDARD_COLUMNS).
+        tool_name: Tool name for JSON output.
+        include_severity: Include severity column in output.
+        include_fixable: Include fixable column in output.
+
+    Returns:
+        Formatted string.
+
+    Example:
+        >>> issues = [RuffIssue(file="foo.py", line=1, code="E501", message="Too long")]
+        >>> print(format_issues(issues))
+    """
+    if not issues:
+        return "No issues found."
+
+    normalized_format = normalize_output_format(output_format)
+    descriptor = UnifiedTableDescriptor(
+        columns=columns,
+        include_severity=include_severity,
+        include_fixable=include_fixable,
+    )
+
+    style = get_style(normalized_format)
+    cols = descriptor.get_columns()
+    rows = descriptor.get_rows(list(issues))
+
+    return style.format(columns=cols, rows=rows, tool_name=tool_name)
+
+
+def format_issues_with_sections(
+    issues: Sequence[BaseIssue],
+    output_format: OutputFormat | str = OutputFormat.GRID,
+    *,
+    group_by_fixable: bool = True,
+    tool_name: str | None = None,
+) -> str:
+    """Format issues with optional fixable/non-fixable sections.
+
+    This function groups issues by their fixable status and formats
+    them in separate sections (except for JSON format).
+
+    Args:
+        issues: List of issues (any BaseIssue subclass).
+        output_format: Output format (grid, json, plain, etc.).
+        group_by_fixable: Whether to group by fixable status.
+        tool_name: Tool name for JSON output.
+
+    Returns:
+        Formatted string with sections.
+
+    Example:
+        >>> print(format_issues_with_sections(issues, group_by_fixable=True))
+        Auto-fixable issues
+        ... table ...
+
+        Not auto-fixable issues
+        ... table ...
+    """
+    if not issues:
+        return "No issues found."
+
+    normalized_format = normalize_output_format(output_format)
+
+    # JSON format: return single table for compatibility
+    if normalized_format == OutputFormat.JSON or not group_by_fixable:
+        return format_issues(
+            issues,
+            output_format=normalized_format,
+            tool_name=tool_name,
+            include_fixable=group_by_fixable,
+        )
+
+    # Partition issues by fixable status
+    fixable: list[BaseIssue] = []
+    non_fixable: list[BaseIssue] = []
+
+    for issue in issues:
+        if getattr(issue, "fixable", False):
+            fixable.append(issue)
+        else:
+            non_fixable.append(issue)
+
+    sections: list[str] = []
+
+    if fixable:
+        fixable_output = format_issues(fixable, output_format=normalized_format)
+        sections.append("Auto-fixable issues\n" + fixable_output)
+
+    if non_fixable:
+        non_fixable_output = format_issues(non_fixable, output_format=normalized_format)
+        sections.append("Not auto-fixable issues\n" + non_fixable_output)
+
+    if not sections:
+        return "No issues found."
+
+    return "\n\n".join(sections)
+
+
+def format_tool_result(
+    tool_name: str,
+    issues: Sequence[BaseIssue],
+    output_format: OutputFormat | str = OutputFormat.GRID,
+    *,
+    include_severity: bool = False,
+    group_by_fixable: bool = False,
+) -> str:
+    """Format a tool's results with appropriate sections and metadata.
+
+    This is a convenience function that combines formatting with
+    tool-specific defaults.
+
+    Args:
+        tool_name: Name of the tool.
+        issues: List of issues from the tool.
+        output_format: Output format.
+        include_severity: Include severity column.
+        group_by_fixable: Group by fixable status.
+
+    Returns:
+        Formatted string.
+    """
+    if group_by_fixable:
+        return format_issues_with_sections(
+            issues,
+            output_format=output_format,
+            group_by_fixable=True,
+            tool_name=tool_name,
+        )
+
+    return format_issues(
+        issues,
+        output_format=output_format,
+        tool_name=tool_name,
+        include_severity=include_severity,
+    )

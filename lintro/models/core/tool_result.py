@@ -5,9 +5,14 @@ supports both check and fix flows and includes standardized fields to report
 fixed vs remaining counts for fix-capable tools.
 """
 
+from __future__ import annotations
+
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from lintro.parsers.base_issue import BaseIssue
 
 
 @dataclass
@@ -33,7 +38,7 @@ class ToolResult:
     output: str | None = field(default=None)
     issues_count: int = field(default=0)
     formatted_output: str | None = field(default=None)
-    issues: Sequence[object] | None = field(default=None)
+    issues: Sequence[BaseIssue] | None = field(default=None)
 
     # Optional standardized counts for fix-capable tools
     initial_issues_count: int | None = field(default=None)

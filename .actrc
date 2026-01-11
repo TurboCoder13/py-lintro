@@ -1,0 +1,11 @@
+# Default: minimal image for fast testing
+# For full CI (quality-ci-main, quality-e2e): use catthehacker/ubuntu:full-22.04
+# Run: docker pull catthehacker/ubuntu:full-22.04
+# Then uncomment the full-22.04 lines below and comment the act-22.04 lines
+# Note: catthehacker/ubuntu doesn't have 24.04 images yet, using 22.04 as fallback
+-P ubuntu-24.04=catthehacker/ubuntu:act-22.04
+-P ubuntu-latest=catthehacker/ubuntu:act-22.04
+# -P ubuntu-24.04=catthehacker/ubuntu:full-22.04
+# -P ubuntu-latest=catthehacker/ubuntu:full-22.04
+# --container-architecture linux/amd64
+--env ACT=true

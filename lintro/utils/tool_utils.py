@@ -5,20 +5,17 @@ that have been moved to focused modules.
 """
 
 # Re-exports for backward compatibility
-from lintro.utils.output_formatting import TOOL_TABLE_FORMATTERS, format_tool_output
+from lintro.utils.output import format_tool_output
 from lintro.utils.path_filtering import (
     should_exclude_path,
     walk_files_with_excludes,
 )
-from lintro.utils.table_formatting import format_as_table
 
 __all__ = [
-    "TOOL_TABLE_FORMATTERS",
     "format_tool_output",
     "VENV_PATTERNS",
     "should_exclude_path",
     "walk_files_with_excludes",
-    "format_as_table",
 ]
 
 # Legacy constants (kept for backward compatibility)

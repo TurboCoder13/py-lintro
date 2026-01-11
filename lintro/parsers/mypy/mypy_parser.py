@@ -7,6 +7,7 @@ from typing import Any
 
 from loguru import logger
 
+from lintro.parsers.base_parser import extract_int_field, extract_str_field
 from lintro.parsers.mypy.mypy_issue import MypyIssue
 
 
@@ -21,16 +22,14 @@ def _parse_issue(item: dict[str, Any]) -> MypyIssue | None:
         be parsed.
     """
     try:
-        file_path = item.get("path") or item.get("filename") or item.get("file") or ""
+        file_path = extract_str_field(item, ["path", "filename", "file"])
         if not file_path:
             return None
 
-        line = int(item.get("line") or 0)
-        column = int(item.get("column") or 0)
-        end_line = item.get("endLine") or item.get("end_line")
-        end_column = item.get("endColumn") or item.get("end_column")
-        end_line_int = int(end_line) if end_line is not None else None
-        end_column_int = int(end_column) if end_column is not None else None
+        line = extract_int_field(item, ["line"], default=0) or 0
+        column = extract_int_field(item, ["column"], default=0) or 0
+        end_line_int = extract_int_field(item, ["endLine", "end_line"])
+        end_column_int = extract_int_field(item, ["endColumn", "end_column"])
 
         raw_code = item.get("code")
         code: str | None
@@ -57,7 +56,8 @@ def _parse_issue(item: dict[str, Any]) -> MypyIssue | None:
             end_line=end_line_int,
             end_column=end_column_int,
         )
-    except Exception:
+    except (KeyError, TypeError, ValueError) as e:
+        logger.debug(f"Failed to parse mypy issue item: {e}")
         return None
 
 

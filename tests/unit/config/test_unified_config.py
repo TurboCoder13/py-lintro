@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from assertpy import assert_that
 
 from lintro.utils.unified_config import (
@@ -13,14 +14,26 @@ from lintro.utils.unified_config import (
 )
 
 
-def test_has_priority_strategy() -> None:
-    """Verify priority strategy exists."""
-    assert_that(ToolOrderStrategy.PRIORITY).is_not_none()
+@pytest.mark.parametrize(
+    ("strategy", "expected_value"),
+    [
+        (ToolOrderStrategy.PRIORITY, "priority"),
+        (ToolOrderStrategy.CUSTOM, "custom"),
+        (ToolOrderStrategy.ALPHABETICAL, "alphabetical"),
+    ],
+    ids=["priority", "custom", "alphabetical"],
+)
+def test_tool_order_strategy_values(
+    strategy: ToolOrderStrategy,
+    expected_value: str,
+) -> None:
+    """Verify ToolOrderStrategy enum members have expected string values.
 
-
-def test_has_custom_strategy() -> None:
-    """Verify custom strategy exists."""
-    assert_that(ToolOrderStrategy.CUSTOM).is_not_none()
+    Args:
+        strategy: The ToolOrderStrategy enum member to test.
+        expected_value: The expected string value.
+    """
+    assert_that(strategy.value).is_equal_to(expected_value)
 
 
 def test_default_values() -> None:
@@ -69,36 +82,33 @@ def test_line_length_has_injectable_tools() -> None:
     assert_that(injectable).contains("yamllint")
 
 
-class TestDefaultToolPriorities:
-    """Tests for DEFAULT_TOOL_PRIORITIES."""
-
-    def test_formatters_have_lower_priority(self) -> None:
-        """Formatters should run before linters (lower priority value)."""
-        assert_that(DEFAULT_TOOL_PRIORITIES["prettier"]).is_less_than(
-            DEFAULT_TOOL_PRIORITIES["ruff"],
-        )
-        assert_that(DEFAULT_TOOL_PRIORITIES["black"]).is_less_than(
-            DEFAULT_TOOL_PRIORITIES["markdownlint"],
-        )
-
-    def test_pytest_runs_last(self) -> None:
-        """Pytest should have highest priority value (runs last)."""
-        pytest_priority = DEFAULT_TOOL_PRIORITIES["pytest"]
-        for tool, priority in DEFAULT_TOOL_PRIORITIES.items():
-            if tool != "pytest":
-                assert_that(priority).is_less_than(pytest_priority)
+def test_formatters_have_lower_priority_than_linters() -> None:
+    """Formatters should run before linters (lower priority value)."""
+    assert_that(DEFAULT_TOOL_PRIORITIES["prettier"]).is_less_than(
+        DEFAULT_TOOL_PRIORITIES["ruff"],
+    )
+    assert_that(DEFAULT_TOOL_PRIORITIES["black"]).is_less_than(
+        DEFAULT_TOOL_PRIORITIES["markdownlint"],
+    )
 
 
-def test_ruff_is_injectable() -> None:
-    """Ruff supports config injection."""
-    assert_that(is_tool_injectable("ruff")).is_true()
+def test_pytest_runs_last() -> None:
+    """Pytest should have highest priority value (runs last)."""
+    pytest_priority = DEFAULT_TOOL_PRIORITIES["pytest"]
+    for tool, priority in DEFAULT_TOOL_PRIORITIES.items():
+        if tool != "pytest":
+            assert_that(priority).is_less_than(pytest_priority)
 
 
-def test_markdownlint_is_injectable() -> None:
-    """Markdownlint supports config injection."""
-    assert_that(is_tool_injectable("markdownlint")).is_true()
+@pytest.mark.parametrize(
+    "tool_name",
+    ["ruff", "markdownlint", "yamllint", "black", "prettier"],
+    ids=["ruff", "markdownlint", "yamllint", "black", "prettier"],
+)
+def test_tool_is_injectable(tool_name: str) -> None:
+    """Verify tools that support config injection.
 
-
-def test_yamllint_is_injectable() -> None:
-    """Yamllint supports config injection via Lintro config generation."""
-    assert_that(is_tool_injectable("yamllint")).is_true()
+    Args:
+        tool_name: Name of the tool to check for injectability.
+    """
+    assert_that(is_tool_injectable(tool_name)).is_true()

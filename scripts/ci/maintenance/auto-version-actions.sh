@@ -160,34 +160,6 @@ create_and_push_tag() {
   fi
 }
 
-# Update the floating major version tag (e.g., actions-v1)
-# This allows workflows to reference @actions-v1 and get the latest patch version
-update_floating_tag() {
-  local versioned_tag="$1"
-
-  # Extract major version (e.g., "actions-v1" from "actions-v1.0.8")
-  local floating_tag
-  floating_tag=$(echo "$versioned_tag" | sed 's/\.[0-9]*\.[0-9]*$//')
-
-  if [[ -n "$DRY_RUN" ]]; then
-    log_info "[DRY-RUN] Would update floating tag: $floating_tag -> $versioned_tag"
-    return 0
-  fi
-
-  # Delete local floating tag if it exists, then recreate pointing to versioned tag
-  git tag -d "$floating_tag" 2>/dev/null || true
-  git tag "$floating_tag" "$versioned_tag"
-  log_info "✅ Updated floating tag: $floating_tag -> $versioned_tag"
-
-  # Force push the floating tag if pushing is enabled
-  if [[ "$SHOULD_PUSH" == "true" ]]; then
-    git push origin "$floating_tag" --force
-    log_info "✅ Force pushed floating tag: $floating_tag"
-  else
-    log_info "⏸️  Skipped pushing floating tag (--no-push specified)"
-  fi
-}
-
 # Main logic
 main() {
   # Get latest tag
@@ -214,11 +186,8 @@ main() {
   create_and_push_tag "$next_tag"
   set_github_output "tag_created" "true"
 
-  # Update the floating major version tag (e.g., actions-v1)
-  update_floating_tag "$next_tag"
-
   log_info "Internal actions automatically versioned to $next_tag"
-  log_info "Workflows using @actions-v1 will automatically use this version"
+  log_info "Update workflow references to use @$next_tag"
 }
 
 # Run main

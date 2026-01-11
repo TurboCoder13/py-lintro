@@ -300,42 +300,51 @@ def test_prettier_tool_formats_code_correctly():
 
 When adding new tools to Lintro, ensure they follow these guidelines:
 
-1. Inherit from `BaseTool` in `lintro.tools.core.tool_base`
-2. Implement the `check()` method (and `fix()` if `can_fix=True`)
-3. Configure tool conflicts and priorities via `ToolConfig`
-4. Create a parser in `lintro.parsers.{tool_name}/` to parse tool output
-5. Create a formatter in `lintro.formatters.tools.{tool_name}_formatter.py`
-6. Include comprehensive docstrings
-7. Add appropriate tests in `tests/unit/tools/` and `tests/integration/`
-8. Update documentation
+1. Inherit from `BaseToolPlugin` in `lintro.plugins.base`
+2. Use `@register_tool` decorator from `lintro.plugins.registry`
+3. Implement `definition` property returning `ToolDefinition`
+4. Implement `check()` and optionally `fix()` methods
+5. Create a parser in `lintro.parsers.{tool_name}/` to parse tool output
+6. Use unified formatter in `lintro.formatters.unified`
+7. Include comprehensive docstrings
+8. Add appropriate tests in `tests/unit/tools/` and `tests/integration/`
+9. Update documentation
 
 Example tool configuration:
 
 ```python
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from lintro.tools.core.tool_base import BaseTool
-from lintro.models.core.tool_config import ToolConfig
-from lintro.models.core.tool_result import ToolResult
 from lintro.enums.tool_type import ToolType
+from lintro.models.core.tool_result import ToolResult
+from lintro.plugins.base import BaseToolPlugin
+from lintro.plugins.protocol import ToolDefinition
+from lintro.plugins.registry import register_tool
 
+@register_tool
 @dataclass
-class ExampleTool(BaseTool):
+class ExamplePlugin(BaseToolPlugin):
     """Example tool integration."""
 
-    name: str = "example"
-    description: str = "Example tool for demonstration"
-    can_fix: bool = False
-    config: ToolConfig = field(
-        default_factory=lambda: ToolConfig(
+    @property
+    def definition(self) -> ToolDefinition:
+        """Return the tool definition."""
+        return ToolDefinition(
+            name="example",
+            description="Example tool for demonstration",
+            can_fix=False,
+            tool_type=ToolType.LINTER,
+            file_patterns=["*.py"],
             priority=60,
             conflicts_with=[],
-            file_patterns=["*.py"],
-            tool_type=ToolType.LINTER,
-        ),
-    )
+            native_configs=["pyproject.toml"],
+            version_command=["example", "--version"],
+            min_version="1.0.0",
+            default_options={},
+            default_timeout=30,
+        )
 
-    def check(self, paths: list[str]) -> ToolResult:
+    def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with example tool."""
         # Implementation here
         pass
@@ -489,19 +498,14 @@ class MarkdownStyle(OutputStyle):
 
 ### 3. Tool Formatter
 
-- Wires up the descriptor, issues, and style.
-- Example for darglint:
+- Use the unified formatter for all tools.
+- Example usage:
 
 ```python
-from lintro.formatters.tools.darglint_formatter import DarglintTableDescriptor, STYLE_MAP
+from lintro.formatters.unified import format_issues
 
-
-def format_darglint_issues(issues, style="plain"):
-  descriptor = DarglintTableDescriptor()
-  columns = descriptor.get_columns()
-  rows = [descriptor.get_row(issue) for issue in issues]
-  formatter = STYLE_MAP.get(style, PlainStyle())
-  return formatter.format(columns, rows)
+# Format issues from any tool using the unified formatter
+formatted_output = format_issues(issues, output_format="plain")
 ```
 
 ---

@@ -1,6 +1,7 @@
 # Test Samples Directory
 
-This directory contains sample files used for testing Lintro's various linting and formatting tools.
+This directory contains sample files used for testing Lintro's various linting and
+formatting tools.
 
 ## Directory Structure
 
@@ -39,6 +40,7 @@ test_samples/
 ## Usage
 
 These files are used by the test suite to:
+
 - Test tool detection and execution
 - Verify parsing of tool output
 - Validate error reporting and formatting
@@ -47,6 +49,7 @@ These files are used by the test suite to:
 ## Maintenance
 
 When adding new test samples:
+
 1. Follow the directory structure above
 2. Use descriptive filenames that indicate what violations they contain
 3. Include comments in the files explaining what issues they demonstrate

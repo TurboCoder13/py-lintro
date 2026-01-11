@@ -34,7 +34,7 @@ def print_ascii_art(
         if ascii_art:
             art_text: str = "\n".join(ascii_art)
             console_output_func(text=art_text)
-    except Exception as e:
+    except (OSError, ValueError, TypeError) as e:
         logger.debug(f"Could not load ASCII art: {e}")
 
 

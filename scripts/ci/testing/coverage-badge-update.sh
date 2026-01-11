@@ -1,37 +1,41 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Coverage Badge Update Script
 # Generates and updates the coverage badge
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../../utils/utils.sh
+source "$SCRIPT_DIR/../../utils/utils.sh"
+
 # Show help if requested
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    echo "Usage: $0 [--help]"
-    echo ""
-    echo "Coverage Badge Update Script"
-    echo "Generates and updates the coverage badge."
-    echo ""
-    echo "This script:"
-    echo "  - Extracts coverage percentage from coverage.xml"
-    echo "  - Generates SVG badge with appropriate color"
-    echo "  - Updates assets/images/coverage-badge.svg file"
-    echo "  - Commits changes in CI environment"
-    echo ""
-    echo "This script is designed to be run in GitHub Actions CI environment."
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+    cat <<'EOF'
+Usage: coverage-badge-update.sh [--help]
+
+Coverage Badge Update Script
+Generates and updates the coverage badge.
+
+This script:
+  - Extracts coverage percentage from coverage.xml
+  - Generates SVG badge with appropriate color
+  - Updates assets/images/coverage-badge.svg file
+  - Commits changes in CI environment
+
+This script is designed to be run in GitHub Actions CI environment.
+EOF
     exit 0
 fi
 
-# Source shared utilities
-source "$(dirname "$0")/../../utils/utils.sh"
-
 # Set coverage percentage if not already set (handle nounset)
-if [ -z "${COVERAGE_PERCENTAGE:-}" ]; then
-    if [ -f "coverage.xml" ]; then
-        COVERAGE_PERCENTAGE=$(uv run python scripts/utils/extract-coverage.py 2>&1 | grep "percentage=" | tail -1 | cut -d'=' -f2)
+if [[ -z "${COVERAGE_PERCENTAGE:-}" ]]; then
+    # Use shared get_coverage_percentage function from utils.sh
+    COVERAGE_PERCENTAGE=$(get_coverage_percentage "coverage.xml")
+    if [[ "$COVERAGE_PERCENTAGE" != "0.00" ]]; then
         log_info "Extracted coverage percentage: $COVERAGE_PERCENTAGE%"
     else
+        log_warning "No coverage.xml found or empty, setting coverage to 0.0%"
         COVERAGE_PERCENTAGE="0.0"
-        log_warning "No coverage.xml found, setting coverage to 0.0%"
     fi
 fi
 

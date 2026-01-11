@@ -8,7 +8,7 @@ import pytest
 from assertpy import assert_that
 from loguru import logger
 
-from lintro.tools.implementations.tool_darglint import DarglintTool
+from lintro.plugins import ToolRegistry
 
 logger.remove()
 logger.add(lambda msg: print(msg, end=""), level="INFO")
@@ -100,9 +100,10 @@ def test_darglint_reports_violations_through_lintro(tmp_path: Path) -> None:
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info(f"SAMPLE_FILE: {sample_file}, exists: {sample_file.exists()}")
     logger.info("[TEST] Running DarglintTool through lintro on sample file...")
-    tool = DarglintTool()
+    tool = ToolRegistry.get("darglint")
+    assert_that(tool).is_not_none()
     tool.set_options(strictness="full", verbosity=2)
-    result = tool.check([str(sample_file)])
+    result = tool.check([str(sample_file)], {})
     logger.info(
         f"[LOG] Lintro DarglintTool found {result.issues_count} issues. "
         f"Output:\n{result.output}",
@@ -128,10 +129,11 @@ def test_darglint_output_consistency_direct_vs_lintro(tmp_path: Path) -> None:
     sample_file = tmp_path / "darglint_violations.py"
     shutil.copy(SAMPLE_FILE, sample_file)
     logger.info("[TEST] Comparing darglint CLI and Lintro DarglintTool outputs...")
-    tool = DarglintTool()
+    tool = ToolRegistry.get("darglint")
+    assert_that(tool).is_not_none()
     tool.set_options(strictness="full", verbosity=2)
     direct_success, direct_output, direct_issues = run_darglint_directly(sample_file)
-    result = tool.check([str(sample_file)])
+    result = tool.check([str(sample_file)], {})
     logger.info(
         f"[LOG] CLI issues: {direct_issues}, Lintro issues: {result.issues_count}",
     )
@@ -155,7 +157,8 @@ def test_darglint_fix_method_not_implemented(tmp_path: Path) -> None:
     logger.info(
         "[TEST] Verifying that DarglintTool.fix() raises NotImplementedError...",
     )
-    tool = DarglintTool()
+    tool = ToolRegistry.get("darglint")
+    assert_that(tool).is_not_none()
     with pytest.raises(NotImplementedError):
-        tool.fix([str(sample_file)])
+        tool.fix([str(sample_file)], {})
     logger.info("[LOG] NotImplementedError correctly raised by DarglintTool.fix().")

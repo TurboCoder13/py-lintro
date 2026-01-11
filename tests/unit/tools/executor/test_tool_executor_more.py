@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Never
 
 import pytest
@@ -20,20 +21,26 @@ from assertpy import assert_that
 if TYPE_CHECKING:
     pass
 
+import lintro.utils.tool_executor as te
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools import tool_manager
-from lintro.tools.tool_enum import ToolEnum
-from lintro.utils.output_manager import OutputManager
+from lintro.utils.output import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
 
 
-class _EnumLike:
-    def __init__(self, name: str) -> None:
-        self.name = name
+@dataclass
+class FakeToolDefinition:
+    """Fake ToolDefinition for testing."""
+
+    name: str
+    can_fix: bool = False
+    description: str = ""
+    file_patterns: list[str] = field(default_factory=list)
+    native_configs: list[str] = field(default_factory=list)
 
 
 def _stub_logger(monkeypatch: pytest.MonkeyPatch) -> None:
-    import lintro.utils.console_logger as cl
+    import lintro.utils.console as cl
 
     class SilentLogger:
         def __getattr__(
@@ -57,7 +64,7 @@ def test_get_tools_to_run_unknown_tool_raises(monkeypatch: pytest.MonkeyPatch) -
     Raises:
         AssertionError: If the expected ValueError is not raised.
     """
-    import lintro.utils.tool_executor as te
+    from lintro.utils.execution import tool_configuration as tc
 
     _stub_logger(monkeypatch)
 
@@ -70,7 +77,7 @@ def test_get_tools_to_run_unknown_tool_raises(monkeypatch: pytest.MonkeyPatch) -
     )
 
     try:
-        _ = te._get_tools_to_run(tools="notatool", action="check")
+        _ = tc.get_tools_to_run(tools="notatool", action="check")
         raise AssertionError("Expected ValueError for unknown tool")
     except ValueError as e:  # noqa: PT017
         assert_that(str(e)).contains("Unknown tool")
@@ -87,12 +94,21 @@ def test_get_tools_to_run_fmt_with_cannot_fix_raises(
     Raises:
         AssertionError: If the expected ValueError is not raised.
     """
-    import lintro.utils.tool_executor as te
+    from lintro.utils.execution import tool_configuration as tc
 
     _stub_logger(monkeypatch)
 
     class NoFixTool:
-        can_fix = False
+        def __init__(self) -> None:
+            self._definition = FakeToolDefinition(name="bandit", can_fix=False)
+
+        @property
+        def definition(self) -> FakeToolDefinition:
+            return self._definition
+
+        @property
+        def can_fix(self) -> bool:
+            return self._definition.can_fix
 
         def set_options(self, **kwargs: Any) -> None:  # noqa: D401
             return None
@@ -101,13 +117,13 @@ def test_get_tools_to_run_fmt_with_cannot_fix_raises(
     monkeypatch.setattr(
         tool_manager,
         "get_tool",
-        lambda enum_val: NoFixTool(),
+        lambda name: NoFixTool(),
         raising=True,
     )
 
     # Directly call the helper
     try:
-        _ = te._get_tools_to_run(tools="bandit", action="fmt")
+        _ = tc.get_tools_to_run(tools="bandit", action="fmt")
         raise AssertionError("Expected ValueError for non-fix tool in fmt")
     except ValueError as e:  # noqa: PT017
         assert_that(str(e)).contains("does not support formatting")
@@ -125,30 +141,29 @@ def test_main_loop_get_tool_raises_appends_failure(
     """
     _stub_logger(monkeypatch)
 
-    import lintro.utils.tool_executor as te
-
     ok = ToolResult(name="black", success=True, output="", issues_count=0)
 
-    def fake_get_tools(tools: str | None, action: str) -> list[ToolEnum]:
-        return [ToolEnum.RUFF, ToolEnum.BLACK]
+    def fake_get_tools(tools: str | None, action: str) -> list[str]:
+        return ["ruff", "black"]
 
-    def fake_get_tool(enum_val: ToolEnum) -> object:
-        if enum_val == ToolEnum.RUFF:
+    def fake_get_tool(name: str) -> object:
+        if name == "ruff":
             raise RuntimeError("ruff not available")
         return type(
             "_T",
             (),
             {  # simple stub
                 "name": "black",
+                "definition": FakeToolDefinition(name="black", can_fix=True),
                 "can_fix": True,
                 "set_options": lambda self, **k: None,
-                "check": lambda self, paths: ok,
-                "fix": lambda self, paths: ok,
+                "check": lambda self, paths, options=None: ok,
+                "fix": lambda self, paths, options=None: ok,
                 "options": {},
             },
         )()
 
-    monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
+    monkeypatch.setattr(te, "get_tools_to_run", fake_get_tools, raising=True)
     monkeypatch.setattr(tool_manager, "get_tool", fake_get_tool, raising=True)
     monkeypatch.setattr(
         OutputManager,
@@ -185,31 +200,30 @@ def test_write_reports_errors_are_swallowed(monkeypatch: pytest.MonkeyPatch) -> 
     """
     _stub_logger(monkeypatch)
 
-    import lintro.utils.tool_executor as te
-
     ok = ToolResult(name="ruff", success=True, output="", issues_count=0)
 
-    def fake_get_tools(tools: str | None, action: str) -> list[_EnumLike]:
-        return [_EnumLike("RUFF")]
+    def fake_get_tools(tools: str | None, action: str) -> list[str]:
+        return ["ruff"]
 
     ruff_tool = type(
         "_T",
         (),
         {
             "name": "ruff",
+            "definition": FakeToolDefinition(name="ruff", can_fix=True),
             "can_fix": True,
             "set_options": lambda self, **k: None,
-            "check": lambda self, paths: ok,
-            "fix": lambda self, paths: ok,
+            "check": lambda self, paths, options=None: ok,
+            "fix": lambda self, paths, options=None: ok,
             "options": {},
         },
     )()
 
-    monkeypatch.setattr(te, "_get_tools_to_run", fake_get_tools, raising=True)
-    monkeypatch.setattr(tool_manager, "get_tool", lambda e: ruff_tool)
+    monkeypatch.setattr(te, "get_tools_to_run", fake_get_tools, raising=True)
+    monkeypatch.setattr(tool_manager, "get_tool", lambda name: ruff_tool)
 
     def boom(self: object, results: list[ToolResult]) -> Never:
-        raise RuntimeError("disk full")
+        raise OSError("disk full")
 
     monkeypatch.setattr(
         OutputManager,
@@ -249,21 +263,22 @@ def test_unknown_post_check_tool_is_skipped(monkeypatch: pytest.MonkeyPatch) -> 
         (),
         {
             "name": "ruff",
+            "definition": FakeToolDefinition(name="ruff", can_fix=True),
             "can_fix": True,
             "set_options": lambda self, **k: None,
-            "check": lambda self, paths: ok,
-            "fix": lambda self, paths: ok,
+            "check": lambda self, paths, options=None: ok,
+            "fix": lambda self, paths, options=None: ok,
             "options": {},
         },
     )()
 
     monkeypatch.setattr(
         te,
-        "_get_tools_to_run",
-        lambda tools, action: [_EnumLike("RUFF")],
+        "get_tools_to_run",
+        lambda tools, action: ["ruff"],
         raising=True,
     )
-    monkeypatch.setattr(tool_manager, "get_tool", lambda e: ruff_tool)
+    monkeypatch.setattr(tool_manager, "get_tool", lambda name: ruff_tool)
     monkeypatch.setattr(
         te,
         "load_post_checks_config",
@@ -294,6 +309,8 @@ def test_post_checks_early_filter_removes_black_from_main(
     Args:
         monkeypatch: Pytest fixture to modify objects during the test.
     """
+    import lintro.utils.config as cfg
+    import lintro.utils.post_checks as pc
     import lintro.utils.tool_executor as te
 
     class LoggerCapture:
@@ -318,10 +335,10 @@ def test_post_checks_early_filter_removes_black_from_main(
             return None
 
     logger = LoggerCapture()
-    from lintro.utils import console_logger
+    from lintro.utils import console
 
     monkeypatch.setattr(
-        console_logger,
+        console,
         "create_logger",
         lambda **k: logger,
         raising=True,
@@ -330,17 +347,19 @@ def test_post_checks_early_filter_removes_black_from_main(
     # Tools initially include ruff and black
     monkeypatch.setattr(
         te,
-        "_get_tools_to_run",
-        lambda tools, action: [_EnumLike("RUFF"), _EnumLike("BLACK")],
+        "get_tools_to_run",
+        lambda tools, action: ["ruff", "black"],
         raising=True,
     )
+
+    def post_check_config():
+        return {"enabled": True, "tools": ["black"], "enforce_failure": True}
+
     # Early config marks black as post-check
-    monkeypatch.setattr(
-        te,
-        "load_post_checks_config",
-        lambda: {"enabled": True, "tools": ["black"], "enforce_failure": True},
-        raising=True,
-    )
+    # Must patch in all modules that import load_post_checks_config
+    monkeypatch.setattr(cfg, "load_post_checks_config", post_check_config, raising=True)
+    monkeypatch.setattr(te, "load_post_checks_config", post_check_config, raising=True)
+    monkeypatch.setattr(pc, "load_post_checks_config", post_check_config, raising=True)
 
     # Provide a no-op ruff tool
     ok = ToolResult(name="ruff", success=True, output="", issues_count=0)
@@ -349,23 +368,40 @@ def test_post_checks_early_filter_removes_black_from_main(
         (),
         {
             "name": "ruff",
+            "definition": FakeToolDefinition(name="ruff", can_fix=True),
             "can_fix": True,
             "set_options": lambda self, **k: None,
-            "check": lambda self, paths: ok,
-            "fix": lambda self, paths: ok,
+            "check": lambda self, paths, options=None: ok,
+            "fix": lambda self, paths, options=None: ok,
             "options": {},
         },
     )()
     monkeypatch.setattr(
         tool_manager,
         "get_tool",
-        lambda enum_val: ruff_tool,
+        lambda name: ruff_tool,
         raising=True,
     )
     monkeypatch.setattr(
         OutputManager,
         "write_reports_from_results",
         lambda self, results: None,
+        raising=True,
+    )
+
+    # Mock execute_post_checks to not run any post-checks
+    # (we're only testing that black is filtered from the main phase)
+    def mock_execute_post_checks(**kwargs: Any) -> tuple[int, int, int]:
+        return (
+            kwargs.get("total_issues", 0),
+            kwargs.get("total_fixed", 0),
+            kwargs.get("total_remaining", 0),
+        )
+
+    monkeypatch.setattr(
+        te,
+        "execute_post_checks",
+        mock_execute_post_checks,
         raising=True,
     )
 
@@ -382,9 +418,9 @@ def test_post_checks_early_filter_removes_black_from_main(
         raw_output=False,
     )
     assert_that(code).is_equal_to(0)
-    # Ensure black is not in main-phase tool headers
+    # Ensure black is not in main-phase tool headers (only ruff should run)
     assert_that(logger.tools_list).is_not_none()
-    assert_that("black" not in (logger.tools_list or [])).is_true()
+    assert_that(logger.tools_list).is_equal_to(["ruff"])
 
 
 def test_all_filtered_results_in_no_tools_warning(
@@ -408,8 +444,8 @@ def test_all_filtered_results_in_no_tools_warning(
     # Start with only black
     monkeypatch.setattr(
         te,
-        "_get_tools_to_run",
-        lambda tools, action: [_EnumLike("BLACK")],
+        "get_tools_to_run",
+        lambda tools, action: ["black"],
         raising=True,
     )
     # Early config filters out black

@@ -14,6 +14,18 @@ from lintro.tools.core.timeout_utils import (
 )
 
 
+class MockDefinition:
+    """Mock definition for testing."""
+
+    def __init__(self, name: str) -> None:
+        """Initialize mock definition.
+
+        Args:
+            name: Tool name.
+        """
+        self.name = name
+
+
 class MockTool:
     """Mock tool for testing timeout utilities."""
 
@@ -24,7 +36,7 @@ class MockTool:
             name: Tool name for testing.
             default_timeout: Default timeout value in seconds.
         """
-        self.name = name
+        self.definition = MockDefinition(name)
         self._default_timeout = default_timeout
         self.options: dict[str, Any] = {}
 

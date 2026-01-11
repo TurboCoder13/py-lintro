@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from enum import StrEnum, auto
 
+from loguru import logger
+
 
 class HadolintFormat(StrEnum):
     """Supported output formats for Hadolint."""
@@ -44,7 +46,10 @@ def normalize_hadolint_format(value: str | HadolintFormat) -> HadolintFormat:
         return value
     try:
         return HadolintFormat[value.upper()]
-    except Exception:
+    except (KeyError, AttributeError) as e:
+        logger.debug(
+            f"Invalid HadolintFormat value '{value}': {e}. Defaulting to TTY.",
+        )
         return HadolintFormat.TTY
 
 
@@ -64,5 +69,9 @@ def normalize_hadolint_threshold(
         return value
     try:
         return HadolintFailureThreshold[value.upper()]
-    except Exception:
+    except (KeyError, AttributeError) as e:
+        logger.debug(
+            f"Invalid HadolintFailureThreshold value '{value}': {e}. "
+            "Defaulting to INFO.",
+        )
         return HadolintFailureThreshold.INFO

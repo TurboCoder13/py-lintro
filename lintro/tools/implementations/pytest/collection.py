@@ -9,6 +9,7 @@ maintainability and reduce file size. Functions are organized by category:
 
 import json
 import os
+import xml.etree.ElementTree  # nosec B405 - only used for exception type, parsing uses defusedxml
 from pathlib import Path
 
 from loguru import logger
@@ -71,7 +72,13 @@ def extract_all_test_results_from_junit(junitxml_path: str) -> dict[str, str] | 
             test_results[node_id] = status
 
         return test_results
-    except Exception as e:
+    except (
+        ImportError,
+        OSError,
+        xml.etree.ElementTree.ParseError,
+        KeyError,
+        AttributeError,
+    ) as e:
         logger.debug(f"Failed to parse JUnit XML for all tests: {e}")
         return None
 
@@ -86,7 +93,7 @@ def get_cpu_count() -> int:
         import multiprocessing
 
         return max(1, multiprocessing.cpu_count())
-    except Exception:
+    except (OSError, ValueError, NotImplementedError):
         return 1
 
 

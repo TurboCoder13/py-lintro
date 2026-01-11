@@ -4,7 +4,7 @@ This module contains validation logic extracted from PytestTool.set_options()
 to improve maintainability and reduce file size.
 """
 
-from lintro.tools.implementations.pytest.pytest_utils import (
+from lintro.tools.implementations.pytest.collection import (
     get_parallel_workers_from_preset,
 )
 
@@ -17,7 +17,6 @@ def validate_pytest_options(
     disable_warnings: bool | None = None,
     json_report: bool | None = None,
     junitxml: str | None = None,
-    run_docker_tests: bool | None = None,
     slow_test_threshold: float | None = None,
     total_time_warning: float | None = None,
     workers: str | None = None,
@@ -34,6 +33,7 @@ def validate_pytest_options(
     coverage_html: str | None = None,
     coverage_xml: str | None = None,
     coverage_report: bool | None = None,
+    coverage_term_missing: bool | None = None,
     collect_only: bool | None = None,
     list_fixtures: bool | None = None,
     fixture_info: str | None = None,
@@ -54,7 +54,6 @@ def validate_pytest_options(
         disable_warnings: Disable warnings.
         json_report: Enable JSON report output.
         junitxml: Path for JUnit XML output.
-        run_docker_tests: Enable Docker tests (default: False).
         slow_test_threshold: Duration threshold in seconds for slow test warning
             (default: 1.0).
         total_time_warning: Total execution time threshold in seconds for warning
@@ -73,6 +72,7 @@ def validate_pytest_options(
         coverage_html: Path for HTML coverage report (requires pytest-cov).
         coverage_xml: Path for XML coverage report (requires pytest-cov).
         coverage_report: Generate both HTML and XML coverage reports.
+        coverage_term_missing: Show coverage report in terminal with missing lines.
         collect_only: List tests without executing them.
         list_fixtures: List all available fixtures.
         fixture_info: Show detailed information about a specific fixture.
@@ -106,9 +106,6 @@ def validate_pytest_options(
 
     if junitxml is not None and not isinstance(junitxml, str):
         raise ValueError("junitxml must be a string")
-
-    if run_docker_tests is not None and not isinstance(run_docker_tests, bool):
-        raise ValueError("run_docker_tests must be a boolean")
 
     if slow_test_threshold is not None and (
         not isinstance(slow_test_threshold, (int, float)) or slow_test_threshold < 0
@@ -179,6 +176,12 @@ def validate_pytest_options(
 
     if coverage_report is not None and not isinstance(coverage_report, bool):
         raise ValueError("coverage_report must be a boolean")
+
+    if coverage_term_missing is not None and not isinstance(
+        coverage_term_missing,
+        bool,
+    ):
+        raise ValueError("coverage_term_missing must be a boolean")
 
     # Validate discovery and inspection options
     if collect_only is not None and not isinstance(collect_only, bool):

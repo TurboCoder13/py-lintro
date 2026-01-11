@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 
 from loguru import logger
+from packaging.version import InvalidVersion, Version
 
 from lintro.enums.tool_name import ToolName, normalize_tool_name
 
@@ -20,6 +21,9 @@ from lintro.tools.core.version_checking import (
 from lintro.tools.core.version_checking import (
     get_minimum_versions as _get_minimum_versions_impl,
 )
+
+# Sentinel value for unknown/unspecified version requirements
+VERSION_UNKNOWN: str = "unknown"
 
 # Common regex pattern for tools that output simple version numbers
 # Matches version strings like "1.2.3", "0.14.0", "25.1", etc.
@@ -90,30 +94,54 @@ class ToolVersionInfo:
     error_message: str | None = field(default=None)
 
 
-def parse_version(version_str: str) -> tuple[int, ...]:
-    """Parse a version string into a comparable tuple.
+def parse_version(version_str: str) -> Version:
+    """Parse a version string into a comparable Version object.
+
+    Uses the standard packaging library for robust version parsing that
+    handles PEP 440 compliant versions including pre-release, post-release,
+    and development versions.
 
     Args:
-        version_str: Version string like "1.2.3" or "0.14.0"
+        version_str: Version string like "1.2.3", "0.14.0", or "v1.0.0-alpha"
 
     Returns:
-        tuple[int, ...]: Comparable version tuple like (1, 2, 3)
+        Version: Comparable Version object from packaging library.
 
     Raises:
         ValueError: If the version string cannot be parsed.
-    """
-    # Extract version numbers, handling pre-release suffixes
-    # Also handle optional leading 'v' (e.g., "v1.2.3")
-    match = re.match(r"^v?(\d+(?:\.\d+)*)", version_str.strip(), re.IGNORECASE)
-    if not match:
-        raise ValueError(f"Unable to parse version string: {version_str!r}")
 
-    version_part = match.group(1)
-    return tuple(int(part) for part in version_part.split("."))
+    Examples:
+        >>> parse_version("1.2.3")
+        <Version('1.2.3')>
+        >>> parse_version("v0.14.0")
+        <Version('0.14.0')>
+    """
+    # Strip common prefixes and suffixes that packaging can't handle
+    cleaned = version_str.strip()
+
+    # Handle optional leading 'v' (e.g., "v1.2.3")
+    if cleaned.lower().startswith("v"):
+        cleaned = cleaned[1:]
+
+    # Handle pre-release suffixes with hyphens (convert to PEP 440 format)
+    # e.g., "1.0.0-alpha" -> "1.0.0a0", "1.0.0-beta.1" -> "1.0.0b1"
+    cleaned = cleaned.split("+")[0]  # Remove build metadata
+    if "-" in cleaned:
+        base, suffix = cleaned.split("-", 1)
+        # Try to use just the base version for simpler comparison
+        cleaned = base
+
+    try:
+        return Version(cleaned)
+    except InvalidVersion as e:
+        raise ValueError(f"Unable to parse version string: {version_str!r}") from e
 
 
 def compare_versions(version1: str, version2: str) -> int:
     """Compare two version strings.
+
+    Uses the packaging library for robust version comparison that properly
+    handles major/minor/patch versions, pre-release versions, and more.
 
     Args:
         version1: First version string
@@ -121,21 +149,18 @@ def compare_versions(version1: str, version2: str) -> int:
 
     Returns:
         int: -1 if version1 < version2, 0 if equal, 1 if version1 > version2
+
+    Examples:
+        >>> compare_versions("1.2.3", "1.2.3")
+        0
+        >>> compare_versions("1.2.3", "1.2.4")
+        -1
+        >>> compare_versions("2.0.0", "1.9.9")
+        1
     """
-    v1_parts = parse_version(version1)
-    v2_parts = parse_version(version2)
-
-    # Pad shorter version to same length
-    max_len = max(len(v1_parts), len(v2_parts))
-    v1_padded = v1_parts + (0,) * (max_len - len(v1_parts))
-    v2_padded = v2_parts + (0,) * (max_len - len(v2_parts))
-
-    if v1_padded < v2_padded:
-        return -1
-    elif v1_padded > v2_padded:
-        return 1
-    else:
-        return 0
+    v1 = parse_version(version1)
+    v2 = parse_version(version2)
+    return (v1 > v2) - (v1 < v2)
 
 
 def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
@@ -151,7 +176,7 @@ def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
     minimum_versions = get_minimum_versions()
     install_hints = get_install_hints()
 
-    min_version = minimum_versions.get(tool_name, "unknown")
+    min_version = minimum_versions.get(tool_name, VERSION_UNKNOWN)
     install_hint = install_hints.get(
         tool_name,
         f"Install {tool_name} and ensure it's in PATH",
@@ -199,7 +224,7 @@ def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
             return info
 
         # Compare versions
-        if min_version != "unknown":
+        if min_version != VERSION_UNKNOWN:
             comparison = compare_versions(info.current_version, min_version)
             info.version_check_passed = comparison >= 0
         else:
@@ -273,10 +298,11 @@ def extract_version_from_output(output: str, tool_name: str | ToolName) -> str |
         match = re.search(r"rustc\s+(\d+(?:\.\d+)*)", output, re.IGNORECASE)
         if match:
             return match.group(1)
-        # Fallback: try clippy version format
-        match = re.search(r"clippy\s+(\d+(?:\.\d+)*)", output, re.IGNORECASE)
+        # Fallback: try clippy version format (0.1.X -> 1.X.0)
+        # Clippy uses 0.1.X where X is the Rust minor version
+        match = re.search(r"clippy\s+0\.1\.(\d+)", output, re.IGNORECASE)
         if match:
-            return match.group(1)
+            return f"1.{match.group(1)}.0"
 
     # Fallback: look for version-like pattern (more restrictive)
     # Match version numbers that look reasonable: 1.2.3, 0.14, 25.1, etc.

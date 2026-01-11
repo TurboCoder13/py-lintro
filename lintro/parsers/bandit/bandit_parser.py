@@ -5,6 +5,7 @@ from typing import Any
 from loguru import logger
 
 from lintro.parsers.bandit.bandit_issue import BanditIssue
+from lintro.parsers.base_parser import validate_int_field, validate_str_field
 
 
 def parse_bandit_output(bandit_data: dict[str, Any]) -> list[BanditIssue]:
@@ -33,28 +34,34 @@ def parse_bandit_output(bandit_data: dict[str, Any]) -> list[BanditIssue]:
             continue
 
         try:
-            filename = result.get("filename", "")
-            line_number = result.get("line_number", 0)
-            col_offset = result.get("col_offset", 0)
+            filename = validate_str_field(
+                result.get("filename"),
+                "filename",
+                log_warning=True,
+            )
+            line_number_raw = result.get("line_number")
+            # Skip if line_number is missing or invalid (required field)
+            # bool is a subclass of int, so we check for bool first
+            if isinstance(line_number_raw, bool):
+                logger.warning("Skipping issue with non-integer line_number")
+                continue
+            if not isinstance(line_number_raw, int):
+                logger.warning("Skipping issue with non-integer line_number")
+                continue
+            # After the isinstance checks above, mypy knows line_number_raw is int
+            line_number: int = line_number_raw
+
+            # Skip if filename is empty (required field)
+            if not filename:
+                logger.warning("Skipping issue with empty filename")
+                continue
+
+            col_offset = validate_int_field(result.get("col_offset"), "col_offset")
             issue_severity = result.get("issue_severity", "UNKNOWN")
             issue_confidence = result.get("issue_confidence", "UNKNOWN")
-            test_id = result.get("test_id", "")
-            test_name = result.get("test_name", "")
-            issue_text = result.get("issue_text", "")
-            more_info = result.get("more_info", "")
             cwe = result.get("issue_cwe")
             code = result.get("code")
             line_range = result.get("line_range")
-
-            # Validate critical fields; skip malformed entries
-            if not isinstance(filename, str):
-                logger.warning("Skipping issue with non-string filename")
-                continue
-            if not isinstance(line_number, int):
-                logger.warning("Skipping issue with non-integer line_number")
-                continue
-            if not isinstance(col_offset, int):
-                col_offset = 0
 
             sev = (
                 str(issue_severity).upper() if issue_severity is not None else "UNKNOWN"
@@ -65,10 +72,10 @@ def parse_bandit_output(bandit_data: dict[str, Any]) -> list[BanditIssue]:
                 else "UNKNOWN"
             )
 
-            test_id = test_id if isinstance(test_id, str) else ""
-            test_name = test_name if isinstance(test_name, str) else ""
-            issue_text = issue_text if isinstance(issue_text, str) else ""
-            more_info = more_info if isinstance(more_info, str) else ""
+            test_id = validate_str_field(result.get("test_id"), "test_id")
+            test_name = validate_str_field(result.get("test_name"), "test_name")
+            issue_text = validate_str_field(result.get("issue_text"), "issue_text")
+            more_info = validate_str_field(result.get("more_info"), "more_info")
 
             # Normalize line_range to list[int] when provided
             if isinstance(line_range, list):
@@ -87,7 +94,7 @@ def parse_bandit_output(bandit_data: dict[str, Any]) -> list[BanditIssue]:
                 issue_text=issue_text,
                 more_info=more_info,
                 cwe=cwe if isinstance(cwe, dict) else None,
-                code=code if isinstance(code, str) else None,
+                code_snippet=code if isinstance(code, str) else None,
                 line_range=line_range,
             )
             issues.append(issue)

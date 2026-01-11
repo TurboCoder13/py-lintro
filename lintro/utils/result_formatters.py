@@ -50,15 +50,51 @@ def print_tool_result(
         console_output_func(text="🧪 Test Results")
         console_output_func(text="-" * 20)  # Simplified border length
 
+        # Extract coverage summary from JSON in output
+        coverage_summary = None
+
         # Display formatted test failures table if present
-        # Skip JSON lines but keep tables
+        # Skip JSON lines and verbose coverage output, extract coverage data from JSON
         if output and output.strip():
             lines = output.split("\n")
             display_lines = []
             json_buffer: list[str] = []
             in_json = False
+            in_coverage_section = False
+
             for line in lines:
                 stripped = line.strip()
+
+                # Skip verbose coverage table lines
+                # Detect coverage section start
+                if (
+                    "coverage:" in stripped.lower() and "platform" in stripped.lower()
+                ) or (
+                    stripped.startswith("Name")
+                    and "Stmts" in stripped
+                    and "Miss" in stripped
+                ):
+                    in_coverage_section = True
+                    continue
+
+                # Skip lines within coverage section
+                if in_coverage_section:
+                    # Coverage section ends at empty line or new section marker
+                    if stripped == "" or stripped.startswith("==="):
+                        in_coverage_section = False
+                        # Don't add the empty line/marker that ends coverage
+                        if stripped.startswith("==="):
+                            display_lines.append(line)
+                        continue
+                    # Skip coverage data lines (files, TOTAL, dashes, etc.)
+                    if (
+                        stripped.startswith("-")
+                        or stripped.startswith("TOTAL")
+                        or "%" in stripped
+                        or stripped.startswith("Coverage")
+                    ):
+                        continue
+
                 # More specific JSON detection: only start JSON collection for:
                 # - Lines starting with '{' (JSON object)
                 # - Lines starting with '[' followed by JSON-like content
@@ -89,16 +125,28 @@ def print_tool_result(
                     )
                 )
                 if is_json_start:
-                    # Start collecting JSON (objects or arrays)
-                    json_buffer = [line]
-                    in_json = True
-                    continue
+                    # Try to parse single-line JSON first
+                    try:
+                        parsed_json = json.loads(stripped)
+                        # Extract coverage summary if present
+                        if isinstance(parsed_json, dict) and "coverage" in parsed_json:
+                            coverage_summary = parsed_json["coverage"]
+                        # Successfully parsed single-line JSON - skip it
+                        continue
+                    except json.JSONDecodeError:
+                        # Not complete, start collecting multi-line JSON
+                        json_buffer = [line]
+                        in_json = True
+                        continue
                 if in_json:
                     json_buffer.append(line)
                     # Try to parse accumulated JSON
                     try:
                         json_str = "\n".join(json_buffer)
-                        json.loads(json_str)
+                        parsed_json = json.loads(json_str)
+                        # Extract coverage summary if present
+                        if isinstance(parsed_json, dict) and "coverage" in parsed_json:
+                            coverage_summary = parsed_json["coverage"]
                         # Successfully parsed - skip this JSON block
                         json_buffer = []
                         in_json = False
@@ -114,6 +162,39 @@ def print_tool_result(
 
             if display_lines:
                 console_output_func(text="\n".join(display_lines))
+
+        # Display coverage summary as a clean table if present
+        if coverage_summary:
+            console_output_func(text="")
+            console_output_func(text="📊 Coverage Summary")
+            console_output_func(text="-" * 20)
+
+            coverage_pct = coverage_summary.get("coverage_pct", 0)
+            total_stmts = coverage_summary.get("total_stmts", 0)
+            covered_stmts = coverage_summary.get("covered_stmts", 0)
+            missing_stmts = coverage_summary.get("missing_stmts", 0)
+            files_count = coverage_summary.get("files_count", 0)
+
+            # Choose color/emoji based on coverage percentage
+            if coverage_pct >= 80:
+                cov_indicator = "🟢"
+            elif coverage_pct >= 60:
+                cov_indicator = "🟡"
+            else:
+                cov_indicator = "🔴"
+
+            console_output_func(
+                text=f"{cov_indicator} Coverage: {coverage_pct}%",
+            )
+            console_output_func(
+                text=f"   Lines: {covered_stmts:,} / {total_stmts:,} covered",
+            )
+            console_output_func(
+                text=f"   Missing: {missing_stmts:,} lines",
+            )
+            console_output_func(
+                text=f"   Files: {files_count:,}",
+            )
 
         # Don't show summary line here - it will be in the Execution Summary table
         if issues_count == 0 and not output:

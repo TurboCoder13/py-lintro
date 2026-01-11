@@ -64,7 +64,7 @@ jobs:
 
       - name: Environment setup
         # yamllint disable-line rule:line-length
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1.0.10
         with:
           python-version: '3.13'
         env:

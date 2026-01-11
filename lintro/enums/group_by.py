@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from enum import StrEnum, auto
 
+from loguru import logger
+
 
 class GroupBy(StrEnum):
     """Supported grouping strategies for presenting issues."""
@@ -27,5 +29,6 @@ def normalize_group_by(value: str | GroupBy) -> GroupBy:
         return value
     try:
         return GroupBy[value.upper()]
-    except Exception:
+    except (KeyError, AttributeError) as e:
+        logger.debug(f"Invalid GroupBy value '{value}': {e}. Defaulting to FILE.")
         return GroupBy.FILE

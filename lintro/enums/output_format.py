@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from enum import StrEnum, auto
 
+from loguru import logger
+
 
 class OutputFormat(StrEnum):
     """Supported output formats for rendering results.
@@ -35,6 +37,6 @@ def normalize_output_format(value: str | OutputFormat) -> OutputFormat:
         return value
     try:
         return OutputFormat[value.upper()]
-    except Exception:
-        # Fallback to GRID if invalid; callers may override upstream.
+    except (KeyError, AttributeError) as e:
+        logger.debug(f"Invalid OutputFormat value '{value}': {e}. Defaulting to GRID.")
         return OutputFormat.GRID

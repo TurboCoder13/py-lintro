@@ -1,5 +1,7 @@
 """Versions command for displaying tool version information."""
 
+import json
+
 import click
 from rich.console import Console
 from rich.table import Table
@@ -14,7 +16,13 @@ from lintro.tools.core.version_requirements import get_all_tool_versions
     is_flag=True,
     help="Show detailed version information including install hints.",
 )
-def versions_command(verbose: bool) -> None:
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    help="Output version information as JSON.",
+)
+def versions_command(verbose: bool, json_output: bool) -> None:
     """Display version information for all supported tools.
 
     Shows each tool's current version, minimum required version, and status.
@@ -22,9 +30,25 @@ def versions_command(verbose: bool) -> None:
 
     Args:
         verbose: Show detailed version information including install hints.
+        json_output: Output version information as JSON.
     """
-    console = Console()
     tool_versions = get_all_tool_versions()
+
+    # JSON output mode
+    if json_output:
+        output: dict[str, dict[str, object]] = {}
+        for tool_name, version_info in sorted(tool_versions.items()):
+            output[tool_name] = {
+                "current_version": version_info.current_version,
+                "min_version": version_info.min_version,
+                "version_check_passed": version_info.version_check_passed,
+                "error_message": version_info.error_message,
+                "install_hint": version_info.install_hint,
+            }
+        click.echo(json.dumps(output, indent=2))
+        return
+
+    console = Console()
 
     table = Table(title="Tool Versions")
     table.add_column("Tool", style="cyan", no_wrap=True)

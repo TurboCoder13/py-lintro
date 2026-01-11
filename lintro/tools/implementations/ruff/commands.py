@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 from lintro.enums.env_bool import EnvBool
 
 if TYPE_CHECKING:
-    from lintro.tools.implementations.tool_ruff import RuffTool
+    from lintro.tools.definitions.ruff import RuffPlugin
 
 
 def _get_list_option(options: dict[str, Any], key: str) -> list[str]:
@@ -54,7 +54,7 @@ RUFF_OUTPUT_FORMAT: str = "json"
 
 
 def build_ruff_check_command(
-    tool: "RuffTool",
+    tool: "RuffPlugin",
     files: list[str],
     fix: bool = False,
 ) -> list[str]:
@@ -138,7 +138,7 @@ def build_ruff_check_command(
 
 
 def build_ruff_format_command(
-    tool: "RuffTool",
+    tool: "RuffPlugin",
     files: list[str],
     check_only: bool = False,
 ) -> list[str]:

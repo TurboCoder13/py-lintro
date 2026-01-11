@@ -40,8 +40,6 @@ class PytestResultProcessor:
         return_code: int,
         issues: list[PytestIssue],
         total_available_tests: int,
-        docker_test_count: int,
-        run_docker_tests: bool,
     ) -> tuple[dict[str, Any], list[PytestIssue]]:
         """Process test results and generate summary.
 
@@ -50,8 +48,6 @@ class PytestResultProcessor:
             return_code: Return code from pytest.
             issues: Parsed test issues.
             total_available_tests: Total number of available tests.
-            docker_test_count: Number of docker tests.
-            run_docker_tests: Whether docker tests were enabled.
 
         Returns:
             Tuple[Dict, List]: Tuple of (summary_data, all_issues).
@@ -61,8 +57,6 @@ class PytestResultProcessor:
             output=output,
             issues=issues,
             total_available_tests=total_available_tests,
-            docker_test_count=docker_test_count,
-            run_docker_tests=run_docker_tests,
         )
 
         # Performance warnings (uses all issues including passed for duration info)
@@ -83,6 +77,7 @@ class PytestResultProcessor:
         success: bool,
         summary_data: dict[str, Any],
         all_issues: list[PytestIssue],
+        raw_output: str | None = None,
     ) -> ToolResult:
         """Build final ToolResult from processed data.
 
@@ -90,6 +85,7 @@ class PytestResultProcessor:
             success: Whether tests passed.
             summary_data: Summary data dictionary.
             all_issues: List of all test issues (failures, errors, skips).
+            raw_output: Optional raw pytest output for coverage report extraction.
 
         Returns:
             ToolResult: Final result object.
@@ -99,7 +95,7 @@ class PytestResultProcessor:
             issue for issue in all_issues if issue.test_status in ("FAILED", "ERROR")
         ]
 
-        output_text = build_output_with_failures(summary_data, all_issues)
+        output_text = build_output_with_failures(summary_data, all_issues, raw_output)
 
         result = ToolResult(
             name=self.tool_name,

@@ -8,7 +8,7 @@ import pytest
 from assertpy import assert_that
 
 from lintro.enums.action import Action
-from lintro.utils.console_logger import SimpleLintroLogger, create_logger
+from lintro.utils.console import ThreadSafeConsoleLogger, create_logger
 
 
 def test_create_logger_and_basic_methods(
@@ -22,7 +22,7 @@ def test_create_logger_and_basic_methods(
         capsys: Pytest capture fixture for stdout.
     """
     logger = create_logger(run_dir=tmp_path, verbose=True, raw_output=False)
-    assert_that(isinstance(logger, SimpleLintroLogger)).is_true()
+    assert_that(isinstance(logger, ThreadSafeConsoleLogger)).is_true()
     logger.info("info message")
     logger.debug("debug message")
     logger.warning("warn message")

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from enum import StrEnum, auto
 
+from loguru import logger
+
 
 class YamllintFormat(StrEnum):
     """Output styles supported by Yamllint's CLI."""
@@ -29,5 +31,8 @@ def normalize_yamllint_format(value: str | YamllintFormat) -> YamllintFormat:
         return value
     try:
         return YamllintFormat[value.upper()]
-    except Exception:
+    except (KeyError, AttributeError) as e:
+        logger.debug(
+            f"Invalid YamllintFormat value '{value}': {e}. Defaulting to PARSABLE.",
+        )
         return YamllintFormat.PARSABLE

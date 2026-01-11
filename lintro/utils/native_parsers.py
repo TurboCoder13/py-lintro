@@ -154,7 +154,7 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
     Returns:
         Native configuration dictionary
     """
-    from lintro.utils.config_loaders import load_pyproject
+    from lintro.utils.config import load_pyproject
 
     # Convert string to ToolName enum for consistent comparisons
     try:
@@ -276,14 +276,11 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                             content = content[0]
                         if isinstance(content, dict):
                             return content
-                except Exception as e:  # noqa: BLE001
-                    # Catch yaml.YAMLError and other exceptions
-                    # (file I/O, parsing errors)
+                except (yaml.YAMLError, OSError, UnicodeDecodeError) as e:
                     # Continue to next config file if this one fails to parse
                     logger.debug(
-                        f"Failed to parse {config_path}: {type(e).__name__}",
+                        f"Failed to parse {config_path}: {type(e).__name__}: {e}",
                     )
-                    # Continue to next config file
         return {}
 
     return {}

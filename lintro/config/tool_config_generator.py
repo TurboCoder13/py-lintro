@@ -128,7 +128,7 @@ def _cleanup_temp_files() -> None:
             if temp_file.exists():
                 temp_file.unlink()
                 logger.debug(f"Cleaned up temp config: {temp_file}")
-        except Exception as e:
+        except OSError as e:
             logger.debug(f"Failed to clean up {temp_file}: {e}")
 
 
@@ -263,8 +263,11 @@ def generate_defaults_config(
             tool_name=tool_lower,
             config_format=config_format,
         )
-    except Exception as e:
-        logger.error(f"Failed to generate defaults config for {tool_name}: {e}")
+    except (OSError, ValueError, TypeError, ImportError) as e:
+        logger.error(
+            f"Failed to generate defaults config for {tool_name}: "
+            f"{type(e).__name__}: {e}",
+        )
         return None
 
 
@@ -354,7 +357,7 @@ def cleanup_temp_config(config_path: Path) -> None:
         if config_path.exists():
             config_path.unlink()
             logger.debug(f"Cleaned up temp config: {config_path}")
-    except Exception as e:
+    except OSError as e:
         logger.debug(f"Failed to clean up {config_path}: {e}")
 
 

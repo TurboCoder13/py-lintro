@@ -38,17 +38,21 @@ jobs:
             objects.githubusercontent.com:443
             pypi.org:443
             files.pythonhosted.org:443
+            api.osv.dev:443
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1.0.10
         with:
           python-version: '3.13'
 
       - name: Sync dependencies
         run: uv sync --dev --no-progress
+
+      - name: Security audit dependencies
+        run: uv run pip-audit --strict --progress-spinner=off --skip-editable
 
       - name: Quality gate
         id: version

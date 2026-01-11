@@ -7,7 +7,11 @@ from pathlib import Path
 import pytest
 from assertpy import assert_that
 
-from lintro.utils.config import load_post_checks_config
+from lintro.utils.config import (
+    _find_pyproject,
+    load_post_checks_config,
+    load_pyproject,
+)
 
 
 def test_load_post_checks_config_present(
@@ -20,6 +24,10 @@ def test_load_post_checks_config_present(
         tmp_path: Temporary directory to host a pyproject.
         monkeypatch: Pytest monkeypatch for chdir.
     """
+    # Clear LRU caches to ensure we load from the test directory
+    load_pyproject.cache_clear()
+    _find_pyproject.cache_clear()
+
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(
         (

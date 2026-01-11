@@ -25,7 +25,7 @@ def test_execution_config_defaults() -> None:
     assert_that(config.enabled_tools).is_equal_to([])
     assert_that(config.tool_order).is_equal_to("priority")
     assert_that(config.fail_fast).is_false()
-    assert_that(config.parallel).is_false()
+    assert_that(config.parallel).is_true()
 
 
 def test_tool_config_defaults() -> None:

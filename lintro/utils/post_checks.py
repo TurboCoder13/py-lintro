@@ -10,37 +10,15 @@ from typing import TYPE_CHECKING
 from lintro.enums.action import Action
 from lintro.enums.group_by import normalize_group_by
 from lintro.enums.output_format import OutputFormat, normalize_output_format
+from lintro.plugins.registry import ToolRegistry
 from lintro.tools import tool_manager
-from lintro.tools.tool_enum import ToolEnum
 from lintro.utils.config import load_post_checks_config
-from lintro.utils.output_formatting import format_tool_output
+from lintro.utils.output import format_tool_output
 from lintro.utils.unified_config import UnifiedConfigManager
 
 if TYPE_CHECKING:
     from lintro.models.core.tool_result import ToolResult
-    from lintro.utils.console_logger import ConsoleLogger
-
-
-def _get_tool_display_name(tool_enum: ToolEnum) -> str:
-    """Get the canonical display name for a tool enum.
-
-    This function provides a consistent mapping from ToolEnum to user-friendly
-    display names. It first attempts to get the tool instance to use its canonical
-    name, but falls back to a predefined mapping if the tool cannot be instantiated.
-
-    Args:
-        tool_enum: The ToolEnum instance.
-
-    Returns:
-        str: The canonical display name for the tool.
-    """
-    # Try to get the tool instance to use its canonical name
-    try:
-        tool = tool_manager.get_tool(tool_enum)
-        return tool.name
-    except Exception:
-        # Fall back to predefined mapping if tool cannot be instantiated
-        return tool_enum.name.lower()
+    from lintro.utils.console import ThreadSafeConsoleLogger
 
 
 def execute_post_checks(
@@ -53,7 +31,7 @@ def execute_post_checks(
     output_format: str,
     verbose: bool,
     raw_output: bool,
-    logger: ConsoleLogger,
+    logger: ThreadSafeConsoleLogger,
     all_results: list[ToolResult],
     total_issues: int,
     total_fixed: int,
@@ -62,19 +40,19 @@ def execute_post_checks(
     """Execute post-check tools after primary linting.
 
     Args:
-        action: Action: The action being performed.
-        paths: list[str]: List of paths to check.
-        exclude: str | None: Patterns to exclude.
-        include_venv: bool: Whether to include virtual environments.
-        group_by: str: How to group results.
-        output_format: str: Output format for results.
-        verbose: bool: Whether to enable verbose output.
-        raw_output: bool: Whether to show raw tool output.
+        action: The action being performed.
+        paths: List of paths to check.
+        exclude: Patterns to exclude.
+        include_venv: Whether to include virtual environments.
+        group_by: How to group results.
+        output_format: Output format for results.
+        verbose: Whether to enable verbose output.
+        raw_output: Whether to show raw tool output.
         logger: Logger instance for output.
-        all_results: list: List to append results to.
-        total_issues: int: Current total issues count.
-        total_fixed: int: Current total fixed count.
-        total_remaining: int: Current total remaining count.
+        all_results: List to append results to.
+        total_issues: Current total issues count.
+        total_fixed: Current total fixed count.
+        total_remaining: Current total remaining count.
 
     Returns:
         tuple[int, int, int]: Updated (total_issues, total_fixed, total_remaining)
@@ -100,18 +78,15 @@ def execute_post_checks(
     # so summaries and exit codes reflect the condition.
     if post_tools and json_output_mode and action == Action.CHECK and enforce_failure:
         for post_tool_name in post_tools:
-            try:
-                tool_enum = ToolEnum[post_tool_name.upper()]
-                # Ensure tool can be resolved; we don't execute it in JSON mode
-                _ = tool_manager.get_tool(tool_enum)
-            except Exception as e:
+            tool_name_lower = post_tool_name.lower()
+            if not ToolRegistry.is_registered(tool_name_lower):
                 from lintro.models.core.tool_result import ToolResult
 
                 all_results.append(
                     ToolResult(
                         name=post_tool_name,
                         success=False,
-                        output=str(e),
+                        output=f"Tool '{post_tool_name}' not registered",
                         issues_count=1,
                     ),
                 )
@@ -122,9 +97,9 @@ def execute_post_checks(
             logger.print_post_checks_header()
 
         for post_tool_name in post_tools:
-            try:
-                tool_enum = ToolEnum[post_tool_name.upper()]
-            except KeyError:
+            tool_name_lower = post_tool_name.lower()
+
+            if not ToolRegistry.is_registered(tool_name_lower):
                 logger.console_output(
                     text=f"Warning: Unknown post-check tool: {post_tool_name}",
                     color="yellow",
@@ -136,19 +111,17 @@ def execute_post_checks(
             # failure. Post-checks are optional when the tool cannot be resolved
             # from the tool manager.
             try:
-                tool = tool_manager.get_tool(tool_enum)
-            except Exception as e:
+                tool = tool_manager.get_tool(tool_name_lower)
+            except (KeyError, ValueError, RuntimeError) as e:
                 logger.console_output(
                     text=f"Warning: Post-check '{post_tool_name}' unavailable: {e}",
                     color="yellow",
                 )
                 continue
-            # Use canonical display name for consistent logging
-            tool_name = _get_tool_display_name(tool_enum)
 
             # Post-checks run with explicit headers (reuse standard header)
             if not json_output_mode:
-                logger.print_tool_header(tool_name=tool_name, action=action)
+                logger.print_tool_header(tool_name=tool_name_lower, action=action)
 
             try:
                 # Configure post-check tool using UnifiedConfigManager
@@ -164,8 +137,8 @@ def execute_post_checks(
                     tool.set_options(exclude_patterns=exclude_patterns)
 
                 # For check: Black should run in check mode; for fmt: run fix
-                if action == Action.FIX and tool.can_fix:
-                    result = tool.fix(paths=paths)
+                if action == Action.FIX and tool.definition.can_fix:
+                    result = tool.fix(paths=paths, options={})
                     issues_count = getattr(result, "issues_count", 0)
                     fixed_count = getattr(result, "fixed_issues_count", None)
                     total_fixed += fixed_count if fixed_count is not None else 0
@@ -174,7 +147,7 @@ def execute_post_checks(
                         remaining_count if remaining_count is not None else issues_count
                     )
                 else:
-                    result = tool.check(paths=paths)
+                    result = tool.check(paths=paths, options={})
                     issues_count = getattr(result, "issues_count", 0)
                     total_issues += issues_count
 
@@ -184,7 +157,7 @@ def execute_post_checks(
                 formatted_output: str = ""
                 if (output and output.strip()) or issues:
                     formatted_output = format_tool_output(
-                        tool_name=tool_name,
+                        tool_name=tool_name_lower,
                         output=output or "",
                         output_format=output_fmt_enum.value,
                         issues=issues,
@@ -200,7 +173,7 @@ def execute_post_checks(
                         print_tool_result(
                             console_output_func=logger.console_output,
                             success_func=success_func,
-                            tool_name=tool_name,
+                            tool_name=tool_name_lower,
                             output=(
                                 formatted_output if not raw_output else (output or "")
                             ),
@@ -216,7 +189,7 @@ def execute_post_checks(
                         logger.console_output(text="")
 
                 all_results.append(result)
-            except Exception as e:
+            except (OSError, ValueError, RuntimeError, TypeError, AttributeError) as e:
                 # Do not crash the entire run due to missing optional post-check
                 # tool
                 logger.console_output(

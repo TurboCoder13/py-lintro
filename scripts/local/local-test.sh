@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # local-test.sh - Local test runner stub for Lintro
 #
@@ -9,12 +9,9 @@ set -e
 # This script is a placeholder for local test execution.
 # It provides help output and argument validation for test suite compatibility.
 
-# Color output for better readability
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../utils/utils.sh
+source "$SCRIPT_DIR/../utils/utils.sh"
 
 show_help() {
     echo -e "${BLUE}Usage:${NC} ./scripts/local-test.sh [--help] [--verbose]"

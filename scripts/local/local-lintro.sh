@@ -2,16 +2,13 @@
 set -euo pipefail
 
 # local-lintro.sh - Enhanced local lintro runner
-# 
+#
 # This script handles the complete setup and execution of lintro locally.
 # It automatically installs missing tools and sets up the environment.
 
-# Color output for better readability
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../utils/utils.sh
+source "$SCRIPT_DIR/../utils/utils.sh"
 
 echo -e "${BLUE}=== Lintro Local Runner ===${NC}"
 

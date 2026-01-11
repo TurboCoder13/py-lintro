@@ -1,4 +1,4 @@
-"""Models for ruff issues."""
+"""Model for ruff linting issues."""
 
 from dataclasses import dataclass, field
 
@@ -24,14 +24,3 @@ class RuffIssue(BaseIssue):
     end_column: int | None = field(default=None)
     fixable: bool = field(default=False)
     fix_applicability: str | None = field(default=None)
-
-
-@dataclass
-class RuffFormatIssue:
-    """Represents a ruff formatting issue.
-
-    Attributes:
-        file: File path that would be reformatted.
-    """
-
-    file: str

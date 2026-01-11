@@ -75,6 +75,18 @@
       ],
       "matchPackageNames": ["python"],
       "rangeStrategy": "update-lockfile"
+    },
+    {
+      "groupName": "linting tools",
+      "groupSlug": "linting-tools",
+      "matchPackageNames": [
+        "hadolint",
+        "actionlint",
+        "prettier",
+        "markdownlint-cli2",
+        "@biomejs/biome"
+      ],
+      "automerge": false
     }
   ],
   "pip_requirements": {
@@ -93,6 +105,93 @@
       ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "codecov/uploader"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["Dockerfile"],
+      "matchStrings": [
+        "ARG HADOLINT_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "hadolint/hadolint",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["Dockerfile"],
+      "matchStrings": [
+        "ARG ACTIONLINT_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "rhysd/actionlint",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["scripts/utils/install-tools\\.sh"],
+      "matchStrings": [
+        "HADOLINT_VERSION=\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "hadolint/hadolint",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["scripts/utils/install-tools\\.sh"],
+      "matchStrings": [
+        "ACTIONLINT_VERSION=\"v(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "rhysd/actionlint",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["pyproject\\.toml"],
+      "matchStrings": [
+        "\\[tool\\.lintro\\.versions\\][\\s\\S]*?hadolint\\s*=\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "hadolint/hadolint",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["pyproject\\.toml"],
+      "matchStrings": [
+        "\\[tool\\.lintro\\.versions\\][\\s\\S]*?actionlint\\s*=\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "rhysd/actionlint",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["pyproject\\.toml"],
+      "matchStrings": [
+        "\\[tool\\.lintro\\.versions\\][\\s\\S]*?prettier\\s*=\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "npm",
+      "packageNameTemplate": "prettier"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["pyproject\\.toml"],
+      "matchStrings": [
+        "\\[tool\\.lintro\\.versions\\][\\s\\S]*?biome\\s*=\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "npm",
+      "packageNameTemplate": "@biomejs/biome"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["pyproject\\.toml"],
+      "matchStrings": [
+        "\\[tool\\.lintro\\.versions\\][\\s\\S]*?markdownlint\\s*=\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "npm",
+      "packageNameTemplate": "markdownlint-cli2"
     }
   ],
   "schedule": ["after 22:00", "before 23:00"],

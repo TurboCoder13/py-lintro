@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from loguru import logger
+
 from lintro.parsers.clippy.clippy_issue import ClippyIssue
 
 
@@ -98,7 +100,8 @@ def _parse_issue(item: dict[str, Any]) -> ClippyIssue | None:
             end_line=end_line if end_line != line else None,
             end_column=end_column if end_column != column else None,
         )
-    except Exception:
+    except (KeyError, TypeError, ValueError) as e:
+        logger.debug(f"Failed to parse clippy diagnostic: {e}")
         return None
 
 

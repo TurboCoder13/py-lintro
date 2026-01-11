@@ -1,19 +1,14 @@
-#!/bin/bash
-
-# Exit on any error
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # run-tests.sh - Universal test runner (works locally and in Docker)
-# 
+#
 # This script handles the complete setup and execution of tests locally.
 # It automatically checks tool availability and runs appropriate tests.
 
-# Color codes for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../utils/utils.sh
+source "$SCRIPT_DIR/../utils/utils.sh"
 
 # Global variables
 VERBOSE=0
@@ -176,21 +171,12 @@ run_tests() {
     
     # Add verbose flag if requested
     local tool_opts="pytest:coverage_report=True,pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml,pytest:timeout=600"
-    if [ "$VERBOSE" = "1" ] || [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
+    if [ "$VERBOSE" = "1" ] || [ "${1:-}" = "--verbose" ] || [ "${1:-}" = "-v" ]; then
         echo -e "${YELLOW}Running tests in verbose mode${NC}"
         tst_args+=("--verbose")
         tool_opts="${tool_opts},pytest:verbose=True"
     fi
     
-    # Add Docker test enablement and coverage options
-    # Set a longer timeout (600s = 10 minutes) since tests are more comprehensive
-    if [ "${LINTRO_RUN_DOCKER_TESTS:-0}" = "1" ]; then
-        echo -e "${YELLOW}Including Docker tests (LINTRO_RUN_DOCKER_TESTS=1)${NC}"
-        tool_opts="${tool_opts},pytest:run_docker_tests=True"
-    else
-        echo -e "${YELLOW}Docker-specific tests will be auto-skipped by pytest config${NC}"
-    fi
-
     # Add pytest-sugar for enhanced CI output (if available)
     if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
         if python -c "import pytest_sugar" 2>/dev/null; then
@@ -221,7 +207,6 @@ show_tips() {
     echo -e "${YELLOW}=== Helpful Tips ===${NC}"
     echo -e "${BLUE}• Install missing tools: ./scripts/local/local-lintro.sh --install${NC}"
     echo -e "${BLUE}• Run specific tests: uv run lintro tst tests/ --tool-options pytest:workers=auto${NC}"
-    echo -e "${BLUE}• Include Docker tests: LINTRO_RUN_DOCKER_TESTS=1 $0${NC}"
     echo -e "${BLUE}• Run with verbose output: $0 --verbose${NC}"
     echo -e "${BLUE}• Check tool installation: ./scripts/utils/install-tools.sh --local${NC}"
     echo ""
@@ -241,7 +226,7 @@ main() {
     
     # Handle command line arguments
     local verbose=false
-    if [ "$1" = "--verbose" ] || [ "$1" = "-v" ]; then
+    if [ "${1:-}" = "--verbose" ] || [ "${1:-}" = "-v" ]; then
         verbose=true
         VERBOSE=1
         echo -e "${YELLOW}Verbose mode enabled${NC}"
@@ -357,7 +342,7 @@ show_usage() {
 }
 
 # Handle help request or docker delegate
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
     show_usage
     echo ""
     echo "Options:" 
@@ -366,7 +351,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 
 # Delegate to Docker-based test runner when requested
-if [ "$1" = "--docker" ]; then
+if [ "${1:-}" = "--docker" ]; then
     SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
     DOCKER_SCRIPT="${SCRIPT_DIR%/local}/docker/docker-test.sh"
     if [ ! -x "$DOCKER_SCRIPT" ]; then

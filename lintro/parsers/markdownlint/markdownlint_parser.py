@@ -2,7 +2,22 @@
 
 import re
 
+from lintro.parsers.base_parser import collect_continuation_lines
 from lintro.parsers.markdownlint.markdownlint_issue import MarkdownlintIssue
+
+
+def _is_markdownlint_continuation(line: str) -> bool:
+    """Check if a line is a continuation of a markdownlint message.
+
+    Continuation lines start with whitespace (indentation) and are non-empty.
+
+    Args:
+        line: The line to check.
+
+    Returns:
+        True if the line is a continuation (starts with whitespace and non-empty).
+    """
+    return bool(line.strip()) and line[0].isspace()
 
 
 def parse_markdownlint_output(output: str) -> list[MarkdownlintIssue]:
@@ -75,27 +90,17 @@ def parse_markdownlint_output(output: str) -> list[MarkdownlintIssue]:
             message: str
             filename, line_num, column, code, message = match.groups()
 
-            # Collect continuation lines (lines that start with whitespace)
-            # These are part of the multi-line message
-            i += 1
-            continuation_lines: list[str] = []
-            while i < len(lines):
-                next_line = lines[i]
-                # Continuation lines start with whitespace (indentation)
-                # Empty lines break the continuation
-                if not next_line.strip():
-                    break
-                if next_line[0].isspace():
-                    continuation_lines.append(next_line.strip())
-                    i += 1
-                else:
-                    # Next line doesn't start with whitespace, stop collecting
-                    break
+            # Collect continuation lines using the shared utility
+            continuation, next_idx = collect_continuation_lines(
+                lines,
+                i + 1,
+                _is_markdownlint_continuation,
+            )
 
             # Combine main message with continuation lines
             full_message = message.strip()
-            if continuation_lines:
-                full_message = " ".join([full_message] + continuation_lines)
+            if continuation:
+                full_message = f"{full_message} {continuation}"
 
             issues.append(
                 MarkdownlintIssue(
@@ -106,6 +111,7 @@ def parse_markdownlint_output(output: str) -> list[MarkdownlintIssue]:
                     message=full_message,
                 ),
             )
+            i = next_idx
         else:
             # Line doesn't match pattern, skip it
             i += 1
