@@ -94,18 +94,27 @@ COPY --from=builder /usr/local/bin/actionlint /usr/local/bin/
 COPY --from=builder /usr/local/bin/cargo /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustc /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustup /usr/local/bin/
-COPY --from=builder /root/.bun/install/global/node_modules /usr/local/lib/node_modules
+COPY --from=builder /usr/local/bin/uv /usr/local/bin/
+COPY --from=builder /usr/local/bin/bun /usr/local/bin/
+COPY --from=builder /root/.bun/install/global /opt/bun/install/global
 COPY --from=builder /root/.cargo /home/lintro/.cargo
 COPY --from=builder /root/.rustup /home/lintro/.rustup
 
-# Set Rust environment for lintro user
+# Set Rust environment for lintro user and bun global install location
 ENV CARGO_HOME=/home/lintro/.cargo \
-    RUSTUP_HOME=/home/lintro/.rustup
+    RUSTUP_HOME=/home/lintro/.rustup \
+    BUN_INSTALL=/opt/bun
 
-# Create symlinks for bun global packages
-RUN (ln -sf /usr/local/lib/node_modules/prettier/bin/prettier.cjs /usr/local/bin/prettier || true) && \
-    (ln -sf /usr/local/lib/node_modules/markdownlint-cli2/markdownlint-cli2.mjs /usr/local/bin/markdownlint-cli2 || true) && \
-    (ln -sf /usr/local/lib/node_modules/@biomejs/biome/bin/biome /usr/local/bin/biome || true)
+# Create bunx symlink (bun acts as bunx when called by that name)
+RUN ln -sf /usr/local/bin/bun /usr/local/bin/bunx
+
+# Create wrapper scripts for Node.js tools (uses bun as runtime)
+RUN printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/prettier/bin/prettier.cjs "$@"\n' > /usr/local/bin/prettier && \
+    chmod +x /usr/local/bin/prettier && \
+    printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/markdownlint-cli2/markdownlint-cli2-bin.mjs "$@"\n' > /usr/local/bin/markdownlint-cli2 && \
+    chmod +x /usr/local/bin/markdownlint-cli2 && \
+    printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/@biomejs/biome/bin/biome "$@"\n' > /usr/local/bin/biome && \
+    chmod +x /usr/local/bin/biome
 
 # Copy Python virtual environment and application from builder
 COPY --from=builder /app/.venv /app/.venv
