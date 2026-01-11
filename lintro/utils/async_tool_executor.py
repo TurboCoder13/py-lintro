@@ -49,6 +49,19 @@ class AsyncToolExecutor:
         """Initialize the thread pool executor."""
         self._executor = ThreadPoolExecutor(max_workers=self.max_workers)
 
+    def __enter__(self) -> "AsyncToolExecutor":
+        """Enter context manager."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any,
+    ) -> None:
+        """Exit context manager and cleanup resources."""
+        self.shutdown()
+
     async def run_tool_async(
         self,
         tool: BaseToolPlugin,
@@ -69,7 +82,10 @@ class AsyncToolExecutor:
         """
         from lintro.enums.action import Action
 
-        loop = asyncio.get_event_loop()
+        if self._executor is None:
+            raise RuntimeError("Executor has been shut down")
+
+        loop = asyncio.get_running_loop()
         opts = options or {}
 
         func = tool.fix if action == Action.FIX else tool.check

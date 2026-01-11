@@ -306,9 +306,17 @@ def parse_pytest_junit_xml(output: str) -> list[PytestIssue]:
         # Handle different JUnit XML structures
         for testcase in root.findall(".//testcase"):
             file_path = testcase.get("file", "")
-            line = int(testcase.get("line", 0))
+            # Safely parse line number, defaulting to 0 if not numeric
+            try:
+                line = int(testcase.get("line", 0))
+            except (ValueError, TypeError):
+                line = 0
             test_name = testcase.get("name", "")
-            duration = float(testcase.get("time", 0.0))
+            # Safely parse duration, defaulting to 0.0 if not numeric
+            try:
+                duration = float(testcase.get("time", 0.0))
+            except (ValueError, TypeError):
+                duration = 0.0
             class_name = testcase.get("classname", "")
             # If file attribute is missing, try to derive it from classname
             if not file_path and class_name:

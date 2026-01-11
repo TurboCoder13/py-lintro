@@ -129,11 +129,10 @@ def get_ordered_tools(
         for tool in custom_order:
             # Case-insensitive matching for custom order
             tool_lower = tool.lower()
-            for t in remaining:
-                if t.lower() == tool_lower:
-                    ordered.append(t)
-                    remaining.remove(t)
-                    break
+            matched = next((t for t in remaining if t.lower() == tool_lower), None)
+            if matched:
+                ordered.append(matched)
+                remaining.remove(matched)
 
         # Add remaining tools by priority (consistent with default strategy)
         ordered.extend(

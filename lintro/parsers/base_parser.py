@@ -22,7 +22,6 @@ from loguru import logger
 if TYPE_CHECKING:
     from lintro.parsers.base_issue import BaseIssue
 
-T = TypeVar("T")
 IssueT = TypeVar("IssueT", bound="BaseIssue")
 
 # Pre-compiled regex for ANSI escape sequences
@@ -57,7 +56,8 @@ def extract_int_field(
     """
     for key in candidates:
         val = data.get(key)
-        if isinstance(val, int):
+        # Check for int but exclude bool (bool is a subclass of int in Python)
+        if isinstance(val, int) and not isinstance(val, bool):
             return val
     return default
 

@@ -188,14 +188,14 @@ Quality without testing is wishful thinking.
 
 ### Code Quality Metrics
 
-| Metric                   | Minimum   | Target    |
+| Metric                   | Threshold | Target    |
 | ------------------------ | --------- | --------- |
-| Test Coverage            | 70%       | 90%       |
-| Type Annotation Coverage | 95%       | 100%      |
-| Docstring Coverage       | 90%       | 100%      |
-| Max File Length          | 500 lines | 300 lines |
-| Max Function Length      | 50 lines  | 25 lines  |
-| Cyclomatic Complexity    | 15        | 10        |
+| Test Coverage            | ≥ 70%     | 90%       |
+| Type Annotation Coverage | ≥ 95%     | 100%      |
+| Docstring Coverage       | ≥ 90%     | 100%      |
+| File Length              | ≤ 500     | 300 lines |
+| Function Length          | ≤ 50      | 25 lines  |
+| Cyclomatic Complexity    | ≤ 15      | 10        |
 
 ### Self-Validation
 
