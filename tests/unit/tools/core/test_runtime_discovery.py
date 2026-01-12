@@ -105,7 +105,7 @@ def test_discover_tool_uses_cache() -> None:
         patch("shutil.which", return_value="/usr/bin/ruff") as mock_which,
         patch("subprocess.run") as mock_run,
     ):
-        mock_run.return_value = MagicMock(returncode=0, stdout="ruff 0.1.0")
+        mock_run.return_value = MagicMock(returncode=0, stdout="ruff 0.1.0", stderr="")
 
         discover_tool("ruff")
         discover_tool("ruff")
@@ -119,7 +119,7 @@ def test_discover_all_tools() -> None:
         patch("shutil.which", return_value="/usr/bin/tool"),
         patch("subprocess.run") as mock_run,
     ):
-        mock_run.return_value = MagicMock(returncode=0, stdout="1.0.0")
+        mock_run.return_value = MagicMock(returncode=0, stdout="1.0.0", stderr="")
 
         tools = discover_all_tools(use_cache=False)
 
@@ -133,7 +133,7 @@ def test_is_tool_available_returns_true() -> None:
         patch("shutil.which", return_value="/usr/bin/ruff"),
         patch("subprocess.run") as mock_run,
     ):
-        mock_run.return_value = MagicMock(returncode=0, stdout="ruff 0.1.0")
+        mock_run.return_value = MagicMock(returncode=0, stdout="ruff 0.1.0", stderr="")
         assert_that(is_tool_available("ruff")).is_true()
 
 
@@ -149,7 +149,7 @@ def test_get_tool_path_returns_path() -> None:
         patch("shutil.which", return_value="/usr/bin/ruff"),
         patch("subprocess.run") as mock_run,
     ):
-        mock_run.return_value = MagicMock(returncode=0, stdout="ruff 0.1.0")
+        mock_run.return_value = MagicMock(returncode=0, stdout="ruff 0.1.0", stderr="")
         assert_that(get_tool_path("ruff")).is_equal_to("/usr/bin/ruff")
 
 
@@ -169,7 +169,7 @@ def test_get_unavailable_tools() -> None:
         patch("shutil.which", side_effect=mock_which),
         patch("subprocess.run") as mock_run,
     ):
-        mock_run.return_value = MagicMock(returncode=0, stdout="1.0.0")
+        mock_run.return_value = MagicMock(returncode=0, stdout="1.0.0", stderr="")
         unavailable = get_unavailable_tools()
         assert_that(unavailable).does_not_contain("ruff")
         assert_that(len(unavailable)).is_greater_than(0)
@@ -185,7 +185,7 @@ def test_get_available_tools() -> None:
         patch("shutil.which", side_effect=mock_which),
         patch("subprocess.run") as mock_run,
     ):
-        mock_run.return_value = MagicMock(returncode=0, stdout="1.0.0")
+        mock_run.return_value = MagicMock(returncode=0, stdout="1.0.0", stderr="")
         available = get_available_tools()
         assert_that(available).contains("ruff")
 
@@ -196,7 +196,7 @@ def test_format_tool_status_table() -> None:
         patch("shutil.which", return_value="/usr/bin/tool"),
         patch("subprocess.run") as mock_run,
     ):
-        mock_run.return_value = MagicMock(returncode=0, stdout="1.0.0")
+        mock_run.return_value = MagicMock(returncode=0, stdout="1.0.0", stderr="")
         table = format_tool_status_table()
         assert_that(table).contains("Tool Discovery Status")
 
@@ -207,7 +207,7 @@ def test_clear_discovery_cache() -> None:
         patch("shutil.which", return_value="/usr/bin/ruff") as mock_which,
         patch("subprocess.run") as mock_run,
     ):
-        mock_run.return_value = MagicMock(returncode=0, stdout="ruff 0.1.0")
+        mock_run.return_value = MagicMock(returncode=0, stdout="ruff 0.1.0", stderr="")
 
         discover_tool("ruff")
         initial_count = mock_which.call_count

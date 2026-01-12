@@ -62,15 +62,14 @@ def mock_fix_result() -> ToolResult:
     Returns:
         A ToolResult with fix counts set.
     """
-    result = ToolResult(
+    return ToolResult(
         name="test_tool",
         success=True,
         issues_count=0,
         output="Fixed",
+        fixed_issues_count=3,
+        remaining_issues_count=1,
     )
-    result.fixed_issues_count = 3
-    result.remaining_issues_count = 1
-    return result
 
 
 def test_handler_stores_output_format() -> None:
@@ -309,6 +308,34 @@ def test_writes_json_array_format(mock_tool_result: ToolResult) -> None:
         data = json.loads(content)
         assert_that(data).is_instance_of(list)
         assert_that(data[0]["tool"]).is_equal_to("test_tool")
+    finally:
+        Path(temp_path).unlink()
+
+
+def test_writes_multiple_json_array_results() -> None:
+    """Handler writes multiple results in JSON array format."""
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as f:
+        temp_path = f.name
+
+    try:
+        result1 = ToolResult(name="tool1", success=True, issues_count=0)
+        result2 = ToolResult(name="tool2", success=True, issues_count=1)
+
+        handler = StreamingResultHandler(
+            output_format="json",
+            action=Action.CHECK,
+            output_file=temp_path,
+        )
+        with handler:
+            handler.handle_result(result1)
+            handler.handle_result(result2)
+
+        content = Path(temp_path).read_text()
+        data = json.loads(content)
+        assert_that(data).is_instance_of(list)
+        assert_that(data).is_length(2)
+        assert_that(data[0]["tool"]).is_equal_to("tool1")
+        assert_that(data[1]["tool"]).is_equal_to("tool2")
     finally:
         Path(temp_path).unlink()
 
