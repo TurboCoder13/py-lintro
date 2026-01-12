@@ -45,7 +45,7 @@ jobs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -71,7 +71,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1.0.10
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@430918b0b426a2c64c675c56d90cd82ab20d59d7 # actions-v1.0.10
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
@@ -108,7 +108,7 @@ jobs:
         if: always()
         continue-on-error: true
         # Pin Codecov action to commit SHA containing pinned github-script usage
-        uses: codecov/codecov-action@96b38e9e60ee60a8c3911f4612407bba2f9195fb
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de
         with:
           files: coverage.xml
           flags: python-3.13
@@ -145,7 +145,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -164,7 +164,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Environment setup
         # yamllint disable-line rule:line-length
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1.0.10
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@430918b0b426a2c64c675c56d90cd82ab20d59d7 # actions-v1.0.10
       - name: Download coverage XML artifact (fallback for comment generation)
         if: always()
         continue-on-error: true
@@ -184,7 +184,7 @@ jobs:
           ./scripts/ci/github/coverage-pr-comment.sh
         # yamllint enable
       - name: Comment PR with coverage info
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@actions-v1.0.10
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@430918b0b426a2c64c675c56d90cd82ab20d59d7 # actions-v1.0.10
         with:
           file: coverage-pr-comment.txt
           marker: '<!-- coverage-report -->'

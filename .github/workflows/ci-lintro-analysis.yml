@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -57,7 +57,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Docker Buildx
         # yamllint disable-line rule:line-length
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
           driver: docker
       - name: Log in to GitHub Container Registry
@@ -68,7 +68,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Environment setup
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1.0.10
+        uses: TurboCoder13/py-lintro/.github/actions/setup-env@430918b0b426a2c64c675c56d90cd82ab20d59d7 # actions-v1.0.10
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BOOTSTRAP_SKIP_SYNC: '1'
@@ -112,7 +112,7 @@ jobs:
 
       - name: Comment PR with Lintro Results (merge-update)
         if: github.event_name == 'pull_request'
-        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@actions-v1.0.10
+        uses: TurboCoder13/py-lintro/.github/actions/post-pr-comment@430918b0b426a2c64c675c56d90cd82ab20d59d7 # actions-v1.0.10
         with:
           file: pr-comment.txt
           marker: '<!-- lintro-report -->'

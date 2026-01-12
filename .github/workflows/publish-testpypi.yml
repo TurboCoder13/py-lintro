@@ -13,11 +13,11 @@ permissions:
 
 jobs:
   quality:
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@actions-v1.0.10
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-quality.yml@430918b0b426a2c64c675c56d90cd82ab20d59d7 # actions-v1.0.10
 
   build:
     needs: quality
-    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@actions-v1.0.10
+    uses: TurboCoder13/py-lintro/.github/workflows/reusable-build.yml@430918b0b426a2c64c675c56d90cd82ab20d59d7 # actions-v1.0.10
 
   publish:
     name: Upload to TestPyPI
@@ -33,7 +33,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76
         with:
           egress-policy: 'block'
           allowed-endpoints: >

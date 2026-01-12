@@ -53,7 +53,7 @@ jobs:
       github.event.pull_request.draft == false
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -77,7 +77,7 @@ jobs:
           persist-credentials: true
       - name: Set up Docker Buildx
         # yamllint disable-line rule:line-length
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
       - name: Build Docker image
         # yamllint disable-line rule:line-length
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
@@ -112,7 +112,7 @@ jobs:
       cancel-in-progress: true
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -139,7 +139,7 @@ jobs:
           "Scoped permissions to packages:write via job-level permissions"
 
       - name: Setup Docker (Buildx + login)
-        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@actions-v1.0.10
+        uses: TurboCoder13/py-lintro/.github/actions/setup-docker@430918b0b426a2c64c675c56d90cd82ab20d59d7 # actions-v1.0.10
         with:
           login: 'true'
           registry: ghcr.io
