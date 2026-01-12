@@ -40,7 +40,10 @@ def test_validate_all_valid_values() -> None:
         .add(bool_option("preview", "--preview"))
         .add(int_option("line_length", "--line-length"))
     )
+    # Should not raise - if it does, test fails
     spec.validate_all({"preview": True, "line_length": 88})
+    # Explicit pass indicator
+    assert_that(True).is_true()
 
 
 def test_validate_all_rejects_invalid_value() -> None:

@@ -62,14 +62,14 @@ class DiscoveredTool:
         name: The canonical name of the tool (e.g., "ruff", "black").
         path: Full path to the tool executable, or empty string if not found.
         version: Version string if available, None otherwise.
-        available: True if the tool was found and is executable.
+        available: True if the tool was found and is executable, False by default.
         error_message: Error message if discovery failed, None otherwise.
     """
 
     name: str
     path: str = ""
     version: str | None = None
-    available: bool = True
+    available: bool = False
     error_message: str | None = None
 
 

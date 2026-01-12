@@ -378,7 +378,8 @@ def test_create_streaming_handler_with_action() -> None:
     assert_that(handler.action).is_equal_to(Action.FIX)
 
 
-def test_create_streaming_handler_with_output_file() -> None:
+def test_create_streaming_handler_with_output_file(tmp_path: Path) -> None:
     """Create handler with output file."""
-    handler = create_streaming_handler("json", Action.CHECK, "/tmp/output.json")
-    assert_that(handler.output_file).is_equal_to("/tmp/output.json")
+    output_file = tmp_path / "output.json"
+    handler = create_streaming_handler("json", Action.CHECK, str(output_file))
+    assert_that(handler.output_file).is_equal_to(str(output_file))

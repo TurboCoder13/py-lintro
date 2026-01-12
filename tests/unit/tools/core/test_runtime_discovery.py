@@ -225,4 +225,4 @@ def test_discovered_tool_default_values() -> None:
     assert_that(tool.name).is_equal_to("test")
     assert_that(tool.path).is_equal_to("")
     assert_that(tool.version).is_none()
-    assert_that(tool.available).is_true()
+    assert_that(tool.available).is_false()
