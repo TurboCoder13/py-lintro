@@ -160,6 +160,9 @@ packages = [
     "lintro.tools.implementations.pytest",
     "lintro.tools.implementations.ruff",
     "lintro.utils",
+    "lintro.utils.console",
+    "lintro.utils.execution",
+    "lintro.utils.output",
 ]
 
 [tool.semantic_release]
