@@ -4,6 +4,11 @@ This guide covers all configuration options for Lintro and the underlying tools 
 integrates. Learn how to customize behavior, set tool-specific options, and optimize
 Lintro for your project.
 
+> **TL;DR**: Lintro uses your existing tool configs (`.prettierrc`, `pyproject.toml`,
+> etc.) automatically. It only provides fallback defaults when no native config exists.
+> Use `enforce.line_length` to ensure consistent settings across all tools via CLI
+> injection.
+
 ## Configuration Model: 4-Tier System
 
 Lintro uses a clear 4-tier configuration model that separates concerns:
@@ -32,6 +37,8 @@ The configuration system works in a specific order:
    - `enabled_tools`: Empty list means all enabled tools run
    - `tool_order`: Controls execution order (priority, alphabetical, or custom)
    - `fail_fast`: Whether to stop on first tool failure
+   - `parallel`: Whether to run tools in parallel (default: `true`)
+   - `max_workers`: Maximum parallel workers, 1-32 (default: CPU count)
 
 2. **Enforce Tier** - Cross-cutting settings injected as CLI flags
    - These settings override native configs via CLI arguments
@@ -76,6 +83,8 @@ execution:
   enabled_tools: [] # Empty = all enabled tools run
   tool_order: priority # priority | alphabetical | [custom list]
   fail_fast: false
+  parallel: true # Run tools in parallel (default: true)
+  max_workers: 10 # Max parallel workers, 1-32 (default: CPU count)
 
 # Tier 2: ENFORCE - Cross-cutting settings injected via CLI flags
 # These OVERRIDE native configs for consistency
