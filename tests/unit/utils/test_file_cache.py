@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from assertpy import assert_that
 
 from lintro.utils.file_cache import (
@@ -86,6 +85,22 @@ def test_tool_cache_modified_file_returned(tmp_path: Path) -> None:
         path=str(temp_file),
         mtime=stat.st_mtime - 100,
         size=stat.st_size,
+    )
+    changed = cache.get_changed_files([str(temp_file)])
+    assert_that(changed).contains(str(temp_file))
+
+
+def test_tool_cache_size_changed_file_returned(tmp_path: Path) -> None:
+    """File in cache with different size returned as changed."""
+    temp_file = tmp_path / "test.py"
+    temp_file.write_text("test content")
+
+    stat = temp_file.stat()
+    cache = ToolCache(tool_name="test")
+    cache.fingerprints[str(temp_file)] = FileFingerprint(
+        path=str(temp_file),
+        mtime=stat.st_mtime,
+        size=stat.st_size + 100,  # Different size
     )
     changed = cache.get_changed_files([str(temp_file)])
     assert_that(changed).contains(str(temp_file))

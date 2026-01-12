@@ -105,7 +105,7 @@ def test_enum_option_rejects_invalid_choice() -> None:
 
 def test_required_option_validates_none() -> None:
     """Required option raises on None value."""
-    spec = OptionSpec(
+    spec: OptionSpec[str] = OptionSpec(
         name="required_opt",
         cli_flag="--required",
         option_type=OptionType.STR,
