@@ -35,9 +35,7 @@ lintro format .             # Fix issues
 lintro check --output-format grid   # Beautiful output
 ```
 
-<!-- Screenshot placeholder - add actual screenshot -->
 <!-- TODO: Add screenshot of grid output -->
-<!-- <img src="assets/images/lintro-cli-output.png" alt="Lintro CLI Output" width="800"> -->
 
 ## ✨ Why Lintro?
 
