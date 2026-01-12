@@ -128,13 +128,13 @@ def execute_ruff_check(
     format_issues_count: int = 0
     format_files: list[str] = []
     format_issues: list[RuffFormatIssue] = []
+    success_format: bool = True  # Default to True when format check is skipped
     if tool.options.get("format_check", False):
         format_cmd: list[str] = build_ruff_format_command(
             tool=tool,
             files=rel_files,
             check_only=True,
         )
-        success_format: bool
         output_format: str
         try:
             success_format, output_format = run_subprocess_with_timeout(
@@ -169,9 +169,9 @@ def execute_ruff_check(
         format_issues_count = len(normalized_files)
         format_issues = [RuffFormatIssue(file=file) for file in normalized_files]
 
-    # Combine results
+    # Combine results - respect subprocess exit codes and issue counts
     issues_count: int = lint_issues_count + format_issues_count
-    success: bool = issues_count == 0
+    success: bool = success_lint and success_format and (issues_count == 0)
 
     # Suppress narrative blocks; rely on standardized tables and summary lines
     output_summary: str | None = None
