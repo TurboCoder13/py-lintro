@@ -42,8 +42,8 @@ configuring, and contributing to Lintro.
 **Reference Documentation:**
 
 - **[Style Guide](style-guide.md)** - Coding standards and best practices
-- **[Coverage Setup](coverage-setup.md)** - Test coverage configuration reference
 - **[Self-Use Documentation](lintro-self-use.md)** - How Lintro uses itself
+- **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
 
 ## 🚀 Quick Links
 
@@ -59,6 +59,7 @@ configuring, and contributing to Lintro.
 | **Add new tool**        | [Contributing → How to Add a Tool](contributing.md#how-to-add-a-new-tool) |
 | **Project vision**      | [Architecture → Vision](architecture/VISION.md)                           |
 | **Development roadmap** | [Architecture → Roadmap](architecture/ROADMAP.md)                         |
+| **Troubleshooting**     | [Troubleshooting](troubleshooting.md)                                     |
 
 ### By Use Case
 

@@ -29,7 +29,6 @@ scripts/ci/
 │   └── semantic-release-helpers.sh
 ├── maintenance/         # System maintenance and automation
 │   ├── auto-tag-unified.sh
-│   ├── auto-version-actions.sh
 │   ├── bomctl-help-test.sh
 │   ├── codecov-upload.sh
 │   ├── configure-git-user.sh

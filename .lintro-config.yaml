@@ -14,6 +14,7 @@ execution:
   tool_order: 'priority'
   fail_fast: false
   parallel: true
+  max_workers: 10 # 1-32, defaults to CPU count if omitted
 
 # Fallback configurations for tools without native config files.
 # These are used when no native config (e.g., .prettierrc, .yamllint) is found.

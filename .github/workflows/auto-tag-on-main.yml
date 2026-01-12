@@ -63,8 +63,7 @@ jobs:
         run: scripts/ci/ci-log.sh "Not a release bump commit; skipping tag creation."
 
       - name: Environment setup
-        # yamllint disable-line rule:line-length
-        uses: TurboCoder13/py-lintro/.github/actions/setup-env@actions-v1.0.10
+        uses: ./.github/actions/setup-env
         with:
           python-version: '3.13'
         env:

@@ -47,7 +47,7 @@ pip install -e .
 
 ### Python Version
 
-Lintro requires **Python 3.13+**. This is a strict requirement - Lintro will not run on
+Lintro requires **Python 3.11+**. This is a strict requirement - Lintro will not run on
 older Python versions.
 
 ### Tool Dependencies
