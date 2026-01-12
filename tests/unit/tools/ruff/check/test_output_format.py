@@ -66,5 +66,7 @@ def test_execute_ruff_check_output_is_none_with_issues(
     ):
         result = execute_ruff_check(mock_ruff_tool, ["/test/project"])
 
+        # Verify failure when subprocess fails and issues are found
+        assert_that(result.success).is_false()
         # Output is suppressed - formatters handle the display
         assert_that(result.output).is_none()

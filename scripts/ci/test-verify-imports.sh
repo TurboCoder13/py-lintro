@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# test-verify-imports.sh - Verify critical package imports in installed lintro
-# Tests that the installed package can be imported and key submodules are accessible
+# test-verify-imports.sh - Verify ALL package imports in installed lintro
+# Tests that every package listed in pyproject.toml can be imported from
+# the built distribution. This catches packaging issues like missing packages
+# in the setuptools configuration.
 
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   cat <<'EOF'
-Verify critical imports from installed lintro package.
+Verify ALL package imports from installed lintro package.
 
 Usage:
   scripts/ci/test-verify-imports.sh [--help|-h] [PYTHON_BIN] [DISTRIBUTION_TYPE]
@@ -20,71 +22,108 @@ Environment Variables:
   TEST_VENV_PYTHON  Python executable path (overrides PYTHON_BIN arg)
 
 Verifies:
-  - Basic package import: lintro
-  - Parsers module: lintro.parsers
-  - Specific parser: lintro.parsers.bandit
-  - Tool implementations (wheel only): lintro.tools.implementations
-  - CLI module: lintro.cli
+  - All packages listed in pyproject.toml [tool.setuptools] packages
+  - CLI entry point functionality
+  - Plugin registry loading
 EOF
   exit 0
 fi
 
 PYTHON_BIN="${TEST_VENV_PYTHON:-${1:-test_venv/bin/python}}"
 DISTRIBUTION_TYPE="${2:-wheel}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 log_info() {
   echo "[test-verify-imports] $*"
+}
+
+log_error() {
+  echo "[test-verify-imports] ERROR: $*" >&2
 }
 
 log_info "Verifying imports with: $PYTHON_BIN"
 
 # Verify Python executable exists
 if [ ! -f "$PYTHON_BIN" ]; then
-  echo "[test-verify-imports] ERROR: Python executable not found at $PYTHON_BIN" >&2
+  log_error "Python executable not found at $PYTHON_BIN"
   exit 1
 fi
 
-# Test 1: Basic package import and version
-log_info "Test 1: Basic package import"
-if ! "$PYTHON_BIN" -c "import lintro; print(f'lintro {lintro.__version__}')"; then
-  echo "[test-verify-imports] ERROR: Failed to import lintro" >&2
+# Extract all packages from pyproject.toml
+log_info "Extracting packages from pyproject.toml..."
+PACKAGES=$("$PYTHON_BIN" -c "
+import tomllib
+from pathlib import Path
+
+pyproject = Path('$PROJECT_ROOT/pyproject.toml')
+with open(pyproject, 'rb') as f:
+    data = tomllib.load(f)
+
+packages = data.get('tool', {}).get('setuptools', {}).get('packages', [])
+for pkg in sorted(packages):
+    print(pkg)
+")
+
+if [ -z "$PACKAGES" ]; then
+  log_error "No packages found in pyproject.toml"
   exit 1
 fi
 
-# Test 2: Parsers module
-log_info "Test 2: Parsers module import"
-if ! "$PYTHON_BIN" -c "import lintro.parsers"; then
-  echo "[test-verify-imports] ERROR: Failed to import lintro.parsers" >&2
+# Count packages
+PACKAGE_COUNT=$(echo "$PACKAGES" | wc -l | tr -d ' ')
+log_info "Found $PACKAGE_COUNT packages to verify"
+
+# Test each package import
+FAILED_IMPORTS=()
+PASS_COUNT=0
+
+log_info "Testing all package imports..."
+while IFS= read -r package; do
+  if "$PYTHON_BIN" -c "import $package" 2>/dev/null; then
+    PASS_COUNT=$((PASS_COUNT + 1))
+  else
+    FAILED_IMPORTS+=("$package")
+    log_error "Failed to import: $package"
+  fi
+done <<< "$PACKAGES"
+
+# Report results
+log_info "Import results: $PASS_COUNT/$PACKAGE_COUNT packages imported successfully"
+
+if [ ${#FAILED_IMPORTS[@]} -gt 0 ]; then
+  log_error "The following packages failed to import:"
+  for pkg in "${FAILED_IMPORTS[@]}"; do
+    echo "  - $pkg" >&2
+  done
+  log_error "This usually means the package is missing from [tool.setuptools] packages in pyproject.toml"
   exit 1
 fi
 
-# Test 3: Specific parser (bandit)
-log_info "Test 3: Bandit parser import"
-if ! "$PYTHON_BIN" -c "from lintro.parsers import bandit"; then
-  echo "[test-verify-imports] ERROR: Failed to import lintro.parsers.bandit" >&2
+# Additional functional tests
+log_info "Running additional functional tests..."
+
+# Test CLI module entry point
+log_info "Testing CLI entry point..."
+if ! "$PYTHON_BIN" -c "from lintro.cli import cli; from lintro.cli import main"; then
+  log_error "Failed to import CLI entry points"
   exit 1
 fi
 
-# Test 4: Wheel-only tests (actionlint parser and tool)
+# Wheel-only tests (plugin registry)
 if [ "$DISTRIBUTION_TYPE" = "wheel" ] || [ "$DISTRIBUTION_TYPE" = "both" ]; then
-  log_info "Test 4: Actionlint parser import (wheel distribution)"
-  if ! "$PYTHON_BIN" -c "from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output"; then
-    echo "[test-verify-imports] ERROR: Failed to import actionlint_parser" >&2
-    exit 1
-  fi
-
-  log_info "Test 5: Actionlint tool via plugin registry (wheel distribution)"
-  if ! "$PYTHON_BIN" -c "from lintro.plugins.registry import ToolRegistry; from lintro.plugins.discovery import discover_all_tools; discover_all_tools(); ToolRegistry.get('actionlint')"; then
-    echo "[test-verify-imports] ERROR: Failed to load actionlint via ToolRegistry" >&2
+  log_info "Testing plugin registry (wheel distribution)..."
+  if ! "$PYTHON_BIN" -c "
+from lintro.plugins.registry import ToolRegistry
+from lintro.plugins.discovery import discover_all_tools
+discover_all_tools()
+# Verify at least some tools are registered
+tools = ToolRegistry.get_all()
+assert len(tools) > 0, 'No tools registered'
+"; then
+    log_error "Failed to load plugin registry"
     exit 1
   fi
 fi
 
-# Test 5/6: CLI module
-log_info "Test $([ "$DISTRIBUTION_TYPE" = "wheel" ] && echo 6 || echo 4): CLI module import"
-if ! "$PYTHON_BIN" -c "from lintro.cli import cli"; then
-  echo "[test-verify-imports] ERROR: Failed to import lintro.cli" >&2
-  exit 1
-fi
-
-log_info "All import tests passed ✅"
+log_info "All import tests passed ($PACKAGE_COUNT packages verified)"

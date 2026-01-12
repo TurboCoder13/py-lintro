@@ -39,6 +39,8 @@ def test_execute_ruff_check_parses_json_output_correctly(
     ):
         result = execute_ruff_check(mock_ruff_tool, ["/test/project"])
 
+        # Verify overall result reflects subprocess failure and issues found
+        assert_that(result.success).is_false()
         assert_that(result.issues_count).is_equal_to(2)
         assert_that(result.issues).is_not_none()
         assert_that(result.issues).is_length(2)
@@ -129,4 +131,6 @@ def test_execute_ruff_check_parses_format_check_output(
 
             result = execute_ruff_check(mock_ruff_tool, ["/test/project"])
 
+            # Format check subprocess failed, so overall result should be failure
+            assert_that(result.success).is_false()
             assert_that(result.issues_count).is_equal_to(2)
