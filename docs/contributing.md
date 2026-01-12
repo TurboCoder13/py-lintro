@@ -170,3 +170,75 @@ consistent UX and maintainable implementation.
 Expose native flags via `--tool-options tool:key=value` only after the core behavior is
 stable. Keep defaults minimal to avoid surprising users and to maintain parity with
 direct CLI behavior.
+
+---
+
+## Code Review Process
+
+All contributions go through code review:
+
+1. **Automated checks**: CI runs tests, linting, and security audits
+2. **Manual review**: A maintainer reviews code quality and design
+3. **Approval required**: At least one approval before merge
+4. **Squash merge**: PRs are squash-merged with the PR title as commit message
+
+### What reviewers look for
+
+- Code follows the [style guide](style-guide.md)
+- Tests cover new functionality
+- Documentation is updated if needed
+- No security vulnerabilities introduced
+- Commit messages follow Conventional Commits
+
+---
+
+## Local Development Commands
+
+### Run the test suite
+
+```bash
+# Run all tests
+./scripts/local/run-tests.sh
+
+# Run with coverage
+uv run pytest --cov=lintro --cov-report=term-missing
+
+# Run specific tests
+uv run pytest tests/unit/tools/ -v
+```
+
+### Run linting locally
+
+```bash
+# Full lintro check on the codebase
+./scripts/local/local-lintro.sh check --output-format grid
+
+# Format code
+./scripts/local/local-lintro.sh format
+
+# Run specific tools
+uv run ruff check .
+uv run mypy lintro/
+```
+
+### Build and test locally
+
+```bash
+# Install in development mode
+uv sync --dev
+
+# Build package
+uv run python -m build
+
+# Test the built package
+pip install dist/*.whl
+lintro --version
+```
+
+---
+
+## Additional Resources
+
+- [Style Guide](style-guide.md) - Code style and conventions
+- [Architecture](architecture/ARCHITECTURE.md) - System design and decisions
+- [Troubleshooting](troubleshooting.md) - Common issues and solutions
