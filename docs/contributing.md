@@ -194,6 +194,9 @@ All contributions go through code review:
 
 ## Local Development Commands
 
+> See [Quick Start](#quick-start) above for initial setup. This section covers
+> additional development workflows.
+
 ### Run the test suite
 
 ```bash
@@ -231,7 +234,7 @@ uv sync --dev
 uv run python -m build
 
 # Test the built package
-pip install dist/*.whl
+uv pip install dist/*.whl
 lintro --version
 ```
 

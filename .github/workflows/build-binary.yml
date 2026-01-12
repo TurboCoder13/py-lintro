@@ -21,23 +21,14 @@ permissions:
   contents: write
 
 jobs:
-  build-macos:
-    name: Build macOS Binary
-    runs-on: macos-latest
+  get-release-info:
+    name: Get Release Info
+    runs-on: ubuntu-latest
     # Only run on workflow_dispatch or successful workflow_run (skip actions-v* tags)
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
        !startsWith(github.event.workflow_run.head_branch, 'actions-v'))
-    strategy:
-      matrix:
-        arch: >-
-          ${{
-            github.event_name == 'workflow_dispatch' &&
-            github.event.inputs.arch != 'universal' &&
-            fromJSON(format('["{0}"]', github.event.inputs.arch)) ||
-            fromJSON('["arm64", "x86_64"]')
-          }}
     outputs:
       release_tag: ${{ steps.get-tag.outputs.tag }}
 
@@ -56,6 +47,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  build-macos:
+    name: Build macOS Binary
+    needs: get-release-info
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: >-
+          ${{
+            github.event_name == 'workflow_dispatch' &&
+            github.event.inputs.arch != 'universal' &&
+            fromJSON(format('["{0}"]', github.event.inputs.arch)) ||
+            fromJSON('["arm64", "x86_64"]')
+          }}
+
+    steps:
       - name: Harden Runner
         uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
         with:
@@ -133,17 +139,19 @@ jobs:
           retention-days: 7
 
       - name: Upload to release
-        if: github.event_name == 'workflow_run' && steps.get-tag.outputs.tag != ''
+        if: >-
+          github.event_name == 'workflow_run' &&
+          needs.get-release-info.outputs.release_tag != ''
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
-          tag_name: ${{ steps.get-tag.outputs.tag }}
+          tag_name: ${{ needs.get-release-info.outputs.release_tag }}
           files: dist/nuitka/lintro-macos-${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   create-universal-binary:
     name: Create Universal Binary
-    needs: build-macos
+    needs: [get-release-info, build-macos]
     runs-on: macos-latest
     if: >-
       github.event_name == 'workflow_run' ||
@@ -193,19 +201,23 @@ jobs:
           retention-days: 7
 
       - name: Upload to release
-        if: github.event_name == 'workflow_run' && needs.build-macos.outputs.release_tag != ''
+        if: >-
+          github.event_name == 'workflow_run' &&
+          needs.get-release-info.outputs.release_tag != ''
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
-          tag_name: ${{ needs.build-macos.outputs.release_tag }}
+          tag_name: ${{ needs.get-release-info.outputs.release_tag }}
           files: binaries/lintro-macos-universal
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   update-homebrew:
     name: Update Homebrew Formula
-    needs: [build-macos]
+    needs: [get-release-info, build-macos]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_run' && needs.build-macos.outputs.release_tag != ''
+    if: >-
+      github.event_name == 'workflow_run' &&
+      needs.get-release-info.outputs.release_tag != ''
 
     steps:
       - name: Harden Runner
@@ -244,7 +256,7 @@ jobs:
       - name: Extract version from tag
         id: version
         run: |
-          TAG="${{ needs.build-macos.outputs.release_tag }}"
+          TAG="${{ needs.get-release-info.outputs.release_tag }}"
           VERSION="${TAG#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
