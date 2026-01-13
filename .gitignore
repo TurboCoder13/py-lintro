@@ -332,3 +332,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .lintro/
+coverage.json

@@ -101,9 +101,11 @@ COPY --from=builder /root/.cargo /home/lintro/.cargo
 COPY --from=builder /root/.rustup /home/lintro/.rustup
 
 # Set Rust environment for lintro user and bun global install location
+# RUFF_CACHE_DIR set to /tmp to avoid permission issues with mounted volumes
 ENV CARGO_HOME=/home/lintro/.cargo \
     RUSTUP_HOME=/home/lintro/.rustup \
-    BUN_INSTALL=/opt/bun
+    BUN_INSTALL=/opt/bun \
+    RUFF_CACHE_DIR=/tmp/.ruff_cache
 
 # Create bunx symlink (bun acts as bunx when called by that name)
 RUN ln -sf /usr/local/bin/bun /usr/local/bin/bunx
