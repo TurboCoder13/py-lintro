@@ -7,6 +7,8 @@ import os
 import subprocess  # nosec B404 - subprocess used safely to execute ruff commands with controlled input
 from typing import TYPE_CHECKING
 
+from loguru import logger
+
 from lintro.parsers.ruff.ruff_format_issue import RuffFormatIssue
 from lintro.parsers.ruff.ruff_parser import (
     parse_ruff_format_check_output,
@@ -121,6 +123,13 @@ def execute_ruff_check(
             issues_count=timeout_result.issues_count,
             issues=timeout_result.issues,
         )
+
+    # Debug logging for CI diagnostics
+    logger.debug(f"ruff check command: {' '.join(cmd)}")
+    logger.debug(f"ruff check success: {success_lint}")
+    if not success_lint:
+        logger.warning(f"ruff check failed with output:\n{output_lint[:2000]}")
+
     lint_issues = parse_ruff_output(output=output_lint)
     lint_issues_count: int = len(lint_issues)
 
@@ -156,6 +165,15 @@ def execute_ruff_check(
                 issues_count=lint_issues_count + timeout_result.issues_count,
                 issues=lint_issues + timeout_result.issues,
             )
+
+        # Debug logging for CI diagnostics
+        logger.debug(f"ruff format --check command: {' '.join(format_cmd)}")
+        logger.debug(f"ruff format --check success: {success_format}")
+        if not success_format:
+            logger.warning(
+                f"ruff format check failed with output:\n{output_format[:2000]}",
+            )
+
         format_files = parse_ruff_format_check_output(output=output_format)
         # Normalize files to absolute paths to keep behavior consistent with
         # direct CLI calls and stabilize tests that compare exact paths.
@@ -172,6 +190,13 @@ def execute_ruff_check(
     # Combine results - respect subprocess exit codes and issue counts
     issues_count: int = lint_issues_count + format_issues_count
     success: bool = success_lint and success_format and (issues_count == 0)
+
+    # Diagnostic logging for the "ERROR" case (subprocess failed but no issues parsed)
+    if not success and issues_count == 0:
+        logger.warning(
+            f"ruff subprocess failed (lint={success_lint}, format={success_format}) "
+            f"but no issues were parsed - this indicates a ruff execution error",
+        )
 
     # Suppress narrative blocks; rely on standardized tables and summary lines
     output_summary: str | None = None
