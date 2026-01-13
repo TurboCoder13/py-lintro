@@ -12,6 +12,8 @@ import sys
 import threading
 from typing import TYPE_CHECKING
 
+from loguru import logger
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -138,6 +140,9 @@ def run_subprocess(
     """
     validate_subprocess_command(cmd)
 
+    cmd_str = " ".join(cmd[:5]) + ("..." if len(cmd) > 5 else "")
+    logger.debug(f"Running subprocess: {cmd_str} (timeout={timeout}s, cwd={cwd})")
+
     try:
         result = subprocess.run(  # nosec B603 - args list, shell=False
             cmd,
@@ -147,8 +152,18 @@ def run_subprocess(
             cwd=cwd,
             env=env,
         )
+
+        if result.returncode != 0:
+            stderr_preview = (result.stderr or "")[:500]
+            if stderr_preview:
+                logger.debug(
+                    f"Subprocess {cmd[0]} exited with code {result.returncode}, "
+                    f"stderr: {stderr_preview}",
+                )
+
         return result.returncode == 0, result.stdout + result.stderr
     except subprocess.TimeoutExpired as e:
+        logger.warning(f"Subprocess {cmd[0]} timed out after {timeout}s")
         # Preserve partial output from the original exception
         partial_output = ""
         if e.output:
@@ -170,6 +185,9 @@ def run_subprocess(
             output=partial_output,
         ) from e
     except FileNotFoundError as e:
+        logger.warning(
+            f"Command not found: {cmd[0]}. Ensure it is installed and in PATH.",
+        )
         raise FileNotFoundError(
             f"Command not found: {cmd[0]}. "
             f"Please ensure it is installed and in your PATH.",
@@ -207,6 +225,11 @@ def run_subprocess_streaming(
     """
     validate_subprocess_command(cmd)
 
+    cmd_str = " ".join(cmd[:5]) + ("..." if len(cmd) > 5 else "")
+    logger.debug(
+        f"Running subprocess (streaming): {cmd_str} (timeout={timeout}s, cwd={cwd})",
+    )
+
     try:
         # Use Popen for streaming output  # nosec B603
         process = subprocess.Popen(
@@ -237,6 +260,9 @@ def run_subprocess_streaming(
 
         if reader_thread.is_alive():
             # Timeout occurred during reading - kill the process
+            logger.warning(
+                f"Subprocess {cmd[0]} timed out after {timeout}s (reading output)",
+            )
             process.kill()
             # Brief timeout for cleanup; ignore if process doesn't die cleanly
             with contextlib.suppress(subprocess.TimeoutExpired):
@@ -251,6 +277,9 @@ def run_subprocess_streaming(
         try:
             returncode = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired as e:
+            logger.warning(
+                f"Subprocess {cmd[0]} timed out after {timeout}s (during wait)",
+            )
             process.kill()
             process.wait(timeout=1.0)
             raise subprocess.TimeoutExpired(
@@ -258,9 +287,21 @@ def run_subprocess_streaming(
                 timeout=timeout,
                 output="\n".join(output_lines),
             ) from e
+
+        if returncode != 0:
+            output_preview = "\n".join(output_lines)[:500]
+            if output_preview:
+                logger.debug(
+                    f"Subprocess {cmd[0]} exited with code {returncode}, "
+                    f"output: {output_preview}",
+                )
+
         return returncode == 0, "\n".join(output_lines)
 
     except FileNotFoundError as e:
+        logger.warning(
+            f"Command not found: {cmd[0]}. Ensure it is installed and in PATH.",
+        )
         raise FileNotFoundError(
             f"Command not found: {cmd[0]}. "
             f"Please ensure it is installed and in your PATH.",
