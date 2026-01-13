@@ -19,7 +19,6 @@ Example:
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 from lintro.enums.display_column import STANDARD_COLUMNS, DisplayColumn
 from lintro.enums.output_format import OutputFormat, normalize_output_format
@@ -27,8 +26,16 @@ from lintro.formatters.core.format_registry import TableDescriptor, get_style
 from lintro.parsers.base_issue import BaseIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
 
-if TYPE_CHECKING:
-    pass
+# Map DisplayColumn enum to row dict keys
+_COLUMN_KEY_MAP: dict[DisplayColumn, str] = {
+    DisplayColumn.FILE: "file",
+    DisplayColumn.LINE: "line",
+    DisplayColumn.COLUMN: "column",
+    DisplayColumn.CODE: "code",
+    DisplayColumn.MESSAGE: "message",
+    DisplayColumn.SEVERITY: "severity",
+    DisplayColumn.FIXABLE: "fixable",
+}
 
 
 class UnifiedTableDescriptor(TableDescriptor):
@@ -68,17 +75,6 @@ class UnifiedTableDescriptor(TableDescriptor):
         """
         rows: list[list[str]] = []
 
-        # Map DisplayColumn enum to row dict keys
-        column_key_map = {
-            DisplayColumn.FILE: "file",
-            DisplayColumn.LINE: "line",
-            DisplayColumn.COLUMN: "column",
-            DisplayColumn.CODE: "code",
-            DisplayColumn.MESSAGE: "message",
-            DisplayColumn.SEVERITY: "severity",
-            DisplayColumn.FIXABLE: "fixable",
-        }
-
         for issue in issues:
             display_data = issue.to_display_row()
 
@@ -90,7 +86,7 @@ class UnifiedTableDescriptor(TableDescriptor):
 
             row = []
             for col in self._columns:
-                key = column_key_map.get(col, str(col).lower())
+                key = _COLUMN_KEY_MAP.get(col, str(col).lower())
                 value = display_data.get(key, "")
                 row.append(str(value) if value else "")
 

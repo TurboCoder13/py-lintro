@@ -13,9 +13,9 @@ class RuffFormatIssue(BaseIssue):
 
     Attributes:
         file: File path that would be reformatted.
-        code: Always "FORMAT" for format issues.
-        message: Always "Would reformat file" for format issues.
-        fixable: Always True since format issues are auto-fixable by fmt.
+        code: Defaults to "FORMAT" for format issues.
+        message: Defaults to "Would reformat file" for format issues.
+        fixable: Defaults to True since format issues are auto-fixable by fmt.
     """
 
     # file is inherited from BaseIssue

@@ -54,6 +54,9 @@ def _load_json_config(config_path: Path) -> dict[str, Any]:
     except FileNotFoundError:
         logger.debug(f"Config file not found: {config_path}")
         return {}
+    except OSError as e:
+        logger.debug(f"Could not read config file {config_path}: {e}")
+        return {}
 
 
 def _strip_jsonc_comments(content: str) -> str:
@@ -226,6 +229,8 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                 )
             except FileNotFoundError:
                 logger.debug("package.json not found")
+            except OSError as e:
+                logger.debug(f"Could not read package.json: {e}")
         return {}
 
     # Biome: check config files
@@ -249,6 +254,8 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                 )
             except FileNotFoundError:
                 logger.debug(f"Biome config not found: {config_file}")
+            except OSError as e:
+                logger.debug(f"Could not read Biome config {config_file}: {e}")
         return {}
 
     # Markdownlint: check config files
@@ -274,6 +281,8 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                     )
                 except FileNotFoundError:
                     logger.debug(f"Markdownlint config not found: {config_file}")
+                except OSError as e:
+                    logger.debug(f"Could not read markdownlint config: {e}")
 
             # Handle YAML files
             elif config_file.endswith((".yaml", ".yml")):

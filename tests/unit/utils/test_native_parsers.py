@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import mock_open, patch
 
 import pytest
 from assertpy import assert_that
@@ -95,9 +95,6 @@ def test_load_yamllint_config_yaml_error_logs_warning() -> None:
         patch("lintro.utils.native_parsers.yaml") as mock_yaml,
         patch("lintro.utils.native_parsers.logger") as mock_logger,
     ):
-        mock_yaml.safe_load.side_effect = MagicMock(
-            side_effect=Exception("YAML parse error"),
-        )
         # Make yaml.YAMLError available for isinstance check
         mock_yaml.YAMLError = type("YAMLError", (Exception,), {})
         mock_yaml.safe_load.side_effect = mock_yaml.YAMLError("bad yaml")

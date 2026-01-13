@@ -93,7 +93,7 @@ def test_format_issues_with_ruff_issue_contains_issue_data() -> None:
 
 
 def test_format_issues_shows_fixable_status() -> None:
-    """Verify Fixable column shows Yes/No for fixable status."""
+    """Verify Fixable column shows Yes for fixable=True status."""
     issues = [
         RuffIssue(
             file="src/main.py",
@@ -109,6 +109,26 @@ def test_format_issues_shows_fixable_status() -> None:
 
     assert_that(result).contains("Fixable")
     assert_that(result).contains("Yes")
+
+
+def test_format_issues_shows_non_fixable_status() -> None:
+    """Verify Fixable column is empty for fixable=False status."""
+    issues = [
+        RuffIssue(
+            file="src/main.py",
+            line=10,
+            column=5,
+            code="D100",
+            message="missing docstring",
+            fixable=False,
+        ),
+    ]
+
+    result = format_issues(issues, output_format="grid")
+
+    assert_that(result).contains("Fixable")
+    # Non-fixable issues show empty string, not "Yes"
+    assert_that(result).does_not_contain("Yes")
 
 
 def test_format_issues_shows_severity() -> None:
@@ -371,8 +391,17 @@ def test_format_issues_with_sections_without_grouping() -> None:
             severity="error",
             fixable=True,
         ),
+        BanditIssue(
+            file="test.py",
+            line=1,
+            col_offset=1,
+            test_id="B101",
+            issue_text="test",
+            issue_severity="LOW",
+            issue_confidence="HIGH",
+        ),
     ],
-    ids=["ruff", "black", "ruff_format", "biome"],
+    ids=["ruff", "black", "ruff_format", "biome", "bandit"],
 )
 def test_all_tool_issues_produce_tables_with_standard_columns(issue: BaseIssue) -> None:
     """Verify all tool issue types produce tables with standard columns.

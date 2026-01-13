@@ -203,7 +203,7 @@ def test_permission_fallback_uses_temp_dir(temp_output_dir: str) -> None:
 
             # Should have fallen back to temp directory
             assert_that(str(om.run_dir).startswith(str(restricted_path))).is_false()
-            assert_that("lintro" in str(om.run_dir)).is_true()
+            assert_that(str(om.run_dir).startswith(tempfile.gettempdir())).is_true()
 
             # Warning should have been logged
             mock_logger.warning.assert_called_once()
