@@ -1,4 +1,4 @@
-"""Tests for output truncation in execute_ruff_check."""
+"""Tests for output logging in execute_ruff_check."""
 
 from __future__ import annotations
 
@@ -9,13 +9,14 @@ from assertpy import assert_that
 from lintro.tools.implementations.ruff.check import execute_ruff_check
 
 
-def test_check_failure_truncates_long_output_in_warning(
+def test_check_failure_logs_output_to_debug_only(
     mock_ruff_tool: MagicMock,
 ) -> None:
-    """Verify long check output is truncated in warning log.
+    """Verify check output is logged to debug only, not warning.
 
-    When ruff check fails with output > 2000 chars, the warning should show
-    truncated output with a note about seeing debug.log for full output.
+    When ruff check fails (exit code non-zero due to issues found),
+    the raw JSON output should only be logged at debug level since
+    it is already parsed and displayed as a formatted table.
 
     Args:
         mock_ruff_tool: Mock RuffTool instance for testing.
@@ -40,22 +41,31 @@ def test_check_failure_truncates_long_output_in_warning(
     ):
         execute_ruff_check(mock_ruff_tool, ["/test/project"])
 
-        # Verify warning was called with truncated message
-        mock_logger.warning.assert_called()
-        warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
-        truncation_logged = any("1000 more chars" in call for call in warning_calls)
-        assert_that(truncation_logged).described_as(
-            f"Expected truncation message in warning calls: {warning_calls}",
+        # Verify full output was logged to debug
+        debug_calls = [str(call) for call in mock_logger.debug.call_args_list]
+        full_output_logged = any("check full output" in call for call in debug_calls)
+        assert_that(full_output_logged).described_as(
+            f"Expected full output in debug calls: {debug_calls}",
         ).is_true()
 
+        # Verify no truncation warning was logged (raw JSON should not appear in console)
+        warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
+        truncation_warning = any(
+            "check failed with output" in call for call in warning_calls
+        )
+        assert_that(truncation_warning).described_as(
+            f"Did not expect 'check failed with output' warning: {warning_calls}",
+        ).is_false()
 
-def test_format_check_failure_truncates_long_output_in_warning(
+
+def test_format_check_failure_logs_output_to_debug_only(
     mock_ruff_tool: MagicMock,
 ) -> None:
-    """Verify long format check output is truncated in warning log.
+    """Verify format check output is logged to debug only, not warning.
 
-    When ruff format --check fails with output > 2000 chars, the warning should
-    show truncated output with a note about seeing debug.log for full output.
+    When ruff format --check fails (exit code non-zero due to formatting issues),
+    the output should only be logged at debug level since it is already
+    parsed and displayed as a formatted table.
 
     Args:
         mock_ruff_tool: Mock RuffTool instance for testing.
@@ -91,28 +101,36 @@ def test_format_check_failure_truncates_long_output_in_warning(
 
         execute_ruff_check(mock_ruff_tool, ["/test/project"])
 
-        # Verify warning was called with truncated message
-        mock_logger.warning.assert_called()
-        warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
-        truncation_logged = any("more chars" in call for call in warning_calls)
-        assert_that(truncation_logged).described_as(
-            f"Expected truncation message in warning calls: {warning_calls}",
+        # Verify full output was logged to debug
+        debug_calls = [str(call) for call in mock_logger.debug.call_args_list]
+        full_output_logged = any(
+            "format check full output" in call for call in debug_calls
+        )
+        assert_that(full_output_logged).described_as(
+            f"Expected full output in debug calls: {debug_calls}",
         ).is_true()
 
+        # Verify no truncation warning was logged
+        warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
+        truncation_warning = any(
+            "format check failed with output" in call for call in warning_calls
+        )
+        assert_that(truncation_warning).described_as(
+            f"Did not expect 'format check failed with output' warning: {warning_calls}",
+        ).is_false()
 
-def test_check_failure_does_not_truncate_short_output(
+
+def test_check_success_does_not_log_output(
     mock_ruff_tool: MagicMock,
 ) -> None:
-    """Verify short check output is not truncated in warning log.
+    """Verify successful check does not log output unnecessarily.
 
-    When ruff check fails with output < 2000 chars, the warning should show
-    the full output without any truncation message.
+    When ruff check succeeds (no issues), there should be no output
+    logged to debug since there's nothing to report.
 
     Args:
         mock_ruff_tool: Mock RuffTool instance for testing.
     """
-    short_output = "Error: something went wrong"
-
     with (
         patch(
             "lintro.tools.implementations.ruff.check.walk_files_with_excludes",
@@ -120,7 +138,7 @@ def test_check_failure_does_not_truncate_short_output(
         ),
         patch(
             "lintro.tools.implementations.ruff.check.run_subprocess_with_timeout",
-            return_value=(False, short_output),
+            return_value=(True, "[]"),
         ),
         patch(
             "lintro.tools.implementations.ruff.check.parse_ruff_output",
@@ -130,10 +148,9 @@ def test_check_failure_does_not_truncate_short_output(
     ):
         execute_ruff_check(mock_ruff_tool, ["/test/project"])
 
-        # Verify warning was called without truncation message
-        mock_logger.warning.assert_called()
-        warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
-        truncation_logged = any("more chars" in call for call in warning_calls)
-        assert_that(truncation_logged).described_as(
-            f"Did not expect truncation message: {warning_calls}",
+        # Verify no "check full output" logged when success
+        debug_calls = [str(call) for call in mock_logger.debug.call_args_list]
+        full_output_logged = any("check full output" in call for call in debug_calls)
+        assert_that(full_output_logged).described_as(
+            f"Did not expect 'check full output' on success: {debug_calls}",
         ).is_false()
