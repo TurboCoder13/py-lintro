@@ -303,7 +303,7 @@ class MypyPlugin(BaseToolPlugin):
                 issues_count=0,
             )
 
-        logger.debug("Mypy discovered {} python file(s)", len(ctx.files))
+        logger.debug("[mypy] Discovered {} python file(s)", len(ctx.files))
 
         # Set config file if discovered
         if not self.options.get("config_file") and config_path:
@@ -314,7 +314,7 @@ class MypyPlugin(BaseToolPlugin):
             )
 
         cmd = self._build_command(files=ctx.rel_files)
-        logger.debug("Running mypy with cwd={} and cmd={}", ctx.cwd, cmd)
+        logger.debug("[mypy] Running with cwd={} and cmd={}", ctx.cwd, cmd)
 
         try:
             success, output = self._run_subprocess(
