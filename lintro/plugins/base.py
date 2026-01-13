@@ -25,6 +25,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from loguru import logger
+
 from lintro.config.lintro_config import LintroConfig
 from lintro.models.core.tool_result import ToolResult
 from lintro.plugins.execution_preparation import (
@@ -372,6 +374,8 @@ class BaseToolPlugin(ABC):
             cmd = self._build_command(ctx.rel_files)
             success, output = self._run_subprocess(cmd, cwd=ctx.cwd)
         """
+        logger.debug(f"[{self.name}] Preparing execution for {len(paths)} input paths")
+
         result = prepare_execution(
             paths=paths,
             options=options,
@@ -383,13 +387,19 @@ class BaseToolPlugin(ABC):
         )
 
         if "early_result" in result:
-            return ExecutionContext(early_result=result["early_result"])
+            early_result = result["early_result"]
+            logger.debug(f"[{self.name}] Early exit: {early_result.output}")
+            return ExecutionContext(early_result=early_result)
+
+        files = result.get("files", [])
+        timeout = result.get("timeout", DEFAULT_TIMEOUT)
+        logger.debug(f"[{self.name}] Ready: {len(files)} files, timeout={timeout}s")
 
         return ExecutionContext(
-            files=result.get("files", []),
+            files=files,
             rel_files=result.get("rel_files", []),
             cwd=result.get("cwd"),
-            timeout=result.get("timeout", DEFAULT_TIMEOUT),
+            timeout=timeout,
         )
 
     def _get_executable_command(self, tool_name: str) -> list[str]:

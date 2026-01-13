@@ -318,6 +318,7 @@ class BanditPlugin(BaseToolPlugin):
             return ctx.early_result  # type: ignore[return-value]
 
         cmd: list[str] = self._build_check_command(files=ctx.rel_files)
+        logger.debug(f"[bandit] Running: {' '.join(cmd[:10])}... (cwd={ctx.cwd})")
 
         output: str
         execution_failure: bool = False

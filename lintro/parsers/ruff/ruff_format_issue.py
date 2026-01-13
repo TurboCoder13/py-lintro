@@ -1,6 +1,6 @@
 """Model for ruff formatting issues."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from lintro.parsers.base_issue import BaseIssue
 
@@ -13,6 +13,12 @@ class RuffFormatIssue(BaseIssue):
 
     Attributes:
         file: File path that would be reformatted.
+        code: Defaults to "FORMAT" for format issues.
+        message: Defaults to "Would reformat file" for format issues.
+        fixable: Defaults to True since format issues are auto-fixable by fmt.
     """
 
     # file is inherited from BaseIssue
+    code: str = field(default="FORMAT")
+    message: str = field(default="Would reformat file")
+    fixable: bool = field(default=True)

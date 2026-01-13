@@ -45,7 +45,17 @@ def _load_json_config(config_path: Path) -> dict[str, Any]:
         with config_path.open(encoding="utf-8") as f:
             loaded = json.load(f)
             return loaded if isinstance(loaded, dict) else {}
-    except (json.JSONDecodeError, FileNotFoundError):
+    except json.JSONDecodeError as e:
+        logger.warning(
+            f"Failed to parse JSON config {config_path}: {e.msg} "
+            f"(line {e.lineno}, col {e.colno})",
+        )
+        return {}
+    except FileNotFoundError:
+        logger.debug(f"Config file not found: {config_path}")
+        return {}
+    except OSError as e:
+        logger.debug(f"Could not read config file {config_path}: {e}")
         return {}
 
 
@@ -186,8 +196,12 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                     with config_path.open(encoding="utf-8") as f:
                         content = yaml.safe_load(f)
                         return content if isinstance(content, dict) else {}
-                except (yaml.YAMLError, OSError) as e:
-                    logger.debug(f"[UnifiedConfig] Failed to parse {config_file}: {e}")
+                except yaml.YAMLError as e:
+                    logger.warning(
+                        f"Failed to parse yamllint config {config_file}: {e}",
+                    )
+                except OSError as e:
+                    logger.debug(f"Could not read yamllint config {config_file}: {e}")
         return {}
 
     # Prettier: check multiple config file formats
@@ -208,11 +222,15 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                     if isinstance(pkg, dict) and "prettier" in pkg:
                         prettier_cfg = pkg.get("prettier", {})
                         return prettier_cfg if isinstance(prettier_cfg, dict) else {}
-            except (json.JSONDecodeError, FileNotFoundError) as e:
-                logger.debug(
-                    "[UnifiedConfig] Failed to parse prettier config "
-                    f"from package.json: {e}",
+            except json.JSONDecodeError as e:
+                logger.warning(
+                    f"Failed to parse prettier config from package.json: {e.msg} "
+                    f"(line {e.lineno}, col {e.colno})",
                 )
+            except FileNotFoundError:
+                logger.debug("package.json not found")
+            except OSError as e:
+                logger.debug(f"Could not read package.json: {e}")
         return {}
 
     # Biome: check config files
@@ -229,10 +247,15 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                     content = _strip_jsonc_comments(content)
                 loaded = json.loads(content)
                 return loaded if isinstance(loaded, dict) else {}
-            except (json.JSONDecodeError, FileNotFoundError) as e:
-                logger.debug(
-                    f"[UnifiedConfig] Failed to parse {config_file}: {e}",
+            except json.JSONDecodeError as e:
+                logger.warning(
+                    f"Failed to parse Biome config {config_file}: {e.msg} "
+                    f"(line {e.lineno}, col {e.colno})",
                 )
+            except FileNotFoundError:
+                logger.debug(f"Biome config not found: {config_file}")
+            except OSError as e:
+                logger.debug(f"Could not read Biome config {config_file}: {e}")
         return {}
 
     # Markdownlint: check config files
@@ -251,10 +274,15 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                         content = _strip_jsonc_comments(content)
                         loaded = json.loads(content)
                         return loaded if isinstance(loaded, dict) else {}
-                except (json.JSONDecodeError, FileNotFoundError) as e:
-                    logger.debug(
-                        f"[UnifiedConfig] Failed to parse {config_file}: {e}",
+                except json.JSONDecodeError as e:
+                    logger.warning(
+                        f"Failed to parse markdownlint config {config_file}: {e.msg} "
+                        f"(line {e.lineno}, col {e.colno})",
                     )
+                except FileNotFoundError:
+                    logger.debug(f"Markdownlint config not found: {config_file}")
+                except OSError as e:
+                    logger.debug(f"Could not read markdownlint config: {e}")
 
             # Handle YAML files
             elif config_file.endswith((".yaml", ".yml")):
@@ -276,10 +304,14 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                             content = content[0]
                         if isinstance(content, dict):
                             return content
-                except (yaml.YAMLError, OSError, UnicodeDecodeError) as e:
-                    # Continue to next config file if this one fails to parse
+                except yaml.YAMLError as e:
+                    logger.warning(
+                        f"Failed to parse markdownlint config {config_path}: {e}",
+                    )
+                except (OSError, UnicodeDecodeError) as e:
                     logger.debug(
-                        f"Failed to parse {config_path}: {type(e).__name__}: {e}",
+                        f"Could not read markdownlint config {config_path}: "
+                        f"{type(e).__name__}: {e}",
                     )
         return {}
 

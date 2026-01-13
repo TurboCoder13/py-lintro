@@ -125,10 +125,12 @@ def execute_ruff_check(
         )
 
     # Debug logging for CI diagnostics
-    logger.debug(f"ruff check command: {' '.join(cmd)}")
-    logger.debug(f"ruff check success: {success_lint}")
+    logger.debug(f"[ruff] check command: {' '.join(cmd)}")
+    logger.debug(f"[ruff] check success: {success_lint}")
     if not success_lint:
-        logger.warning(f"ruff check failed with output:\n{output_lint[:2000]}")
+        # Log full output to debug file only - raw JSON output is parsed and
+        # formatted into tables, so no need to show it in console warnings
+        logger.debug(f"[ruff] check full output:\n{output_lint}")
 
     lint_issues = parse_ruff_output(output=output_lint)
     lint_issues_count: int = len(lint_issues)
@@ -167,12 +169,12 @@ def execute_ruff_check(
             )
 
         # Debug logging for CI diagnostics
-        logger.debug(f"ruff format --check command: {' '.join(format_cmd)}")
-        logger.debug(f"ruff format --check success: {success_format}")
+        logger.debug(f"[ruff] format --check command: {' '.join(format_cmd)}")
+        logger.debug(f"[ruff] format --check success: {success_format}")
         if not success_format:
-            logger.warning(
-                f"ruff format check failed with output:\n{output_format[:2000]}",
-            )
+            # Log full output to debug file only - output is parsed and
+            # formatted into tables, so no need to show it in console warnings
+            logger.debug(f"[ruff] format check full output:\n{output_format}")
 
         format_files = parse_ruff_format_check_output(output=output_format)
         # Normalize files to absolute paths to keep behavior consistent with

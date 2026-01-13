@@ -5,12 +5,11 @@ tool's issues by using the BaseIssue.to_display_row() method.
 """
 
 # Base classes and utilities
+from lintro.enums.display_column import STANDARD_COLUMNS, DisplayColumn
 from lintro.formatters.core.format_registry import OutputStyle, TableDescriptor
 
 # Unified formatter - the preferred way to format issues
 from lintro.formatters.formatter import (
-    EXTENDED_COLUMNS,
-    STANDARD_COLUMNS,
     UnifiedTableDescriptor,
     format_issues,
     format_issues_with_sections,
@@ -24,7 +23,7 @@ __all__ = [
     "format_tool_result",
     "UnifiedTableDescriptor",
     "STANDARD_COLUMNS",
-    "EXTENDED_COLUMNS",
+    "DisplayColumn",
     # Base classes
     "TableDescriptor",
     "OutputStyle",

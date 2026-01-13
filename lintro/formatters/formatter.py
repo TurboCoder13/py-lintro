@@ -19,22 +19,23 @@ Example:
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
+from lintro.enums.display_column import STANDARD_COLUMNS, DisplayColumn
 from lintro.enums.output_format import OutputFormat, normalize_output_format
 from lintro.formatters.core.format_registry import TableDescriptor, get_style
 from lintro.parsers.base_issue import BaseIssue
 from lintro.utils.path_utils import normalize_file_path_for_display
 
-if TYPE_CHECKING:
-    pass
-
-
-# Standard columns for display (basic)
-STANDARD_COLUMNS = ["File", "Line", "Col", "Code", "Message"]
-
-# Extended columns including severity and fixable status
-EXTENDED_COLUMNS = ["File", "Line", "Col", "Code", "Severity", "Fixable", "Message"]
+# Map DisplayColumn enum to row dict keys
+_COLUMN_KEY_MAP: dict[DisplayColumn, str] = {
+    DisplayColumn.FILE: "file",
+    DisplayColumn.LINE: "line",
+    DisplayColumn.COLUMN: "column",
+    DisplayColumn.CODE: "code",
+    DisplayColumn.MESSAGE: "message",
+    DisplayColumn.SEVERITY: "severity",
+    DisplayColumn.FIXABLE: "fixable",
+}
 
 
 class UnifiedTableDescriptor(TableDescriptor):
@@ -46,27 +47,14 @@ class UnifiedTableDescriptor(TableDescriptor):
 
     def __init__(
         self,
-        columns: list[str] | None = None,
-        *,
-        include_severity: bool = False,
-        include_fixable: bool = False,
+        columns: list[DisplayColumn] | None = None,
     ) -> None:
         """Initialize the descriptor.
 
         Args:
-            columns: Custom column list, or None to use defaults.
-            include_severity: Include severity column.
-            include_fixable: Include fixable column.
+            columns: Custom column list, or None to use STANDARD_COLUMNS.
         """
-        if columns is not None:
-            self._columns = columns
-        elif include_severity or include_fixable:
-            self._columns = EXTENDED_COLUMNS
-        else:
-            self._columns = STANDARD_COLUMNS
-
-        self._include_severity = include_severity
-        self._include_fixable = include_fixable
+        self._columns = columns if columns is not None else STANDARD_COLUMNS
 
     def get_columns(self) -> list[str]:
         """Return the column names.
@@ -74,7 +62,7 @@ class UnifiedTableDescriptor(TableDescriptor):
         Returns:
             List of column header names.
         """
-        return self._columns
+        return [str(col) for col in self._columns]
 
     def get_rows(self, issues: Sequence[BaseIssue]) -> list[list[str]]:
         """Extract row data from issues using to_display_row().
@@ -87,18 +75,6 @@ class UnifiedTableDescriptor(TableDescriptor):
         """
         rows: list[list[str]] = []
 
-        # Map column names to row dict keys
-        column_key_map = {
-            "File": "file",
-            "Line": "line",
-            "Col": "column",
-            "Column": "column",
-            "Code": "code",
-            "Message": "message",
-            "Severity": "severity",
-            "Fixable": "fixable",
-        }
-
         for issue in issues:
             display_data = issue.to_display_row()
 
@@ -110,7 +86,7 @@ class UnifiedTableDescriptor(TableDescriptor):
 
             row = []
             for col in self._columns:
-                key = column_key_map.get(col, col.lower())
+                key = _COLUMN_KEY_MAP.get(col, str(col).lower())
                 value = display_data.get(key, "")
                 row.append(str(value) if value else "")
 
@@ -123,10 +99,8 @@ def format_issues(
     issues: Sequence[BaseIssue],
     output_format: OutputFormat | str = OutputFormat.GRID,
     *,
-    columns: list[str] | None = None,
+    columns: list[DisplayColumn] | None = None,
     tool_name: str | None = None,
-    include_severity: bool = False,
-    include_fixable: bool = False,
 ) -> str:
     """Format any issues using unified display.
 
@@ -138,8 +112,6 @@ def format_issues(
         output_format: Output format (grid, json, plain, etc.).
         columns: Custom column list (defaults to STANDARD_COLUMNS).
         tool_name: Tool name for JSON output.
-        include_severity: Include severity column in output.
-        include_fixable: Include fixable column in output.
 
     Returns:
         Formatted string.
@@ -152,11 +124,7 @@ def format_issues(
         return "No issues found."
 
     normalized_format = normalize_output_format(output_format)
-    descriptor = UnifiedTableDescriptor(
-        columns=columns,
-        include_severity=include_severity,
-        include_fixable=include_fixable,
-    )
+    descriptor = UnifiedTableDescriptor(columns=columns)
 
     style = get_style(normalized_format)
     cols = descriptor.get_columns()
@@ -205,7 +173,6 @@ def format_issues_with_sections(
             issues,
             output_format=normalized_format,
             tool_name=tool_name,
-            include_fixable=group_by_fixable,
         )
 
     # Partition issues by fixable status
@@ -239,7 +206,6 @@ def format_tool_result(
     issues: Sequence[BaseIssue],
     output_format: OutputFormat | str = OutputFormat.GRID,
     *,
-    include_severity: bool = False,
     group_by_fixable: bool = False,
 ) -> str:
     """Format a tool's results with appropriate sections and metadata.
@@ -251,7 +217,6 @@ def format_tool_result(
         tool_name: Name of the tool.
         issues: List of issues from the tool.
         output_format: Output format.
-        include_severity: Include severity column.
         group_by_fixable: Group by fixable status.
 
     Returns:
@@ -269,5 +234,4 @@ def format_tool_result(
         issues,
         output_format=output_format,
         tool_name=tool_name,
-        include_severity=include_severity,
     )

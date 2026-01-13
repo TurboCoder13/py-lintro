@@ -112,8 +112,13 @@ def _load_pyproject_fallback() -> tuple[dict[str, Any], Path | None]:
                 with pyproject_path.open("rb") as f:
                     data = tomllib.load(f)
                 return data.get("tool", {}).get("lintro", {}), pyproject_path
-            except (OSError, tomllib.TOMLDecodeError) as e:
-                logger.debug(f"Failed to load pyproject.toml: {e}")
+            except tomllib.TOMLDecodeError as e:
+                logger.warning(
+                    f"Failed to parse pyproject.toml at {pyproject_path}: {e}",
+                )
+                return {}, None
+            except OSError as e:
+                logger.debug(f"Could not read pyproject.toml at {pyproject_path}: {e}")
                 return {}, None
 
         # Move up one directory

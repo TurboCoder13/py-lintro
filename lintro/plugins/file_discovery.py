@@ -105,6 +105,9 @@ def discover_files(
         )
         progress.update(task, description=f"Found {len(files)} files")
 
+    logger.debug(
+        f"File discovery: {len(files)} files matching {definition.file_patterns}",
+    )
     return files
 
 
