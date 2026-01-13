@@ -194,6 +194,9 @@ def prepare_execution(
         definition.default_timeout,
     )
 
+    logger.debug(
+        f"Prepared execution: {len(files)} files, cwd={cwd}, timeout={timeout}s",
+    )
     return {
         "files": files,
         "rel_files": rel_files,
