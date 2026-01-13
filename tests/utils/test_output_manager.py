@@ -170,3 +170,44 @@ def test_write_reports_from_results(temp_output_dir: str) -> None:
     assert_that(reader[0][:2]).is_equal_to(["tool", "issues_count"])
     assert_that(any("tool1" in row for row in reader)).is_true()
     assert_that(any("foo.py" in row for row in reader)).is_true()
+
+
+def test_permission_fallback_uses_temp_dir(temp_output_dir: str) -> None:
+    """Verify PermissionError falls back to temp directory with warning.
+
+    When OutputManager cannot write to the base directory, it should fall back
+    to a temp directory and log a warning.
+
+    Args:
+        temp_output_dir: Temporary directory fixture for test output.
+    """
+    from unittest.mock import patch
+
+    # Create a restricted directory path
+    restricted_path = Path(temp_output_dir) / "restricted"
+
+    with patch("lintro.utils.output.manager.logger") as mock_logger:
+        # Patch mkdir to raise PermissionError on first call, succeed on second
+        original_mkdir = Path.mkdir
+
+        call_count = [0]
+
+        def mock_mkdir(self: Path, *args: Any, **kwargs: Any) -> None:
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise PermissionError("Permission denied")
+            return original_mkdir(self, *args, **kwargs)
+
+        with patch.object(Path, "mkdir", mock_mkdir):
+            om = OutputManager(base_dir=str(restricted_path))
+
+            # Should have fallen back to temp directory
+            assert_that(str(om.run_dir).startswith(str(restricted_path))).is_false()
+            assert_that("lintro" in str(om.run_dir)).is_true()
+
+            # Warning should have been logged
+            mock_logger.warning.assert_called_once()
+            warning_msg = mock_logger.warning.call_args[0][0]
+            assert_that(warning_msg).contains("Cannot write to")
+            assert_that(warning_msg).contains("permission denied")
+            assert_that(warning_msg).contains("using fallback")
