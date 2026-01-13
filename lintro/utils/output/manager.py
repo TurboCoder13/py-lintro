@@ -15,6 +15,8 @@ import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from loguru import logger
+
 from lintro.utils.output.constants import (
     DEFAULT_BASE_DIR,
     DEFAULT_KEEP_LAST,
@@ -70,6 +72,10 @@ class OutputManager:
             temp_base: Path = Path(tempfile.gettempdir()) / DEFAULT_TEMP_PREFIX
             run_dir = temp_base / f"{DEFAULT_RUN_PREFIX}{timestamp}"
             run_dir.mkdir(parents=True, exist_ok=True)
+            logger.warning(
+                f"Cannot write to {self.base_dir} (permission denied), "
+                f"using fallback: {run_dir}",
+            )
         return run_dir
 
     def write_console_log(
