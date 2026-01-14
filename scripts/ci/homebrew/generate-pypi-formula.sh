@@ -18,8 +18,7 @@ Arguments:
   output-file  Path to write the formula (e.g., Formula/lintro.rb)
 
 Requirements:
-  - Python 3.x with pip
-  - homebrew-pypi-poet (pip install homebrew-pypi-poet)
+  - Python 3.x with pip and venv
 
 Examples:
   generate-pypi-formula.sh 1.0.0 Formula/lintro.rb
@@ -50,17 +49,19 @@ fi
 log_info "Tarball URL: ${TARBALL_URL}"
 log_info "Tarball SHA256: ${TARBALL_SHA}"
 
-# Generate resources with poet
-if ! command -v poet &> /dev/null; then
-    log_error "poet not found. Install with: pip install homebrew-pypi-poet"
-    exit 1
-fi
+# Create temporary directories (cleaned up on exit)
+POET_VENV=$(mktemp -d)
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$POET_VENV" "$TMPDIR"' EXIT
 
-log_info "Installing lintro==${VERSION} for poet dependency analysis..."
-pip install "lintro==${VERSION}" --quiet
+log_info "Creating temporary venv for poet analysis..."
+python3 -m venv "$POET_VENV"
+
+log_info "Installing lintro==${VERSION} and poet in temporary venv..."
+"$POET_VENV/bin/pip" install --quiet "lintro==${VERSION}" homebrew-pypi-poet
 
 log_info "Generating resources with poet..."
-POET_OUTPUT=$(poet lintro 2>/dev/null)
+POET_OUTPUT=$("$POET_VENV/bin/poet" lintro 2>/dev/null)
 
 # Build exclusion pattern for packages we handle specially
 EXCLUDE_PATTERN="lintro"
@@ -84,10 +85,7 @@ if [[ "$RESOURCE_COUNT" -lt 5 ]]; then
 fi
 log_info "Generated ${RESOURCE_COUNT} resource stanzas from poet"
 
-# Create temp files for resources
-TMPDIR=$(mktemp -d)
-trap "rm -rf $TMPDIR" EXIT
-
+# Write resources to temp files
 echo "$RESOURCES" > "$TMPDIR/poet_resources.txt"
 
 # Generate wheel resources for packages that can't build from source

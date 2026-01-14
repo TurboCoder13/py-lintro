@@ -28,7 +28,16 @@ def generate_universal_resource(
     wheel: WheelInfo,
     comment: str,
 ) -> str:
-    """Generate Homebrew resource stanza for universal wheel."""
+    """Generate Homebrew resource stanza for universal wheel.
+
+    Args:
+        package: Package name.
+        wheel: Wheel information containing URL and SHA256.
+        comment: Comment to add above the resource stanza.
+
+    Returns:
+        Homebrew resource stanza as a string.
+    """
     return f"""  # {comment}
   resource "{package}" do
     url "{wheel.url}"
@@ -42,7 +51,17 @@ def generate_platform_resource(
     intel_wheel: WheelInfo,
     comment: str,
 ) -> str:
-    """Generate Homebrew resource stanza for platform-specific wheels."""
+    """Generate Homebrew resource stanza for platform-specific wheels.
+
+    Args:
+        package: Package name.
+        arm_wheel: Wheel information for ARM64 architecture.
+        intel_wheel: Wheel information for x86_64 architecture.
+        comment: Comment to add above the resource stanza.
+
+    Returns:
+        Homebrew resource stanza as a string.
+    """
     return f"""  # {comment}
   resource "{package}" do
     on_arm do

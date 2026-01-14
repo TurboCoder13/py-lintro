@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Render Homebrew formula from template.
+r"""Render Homebrew formula from template.
 
 Usage:
-    python3 render_formula.py \\
-        --tarball-url "https://..." \\
-        --tarball-sha "abc123" \\
-        --poet-resources poet_output.txt \\
-        --darglint-resource darglint.txt \\
-        --pydantic-resource pydantic.txt \\
+    python3 render_formula.py \
+        --tarball-url "https://..." \
+        --tarball-sha "abc123" \
+        --poet-resources poet_output.txt \
+        --darglint-resource darglint.txt \
+        --pydantic-resource pydantic.txt \
         --output Formula/lintro.rb
 """
 
@@ -17,7 +17,14 @@ from pathlib import Path
 
 
 def read_file_content(path: str) -> str:
-    """Read content from file or stdin if path is '-'."""
+    """Read content from file or stdin if path is '-'.
+
+    Args:
+        path: File path or '-' for stdin.
+
+    Returns:
+        File content as a string.
+    """
     if path == "-":
         return sys.stdin.read()
     return Path(path).read_text()
@@ -69,6 +76,21 @@ def main() -> None:
 
     # Read template
     template = Path(args.template).read_text()
+
+    # Validate all placeholders exist in template
+    placeholders = [
+        "{{TARBALL_URL}}",
+        "{{TARBALL_SHA}}",
+        "{{POET_RESOURCES}}",
+        "{{DARGLINT_RESOURCE}}",
+        "{{PYDANTIC_CORE_RESOURCE}}",
+    ]
+    for placeholder in placeholders:
+        if placeholder not in template:
+            print(
+                f"Warning: Placeholder {placeholder} not found in template",
+                file=sys.stderr,
+            )
 
     # Read resources
     poet_resources = read_file_content(args.poet_resources)

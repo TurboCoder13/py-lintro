@@ -45,7 +45,8 @@ class Lintro < Formula
     # Install pydantic_core wheel (requires special handling due to Rust build)
     resource("pydantic_core").stage do
       wheel = Pathname.pwd.children.find { |f| f.extname == ".whl" }
-      system "python3.13", "-m", "pip", "--python=#{libexec}/bin/python",
+      odie "pydantic_core wheel not found in staged resource" if wheel.nil?
+      system libexec/"bin/python", "-m", "pip",
              "install", "--no-deps", "--ignore-installed", wheel.to_s
     end
 

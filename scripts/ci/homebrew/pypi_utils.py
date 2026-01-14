@@ -4,7 +4,10 @@
 import json
 import sys
 import urllib.request
-from typing import NamedTuple
+from typing import Any, NamedTuple
+
+# PyPI API base URL (only https is allowed)
+PYPI_BASE_URL = "https://pypi.org/pypi"
 
 
 class PackageInfo(NamedTuple):
@@ -22,7 +25,10 @@ class WheelInfo(NamedTuple):
     sha256: str
 
 
-def fetch_pypi_json(package: str, version: str | None = None) -> dict:
+def fetch_pypi_json(
+    package: str,
+    version: str | None = None,
+) -> dict[str, Any]:
     """Fetch package JSON from PyPI.
 
     Args:
@@ -31,18 +37,16 @@ def fetch_pypi_json(package: str, version: str | None = None) -> dict:
 
     Returns:
         PyPI JSON response as dictionary.
-
-    Raises:
-        SystemExit: If the request fails.
     """
     if version:
-        url = f"https://pypi.org/pypi/{package}/{version}/json"
+        url = f"{PYPI_BASE_URL}/{package}/{version}/json"
     else:
-        url = f"https://pypi.org/pypi/{package}/json"
+        url = f"{PYPI_BASE_URL}/{package}/json"
 
     try:
-        with urllib.request.urlopen(url, timeout=30) as response:
-            return json.load(response)
+        with urllib.request.urlopen(url, timeout=30) as response:  # nosec B310
+            result: dict[str, Any] = json.load(response)
+            return result
     except Exception as e:
         print(f"Error fetching {url}: {e}", file=sys.stderr)
         sys.exit(1)
@@ -58,10 +62,11 @@ def get_latest_version(package: str) -> str:
         Latest version string.
     """
     data = fetch_pypi_json(package)
-    return data["info"]["version"]
+    version: str = data["info"]["version"]
+    return version
 
 
-def get_sdist_info(data: dict) -> PackageInfo:
+def get_sdist_info(data: dict[str, Any]) -> PackageInfo:
     """Extract source distribution info from PyPI JSON.
 
     Args:
@@ -69,9 +74,6 @@ def get_sdist_info(data: dict) -> PackageInfo:
 
     Returns:
         PackageInfo with version, tarball URL, and SHA256.
-
-    Raises:
-        SystemExit: If no sdist is found.
     """
     version = data["info"]["version"]
     for url_info in data.get("urls", []):
@@ -86,7 +88,7 @@ def get_sdist_info(data: dict) -> PackageInfo:
     sys.exit(1)
 
 
-def find_universal_wheel(data: dict) -> WheelInfo | None:
+def find_universal_wheel(data: dict[str, Any]) -> WheelInfo | None:
     """Find a universal wheel (py3-none-any).
 
     Args:
@@ -104,19 +106,25 @@ def find_universal_wheel(data: dict) -> WheelInfo | None:
     return None
 
 
-def find_macos_wheel(data: dict, arch: str) -> WheelInfo | None:
+def find_macos_wheel(
+    data: dict[str, Any],
+    arch: str,
+    python_version: str = "313",
+) -> WheelInfo | None:
     """Find a macOS wheel for specific architecture.
 
     Args:
         data: PyPI JSON response.
         arch: Architecture string (e.g., "arm64", "x86_64").
+        python_version: Python version without dots (e.g., "313" for 3.13).
 
     Returns:
         WheelInfo if found, None otherwise.
     """
+    cpython_tag = f"cp{python_version}-cp{python_version}"
     for url_info in data.get("urls", []):
         filename = url_info.get("filename", "")
-        if "cp313-cp313-macosx" in filename and arch in filename:
+        if f"{cpython_tag}-macosx" in filename and arch in filename:
             return WheelInfo(
                 url=url_info["url"],
                 sha256=url_info["digests"]["sha256"],
