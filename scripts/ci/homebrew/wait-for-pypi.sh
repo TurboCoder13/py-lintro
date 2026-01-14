@@ -33,6 +33,18 @@ DELAY_SECONDS="${4:-10}"
 
 PYPI_URL="https://pypi.org/pypi/${PACKAGE_NAME}/${VERSION}/json"
 
+# Check if sdist is available in the PyPI response
+# Uses jq for robust JSON parsing if available, falls back to grep
+has_sdist() {
+    local response="$1"
+    if command -v jq &>/dev/null; then
+        echo "$response" | jq -e '.urls[] | select(.packagetype == "sdist")' &>/dev/null
+    else
+        # Pattern handles both pretty-printed and compact JSON
+        echo "$response" | grep -E -q '"packagetype"[[:space:]]*:[[:space:]]*"sdist"'
+    fi
+}
+
 log_info "Waiting for ${PACKAGE_NAME} ${VERSION} to be available on PyPI..."
 log_info "URL: ${PYPI_URL}"
 
@@ -47,7 +59,7 @@ for i in $(seq 1 "$MAX_ATTEMPTS"); do
 
     # Check that the sdist (source distribution) is available, not just metadata
     # This prevents race conditions where metadata exists but files aren't indexed
-    if echo "$RESPONSE" | grep -q '"packagetype": "sdist"'; then
+    if has_sdist "$RESPONSE"; then
         log_success "Package ${PACKAGE_NAME} ${VERSION} is available on PyPI (sdist confirmed)"
         exit 0
     fi
