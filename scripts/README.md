@@ -130,6 +130,10 @@ Scripts for generating and updating Homebrew formulas.
 | `wait-for-pypi.sh`           | Poll PyPI until package version is available | `./scripts/ci/homebrew/wait-for-pypi.sh lintro 1.0.0`      |
 | `generate-pypi-formula.sh`   | Generate lintro.rb formula from PyPI         | `./scripts/ci/homebrew/generate-pypi-formula.sh 1.0.0 out` |
 | `generate-binary-formula.sh` | Generate lintro-bin.rb formula for binaries  | `./scripts/ci/homebrew/generate-binary-formula.sh ...`     |
+| `pypi_utils.py`              | Shared PyPI API utilities module             | Imported by other Python scripts                           |
+| `fetch_package_info.py`      | Fetch package tarball info from PyPI         | `python3 fetch_package_info.py lintro 1.0.0`               |
+| `fetch_wheel_info.py`        | Fetch wheel info and generate resource stanzas | `python3 fetch_wheel_info.py darglint --type universal`  |
+| `render_formula.py`          | Render Homebrew formula from template        | `python3 render_formula.py --tarball-url ... -o out.rb`    |
 
 ### 🐳 Docker Scripts (`docker/`)
 
