@@ -15,7 +15,12 @@ Usage:
 import argparse
 import sys
 
-from pypi_utils import WheelInfo, fetch_pypi_json, find_macos_wheel, find_universal_wheel
+from pypi_utils import (
+    WheelInfo,
+    fetch_pypi_json,
+    find_macos_wheel,
+    find_universal_wheel,
+)
 
 
 def generate_universal_resource(
