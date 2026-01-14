@@ -1,61 +1,34 @@
 #!/usr/bin/env python3
-"""Fetch wheel information from PyPI for Homebrew formula generation."""
+"""Fetch wheel information from PyPI for Homebrew formula generation.
+
+Generates Homebrew resource stanzas for packages that require wheel installation
+(e.g., packages that need Rust/maturin or poetry to build from source).
+
+Usage:
+    # Universal wheel (py3-none-any)
+    python3 fetch_wheel_info.py darglint --type universal
+
+    # Platform-specific wheels (macos arm64/x86_64)
+    python3 fetch_wheel_info.py pydantic_core --type platform
+"""
 
 import argparse
-import json
 import sys
-import urllib.request
-from typing import NamedTuple
+
+from pypi_utils import WheelInfo, fetch_pypi_json, find_macos_wheel, find_universal_wheel
 
 
-class WheelInfo(NamedTuple):
-    """Information about a wheel file."""
-
-    url: str
-    sha256: str
-
-
-def fetch_pypi_json(package: str) -> dict:
-    """Fetch package JSON from PyPI."""
-    url = f"https://pypi.org/pypi/{package}/json"
-    try:
-        with urllib.request.urlopen(url, timeout=30) as response:
-            return json.load(response)
-    except Exception as e:
-        print(f"Error fetching {url}: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-def find_universal_wheel(data: dict) -> WheelInfo | None:
-    """Find a universal wheel (py3-none-any)."""
-    for url_info in data.get("urls", []):
-        if "py3-none-any.whl" in url_info.get("filename", ""):
-            return WheelInfo(
-                url=url_info["url"],
-                sha256=url_info["digests"]["sha256"],
-            )
-    return None
-
-
-def find_macos_wheel(data: dict, arch: str) -> WheelInfo | None:
-    """Find a macOS wheel for specific architecture."""
-    for url_info in data.get("urls", []):
-        filename = url_info.get("filename", "")
-        if "cp313-cp313-macosx" in filename and arch in filename:
-            return WheelInfo(
-                url=url_info["url"],
-                sha256=url_info["digests"]["sha256"],
-            )
-    return None
-
-
-def generate_universal_resource(package: str, wheel: WheelInfo, comment: str) -> str:
+def generate_universal_resource(
+    package: str,
+    wheel: WheelInfo,
+    comment: str,
+) -> str:
     """Generate Homebrew resource stanza for universal wheel."""
-    return f'''  # {comment}
+    return f"""  # {comment}
   resource "{package}" do
     url "{wheel.url}"
     sha256 "{wheel.sha256}"
-  end'''
+  end"""
 
 
 def generate_platform_resource(
@@ -65,7 +38,7 @@ def generate_platform_resource(
     comment: str,
 ) -> str:
     """Generate Homebrew resource stanza for platform-specific wheels."""
-    return f'''  # {comment}
+    return f"""  # {comment}
   resource "{package}" do
     on_arm do
       url "{arm_wheel.url}"
@@ -75,7 +48,7 @@ def generate_platform_resource(
       url "{intel_wheel.url}"
       sha256 "{intel_wheel.sha256}"
     end
-  end'''
+  end"""
 
 
 def main() -> None:
@@ -100,7 +73,10 @@ def main() -> None:
     if args.type == "universal":
         wheel = find_universal_wheel(data)
         if not wheel:
-            print(f"Error: No universal wheel found for {args.package}", file=sys.stderr)
+            print(
+                f"Error: No universal wheel found for {args.package}",
+                file=sys.stderr,
+            )
             sys.exit(1)
         comment = args.comment or f"{args.package} - using wheel"
         print(generate_universal_resource(args.package, wheel, comment))

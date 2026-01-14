@@ -30,38 +30,20 @@ fi
 VERSION="${1:?Version is required}"
 OUTPUT_FILE="${2:?Output file is required}"
 
-log_info "Generating lintro formula for version ${VERSION}"
-
 # Packages that require special handling (can't build from source in Homebrew)
-# darglint: requires poetry to build
-# pydantic_core: requires Rust/maturin to build
 WHEEL_PACKAGES=("darglint" "pydantic_core")
 
 # Packages available as Homebrew formulae (use depends_on instead of bundling)
 HOMEBREW_PACKAGES=("bandit" "black" "mypy" "ruff" "yamllint")
 
-# Fetch package info from PyPI
-PYPI_URL="https://pypi.org/pypi/lintro/${VERSION}/json"
-log_info "Fetching package info from: ${PYPI_URL}"
+log_info "Generating lintro formula for version ${VERSION}"
 
-PYPI_JSON=$(curl -sf "$PYPI_URL")
-if [[ -z "$PYPI_JSON" ]]; then
-    log_error "Failed to fetch package info from PyPI"
-    exit 1
-fi
-
-# Extract tarball URL and SHA256 using Python
-read -r TARBALL_URL TARBALL_SHA < <(echo "$PYPI_JSON" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-for url in data['urls']:
-    if url['packagetype'] == 'sdist':
-        print(url['url'], url['digests']['sha256'])
-        break
-")
+# Fetch package info using Python helper
+log_info "Fetching package info from PyPI..."
+read -r TARBALL_URL TARBALL_SHA < <(python3 "$SCRIPT_DIR/fetch_package_info.py" lintro "$VERSION")
 
 if [[ -z "$TARBALL_URL" ]] || [[ -z "$TARBALL_SHA" ]]; then
-    log_error "Failed to extract tarball URL or SHA256"
+    log_error "Failed to fetch tarball info from PyPI"
     exit 1
 fi
 
@@ -102,112 +84,39 @@ if [[ "$RESOURCE_COUNT" -lt 5 ]]; then
 fi
 log_info "Generated ${RESOURCE_COUNT} resource stanzas from poet"
 
+# Create temp files for resources
+TMPDIR=$(mktemp -d)
+trap "rm -rf $TMPDIR" EXIT
+
+echo "$RESOURCES" > "$TMPDIR/poet_resources.txt"
+
 # Generate wheel resources for packages that can't build from source
 log_info "Generating wheel resources for special packages..."
 
-DARGLINT_RESOURCE=$(python3 "${SCRIPT_DIR}/fetch_wheel_info.py" darglint \
+python3 "$SCRIPT_DIR/fetch_wheel_info.py" darglint \
     --type universal \
-    --comment "darglint requires poetry to build - use wheel") || {
+    --comment "darglint requires poetry to build - use wheel" \
+    > "$TMPDIR/darglint.txt" || {
     log_error "Failed to fetch darglint wheel info"
     exit 1
 }
 
-PYDANTIC_CORE_RESOURCE=$(python3 "${SCRIPT_DIR}/fetch_wheel_info.py" pydantic_core \
+python3 "$SCRIPT_DIR/fetch_wheel_info.py" pydantic_core \
     --type platform \
-    --comment "pydantic_core requires Rust to build - use platform-specific wheels") || {
+    --comment "pydantic_core requires Rust to build - use platform-specific wheels" \
+    > "$TMPDIR/pydantic.txt" || {
     log_error "Failed to fetch pydantic_core wheel info"
     exit 1
 }
 
-log_info "Writing formula to ${OUTPUT_FILE}..."
-
-# Generate the formula
-cat > "$OUTPUT_FILE" << EOF
-# typed: strict
-# frozen_string_literal: true
-
-# Homebrew formula for lintro
-# CLI tools (ruff, black, mypy, bandit) are installed as Homebrew dependencies
-# Python libraries are bundled as resources
-class Lintro < Formula
-  include Language::Python::Virtualenv
-
-  desc "Unified CLI tool for code formatting, linting, and quality assurance"
-  homepage "https://github.com/TurboCoder13/py-lintro"
-  url "${TARBALL_URL}"
-  sha256 "${TARBALL_SHA}"
-  license "MIT"
-
-  livecheck do
-    url :stable
-    strategy :pypi
-  end
-
-  # CLI tools installed via Homebrew
-  depends_on "actionlint"
-  depends_on "bandit"
-  depends_on "black"
-  depends_on "hadolint"
-  depends_on "mypy"
-  depends_on "prettier"
-  depends_on "python@3.13"
-  depends_on "ruff"
-  depends_on "yamllint"
-
-  # Pure Python library dependencies
-${RESOURCES}
-${DARGLINT_RESOURCE}
-
-${PYDANTIC_CORE_RESOURCE}
-
-  def install
-    venv = virtualenv_create(libexec, "python3.13")
-
-    # Install other resources first (this sets up pip in the venv)
-    other_resources = resources.reject { |r| r.name == "pydantic_core" }
-    venv.pip_install other_resources
-
-    # Install pydantic_core wheel (requires special handling due to Rust build)
-    resource("pydantic_core").stage do
-      wheel = Pathname.pwd.children.find { |f| f.extname == ".whl" }
-      system "python3.13", "-m", "pip", "--python=#{libexec}/bin/python",
-             "install", "--no-deps", "--ignore-installed", wheel.to_s
-    end
-
-    # Install lintro itself
-    venv.pip_install_and_link buildpath
-  end
-
-  def caveats
-    <<~EOS
-      Lintro is now installed!
-
-      Included tools (installed via Homebrew):
-        - ruff - Python linter and formatter
-        - black - Python code formatter
-        - mypy - Python type checker
-        - bandit - Python security linter
-        - hadolint - Dockerfile linter
-        - actionlint - GitHub Actions workflow linter
-        - prettier - Code formatter
-        - yamllint - YAML linter
-
-      Bundled tools:
-        - darglint - Python docstring linter
-
-      Get started:
-        lintro check          # Check files for issues
-        lintro format         # Auto-fix issues
-        lintro list-tools     # View available tools
-
-      Documentation: https://github.com/TurboCoder13/py-lintro/tree/main/docs
-    EOS
-  end
-
-  test do
-    assert_match version.to_s, shell_output("\#{bin}/lintro --version")
-  end
-end
-EOF
+# Render formula from template
+log_info "Rendering formula template..."
+python3 "$SCRIPT_DIR/render_formula.py" \
+    --tarball-url "$TARBALL_URL" \
+    --tarball-sha "$TARBALL_SHA" \
+    --poet-resources "$TMPDIR/poet_resources.txt" \
+    --darglint-resource "$TMPDIR/darglint.txt" \
+    --pydantic-resource "$TMPDIR/pydantic.txt" \
+    --output "$OUTPUT_FILE"
 
 log_success "Formula written to ${OUTPUT_FILE}"
