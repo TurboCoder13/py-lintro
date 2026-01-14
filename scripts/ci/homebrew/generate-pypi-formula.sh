@@ -18,8 +18,7 @@ Arguments:
   output-file  Path to write the formula (e.g., Formula/lintro.rb)
 
 Requirements:
-  - Python 3.x with pip
-  - homebrew-pypi-poet (pip install homebrew-pypi-poet)
+  - Python 3.x with pip and venv
 
 Examples:
   generate-pypi-formula.sh 1.0.0 Formula/lintro.rb
@@ -30,114 +29,92 @@ fi
 VERSION="${1:?Version is required}"
 OUTPUT_FILE="${2:?Output file is required}"
 
+# Packages that require special handling (can't build from source in Homebrew)
+WHEEL_PACKAGES=("darglint" "pydantic_core")
+
+# Packages available as Homebrew formulae (use depends_on instead of bundling)
+HOMEBREW_PACKAGES=("bandit" "black" "mypy" "ruff" "yamllint")
+
 log_info "Generating lintro formula for version ${VERSION}"
 
-# Fetch package info from PyPI
-PYPI_URL="https://pypi.org/pypi/lintro/${VERSION}/json"
-log_info "Fetching package info from: ${PYPI_URL}"
-
-PYPI_JSON=$(curl -sf "$PYPI_URL")
-if [[ -z "$PYPI_JSON" ]]; then
-    log_error "Failed to fetch package info from PyPI"
-    exit 1
-fi
-
-# Extract tarball URL and SHA256
-TARBALL_URL=$(echo "$PYPI_JSON" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-for url in data['urls']:
-    if url['packagetype'] == 'sdist':
-        print(url['url'])
-        break
-")
-
-TARBALL_SHA=$(echo "$PYPI_JSON" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-for url in data['urls']:
-    if url['packagetype'] == 'sdist':
-        print(url['digests']['sha256'])
-        break
-")
+# Fetch package info using Python helper
+log_info "Fetching package info from PyPI..."
+read -r TARBALL_URL TARBALL_SHA < <(python3 "$SCRIPT_DIR/fetch_package_info.py" lintro "$VERSION")
 
 if [[ -z "$TARBALL_URL" ]] || [[ -z "$TARBALL_SHA" ]]; then
-    log_error "Failed to extract tarball URL or SHA256"
+    log_error "Failed to fetch tarball info from PyPI"
     exit 1
 fi
 
 log_info "Tarball URL: ${TARBALL_URL}"
 log_info "Tarball SHA256: ${TARBALL_SHA}"
 
-# Generate resources with poet (if available)
-RESOURCES=""
-if command -v poet &> /dev/null; then
-    log_info "Generating resources with poet..."
-    RESOURCES=$(poet lintro 2>/dev/null || echo "")
-else
-    log_warning "poet not found, skipping resource generation"
+# Create temporary directories (cleaned up on exit)
+POET_VENV=$(mktemp -d)
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$POET_VENV" "$TMPDIR"' EXIT
+
+log_info "Creating temporary venv for poet analysis..."
+python3 -m venv "$POET_VENV"
+
+log_info "Installing lintro==${VERSION} and poet in temporary venv..."
+"$POET_VENV/bin/pip" install --quiet "lintro==${VERSION}" homebrew-pypi-poet
+
+log_info "Generating resources with poet..."
+POET_OUTPUT=$("$POET_VENV/bin/poet" lintro 2>/dev/null)
+
+# Build exclusion pattern for packages we handle specially
+EXCLUDE_PATTERN="lintro"
+for pkg in "${WHEEL_PACKAGES[@]}" "${HOMEBREW_PACKAGES[@]}"; do
+    EXCLUDE_PATTERN="${EXCLUDE_PATTERN}|${pkg}"
+done
+
+# Remove excluded packages and clean up formatting
+RESOURCES=$(echo "$POET_OUTPUT" | awk -v pattern="$EXCLUDE_PATTERN" '
+    $0 ~ "resource \"(" pattern ")\"" { skip=1; next }
+    skip && /^  end$/ { skip=0; getline; next }
+    !skip { print }
+' | cat -s)
+
+# Validate resources were generated
+RESOURCE_COUNT=$(echo "$RESOURCES" | grep -c "^  resource " || echo "0")
+if [[ "$RESOURCE_COUNT" -lt 5 ]]; then
+    log_error "Expected multiple resource stanzas but only found ${RESOURCE_COUNT}"
+    log_error "poet may have failed to analyze dependencies."
+    exit 1
 fi
+log_info "Generated ${RESOURCE_COUNT} resource stanzas from poet"
 
-# Generate the formula
-cat > "$OUTPUT_FILE" << EOF
-# typed: false
-# frozen_string_literal: true
+# Write resources to temp files
+echo "$RESOURCES" > "$TMPDIR/poet_resources.txt"
 
-# Homebrew formula for lintro - auto-generated on release
-# Manual edits will be overwritten on next release
-class Lintro < Formula
-  include Language::Python::Virtualenv
+# Generate wheel resources for packages that can't build from source
+log_info "Generating wheel resources for special packages..."
 
-  desc "Unified CLI tool for code formatting, linting, and quality assurance"
-  homepage "https://github.com/TurboCoder13/py-lintro"
-  url "${TARBALL_URL}"
-  sha256 "${TARBALL_SHA}"
-  license "MIT"
+python3 "$SCRIPT_DIR/fetch_wheel_info.py" darglint \
+    --type universal \
+    --comment "darglint requires poetry to build - use wheel" \
+    > "$TMPDIR/darglint.txt" || {
+    log_error "Failed to fetch darglint wheel info"
+    exit 1
+}
 
-  livecheck do
-    url :stable
-    strategy :pypi
-  end
+python3 "$SCRIPT_DIR/fetch_wheel_info.py" pydantic_core \
+    --type platform \
+    --comment "pydantic_core requires Rust to build - use platform-specific wheels" \
+    > "$TMPDIR/pydantic.txt" || {
+    log_error "Failed to fetch pydantic_core wheel info"
+    exit 1
+}
 
-  depends_on "actionlint"
-  depends_on "hadolint"
-  depends_on "prettier"
-  depends_on "python@3.13"
-  depends_on "ruff"
-
-${RESOURCES}
-
-  def install
-    virtualenv_install_with_resources
-  end
-
-  def caveats
-    <<~EOS
-      Lintro is now installed!
-
-      Included tools:
-        - ruff - Python linter and formatter
-        - hadolint - Dockerfile linter
-        - actionlint - GitHub Actions workflow linter
-        - prettier - Code formatter
-        - bandit - Python security linter
-        - black - Python code formatter
-        - darglint - Python docstring linter
-        - yamllint - YAML linter
-
-      Get started:
-        lintro check          # Check files for issues
-        lintro format         # Auto-fix issues
-        lintro list-tools     # View available tools
-
-      Documentation: https://github.com/TurboCoder13/py-lintro/tree/main/docs
-    EOS
-  end
-
-  test do
-    assert_match version.to_s, shell_output("\#{bin}/lintro --version")
-  end
-end
-EOF
+# Render formula from template
+log_info "Rendering formula template..."
+python3 "$SCRIPT_DIR/render_formula.py" \
+    --tarball-url "$TARBALL_URL" \
+    --tarball-sha "$TARBALL_SHA" \
+    --poet-resources "$TMPDIR/poet_resources.txt" \
+    --darglint-resource "$TMPDIR/darglint.txt" \
+    --pydantic-resource "$TMPDIR/pydantic.txt" \
+    --output "$OUTPUT_FILE"
 
 log_success "Formula written to ${OUTPUT_FILE}"
