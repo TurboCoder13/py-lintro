@@ -37,9 +37,12 @@ HOMEBREW_PACKAGES=("bandit" "black" "mypy" "ruff" "yamllint")
 
 log_info "Generating lintro formula for version ${VERSION}"
 
-# Fetch package info using Python helper
+# Fetch package info using Python helper (outputs URL on line 1, SHA on line 2)
 log_info "Fetching package info from PyPI..."
-read -r TARBALL_URL TARBALL_SHA < <(python3 "$SCRIPT_DIR/fetch_package_info.py" lintro "$VERSION")
+{
+    read -r TARBALL_URL
+    read -r TARBALL_SHA
+} < <(python3 "$SCRIPT_DIR/fetch_package_info.py" lintro "$VERSION")
 
 if [[ -z "$TARBALL_URL" ]] || [[ -z "$TARBALL_SHA" ]]; then
     log_error "Failed to fetch tarball info from PyPI"
