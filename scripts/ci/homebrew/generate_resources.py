@@ -21,7 +21,7 @@ import re
 import sys
 from importlib.metadata import distributions
 
-from packaging.requirements import Requirement
+from packaging.requirements import InvalidRequirement, Requirement
 from pypi_utils import fetch_pypi_json, get_sdist_info
 
 # Template for a single resource stanza
@@ -109,13 +109,13 @@ def get_package_dependencies(package_name: str) -> set[str]:
             # Use packaging.Requirement for robust parsing
             try:
                 req = Requirement(req_str)
-                req_name = normalize_name(req.name)
-                if req_name in dist_map:
-                    dependencies.add(req_name)
-                    to_process.add(req_name)
-            except Exception:
+            except InvalidRequirement:
                 # Skip malformed requirements
                 continue
+            req_name = normalize_name(req.name)
+            if req_name in dist_map:
+                dependencies.add(req_name)
+                to_process.add(req_name)
 
     # Don't include the main package itself
     dependencies.discard(normalized_name)
