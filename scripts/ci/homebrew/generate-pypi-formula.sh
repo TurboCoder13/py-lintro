@@ -63,8 +63,27 @@ trap 'rm -rf "$ANALYSIS_VENV" "$TMPDIR"' EXIT
 log_info "Creating temporary venv for dependency analysis..."
 python3 -m venv "$ANALYSIS_VENV"
 
+log_info "Downloading and verifying tarball..."
+TARBALL_FILE="$TMPDIR/lintro-${VERSION}.tar.gz"
+if ! curl -sSfL "$TARBALL_URL" -o "$TARBALL_FILE"; then
+    log_error "Failed to download tarball from $TARBALL_URL"
+    exit 1
+fi
+
+# Verify hash (use sha256sum on Linux, shasum on macOS)
+if command -v sha256sum &>/dev/null; then
+    ACTUAL_SHA=$(sha256sum "$TARBALL_FILE" | cut -d' ' -f1)
+else
+    ACTUAL_SHA=$(shasum -a 256 "$TARBALL_FILE" | cut -d' ' -f1)
+fi
+if [[ "$ACTUAL_SHA" != "$TARBALL_SHA" ]]; then
+    log_error "SHA256 mismatch! Expected: $TARBALL_SHA, Got: $ACTUAL_SHA"
+    exit 1
+fi
+log_info "SHA256 verified"
+
 log_info "Installing lintro from tarball (bypasses pip index propagation delay)..."
-"$ANALYSIS_VENV/bin/pip" install --quiet "$TARBALL_URL" --hash "sha256:$TARBALL_SHA"
+"$ANALYSIS_VENV/bin/pip" install --quiet "$TARBALL_FILE"
 
 # Build exclusion list for packages we handle specially
 EXCLUDE_ARGS=()
