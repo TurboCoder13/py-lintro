@@ -63,8 +63,8 @@ trap 'rm -rf "$ANALYSIS_VENV" "$TMPDIR"' EXIT
 log_info "Creating temporary venv for dependency analysis..."
 python3 -m venv "$ANALYSIS_VENV"
 
-log_info "Installing lintro==${VERSION} in temporary venv..."
-"$ANALYSIS_VENV/bin/pip" install --quiet "lintro==${VERSION}"
+log_info "Installing lintro from tarball (bypasses pip index propagation delay)..."
+"$ANALYSIS_VENV/bin/pip" install --quiet "$TARBALL_URL" --hash "sha256:$TARBALL_SHA"
 
 # Build exclusion list for packages we handle specially
 EXCLUDE_ARGS=()
