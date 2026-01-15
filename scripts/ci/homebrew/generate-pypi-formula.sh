@@ -18,7 +18,10 @@ Arguments:
   output-file  Path to write the formula (e.g., Formula/lintro.rb)
 
 Requirements:
-  - Python 3.x with pip and venv
+  - Python 3.11+ with pip and venv
+
+This script uses generate_resources.py with importlib.metadata
+to generate dependency resource stanzas (replacing homebrew-pypi-poet).
 
 Examples:
   generate-pypi-formula.sh 1.0.0 Formula/lintro.rb
@@ -53,40 +56,34 @@ log_info "Tarball URL: ${TARBALL_URL}"
 log_info "Tarball SHA256: ${TARBALL_SHA}"
 
 # Create temporary directories (cleaned up on exit)
-POET_VENV=$(mktemp -d)
+ANALYSIS_VENV=$(mktemp -d)
 TMPDIR=$(mktemp -d)
-trap 'rm -rf "$POET_VENV" "$TMPDIR"' EXIT
+trap 'rm -rf "$ANALYSIS_VENV" "$TMPDIR"' EXIT
 
-log_info "Creating temporary venv for poet analysis..."
-python3 -m venv "$POET_VENV"
+log_info "Creating temporary venv for dependency analysis..."
+python3 -m venv "$ANALYSIS_VENV"
 
-log_info "Installing lintro==${VERSION} and poet in temporary venv..."
-"$POET_VENV/bin/pip" install --quiet "lintro==${VERSION}" homebrew-pypi-poet
+log_info "Installing lintro==${VERSION} in temporary venv..."
+"$ANALYSIS_VENV/bin/pip" install --quiet "lintro==${VERSION}"
 
-log_info "Generating resources with poet..."
-POET_OUTPUT=$("$POET_VENV/bin/poet" lintro 2>/dev/null)
-
-# Build exclusion pattern for packages we handle specially
-EXCLUDE_PATTERN="lintro"
+# Build exclusion list for packages we handle specially
+EXCLUDE_ARGS=()
 for pkg in "${WHEEL_PACKAGES[@]}" "${HOMEBREW_PACKAGES[@]}"; do
-    EXCLUDE_PATTERN="${EXCLUDE_PATTERN}|${pkg}"
+    EXCLUDE_ARGS+=("$pkg")
 done
 
-# Remove excluded packages and clean up formatting
-RESOURCES=$(echo "$POET_OUTPUT" | awk -v pattern="$EXCLUDE_PATTERN" '
-    $0 ~ "resource \"(" pattern ")\"" { skip=1; next }
-    skip && /^  end$/ { skip=0; getline; next }
-    !skip { print }
-' | cat -s)
+log_info "Generating resources with generate_resources.py (importlib.metadata)..."
+RESOURCES=$("$ANALYSIS_VENV/bin/python" "$SCRIPT_DIR/generate_resources.py" lintro \
+    --exclude "${EXCLUDE_ARGS[@]}")
 
 # Validate resources were generated
 RESOURCE_COUNT=$(echo "$RESOURCES" | grep -c "^  resource " || echo "0")
 if [[ "$RESOURCE_COUNT" -lt 5 ]]; then
     log_error "Expected multiple resource stanzas but only found ${RESOURCE_COUNT}"
-    log_error "poet may have failed to analyze dependencies."
+    log_error "generate_resources.py may have failed to analyze dependencies."
     exit 1
 fi
-log_info "Generated ${RESOURCE_COUNT} resource stanzas from poet"
+log_info "Generated ${RESOURCE_COUNT} resource stanzas"
 
 # Write resources to temp files
 echo "$RESOURCES" > "$TMPDIR/poet_resources.txt"
