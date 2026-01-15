@@ -17,9 +17,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from importlib.metadata import distributions
 
+from packaging.requirements import Requirement
 from pypi_utils import fetch_pypi_json, get_sdist_info
 
 # Template for a single resource stanza
@@ -30,21 +32,43 @@ RESOURCE_TEMPLATE = """  resource "{name}" do
 """
 
 
+def normalize_name(name: str) -> str:
+    """Normalize package name per PEP 503.
+
+    Args:
+        name: Package name to normalize.
+
+    Returns:
+        Normalized package name (lowercase, runs of [-_.] replaced with single hyphen).
+    """
+    return re.sub(r"[-_.]+", "-", name.lower())
+
+
+def build_distribution_map() -> dict[str, tuple[str, list[str] | None]]:
+    """Build a cached map of all installed distributions.
+
+    Returns:
+        Dictionary mapping normalized package names to (version, requires) tuples.
+    """
+    dist_map: dict[str, tuple[str, list[str] | None]] = {}
+    for dist in distributions():
+        name = dist.metadata["Name"]
+        version = dist.metadata["Version"]
+        if name and version:
+            normalized = normalize_name(name)
+            requires = dist.metadata.get_all("Requires-Dist")
+            dist_map[normalized] = (version, requires)
+    return dist_map
+
+
 def get_installed_packages() -> dict[str, str]:
     """Get all installed packages and their versions.
 
     Returns:
         Dictionary mapping normalized package names to versions.
     """
-    packages: dict[str, str] = {}
-    for dist in distributions():
-        name = dist.metadata["Name"]
-        version = dist.metadata["Version"]
-        if name and version:
-            # Normalize package name (lowercase, replace underscores with hyphens)
-            normalized = name.lower().replace("_", "-")
-            packages[normalized] = version
-    return packages
+    dist_map = build_distribution_map()
+    return {name: version for name, (version, _) in dist_map.items()}
 
 
 def get_package_dependencies(package_name: str) -> set[str]:
@@ -56,11 +80,11 @@ def get_package_dependencies(package_name: str) -> set[str]:
     Returns:
         Set of normalized dependency package names.
     """
-    # Get all installed packages for lookup
-    installed = get_installed_packages()
+    # Build cached distribution map for O(n) lookup
+    dist_map = build_distribution_map()
 
     # Normalize the input package name
-    normalized_name = package_name.lower().replace("_", "-")
+    normalized_name = normalize_name(package_name)
 
     # Build the set of all dependencies
     dependencies: set[str] = set()
@@ -73,23 +97,25 @@ def get_package_dependencies(package_name: str) -> set[str]:
             continue
         processed.add(current)
 
-        # Find this package in installed distributions
-        for dist in distributions():
-            dist_name = dist.metadata["Name"]
-            if dist_name and dist_name.lower().replace("_", "-") == current:
-                # Add this package's direct dependencies
-                requires = dist.metadata.get_all("Requires-Dist") or []
-                for req in requires:
-                    # Parse requirement (e.g., "click>=7.0" -> "click")
-                    # Handle extras like "package[extra]"
-                    req_name = req.split(";")[0].split("[")[0].split(">=")[0]
-                    req_name = req_name.split("<=")[0].split("==")[0].split("!=")[0]
-                    req_name = req_name.split("<")[0].split(">")[0].split("~=")[0]
-                    req_name = req_name.strip().lower().replace("_", "-")
-                    if req_name and req_name in installed:
-                        dependencies.add(req_name)
-                        to_process.add(req_name)
-                break
+        # Look up package in cached distribution map (O(1) lookup)
+        if current not in dist_map:
+            continue
+
+        _, requires = dist_map[current]
+        if not requires:
+            continue
+
+        for req_str in requires:
+            # Use packaging.Requirement for robust parsing
+            try:
+                req = Requirement(req_str)
+                req_name = normalize_name(req.name)
+                if req_name in dist_map:
+                    dependencies.add(req_name)
+                    to_process.add(req_name)
+            except Exception:
+                # Skip malformed requirements
+                continue
 
     # Don't include the main package itself
     dependencies.discard(normalized_name)
@@ -144,10 +170,10 @@ def main() -> None:
     args = parser.parse_args()
 
     # Normalize exclusion list
-    exclude: set[str] = {name.lower().replace("_", "-") for name in args.exclude}
+    exclude: set[str] = {normalize_name(name) for name in args.exclude}
 
     # Always exclude the main package
-    main_package = args.package.lower().replace("_", "-")
+    main_package = normalize_name(args.package)
     exclude.add(main_package)
 
     # Get installed packages and their versions

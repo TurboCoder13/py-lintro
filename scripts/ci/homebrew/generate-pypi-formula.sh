@@ -86,7 +86,7 @@ fi
 log_info "Generated ${RESOURCE_COUNT} resource stanzas"
 
 # Write resources to temp files
-echo "$RESOURCES" > "$TMPDIR/poet_resources.txt"
+echo "$RESOURCES" > "$TMPDIR/resources.txt"
 
 # Generate wheel resources for packages that can't build from source
 log_info "Generating wheel resources for special packages..."
@@ -112,7 +112,7 @@ log_info "Rendering formula template..."
 python3 "$SCRIPT_DIR/render_formula.py" \
     --tarball-url "$TARBALL_URL" \
     --tarball-sha "$TARBALL_SHA" \
-    --poet-resources "$TMPDIR/poet_resources.txt" \
+    --poet-resources "$TMPDIR/resources.txt" \
     --darglint-resource "$TMPDIR/darglint.txt" \
     --pydantic-resource "$TMPDIR/pydantic.txt" \
     --output "$OUTPUT_FILE"
