@@ -31,6 +31,7 @@ class Lintro < Formula
   depends_on "semgrep"
   depends_on "shellcheck"
   depends_on "shfmt"
+  depends_on "sqlfluff"
   depends_on "yamllint"
 
   # Pure Python library dependencies
