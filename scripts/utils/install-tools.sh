@@ -396,6 +396,41 @@ main() {
     fi
     rm -rf "$tmpdir" || true
 
+    # Install gitleaks (secret detection)
+    echo -e "${BLUE}Installing gitleaks...${NC}"
+    GITLEAKS_VERSION="8.21.2"
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install gitleaks v${GITLEAKS_VERSION}"
+    elif command -v gitleaks &> /dev/null; then
+        echo -e "${GREEN}✓ gitleaks already installed${NC}"
+    else
+        tmpdir=$(mktemp -d)
+        os=$(uname -s | tr '[:upper:]' '[:lower:]')
+        arch=$(uname -m)
+        case "$os" in
+            darwin) os_name="darwin" ;;
+            linux) os_name="linux" ;;
+            *) os_name="linux" ;;
+        esac
+        case "$arch" in
+            x86_64|amd64) arch_name="x64" ;;
+            aarch64|arm64) arch_name="arm64" ;;
+            *) arch_name="x64" ;;
+        esac
+        # gitleaks releases use format: gitleaks_{version}_{os}_{arch}.tar.gz
+        tgz_url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_${os_name}_${arch_name}.tar.gz"
+        if download_with_retries "$tgz_url" "$tmpdir/gitleaks.tar.gz" 3; then
+            tar -xzf "$tmpdir/gitleaks.tar.gz" -C "$tmpdir"
+            cp "$tmpdir/gitleaks" "$BIN_DIR/gitleaks"
+            chmod +x "$BIN_DIR/gitleaks"
+            echo -e "${GREEN}✓ gitleaks installed successfully${NC}"
+        else
+            echo -e "${RED}✗ Failed to download gitleaks${NC}"
+            exit 1
+        fi
+        rm -rf "$tmpdir"
+    fi
+
     # Install Rust toolchain and clippy
     echo -e "${BLUE}Installing Rust toolchain and clippy...${NC}"
     if [ $DRY_RUN -eq 1 ]; then
@@ -638,6 +673,7 @@ main() {
     echo "  - black (Python formatting)"
     echo "  - clippy (Rust linting)"
     echo "  - darglint (Python docstring validation)"
+    echo "  - gitleaks (Secret detection)"
     echo "  - hadolint (Docker linting)"
     echo "  - markdownlint-cli2 (Markdown linting)"
     echo "  - prettier (JavaScript/JSON formatting)"
@@ -649,7 +685,7 @@ main() {
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint" "mypy")
+    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint" "mypy")
     for tool in "${tools_to_verify[@]}"; do
         if [ "$tool" = "clippy" ]; then
             # Clippy is invoked through cargo
