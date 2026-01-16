@@ -618,7 +618,7 @@ main() {
     
     # Install darglint (Python package)
     echo -e "${BLUE}Installing darglint...${NC}"
-    
+
     if [ $DRY_RUN -eq 1 ]; then
         log_info "[DRY-RUN] Would install darglint==1.8.1"
     elif install_python_package "darglint" "1.8.1"; then
@@ -627,7 +627,35 @@ main() {
         echo -e "${RED}✗ Failed to install darglint${NC}"
         exit 1
     fi
-    
+
+    # Install shellcheck (shell script linter)
+    echo -e "${BLUE}Installing shellcheck...${NC}"
+    SHELLCHECK_VERSION="0.10.0"
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install shellcheck v${SHELLCHECK_VERSION}"
+    elif command -v shellcheck &> /dev/null; then
+        echo -e "${GREEN}✓ shellcheck already installed${NC}"
+    else
+        tmpdir=$(mktemp -d)
+        os=$(uname -s | tr '[:upper:]' '[:lower:]')
+        arch=$(uname -m)
+        case "$arch" in
+            x86_64|amd64) arch="x86_64" ;;
+            aarch64|arm64) arch="aarch64" ;;
+        esac
+        tar_url="https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.${os}.${arch}.tar.xz"
+        if download_with_retries "$tar_url" "$tmpdir/shellcheck.tar.xz" 3; then
+            tar -xJf "$tmpdir/shellcheck.tar.xz" -C "$tmpdir"
+            cp "$tmpdir/shellcheck-v${SHELLCHECK_VERSION}/shellcheck" "$BIN_DIR/shellcheck"
+            chmod +x "$BIN_DIR/shellcheck"
+            echo -e "${GREEN}✓ shellcheck installed successfully${NC}"
+        else
+            echo -e "${RED}✗ Failed to download shellcheck${NC}"
+            exit 1
+        fi
+        rm -rf "$tmpdir"
+    fi
+
     echo ""
     echo -e "${GREEN}=== Installation Complete! ===${NC}"
     echo ""
@@ -643,13 +671,14 @@ main() {
     echo "  - prettier (JavaScript/JSON formatting)"
     echo "  - ruff (Python linting and formatting)"
     echo "  - mypy (Python type checking)"
+    echo "  - shellcheck (Shell script linting)"
     echo "  - yamllint (YAML linting)"
     echo ""
     
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint" "mypy")
+    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "shellcheck" "yamllint" "mypy")
     for tool in "${tools_to_verify[@]}"; do
         if [ "$tool" = "clippy" ]; then
             # Clippy is invoked through cargo
