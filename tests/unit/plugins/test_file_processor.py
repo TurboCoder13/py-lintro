@@ -313,8 +313,16 @@ def test_empty_output_not_added() -> None:
         "empty_string",
     ],
 )
-def test_build_output_whitespace_returns_none(output: str, expected: str | None) -> None:
-    """Build output returns None for whitespace-only outputs."""
+def test_build_output_whitespace_returns_none(
+    output: str,
+    expected: str | None,
+) -> None:
+    """Build output returns None for whitespace-only outputs.
+
+    Args:
+        output: The whitespace-only output string to test.
+        expected: The expected result (None for whitespace-only).
+    """
     aggregated = AggregatedResult()
     aggregated.all_outputs = [output]
 
