@@ -396,6 +396,32 @@ main() {
     fi
     rm -rf "$tmpdir" || true
 
+    # Install shfmt (shell script formatter)
+    echo -e "${BLUE}Installing shfmt...${NC}"
+    SHFMT_VERSION="3.10.0"
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install shfmt v${SHFMT_VERSION}"
+    elif command -v shfmt &> /dev/null; then
+        echo -e "${GREEN}✓ shfmt already installed${NC}"
+    else
+        tmpdir=$(mktemp -d)
+        os=$(uname -s | tr '[:upper:]' '[:lower:]')
+        arch=$(uname -m)
+        case "$arch" in
+            x86_64|amd64) arch="amd64" ;;
+            aarch64|arm64) arch="arm64" ;;
+        esac
+        binary_url="https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_${os}_${arch}"
+        if download_with_retries "$binary_url" "$BIN_DIR/shfmt" 3; then
+            chmod +x "$BIN_DIR/shfmt"
+            echo -e "${GREEN}✓ shfmt installed successfully${NC}"
+        else
+            echo -e "${RED}✗ Failed to download shfmt${NC}"
+            exit 1
+        fi
+        rm -rf "$tmpdir"
+    fi
+
     # Install Rust toolchain and clippy
     echo -e "${BLUE}Installing Rust toolchain and clippy...${NC}"
     if [ $DRY_RUN -eq 1 ]; then
@@ -642,6 +668,7 @@ main() {
     echo "  - markdownlint-cli2 (Markdown linting)"
     echo "  - prettier (JavaScript/JSON formatting)"
     echo "  - ruff (Python linting and formatting)"
+    echo "  - shfmt (Shell script formatting)"
     echo "  - mypy (Python type checking)"
     echo "  - yamllint (YAML linting)"
     echo ""
@@ -649,7 +676,7 @@ main() {
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint" "mypy")
+    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "shfmt" "yamllint" "mypy")
     for tool in "${tools_to_verify[@]}"; do
         if [ "$tool" = "clippy" ]; then
             # Clippy is invoked through cargo
