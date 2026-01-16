@@ -43,6 +43,7 @@ Example:
     >>> result = tool.check(["."], {})
 """
 
+from lintro.plugins.file_processor import AggregatedResult, FileProcessingResult
 from lintro.plugins.protocol import LintroPlugin, ToolDefinition
 from lintro.plugins.registry import ToolRegistry, register_tool
 
@@ -50,6 +51,8 @@ from lintro.plugins.registry import ToolRegistry, register_tool
 # Use: from lintro.plugins.base import BaseToolPlugin
 
 __all__ = [
+    "AggregatedResult",
+    "FileProcessingResult",
     "LintroPlugin",
     "ToolDefinition",
     "ToolRegistry",

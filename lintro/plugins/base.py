@@ -25,6 +25,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+import click
 from loguru import logger
 
 from lintro.config.lintro_config import LintroConfig
@@ -58,6 +59,8 @@ from lintro.plugins.subprocess_executor import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from lintro.plugins.file_processor import AggregatedResult, FileProcessingResult
 
 
 @dataclass
@@ -401,6 +404,77 @@ class BaseToolPlugin(ABC):
             cwd=result.get("cwd"),
             timeout=timeout,
         )
+
+    def _process_files_with_progress(
+        self,
+        files: list[str],
+        processor: Callable[[str], FileProcessingResult],
+        timeout: int,
+        *,
+        label: str = "Processing files",
+        progress_threshold: int = 2,
+    ) -> AggregatedResult:
+        """Process files with optional progress bar.
+
+        This method handles the common pattern of iterating through files,
+        calling a processor function for each file, and aggregating results.
+        It shows a progress bar when processing multiple files.
+
+        Args:
+            files: List of file paths to process.
+            processor: Callable that processes a single file and returns
+                FileProcessingResult. The processor should handle its own
+                exceptions and return appropriate FileProcessingResult.
+            timeout: Timeout for each file operation (included in output).
+            label: Label for progress bar.
+            progress_threshold: Minimum files to show progress bar.
+
+        Returns:
+            AggregatedResult with all file processing results.
+
+        Example:
+            def process_file(path: str) -> FileProcessingResult:
+                try:
+                    success, output = self._run_subprocess(cmd + [path])
+                    issues = parse_output(output)
+                    return FileProcessingResult(
+                        success=success,
+                        output=output,
+                        issues=issues,
+                    )
+                except subprocess.TimeoutExpired:
+                    return FileProcessingResult(
+                        success=False,
+                        output="",
+                        issues=[],
+                        skipped=True,
+                    )
+
+            result = self._process_files_with_progress(
+                files=ctx.files,
+                processor=process_file,
+                timeout=ctx.timeout,
+            )
+        """
+        from lintro.plugins.file_processor import AggregatedResult
+
+        aggregated = AggregatedResult()
+
+        if len(files) >= progress_threshold:
+            with click.progressbar(
+                files,
+                label=label,
+                bar_template="%(label)s  %(info)s",
+            ) as bar:
+                for file_path in bar:
+                    result = processor(file_path)
+                    aggregated.add_file_result(file_path, result)
+        else:
+            for file_path in files:
+                result = processor(file_path)
+                aggregated.add_file_result(file_path, result)
+
+        return aggregated
 
     def _get_executable_command(self, tool_name: str) -> list[str]:
         """Get the command prefix to execute a tool.

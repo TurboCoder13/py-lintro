@@ -11,8 +11,6 @@ import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
 from typing import Any
 
-import click
-
 from lintro.enums.hadolint_enums import (
     HadolintFailureThreshold,
     HadolintFormat,
@@ -23,6 +21,7 @@ from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.plugins.base import BaseToolPlugin
+from lintro.plugins.file_processor import FileProcessingResult
 from lintro.plugins.protocol import ToolDefinition
 from lintro.plugins.registry import register_tool
 from lintro.tools.core.option_validators import (
@@ -199,37 +198,39 @@ class HadolintPlugin(BaseToolPlugin):
         self,
         file_path: str,
         timeout: int,
-        results: dict[str, Any],
-    ) -> None:
+    ) -> FileProcessingResult:
         """Process a single Dockerfile with hadolint.
 
         Args:
             file_path: Path to the Dockerfile to process.
             timeout: Timeout in seconds for the hadolint command.
-            results: Dictionary to accumulate results across files.
+
+        Returns:
+            FileProcessingResult with processing outcome.
         """
         cmd = self._build_command() + [str(file_path)]
         try:
             success, output = self._run_subprocess(cmd=cmd, timeout=timeout)
             issues = parse_hadolint_output(output=output)
-            issues_count = len(issues)
-
-            if not success:
-                results["all_success"] = False
-            results["total_issues"] += issues_count
-
-            if not success or issues:
-                results["all_outputs"].append(output)
-            if issues:
-                results["all_issues"].extend(issues)
+            return FileProcessingResult(
+                success=success,
+                output=output,
+                issues=issues,
+            )
         except subprocess.TimeoutExpired:
-            results["skipped_files"].append(file_path)
-            results["all_success"] = False
-            results["execution_failures"] += 1
+            return FileProcessingResult(
+                success=False,
+                output="",
+                issues=[],
+                skipped=True,
+            )
         except (OSError, ValueError, RuntimeError) as e:
-            results["all_outputs"].append(f"Error processing {file_path}: {e!s}")
-            results["all_success"] = False
-            results["execution_failures"] += 1
+            return FileProcessingResult(
+                success=False,
+                output="",
+                issues=[],
+                error=str(e),
+            )
 
     def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with Hadolint.
@@ -241,66 +242,23 @@ class HadolintPlugin(BaseToolPlugin):
         Returns:
             ToolResult with check results.
         """
-        # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(paths, options)
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
 
-        # Hadolint processes files one at a time (doesn't support batch mode)
-        dockerfile_files = ctx.files
-
-        # Accumulate results across all files
-        results: dict[str, Any] = {
-            "all_outputs": [],
-            "all_issues": [],
-            "all_success": True,
-            "skipped_files": [],
-            "execution_failures": 0,
-            "total_issues": 0,
-        }
-
-        # Show progress bar only when processing multiple files
-        if len(dockerfile_files) >= 2:
-            with click.progressbar(
-                dockerfile_files,
-                label="Processing files",
-                bar_template="%(label)s  %(info)s",
-            ) as bar:
-                for file_path in bar:
-                    self._process_single_file(file_path, ctx.timeout, results)
-        else:
-            for file_path in dockerfile_files:
-                self._process_single_file(file_path, ctx.timeout, results)
-
-        # Build output from accumulated results
-        output: str = (
-            "\n".join(results["all_outputs"]) if results["all_outputs"] else ""
+        # Process files using the shared file processor
+        result = self._process_files_with_progress(
+            files=ctx.files,
+            processor=lambda f: self._process_single_file(f, ctx.timeout),
+            timeout=ctx.timeout,
         )
-        if results["execution_failures"] > 0:
-            if output:
-                output += "\n\n"
-            if results["skipped_files"]:
-                output += (
-                    f"Skipped/failed {results['execution_failures']} file(s) due to "
-                    f"execution failures (including timeouts)"
-                )
-                output += f" (timeout: {ctx.timeout}s):"
-                for file in results["skipped_files"]:
-                    output += f"\n  - {file}"
-            else:
-                output += (
-                    f"Failed to process {results['execution_failures']} file(s) "
-                    "due to execution errors"
-                )
-
-        final_output: str | None = output if output.strip() else None
 
         return ToolResult(
             name=self.definition.name,
-            success=results["all_success"],
-            output=final_output,
-            issues_count=results["total_issues"],
-            issues=results["all_issues"],
+            success=result.all_success and result.total_issues == 0,
+            output=result.build_output(timeout=ctx.timeout),
+            issues_count=result.total_issues,
+            issues=result.all_issues,
         )
 
     def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
