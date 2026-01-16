@@ -53,6 +53,7 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         # Binary tools
         "hadolint": ["hadolint"],
         "actionlint": ["actionlint"],
+        "taplo": ["taplo"],
         # Rust/Cargo tools
         "clippy": ["cargo", "clippy"],
     }

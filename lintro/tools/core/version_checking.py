@@ -294,6 +294,11 @@ def get_install_hints() -> dict[str, str]:
                 f"Install via: rustup component add clippy "
                 f"(requires Rust {versions.get('clippy', '1.75.0')}+)"
             ),
+            "taplo": (
+                f"Install via: cargo install taplo-cli "
+                f"or download from https://github.com/tamasfe/taplo/releases "
+                f"(v{versions.get('taplo', '0.9.0')}+)"
+            ),
         },
     )
 
