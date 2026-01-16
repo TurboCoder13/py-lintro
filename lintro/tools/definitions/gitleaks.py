@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import subprocess  # nosec B404 - used safely with shell disabled
+import sys
 from dataclasses import dataclass
 from typing import Any
 
@@ -146,9 +147,11 @@ class GitleaksPlugin(BaseToolPlugin):
         if max_mb_opt is not None:
             cmd.extend(["--max-target-megabytes", str(max_mb_opt)])
 
-        # Output format and path
+        # Output format and path (cross-platform stdout handling)
         cmd.extend(["--report-format", GITLEAKS_OUTPUT_FORMAT])
-        cmd.extend(["--report-path", "/dev/stdout"])
+        # Use /dev/stdout on Unix, CON on Windows for stdout output
+        stdout_path = "CON" if sys.platform == "win32" else "/dev/stdout"
+        cmd.extend(["--report-path", stdout_path])
 
         # Exit with code 0 even when secrets are found (we parse the output)
         cmd.append("--exit-code")
