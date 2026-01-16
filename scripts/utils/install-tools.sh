@@ -396,6 +396,34 @@ main() {
     fi
     rm -rf "$tmpdir" || true
 
+    # Install taplo (TOML linter and formatter)
+    echo -e "${BLUE}Installing taplo...${NC}"
+    TAPLO_VERSION="0.9.3"
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install taplo v${TAPLO_VERSION}"
+    elif command -v taplo &> /dev/null; then
+        echo -e "${GREEN}✓ taplo already installed${NC}"
+    else
+        tmpdir=$(mktemp -d)
+        os=$(uname -s | tr '[:upper:]' '[:lower:]')
+        arch=$(uname -m)
+        case "$arch" in
+            x86_64|amd64) arch="x86_64" ;;
+            aarch64|arm64) arch="aarch64" ;;
+        esac
+        # taplo releases use format: taplo-full-{os}-{arch}.gz
+        gz_url="https://github.com/tamasfe/taplo/releases/download/${TAPLO_VERSION}/taplo-full-${os}-${arch}.gz"
+        if download_with_retries "$gz_url" "$tmpdir/taplo.gz" 3; then
+            gunzip -c "$tmpdir/taplo.gz" > "$BIN_DIR/taplo"
+            chmod +x "$BIN_DIR/taplo"
+            echo -e "${GREEN}✓ taplo installed successfully${NC}"
+        else
+            echo -e "${RED}✗ Failed to download taplo${NC}"
+            exit 1
+        fi
+        rm -rf "$tmpdir"
+    fi
+
     # Install Rust toolchain and clippy
     echo -e "${BLUE}Installing Rust toolchain and clippy...${NC}"
     if [ $DRY_RUN -eq 1 ]; then
@@ -643,13 +671,14 @@ main() {
     echo "  - prettier (JavaScript/JSON formatting)"
     echo "  - ruff (Python linting and formatting)"
     echo "  - mypy (Python type checking)"
+    echo "  - taplo (TOML linting and formatting)"
     echo "  - yamllint (YAML linting)"
     echo ""
     
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint" "mypy")
+    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "taplo" "yamllint" "mypy")
     for tool in "${tools_to_verify[@]}"; do
         if [ "$tool" = "clippy" ]; then
             # Clippy is invoked through cargo
