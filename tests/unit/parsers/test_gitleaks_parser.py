@@ -18,28 +18,30 @@ from lintro.plugins import ToolRegistry
 
 def test_parse_gitleaks_valid_output() -> None:
     """Parse a representative Gitleaks JSON result and validate fields."""
-    sample_output = json.dumps([
-        {
-            "Description": "AWS Access Key",
-            "StartLine": 10,
-            "EndLine": 10,
-            "StartColumn": 15,
-            "EndColumn": 35,
-            "Match": "AKIAIOSFODNN7EXAMPLE",
-            "Secret": "AKIAIOSFODNN7EXAMPLE",
-            "File": "config.py",
-            "SymlinkFile": "",
-            "Commit": "",
-            "Entropy": 3.5,
-            "Author": "",
-            "Email": "",
-            "Date": "",
-            "Message": "",
-            "Tags": ["key", "AWS"],
-            "RuleID": "aws-access-key-id",
-            "Fingerprint": "config.py:aws-access-key-id:10",
-        },
-    ])
+    sample_output = json.dumps(
+        [
+            {
+                "Description": "AWS Access Key",
+                "StartLine": 10,
+                "EndLine": 10,
+                "StartColumn": 15,
+                "EndColumn": 35,
+                "Match": "AKIAIOSFODNN7EXAMPLE",
+                "Secret": "AKIAIOSFODNN7EXAMPLE",
+                "File": "config.py",
+                "SymlinkFile": "",
+                "Commit": "",
+                "Entropy": 3.5,
+                "Author": "",
+                "Email": "",
+                "Date": "",
+                "Message": "",
+                "Tags": ["key", "AWS"],
+                "RuleID": "aws-access-key-id",
+                "Fingerprint": "config.py:aws-access-key-id:10",
+            },
+        ],
+    )
 
     issues = parse_gitleaks_output(output=sample_output)
 
@@ -60,28 +62,30 @@ def test_parse_gitleaks_valid_output() -> None:
 
 def test_parse_gitleaks_multiple_findings() -> None:
     """Parser should handle multiple findings."""
-    sample_output = json.dumps([
-        {
-            "Description": "AWS Access Key",
-            "StartLine": 5,
-            "EndLine": 5,
-            "StartColumn": 1,
-            "EndColumn": 20,
-            "File": "a.py",
-            "RuleID": "aws-access-key-id",
-            "Fingerprint": "a.py:aws-access-key-id:5",
-        },
-        {
-            "Description": "GitHub Token",
-            "StartLine": 10,
-            "EndLine": 10,
-            "StartColumn": 1,
-            "EndColumn": 40,
-            "File": "b.py",
-            "RuleID": "github-pat",
-            "Fingerprint": "b.py:github-pat:10",
-        },
-    ])
+    sample_output = json.dumps(
+        [
+            {
+                "Description": "AWS Access Key",
+                "StartLine": 5,
+                "EndLine": 5,
+                "StartColumn": 1,
+                "EndColumn": 20,
+                "File": "a.py",
+                "RuleID": "aws-access-key-id",
+                "Fingerprint": "a.py:aws-access-key-id:5",
+            },
+            {
+                "Description": "GitHub Token",
+                "StartLine": 10,
+                "EndLine": 10,
+                "StartColumn": 1,
+                "EndColumn": 40,
+                "File": "b.py",
+                "RuleID": "github-pat",
+                "Fingerprint": "b.py:github-pat:10",
+            },
+        ],
+    )
 
     issues = parse_gitleaks_output(output=sample_output)
 
@@ -130,18 +134,20 @@ def test_parse_gitleaks_non_array_json() -> None:
 
 def test_parse_gitleaks_handles_malformed_finding_gracefully() -> None:
     """Malformed findings should be skipped."""
-    sample_output = json.dumps([
-        None,
-        42,
-        {"File": "", "StartLine": 10},  # Empty file
-        {"StartLine": 10},  # Missing File
-        {
-            "File": "valid.py",
-            "StartLine": 5,
-            "RuleID": "test-rule",
-            "Description": "Valid finding",
-        },
-    ])
+    sample_output = json.dumps(
+        [
+            None,
+            42,
+            {"File": "", "StartLine": 10},  # Empty file
+            {"StartLine": 10},  # Missing File
+            {
+                "File": "valid.py",
+                "StartLine": 5,
+                "RuleID": "test-rule",
+                "Description": "Valid finding",
+            },
+        ],
+    )
 
     issues = parse_gitleaks_output(output=sample_output)
 
@@ -152,23 +158,25 @@ def test_parse_gitleaks_handles_malformed_finding_gracefully() -> None:
 
 def test_parse_gitleaks_git_history_fields() -> None:
     """Parser should handle git history fields from commit scanning."""
-    sample_output = json.dumps([
-        {
-            "Description": "API Key",
-            "StartLine": 1,
-            "EndLine": 1,
-            "StartColumn": 1,
-            "EndColumn": 30,
-            "File": "secret.py",
-            "Commit": "abc123def456",
-            "Author": "John Doe",
-            "Email": "john@example.com",
-            "Date": "2024-01-15T10:30:00Z",
-            "Message": "Add configuration",
-            "RuleID": "generic-api-key",
-            "Fingerprint": "secret.py:generic-api-key:1:abc123def456",
-        },
-    ])
+    sample_output = json.dumps(
+        [
+            {
+                "Description": "API Key",
+                "StartLine": 1,
+                "EndLine": 1,
+                "StartColumn": 1,
+                "EndColumn": 30,
+                "File": "secret.py",
+                "Commit": "abc123def456",
+                "Author": "John Doe",
+                "Email": "john@example.com",
+                "Date": "2024-01-15T10:30:00Z",
+                "Message": "Add configuration",
+                "RuleID": "generic-api-key",
+                "Fingerprint": "secret.py:generic-api-key:1:abc123def456",
+            },
+        ],
+    )
 
     issues = parse_gitleaks_output(output=sample_output)
 
@@ -348,14 +356,16 @@ def test_gitleaks_check_handles_unparseable_output(
 
 def test_gitleaks_entropy_parsing() -> None:
     """Parser should correctly handle entropy as float."""
-    sample_output = json.dumps([
-        {
-            "File": "test.py",
-            "StartLine": 1,
-            "Entropy": 4.25,
-            "RuleID": "test",
-        },
-    ])
+    sample_output = json.dumps(
+        [
+            {
+                "File": "test.py",
+                "StartLine": 1,
+                "Entropy": 4.25,
+                "RuleID": "test",
+            },
+        ],
+    )
 
     issues = parse_gitleaks_output(output=sample_output)
 
@@ -365,14 +375,16 @@ def test_gitleaks_entropy_parsing() -> None:
 
 def test_gitleaks_entropy_as_int() -> None:
     """Parser should handle entropy as integer."""
-    sample_output = json.dumps([
-        {
-            "File": "test.py",
-            "StartLine": 1,
-            "Entropy": 4,
-            "RuleID": "test",
-        },
-    ])
+    sample_output = json.dumps(
+        [
+            {
+                "File": "test.py",
+                "StartLine": 1,
+                "Entropy": 4,
+                "RuleID": "test",
+            },
+        ],
+    )
 
     issues = parse_gitleaks_output(output=sample_output)
 
@@ -382,14 +394,16 @@ def test_gitleaks_entropy_as_int() -> None:
 
 def test_gitleaks_tags_empty_list() -> None:
     """Parser should handle empty tags list."""
-    sample_output = json.dumps([
-        {
-            "File": "test.py",
-            "StartLine": 1,
-            "Tags": [],
-            "RuleID": "test",
-        },
-    ])
+    sample_output = json.dumps(
+        [
+            {
+                "File": "test.py",
+                "StartLine": 1,
+                "Tags": [],
+                "RuleID": "test",
+            },
+        ],
+    )
 
     issues = parse_gitleaks_output(output=sample_output)
 
@@ -399,13 +413,15 @@ def test_gitleaks_tags_empty_list() -> None:
 
 def test_gitleaks_tags_none() -> None:
     """Parser should handle missing tags field."""
-    sample_output = json.dumps([
-        {
-            "File": "test.py",
-            "StartLine": 1,
-            "RuleID": "test",
-        },
-    ])
+    sample_output = json.dumps(
+        [
+            {
+                "File": "test.py",
+                "StartLine": 1,
+                "RuleID": "test",
+            },
+        ],
+    )
 
     issues = parse_gitleaks_output(output=sample_output)
 
