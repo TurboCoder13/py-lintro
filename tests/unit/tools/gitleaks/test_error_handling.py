@@ -26,7 +26,7 @@ def test_check_with_timeout(
         tmp_path: Temporary directory path for test files.
     """
     test_file = tmp_path / "test_module.py"
-    test_file.write_text('"""Test module."""' + chr(92) + 'n')
+    test_file.write_text('"""Test module."""' + chr(92) + "n")
 
     with patch(
         "lintro.plugins.execution_preparation.verify_tool_version",
@@ -57,7 +57,7 @@ def test_check_with_execution_failure(
         tmp_path: Temporary directory path for test files.
     """
     test_file = tmp_path / "test_module.py"
-    test_file.write_text('"""Test module."""' + chr(92) + 'n')
+    test_file.write_text('"""Test module."""' + chr(92) + "n")
 
     with patch(
         "lintro.plugins.execution_preparation.verify_tool_version",
@@ -88,7 +88,7 @@ def test_fix_raises_not_implemented_error(
         tmp_path: Temporary directory path for test files.
     """
     test_file = tmp_path / "test_module.py"
-    test_file.write_text('API_KEY = "secret123"' + chr(92) + 'n')
+    test_file.write_text('API_KEY = "secret123"' + chr(92) + "n")
 
     with pytest.raises(NotImplementedError, match="cannot automatically fix"):
         gitleaks_plugin.fix([str(test_file)], {})
