@@ -191,7 +191,7 @@ def test_parse_gitleaks_git_history_fields() -> None:
 
 def test_gitleaks_issue_display_row() -> None:
     """GitleaksIssue should produce correct display row."""
-    issue = GitleaksIssue(
+    issue = GitleaksIssue(  # nosec B106 - test data for secret detection
         file="config.py",
         line=10,
         column=5,
@@ -212,7 +212,7 @@ def test_gitleaks_issue_display_row() -> None:
 
 def test_gitleaks_issue_message_without_secret() -> None:
     """GitleaksIssue message should not show REDACTED when no secret."""
-    issue = GitleaksIssue(
+    issue = GitleaksIssue(  # nosec B106 - test data for secret detection
         file="test.py",
         line=1,
         column=1,
