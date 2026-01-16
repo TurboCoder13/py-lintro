@@ -82,7 +82,7 @@ class HadolintPlugin(BaseToolPlugin):
             default_timeout=HADOLINT_DEFAULT_TIMEOUT,
         )
 
-    def set_options(  # type: ignore[override]
+    def set_options(
         self,
         format: str | HadolintFormat | None = None,
         failure_threshold: str | HadolintFailureThreshold | None = None,
@@ -244,7 +244,7 @@ class HadolintPlugin(BaseToolPlugin):
         """
         ctx = self._prepare_execution(paths, options)
         if ctx.should_skip:
-            return ctx.early_result  # type: ignore[return-value]
+            return ctx.early_result
 
         # Process files using the shared file processor
         result = self._process_files_with_progress(
