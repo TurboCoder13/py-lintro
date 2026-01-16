@@ -850,6 +850,95 @@ lintro check src/ --tools clippy
 
 ### Shell Tools
 
+#### ShellCheck Configuration
+
+ShellCheck is a static analysis tool for shell scripts. It identifies bugs, syntax
+issues, and suggests improvements for bash/sh/dash/ksh/zsh scripts. Unlike formatters,
+ShellCheck focuses on finding potential bugs and problematic patterns.
+
+**Installation:**
+
+```bash
+# macOS
+brew install shellcheck
+
+# Debian/Ubuntu
+apt-get install shellcheck
+
+# Fedora
+dnf install ShellCheck
+```
+
+**File:** `.shellcheckrc`
+
+```ini
+# Exclude specific codes
+disable=SC2086,SC2046
+
+# Set default shell dialect
+shell=bash
+
+# Set minimum severity level
+severity=warning
+```
+
+**Lintro options via `--tool-options`:**
+
+```bash
+# Set minimum severity level (error, warning, info, style)
+lintro check --tools shellcheck --tool-options "shellcheck:severity=warning"
+
+# Force shell dialect (bash, sh, dash, ksh, zsh)
+lintro check --tools shellcheck --tool-options "shellcheck:shell=bash"
+
+# Exclude specific codes
+lintro check --tools shellcheck --tool-options "shellcheck:exclude=SC2086|SC2046"
+```
+
+**Available Options:**
+
+| Option     | Type        | Description                                     |
+| ---------- | ----------- | ----------------------------------------------- |
+| `severity` | str         | Minimum severity: error, warning, info, style   |
+| `exclude`  | list\[str\] | List of codes to exclude (e.g., SC2086, SC2046) |
+| `shell`    | str         | Force shell dialect: bash, sh, dash, ksh, zsh   |
+
+**Common ShellCheck Codes:**
+
+| Code   | Description                                         |
+| ------ | --------------------------------------------------- |
+| SC2086 | Double quote to prevent globbing and word splitting |
+| SC2046 | Quote this to prevent word splitting                |
+| SC2002 | Useless use of cat                                  |
+| SC2006 | Use $(...) notation instead of backticks            |
+| SC2034 | Variable appears unused                             |
+| SC2155 | Declare and assign separately                       |
+
+**Inline ignoring:**
+
+```bash
+#!/bin/bash
+
+# shellcheck disable=SC2086
+echo $unquoted_variable
+
+# Or use a directive that applies to the whole file at the top:
+# shellcheck disable=SC2086,SC2046
+```
+
+**Lintro usage:**
+
+```bash
+# Check shell scripts with ShellCheck
+lintro check --tools shellcheck
+
+# Check with warning level (ignores info and style)
+lintro check --tools shellcheck --tool-options "shellcheck:severity=warning"
+
+# Check specific shell directories
+lintro check scripts/ --tools shellcheck
+```
+
 #### Shfmt Configuration
 
 Shfmt is a shell script formatter that supports POSIX, Bash, mksh, and bats shells. It

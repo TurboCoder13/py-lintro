@@ -274,6 +274,7 @@ def test_get_all_tool_versions(mock_run: MagicMock) -> None:
         "markdownlint",
         "clippy",
         "semgrep",
+        "shellcheck",
         "shfmt",
     }
 

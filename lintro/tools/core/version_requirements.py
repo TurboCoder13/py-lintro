@@ -56,6 +56,7 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         # Rust/Cargo tools
         "clippy": ["cargo", "clippy"],
         # Shell tools
+        "shellcheck": ["shellcheck"],
         "shfmt": ["shfmt"],
         # Security tools
         "semgrep": ["semgrep"],
