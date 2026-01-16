@@ -294,6 +294,10 @@ def get_install_hints() -> dict[str, str]:
                 f"Install via: rustup component add clippy "
                 f"(requires Rust {versions.get('clippy', '1.75.0')}+)"
             ),
+            "semgrep": (
+                f"Install via: pip install semgrep>="
+                f"{versions.get('semgrep', '1.50.0')} or brew install semgrep"
+            ),
             "shfmt": (
                 f"Install via: https://github.com/mvdan/sh/releases "
                 f"(v{versions.get('shfmt', '3.7.0')}+)"
