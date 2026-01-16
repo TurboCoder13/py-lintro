@@ -166,10 +166,6 @@ class GitleaksPlugin(BaseToolPlugin):
         Returns:
             ToolResult with check results.
         """
-        # Merge runtime options
-        merged_options = dict(self.options)
-        merged_options.update(options)
-
         # Use shared preparation for version check, path validation
         ctx = self._prepare_execution(paths=paths, options=options)
         if ctx.should_skip:
@@ -185,7 +181,9 @@ class GitleaksPlugin(BaseToolPlugin):
         output: str
         execution_failure: bool = False
         try:
-            success, combined = self._run_subprocess(
+            # Note: gitleaks with --exit-code 0 always returns success,
+            # we parse the JSON output to determine findings
+            _, combined = self._run_subprocess(
                 cmd=cmd,
                 timeout=ctx.timeout,
                 cwd=ctx.cwd,
