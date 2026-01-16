@@ -349,7 +349,14 @@ class ShfmtPlugin(BaseToolPlugin):
         fixed_files: list[str] = []
 
         def process_fix(file_path: str) -> FileProcessingResult:
-            """Process a single file for fixing."""
+            """Process a single file for fixing.
+
+            Args:
+                file_path: Path to the file to process.
+
+            Returns:
+                FileProcessingResult with processing outcome.
+            """
             nonlocal initial_issues_total, fixed_issues_total, fixed_files
             result, initial, fixed = self._process_single_file_fix(
                 file_path=file_path,
