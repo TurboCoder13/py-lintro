@@ -255,10 +255,6 @@ class SemgrepPlugin(BaseToolPlugin):
         Returns:
             ToolResult with check results.
         """
-        # Merge runtime options
-        merged_options = dict(self.options)
-        merged_options.update(options)
-
         # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(paths=paths, options=options)
         if ctx.should_skip:
@@ -270,7 +266,9 @@ class SemgrepPlugin(BaseToolPlugin):
         output: str
         execution_failure: bool = False
         try:
-            success, combined = self._run_subprocess(
+            # Note: semgrep returns non-zero exit code when findings exist,
+            # so we intentionally ignore the success return value
+            _, combined = self._run_subprocess(
                 cmd=cmd,
                 timeout=ctx.timeout,
                 cwd=ctx.cwd,

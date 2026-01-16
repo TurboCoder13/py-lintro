@@ -37,13 +37,15 @@ class SemgrepIssue(BaseIssue):
     metadata: dict[str, object] | None = field(default=None)
 
     def __post_init__(self) -> None:
-        """Initialize the inherited fields."""
-        # Set the message field if not already set
-        if not self.message:
-            self.message = self._get_message()
+        """Initialize the inherited fields with formatted message."""
+        # Always format the message to include check_id and severity prefix
+        self.message = self._get_message(self.message)
 
-    def _get_message(self) -> str:
-        """Get the formatted issue message.
+    def _get_message(self, base_message: str = "") -> str:
+        """Get the formatted issue message with check_id and severity prefix.
+
+        Args:
+            base_message: The original message to include after the prefix.
 
         Returns:
             Formatted issue message including check_id and severity.
@@ -53,6 +55,6 @@ class SemgrepIssue(BaseIssue):
             parts.append(f"[{self.check_id}]")
         if self.severity:
             parts.append(f"{self.severity}:")
-        if self.message:
-            parts.append(self.message)
+        if base_message:
+            parts.append(base_message)
         return " ".join(parts) if parts else ""
