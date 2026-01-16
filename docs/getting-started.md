@@ -75,6 +75,8 @@ Some tools require separate installation. Their minimum versions are also manage
 - `prettier` - JavaScript/TypeScript formatter (install via npm)
 - `hadolint` - Dockerfile linter (download from GitHub releases)
 - `actionlint` - GitHub Actions linter (download from GitHub releases)
+- `semgrep` - Security scanner and code analyzer (`pip install semgrep` or
+  `brew install semgrep`)
 
 ### Checking Versions
 

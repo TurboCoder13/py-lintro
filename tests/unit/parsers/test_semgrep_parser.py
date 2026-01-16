@@ -243,6 +243,10 @@ def test_semgrep_check_parses_mixed_output_json(
         timeout: int,
         **kwargs: Any,
     ) -> SimpleNamespace:
+        # Handle version check calls
+        if "--version" in cmd:
+            return SimpleNamespace(stdout="semgrep 1.50.0", stderr="", returncode=0)
+        # Handle actual check calls
         return SimpleNamespace(
             stdout=mixed_stdout,
             stderr=mixed_stderr,

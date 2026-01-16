@@ -167,9 +167,8 @@ class SemgrepPlugin(BaseToolPlugin):
                 raise ValueError(f"severity must be one of {valid_severities}")
             severity = severity_upper
 
-        if (
-            timeout_threshold is not None
-            and (not isinstance(timeout_threshold, int) or timeout_threshold < 0)
+        if timeout_threshold is not None and (
+            not isinstance(timeout_threshold, int) or timeout_threshold < 0
         ):
             raise ValueError("timeout_threshold must be a non-negative integer")
 
