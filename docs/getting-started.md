@@ -75,6 +75,7 @@ Some tools require separate installation. Their minimum versions are also manage
 - `prettier` - JavaScript/TypeScript formatter (install via npm)
 - `hadolint` - Dockerfile linter (download from GitHub releases)
 - `actionlint` - GitHub Actions linter (download from GitHub releases)
+- `taplo` - TOML linter and formatter (`brew install taplo` or GitHub releases)
 
 ### Checking Versions
 
