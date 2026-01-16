@@ -294,6 +294,10 @@ def get_install_hints() -> dict[str, str]:
                 f"Install via: rustup component add clippy "
                 f"(requires Rust {versions.get('clippy', '1.75.0')}+)"
             ),
+            "shellcheck": (
+                f"Install via: https://github.com/koalaman/shellcheck/releases "
+                f"(v{versions.get('shellcheck', '0.9.0')}+)"
+            ),
         },
     )
 
