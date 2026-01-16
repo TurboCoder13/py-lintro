@@ -1109,6 +1109,70 @@ lintro format --tools shfmt
 lintro check scripts/ --tools shfmt
 ```
 
+### TOML Tools
+
+#### Taplo Configuration
+
+**File:** `taplo.toml` or `.taplo.toml`
+
+```toml
+# Taplo configuration
+[formatting]
+align_entries = false
+align_comments = true
+array_trailing_comma = true
+array_auto_expand = true
+array_auto_collapse = true
+compact_arrays = true
+compact_inline_tables = false
+column_width = 80
+indent_tables = false
+indent_entries = false
+indent_string = "  "
+trailing_newline = true
+reorder_keys = false
+allowed_blank_lines = 2
+crlf = false
+
+[[rule]]
+# Apply to all TOML files
+include = ["**/*.toml"]
+keys = ["Cargo.toml"]
+
+[rule.formatting]
+reorder_keys = true
+```
+
+**Available Options:**
+
+| Option                 | Type    | Description                               |
+| ---------------------- | ------- | ----------------------------------------- |
+| `schema`               | string  | Path or URL to JSON schema for validation |
+| `aligned_arrays`       | boolean | Align array entries vertically            |
+| `aligned_entries`      | boolean | Align table entries (key = value)         |
+| `array_trailing_comma` | boolean | Add trailing comma in multi-line arrays   |
+| `indent_string`        | string  | Indentation string (default: 2 spaces)    |
+| `reorder_keys`         | boolean | Reorder keys alphabetically               |
+
+**Usage Examples:**
+
+```bash
+# Basic TOML check
+lintro check --tools taplo
+
+# Format TOML files
+lintro format --tools taplo
+
+# Check with aligned entries
+lintro check --tools taplo --tool-options taplo:aligned_entries=true
+
+# Format with specific indent
+lintro format --tools taplo --tool-options taplo:indent_string="    "
+
+# Use custom schema for validation
+lintro check --tools taplo --tool-options taplo:schema=pyproject.schema.json
+```
+
 ### Infrastructure Tools
 
 #### Hadolint Configuration
