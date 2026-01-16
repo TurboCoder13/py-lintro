@@ -96,8 +96,8 @@ class LintroGroup(click.Group):
 
         # Options
         console.print("[bold cyan]Options:[/bold cyan]")
-        console.print("  [yellow]--version[/yellow]  Show the version and exit.")
-        console.print("  [yellow]--help[/yellow]     Show this message and exit.")
+        console.print("  [yellow]-v, --version[/yellow]  Show the version and exit.")
+        console.print("  [yellow]-h, --help[/yellow]     Show this message and exit.")
         console.print()
 
         # Examples
@@ -163,8 +163,12 @@ class LintroGroup(click.Group):
         return int(result) if isinstance(result, int) else 0
 
 
-@click.group(cls=LintroGroup, invoke_without_command=True)
-@click.version_option(version=__version__)
+@click.group(
+    cls=LintroGroup,
+    invoke_without_command=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+@click.version_option(__version__, "-v", "--version")
 def cli() -> None:
     """Lintro: Unified CLI for code formatting, linting, and quality assurance."""
     pass
@@ -189,11 +193,15 @@ cli.add_command(versions_command, name="versions")
 
 # Register aliases
 cli.add_command(check_command, name="chk")
+cli.add_command(check_command, name="lint")
 cli.add_command(config_command, name="cfg")
 cli.add_command(format_command, name="fmt")
+cli.add_command(format_command, name="fix")
 cli.add_command(test_command, name="tst")
 cli.add_command(list_tools_command, name="ls")
+cli.add_command(list_tools_command, name="tools")
 cli.add_command(versions_command, name="ver")
+cli.add_command(versions_command, name="version")
 
 
 def main() -> None:
