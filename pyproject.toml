@@ -90,6 +90,7 @@ typing = [
 ]
 tools = [
     "semgrep>=1.50.0",
+    "sqlfluff>=3.0.0",
 ]
 
 [project.scripts]
