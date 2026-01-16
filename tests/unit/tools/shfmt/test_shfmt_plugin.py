@@ -362,7 +362,9 @@ def test_check_with_mocked_subprocess_issues(
         tmp_path: Temporary directory path for test files.
     """
     test_file = tmp_path / "test_script.sh"
-    test_file.write_text('#!/bin/bash\nif [  "$foo" = "bar" ]; then\necho "match"\nfi\n')
+    test_file.write_text(
+        '#!/bin/bash\nif [  "$foo" = "bar" ]; then\necho "match"\nfi\n',
+    )
 
     shfmt_diff_output = f"""--- {test_file}
 +++ {test_file}
@@ -449,7 +451,9 @@ def test_fix_with_mocked_subprocess_success(
         tmp_path: Temporary directory path for test files.
     """
     test_file = tmp_path / "test_script.sh"
-    test_file.write_text('#!/bin/bash\nif [  "$foo" = "bar" ]; then\necho "match"\nfi\n')
+    test_file.write_text(
+        '#!/bin/bash\nif [  "$foo" = "bar" ]; then\necho "match"\nfi\n',
+    )
 
     shfmt_diff_output = f"""--- {test_file}
 +++ {test_file}
