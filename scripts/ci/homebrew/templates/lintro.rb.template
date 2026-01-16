@@ -29,6 +29,7 @@ class Lintro < Formula
   depends_on "python@3.13"
   depends_on "ruff"
   depends_on "semgrep"
+  depends_on "shellcheck"
   depends_on "shfmt"
   depends_on "yamllint"
 
@@ -71,6 +72,8 @@ class Lintro < Formula
         - prettier - Code formatter
         - yamllint - YAML linter
         - semgrep - Security scanner
+        - shellcheck - Shell script analyzer
+        - shfmt - Shell script formatter
 
       Bundled tools:
         - darglint - Python docstring linter

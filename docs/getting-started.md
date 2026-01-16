@@ -77,6 +77,7 @@ Some tools require separate installation. Their minimum versions are also manage
 - `actionlint` - GitHub Actions linter (download from GitHub releases)
 - `semgrep` - Security scanner and code analyzer (`pipx install semgrep`,
   `pip install semgrep`, or `brew install semgrep`)
+- `shellcheck` - Shell script analyzer (`brew install shellcheck` or GitHub releases)
 - `shfmt` - Shell script formatter (`brew install shfmt` or GitHub releases)
 
 ### Checking Versions
