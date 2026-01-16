@@ -74,6 +74,7 @@ system.
 | [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                                        | 🐍 Python              | ✅       |
 | [![Mypy](https://img.shields.io/badge/Mypy-type%20checking-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)                                       | 🐍 Python              | -        |
 | [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)                                 | 🐍 Python              | -        |
+| [![Gitleaks](https://img.shields.io/badge/Gitleaks-secrets-dc2626?logo=git&logoColor=white)](https://gitleaks.io/)                                            | 🔐 Secret Detection    | -        |
 | [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                                        | 🟨 JS/TS · 🧾 JSON     | ✅       |
 | [![Biome](https://img.shields.io/badge/Biome-lint-60A5FA?logo=biome&logoColor=white)](https://biomejs.dev/)                                                   | 🟨 JS/TS · 🧾 JSON/CSS | ✅       |
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                           | 🧾 YAML                | -        |
@@ -111,6 +112,8 @@ For full functionality, install these additional tools:
 - **Markdownlint-cli2** - `npm install -g markdownlint-cli2`
 - **Hadolint** - [GitHub Releases](https://github.com/hadolint/hadolint/releases)
 - **Actionlint** - [GitHub Releases](https://github.com/rhysd/actionlint/releases)
+- **Gitleaks** - `brew install gitleaks` or
+  [GitHub Releases](https://github.com/gitleaks/gitleaks/releases)
 
 Check all tool versions with: `lintro list-tools`
 
