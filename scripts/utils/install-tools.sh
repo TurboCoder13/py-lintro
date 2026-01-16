@@ -618,7 +618,7 @@ main() {
     
     # Install darglint (Python package)
     echo -e "${BLUE}Installing darglint...${NC}"
-    
+
     if [ $DRY_RUN -eq 1 ]; then
         log_info "[DRY-RUN] Would install darglint==1.8.1"
     elif install_python_package "darglint" "1.8.1"; then
@@ -627,7 +627,18 @@ main() {
         echo -e "${RED}✗ Failed to install darglint${NC}"
         exit 1
     fi
-    
+
+    # Install semgrep (security scanner)
+    echo -e "${BLUE}Installing semgrep...${NC}"
+    if [ $DRY_RUN -eq 1 ]; then
+        log_info "[DRY-RUN] Would install semgrep"
+    elif install_python_package "semgrep"; then
+        echo -e "${GREEN}✓ semgrep installed successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to install semgrep${NC}"
+        exit 1
+    fi
+
     echo ""
     echo -e "${GREEN}=== Installation Complete! ===${NC}"
     echo ""
@@ -643,13 +654,14 @@ main() {
     echo "  - prettier (JavaScript/JSON formatting)"
     echo "  - ruff (Python linting and formatting)"
     echo "  - mypy (Python type checking)"
+    echo "  - semgrep (Security scanning)"
     echo "  - yamllint (YAML linting)"
     echo ""
     
     # Verify installations
     echo -e "${YELLOW}Verifying installations...${NC}"
     
-    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "yamllint" "mypy")
+    tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "yamllint" "mypy")
     for tool in "${tools_to_verify[@]}"; do
         if [ "$tool" = "clippy" ]; then
             # Clippy is invoked through cargo
