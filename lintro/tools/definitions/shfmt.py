@@ -94,6 +94,9 @@ class ShfmtPlugin(BaseToolPlugin):
             language_dialect: Shell language dialect (bash, posix, mksh, bats).
             simplify: Simplify code where possible.
             **kwargs: Other tool options.
+
+        Raises:
+            ValueError: If language_dialect is not a valid dialect.
         """
         validate_int(indent, "indent")
         validate_bool(binary_next_line, "binary_next_line")

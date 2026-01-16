@@ -79,6 +79,7 @@ system.
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                           | 🧾 YAML                | -        |
 | [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)                            | 🐳 Dockerfile          | -        |
 | [![Actionlint](https://img.shields.io/badge/Actionlint-lint-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)                         | ⚙️ GitHub Actions      | -        |
+| [![shfmt](https://img.shields.io/badge/shfmt-format-4EAA25?logo=gnubash&logoColor=white)](https://github.com/mvdan/sh)                                        | 🐚 Shell Scripts       | ✅       |
 | [![Markdownlint](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2) | 📝 Markdown            | -        |
 | [![Clippy](https://img.shields.io/badge/Clippy-lint-000000?logo=rust&logoColor=white)](https://github.com/rust-lang/rust-clippy)                              | 🦀 Rust                | ✅       |
 | [![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint)               | 🐍 Python              | -        |
@@ -111,6 +112,8 @@ For full functionality, install these additional tools:
 - **Markdownlint-cli2** - `npm install -g markdownlint-cli2`
 - **Hadolint** - [GitHub Releases](https://github.com/hadolint/hadolint/releases)
 - **Actionlint** - [GitHub Releases](https://github.com/rhysd/actionlint/releases)
+- **shfmt** - `brew install shfmt` or
+  [GitHub Releases](https://github.com/mvdan/sh/releases)
 
 Check all tool versions with: `lintro list-tools`
 
