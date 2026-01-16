@@ -23,6 +23,7 @@ Example:
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -44,7 +45,7 @@ class FileProcessingResult:
 
     success: bool
     output: str
-    issues: list[BaseIssue]
+    issues: Sequence[BaseIssue]
     skipped: bool = False
     error: str | None = None
 
