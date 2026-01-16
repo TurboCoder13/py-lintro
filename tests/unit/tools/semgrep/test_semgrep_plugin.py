@@ -11,6 +11,7 @@ from unittest.mock import patch
 import pytest
 from assertpy import assert_that
 
+from lintro.parsers.semgrep.semgrep_issue import SemgrepIssue
 from lintro.parsers.semgrep.semgrep_parser import parse_semgrep_output
 from lintro.tools.definitions.semgrep import (
     SEMGREP_DEFAULT_CONFIG,
@@ -136,6 +137,7 @@ def test_set_options_valid(
     semgrep_plugin.set_options(**{option_name: option_value})  # type: ignore[arg-type]
 
     # Severity is normalized to uppercase
+    expected: object
     if option_name == "severity" and isinstance(option_value, str):
         expected = option_value.upper()
     else:
@@ -166,7 +168,11 @@ def test_set_options_severity_lowercase(semgrep_plugin: SemgrepPlugin) -> None:
         ("jobs", -1, "jobs must be a positive integer"),
         ("jobs", "four", "jobs must be a positive integer"),
         ("timeout_threshold", -1, "timeout_threshold must be a non-negative integer"),
-        ("timeout_threshold", "slow", "timeout_threshold must be a non-negative integer"),
+        (
+            "timeout_threshold",
+            "slow",
+            "timeout_threshold must be a non-negative integer",
+        ),
         ("exclude", "*.py", "exclude must be a list"),
         ("include", "*.py", "include must be a list"),
         ("config", 123, "config must be a string"),
@@ -410,28 +416,30 @@ def test_check_with_mocked_subprocess_findings(
         tmp_path: Temporary directory path for test files.
     """
     test_file = tmp_path / "vulnerable.py"
-    test_file.write_text('import os\nos.system(user_input)\n')
+    test_file.write_text("import os\nos.system(user_input)\n")
 
     # Semgrep JSON output with findings
-    semgrep_output = json.dumps({
-        "results": [
-            {
-                "check_id": "python.lang.security.audit.dangerous-system-call",
-                "path": str(test_file),
-                "start": {"line": 2, "col": 1},
-                "end": {"line": 2, "col": 25},
-                "extra": {
-                    "message": "Detected dangerous system call with user input",
-                    "severity": "ERROR",
-                    "metadata": {
-                        "category": "security",
-                        "cwe": ["CWE-78"],
+    semgrep_output = json.dumps(
+        {
+            "results": [
+                {
+                    "check_id": "python.lang.security.audit.dangerous-system-call",
+                    "path": str(test_file),
+                    "start": {"line": 2, "col": 1},
+                    "end": {"line": 2, "col": 25},
+                    "extra": {
+                        "message": "Detected dangerous system call with user input",
+                        "severity": "ERROR",
+                        "metadata": {
+                            "category": "security",
+                            "cwe": ["CWE-78"],
+                        },
                     },
                 },
-            },
-        ],
-        "errors": [],
-    })
+            ],
+            "errors": [],
+        },
+    )
 
     with patch(
         "lintro.plugins.execution_preparation.verify_tool_version",
@@ -446,8 +454,11 @@ def test_check_with_mocked_subprocess_findings(
 
     assert_that(result.success).is_true()  # No errors in response
     assert_that(result.issues_count).is_equal_to(1)
+    assert result.issues is not None
     assert_that(result.issues).is_length(1)
-    assert_that(result.issues[0].check_id).is_equal_to(
+    issue = result.issues[0]
+    assert isinstance(issue, SemgrepIssue)
+    assert_that(issue.check_id).is_equal_to(
         "python.lang.security.audit.dangerous-system-call",
     )
 
@@ -522,36 +533,38 @@ def test_check_with_multiple_findings(
         tmp_path: Temporary directory path for test files.
     """
     test_file = tmp_path / "multiple_issues.py"
-    test_file.write_text('import os\nos.system(x)\neval(y)\n')
+    test_file.write_text("import os\nos.system(x)\neval(y)\n")
 
     # Semgrep JSON output with multiple findings
-    semgrep_output = json.dumps({
-        "results": [
-            {
-                "check_id": "python.lang.security.audit.dangerous-system-call",
-                "path": str(test_file),
-                "start": {"line": 2, "col": 1},
-                "end": {"line": 2, "col": 15},
-                "extra": {
-                    "message": "Dangerous system call",
-                    "severity": "ERROR",
-                    "metadata": {"category": "security"},
+    semgrep_output = json.dumps(
+        {
+            "results": [
+                {
+                    "check_id": "python.lang.security.audit.dangerous-system-call",
+                    "path": str(test_file),
+                    "start": {"line": 2, "col": 1},
+                    "end": {"line": 2, "col": 15},
+                    "extra": {
+                        "message": "Dangerous system call",
+                        "severity": "ERROR",
+                        "metadata": {"category": "security"},
+                    },
                 },
-            },
-            {
-                "check_id": "python.lang.security.audit.eval-usage",
-                "path": str(test_file),
-                "start": {"line": 3, "col": 1},
-                "end": {"line": 3, "col": 8},
-                "extra": {
-                    "message": "Use of eval() detected",
-                    "severity": "WARNING",
-                    "metadata": {"category": "security"},
+                {
+                    "check_id": "python.lang.security.audit.eval-usage",
+                    "path": str(test_file),
+                    "start": {"line": 3, "col": 1},
+                    "end": {"line": 3, "col": 8},
+                    "extra": {
+                        "message": "Use of eval() detected",
+                        "severity": "WARNING",
+                        "metadata": {"category": "security"},
+                    },
                 },
-            },
-        ],
-        "errors": [],
-    })
+            ],
+            "errors": [],
+        },
+    )
 
     with patch(
         "lintro.plugins.execution_preparation.verify_tool_version",
@@ -582,12 +595,14 @@ def test_check_with_semgrep_errors(
     test_file.write_text('"""Test module."""\n')
 
     # Semgrep JSON output with errors
-    semgrep_output = json.dumps({
-        "results": [],
-        "errors": [
-            {"message": "Failed to fetch rules from registry"},
-        ],
-    })
+    semgrep_output = json.dumps(
+        {
+            "results": [],
+            "errors": [
+                {"message": "Failed to fetch rules from registry"},
+            ],
+        },
+    )
 
     with patch(
         "lintro.plugins.execution_preparation.verify_tool_version",
@@ -621,21 +636,23 @@ def test_fix_raises_not_implemented(semgrep_plugin: SemgrepPlugin) -> None:
 
 def test_parse_semgrep_output_single_issue() -> None:
     """Parse single issue from Semgrep output."""
-    output = json.dumps({
-        "results": [
-            {
-                "check_id": "python.lang.security.audit.eval-usage",
-                "path": "test.py",
-                "start": {"line": 10, "col": 1},
-                "end": {"line": 10, "col": 15},
-                "extra": {
-                    "message": "Detected use of eval()",
-                    "severity": "WARNING",
-                    "metadata": {"category": "security"},
+    output = json.dumps(
+        {
+            "results": [
+                {
+                    "check_id": "python.lang.security.audit.eval-usage",
+                    "path": "test.py",
+                    "start": {"line": 10, "col": 1},
+                    "end": {"line": 10, "col": 15},
+                    "extra": {
+                        "message": "Detected use of eval()",
+                        "severity": "WARNING",
+                        "metadata": {"category": "security"},
+                    },
                 },
-            },
-        ],
-    })
+            ],
+        },
+    )
     issues = parse_semgrep_output(output)
 
     assert_that(issues).is_length(1)
@@ -647,32 +664,34 @@ def test_parse_semgrep_output_single_issue() -> None:
 
 def test_parse_semgrep_output_multiple_issues() -> None:
     """Parse multiple issues from Semgrep output."""
-    output = json.dumps({
-        "results": [
-            {
-                "check_id": "rule1",
-                "path": "file1.py",
-                "start": {"line": 5, "col": 1},
-                "end": {"line": 5, "col": 10},
-                "extra": {
-                    "message": "Issue 1",
-                    "severity": "ERROR",
-                    "metadata": {},
+    output = json.dumps(
+        {
+            "results": [
+                {
+                    "check_id": "rule1",
+                    "path": "file1.py",
+                    "start": {"line": 5, "col": 1},
+                    "end": {"line": 5, "col": 10},
+                    "extra": {
+                        "message": "Issue 1",
+                        "severity": "ERROR",
+                        "metadata": {},
+                    },
                 },
-            },
-            {
-                "check_id": "rule2",
-                "path": "file2.py",
-                "start": {"line": 15, "col": 1},
-                "end": {"line": 15, "col": 20},
-                "extra": {
-                    "message": "Issue 2",
-                    "severity": "WARNING",
-                    "metadata": {},
+                {
+                    "check_id": "rule2",
+                    "path": "file2.py",
+                    "start": {"line": 15, "col": 1},
+                    "end": {"line": 15, "col": 20},
+                    "extra": {
+                        "message": "Issue 2",
+                        "severity": "WARNING",
+                        "metadata": {},
+                    },
                 },
-            },
-        ],
-    })
+            ],
+        },
+    )
     issues = parse_semgrep_output(output)
 
     assert_that(issues).is_length(2)
@@ -697,24 +716,26 @@ def test_parse_semgrep_output_empty_results() -> None:
 
 def test_parse_semgrep_output_with_cwe() -> None:
     """Parse output with CWE information."""
-    output = json.dumps({
-        "results": [
-            {
-                "check_id": "security-rule",
-                "path": "app.py",
-                "start": {"line": 20, "col": 1},
-                "end": {"line": 20, "col": 30},
-                "extra": {
-                    "message": "SQL injection vulnerability",
-                    "severity": "ERROR",
-                    "metadata": {
-                        "category": "security",
-                        "cwe": ["CWE-89"],
+    output = json.dumps(
+        {
+            "results": [
+                {
+                    "check_id": "security-rule",
+                    "path": "app.py",
+                    "start": {"line": 20, "col": 1},
+                    "end": {"line": 20, "col": 30},
+                    "extra": {
+                        "message": "SQL injection vulnerability",
+                        "severity": "ERROR",
+                        "metadata": {
+                            "category": "security",
+                            "cwe": ["CWE-89"],
+                        },
                     },
                 },
-            },
-        ],
-    })
+            ],
+        },
+    )
     issues = parse_semgrep_output(output)
 
     assert_that(issues).is_length(1)
