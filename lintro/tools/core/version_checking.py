@@ -294,6 +294,11 @@ def get_install_hints() -> dict[str, str]:
                 f"Install via: rustup component add clippy "
                 f"(requires Rust {versions.get('clippy', '1.75.0')}+)"
             ),
+            "sqlfluff": (
+                f"Install via: pip install sqlfluff>="
+                f"{versions.get('sqlfluff', '3.0.0')} "
+                f"or uv add sqlfluff>={versions.get('sqlfluff', '3.0.0')}"
+            ),
         },
     )
 

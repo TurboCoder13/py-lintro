@@ -55,7 +55,7 @@ RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
 # Copy project files and install Python dependencies
 COPY pyproject.toml /app/
 COPY lintro/ /app/lintro/
-RUN uv sync --dev --no-progress && (uv cache clean || true)
+RUN uv sync --dev --extra tools --no-progress && (uv cache clean || true)
 
 # =============================================================================
 # Stage 2: Runtime - Minimal image with only what's needed to run
