@@ -160,6 +160,7 @@ packages = [
     "lintro.parsers.mypy",
     "lintro.parsers.shellcheck",
     "lintro.parsers.shfmt",
+    "lintro.parsers.sqlfluff",
     "lintro.plugins",
     "lintro.tools",
     "lintro.tools.core",
@@ -297,6 +298,7 @@ clippy = "1.92.0"
 semgrep = "1.50.0"
 shellcheck = "0.10.0"
 shfmt = "3.7.0"
+sqlfluff = "3.0.0"
 
 [tool.mypy]
 python_version = "3.11"

@@ -306,6 +306,11 @@ def get_install_hints() -> dict[str, str]:
                 f"Install via: https://github.com/mvdan/sh/releases "
                 f"(v{versions.get('shfmt', '3.7.0')}+)"
             ),
+            "sqlfluff": (
+                f"Install via: pip install sqlfluff>="
+                f"{versions.get('sqlfluff', '3.0.0')} "
+                f"or uv add sqlfluff>={versions.get('sqlfluff', '3.0.0')}"
+            ),
         },
     )
 

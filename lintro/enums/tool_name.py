@@ -26,6 +26,7 @@ class ToolName(StrEnum):
     SEMGREP = auto()
     SHELLCHECK = auto()
     SHFMT = auto()
+    SQLFLUFF = auto()
     YAMLLINT = auto()
 
 
