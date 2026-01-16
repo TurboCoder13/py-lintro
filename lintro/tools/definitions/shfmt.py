@@ -9,15 +9,14 @@ from __future__ import annotations
 
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
-from typing import Any
 
-import click
 from loguru import logger
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.shfmt.shfmt_parser import parse_shfmt_output
 from lintro.plugins.base import BaseToolPlugin
+from lintro.plugins.file_processor import FileProcessingResult
 from lintro.plugins.protocol import ToolDefinition
 from lintro.plugins.registry import register_tool
 from lintro.tools.core.option_validators import (
@@ -162,20 +161,19 @@ class ShfmtPlugin(BaseToolPlugin):
 
         return args
 
-    def _process_single_file_check(
+    def _process_single_file(
         self,
         file_path: str,
         timeout: int,
-        cwd: str | None,
-        results: dict[str, Any],
-    ) -> None:
+    ) -> FileProcessingResult:
         """Process a single file in check mode.
 
         Args:
             file_path: Path to the shell script to check.
             timeout: Timeout in seconds for the shfmt command.
-            cwd: Working directory for the command.
-            results: Dictionary to accumulate results across files.
+
+        Returns:
+            FileProcessingResult with processing outcome.
         """
         cmd = self._get_executable_command(tool_name="shfmt") + ["-d"]
         cmd.extend(self._build_common_args())
@@ -185,42 +183,41 @@ class ShfmtPlugin(BaseToolPlugin):
             success, output = self._run_subprocess(
                 cmd=cmd,
                 timeout=timeout,
-                cwd=cwd,
             )
             issues = parse_shfmt_output(output=output)
-            issues_count = len(issues)
-
-            if not success:
-                results["all_success"] = False
-            results["total_issues"] += issues_count
-
-            if not success or issues:
-                results["all_outputs"].append(output)
-            if issues:
-                results["all_issues"].extend(issues)
+            return FileProcessingResult(
+                success=success,
+                output=output,
+                issues=issues,
+            )
         except subprocess.TimeoutExpired:
-            results["skipped_files"].append(file_path)
-            results["all_success"] = False
-            results["execution_failures"] += 1
+            return FileProcessingResult(
+                success=False,
+                output="",
+                issues=[],
+                skipped=True,
+            )
         except (OSError, ValueError, RuntimeError) as e:
-            results["all_outputs"].append(f"Error processing {file_path}: {e!s}")
-            results["all_success"] = False
-            results["execution_failures"] += 1
+            return FileProcessingResult(
+                success=False,
+                output="",
+                issues=[],
+                error=str(e),
+            )
 
     def _process_single_file_fix(
         self,
         file_path: str,
         timeout: int,
-        cwd: str | None,
-        results: dict[str, Any],
-    ) -> None:
+    ) -> tuple[FileProcessingResult, int, int]:
         """Process a single file in fix mode.
 
         Args:
             file_path: Path to the shell script to fix.
             timeout: Timeout in seconds for the shfmt command.
-            cwd: Working directory for the command.
-            results: Dictionary to accumulate results across files.
+
+        Returns:
+            Tuple of (FileProcessingResult, initial_issues_count, fixed_issues_count).
         """
         # First check if file needs formatting
         check_cmd = self._get_executable_command(tool_name="shfmt") + ["-d"]
@@ -228,43 +225,56 @@ class ShfmtPlugin(BaseToolPlugin):
         check_cmd.append(file_path)
 
         try:
-            check_success, check_output = self._run_subprocess(
+            _, check_output = self._run_subprocess(
                 cmd=check_cmd,
                 timeout=timeout,
-                cwd=cwd,
             )
             check_issues = parse_shfmt_output(output=check_output)
 
-            if check_issues:
-                results["initial_issues"] += len(check_issues)
+            if not check_issues:
+                # No issues found, file is already formatted
+                return FileProcessingResult(
+                    success=True,
+                    output="",
+                    issues=[],
+                ), 0, 0
 
-                # Apply fix with -w flag
-                fix_cmd = self._get_executable_command(tool_name="shfmt") + ["-w"]
-                fix_cmd.extend(self._build_common_args())
-                fix_cmd.append(file_path)
+            # Apply fix with -w flag
+            fix_cmd = self._get_executable_command(tool_name="shfmt") + ["-w"]
+            fix_cmd.extend(self._build_common_args())
+            fix_cmd.append(file_path)
 
-                fix_success, _ = self._run_subprocess(
-                    cmd=fix_cmd,
-                    timeout=timeout,
-                    cwd=cwd,
-                )
+            fix_success, _ = self._run_subprocess(
+                cmd=fix_cmd,
+                timeout=timeout,
+            )
 
-                if fix_success:
-                    results["fixed_issues"] += len(check_issues)
-                    results["fixed_files"].append(file_path)
-                else:
-                    results["all_success"] = False
-                    results["remaining_issues"] += len(check_issues)
-                    results["all_issues"].extend(check_issues)
+            if fix_success:
+                return FileProcessingResult(
+                    success=True,
+                    output="",
+                    issues=[],
+                ), len(check_issues), len(check_issues)
+            return FileProcessingResult(
+                success=False,
+                output="",
+                issues=check_issues,
+            ), len(check_issues), 0
 
         except subprocess.TimeoutExpired:
-            results["skipped_files"].append(file_path)
-            results["all_success"] = False
-            results["execution_failures"] += 1
+            return FileProcessingResult(
+                success=False,
+                output="",
+                issues=[],
+                skipped=True,
+            ), 0, 0
         except (OSError, ValueError, RuntimeError) as e:
-            results["all_outputs"].append(f"Error processing {file_path}: {e!s}")
-            results["all_success"] = False
-            results["execution_failures"] += 1
+            return FileProcessingResult(
+                success=False,
+                output="",
+                issues=[],
+                error=str(e),
+            ), 0, 0
 
     def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with shfmt.
@@ -276,75 +286,22 @@ class ShfmtPlugin(BaseToolPlugin):
         Returns:
             ToolResult with check results.
         """
-        # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(paths, options)
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
 
-        shell_files = ctx.files
-
-        # Accumulate results across all files
-        results: dict[str, Any] = {
-            "all_outputs": [],
-            "all_issues": [],
-            "all_success": True,
-            "skipped_files": [],
-            "execution_failures": 0,
-            "total_issues": 0,
-        }
-
-        # Show progress bar only when processing multiple files
-        if len(shell_files) >= 2:
-            with click.progressbar(
-                shell_files,
-                label="Processing files",
-                bar_template="%(label)s  %(info)s",
-            ) as bar:
-                for file_path in bar:
-                    self._process_single_file_check(
-                        file_path=file_path,
-                        timeout=ctx.timeout,
-                        cwd=ctx.cwd,
-                        results=results,
-                    )
-        else:
-            for file_path in shell_files:
-                self._process_single_file_check(
-                    file_path=file_path,
-                    timeout=ctx.timeout,
-                    cwd=ctx.cwd,
-                    results=results,
-                )
-
-        # Build output from accumulated results
-        output: str = (
-            "\n".join(results["all_outputs"]) if results["all_outputs"] else ""
+        result = self._process_files_with_progress(
+            files=ctx.files,
+            processor=lambda f: self._process_single_file(f, ctx.timeout),
+            timeout=ctx.timeout,
         )
-        if results["execution_failures"] > 0:
-            if output:
-                output += "\n\n"
-            if results["skipped_files"]:
-                output += (
-                    f"Skipped/failed {results['execution_failures']} file(s) due to "
-                    f"execution failures (including timeouts)"
-                )
-                output += f" (timeout: {ctx.timeout}s):"
-                for file in results["skipped_files"]:
-                    output += f"\n  - {file}"
-            else:
-                output += (
-                    f"Failed to process {results['execution_failures']} file(s) "
-                    "due to execution errors"
-                )
-
-        final_output: str | None = output if output.strip() else None
 
         return ToolResult(
             name=self.definition.name,
-            success=results["all_success"] and results["total_issues"] == 0,
-            output=final_output,
-            issues_count=results["total_issues"],
-            issues=results["all_issues"],
+            success=result.all_success and result.total_issues == 0,
+            output=result.build_output(timeout=ctx.timeout),
+            issues_count=result.total_issues,
+            issues=result.all_issues,
         )
 
     def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
@@ -357,7 +314,6 @@ class ShfmtPlugin(BaseToolPlugin):
         Returns:
             ToolResult with fix results.
         """
-        # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(
             paths,
             options,
@@ -366,74 +322,64 @@ class ShfmtPlugin(BaseToolPlugin):
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
 
-        shell_files = ctx.files
+        # Track fix-specific metrics
+        initial_issues_total = 0
+        fixed_issues_total = 0
+        fixed_files: list[str] = []
 
-        # Accumulate results across all files
-        results: dict[str, Any] = {
-            "all_outputs": [],
-            "all_issues": [],
-            "all_success": True,
-            "skipped_files": [],
-            "execution_failures": 0,
-            "initial_issues": 0,
-            "fixed_issues": 0,
-            "remaining_issues": 0,
-            "fixed_files": [],
-        }
+        def process_fix(file_path: str) -> FileProcessingResult:
+            """Process a single file for fixing."""
+            nonlocal initial_issues_total, fixed_issues_total, fixed_files
+            result, initial, fixed = self._process_single_file_fix(
+                file_path=file_path,
+                timeout=ctx.timeout,
+            )
+            initial_issues_total += initial
+            fixed_issues_total += fixed
+            if fixed > 0:
+                fixed_files.append(file_path)
+            return result
 
-        # Show progress bar only when processing multiple files
-        if len(shell_files) >= 2:
-            with click.progressbar(
-                shell_files,
-                label="Formatting files",
-                bar_template="%(label)s  %(info)s",
-            ) as bar:
-                for file_path in bar:
-                    self._process_single_file_fix(
-                        file_path=file_path,
-                        timeout=ctx.timeout,
-                        cwd=ctx.cwd,
-                        results=results,
-                    )
-        else:
-            for file_path in shell_files:
-                self._process_single_file_fix(
-                    file_path=file_path,
-                    timeout=ctx.timeout,
-                    cwd=ctx.cwd,
-                    results=results,
-                )
+        result = self._process_files_with_progress(
+            files=ctx.files,
+            processor=process_fix,
+            timeout=ctx.timeout,
+            label="Formatting files",
+        )
+
+        # Calculate remaining issues
+        remaining_issues = initial_issues_total - fixed_issues_total
 
         # Build summary output
         summary_parts: list[str] = []
-        if results["fixed_issues"] > 0:
+        if fixed_issues_total > 0:
             summary_parts.append(
-                f"Fixed {results['fixed_issues']} issue(s) in "
-                f"{len(results['fixed_files'])} file(s)",
+                f"Fixed {fixed_issues_total} issue(s) in "
+                f"{len(fixed_files)} file(s)",
             )
-        if results["remaining_issues"] > 0:
+        if remaining_issues > 0:
             summary_parts.append(
-                f"Found {results['remaining_issues']} issue(s) that could not be fixed",
+                f"Found {remaining_issues} issue(s) that could not be fixed",
             )
-        if results["execution_failures"] > 0:
+        if result.execution_failures > 0:
             summary_parts.append(
-                f"Failed to process {results['execution_failures']} file(s)",
+                f"Failed to process {result.execution_failures} file(s)",
             )
 
         final_output = "\n".join(summary_parts) if summary_parts else "No fixes needed."
 
         logger.debug(
-            f"[ShfmtPlugin] Fix complete: initial={results['initial_issues']}, "
-            f"fixed={results['fixed_issues']}, remaining={results['remaining_issues']}",
+            f"[ShfmtPlugin] Fix complete: initial={initial_issues_total}, "
+            f"fixed={fixed_issues_total}, remaining={remaining_issues}",
         )
 
         return ToolResult(
             name=self.definition.name,
-            success=results["all_success"] and results["remaining_issues"] == 0,
+            success=result.all_success and remaining_issues == 0,
             output=final_output,
-            issues_count=results["remaining_issues"],
-            issues=results["all_issues"],
-            initial_issues_count=results["initial_issues"],
-            fixed_issues_count=results["fixed_issues"],
-            remaining_issues_count=results["remaining_issues"],
+            issues_count=remaining_issues,
+            issues=result.all_issues,
+            initial_issues_count=initial_issues_total,
+            fixed_issues_count=fixed_issues_total,
+            remaining_issues_count=remaining_issues,
         )
