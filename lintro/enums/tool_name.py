@@ -27,6 +27,7 @@ class ToolName(StrEnum):
     SHELLCHECK = auto()
     SHFMT = auto()
     SQLFLUFF = auto()
+    TAPLO = auto()
     YAMLLINT = auto()
 
 
