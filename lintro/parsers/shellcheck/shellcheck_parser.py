@@ -43,13 +43,18 @@ def parse_shellcheck_output(output: str | None) -> list[ShellcheckIssue]:
         return issues
 
     try:
-        data: list[dict[str, Any]] = json.loads(output)
+        parsed = json.loads(output)
     except json.JSONDecodeError:
         # If JSON parsing fails, return empty list
         return issues
 
-    # Validate that data is a list
-    if not isinstance(data, list):
+    # Handle json1 format: {"comments": [...]}
+    # Or plain JSON format: [...]
+    if isinstance(parsed, dict) and "comments" in parsed:
+        data: list[dict[str, Any]] = parsed["comments"]
+    elif isinstance(parsed, list):
+        data = parsed
+    else:
         return issues
 
     for item in data:
