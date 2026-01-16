@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
+from typing import Any
 
 from loguru import logger
 
@@ -233,11 +234,15 @@ class ShfmtPlugin(BaseToolPlugin):
 
             if not check_issues:
                 # No issues found, file is already formatted
-                return FileProcessingResult(
-                    success=True,
-                    output="",
-                    issues=[],
-                ), 0, 0
+                return (
+                    FileProcessingResult(
+                        success=True,
+                        output="",
+                        issues=[],
+                    ),
+                    0,
+                    0,
+                )
 
             # Apply fix with -w flag
             fix_cmd = self._get_executable_command(tool_name="shfmt") + ["-w"]
@@ -250,31 +255,47 @@ class ShfmtPlugin(BaseToolPlugin):
             )
 
             if fix_success:
-                return FileProcessingResult(
-                    success=True,
+                return (
+                    FileProcessingResult(
+                        success=True,
+                        output="",
+                        issues=[],
+                    ),
+                    len(check_issues),
+                    len(check_issues),
+                )
+            return (
+                FileProcessingResult(
+                    success=False,
                     output="",
-                    issues=[],
-                ), len(check_issues), len(check_issues)
-            return FileProcessingResult(
-                success=False,
-                output="",
-                issues=check_issues,
-            ), len(check_issues), 0
+                    issues=check_issues,
+                ),
+                len(check_issues),
+                0,
+            )
 
         except subprocess.TimeoutExpired:
-            return FileProcessingResult(
-                success=False,
-                output="",
-                issues=[],
-                skipped=True,
-            ), 0, 0
+            return (
+                FileProcessingResult(
+                    success=False,
+                    output="",
+                    issues=[],
+                    skipped=True,
+                ),
+                0,
+                0,
+            )
         except (OSError, ValueError, RuntimeError) as e:
-            return FileProcessingResult(
-                success=False,
-                output="",
-                issues=[],
-                error=str(e),
-            ), 0, 0
+            return (
+                FileProcessingResult(
+                    success=False,
+                    output="",
+                    issues=[],
+                    error=str(e),
+                ),
+                0,
+                0,
+            )
 
     def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with shfmt.
@@ -354,8 +375,7 @@ class ShfmtPlugin(BaseToolPlugin):
         summary_parts: list[str] = []
         if fixed_issues_total > 0:
             summary_parts.append(
-                f"Fixed {fixed_issues_total} issue(s) in "
-                f"{len(fixed_files)} file(s)",
+                f"Fixed {fixed_issues_total} issue(s) in {len(fixed_files)} file(s)",
             )
         if remaining_issues > 0:
             summary_parts.append(
