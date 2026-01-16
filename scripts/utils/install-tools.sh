@@ -702,6 +702,17 @@ main() {
 		exit 1
 	fi
 
+	# Install sqlfluff (SQL linter and formatter)
+	echo -e "${BLUE}Installing sqlfluff...${NC}"
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install sqlfluff"
+	elif install_python_package "sqlfluff"; then
+		echo -e "${GREEN}✓ sqlfluff installed successfully${NC}"
+	else
+		echo -e "${RED}✗ Failed to install sqlfluff${NC}"
+		exit 1
+	fi
+
 	echo ""
 	echo -e "${GREEN}=== Installation Complete! ===${NC}"
 	echo ""
@@ -719,6 +730,7 @@ main() {
 	echo "  - semgrep (Security scanning)"
 	echo "  - shellcheck (Shell script linting)"
 	echo "  - shfmt (Shell script formatting)"
+	echo "  - sqlfluff (SQL linting and formatting)"
 	echo "  - mypy (Python type checking)"
 	echo "  - yamllint (YAML linting)"
 	echo ""
@@ -726,7 +738,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "yamllint" "mypy")
+	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "yamllint" "mypy")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo
