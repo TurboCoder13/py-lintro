@@ -1,0 +1,1 @@
+"""Taplo plugin tests."""
