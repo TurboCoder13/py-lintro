@@ -24,6 +24,7 @@ class ToolName(StrEnum):
     PYTEST = auto()
     RUFF = auto()
     SEMGREP = auto()
+    SHELLCHECK = auto()
     SHFMT = auto()
     YAMLLINT = auto()
 

@@ -298,6 +298,10 @@ def get_install_hints() -> dict[str, str]:
                 f"Install via: pip install semgrep>="
                 f"{versions.get('semgrep', '1.50.0')} or brew install semgrep"
             ),
+            "shellcheck": (
+                f"Install via: https://github.com/koalaman/shellcheck/releases "
+                f"(v{versions.get('shellcheck', '0.9.0')}+)"
+            ),
             "shfmt": (
                 f"Install via: https://github.com/mvdan/sh/releases "
                 f"(v{versions.get('shfmt', '3.7.0')}+)"
