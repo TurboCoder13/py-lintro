@@ -136,6 +136,7 @@ packages = [
   "lintro.parsers.black",
   "lintro.parsers.clippy",
   "lintro.parsers.darglint",
+  "lintro.parsers.gitleaks",
   "lintro.parsers.hadolint",
   "lintro.parsers.markdownlint",
   "lintro.parsers.prettier",
@@ -240,6 +241,7 @@ actionlint = "1.7.5"
 markdownlint = "0.17.2"
 clippy = "1.92.0"
 semgrep = "1.50.0"
+gitleaks = "8.18.0"
 shellcheck = "0.10.0"
 shfmt = "3.7.0"
 sqlfluff = "3.0.0"

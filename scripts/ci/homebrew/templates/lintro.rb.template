@@ -27,6 +27,7 @@ class Lintro < Formula
   depends_on "mypy"
   depends_on "prettier"
   depends_on "python@3.13"
+  depends_on "gitleaks"
   depends_on "ruff"
   depends_on "semgrep"
   depends_on "shellcheck"
