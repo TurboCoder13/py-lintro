@@ -1,0 +1,43 @@
+# Sample TOML file with various violations for taplo testing
+
+# Formatting issues - inconsistent indentation and alignment
+[package]
+name="example"
+version = "0.1.0"
+description    =    "A sample project with TOML violations"
+
+# Missing trailing comma in multi-line array (formatting issue)
+authors = [
+    "Alice <alice@example.com>",
+    "Bob <bob@example.com>"
+]
+
+# Inconsistent key ordering
+[dependencies]
+zlib = "1.0"
+alib = "2.0"
+mlib = "3.0"
+
+# Mixed inline and expanded tables
+[dev-dependencies]
+test-lib = { version = "1.0", features = ["async"] }
+
+# Unaligned entries
+[build]
+target="x86_64-unknown-linux-gnu"
+rustflags       = ["-C", "target-feature=+crt-static"]
+
+# Extra blank lines and spacing issues (formatting)
+
+
+[metadata]
+license = "MIT"
+repository = "https://github.com/example/project"
+
+
+# Note: To create actual syntax errors, you would need invalid TOML like:
+# version =     (missing value)
+# [invalid..section]  (double dots)
+# key = "unclosed string
+# But these would make the file unparseable by TOML parsers,
+# so we keep this file as valid TOML with formatting issues.
