@@ -164,6 +164,7 @@ def test_check_file_with_secrets(
     assert_that(result).is_not_none()
     assert_that(result.name).is_equal_to("gitleaks")
     # Gitleaks should detect at least one secret pattern
+    assert_that(result.issues_count).is_greater_than(0)
 
 
 def test_check_clean_file(
