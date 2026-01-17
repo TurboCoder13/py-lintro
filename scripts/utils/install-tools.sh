@@ -418,14 +418,40 @@ main() {
             *) arch_name="x64" ;;
         esac
         # gitleaks releases use format: gitleaks_{version}_{os}_{arch}.tar.gz
-        tgz_url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_${os_name}_${arch_name}.tar.gz"
+        tgz_name="gitleaks_${GITLEAKS_VERSION}_${os_name}_${arch_name}.tar.gz"
+        tgz_url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tgz_name}"
+        checksum_url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
         if download_with_retries "$tgz_url" "$tmpdir/gitleaks.tar.gz" 3; then
+            # Verify SHA256 if checksum is available
+            if download_with_retries "$checksum_url" "$tmpdir/checksums.txt" 3; then
+                echo -e "${BLUE}Verifying checksum for gitleaks...${NC}"
+                expected=$(grep "${tgz_name}" "$tmpdir/checksums.txt" | awk '{print $1}')
+                if [[ -n "$expected" ]]; then
+                    if command -v sha256sum >/dev/null 2>&1; then
+                        actual=$(sha256sum "$tmpdir/gitleaks.tar.gz" | awk '{print $1}')
+                    elif command -v shasum >/dev/null 2>&1; then
+                        actual=$(shasum -a 256 "$tmpdir/gitleaks.tar.gz" | awk '{print $1}')
+                    else
+                        echo -e "${YELLOW}⚠ No checksum tool available; skipping verification${NC}"
+                        actual="$expected"  # Skip verification
+                    fi
+                    if [[ "$expected" != "$actual" ]]; then
+                        echo -e "${RED}✗ Checksum mismatch for gitleaks${NC}"
+                        rm -rf "$tmpdir"
+                        exit 1
+                    fi
+                    echo -e "${GREEN}✓ Checksum verified${NC}"
+                else
+                    echo -e "${YELLOW}⚠ Could not find checksum for ${tgz_name}; skipping verification${NC}"
+                fi
+            fi
             tar -xzf "$tmpdir/gitleaks.tar.gz" -C "$tmpdir"
             cp "$tmpdir/gitleaks" "$BIN_DIR/gitleaks"
             chmod +x "$BIN_DIR/gitleaks"
             echo -e "${GREEN}✓ gitleaks installed successfully${NC}"
         else
             echo -e "${RED}✗ Failed to download gitleaks${NC}"
+            rm -rf "$tmpdir"
             exit 1
         fi
         rm -rf "$tmpdir"

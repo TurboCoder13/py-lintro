@@ -21,18 +21,14 @@ def test_check_with_mocked_subprocess_success(
         tmp_path: Temporary directory path for test files.
     """
     test_file = tmp_path / "test_module.py"
-    test_file.write_text('"""Test module with no secrets."""' + chr(92) + "n")
+    test_file.write_text('"""Test module with no secrets."""\n')
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    with patch.object(
+        gitleaks_plugin,
+        "_run_subprocess",
+        return_value=(True, "[]"),
     ):
-        with patch.object(
-            gitleaks_plugin,
-            "_run_subprocess",
-            return_value=(True, "[]"),
-        ):
-            result = gitleaks_plugin.check([str(test_file)], {})
+        result = gitleaks_plugin.check([str(test_file)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.issues_count).is_equal_to(0)
@@ -49,7 +45,7 @@ def test_check_with_mocked_subprocess_secrets_found(
         tmp_path: Temporary directory path for test files.
     """
     test_file = tmp_path / "test_module.py"
-    test_file.write_text('API_KEY = "AKIAIOSFODNN7EXAMPLE"' + chr(92) + "n")
+    test_file.write_text('API_KEY = "AKIAIOSFODNN7EXAMPLE"\n')
 
     gitleaks_output = """[
         {
@@ -67,16 +63,12 @@ def test_check_with_mocked_subprocess_secrets_found(
         }
     ]"""
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    with patch.object(
+        gitleaks_plugin,
+        "_run_subprocess",
+        return_value=(True, gitleaks_output),
     ):
-        with patch.object(
-            gitleaks_plugin,
-            "_run_subprocess",
-            return_value=(True, gitleaks_output),
-        ):
-            result = gitleaks_plugin.check([str(test_file)], {})
+        result = gitleaks_plugin.check([str(test_file)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.issues_count).is_equal_to(1)

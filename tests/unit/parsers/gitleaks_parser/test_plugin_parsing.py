@@ -63,7 +63,7 @@ def test_gitleaks_check_parses_output(
 
     result: ToolResult = tool.check([str(tmp_path)], {})
 
-    assert_that(isinstance(result, ToolResult)).is_true()
+    assert_that(result).is_instance_of(ToolResult)
     assert_that(result.name).is_equal_to("gitleaks")
     assert_that(result.success).is_true()  # success=True means tool ran, not no issues
     assert_that(result.issues_count).is_equal_to(1)
@@ -137,7 +137,7 @@ def test_gitleaks_check_handles_unparseable_output(
 
     result: ToolResult = tool.check([str(tmp_path)], {})
 
-    assert_that(isinstance(result, ToolResult)).is_true()
+    assert_that(result).is_instance_of(ToolResult)
     assert_that(result.name).is_equal_to("gitleaks")
     # Parser returns empty list for invalid JSON, success depends on returncode
     assert_that(result.issues_count).is_equal_to(0)

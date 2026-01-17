@@ -25,16 +25,12 @@ def test_check_with_timeout(
     test_file = tmp_path / "test_module.py"
     test_file.write_text('"""Test module."""\n')
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    with patch.object(
+        gitleaks_plugin,
+        "_run_subprocess",
+        side_effect=subprocess.TimeoutExpired(cmd=["gitleaks"], timeout=60),
     ):
-        with patch.object(
-            gitleaks_plugin,
-            "_run_subprocess",
-            side_effect=subprocess.TimeoutExpired(cmd=["gitleaks"], timeout=60),
-        ):
-            result = gitleaks_plugin.check([str(test_file)], {})
+        result = gitleaks_plugin.check([str(test_file)], {})
 
     assert_that(result.success).is_false()
     assert_that(result.output).contains("timed out")
@@ -53,16 +49,12 @@ def test_check_with_execution_failure(
     test_file = tmp_path / "test_module.py"
     test_file.write_text('"""Test module."""\n')
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    with patch.object(
+        gitleaks_plugin,
+        "_run_subprocess",
+        side_effect=OSError("Failed to execute gitleaks"),
     ):
-        with patch.object(
-            gitleaks_plugin,
-            "_run_subprocess",
-            side_effect=OSError("Failed to execute gitleaks"),
-        ):
-            result = gitleaks_plugin.check([str(test_file)], {})
+        result = gitleaks_plugin.check([str(test_file)], {})
 
     assert_that(result.success).is_false()
     assert_that(result.output).contains("Gitleaks failed")
