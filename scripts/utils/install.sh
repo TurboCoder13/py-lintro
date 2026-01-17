@@ -4,7 +4,10 @@ set -e
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
     echo "Loading environment variables from .env file..."
-    export $(grep -v '^#' .env | xargs)
+    set -a  # automatically export all variables
+    # shellcheck source=/dev/null
+    source .env
+    set +a
 fi
 
 # Install Lintro using uv

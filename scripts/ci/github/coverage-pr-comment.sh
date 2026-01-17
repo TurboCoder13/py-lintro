@@ -16,6 +16,7 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
 fi
 
 # Source shared utilities
+# shellcheck source=../../utils/utils.sh
 source "$(dirname "$0")/../../utils/utils.sh"
 
 # Check if we're in a PR context

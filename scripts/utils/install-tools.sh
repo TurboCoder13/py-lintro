@@ -157,26 +157,28 @@ fi
 
 # Function to detect platform and architecture
 detect_platform() {
-    local os=$(uname -s)
-    local arch=$(uname -m)
-    
+    local os
+    local arch
+    os=$(uname -s)
+    arch=$(uname -m)
+
     # Normalize OS names for hadolint
     case "$os" in
         Darwin) os="Darwin" ;;
         Linux) os="Linux" ;;
         MINGW*|MSYS*|CYGWIN*) os="Windows" ;;
-        *) os="$os" ;;
+        *) ;;  # keep as-is
     esac
-    
+
     # Normalize architecture names for hadolint
     case "$arch" in
         x86_64) arch="x86_64" ;;
         amd64) arch="x86_64" ;;
         aarch64) arch="arm64" ;;
         arm64) arch="arm64" ;;
-        *) arch="$arch" ;;
+        *) ;;  # keep as-is
     esac
-    
+
     echo "${os}-${arch}"
 }
 
@@ -194,7 +196,8 @@ install_python_package() {
     if command -v uv &> /dev/null; then
         if uv pip install "$full_package"; then
             # Copy the executable to target directory if it exists in uv environment
-            local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
+            local uv_path
+            uv_path=$(uv run which "$package" 2>/dev/null || echo "")
             if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
                 cp "$uv_path" "$BIN_DIR/$package"
                 chmod +x "$BIN_DIR/$package"
@@ -228,9 +231,10 @@ install_tool_curl() {
     local target_path="$BIN_DIR/$tool_name"
     
     echo -e "${BLUE}Installing $tool_name...${NC}"
-    
+
     # Get platform info
-    local platform=$(detect_platform)
+    local platform
+    platform=$(detect_platform)
     local download_url="${base_url}-${platform}"
     
     echo -e "${YELLOW}Detected platform: $platform${NC}"
@@ -276,7 +280,8 @@ install_tool_curl() {
                 echo -e "${YELLOW}Trying Homebrew installation...${NC}"
                 if brew install hadolint; then
                     # Copy from Homebrew location to target
-                    local brew_path=$(brew --prefix hadolint)/bin/hadolint
+                    local brew_path
+                    brew_path="$(brew --prefix hadolint)/bin/hadolint"
                     if [ -f "$brew_path" ]; then
                         cp "$brew_path" "$target_path"
                         chmod +x "$target_path"
@@ -580,7 +585,8 @@ main() {
         if command -v uv &> /dev/null; then
             if uv pip install "$full_package"; then
                 # Copy the executable to target directory if it exists in uv environment
-                local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
+                local uv_path
+                uv_path=$(uv run which "$package" 2>/dev/null || echo "")
                 if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
                     cp "$uv_path" "$BIN_DIR/$package"
                     chmod +x "$BIN_DIR/$package"

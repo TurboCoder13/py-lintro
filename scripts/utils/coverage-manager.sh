@@ -213,6 +213,7 @@ EOF
   if [ -z "$coverage_pct" ]; then
     log_verbose "Extracting coverage from coverage.xml" >&2
     coverage_pct="$(extract_coverage)"
+    # shellcheck disable=SC2181  # Need to capture output AND check exit code separately
     if [ $? -ne 0 ]; then
       return 1
     fi
@@ -269,6 +270,7 @@ EOF
 
   local status_info
   status_info="$(get_status)"
+  # shellcheck disable=SC2181  # Need to capture output AND check exit code separately
   if [ $? -ne 0 ]; then
     return 1
   fi
@@ -373,6 +375,7 @@ EOF
 
   local status_info
   status_info="$(get_status)"
+  # shellcheck disable=SC2181  # Need to capture output AND check exit code separately
   if [ $? -ne 0 ]; then
     return 1
   fi
@@ -460,6 +463,7 @@ EOF
 
   local coverage_pct
   coverage_pct="$(extract_coverage)"
+  # shellcheck disable=SC2181  # Need to capture output AND check exit code separately
   if [ $? -ne 0 ]; then
     return 1
   fi

@@ -84,9 +84,9 @@ else
 fi
 
 EXIT_CODE=$?
-if [ $EXIT_CODE -eq 0 ]; then
+if [ "$EXIT_CODE" -eq 0 ]; then
     echo -e "${GREEN}✓ Docker lintro completed${NC}"
 else
     echo -e "${RED}✗ Docker lintro failed with exit code $EXIT_CODE${NC}"
 fi
-exit $EXIT_CODE 
+exit "$EXIT_CODE" 

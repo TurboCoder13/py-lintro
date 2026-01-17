@@ -40,6 +40,7 @@ fi
 
 # Source shared utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../utils/utils.sh
 source "${SCRIPT_DIR}/../utils/utils.sh"
 
 log_info "Validating Docker Buildx Configuration..."

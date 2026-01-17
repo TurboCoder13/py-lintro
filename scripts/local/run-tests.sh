@@ -12,7 +12,6 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 
 # Global variables
 VERBOSE=0
-TEST_FILES=()
 
 # Function to setup Python environment
 setup_python_env() {
@@ -76,8 +75,7 @@ check_system_tool() {
 # Function to discover available tools and build test list
 discover_tests() {
     echo -e "${BLUE}Discovering tests to run...${NC}"
-    # Always run all tests in the tests directory
-    TEST_FILES=("tests")
+    # All tests in the tests directory will be run
     echo -e "${GREEN}All tests in the tests directory will be run.${NC}"
 }
 
@@ -197,7 +195,9 @@ run_tests() {
     fi
     
     echo -e "${BLUE}Executing: ${cmd_prefix} ${tst_args[*]}${NC}"
-    run_and_report_tests ${cmd_prefix} "${tst_args[@]}"
+    # Split cmd_prefix into array for proper word handling
+    read -ra cmd_array <<< "$cmd_prefix"
+    run_and_report_tests "${cmd_array[@]}" "${tst_args[@]}"
     return $?
 }
 
@@ -221,13 +221,14 @@ main() {
     # Load environment variables from .env file if it exists
     if [ -f .env ]; then
         echo -e "${YELLOW}Loading environment variables from .env file...${NC}"
-        export $(grep -v '^#' .env | xargs)
+        set -a  # automatically export all variables
+        # shellcheck source=/dev/null
+        source .env
+        set +a
     fi
     
     # Handle command line arguments
-    local verbose=false
     if [ "${1:-}" = "--verbose" ] || [ "${1:-}" = "-v" ]; then
-        verbose=true
         VERBOSE=1
         echo -e "${YELLOW}Verbose mode enabled${NC}"
     fi
@@ -300,7 +301,7 @@ main() {
                 # Verify files were copied
                 echo -e "${YELLOW}Verifying files in ${dest_dir} after copy:${NC}"
                 if [ -f "${dest_dir}/coverage.xml" ]; then
-                    echo -e "${GREEN}✓ ${dest_dir}/coverage.xml exists (size: $(wc -c < ${dest_dir}/coverage.xml) bytes)${NC}"
+                    echo -e "${GREEN}✓ ${dest_dir}/coverage.xml exists (size: $(wc -c < "${dest_dir}/coverage.xml") bytes)${NC}"
                 else
                     echo -e "${RED}✗ ${dest_dir}/coverage.xml not found${NC}"
                 fi
@@ -320,8 +321,8 @@ main() {
     
     # Show helpful tips
     show_tips
-    
-    exit $exit_code
+
+    exit "$exit_code"
 }
 
 # Show usage information

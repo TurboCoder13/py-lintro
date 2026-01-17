@@ -114,9 +114,10 @@ if (( DO_WRITE )); then
     if (( DO_PUSH )); then
       echo "[info] Pushing updated tags to origin..."
       # Push only those we changed
-      git push origin ${updated_tags}
+      # shellcheck disable=SC2086  # Intentional word splitting: updated_tags contains space-separated tag names
+      git push origin $updated_tags
     else
-      echo "[hint] To push: git push origin${updated_tags}"
+      echo "[hint] To push: git push origin$updated_tags"
     fi
   fi
 else

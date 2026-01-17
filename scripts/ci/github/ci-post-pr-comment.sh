@@ -25,6 +25,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 
 # Source shared utilities
+# shellcheck source=../../utils/utils.sh
 source "$(dirname "$0")/../../utils/utils.sh"
 
 # Check if we're in a PR context
@@ -52,7 +53,7 @@ if [ -n "$MARKER" ]; then
     log_info "Marker provided; attempting to update existing comment in-place"
     # Fetch existing comments via gh API (fallback to curl if gh not available)
     if command -v gh &>/dev/null; then
-        EXISTING_JSON=$(gh api repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments --paginate)
+        EXISTING_JSON=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate)
     else
         EXISTING_JSON=$(curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
@@ -76,7 +77,7 @@ if [ -n "$MARKER" ]; then
         uv run python scripts/utils/merge_pr_comment.py "$MARKER" "$NEW_FILE" --previous-file "$PREV_FILE" > "$MERGED_FILE"
         # Post update via gh or curl
         if command -v gh &>/dev/null; then
-            gh api repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT_ID -X PATCH -F body=@"$MERGED_FILE" >/dev/null
+            gh api "repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT_ID" -X PATCH -F body=@"$MERGED_FILE" >/dev/null
             rm -f "$PREV_FILE" "$NEW_FILE" "$MERGED_FILE"
             log_success "PR comment updated successfully via gh api"
             exit 0
@@ -106,7 +107,7 @@ if command -v gh &>/dev/null; then
         log_success "PR comment posted successfully via gh (pr comment)"
     else
         # Fallback to gh api with explicit body content
-        gh api repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments \
+        gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
           -f body="$(cat "$COMMENT_FILE")"
         log_success "PR comment posted successfully via gh api"
     fi

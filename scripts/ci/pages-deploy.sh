@@ -25,6 +25,7 @@ if [ "${1:-}" = "--badge-path" ] && [ -n "${2:-}" ]; then
 fi
 
 # Source shared utilities
+# shellcheck source=../utils/utils.sh
 source "$(dirname "$0")/../utils/utils.sh"
 
 # Create coverage report directory
