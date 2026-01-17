@@ -1,0 +1,71 @@
+"""Tests for ShellcheckPlugin definition attributes.
+
+These tests verify the plugin definition has correct metadata and configuration.
+"""
+
+from __future__ import annotations
+
+import shutil
+from collections.abc import Callable
+from typing import TYPE_CHECKING
+
+import pytest
+from assertpy import assert_that
+
+if TYPE_CHECKING:
+    from lintro.plugins.base import BaseToolPlugin
+
+pytestmark = pytest.mark.skipif(
+    shutil.which("shellcheck") is None,
+    reason="shellcheck not installed",
+)
+
+
+@pytest.mark.parametrize(
+    ("attr", "expected"),
+    [
+        ("name", "shellcheck"),
+        ("can_fix", False),
+    ],
+    ids=["name", "can_fix"],
+)
+def test_definition_attributes(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    attr: str,
+    expected: object,
+) -> None:
+    """Verify ShellcheckPlugin definition has correct attribute values.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        attr: The attribute name to check on the definition.
+        expected: The expected value of the attribute.
+    """
+    shellcheck_plugin = get_plugin("shellcheck")
+    assert_that(getattr(shellcheck_plugin.definition, attr)).is_equal_to(expected)
+
+
+def test_definition_file_patterns(
+    get_plugin: Callable[[str], BaseToolPlugin],
+) -> None:
+    """Verify ShellcheckPlugin definition includes shell file patterns.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+    """
+    shellcheck_plugin = get_plugin("shellcheck")
+    assert_that(shellcheck_plugin.definition.file_patterns).contains("*.sh")
+    assert_that(shellcheck_plugin.definition.file_patterns).contains("*.bash")
+    assert_that(shellcheck_plugin.definition.file_patterns).contains("*.zsh")
+
+
+def test_definition_has_version_command(
+    get_plugin: Callable[[str], BaseToolPlugin],
+) -> None:
+    """Verify ShellcheckPlugin definition has a version command.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+    """
+    shellcheck_plugin = get_plugin("shellcheck")
+    assert_that(shellcheck_plugin.definition.version_command).is_not_none()
