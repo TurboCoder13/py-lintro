@@ -8,7 +8,7 @@ set -euo pipefail
 # Defaults to 80x20 if not provided.
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  cat <<'EOF'
+	cat <<'EOF'
 Normalize ASCII art files to a standard size.
 
 Usage:
@@ -22,12 +22,10 @@ Examples:
   scripts/local/normalize-ascii-art.sh               # 80x20
   scripts/local/normalize-ascii-art.sh 100 24        # 100x24
 EOF
-  exit 0
+	exit 0
 fi
 
 WIDTH=${1:-80}
 HEIGHT=${2:-20}
 
 uv run python -m lintro.utils.ascii_normalize_cli --width "${WIDTH}" --height "${HEIGHT}"
-
-

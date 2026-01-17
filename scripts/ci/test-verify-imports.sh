@@ -8,7 +8,7 @@ set -euo pipefail
 
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-  cat <<'EOF'
+	cat <<'EOF'
 Verify ALL package imports from installed lintro package.
 
 Usage:
@@ -26,7 +26,7 @@ Verifies:
   - CLI entry point functionality
   - Plugin registry loading
 EOF
-  exit 0
+	exit 0
 fi
 
 PYTHON_BIN="${TEST_VENV_PYTHON:-${1:-test_venv/bin/python}}"
@@ -35,19 +35,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 log_info() {
-  echo "[test-verify-imports] $*"
+	echo "[test-verify-imports] $*"
 }
 
 log_error() {
-  echo "[test-verify-imports] ERROR: $*" >&2
+	echo "[test-verify-imports] ERROR: $*" >&2
 }
 
 log_info "Verifying imports with: $PYTHON_BIN"
 
 # Verify Python executable exists
 if [ ! -f "$PYTHON_BIN" ]; then
-  log_error "Python executable not found at $PYTHON_BIN"
-  exit 1
+	log_error "Python executable not found at $PYTHON_BIN"
+	exit 1
 fi
 
 # Extract all packages from pyproject.toml
@@ -66,8 +66,8 @@ for pkg in sorted(packages):
 ")
 
 if [ -z "$PACKAGES" ]; then
-  log_error "No packages found in pyproject.toml"
-  exit 1
+	log_error "No packages found in pyproject.toml"
+	exit 1
 fi
 
 # Count packages
@@ -80,24 +80,24 @@ PASS_COUNT=0
 
 log_info "Testing all package imports..."
 while IFS= read -r package; do
-  if "$PYTHON_BIN" -c "import $package" 2>/dev/null; then
-    PASS_COUNT=$((PASS_COUNT + 1))
-  else
-    FAILED_IMPORTS+=("$package")
-    log_error "Failed to import: $package"
-  fi
-done <<< "$PACKAGES"
+	if "$PYTHON_BIN" -c "import $package" 2>/dev/null; then
+		PASS_COUNT=$((PASS_COUNT + 1))
+	else
+		FAILED_IMPORTS+=("$package")
+		log_error "Failed to import: $package"
+	fi
+done <<<"$PACKAGES"
 
 # Report results
 log_info "Import results: $PASS_COUNT/$PACKAGE_COUNT packages imported successfully"
 
 if [ ${#FAILED_IMPORTS[@]} -gt 0 ]; then
-  log_error "The following packages failed to import:"
-  for pkg in "${FAILED_IMPORTS[@]}"; do
-    echo "  - $pkg" >&2
-  done
-  log_error "This usually means the package is missing from [tool.setuptools] packages in pyproject.toml"
-  exit 1
+	log_error "The following packages failed to import:"
+	for pkg in "${FAILED_IMPORTS[@]}"; do
+		echo "  - $pkg" >&2
+	done
+	log_error "This usually means the package is missing from [tool.setuptools] packages in pyproject.toml"
+	exit 1
 fi
 
 # Additional functional tests
@@ -106,14 +106,14 @@ log_info "Running additional functional tests..."
 # Test CLI module entry point
 log_info "Testing CLI entry point..."
 if ! "$PYTHON_BIN" -c "from lintro.cli import cli; from lintro.cli import main"; then
-  log_error "Failed to import CLI entry points"
-  exit 1
+	log_error "Failed to import CLI entry points"
+	exit 1
 fi
 
 # Wheel-only tests (plugin registry)
 if [ "$DISTRIBUTION_TYPE" = "wheel" ] || [ "$DISTRIBUTION_TYPE" = "both" ]; then
-  log_info "Testing plugin registry (wheel distribution)..."
-  if ! "$PYTHON_BIN" -c "
+	log_info "Testing plugin registry (wheel distribution)..."
+	if ! "$PYTHON_BIN" -c "
 from lintro.plugins.registry import ToolRegistry
 from lintro.plugins.discovery import discover_all_tools
 discover_all_tools()
@@ -121,9 +121,9 @@ discover_all_tools()
 tools = ToolRegistry.get_all()
 assert len(tools) > 0, 'No tools registered'
 "; then
-    log_error "Failed to load plugin registry"
-    exit 1
-  fi
+		log_error "Failed to load plugin registry"
+		exit 1
+	fi
 fi
 
 log_info "All import tests passed ($PACKAGE_COUNT packages verified)"

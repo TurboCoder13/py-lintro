@@ -7,18 +7,18 @@ set -euo pipefail
 
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-    echo "Usage: $0 [--help]"
-    echo ""
-    echo "Docker Build and Test Script"
-    echo "Handles Docker image building and testing."
-    echo ""
-    echo "This script tests the Docker image by:"
-    echo "  - Listing available tools"
-    echo "  - Checking version information"
-    echo "  - Running lintro in Docker container"
-    echo ""
-    echo "This script is designed to be used with GitHub Actions."
-    exit 0
+	echo "Usage: $0 [--help]"
+	echo ""
+	echo "Docker Build and Test Script"
+	echo "Handles Docker image building and testing."
+	echo ""
+	echo "This script tests the Docker image by:"
+	echo "  - Listing available tools"
+	echo "  - Checking version information"
+	echo "  - Running lintro in Docker container"
+	echo ""
+	echo "This script is designed to be used with GitHub Actions."
+	exit 0
 fi
 
 # Source shared utilities

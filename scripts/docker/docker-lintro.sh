@@ -17,7 +17,7 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 
 # Show help if requested
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-    cat <<'EOF'
+	cat <<'EOF'
 Usage: docker-lintro.sh [--help] [lintro arguments...]
 
 Docker Lintro Runner
@@ -36,28 +36,28 @@ Examples:
 
 This script allows running lintro without installing all dependencies locally.
 EOF
-    exit 0
+	exit 0
 fi
 
 echo -e "${BLUE}=== Docker Lintro Runner ===${NC}"
 
 # Check if Docker is installed
-if ! command -v docker &> /dev/null; then
-    echo -e "${RED}Error: Docker is not installed or not in PATH${NC}"
-    exit 1
+if ! command -v docker &>/dev/null; then
+	echo -e "${RED}Error: Docker is not installed or not in PATH${NC}"
+	exit 1
 fi
 
 # Build the Docker image if it doesn't exist
 IMAGE_NAME="py-lintro:latest"
-if ! docker image inspect "$IMAGE_NAME" &> /dev/null; then
-    echo -e "${YELLOW}Building Docker image...${NC}"
-    if ! docker build -t "$IMAGE_NAME" .; then
-        echo -e "${RED}Error: Failed to build Docker image${NC}"
-        exit 1
-    fi
-    echo -e "${GREEN}✓ Docker image built successfully${NC}"
+if ! docker image inspect "$IMAGE_NAME" &>/dev/null; then
+	echo -e "${YELLOW}Building Docker image...${NC}"
+	if ! docker build -t "$IMAGE_NAME" .; then
+		echo -e "${RED}Error: Failed to build Docker image${NC}"
+		exit 1
+	fi
+	echo -e "${GREEN}✓ Docker image built successfully${NC}"
 else
-    echo -e "${GREEN}✓ Using existing Docker image${NC}"
+	echo -e "${GREEN}✓ Using existing Docker image${NC}"
 fi
 
 # Run lintro in Docker using the Docker entrypoint directly
@@ -68,25 +68,25 @@ echo -e "${YELLOW}Arguments: $*${NC}"
 
 # Check if the command is 'check' and add darglint timeout if not already specified
 if [[ "$1" == "check" ]] && [[ "$*" != *"--tool-options"*"darglint"* ]]; then
-    docker run --rm \
-        --log-driver=local \
-        -v "$(pwd):/code" \
-        -w /code \
-        "$IMAGE_NAME" \
-        lintro "$@" --tool-options darglint:timeout=120
+	docker run --rm \
+		--log-driver=local \
+		-v "$(pwd):/code" \
+		-w /code \
+		"$IMAGE_NAME" \
+		lintro "$@" --tool-options darglint:timeout=120
 else
-    docker run --rm \
-        --log-driver=local \
-        -v "$(pwd):/code" \
-        -w /code \
-        "$IMAGE_NAME" \
-        lintro "$@"
+	docker run --rm \
+		--log-driver=local \
+		-v "$(pwd):/code" \
+		-w /code \
+		"$IMAGE_NAME" \
+		lintro "$@"
 fi
 
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then
-    echo -e "${GREEN}✓ Docker lintro completed${NC}"
+	echo -e "${GREEN}✓ Docker lintro completed${NC}"
 else
-    echo -e "${RED}✗ Docker lintro failed with exit code $EXIT_CODE${NC}"
+	echo -e "${RED}✗ Docker lintro failed with exit code $EXIT_CODE${NC}"
 fi
-exit $EXIT_CODE 
+exit $EXIT_CODE

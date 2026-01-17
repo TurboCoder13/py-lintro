@@ -9,7 +9,7 @@ set -e
 
 # Handle --help
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    cat << 'EOF'
+	cat <<'EOF'
 fix-permissions.sh - Fix permissions for mounted volumes in Docker
 
 USAGE:
@@ -30,14 +30,14 @@ NOTE:
     This script requires appropriate permissions to run chown/chmod.
     It silently ignores permission errors to avoid blocking execution.
 EOF
-    exit 0
+	exit 0
 fi
 
 # Fix permissions for /code if it exists
 if [ -d "/code" ]; then
-    # Ensure current user can write to /code
-    chown -R "$(id -u):$(id -g)" /code 2>/dev/null || true
-    chmod -R 755 /code 2>/dev/null || true
+	# Ensure current user can write to /code
+	chown -R "$(id -u):$(id -g)" /code 2>/dev/null || true
+	chmod -R 755 /code 2>/dev/null || true
 fi
 
 # Execute the command passed as arguments

@@ -6,7 +6,7 @@ set -euo pipefail
 # Requires fetch of origin/main.
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  cat <<'EOF'
+	cat <<'EOF'
 Ensure tag points at a commit on main.
 
 Usage:
@@ -14,7 +14,7 @@ Usage:
 
 Exits non-zero if the tag's commit is not an ancestor of origin/main.
 EOF
-  exit 0
+	exit 0
 fi
 
 git fetch --no-tags origin main:refs/remotes/origin/main
@@ -22,9 +22,8 @@ git fetch --no-tags origin main:refs/remotes/origin/main
 TAG_COMMIT=$(git rev-parse "$GITHUB_REF^{}")
 echo "Tag $GITHUB_REF_NAME -> $TAG_COMMIT"
 if git merge-base --is-ancestor "$TAG_COMMIT" origin/main; then
-  echo "Tag commit is on main"
+	echo "Tag commit is on main"
 else
-  echo "Tag commit is not on main; aborting publish" >&2
-  exit 1
+	echo "Tag commit is not on main; aborting publish" >&2
+	exit 1
 fi
-

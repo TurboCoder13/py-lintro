@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-  cat <<'EOF'
+	cat <<'EOF'
 Install a built package distribution into an isolated virtual environment.
 
 Usage:
@@ -25,49 +25,49 @@ Requirements:
   - For wheel: dist/*.whl file must exist
   - For sdist: dist/*.tar.gz file must exist
 EOF
-  exit 0
+	exit 0
 fi
 
 PACKAGE_TYPE="${1:-wheel}"
 PYTHON_BIN="${TEST_VENV_PYTHON:-${2:-test_venv/bin/python}}"
 
 log_info() {
-  echo "[test-install-package] $*"
+	echo "[test-install-package] $*"
 }
 
 # Validate package type
 if [ "$PACKAGE_TYPE" != "wheel" ] && [ "$PACKAGE_TYPE" != "sdist" ]; then
-  echo "[test-install-package] ERROR: PACKAGE_TYPE must be 'wheel' or 'sdist'" >&2
-  exit 1
+	echo "[test-install-package] ERROR: PACKAGE_TYPE must be 'wheel' or 'sdist'" >&2
+	exit 1
 fi
 
 # Find package file
 if [ "$PACKAGE_TYPE" = "wheel" ]; then
-  PACKAGE_FILE=$(find dist/ -name '*.whl' -type f | head -n 1)
-  if [ -z "$PACKAGE_FILE" ]; then
-    echo "[test-install-package] ERROR: No wheel file found in dist/" >&2
-    exit 1
-  fi
+	PACKAGE_FILE=$(find dist/ -name '*.whl' -type f | head -n 1)
+	if [ -z "$PACKAGE_FILE" ]; then
+		echo "[test-install-package] ERROR: No wheel file found in dist/" >&2
+		exit 1
+	fi
 else
-  PACKAGE_FILE=$(find dist/ -name '*.tar.gz' -type f | head -n 1)
-  if [ -z "$PACKAGE_FILE" ]; then
-    echo "[test-install-package] ERROR: No sdist file found in dist/" >&2
-    exit 1
-  fi
+	PACKAGE_FILE=$(find dist/ -name '*.tar.gz' -type f | head -n 1)
+	if [ -z "$PACKAGE_FILE" ]; then
+		echo "[test-install-package] ERROR: No sdist file found in dist/" >&2
+		exit 1
+	fi
 fi
 
 log_info "Installing $PACKAGE_TYPE: $PACKAGE_FILE"
 
 # Verify Python executable exists
 if [ ! -f "$PYTHON_BIN" ]; then
-  echo "[test-install-package] ERROR: Python executable not found at $PYTHON_BIN" >&2
-  exit 1
+	echo "[test-install-package] ERROR: Python executable not found at $PYTHON_BIN" >&2
+	exit 1
 fi
 
 # Install package
 if ! "$PYTHON_BIN" -m pip install "$PACKAGE_FILE"; then
-  echo "[test-install-package] ERROR: Failed to install package" >&2
-  exit 1
+	echo "[test-install-package] ERROR: Failed to install package" >&2
+	exit 1
 fi
 
 log_info "Package installation successful ✅"

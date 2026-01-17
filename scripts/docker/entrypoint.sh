@@ -12,7 +12,7 @@ set -e
 
 # Handle --help
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    cat << 'EOF'
+	cat <<'EOF'
 entrypoint.sh - Docker entrypoint for lintro container
 
 USAGE:
@@ -31,18 +31,18 @@ EXAMPLES:
 The virtual environment Python interpreter (/app/.venv/bin/python)
 is always used for consistency.
 EOF
-    exit 0
+	exit 0
 fi
 
 VENV_PYTHON="/app/.venv/bin/python"
 
 if [ "$1" = "lintro" ]; then
-    shift
-    exec "$VENV_PYTHON" -m lintro "$@"
+	shift
+	exec "$VENV_PYTHON" -m lintro "$@"
 elif [ "$1" = "python" ]; then
-    shift
-    exec "$VENV_PYTHON" "$@"
+	shift
+	exec "$VENV_PYTHON" "$@"
 else
-    # Default: treat all arguments as lintro arguments
-    exec "$VENV_PYTHON" -m lintro "$@"
+	# Default: treat all arguments as lintro arguments
+	exec "$VENV_PYTHON" -m lintro "$@"
 fi

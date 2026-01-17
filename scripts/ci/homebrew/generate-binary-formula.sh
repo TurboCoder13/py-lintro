@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../utils/utils.sh"
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-    cat <<'EOF'
+	cat <<'EOF'
 Generate Homebrew formula for lintro binary distribution.
 
 Usage: generate-binary-formula.sh <version> <arm64-sha> <x86-sha> <output-file>
@@ -22,7 +22,7 @@ Arguments:
 Examples:
   generate-binary-formula.sh 1.0.0 abc123... def456... Formula/lintro-bin.rb
 EOF
-    exit 0
+	exit 0
 fi
 
 VERSION="${1:?Version is required}"
@@ -34,7 +34,7 @@ log_info "Generating lintro-bin formula for version ${VERSION}"
 log_info "ARM64 SHA256: ${ARM64_SHA}"
 log_info "x86_64 SHA256: ${X86_SHA}"
 
-cat > "$OUTPUT_FILE" << EOF
+cat >"$OUTPUT_FILE" <<EOF
 # typed: false
 # frozen_string_literal: true
 
