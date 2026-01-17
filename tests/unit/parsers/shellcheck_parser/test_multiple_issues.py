@@ -39,7 +39,7 @@ def test_parse_multiple_issues() -> None:
                 code=2034,
                 message="Info message",
             ),
-        ]
+        ],
     )
     result = parse_shellcheck_output(output=output)
 

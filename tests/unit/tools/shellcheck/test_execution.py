@@ -28,16 +28,12 @@ def test_check_with_mocked_subprocess_success(
     test_file = tmp_path / "test_script.sh"
     test_file.write_text('#!/bin/bash\necho "Hello World"\n')
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    with patch.object(
+        shellcheck_plugin,
+        "_run_subprocess",
+        return_value=(True, "[]"),
     ):
-        with patch.object(
-            shellcheck_plugin,
-            "_run_subprocess",
-            return_value=(True, "[]"),
-        ):
-            result = shellcheck_plugin.check([str(test_file)], {})
+        result = shellcheck_plugin.check([str(test_file)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.issues_count).is_equal_to(0)
@@ -69,16 +65,12 @@ def test_check_with_mocked_subprocess_issues(
         }
     ]"""
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    with patch.object(
+        shellcheck_plugin,
+        "_run_subprocess",
+        return_value=(False, shellcheck_output),
     ):
-        with patch.object(
-            shellcheck_plugin,
-            "_run_subprocess",
-            return_value=(False, shellcheck_output),
-        ):
-            result = shellcheck_plugin.check([str(test_file)], {})
+        result = shellcheck_plugin.check([str(test_file)], {})
 
     assert_that(result.success).is_false()
     assert_that(result.issues_count).is_greater_than(0)
@@ -97,8 +89,7 @@ def test_check_with_no_shell_files(
     non_shell_file = tmp_path / "test.txt"
     non_shell_file.write_text("Not a shell file")
 
-    with patch.object(shellcheck_plugin, "_verify_tool_version", return_value=None):
-        result = shellcheck_plugin.check([str(non_shell_file)], {})
+    result = shellcheck_plugin.check([str(non_shell_file)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.output).contains("No")

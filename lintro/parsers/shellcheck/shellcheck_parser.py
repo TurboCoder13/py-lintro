@@ -10,7 +10,25 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from loguru import logger
+
 from lintro.parsers.shellcheck.shellcheck_issue import ShellcheckIssue
+
+
+def _safe_int(value: Any, default: int = 0) -> int:
+    """Safely convert a value to int with fallback.
+
+    Args:
+        value: Value to convert.
+        default: Default value if conversion fails.
+
+    Returns:
+        Integer value or default.
+    """
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def parse_shellcheck_output(output: str | None) -> list[ShellcheckIssue]:
@@ -44,8 +62,9 @@ def parse_shellcheck_output(output: str | None) -> list[ShellcheckIssue]:
 
     try:
         parsed = json.loads(output)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
         # If JSON parsing fails, return empty list
+        logger.debug(f"Failed to parse shellcheck output as JSON: {e}")
         return issues
 
     # Handle json1 format: {"comments": [...]}
@@ -61,18 +80,21 @@ def parse_shellcheck_output(output: str | None) -> list[ShellcheckIssue]:
         if not isinstance(item, dict):
             continue
 
-        # Extract required fields with defaults
+        # Extract required fields with defaults (using safe conversion)
         file_path: str = str(item.get("file", ""))
-        line: int = int(item.get("line", 0))
-        column: int = int(item.get("column", 0))
-        end_line: int = int(item.get("endLine", 0))
-        end_column: int = int(item.get("endColumn", 0))
+        line: int = _safe_int(item.get("line", 0))
+        column: int = _safe_int(item.get("column", 0))
+        end_line: int = _safe_int(item.get("endLine", 0))
+        end_column: int = _safe_int(item.get("endColumn", 0))
         level: str = str(item.get("level", "error"))
         code: int | str = item.get("code", 0)
         message: str = str(item.get("message", ""))
 
-        # Format code as SC#### string
-        code_str: str = f"SC{code}" if isinstance(code, int) else str(code)
+        # Format code as SC#### string (handle both int and numeric string codes)
+        if isinstance(code, int) or (isinstance(code, str) and code.isdigit()):
+            code_str = f"SC{code}"
+        else:
+            code_str = str(code)
 
         issues.append(
             ShellcheckIssue(

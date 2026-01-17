@@ -21,7 +21,7 @@ def test_to_display_row() -> None:
                 code=2086,
                 message="Test message",
             ),
-        ]
+        ],
     )
     result = parse_shellcheck_output(output=output)
 

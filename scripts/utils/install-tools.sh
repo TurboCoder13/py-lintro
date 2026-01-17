@@ -587,7 +587,38 @@ main() {
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install shellcheck v${SHELLCHECK_VERSION}"
 	elif command -v shellcheck &>/dev/null; then
-		echo -e "${GREEN}✓ shellcheck already installed${NC}"
+		# Check if installed version meets minimum requirement
+		installed_version=$(shellcheck --version 2>/dev/null | grep -oE 'version: [0-9]+\.[0-9]+\.[0-9]+' | cut -d' ' -f2 || echo "0.0.0")
+		if [ -n "$installed_version" ]; then
+			# Compare versions (using sort -V for version comparison)
+			if printf '%s\n%s' "$SHELLCHECK_VERSION" "$installed_version" | sort -V | head -n1 | grep -qF "$SHELLCHECK_VERSION"; then
+				echo -e "${GREEN}✓ shellcheck v${installed_version} already installed (>= v${SHELLCHECK_VERSION})${NC}"
+			else
+				echo -e "${YELLOW}⚠ shellcheck v${installed_version} is older than required v${SHELLCHECK_VERSION}, upgrading...${NC}"
+				# Fall through to installation
+				tmpdir=$(mktemp -d)
+				os=$(uname -s | tr '[:upper:]' '[:lower:]')
+				arch=$(uname -m)
+				case "$arch" in
+				x86_64 | amd64) arch="x86_64" ;;
+				aarch64 | arm64) arch="aarch64" ;;
+				esac
+				tar_url="https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.${os}.${arch}.tar.xz"
+				if download_with_retries "$tar_url" "$tmpdir/shellcheck.tar.xz" 3; then
+					tar -xJf "$tmpdir/shellcheck.tar.xz" -C "$tmpdir"
+					cp "$tmpdir/shellcheck-v${SHELLCHECK_VERSION}/shellcheck" "$BIN_DIR/shellcheck"
+					chmod +x "$BIN_DIR/shellcheck"
+					echo -e "${GREEN}✓ shellcheck upgraded to v${SHELLCHECK_VERSION}${NC}"
+				else
+					echo -e "${RED}✗ Failed to download shellcheck${NC}"
+					rm -rf "$tmpdir"
+					exit 1
+				fi
+				rm -rf "$tmpdir"
+			fi
+		else
+			echo -e "${GREEN}✓ shellcheck already installed${NC}"
+		fi
 	else
 		tmpdir=$(mktemp -d)
 		os=$(uname -s | tr '[:upper:]' '[:lower:]')
