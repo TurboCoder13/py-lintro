@@ -58,7 +58,8 @@ def discover_builtin_tools() -> int:
 
         module_name = f"lintro.tools.definitions.{py_file.stem}"
         try:
-            importlib.import_module(module_name)
+            # Safe: module_name from internal directory files, not user input
+            importlib.import_module(module_name)  # nosemgrep: non-literal-import
             logger.debug(f"Loaded builtin tool: {py_file.stem}")
             loaded_count += 1
         except ImportError as e:

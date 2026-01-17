@@ -403,7 +403,7 @@ def test_semgrep_set_options_validates_severity() -> None:
     assert_that(tool.options.get("severity")).is_equal_to("WARNING")
 
     # Invalid severity should raise
-    with pytest.raises(ValueError, match="severity must be one of"):
+    with pytest.raises(ValueError, match="Invalid Semgrep severity"):
         tool.set_options(severity="INVALID")
 
 
