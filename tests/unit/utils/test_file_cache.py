@@ -21,11 +21,13 @@ def test_file_fingerprint_to_dict() -> None:
     fp = FileFingerprint(path="/test/file.py", mtime=1234567890.0, size=1024)
     result = fp.to_dict()
 
-    assert_that(result).is_equal_to({
-        "path": "/test/file.py",
-        "mtime": 1234567890.0,
-        "size": 1024,
-    })
+    assert_that(result).is_equal_to(
+        {
+            "path": "/test/file.py",
+            "mtime": 1234567890.0,
+            "size": 1024,
+        },
+    )
 
 
 def test_file_fingerprint_from_dict() -> None:

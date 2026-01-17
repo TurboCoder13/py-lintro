@@ -148,8 +148,8 @@ def test_set_options_severity_lowercase(semgrep_plugin: SemgrepPlugin) -> None:
 @pytest.mark.parametrize(
     ("option_name", "invalid_value", "error_match"),
     [
-        ("severity", "CRITICAL", "severity must be one of"),
-        ("severity", "invalid", "severity must be one of"),
+        ("severity", "CRITICAL", "Invalid Semgrep severity"),
+        ("severity", "invalid", "Invalid Semgrep severity"),
         ("jobs", 0, "jobs must be a positive integer"),
         ("jobs", -1, "jobs must be a positive integer"),
         ("jobs", "four", "jobs must be a positive integer"),

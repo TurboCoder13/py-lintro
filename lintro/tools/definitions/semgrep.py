@@ -14,6 +14,7 @@ from typing import Any
 
 from loguru import logger
 
+from lintro.enums.semgrep_enums import SemgrepSeverity, normalize_semgrep_severity
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.semgrep.semgrep_parser import parse_semgrep_output
@@ -133,7 +134,7 @@ class SemgrepPlugin(BaseToolPlugin):
         config: str | None = None,
         exclude: list[str] | None = None,
         include: list[str] | None = None,
-        severity: str | None = None,
+        severity: str | SemgrepSeverity | None = None,
         timeout_threshold: int | None = None,
         jobs: int | None = None,
         verbose: bool | None = None,
@@ -160,12 +161,9 @@ class SemgrepPlugin(BaseToolPlugin):
         validate_list(exclude, "exclude")
         validate_list(include, "include")
 
+        severity_str: str | None = None
         if severity is not None:
-            valid_severities = ["INFO", "WARNING", "ERROR"]
-            severity_upper = severity.upper()
-            if severity_upper not in valid_severities:
-                raise ValueError(f"severity must be one of {valid_severities}")
-            severity = severity_upper
+            severity_str = normalize_semgrep_severity(severity).name
 
         if timeout_threshold is not None and (
             not isinstance(timeout_threshold, int) or timeout_threshold < 0
@@ -179,7 +177,7 @@ class SemgrepPlugin(BaseToolPlugin):
             config=config,
             exclude=exclude,
             include=include,
-            severity=severity,
+            severity=severity_str,
             timeout_threshold=timeout_threshold,
             jobs=jobs,
             verbose=verbose,
