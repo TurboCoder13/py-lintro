@@ -7,7 +7,7 @@ set -euo pipefail
 # It automatically checks tool availability and runs appropriate tests.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../utils/utils.sh
+# shellcheck source=../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$SCRIPT_DIR/../utils/utils.sh"
 
 # Global variables

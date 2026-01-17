@@ -10,7 +10,7 @@ set -euo pipefail
 #   ./scripts/install-tools.sh [--help] [--dry-run] [--verbose] [--local|--docker]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=utils.sh
+# shellcheck source=utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$SCRIPT_DIR/utils.sh"
 
 # Show help if requested
@@ -414,6 +414,7 @@ main() {
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --component clippy
             # Source cargo environment
             if [ -f "$HOME/.cargo/env" ]; then
+                # shellcheck disable=SC1091 # Can't follow $HOME path; verified by -f check above
                 source "$HOME/.cargo/env"
             fi
         else

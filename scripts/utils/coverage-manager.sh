@@ -107,7 +107,7 @@ shift
 # Source shared utilities for all coverage operations
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "${SCRIPT_DIR}/utils.sh" ]; then
-  # shellcheck source=utils.sh
+  # shellcheck source=utils.sh disable=SC1091 # Can't follow dynamic path; verified by -f check above
   source "${SCRIPT_DIR}/utils.sh"
 else
   # Basic logging if utils.sh not available

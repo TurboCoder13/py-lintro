@@ -5,7 +5,7 @@ set -euo pipefail
 # Generates and updates the coverage badge
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../../utils/utils.sh
+# shellcheck source=../../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$SCRIPT_DIR/../../utils/utils.sh"
 
 # Show help if requested

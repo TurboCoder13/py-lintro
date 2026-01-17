@@ -22,7 +22,7 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
 fi
 
 # Source shared utilities
-# shellcheck source=../utils/utils.sh
+# shellcheck source=../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$(dirname "$0")/../utils/utils.sh"
 
 log_info "Building Docker image..."
