@@ -44,6 +44,7 @@ log_error() {
 }
 
 log_verbose() {
+    # shellcheck disable=SC2015 # Intentional: || true ensures zero exit; echo won't fail
     [ "${VERBOSE:-0}" -eq 1 ] && echo -e "${BLUE}[verbose] $1${NC}" || true
 }
 

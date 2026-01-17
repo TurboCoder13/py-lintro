@@ -66,6 +66,7 @@ log_info() {
 }
 
 log_verbose() {
+  # shellcheck disable=SC2015 # Intentional: || true ensures zero exit; echo won't fail
   [ $VERBOSE -eq 1 ] && echo "[setup-python] [verbose] $*" || true
 }
 
