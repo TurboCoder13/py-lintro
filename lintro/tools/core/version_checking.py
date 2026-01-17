@@ -294,6 +294,10 @@ def get_install_hints() -> dict[str, str]:
                 f"Install via: rustup component add clippy "
                 f"(requires Rust {versions.get('clippy', '1.75.0')}+)"
             ),
+            "gitleaks": (
+                f"Install via: https://github.com/gitleaks/gitleaks/releases "
+                f"(v{versions.get('gitleaks', '8.18.0')}+)"
+            ),
         },
     )
 

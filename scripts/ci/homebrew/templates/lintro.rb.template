@@ -26,6 +26,7 @@ class Lintro < Formula
   depends_on "mypy"
   depends_on "prettier"
   depends_on "python@3.13"
+  depends_on "gitleaks"
   depends_on "ruff"
   depends_on "yamllint"
 
@@ -65,6 +66,7 @@ class Lintro < Formula
         - bandit - Python security linter
         - hadolint - Dockerfile linter
         - actionlint - GitHub Actions workflow linter
+        - gitleaks - Secret detection in git repos
         - prettier - Code formatter
         - yamllint - YAML linter
 

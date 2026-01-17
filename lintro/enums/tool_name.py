@@ -17,6 +17,7 @@ class ToolName(StrEnum):
     BLACK = auto()
     CLIPPY = auto()
     DARGLINT = auto()
+    GITLEAKS = auto()
     HADOLINT = auto()
     MARKDOWNLINT = auto()
     MYPY = auto()

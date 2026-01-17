@@ -75,6 +75,8 @@ Some tools require separate installation. Their minimum versions are also manage
 - `prettier` - JavaScript/TypeScript formatter (install via npm)
 - `hadolint` - Dockerfile linter (download from GitHub releases)
 - `actionlint` - GitHub Actions linter (download from GitHub releases)
+- `gitleaks` - Secret detection in git repos (`brew install gitleaks` or GitHub
+  releases)
 
 ### Checking Versions
 
