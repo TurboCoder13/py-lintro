@@ -75,6 +75,7 @@ mkdir -p "${XDG_CACHE_HOME}"
 while (( "$#" )); do
   case "$1" in
     --help|-h)
+      # shellcheck disable=SC2119 # show_help takes no arguments
       show_help; exit 0 ;;
     --dry-run)
       DRY_RUN=1; shift ;;
