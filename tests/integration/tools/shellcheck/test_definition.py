@@ -50,13 +50,15 @@ def test_definition_file_patterns(
 ) -> None:
     """Verify ShellcheckPlugin definition includes shell file patterns.
 
+    ShellCheck officially supports bash, sh, dash, and ksh dialects.
+
     Args:
         get_plugin: Fixture factory to get plugin instances.
     """
     shellcheck_plugin = get_plugin("shellcheck")
     assert_that(shellcheck_plugin.definition.file_patterns).contains("*.sh")
     assert_that(shellcheck_plugin.definition.file_patterns).contains("*.bash")
-    assert_that(shellcheck_plugin.definition.file_patterns).contains("*.zsh")
+    assert_that(shellcheck_plugin.definition.file_patterns).contains("*.ksh")
 
 
 def test_definition_has_version_command(

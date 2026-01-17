@@ -21,14 +21,12 @@ from lintro.tools.definitions.shellcheck import (
     ("option_name", "expected_value"),
     [
         ("timeout", SHELLCHECK_DEFAULT_TIMEOUT),
-        ("format", SHELLCHECK_DEFAULT_FORMAT),
         ("severity", SHELLCHECK_DEFAULT_SEVERITY),
         ("exclude", None),
         ("shell", None),
     ],
     ids=[
         "timeout_equals_default",
-        "format_equals_default",
         "severity_equals_default",
         "exclude_is_none",
         "shell_is_none",
@@ -66,7 +64,6 @@ def test_default_options_values(
         ("shell", "sh"),
         ("shell", "dash"),
         ("shell", "ksh"),
-        ("shell", "zsh"),
     ],
     ids=[
         "severity_error",
@@ -78,7 +75,6 @@ def test_default_options_values(
         "shell_sh",
         "shell_dash",
         "shell_ksh",
-        "shell_zsh",
     ],
 )
 def test_set_options_valid(
@@ -233,7 +229,7 @@ def test_build_command_with_all_options(shellcheck_plugin: ShellcheckPlugin) -> 
     shellcheck_plugin.set_options(
         severity="warning",
         exclude=["SC2086"],
-        shell="zsh",  # nosec B604
+        shell="ksh",  # nosec B604
     )
     cmd = shellcheck_plugin._build_command()
 
@@ -247,7 +243,7 @@ def test_build_command_with_all_options(shellcheck_plugin: ShellcheckPlugin) -> 
     assert_that(cmd[severity_idx + 1]).is_equal_to("warning")
 
     shell_idx = cmd.index("--shell")
-    assert_that(cmd[shell_idx + 1]).is_equal_to("zsh")
+    assert_that(cmd[shell_idx + 1]).is_equal_to("ksh")
 
 
 # Tests for constants
@@ -268,8 +264,7 @@ def test_shell_dialects_constant() -> None:
     assert_that(SHELLCHECK_SHELL_DIALECTS).contains("sh")
     assert_that(SHELLCHECK_SHELL_DIALECTS).contains("dash")
     assert_that(SHELLCHECK_SHELL_DIALECTS).contains("ksh")
-    assert_that(SHELLCHECK_SHELL_DIALECTS).contains("zsh")
-    assert_that(SHELLCHECK_SHELL_DIALECTS).is_length(5)
+    assert_that(SHELLCHECK_SHELL_DIALECTS).is_length(4)
 
 
 def test_default_timeout_constant() -> None:

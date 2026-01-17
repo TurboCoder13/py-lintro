@@ -48,7 +48,7 @@ def test_parse_extracts_all_fields() -> None:
                 end_line=12,
                 end_column=15,
             ),
-        ]
+        ],
     )
     result = parse_shellcheck_output(output=output)
 

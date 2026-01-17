@@ -66,6 +66,7 @@ class Lintro < Formula
         - bandit - Python security linter
         - hadolint - Dockerfile linter
         - actionlint - GitHub Actions workflow linter
+        - shellcheck - Shell script linter
         - prettier - Code formatter
         - yamllint - YAML linter
 

@@ -16,7 +16,7 @@ def test_parse_unicode_in_message() -> None:
     output = make_shellcheck_output(
         [
             make_issue(message="Mensagem com acentos: café"),
-        ]
+        ],
     )
     result = parse_shellcheck_output(output=output)
 
@@ -29,7 +29,7 @@ def test_parse_file_with_path() -> None:
     output = make_shellcheck_output(
         [
             make_issue(file="scripts/deploy/prod.sh"),
-        ]
+        ],
     )
     result = parse_shellcheck_output(output=output)
 
@@ -61,7 +61,7 @@ def test_parse_special_chars_in_message() -> None:
     output = make_shellcheck_output(
         [
             make_issue(message='Use "$var" instead of $var for safety.'),
-        ]
+        ],
     )
     result = parse_shellcheck_output(output=output)
 

@@ -1,7 +1,7 @@
 """Shellcheck tool definition.
 
 ShellCheck is a static analysis tool for shell scripts. It identifies bugs,
-syntax issues, and suggests improvements for bash/sh/dash/ksh/zsh scripts.
+syntax issues, and suggests improvements for bash/sh/dash/ksh scripts.
 """
 
 from __future__ import annotations
@@ -26,15 +26,15 @@ from lintro.tools.core.option_validators import (
 # Constants for Shellcheck configuration
 SHELLCHECK_DEFAULT_TIMEOUT: int = 30
 SHELLCHECK_DEFAULT_PRIORITY: int = 50
-SHELLCHECK_FILE_PATTERNS: list[str] = ["*.sh", "*.bash", "*.ksh", "*.zsh"]
+SHELLCHECK_FILE_PATTERNS: list[str] = ["*.sh", "*.bash", "*.ksh"]
 SHELLCHECK_DEFAULT_FORMAT: str = "json1"
 SHELLCHECK_DEFAULT_SEVERITY: str = "style"
 
 # Valid severity levels for shellcheck
 SHELLCHECK_SEVERITY_LEVELS: tuple[str, ...] = ("error", "warning", "info", "style")
 
-# Valid shell dialects for shellcheck
-SHELLCHECK_SHELL_DIALECTS: tuple[str, ...] = ("bash", "sh", "dash", "ksh", "zsh")
+# Valid shell dialects for shellcheck (official: bash, sh, dash, ksh)
+SHELLCHECK_SHELL_DIALECTS: tuple[str, ...] = ("bash", "sh", "dash", "ksh")
 
 
 def normalize_shellcheck_severity(value: str) -> str:
@@ -107,7 +107,6 @@ class ShellcheckPlugin(BaseToolPlugin):
             min_version="0.9.0",
             default_options={
                 "timeout": SHELLCHECK_DEFAULT_TIMEOUT,
-                "format": SHELLCHECK_DEFAULT_FORMAT,
                 "severity": SHELLCHECK_DEFAULT_SEVERITY,
                 "exclude": None,
                 "shell": None,
@@ -127,7 +126,7 @@ class ShellcheckPlugin(BaseToolPlugin):
         Args:
             severity: Minimum severity to report (error, warning, info, style).
             exclude: List of codes to exclude (e.g., ["SC2086", "SC2046"]).
-            shell: Force shell dialect (bash, sh, dash, ksh, zsh).
+            shell: Force shell dialect (bash, sh, dash, ksh).
             **kwargs: Other tool options.
         """
         if severity is not None:
