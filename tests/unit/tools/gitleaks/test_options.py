@@ -141,7 +141,10 @@ def test_build_check_command_basic(gitleaks_plugin: GitleaksPlugin) -> None:
     Args:
         gitleaks_plugin: The GitleaksPlugin instance to test.
     """
-    cmd = gitleaks_plugin._build_check_command(source_path="/path/to/source")
+    cmd = gitleaks_plugin._build_check_command(
+        source_path="/path/to/source",
+        report_path="/tmp/report.json",
+    )
 
     assert_that(cmd).contains("gitleaks")
     assert_that(cmd).contains("detect")
@@ -154,6 +157,9 @@ def test_build_check_command_basic(gitleaks_plugin: GitleaksPlugin) -> None:
     # Output format should be JSON
     assert_that(cmd).contains("--report-format")
     assert_that(cmd).contains(GITLEAKS_OUTPUT_FORMAT)
+    # Report path should be included
+    assert_that(cmd).contains("--report-path")
+    assert_that(cmd).contains("/tmp/report.json")
 
 
 def test_build_check_command_with_no_git_false(gitleaks_plugin: GitleaksPlugin) -> None:
@@ -163,7 +169,10 @@ def test_build_check_command_with_no_git_false(gitleaks_plugin: GitleaksPlugin) 
         gitleaks_plugin: The GitleaksPlugin instance to test.
     """
     gitleaks_plugin.set_options(no_git=False)
-    cmd = gitleaks_plugin._build_check_command(source_path="/path/to/source")
+    cmd = gitleaks_plugin._build_check_command(
+        source_path="/path/to/source",
+        report_path="/tmp/report.json",
+    )
 
     assert_that(cmd).does_not_contain("--no-git")
 
@@ -175,7 +184,10 @@ def test_build_check_command_with_config(gitleaks_plugin: GitleaksPlugin) -> Non
         gitleaks_plugin: The GitleaksPlugin instance to test.
     """
     gitleaks_plugin.set_options(config="/path/to/.gitleaks.toml")
-    cmd = gitleaks_plugin._build_check_command(source_path="/path/to/source")
+    cmd = gitleaks_plugin._build_check_command(
+        source_path="/path/to/source",
+        report_path="/tmp/report.json",
+    )
 
     assert_that(cmd).contains("--config")
     config_idx = cmd.index("--config")
@@ -191,7 +203,10 @@ def test_build_check_command_with_baseline_path(
         gitleaks_plugin: The GitleaksPlugin instance to test.
     """
     gitleaks_plugin.set_options(baseline_path="/path/to/baseline.json")
-    cmd = gitleaks_plugin._build_check_command(source_path="/path/to/source")
+    cmd = gitleaks_plugin._build_check_command(
+        source_path="/path/to/source",
+        report_path="/tmp/report.json",
+    )
 
     assert_that(cmd).contains("--baseline-path")
     baseline_idx = cmd.index("--baseline-path")
@@ -207,7 +222,10 @@ def test_build_check_command_with_max_target_megabytes(
         gitleaks_plugin: The GitleaksPlugin instance to test.
     """
     gitleaks_plugin.set_options(max_target_megabytes=100)
-    cmd = gitleaks_plugin._build_check_command(source_path="/path/to/source")
+    cmd = gitleaks_plugin._build_check_command(
+        source_path="/path/to/source",
+        report_path="/tmp/report.json",
+    )
 
     assert_that(cmd).contains("--max-target-megabytes")
     max_mb_idx = cmd.index("--max-target-megabytes")
@@ -223,7 +241,10 @@ def test_build_check_command_with_redact_false(
         gitleaks_plugin: The GitleaksPlugin instance to test.
     """
     gitleaks_plugin.set_options(redact=False)
-    cmd = gitleaks_plugin._build_check_command(source_path="/path/to/source")
+    cmd = gitleaks_plugin._build_check_command(
+        source_path="/path/to/source",
+        report_path="/tmp/report.json",
+    )
 
     assert_that(cmd).does_not_contain("--redact")
 
@@ -241,7 +262,10 @@ def test_build_check_command_with_all_options(gitleaks_plugin: GitleaksPlugin) -
         redact=True,
         max_target_megabytes=50,
     )
-    cmd = gitleaks_plugin._build_check_command(source_path="/path/to/source")
+    cmd = gitleaks_plugin._build_check_command(
+        source_path="/path/to/source",
+        report_path="/tmp/report.json",
+    )
 
     assert_that(cmd).contains("gitleaks")
     assert_that(cmd).contains("detect")
@@ -252,3 +276,4 @@ def test_build_check_command_with_all_options(gitleaks_plugin: GitleaksPlugin) -
     assert_that(cmd).contains("--max-target-megabytes")
     assert_that(cmd).contains("--report-format")
     assert_that(cmd).contains(GITLEAKS_OUTPUT_FORMAT)
+    assert_that(cmd).contains("--report-path")
