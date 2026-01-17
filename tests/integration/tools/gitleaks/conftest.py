@@ -31,20 +31,26 @@ CLEAN_SAMPLE = GITLEAKS_SAMPLES / "gitleaks_clean.py"
 # - aws-access-token: AKIA prefix + 16 chars from [A-Z2-7]
 # - github-pat: ghp_ prefix + 36 alphanumeric chars
 # - private-key: RSA private key header
-_VIOLATION_CONTENT = '''# Generated test file with fake secrets for gitleaks testing
+_VIOLATION_CONTENT = (
+    """# Generated test file with fake secrets for gitleaks testing
 # WARNING: These are FAKE credentials for testing purposes only!
 
 # AWS Access Key pattern (triggers aws-access-token rule)
-AWS_ACCESS_KEY = "AKIA''' + "Z7QRSTUVWXY23456" + '''"
+AWS_ACCESS_KEY = "AKIA"""
+    + "Z7QRSTUVWXY23456"
+    + """"
 
 # GitHub PAT pattern (triggers github-pat rule)
-GITHUB_TOKEN = "ghp_''' + "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8" + '''"
+GITHUB_TOKEN = "ghp_"""
+    + "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8"
+    + '''"
 
 # Private key pattern (triggers private-key rule)
 PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
 MIIBOgIBAAJBALRiMLAHudeSA2ai2TuYkPk
 -----END RSA PRIVATE KEY-----"""
 '''
+)
 
 
 @pytest.fixture

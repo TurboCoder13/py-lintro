@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import json
 import subprocess  # nosec B404 - used safely with shell disabled
-import sys
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from loguru import logger
@@ -110,11 +111,12 @@ class GitleaksPlugin(BaseToolPlugin):
         )
         super().set_options(**options, **kwargs)
 
-    def _build_check_command(self, source_path: str) -> list[str]:
+    def _build_check_command(self, source_path: str, report_path: str) -> list[str]:
         """Build the gitleaks check command.
 
         Args:
             source_path: Path to the directory or file to scan.
+            report_path: Path to write the JSON report to.
 
         Returns:
             List of command arguments.
@@ -147,11 +149,9 @@ class GitleaksPlugin(BaseToolPlugin):
         if max_mb_opt is not None:
             cmd.extend(["--max-target-megabytes", str(max_mb_opt)])
 
-        # Output format and path (cross-platform stdout handling)
+        # Output format and path
         cmd.extend(["--report-format", GITLEAKS_OUTPUT_FORMAT])
-        # Use /dev/stdout on Unix, CON on Windows for stdout output
-        stdout_path = "CON" if sys.platform == "win32" else "/dev/stdout"
-        cmd.extend(["--report-path", stdout_path])
+        cmd.extend(["--report-path", report_path])
 
         # Exit with code 0 even when secrets are found (we parse the output)
         cmd.append("--exit-code")
@@ -178,67 +178,86 @@ class GitleaksPlugin(BaseToolPlugin):
         # Use the common parent directory (cwd) as the source
         source_path = ctx.cwd or "."
 
-        cmd: list[str] = self._build_check_command(source_path=source_path)
-        logger.debug(f"[gitleaks] Running: {' '.join(cmd[:10])}... (cwd={ctx.cwd})")
+        # Use a temporary file for the report (gitleaks can't write to /dev/stdout
+        # in subprocess environments due to permission issues)
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".json",
+            delete=False,
+        ) as report_file:
+            report_path = report_file.name
 
-        output: str
-        execution_failure: bool = False
         try:
-            # Note: gitleaks with --exit-code 0 always returns success,
-            # we parse the JSON output to determine findings
-            _, combined = self._run_subprocess(
-                cmd=cmd,
-                timeout=ctx.timeout,
-                cwd=ctx.cwd,
+            cmd = self._build_check_command(
+                source_path=source_path,
+                report_path=report_path,
             )
-            output = (combined or "").strip()
-        except subprocess.TimeoutExpired:
-            timeout_msg = (
-                f"Gitleaks execution timed out ({ctx.timeout}s limit exceeded).\n\n"
-                "This may indicate:\n"
-                "  - Large codebase taking too long to scan\n"
-                "  - Need to increase timeout via --tool-options gitleaks:timeout=N"
+            logger.debug(
+                f"[gitleaks] Running: {' '.join(cmd[:10])}... (cwd={ctx.cwd})",
             )
-            return ToolResult(
-                name=self.definition.name,
-                success=False,
-                output=timeout_msg,
-                issues_count=0,
-            )
-        except (OSError, ValueError, RuntimeError) as e:
-            logger.error(f"Failed to run Gitleaks: {e}")
-            output = f"Gitleaks failed: {e}"
-            execution_failure = True
 
-        # Parse the JSON output
-        try:
-            if execution_failure:
+            output: str
+            execution_failure: bool = False
+            try:
+                # Note: gitleaks with --exit-code 0 always returns success,
+                # we parse the JSON output to determine findings
+                self._run_subprocess(
+                    cmd=cmd,
+                    timeout=ctx.timeout,
+                    cwd=ctx.cwd,
+                )
+                # Read the report from the temp file
+                output = Path(report_path).read_text(encoding="utf-8").strip()
+            except subprocess.TimeoutExpired:
+                timeout_msg = (
+                    f"Gitleaks execution timed out ({ctx.timeout}s limit exceeded)."
+                    "\n\nThis may indicate:\n"
+                    "  - Large codebase taking too long to scan\n"
+                    "  - Need to increase timeout via --tool-options gitleaks:timeout=N"
+                )
                 return ToolResult(
                     name=self.definition.name,
                     success=False,
-                    output=output,
+                    output=timeout_msg,
                     issues_count=0,
                 )
+            except (OSError, ValueError, RuntimeError) as e:
+                logger.error(f"Failed to run Gitleaks: {e}")
+                output = f"Gitleaks failed: {e}"
+                execution_failure = True
 
-            issues = parse_gitleaks_output(output=output)
-            issues_count = len(issues)
+            # Parse the JSON output
+            try:
+                if execution_failure:
+                    return ToolResult(
+                        name=self.definition.name,
+                        success=False,
+                        output=output,
+                        issues_count=0,
+                    )
 
-            return ToolResult(
-                name=self.definition.name,
-                success=True,
-                output=None,
-                issues_count=issues_count,
-                issues=issues,
-            )
+                issues = parse_gitleaks_output(output=output)
+                issues_count = len(issues)
 
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.error(f"Failed to parse gitleaks output: {e}")
-            return ToolResult(
-                name=self.definition.name,
-                success=False,
-                output=(output or f"Failed to parse gitleaks output: {e!s}"),
-                issues_count=0,
-            )
+                return ToolResult(
+                    name=self.definition.name,
+                    success=True,
+                    output=None,
+                    issues_count=issues_count,
+                    issues=issues,
+                )
+
+            except (json.JSONDecodeError, ValueError) as e:
+                logger.error(f"Failed to parse gitleaks output: {e}")
+                return ToolResult(
+                    name=self.definition.name,
+                    success=False,
+                    output=(output or f"Failed to parse gitleaks output: {e!s}"),
+                    issues_count=0,
+                )
+        finally:
+            # Clean up the temporary report file
+            Path(report_path).unlink(missing_ok=True)
 
     def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Gitleaks cannot fix issues, only report them.

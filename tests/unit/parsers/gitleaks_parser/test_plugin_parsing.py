@@ -14,6 +14,22 @@ from lintro.models.core.tool_result import ToolResult
 from lintro.plugins import ToolRegistry
 
 
+def _get_report_path(cmd: list[str]) -> str | None:
+    """Extract the report path from a gitleaks command.
+
+    Args:
+        cmd: The command list.
+
+    Returns:
+        The report path if found, None otherwise.
+    """
+    try:
+        idx = cmd.index("--report-path")
+        return cmd[idx + 1]
+    except (ValueError, IndexError):
+        return None
+
+
 def test_gitleaks_check_parses_output(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -50,9 +66,12 @@ def test_gitleaks_check_parses_output(
         # Handle version check calls (check for --version flag)
         if "--version" in cmd or "version" in cmd:
             return SimpleNamespace(stdout="8.18.0", stderr="", returncode=0)
-        # Handle actual check calls
+        # Handle actual check calls - write JSON to the report file
+        report_path = _get_report_path(cmd)
+        if report_path:
+            Path(report_path).write_text(json.dumps(sample))
         return SimpleNamespace(
-            stdout=json.dumps(sample),
+            stdout="",
             stderr="",
             returncode=0,
         )
@@ -92,8 +111,11 @@ def test_gitleaks_check_handles_no_secrets(
         # Handle version check calls (check for --version flag)
         if "--version" in cmd or "version" in cmd:
             return SimpleNamespace(stdout="8.18.0", stderr="", returncode=0)
-        # Handle actual check calls - empty array means no secrets
-        return SimpleNamespace(stdout="[]", stderr="", returncode=0)
+        # Handle actual check calls - write empty array to report file
+        report_path = _get_report_path(cmd)
+        if report_path:
+            Path(report_path).write_text("[]")
+        return SimpleNamespace(stdout="", stderr="", returncode=0)
 
     monkeypatch.setattr("subprocess.run", fake_run)
     tool = ToolRegistry.get("gitleaks")
@@ -128,8 +150,11 @@ def test_gitleaks_check_handles_unparseable_output(
         # Handle version check calls (check for --version flag)
         if "--version" in cmd or "version" in cmd:
             return SimpleNamespace(stdout="8.18.0", stderr="", returncode=0)
-        # Handle actual check calls - invalid JSON
-        return SimpleNamespace(stdout="not json", stderr="error", returncode=1)
+        # Handle actual check calls - write invalid JSON to report file
+        report_path = _get_report_path(cmd)
+        if report_path:
+            Path(report_path).write_text("not json")
+        return SimpleNamespace(stdout="", stderr="error", returncode=1)
 
     monkeypatch.setattr("subprocess.run", fake_run)
     tool = ToolRegistry.get("gitleaks")
