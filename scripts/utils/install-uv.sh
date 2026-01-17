@@ -50,6 +50,7 @@ log_info() {
 }
 
 log_verbose() {
+  # shellcheck disable=SC2015 # Intentional: || true ensures zero exit; echo won't fail
   [ $VERBOSE -eq 1 ] && echo "[install-uv] [verbose] $*" || true
 }
 
@@ -116,16 +117,16 @@ for asset in "${assets[@]}"; do
       log_info "Successfully downloaded ${asset}"
       break 2
     else
-      if [ $attempt -lt $max_retries ]; then
+      if [ "$attempt" -lt "$max_retries" ]; then
         sleep_time=$((attempt * 2))
         log_verbose "Download failed, retrying in ${sleep_time} seconds..."
-        sleep $sleep_time
+        sleep "$sleep_time"
       fi
     fi
   done
 done
 
-if [ $download_success -eq 0 ]; then
+if [ "$download_success" -eq 0 ]; then
   echo "[install-uv] ERROR: Failed to download uv for ${tag_name}" >&2
   exit 1
 fi

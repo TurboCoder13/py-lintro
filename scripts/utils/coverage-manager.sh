@@ -107,11 +107,12 @@ shift
 # Source shared utilities for all coverage operations
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "${SCRIPT_DIR}/utils.sh" ]; then
-  # shellcheck source=utils.sh
+  # shellcheck source=utils.sh disable=SC1091 # Can't follow dynamic path; verified by -f check above
   source "${SCRIPT_DIR}/utils.sh"
 else
   # Basic logging if utils.sh not available
   log_info() { echo -e "\033[0;34mℹ️  $*\033[0m"; }
+  # shellcheck disable=SC2015 # Intentional: || true ensures zero exit; echo won't fail
   log_verbose() { [ "${VERBOSE:-0}" -eq 1 ] && echo -e "\033[0;36m[verbose] $*\033[0m" || true; }
   log_success() { echo -e "\033[0;32m✅ $*\033[0m"; }
   log_warning() { echo -e "\033[0;33m⚠️  $*\033[0m"; }
@@ -213,6 +214,7 @@ EOF
   if [ -z "$coverage_pct" ]; then
     log_verbose "Extracting coverage from coverage.xml" >&2
     coverage_pct="$(extract_coverage)"
+    # shellcheck disable=SC2181  # Need to capture output AND check exit code separately
     if [ $? -ne 0 ]; then
       return 1
     fi
@@ -269,6 +271,7 @@ EOF
 
   local status_info
   status_info="$(get_status)"
+  # shellcheck disable=SC2181  # Need to capture output AND check exit code separately
   if [ $? -ne 0 ]; then
     return 1
   fi
@@ -373,6 +376,7 @@ EOF
 
   local status_info
   status_info="$(get_status)"
+  # shellcheck disable=SC2181  # Need to capture output AND check exit code separately
   if [ $? -ne 0 ]; then
     return 1
   fi
@@ -460,6 +464,7 @@ EOF
 
   local coverage_pct
   coverage_pct="$(extract_coverage)"
+  # shellcheck disable=SC2181  # Need to capture output AND check exit code separately
   if [ $? -ne 0 ]; then
     return 1
   fi

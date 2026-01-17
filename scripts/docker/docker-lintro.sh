@@ -12,7 +12,7 @@ set -euo pipefail
 #   ./docker-lintro.sh list-tools
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../utils/utils.sh
+# shellcheck source=../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$SCRIPT_DIR/../utils/utils.sh"
 
 # Show help if requested
@@ -84,9 +84,9 @@ else
 fi
 
 EXIT_CODE=$?
-if [ $EXIT_CODE -eq 0 ]; then
+if [ "$EXIT_CODE" -eq 0 ]; then
     echo -e "${GREEN}✓ Docker lintro completed${NC}"
 else
     echo -e "${RED}✗ Docker lintro failed with exit code $EXIT_CODE${NC}"
 fi
-exit $EXIT_CODE 
+exit "$EXIT_CODE" 

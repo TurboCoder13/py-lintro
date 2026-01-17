@@ -44,6 +44,7 @@ log_error() {
 }
 
 log_verbose() {
+    # shellcheck disable=SC2015 # Intentional: || true ensures zero exit; echo won't fail
     [ "${VERBOSE:-0}" -eq 1 ] && echo -e "${BLUE}[verbose] $1${NC}" || true
 }
 
@@ -95,9 +96,8 @@ get_coverage_status() {
 # Function to run lintro with common options
 run_lintro() {
     local command="$1"
-    local format="${2:-grid}"
-    local exclude="${3:-$EXCLUDE_DIRS}"
-    
+    local exclude="${2:-$EXCLUDE_DIRS}"
+
     if [ -n "$exclude" ]; then
         uv run lintro "$command" . --exclude "$exclude"
     else
@@ -175,7 +175,7 @@ set_github_env() {
 create_temp_dir() {
     local tmpdir
     tmpdir=$(mktemp -d)
-    trap "rm -rf '$tmpdir'" EXIT
+    trap 'rm -rf "$tmpdir"' EXIT
     echo "$tmpdir"
 }
 

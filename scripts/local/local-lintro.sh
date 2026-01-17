@@ -7,7 +7,7 @@ set -euo pipefail
 # It automatically installs missing tools and sets up the environment.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../utils/utils.sh
+# shellcheck source=../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$SCRIPT_DIR/../utils/utils.sh"
 
 echo -e "${BLUE}=== Lintro Local Runner ===${NC}"
@@ -15,7 +15,10 @@ echo -e "${BLUE}=== Lintro Local Runner ===${NC}"
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
     echo -e "${YELLOW}Loading environment variables from .env file...${NC}"
-    export $(grep -v '^#' .env | xargs)
+    set -a  # automatically export all variables
+    # shellcheck source=/dev/null
+    source .env
+    set +a
 fi
 
 # Enable unsafe fixes for local development
@@ -115,7 +118,7 @@ run_lintro() {
     echo -e "${BLUE}Running lintro with arguments: $*${NC}"
     
     # Add some helpful defaults if no arguments provided
-    if [ $# -eq 0 ]; then
+    if [ "$#" -eq 0 ]; then
         echo -e "${YELLOW}No arguments provided. Running 'lintro --help'${NC}"
         set -- "--help"
     fi
@@ -125,27 +128,27 @@ run_lintro() {
     if [ -n "${RUNNING_IN_DOCKER:-}" ] || [ -f "/.dockerenv" ]; then
         uv run lintro "$@"
         local exit_code=$?
-        if [ $exit_code -eq 0 ]; then
+        if [ "$exit_code" -eq 0 ]; then
             echo -e "${GREEN}✓ Lintro completed successfully${NC}"
         else
             echo -e "${RED}✗ Lintro exited with code $exit_code${NC}"
         fi
-        exit $exit_code
+        exit "$exit_code"
     else
         if uv run lintro "$@"; then
             echo -e "${GREEN}✓ Lintro completed successfully${NC}"
         else
             local exit_code=$?
             echo -e "${RED}✗ Lintro exited with code $exit_code${NC}"
-            
+
             # Provide helpful suggestions based on common issues
-            if [ $exit_code -eq 127 ]; then
+            if [ "$exit_code" -eq 127 ]; then
                 echo -e "${YELLOW}Tip: Command not found. Check if lintro is properly installed.${NC}"
-            elif [ $exit_code -eq 1 ]; then
+            elif [ "$exit_code" -eq 1 ]; then
                 echo -e "${YELLOW}Tip: Lintro found issues. Use 'fmt' command to auto-fix where possible.${NC}"
             fi
-            
-            exit $exit_code
+
+            exit "$exit_code"
         fi
     fi
 }

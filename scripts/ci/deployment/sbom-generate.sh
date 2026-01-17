@@ -75,6 +75,7 @@ mkdir -p "${XDG_CACHE_HOME}"
 while (( "$#" )); do
   case "$1" in
     --help|-h)
+      # shellcheck disable=SC2119 # show_help takes no arguments
       show_help; exit 0 ;;
     --dry-run)
       DRY_RUN=1; shift ;;
@@ -216,15 +217,15 @@ done
 ROOT_ID=""
 IMPORT_COUNT=${#IMPORT_FILES[@]}
 MERGE_NEEDED=0
-if [ ${HAS_FETCH} -eq 1 ] || [ ${IMPORT_COUNT} -gt 1 ]; then
+if [ "${HAS_FETCH}" -eq 1 ] || [ "${IMPORT_COUNT}" -gt 1 ]; then
   MERGE_NEEDED=1
 fi
 
-if [ ${MERGE_NEEDED} -eq 1 ]; then
-  if [ ${HAS_FETCH} -eq 1 ] && [ ${IMPORT_COUNT} -gt 0 ]; then
+if [ "${MERGE_NEEDED}" -eq 1 ]; then
+  if [ "${HAS_FETCH}" -eq 1 ] && [ "${IMPORT_COUNT}" -gt 0 ]; then
     # Merge fetched document with imported alias into a single alias
     run_bomctl merge --alias "${DOC_ALIAS}" --name "${DOC_NAME}" "${REPO_URL_RESOLVED}" "${DOC_ALIAS}"
-  elif [ ${HAS_FETCH} -eq 1 ] && [ ${IMPORT_COUNT} -eq 0 ]; then
+  elif [ "${HAS_FETCH}" -eq 1 ] && [ "${IMPORT_COUNT}" -eq 0 ]; then
     # Merge single fetched doc into alias to standardize pushes
     run_bomctl merge --alias "${DOC_ALIAS}" --name "${DOC_NAME}" "${REPO_URL_RESOLVED}"
   else
@@ -234,7 +235,7 @@ if [ ${MERGE_NEEDED} -eq 1 ]; then
   ROOT_ID="${DOC_ALIAS}"
 else
   # Single import only; alias points to the document
-  if [ ${IMPORT_COUNT} -eq 1 ]; then
+  if [ "${IMPORT_COUNT}" -eq 1 ]; then
     ROOT_ID="${DOC_ALIAS}"
   else
     # Fetch-only without merge should not happen; default to alias

@@ -22,37 +22,40 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 
 # Source shared utilities
+# shellcheck source=../../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$(dirname "$0")/../../utils/utils.sh"
 
-echo "## 🔧 Lintro Full Codebase Report" >> $GITHUB_STEP_SUMMARY
-echo "" >> $GITHUB_STEP_SUMMARY
-echo "**Generated on:** $(date)" >> $GITHUB_STEP_SUMMARY
-echo "**Note:** Includes all available tools." >> $GITHUB_STEP_SUMMARY
-echo "Missing tools are skipped gracefully." >> $GITHUB_STEP_SUMMARY
-echo "" >> $GITHUB_STEP_SUMMARY
-
-echo "### 📋 Available Tools" >> $GITHUB_STEP_SUMMARY
-echo '```' >> $GITHUB_STEP_SUMMARY
-./scripts/local/local-lintro.sh list-tools >> $GITHUB_STEP_SUMMARY
-echo '```' >> $GITHUB_STEP_SUMMARY
-echo "" >> $GITHUB_STEP_SUMMARY
-
-echo "### 🔍 Analysis Results" >> $GITHUB_STEP_SUMMARY
-echo '```' >> $GITHUB_STEP_SUMMARY
-# Use shared exclude directories
-./scripts/local/local-lintro.sh check . \
-    --exclude "$EXCLUDE_DIRS" >> $GITHUB_STEP_SUMMARY || true
-echo '```' >> $GITHUB_STEP_SUMMARY
+{
+  echo "## 🔧 Lintro Full Codebase Report"
+  echo ""
+  echo "**Generated on:** $(date)"
+  echo "**Note:** Includes all available tools."
+  echo "Missing tools are skipped gracefully."
+  echo ""
+  echo "### 📋 Available Tools"
+  echo '```'
+  ./scripts/local/local-lintro.sh list-tools
+  echo '```'
+  echo ""
+  echo "### 🔍 Analysis Results"
+  echo '```'
+  # Use shared exclude directories
+  ./scripts/local/local-lintro.sh check . \
+      --exclude "$EXCLUDE_DIRS" || true
+  echo '```'
+} >> "$GITHUB_STEP_SUMMARY"
 
 # Create simple report files
 mkdir -p lintro-report
-echo "# Lintro Report - $(date)" > lintro-report/report.md
-echo "" >> lintro-report/report.md
-echo "**Note:** Includes available tools." >> lintro-report/report.md
-echo "Missing tools skipped gracefully." >> lintro-report/report.md
-echo "" >> lintro-report/report.md
+{
+    echo "# Lintro Report - $(date)"
+    echo ""
+    echo "**Note:** Includes available tools."
+    echo "Missing tools skipped gracefully."
+    echo ""
+} > lintro-report/report.md
 FORMAT="markdown"
-./scripts/local/local-lintro.sh check . --output-format $FORMAT \
+./scripts/local/local-lintro.sh check . --output-format "$FORMAT" \
     --exclude "$EXCLUDE_DIRS" >> lintro-report/report.md || true
 
 log_success "Lintro report generated successfully"
