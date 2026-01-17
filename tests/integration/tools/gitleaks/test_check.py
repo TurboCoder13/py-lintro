@@ -79,3 +79,5 @@ def test_check_empty_directory(
     result = gitleaks_plugin.check([str(tmp_path)], {})
 
     assert_that(result).is_not_none()
+    assert_that(result.name).is_equal_to("gitleaks")
+    assert_that(result.issues_count).is_equal_to(0)

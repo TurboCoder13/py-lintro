@@ -7,8 +7,22 @@ from pathlib import Path
 
 import pytest
 
+
+def _find_project_root() -> Path:
+    """Find project root by looking for pyproject.toml.
+
+    Returns:
+        Path to the project root directory.
+    """
+    path = Path(__file__).resolve()
+    for parent in path.parents:
+        if (parent / "pyproject.toml").exists():
+            return parent
+    return path.parent.parent.parent.parent.parent  # fallback
+
+
 # Paths to test samples
-SAMPLE_DIR = Path(__file__).parent.parent.parent.parent.parent / "test_samples"
+SAMPLE_DIR = _find_project_root() / "test_samples"
 GITLEAKS_SAMPLES = SAMPLE_DIR / "tools" / "security" / "gitleaks"
 VIOLATIONS_SAMPLE = GITLEAKS_SAMPLES / "gitleaks_violations.py"
 CLEAN_SAMPLE = GITLEAKS_SAMPLES / "gitleaks_clean.py"
