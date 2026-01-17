@@ -93,6 +93,8 @@ ensure_bun_installed() {
 	fi
 
 	# Install bun via official installer (works on Linux and macOS)
+	# Justification: Official bun installer from trusted source (bun.sh)
+	# nosemgrep: curl-pipe-bash
 	if curl -fsSL https://bun.sh/install | bash; then
 		# Source bun environment
 		if [ -f "$HOME/.bun/bin/bun" ]; then

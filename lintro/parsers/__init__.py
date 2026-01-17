@@ -86,7 +86,8 @@ def __getattr__(name: str) -> object:
         AttributeError: If the requested name is not a known submodule.
     """
     if name in _SUBMODULES:
-        module = import_module(f".{name}", __package__)
+        # Safe: name validated against _SUBMODULES whitelist (internal modules only)
+        module = import_module(f".{name}", __package__)  # nosemgrep: non-literal-import
         # Cache the module in this module's namespace for future access
         globals()[name] = module
         return module
