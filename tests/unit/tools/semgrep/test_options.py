@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import pytest
 from assertpy import assert_that
 
@@ -12,10 +10,6 @@ from lintro.tools.definitions.semgrep import (
     SEMGREP_DEFAULT_TIMEOUT,
     SemgrepPlugin,
 )
-
-if TYPE_CHECKING:
-    pass
-
 
 # =============================================================================
 # Tests for SemgrepPlugin default options

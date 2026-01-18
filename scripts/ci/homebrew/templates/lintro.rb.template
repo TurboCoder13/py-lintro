@@ -69,6 +69,7 @@ class Lintro < Formula
         - actionlint - GitHub Actions workflow linter
         - prettier - Code formatter
         - yamllint - YAML linter
+        - semgrep - Security scanner
 
       Bundled tools:
         - darglint - Python docstring linter

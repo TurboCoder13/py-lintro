@@ -40,6 +40,7 @@ This script installs:
   - Bandit (Python security linter)
   - Mypy (Python static type checker)
   - Clippy (Rust linter; requires Rust toolchain)
+  - Semgrep (Security scanner)
 
 Use this script to set up a complete development environment.
 EOF
@@ -567,6 +568,17 @@ main() {
 		exit 1
 	fi
 
+	# Install semgrep (security scanner)
+	echo -e "${BLUE}Installing semgrep...${NC}"
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install semgrep"
+	elif install_python_package "semgrep" "1.148.0"; then
+		echo -e "${GREEN}✓ semgrep installed successfully${NC}"
+	else
+		echo -e "${RED}✗ Failed to install semgrep${NC}"
+		exit 1
+	fi
+
 	# Install biome via bun (JavaScript/TypeScript linting and formatting)
 	echo -e "${BLUE}Installing biome...${NC}"
 
@@ -656,17 +668,6 @@ main() {
 		echo -e "${GREEN}✓ darglint installed successfully${NC}"
 	else
 		echo -e "${RED}✗ Failed to install darglint${NC}"
-		exit 1
-	fi
-
-	# Install semgrep (security scanner)
-	echo -e "${BLUE}Installing semgrep...${NC}"
-	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install semgrep"
-	elif install_python_package "semgrep"; then
-		echo -e "${GREEN}✓ semgrep installed successfully${NC}"
-	else
-		echo -e "${RED}✗ Failed to install semgrep${NC}"
 		exit 1
 	fi
 

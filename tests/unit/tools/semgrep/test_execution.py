@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -12,10 +11,6 @@ from assertpy import assert_that
 
 from lintro.parsers.semgrep.semgrep_issue import SemgrepIssue
 from lintro.tools.definitions.semgrep import SemgrepPlugin
-
-if TYPE_CHECKING:
-    pass
-
 
 # =============================================================================
 # Tests for SemgrepPlugin.check method
@@ -100,7 +95,9 @@ def test_check_with_mocked_subprocess_findings(
         ):
             result = semgrep_plugin.check([str(test_file)], {})
 
-    assert_that(result.success).is_true()  # No errors in response
+    assert_that(
+        result.success,
+    ).is_true()  # Scan succeeded; findings don't cause failure
     assert_that(result.issues_count).is_equal_to(1)
     assert result.issues is not None
     assert_that(result.issues).is_length(1)

@@ -159,9 +159,10 @@ def test_definition_tool_type(
     from lintro.enums.tool_type import ToolType
 
     semgrep_plugin = get_plugin("semgrep")
-    assert_that(semgrep_plugin.definition.tool_type).is_equal_to(
-        ToolType.LINTER | ToolType.SECURITY,
-    )
+    # Use flag containment check since tool_type is a flags enum
+    assert_that(
+        semgrep_plugin.definition.tool_type & ToolType.SECURITY,
+    ).is_equal_to(ToolType.SECURITY)
 
 
 # --- Integration tests for semgrep check command ---

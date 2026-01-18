@@ -64,6 +64,8 @@ def _parse_single_result(result: dict[str, Any]) -> SemgrepIssue | None:
 
     # Extract metadata (nested inside extra)
     metadata = extract_dict_field(data=extra, candidates=["metadata"])
+    if metadata is None or not isinstance(metadata, dict):
+        metadata = {}
     category = extract_str_field(data=metadata, candidates=["category"], default="")
 
     # Extract CWE IDs (may be a list or None)

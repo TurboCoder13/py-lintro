@@ -81,6 +81,7 @@ def test_compare_versions(version1: str, version2: str, expected: int) -> None:
         ("actionlint", "actionlint 1.7.5", "1.7.5"),
         ("biome", "Biome CLI v2.3.8", "2.3.8"),
         ("darglint", "1.8.1", "1.8.1"),
+        ("semgrep", "semgrep 1.148.0", "1.148.0"),
         ("ruff", "ruff 0.14.4", "0.14.4"),
         ("yamllint", "yamllint 1.37.1", "1.37.1"),
         # Clippy: rustc output should extract Rust version directly

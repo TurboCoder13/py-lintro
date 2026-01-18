@@ -10,14 +10,14 @@ from lintro.tools.definitions.semgrep import SemgrepPlugin
 
 
 @pytest.fixture
-def semgrep_plugin() -> SemgrepPlugin:
+def semgrep_plugin():
     """Provide a SemgrepPlugin instance for testing.
 
-    Returns:
-        A SemgrepPlugin instance.
+    Yields:
+        A SemgrepPlugin instance with version checks bypassed.
     """
     with patch(
         "lintro.plugins.execution_preparation.verify_tool_version",
         return_value=None,
     ):
-        return SemgrepPlugin()
+        yield SemgrepPlugin()
