@@ -41,7 +41,7 @@ main() {
     log_info "Generating SBOMs with standard formats"
     
     # Use the existing sbom-generate.sh with standard parameters
-    # The || true handles cases where SBOM generation might fail non-critically
+    # The if/else handles cases where SBOM generation might fail non-critically
     if bash "${SCRIPT_DIR}/sbom-generate.sh" \
         --skip-fetch \
         --format cyclonedx-1.6 \

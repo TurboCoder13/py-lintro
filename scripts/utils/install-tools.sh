@@ -157,8 +157,10 @@ fi
 
 # Function to detect platform and architecture
 detect_platform() {
-    local os=$(uname -s)
-    local arch=$(uname -m)
+    local os
+    os=$(uname -s)
+    local arch
+    arch=$(uname -m)
     
     # Normalize OS names for hadolint
     case "$os" in
@@ -194,7 +196,8 @@ install_python_package() {
     if command -v uv &> /dev/null; then
         if uv pip install "$full_package"; then
             # Copy the executable to target directory if it exists in uv environment
-            local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
+            local uv_path
+            uv_path=$(uv run which "$package" 2>/dev/null || echo "")
             if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
                 cp "$uv_path" "$BIN_DIR/$package"
                 chmod +x "$BIN_DIR/$package"
@@ -350,8 +353,13 @@ main() {
     ACTIONLINT_VERSION="v1.7.5"
     # actionlint release assets are named actionlint_${version}_${os}_${arch}.tar.gz
     # We'll try to download and extract the binary
-    tmpdir=$(mktemp -d)
+    local actionlint_tmpdir
+    actionlint_tmpdir=$(mktemp -d)
+    # shellcheck disable=SC2064 -- actionlint_tmpdir is set before trap; immediate expansion is intentional
+    trap "rm -rf '$actionlint_tmpdir'" EXIT
+    local os
     os=$(uname -s)
+    local arch
     arch=$(uname -m)
     case "$os" in
         Darwin) os_name="darwin" ;;
@@ -364,28 +372,30 @@ main() {
         *) arch_name="amd64" ;;
     esac
     tgz_url="https://github.com/rhysd/actionlint/releases/download/${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION#v}_${os_name}_${arch_name}.tar.gz"
-    if download_with_retries "$tgz_url" "$tmpdir/actionlint.tgz" 3; then
+    if download_with_retries "$tgz_url" "$actionlint_tmpdir/actionlint.tgz" 3; then
         # Verify SHA256 if checksum is available
         checksum_url="${tgz_url}.sha256"
-        if download_with_retries "$checksum_url" "$tmpdir/actionlint.tgz.sha256" 3; then
+        if download_with_retries "$checksum_url" "$actionlint_tmpdir/actionlint.tgz.sha256" 3; then
             echo -e "${BLUE}Verifying checksum for actionlint...${NC}"
             if command -v sha256sum >/dev/null 2>&1; then
-                if ! (cd "$tmpdir" && sha256sum -c actionlint.tgz.sha256 >/dev/null 2>&1); then
+                if ! (cd "$actionlint_tmpdir" && sha256sum -c actionlint.tgz.sha256 >/dev/null 2>&1); then
                     echo -e "${RED}✗ Checksum mismatch for actionlint${NC}"
                     exit 1
                 fi
             elif command -v shasum >/dev/null 2>&1; then
-                expected=$(cut -d' ' -f1 < "$tmpdir/actionlint.tgz.sha256")
-                actual=$(shasum -a 256 "$tmpdir/actionlint.tgz" | awk '{print $1}')
+                local expected
+                expected=$(cut -d' ' -f1 < "$actionlint_tmpdir/actionlint.tgz.sha256")
+                local actual
+                actual=$(shasum -a 256 "$actionlint_tmpdir/actionlint.tgz" | awk '{print $1}')
                 if [[ "$expected" != "$actual" ]]; then
                     echo -e "${RED}✗ Checksum mismatch for actionlint${NC}"
                     exit 1
                 fi
             fi
         fi
-        tar -xzf "$tmpdir/actionlint.tgz" -C "$tmpdir" >/dev/null 2>&1 || true
-        if [ -f "$tmpdir/actionlint" ]; then
-            cp "$tmpdir/actionlint" "$BIN_DIR/actionlint"
+        tar -xzf "$actionlint_tmpdir/actionlint.tgz" -C "$actionlint_tmpdir" >/dev/null 2>&1 || true
+        if [ -f "$actionlint_tmpdir/actionlint" ]; then
+            cp "$actionlint_tmpdir/actionlint" "$BIN_DIR/actionlint"
             chmod +x "$BIN_DIR/actionlint"
             echo -e "${GREEN}✓ actionlint installed successfully${NC}"
         else
@@ -394,7 +404,6 @@ main() {
     else
         echo -e "${YELLOW}⚠ Failed to download actionlint prebuilt binary${NC}"
     fi
-    rm -rf "$tmpdir" || true
 
     # Install Rust toolchain and clippy
     echo -e "${BLUE}Installing Rust toolchain and clippy...${NC}"
@@ -565,48 +574,7 @@ main() {
 
     # Install yamllint (Python package)
     echo -e "${BLUE}Installing yamllint...${NC}"
-    
-    # Function to install Python package with fallbacks (uv pip preferred)
-    install_python_package() {
-        local package="$1"
-        local version="${2:-}"
-        local full_package="$package"
-        
-        if [ -n "$version" ]; then
-            full_package="$package==$version"
-        fi
-        
-        # Prefer uv pip when available
-        if command -v uv &> /dev/null; then
-            if uv pip install "$full_package"; then
-                # Copy the executable to target directory if it exists in uv environment
-                local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
-                if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
-                    cp "$uv_path" "$BIN_DIR/$package"
-                    chmod +x "$BIN_DIR/$package"
-                    echo -e "${YELLOW}Copied $package from uv environment to $BIN_DIR${NC}"
-                fi
-                return 0
-            fi
-        fi
-        
-        # Fallback to pip
-        if command -v pip &> /dev/null; then
-            if pip install "$full_package"; then
-                return 0
-            fi
-        fi
-        
-        # Try system package managers as last resort
-        if command -v brew &> /dev/null; then
-            if brew install "$package"; then
-                return 0
-            fi
-        fi
-        
-        return 1
-    }
-    
+
     if [ $DRY_RUN -eq 1 ]; then
         log_info "[DRY-RUN] Would install yamllint"
     elif install_python_package "yamllint"; then

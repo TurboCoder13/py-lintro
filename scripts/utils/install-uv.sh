@@ -140,10 +140,13 @@ fi
 tar -C "${tmpdir}" -xzf "${tmpdir}/uv.tgz" "${uv_path_in_tgz}"
 
 # Install to user bin, fall back to system
+# Ensure ~/.local/bin exists before attempting install
+mkdir -p "$HOME/.local/bin"
 if install -m 0755 "${tmpdir}/${uv_path_in_tgz}" "$HOME/.local/bin/uv" 2>/dev/null; then
   log_info "Installed uv to $HOME/.local/bin/uv"
-  # Add to PATH for current session
-  if [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
+  # Add to PATH for current session and for GitHub Actions
+  export PATH="$HOME/.local/bin:$PATH"
+  if [ -n "${GITHUB_PATH:-}" ]; then
     echo "$HOME/.local/bin" >> "$GITHUB_PATH"
   fi
 else

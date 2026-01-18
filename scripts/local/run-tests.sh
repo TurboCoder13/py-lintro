@@ -12,7 +12,6 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 
 # Global variables
 VERBOSE=0
-TEST_FILES=()
 
 # Function to setup Python environment
 setup_python_env() {
@@ -76,8 +75,7 @@ check_system_tool() {
 # Function to discover available tools and build test list
 discover_tests() {
     echo -e "${BLUE}Discovering tests to run...${NC}"
-    # Always run all tests in the tests directory
-    TEST_FILES=("tests")
+    # All tests in the tests directory will be run
     echo -e "${GREEN}All tests in the tests directory will be run.${NC}"
 }
 
@@ -221,13 +219,21 @@ main() {
     # Load environment variables from .env file if it exists
     if [ -f .env ]; then
         echo -e "${YELLOW}Loading environment variables from .env file...${NC}"
-        export $(grep -v '^#' .env | xargs)
+        # Use while read loop for safe parsing (handles spaces in values)
+        while IFS='=' read -r key value; do
+            # Skip empty lines and comments
+            [[ -z "$key" || "$key" =~ ^# ]] && continue
+            # Remove surrounding quotes from value if present
+            value="${value%\"}"
+            value="${value#\"}"
+            value="${value%\'}"
+            value="${value#\'}"
+            export "$key=$value"
+        done < .env
     fi
     
     # Handle command line arguments
-    local verbose=false
     if [ "${1:-}" = "--verbose" ] || [ "${1:-}" = "-v" ]; then
-        verbose=true
         VERBOSE=1
         echo -e "${YELLOW}Verbose mode enabled${NC}"
     fi

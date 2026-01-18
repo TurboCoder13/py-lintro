@@ -175,6 +175,7 @@ set_github_env() {
 create_temp_dir() {
     local tmpdir
     tmpdir=$(mktemp -d)
+    # shellcheck disable=SC2064 -- tmpdir is set before trap; immediate expansion is intentional
     trap "rm -rf '$tmpdir'" EXIT
     echo "$tmpdir"
 }
@@ -201,8 +202,9 @@ get_coverage_percentage() {
     local coverage_file="${1:-coverage.xml}"
     if [[ -f "$coverage_file" ]]; then
         # Extract line-rate attribute and convert to percentage
+        # Use grep with sed for portability (grep -P is not POSIX-compliant)
         local line_rate
-        line_rate=$(grep -oP 'line-rate="\K[^"]+' "$coverage_file" 2>/dev/null || echo "0")
+        line_rate=$(grep -o 'line-rate="[^"]*"' "$coverage_file" 2>/dev/null | sed 's/line-rate="//;s/"$//' | head -1 || echo "0")
         awk -v lr="$line_rate" 'BEGIN { printf "%.2f", lr * 100 }'
     else
         echo "0.00"

@@ -15,7 +15,17 @@ echo -e "${BLUE}=== Lintro Local Runner ===${NC}"
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
     echo -e "${YELLOW}Loading environment variables from .env file...${NC}"
-    export $(grep -v '^#' .env | xargs)
+    # Use while read loop for safe parsing (handles spaces in values)
+    while IFS='=' read -r key value; do
+        # Skip empty lines and comments
+        [[ -z "$key" || "$key" =~ ^# ]] && continue
+        # Remove surrounding quotes from value if present
+        value="${value%\"}"
+        value="${value#\"}"
+        value="${value%\'}"
+        value="${value#\'}"
+        export "$key=$value"
+    done < .env
 fi
 
 # Enable unsafe fixes for local development
@@ -132,19 +142,20 @@ run_lintro() {
         fi
         exit $exit_code
     else
-        if uv run lintro "$@"; then
+        local exit_code=0
+        uv run lintro "$@" || exit_code=$?
+        if [ $exit_code -eq 0 ]; then
             echo -e "${GREEN}✓ Lintro completed successfully${NC}"
         else
-            local exit_code=$?
             echo -e "${RED}✗ Lintro exited with code $exit_code${NC}"
-            
+
             # Provide helpful suggestions based on common issues
             if [ $exit_code -eq 127 ]; then
                 echo -e "${YELLOW}Tip: Command not found. Check if lintro is properly installed.${NC}"
             elif [ $exit_code -eq 1 ]; then
                 echo -e "${YELLOW}Tip: Lintro found issues. Use 'fmt' command to auto-fix where possible.${NC}"
             fi
-            
+
             exit $exit_code
         fi
     fi

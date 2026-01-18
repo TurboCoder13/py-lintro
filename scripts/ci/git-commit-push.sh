@@ -51,7 +51,7 @@ if git diff --staged --quiet; then
         exit 0
     else
         log_warning "No changes to commit"
-        exit 0
+        exit 1
     fi
 fi
 

@@ -262,7 +262,12 @@ EOF
   local output_path="assets/images/coverage-badge.svg"
   while [[ $# -gt 0 ]]; do
     case $1 in
-      --output) output_path="$2"; shift 2 ;;
+      --output)
+        if [[ $# -lt 2 ]]; then
+          log_error "--output requires a value"
+          return 1
+        fi
+        output_path="$2"; shift 2 ;;
       *) log_error "Unknown option: $1"; return 1 ;;
     esac
   done
@@ -358,7 +363,12 @@ EOF
   local output_path="coverage-pr-comment.txt"
   while [[ $# -gt 0 ]]; do
     case $1 in
-      --output) output_path="$2"; shift 2 ;;
+      --output)
+        if [[ $# -lt 2 ]]; then
+          log_error "--output requires a value"
+          return 1
+        fi
+        output_path="$2"; shift 2 ;;
       *) log_error "Unknown option: $1"; return 1 ;;
     esac
   done
