@@ -1,0 +1,1 @@
+"""Rustfmt plugin tests."""
