@@ -92,10 +92,10 @@ def main() -> None:
                 file=sys.stderr,
             )
 
-    # Read resources
-    poet_resources = read_file_content(args.poet_resources)
-    darglint_resource = read_file_content(args.darglint_resource)
-    pydantic_resource = read_file_content(args.pydantic_resource)
+    # Read resources (strip trailing whitespace to avoid extra blank lines)
+    poet_resources = read_file_content(args.poet_resources).rstrip()
+    darglint_resource = read_file_content(args.darglint_resource).rstrip()
+    pydantic_resource = read_file_content(args.pydantic_resource).rstrip()
 
     # Render template
     rendered = template.replace("{{TARBALL_URL}}", args.tarball_url)
