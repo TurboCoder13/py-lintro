@@ -21,11 +21,13 @@ def test_file_fingerprint_to_dict() -> None:
     fp = FileFingerprint(path="/test/file.py", mtime=1234567890.0, size=1024)
     result = fp.to_dict()
 
-    assert_that(result).is_equal_to({
-        "path": "/test/file.py",
-        "mtime": 1234567890.0,
-        "size": 1024,
-    })
+    assert_that(result).is_equal_to(
+        {
+            "path": "/test/file.py",
+            "mtime": 1234567890.0,
+            "size": 1024,
+        },
+    )
 
 
 def test_file_fingerprint_from_dict() -> None:
@@ -49,7 +51,11 @@ def test_file_fingerprint_roundtrip() -> None:
 
 
 def test_tool_cache_empty_returns_all_files_as_changed(tmp_path: Path) -> None:
-    """Empty cache returns all files as changed."""
+    """Empty cache returns all files as changed.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     temp_file = tmp_path / "test.py"
     temp_file.write_text("test content")
 
@@ -59,7 +65,11 @@ def test_tool_cache_empty_returns_all_files_as_changed(tmp_path: Path) -> None:
 
 
 def test_tool_cache_unchanged_file_not_returned(tmp_path: Path) -> None:
-    """File in cache with same mtime/size not returned as changed."""
+    """File in cache with same mtime/size not returned as changed.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     temp_file = tmp_path / "test.py"
     temp_file.write_text("test content")
 
@@ -75,7 +85,11 @@ def test_tool_cache_unchanged_file_not_returned(tmp_path: Path) -> None:
 
 
 def test_tool_cache_modified_file_returned(tmp_path: Path) -> None:
-    """File in cache with different mtime returned as changed."""
+    """File in cache with different mtime returned as changed.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     temp_file = tmp_path / "test.py"
     temp_file.write_text("test content")
 
@@ -91,7 +105,11 @@ def test_tool_cache_modified_file_returned(tmp_path: Path) -> None:
 
 
 def test_tool_cache_size_changed_file_returned(tmp_path: Path) -> None:
-    """File in cache with different size returned as changed."""
+    """File in cache with different size returned as changed.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     temp_file = tmp_path / "test.py"
     temp_file.write_text("test content")
 
@@ -114,7 +132,11 @@ def test_tool_cache_nonexistent_file_skipped() -> None:
 
 
 def test_tool_cache_update_adds_fingerprints(tmp_path: Path) -> None:
-    """Update adds fingerprints for files."""
+    """Update adds fingerprints for files.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     temp_file = tmp_path / "test.py"
     temp_file.write_text("test content")
 
@@ -136,7 +158,11 @@ def test_tool_cache_clear_removes_all_fingerprints() -> None:
 
 
 def test_tool_cache_save_and_load_roundtrip(tmp_path: Path) -> None:
-    """Save and load preserves cache data."""
+    """Save and load preserves cache data.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     with patch("lintro.utils.file_cache.CACHE_DIR", tmp_path):
         cache = ToolCache(tool_name="test_tool")
         cache.fingerprints["/test/file.py"] = FileFingerprint(
@@ -152,14 +178,22 @@ def test_tool_cache_save_and_load_roundtrip(tmp_path: Path) -> None:
 
 
 def test_tool_cache_load_returns_empty_for_missing_file(tmp_path: Path) -> None:
-    """Load returns empty cache for missing cache file."""
+    """Load returns empty cache for missing cache file.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     with patch("lintro.utils.file_cache.CACHE_DIR", tmp_path):
         loaded = ToolCache.load("nonexistent_tool")
         assert_that(loaded.fingerprints).is_empty()
 
 
 def test_clear_all_caches_deletes_files(tmp_path: Path) -> None:
-    """Clear all caches deletes all cache files."""
+    """Clear all caches deletes all cache files.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     (tmp_path / "tool1.json").write_text('{"tool_name": "tool1"}')
     (tmp_path / "tool2.json").write_text('{"tool_name": "tool2"}')
 
@@ -169,7 +203,11 @@ def test_clear_all_caches_deletes_files(tmp_path: Path) -> None:
 
 
 def test_get_cache_stats_returns_file_counts(tmp_path: Path) -> None:
-    """Get cache stats returns file counts."""
+    """Get cache stats returns file counts.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     cache_data = {
         "tool_name": "test_tool",
         "fingerprints": {
@@ -186,7 +224,11 @@ def test_get_cache_stats_returns_file_counts(tmp_path: Path) -> None:
 
 
 def test_get_cache_stats_returns_empty_for_nonexistent_dir(tmp_path: Path) -> None:
-    """Get cache stats returns empty dict for nonexistent directory."""
+    """Get cache stats returns empty dict for nonexistent directory.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     nonexistent_dir = tmp_path / "nonexistent"
 
     with patch("lintro.utils.file_cache.CACHE_DIR", nonexistent_dir):

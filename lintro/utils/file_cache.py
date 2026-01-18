@@ -33,12 +33,23 @@ class FileFingerprint:
     size: int
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for JSON serialization."""
+        """Convert to dictionary for JSON serialization.
+
+        Returns:
+            Dictionary representation of the fingerprint.
+        """
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> FileFingerprint:
-        """Create from dictionary."""
+        """Create from dictionary.
+
+        Args:
+            data: Dictionary with path, mtime, and size keys.
+
+        Returns:
+            FileFingerprint instance created from the dictionary.
+        """
         return cls(
             path=data["path"],
             mtime=data["mtime"],

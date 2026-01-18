@@ -22,6 +22,10 @@ from lintro.enums.pytest_enums import (
     normalize_pytest_special_mode,
     normalize_test_status,
 )
+from lintro.enums.semgrep_enums import (
+    SemgrepSeverity,
+    normalize_semgrep_severity,
+)
 from lintro.enums.tool_type import ToolType, normalize_tool_type
 from lintro.enums.tools_value import ToolsValue, normalize_tools_value
 
@@ -90,6 +94,15 @@ NORMALIZER_TEST_CASES = [
         "ALL",
         "Unknown tools value",
         id="tools_value",
+    ),
+    pytest.param(
+        normalize_semgrep_severity,
+        SemgrepSeverity,
+        SemgrepSeverity.WARNING,
+        "info",
+        "ERROR",
+        "Invalid Semgrep severity",
+        id="semgrep_severity",
     ),
 ]
 

@@ -23,6 +23,7 @@ class ToolName(StrEnum):
     PRETTIER = auto()
     PYTEST = auto()
     RUFF = auto()
+    SEMGREP = auto()
     YAMLLINT = auto()
 
 

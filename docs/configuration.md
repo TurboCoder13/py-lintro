@@ -500,6 +500,46 @@ exclude = test_*.py
 - `confidence`: Minimum confidence level (`LOW`, `MEDIUM`, `HIGH`)
 - `baseline`: Path to baseline report for comparison
 
+#### Semgrep Configuration
+
+Semgrep is a fast, open-source static analysis tool for security scanning and code
+quality enforcement across 30+ languages.
+
+**File:** `.semgrep.yaml` or `.semgrep.yml`
+
+```yaml
+rules:
+  - id: custom-security-rule
+    pattern: eval(...)
+    message: 'Avoid using eval() - potential code injection'
+    languages: [python]
+    severity: ERROR
+```
+
+**Available Options via `--tool-options`:**
+
+| Option              | Type   | Description                                              |
+| ------------------- | ------ | -------------------------------------------------------- |
+| `config`            | string | Rule config: `auto`, `p/python`, `p/javascript`, or path |
+| `exclude`           | list   | Patterns to exclude from scanning                        |
+| `include`           | list   | Patterns to include in scanning                          |
+| `severity`          | string | Minimum severity: `INFO`, `WARNING`, `ERROR`             |
+| `timeout_threshold` | int    | Per-file timeout in seconds                              |
+| `jobs`              | int    | Number of parallel jobs                                  |
+
+**Example Usage:**
+
+```bash
+# Use Python security rules
+lintro check --tools semgrep --tool-options "semgrep:config=p/python"
+
+# Filter by severity
+lintro check --tools semgrep --tool-options "semgrep:severity=ERROR"
+
+# Exclude test files
+lintro check --tools semgrep --tool-options "semgrep:exclude=tests/*|vendor/*"
+```
+
 #### Darglint Configuration
 
 **File:** `.darglint`

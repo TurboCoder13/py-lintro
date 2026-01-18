@@ -37,7 +37,8 @@ def _get_plugin_instance(plugin_class_path: str) -> BaseToolPlugin:
     module_path, class_name = plugin_class_path.rsplit(".", 1)
     import importlib
 
-    module = importlib.import_module(module_path)
+    # Safe: module_path comes from hardcoded test constants, not user input
+    module = importlib.import_module(module_path)  # nosemgrep: non-literal-import
     plugin_class = getattr(module, class_name)
 
     # Some plugins require mocking during instantiation
