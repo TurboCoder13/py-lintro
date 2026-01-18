@@ -55,6 +55,7 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "actionlint": ["actionlint"],
         # Rust/Cargo tools
         "clippy": ["cargo", "clippy"],
+        "rustfmt": ["rustfmt"],
     }
 
     results = {}
