@@ -44,6 +44,8 @@ def fetch_pypi_json(
         url = f"{PYPI_BASE_URL}/{package}/json"
 
     try:
+        # Safe: URL from hardcoded PYPI_BASE_URL (https://pypi.org/pypi)
+        # nosemgrep: dynamic-urllib-use-detected
         with urllib.request.urlopen(url, timeout=30) as response:  # nosec B310
             result: dict[str, Any] = json.load(response)
             return result

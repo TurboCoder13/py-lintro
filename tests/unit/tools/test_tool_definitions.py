@@ -98,7 +98,8 @@ def _create_plugin_instance(module_path: str, class_name: str) -> Any:
     """
     import importlib
 
-    module = importlib.import_module(module_path)
+    # Safe: module_path comes from hardcoded TOOL_SPECS, not user input
+    module = importlib.import_module(module_path)  # nosemgrep: non-literal-import
     plugin_class = getattr(module, class_name)
     return plugin_class()
 

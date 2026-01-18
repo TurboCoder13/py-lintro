@@ -57,6 +57,8 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "clippy": ["cargo", "clippy"],
         # Shell tools
         "shfmt": ["shfmt"],
+        # Security tools
+        "semgrep": ["semgrep"],
     }
 
     results = {}

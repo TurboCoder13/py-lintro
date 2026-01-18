@@ -157,7 +157,26 @@ def test_command(
     """Run tests using pytest.
 
     This CLI command wraps pytest with lintro's output formatting.
-    See --help for argument descriptions.
+
+    Args:
+        paths: Paths to test files or directories.
+        exclude: Pattern to exclude paths.
+        include_venv: Whether to include virtual environment directories.
+        output: Output file path.
+        output_format: Output format for displaying results.
+        group_by: How to group issues in the output.
+        verbose: Show verbose output.
+        raw_output: Show raw tool output instead of formatted output.
+        tool_options: Tool-specific options in the format option=value.
+        list_plugins: List all installed pytest plugins.
+        check_plugins: Check if required plugins are installed.
+        collect_only: List tests without executing them.
+        fixtures: List all available fixtures.
+        fixture_info: Show detailed information about a specific fixture.
+        markers: List all available markers.
+        parametrize_help: Show help for parametrized tests.
+        coverage: Generate test coverage report with missing lines.
+        debug: Enable debug output on console.
 
     Raises:
         SystemExit: Process exit with the aggregated exit code.

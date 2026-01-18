@@ -40,6 +40,7 @@ This script installs:
   - Bandit (Python security linter)
   - Mypy (Python static type checker)
   - Clippy (Rust linter; requires Rust toolchain)
+  - Semgrep (Security scanner)
 
 Use this script to set up a complete development environment.
 EOF
@@ -93,6 +94,8 @@ ensure_bun_installed() {
 	fi
 
 	# Install bun via official installer (works on Linux and macOS)
+	# Justification: Official bun installer from trusted source (bun.sh)
+	# nosemgrep: curl-pipe-bash
 	if curl -fsSL https://bun.sh/install | bash; then
 		# Source bun environment
 		if [ -f "$HOME/.bun/bin/bun" ]; then
@@ -565,6 +568,17 @@ main() {
 		exit 1
 	fi
 
+	# Install semgrep (security scanner)
+	echo -e "${BLUE}Installing semgrep...${NC}"
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install semgrep"
+	elif install_python_package "semgrep" "1.50.0"; then
+		echo -e "${GREEN}✓ semgrep installed successfully${NC}"
+	else
+		echo -e "${RED}✗ Failed to install semgrep${NC}"
+		exit 1
+	fi
+
 	# Install biome via bun (JavaScript/TypeScript linting and formatting)
 	echo -e "${BLUE}Installing biome...${NC}"
 
@@ -671,6 +685,7 @@ main() {
 	echo "  - markdownlint-cli2 (Markdown linting)"
 	echo "  - prettier (JavaScript/JSON formatting)"
 	echo "  - ruff (Python linting and formatting)"
+	echo "  - semgrep (Security scanning)"
 	echo "  - shfmt (Shell script formatting)"
 	echo "  - mypy (Python type checking)"
 	echo "  - yamllint (YAML linting)"
@@ -679,7 +694,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "shfmt" "yamllint" "mypy")
+	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shfmt" "yamllint" "mypy")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo
