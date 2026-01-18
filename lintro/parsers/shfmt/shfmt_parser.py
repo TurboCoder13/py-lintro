@@ -69,7 +69,7 @@ def parse_shfmt_output(output: str | None) -> list[ShfmtIssue]:
                         issues.append(
                             ShfmtIssue(
                                 file=current_file,
-                                line=current_line,
+                                line=current_line if current_line > 0 else 1,
                                 column=0,
                                 message="Needs formatting",
                                 diff_content="\n".join(current_diff_lines),
