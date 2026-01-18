@@ -1,0 +1,1 @@
+"""Cargo-audit plugin tests."""

@@ -294,6 +294,10 @@ def get_install_hints() -> dict[str, str]:
                 f"Install via: rustup component add clippy "
                 f"(requires Rust {versions.get('clippy', '1.75.0')}+)"
             ),
+            "cargo_audit": (
+                f"Install via: cargo install cargo-audit "
+                f"(v{versions.get('cargo_audit', '0.17.0')}+)"
+            ),
         },
     )
 
