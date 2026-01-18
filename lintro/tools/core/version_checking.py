@@ -298,6 +298,10 @@ def get_install_hints() -> dict[str, str]:
                 f"Install via: rustup component add rustfmt "
                 f"(v{versions.get('rustfmt', '1.5.0')}+)"
             ),
+            "cargo_audit": (
+                f"Install via: cargo install cargo-audit "
+                f"(v{versions.get('cargo_audit', '0.17.0')}+)"
+            ),
             "semgrep": (
                 f"Install via: pip install semgrep>="
                 f"{versions.get('semgrep', '1.50.0')} or brew install semgrep"
