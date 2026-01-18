@@ -98,10 +98,11 @@ def parse_semgrep_output(output: str | None) -> list[SemgrepIssue]:
         output: JSON string from Semgrep output, or None.
 
     Returns:
-        List of parsed security/code quality issues.
+        List of parsed security/code quality issues. Returns empty list for
+        None, empty string, or invalid JSON input.
 
     Raises:
-        ValueError: If the output structure is invalid.
+        ValueError: If the parsed JSON is not a dict or results is not a list.
     """
     if output is None or not output.strip():
         return []

@@ -572,7 +572,7 @@ main() {
 	echo -e "${BLUE}Installing semgrep...${NC}"
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install semgrep"
-	elif install_python_package "semgrep" "1.148.0"; then
+	elif install_python_package "semgrep" "1.50.0"; then
 		echo -e "${GREEN}✓ semgrep installed successfully${NC}"
 	else
 		echo -e "${RED}✗ Failed to install semgrep${NC}"

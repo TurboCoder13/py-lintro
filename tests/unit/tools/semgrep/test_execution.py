@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -33,16 +34,12 @@ def test_check_with_mocked_subprocess_success(
     # Semgrep JSON output with no results
     semgrep_output = json.dumps({"results": [], "errors": []})
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    with patch.object(
+        semgrep_plugin,
+        "_run_subprocess",
+        return_value=(True, semgrep_output),
     ):
-        with patch.object(
-            semgrep_plugin,
-            "_run_subprocess",
-            return_value=(True, semgrep_output),
-        ):
-            result = semgrep_plugin.check([str(test_file)], {})
+        result = semgrep_plugin.check([str(test_file)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.issues_count).is_equal_to(0)
@@ -84,25 +81,21 @@ def test_check_with_mocked_subprocess_findings(
         },
     )
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    with patch.object(
+        semgrep_plugin,
+        "_run_subprocess",
+        return_value=(False, semgrep_output),
     ):
-        with patch.object(
-            semgrep_plugin,
-            "_run_subprocess",
-            return_value=(False, semgrep_output),
-        ):
-            result = semgrep_plugin.check([str(test_file)], {})
+        result = semgrep_plugin.check([str(test_file)], {})
 
-    assert_that(
-        result.success,
-    ).is_true()  # Scan succeeded; findings don't cause failure
+    # Scan succeeded; findings don't cause failure
+    assert_that(result.success).is_true()
     assert_that(result.issues_count).is_equal_to(1)
-    assert result.issues is not None
-    assert_that(result.issues).is_length(1)
-    issue = result.issues[0]
-    assert isinstance(issue, SemgrepIssue)
+    assert_that(result.issues).is_not_none()
+    issues = cast(list[SemgrepIssue], result.issues)
+    assert_that(issues).is_length(1)
+    issue = issues[0]
+    assert_that(issue).is_instance_of(SemgrepIssue)
     assert_that(issue.check_id).is_equal_to(
         "python.lang.security.audit.dangerous-system-call",
     )
@@ -152,16 +145,12 @@ def test_check_with_multiple_findings(
         },
     )
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    with patch.object(
+        semgrep_plugin,
+        "_run_subprocess",
+        return_value=(False, semgrep_output),
     ):
-        with patch.object(
-            semgrep_plugin,
-            "_run_subprocess",
-            return_value=(False, semgrep_output),
-        ):
-            result = semgrep_plugin.check([str(test_file)], {})
+        result = semgrep_plugin.check([str(test_file)], {})
 
     assert_that(result.issues_count).is_equal_to(2)
     assert_that(result.issues).is_length(2)

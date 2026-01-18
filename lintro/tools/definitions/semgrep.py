@@ -197,7 +197,7 @@ class SemgrepPlugin(BaseToolPlugin):
         cmd: list[str] = self._get_executable_command("semgrep") + ["scan"]
 
         # Output format - always use JSON for reliable parsing
-        cmd.extend(["--json"])
+        cmd.extend([f"--{SEMGREP_OUTPUT_FORMAT}"])
 
         # Config option (required for semgrep to know what rules to use)
         config_opt = self.options.get("config", SEMGREP_DEFAULT_CONFIG)
