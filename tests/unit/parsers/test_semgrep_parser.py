@@ -292,24 +292,18 @@ def test_semgrep_check_handles_nonzero_rc_with_errors_array(
         ],
     }
 
-    class NS:
-        def __init__(self, stdout: str, stderr: str, returncode: int) -> None:
-            self.stdout = stdout
-            self.stderr = stderr
-            self.returncode = returncode
-
     def fake_run(
         cmd: list[str],
         capture_output: bool,
         text: bool,
         timeout: int,
         **kwargs: Any,
-    ) -> NS:
+    ) -> SimpleNamespace:
         # Handle version check calls
         if "--version" in cmd:
-            return NS(stdout="semgrep 1.50.0", stderr="", returncode=0)
+            return SimpleNamespace(stdout="semgrep 1.50.0", stderr="", returncode=0)
         # Handle actual check calls
-        return NS(stdout=json.dumps(sample), stderr="", returncode=1)
+        return SimpleNamespace(stdout=json.dumps(sample), stderr="", returncode=1)
 
     monkeypatch.setattr("subprocess.run", fake_run)
     tool = ToolRegistry.get("semgrep")

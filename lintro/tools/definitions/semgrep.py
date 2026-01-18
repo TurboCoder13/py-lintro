@@ -308,11 +308,12 @@ class SemgrepPlugin(BaseToolPlugin):
             # Check for errors in the response
             errors = semgrep_data.get("errors", [])
             execution_success = len(errors) == 0 and not execution_failure
+            has_errors = execution_failure or len(errors) > 0
 
             return ToolResult(
                 name=self.definition.name,
                 success=execution_success,
-                output=output if execution_failure else None,
+                output=output if has_errors else None,
                 issues_count=issues_count,
                 issues=issues,
             )

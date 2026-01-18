@@ -28,6 +28,7 @@ if TYPE_CHECKING:
         prettier,
         pytest,
         ruff,
+        semgrep,
         yamllint,
     )
 
@@ -46,6 +47,7 @@ __all__ = [
     "prettier",
     "pytest",
     "ruff",
+    "semgrep",
     "stream_json_array_fallback",
     "stream_json_lines",
     "stream_text_lines",
@@ -65,6 +67,7 @@ _SUBMODULES = {
     "prettier",
     "pytest",
     "ruff",
+    "semgrep",
     "yamllint",
 }
 
