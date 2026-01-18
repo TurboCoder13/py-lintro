@@ -294,6 +294,10 @@ def get_install_hints() -> dict[str, str]:
                 f"Install via: rustup component add clippy "
                 f"(requires Rust {versions.get('clippy', '1.75.0')}+)"
             ),
+            "rustfmt": (
+                f"Install via: rustup component add rustfmt "
+                f"(v{versions.get('rustfmt', '1.5.0')}+)"
+            ),
         },
     )
 
