@@ -35,6 +35,7 @@ TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
     ToolName.ASTRO_CHECK,
     ToolName.BANDIT,
     ToolName.CARGO_AUDIT,
+    ToolName.CARGO_DENY,
     ToolName.GITLEAKS,
     ToolName.HADOLINT,
     ToolName.OXFMT,
