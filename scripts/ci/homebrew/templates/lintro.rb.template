@@ -23,6 +23,7 @@ class Lintro < Formula
   depends_on "bandit"
   depends_on "black"
   depends_on "hadolint"
+  depends_on "libyaml"
   depends_on "mypy"
   depends_on "prettier"
   depends_on "python@3.13"
