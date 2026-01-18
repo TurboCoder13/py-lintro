@@ -121,6 +121,7 @@ def parse_shfmt_output(output: str | None) -> list[ShfmtIssue]:
             )
 
     except (ValueError, AttributeError, IndexError) as e:
-        logger.debug(f"Error parsing shfmt output: {e}")
+        output_len = len(output) if output else 0
+        logger.debug(f"Error parsing shfmt output ({output_len} chars): {e}")
 
     return issues

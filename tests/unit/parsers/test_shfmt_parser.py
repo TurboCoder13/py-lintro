@@ -240,6 +240,8 @@ def test_parse_shfmt_output_empty_hunk() -> None:
     result = parse_shfmt_output(output)
     assert_that(result).is_length(1)
     assert_that(result[0].file).is_equal_to("test.sh")
+    # Line defaults to 1 from the hunk header (fallback behavior)
+    assert_that(result[0].line).is_equal_to(1)
 
 
 def test_parse_shfmt_output_bash_extension() -> None:

@@ -173,6 +173,8 @@ def test_fix_with_mocked_subprocess_success(
 
     assert_that(result.success).is_true()
     assert_that(result.fixed_issues_count).is_greater_than(0)
+    # Verify the mock was called expected number of times (check + fix)
+    assert_that(call_count).is_equal_to(2)
 
 
 def test_fix_with_nothing_to_fix(
