@@ -145,6 +145,7 @@ packages = [
     "lintro.parsers.bandit",
     "lintro.parsers.biome",
     "lintro.parsers.black",
+    "lintro.parsers.cargo_deny",
     "lintro.parsers.clippy",
     "lintro.parsers.darglint",
     "lintro.parsers.hadolint",
@@ -281,6 +282,7 @@ enforce_failure = true
 [tool.lintro.ruff]
 
 [tool.lintro.versions]
+cargo_deny = "0.14.0"
 pytest = "8.0.0"
 prettier = "3.7.3"
 biome = "2.3.9"
