@@ -808,6 +808,85 @@ lintro format --tools clippy
 lintro check src/ --tools clippy
 ```
 
+### Shell Tools
+
+#### Shfmt Configuration
+
+Shfmt is a shell script formatter that supports POSIX, Bash, mksh, and bats shells. It
+formats shell scripts to ensure consistent style and can detect formatting issues in
+diff mode.
+
+**Installation:**
+
+```bash
+# macOS
+brew install shfmt
+
+# Linux (via Go)
+go install mvdan.cc/sh/v3/cmd/shfmt@latest
+
+# Via npm/bun
+bun add -g shfmt
+```
+
+**File:** `.editorconfig` (shfmt respects EditorConfig)
+
+```ini
+[*.sh]
+indent_style = tab
+indent_size = 4
+shell_variant = bash
+binary_next_line = true
+switch_case_indent = true
+space_redirects = false
+```
+
+**Lintro options via `--tool-options`:**
+
+```bash
+# Set indentation to 4 spaces (0 for tabs)
+lintro check --tools shfmt --tool-options "shfmt:indent=4"
+
+# Enable binary operators at start of line
+lintro check --tools shfmt --tool-options "shfmt:binary_next_line=True"
+
+# Indent switch cases
+lintro check --tools shfmt --tool-options "shfmt:switch_case_indent=True"
+
+# Add space after redirect operators
+lintro check --tools shfmt --tool-options "shfmt:space_redirects=True"
+
+# Set language dialect (bash, posix, mksh, bats)
+lintro check --tools shfmt --tool-options "shfmt:language_dialect=bash"
+
+# Enable code simplification
+lintro check --tools shfmt --tool-options "shfmt:simplify=True"
+```
+
+**Available Options:**
+
+| Option               | Type | Description                                 |
+| -------------------- | ---- | ------------------------------------------- |
+| `indent`             | int  | Indentation size. 0 for tabs, >0 for spaces |
+| `binary_next_line`   | bool | Binary ops like && and \| may start a line  |
+| `switch_case_indent` | bool | Indent switch cases                         |
+| `space_redirects`    | bool | Redirect operators followed by space        |
+| `language_dialect`   | str  | Shell dialect: bash, posix, mksh, bats      |
+| `simplify`           | bool | Simplify code where possible                |
+
+**Lintro usage:**
+
+```bash
+# Check shell scripts with shfmt
+lintro check --tools shfmt
+
+# Auto-format shell scripts
+lintro format --tools shfmt
+
+# Check specific shell directories
+lintro check scripts/ --tools shfmt
+```
+
 ### Infrastructure Tools
 
 #### Hadolint Configuration

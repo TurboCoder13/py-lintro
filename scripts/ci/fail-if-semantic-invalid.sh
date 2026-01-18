@@ -9,26 +9,24 @@ set -euo pipefail
 #   OK=<true|false> scripts/ci/fail-if-semantic-invalid.sh
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  cat <<'EOF'
+	cat <<'EOF'
 Fail the step when the semantic validation reported ok != true.
 
 Usage:
   OK=<true|false> scripts/ci/fail-if-semantic-invalid.sh
 EOF
-  exit 0
+	exit 0
 fi
 
 OK_VALUE="${OK:-}"
 if [[ -z "${OK_VALUE}" ]]; then
-  echo "OK env var is required (expected 'true' or 'false')" >&2
-  exit 2
+	echo "OK env var is required (expected 'true' or 'false')" >&2
+	exit 2
 fi
 
 if [[ "${OK_VALUE}" != "true" ]]; then
-  echo "PR title does not follow Conventional Commits." >&2
-  exit 1
+	echo "PR title does not follow Conventional Commits." >&2
+	exit 1
 fi
 
 echo "Semantic validation ok=true; continuing."
-
-

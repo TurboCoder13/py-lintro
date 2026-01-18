@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-  cat <<'EOF'
+	cat <<'EOF'
 Verify CLI entry points from installed lintro package.
 
 Usage:
@@ -22,35 +22,35 @@ Verifies:
   - CLI --version: displays version information
   - CLI --help: displays help text
 EOF
-  exit 0
+	exit 0
 fi
 
 PYTHON_BIN="${TEST_VENV_PYTHON:-${1:-test_venv/bin/python}}"
 
 log_info() {
-  echo "[test-verify-cli] $*"
+	echo "[test-verify-cli] $*"
 }
 
 log_info "Verifying CLI with: $PYTHON_BIN"
 
 # Verify Python executable exists
 if [ ! -f "$PYTHON_BIN" ]; then
-  echo "[test-verify-cli] ERROR: Python executable not found at $PYTHON_BIN" >&2
-  exit 1
+	echo "[test-verify-cli] ERROR: Python executable not found at $PYTHON_BIN" >&2
+	exit 1
 fi
 
 # Test 1: CLI --version
 log_info "Test 1: CLI --version"
 if ! "$PYTHON_BIN" -m lintro --version; then
-  echo "[test-verify-cli] ERROR: CLI --version failed" >&2
-  exit 1
+	echo "[test-verify-cli] ERROR: CLI --version failed" >&2
+	exit 1
 fi
 
 # Test 2: CLI --help
 log_info "Test 2: CLI --help"
 if ! "$PYTHON_BIN" -m lintro --help; then
-  echo "[test-verify-cli] ERROR: CLI --help failed" >&2
-  exit 1
+	echo "[test-verify-cli] ERROR: CLI --help failed" >&2
+	exit 1
 fi
 
 log_info "All CLI tests passed ✅"

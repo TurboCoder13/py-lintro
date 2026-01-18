@@ -12,7 +12,7 @@ set -euo pipefail
 # in CI workflows, keeping workflow YAML files shell-free.
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  cat <<'EOF'
+	cat <<'EOF'
 CI logging utility for workflow status messages.
 
 Usage:
@@ -25,14 +25,13 @@ Examples:
   scripts/ci/ci-log.sh "Build completed successfully"
   scripts/ci/ci-log.sh "Skipping step: condition not met"
 EOF
-  exit 0
+	exit 0
 fi
 
 if [[ $# -eq 0 ]]; then
-  echo "Error: No message provided" >&2
-  echo "Usage: scripts/ci/ci-log.sh <message>" >&2
-  exit 1
+	echo "Error: No message provided" >&2
+	echo "Usage: scripts/ci/ci-log.sh <message>" >&2
+	exit 1
 fi
 
 echo "$*"
-

@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../utils/utils.sh"
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-    cat <<'EOF'
+	cat <<'EOF'
 Enforce a minimum coverage percentage.
 
 Usage:
@@ -28,7 +28,7 @@ Arguments:
 Exit status:
   0 if PERCENTAGE >= THRESHOLD; 1 otherwise
 EOF
-    exit 0
+	exit 0
 fi
 
 PCT_INPUT="${1:-}"
@@ -36,24 +36,23 @@ THRESHOLD="${2:-${THRESHOLD:-80}}"
 
 # Get coverage percentage from argument, environment, or coverage.xml
 get_pct() {
-    local pct
-    if [[ -n "$PCT_INPUT" ]]; then
-        pct="$PCT_INPUT"
-    elif [[ -n "${COVERAGE_PERCENTAGE:-}" ]]; then
-        pct="$COVERAGE_PERCENTAGE"
-    else
-        # Use shared get_coverage_percentage function from utils.sh
-        pct=$(get_coverage_percentage "coverage.xml")
-    fi
-    echo "$pct"
+	local pct
+	if [[ -n "$PCT_INPUT" ]]; then
+		pct="$PCT_INPUT"
+	elif [[ -n "${COVERAGE_PERCENTAGE:-}" ]]; then
+		pct="$COVERAGE_PERCENTAGE"
+	else
+		# Use shared get_coverage_percentage function from utils.sh
+		pct=$(get_coverage_percentage "coverage.xml")
+	fi
+	echo "$pct"
 }
 
 PCT=$(get_pct)
 
 if awk -v p="$PCT" -v t="$THRESHOLD" 'BEGIN{ exit (p>=t)?0:1 }'; then
-    log_success "Coverage threshold satisfied: ${PCT}% >= ${THRESHOLD}%"
+	log_success "Coverage threshold satisfied: ${PCT}% >= ${THRESHOLD}%"
 else
-    log_error "Coverage threshold NOT satisfied: ${PCT}% < ${THRESHOLD}%"
-    exit 1
+	log_error "Coverage threshold NOT satisfied: ${PCT}% < ${THRESHOLD}%"
+	exit 1
 fi
-

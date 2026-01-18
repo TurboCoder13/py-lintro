@@ -6,13 +6,13 @@ set -euo pipefail
 
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-    echo "Usage: $0 [--help|-h]"
-    echo ""
-    echo "Coverage PR Comment Script"
-    echo "Generates a PR comment with coverage info within a GitHub Actions run."
-    echo ""
-    echo "This script is intended for CI and will no-op outside pull_request events."
-    exit 0
+	echo "Usage: $0 [--help|-h]"
+	echo ""
+	echo "Coverage PR Comment Script"
+	echo "Generates a PR comment with coverage info within a GitHub Actions run."
+	echo ""
+	echo "This script is intended for CI and will no-op outside pull_request events."
+	exit 0
 fi
 
 # Source shared utilities
@@ -20,8 +20,8 @@ source "$(dirname "$0")/../../utils/utils.sh"
 
 # Check if we're in a PR context
 if ! is_pr_context; then
-    log_info "Not in a PR context, skipping coverage comment generation"
-    exit 0
+	log_info "Not in a PR context, skipping coverage comment generation"
+	exit 0
 fi
 
 # Get coverage value using shared function
@@ -29,16 +29,16 @@ COVERAGE_VALUE=$(get_coverage_value)
 COVERAGE_STATUS=$(get_coverage_status "$COVERAGE_VALUE")
 JOB_RESULT_TEXT="${JOB_RESULT:-success}"
 if [ "$JOB_RESULT_TEXT" != "success" ]; then
-    BUILD_STATUS="❌ Tests failed"
+	BUILD_STATUS="❌ Tests failed"
 else
-    BUILD_STATUS="✅ Tests passed"
+	BUILD_STATUS="✅ Tests passed"
 fi
 
 # Determine status text
 if [ "$COVERAGE_STATUS" = "✅" ]; then
-    STATUS_TEXT="Target met (>80%)"
+	STATUS_TEXT="Target met (>80%)"
 else
-    STATUS_TEXT="Below target (<80%)"
+	STATUS_TEXT="Below target (<80%)"
 fi
 
 # Create the comment content with marker

@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/../../utils/utils.sh"
 
 # Show help if requested
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-    cat <<'EOF'
+	cat <<'EOF'
 Usage: coverage-badge-update.sh [--help]
 
 Coverage Badge Update Script
@@ -24,36 +24,36 @@ This script:
 
 This script is designed to be run in GitHub Actions CI environment.
 EOF
-    exit 0
+	exit 0
 fi
 
 # Set coverage percentage if not already set (handle nounset)
 if [[ -z "${COVERAGE_PERCENTAGE:-}" ]]; then
-    # Use shared get_coverage_percentage function from utils.sh
-    COVERAGE_PERCENTAGE=$(get_coverage_percentage "coverage.xml")
-    if [[ "$COVERAGE_PERCENTAGE" != "0.00" ]]; then
-        log_info "Extracted coverage percentage: $COVERAGE_PERCENTAGE%"
-    else
-        log_warning "No coverage.xml found or empty, setting coverage to 0.0%"
-        COVERAGE_PERCENTAGE="0.0"
-    fi
+	# Use shared get_coverage_percentage function from utils.sh
+	COVERAGE_PERCENTAGE=$(get_coverage_percentage "coverage.xml")
+	if [[ "$COVERAGE_PERCENTAGE" != "0.00" ]]; then
+		log_info "Extracted coverage percentage: $COVERAGE_PERCENTAGE%"
+	else
+		log_warning "No coverage.xml found or empty, setting coverage to 0.0%"
+		COVERAGE_PERCENTAGE="0.0"
+	fi
 fi
 
 # Generate badge based on coverage percentage
 if [ -f "coverage.xml" ]; then
-    log_info "Generating coverage badge with $COVERAGE_PERCENTAGE% coverage..."
-    
-    # Determine color based on coverage percentage
-    if (( $(echo "$COVERAGE_PERCENTAGE >= 80" | bc -l) )); then
-        color="#4c1"  # Green
-    elif (( $(echo "$COVERAGE_PERCENTAGE >= 60" | bc -l) )); then
-        color="#dfb317"  # Yellow
-    else
-        color="#e05d44"  # Red
-    fi
-    
-    # Create SVG badge with actual coverage percentage
-    cat > assets/images/coverage-badge.svg << EOF
+	log_info "Generating coverage badge with $COVERAGE_PERCENTAGE% coverage..."
+
+	# Determine color based on coverage percentage
+	if (($(echo "$COVERAGE_PERCENTAGE >= 80" | bc -l))); then
+		color="#4c1" # Green
+	elif (($(echo "$COVERAGE_PERCENTAGE >= 60" | bc -l))); then
+		color="#dfb317" # Yellow
+	else
+		color="#e05d44" # Red
+	fi
+
+	# Create SVG badge with actual coverage percentage
+	cat >assets/images/coverage-badge.svg <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="99" height="20">
     <linearGradient id="b" x2="0" y2="100%">
@@ -76,11 +76,11 @@ if [ -f "coverage.xml" ]; then
     </g>
 </svg>
 EOF
-    log_success "Generated coverage badge with $COVERAGE_PERCENTAGE% coverage"
+	log_success "Generated coverage badge with $COVERAGE_PERCENTAGE% coverage"
 else
-    log_warning "No coverage.xml found, creating default badge"
-    COVERAGE_PERCENTAGE="0.0"
-    cat > assets/images/coverage-badge.svg << EOF
+	log_warning "No coverage.xml found, creating default badge"
+	COVERAGE_PERCENTAGE="0.0"
+	cat >assets/images/coverage-badge.svg <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="99" height="20">
     <linearGradient id="b" x2="0" y2="100%">
@@ -103,28 +103,28 @@ else
     </g>
 </svg>
 EOF
-    log_info "Created default badge with 0% coverage"
+	log_info "Created default badge with 0% coverage"
 fi
 
 # Update badge locally or in CI
 if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ]; then
-    # Default: do not push from CI to keep runs idempotent
-    if [ "${COVERAGE_BADGE_COMMIT:-false}" = "true" ]; then
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add assets/images/coverage-badge.svg
-        if ! git diff --quiet --cached; then
-            git commit -m "docs: update coverage badge - $COVERAGE_PERCENTAGE%"
-            git push
-            log_success "Coverage badge updated and pushed to repository"
-        else
-            log_info "Coverage badge unchanged, no commit needed"
-        fi
-    else
-        log_info "CI detected; skipping commit/push of coverage badge (set COVERAGE_BADGE_COMMIT=true to enable)"
-    fi
+	# Default: do not push from CI to keep runs idempotent
+	if [ "${COVERAGE_BADGE_COMMIT:-false}" = "true" ]; then
+		git config --local user.email "action@github.com"
+		git config --local user.name "GitHub Action"
+		git add assets/images/coverage-badge.svg
+		if ! git diff --quiet --cached; then
+			git commit -m "docs: update coverage badge - $COVERAGE_PERCENTAGE%"
+			git push
+			log_success "Coverage badge updated and pushed to repository"
+		else
+			log_info "Coverage badge unchanged, no commit needed"
+		fi
+	else
+		log_info "CI detected; skipping commit/push of coverage badge (set COVERAGE_BADGE_COMMIT=true to enable)"
+	fi
 else
-    # Local: just update the badge file
-    log_success "Coverage badge updated locally: assets/images/coverage-badge.svg"
-    log_info "Current coverage: $COVERAGE_PERCENTAGE%"
+	# Local: just update the badge file
+	log_success "Coverage badge updated locally: assets/images/coverage-badge.svg"
+	log_info "Current coverage: $COVERAGE_PERCENTAGE%"
 fi

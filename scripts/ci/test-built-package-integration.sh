@@ -12,7 +12,7 @@ set -euo pipefail
 #   - Package must be installed in test_venv (via test-install-package.sh)
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  cat <<'EOF'
+	cat <<'EOF'
 Run integration tests for the built package.
 
 Usage:
@@ -27,13 +27,13 @@ This script:
   2. Installs pytest and test dependencies
   3. Runs the built package integration tests
 EOF
-  exit 0
+	exit 0
 fi
 
 # Verify test_venv exists
 if [[ ! -d "test_venv" ]]; then
-  echo "Error: test_venv not found. Run test-venv-setup.sh first." >&2
-  exit 1
+	echo "Error: test_venv not found. Run test-venv-setup.sh first." >&2
+	exit 1
 fi
 
 # Activate and run tests
@@ -43,4 +43,3 @@ source test_venv/bin/activate
 pip install pytest pytest-cov assertpy
 
 pytest tests/integration/test_built_package.py -v
-

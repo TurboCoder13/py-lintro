@@ -272,6 +272,7 @@ def test_get_all_tool_versions(mock_run: MagicMock) -> None:
         "actionlint",
         "markdownlint",
         "clippy",
+        "shfmt",
     }
 
     assert_that(set(results.keys())).is_equal_to(expected_tools)

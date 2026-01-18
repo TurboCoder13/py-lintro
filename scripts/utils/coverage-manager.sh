@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ $# -eq 0 ]; then
-  cat <<'EOF'
+	cat <<'EOF'
 Unified coverage management tool with subcommands.
 
 Usage:
@@ -34,7 +34,7 @@ Examples:
 For command-specific help:
   scripts/utils/coverage-manager.sh <COMMAND> --help
 EOF
-  exit 0
+	exit 0
 fi
 
 DRY_RUN=0
@@ -42,18 +42,18 @@ VERBOSE=0
 
 # Parse global options first
 while [[ $# -gt 0 ]]; do
-  case $1 in
-    --dry-run)
-      DRY_RUN=1
-      shift
-      ;;
-    --verbose)
-      VERBOSE=1
-      shift
-      ;;
-    --help|-h)
-      # Show main help and exit
-      cat <<'EOF'
+	case $1 in
+	--dry-run)
+		DRY_RUN=1
+		shift
+		;;
+	--verbose)
+		VERBOSE=1
+		shift
+		;;
+	--help | -h)
+		# Show main help and exit
+		cat <<'EOF'
 Unified coverage management tool with subcommands.
 
 Usage:
@@ -81,24 +81,24 @@ Examples:
 For command-specific help:
   scripts/utils/coverage-manager.sh <COMMAND> --help
 EOF
-      exit 0
-      ;;
-    -*)
-      # Unknown global option
-      echo "Error: Unknown global option: $1" >&2
-      exit 1
-      ;;
-    *)
-      # This should be the command
-      break
-      ;;
-  esac
+		exit 0
+		;;
+	-*)
+		# Unknown global option
+		echo "Error: Unknown global option: $1" >&2
+		exit 1
+		;;
+	*)
+		# This should be the command
+		break
+		;;
+	esac
 done
 
 if [ $# -eq 0 ]; then
-  echo "Error: Command required" >&2
-  echo "Run 'coverage-manager.sh --help' for usage information"
-  exit 1
+	echo "Error: Command required" >&2
+	echo "Run 'coverage-manager.sh --help' for usage information"
+	exit 1
 fi
 
 COMMAND="$1"
@@ -107,21 +107,21 @@ shift
 # Source shared utilities for all coverage operations
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "${SCRIPT_DIR}/utils.sh" ]; then
-  # shellcheck source=utils.sh
-  source "${SCRIPT_DIR}/utils.sh"
+	# shellcheck source=utils.sh
+	source "${SCRIPT_DIR}/utils.sh"
 else
-  # Basic logging if utils.sh not available
-  log_info() { echo -e "\033[0;34mℹ️  $*\033[0m"; }
-  log_verbose() { [ "${VERBOSE:-0}" -eq 1 ] && echo -e "\033[0;36m[verbose] $*\033[0m" || true; }
-  log_success() { echo -e "\033[0;32m✅ $*\033[0m"; }
-  log_warning() { echo -e "\033[0;33m⚠️  $*\033[0m"; }
-  log_error() { echo -e "\033[0;31m❌ $*\033[0m" >&2; }
+	# Basic logging if utils.sh not available
+	log_info() { echo -e "\033[0;34mℹ️  $*\033[0m"; }
+	log_verbose() { [ "${VERBOSE:-0}" -eq 1 ] && echo -e "\033[0;36m[verbose] $*\033[0m" || true; }
+	log_success() { echo -e "\033[0;32m✅ $*\033[0m"; }
+	log_warning() { echo -e "\033[0;33m⚠️  $*\033[0m"; }
+	log_error() { echo -e "\033[0;31m❌ $*\033[0m" >&2; }
 fi
 
 # Coverage extraction function
 extract_coverage() {
-  if [ "${1:-}" = "--help" ]; then
-    cat <<'EOF'
+	if [ "${1:-}" = "--help" ]; then
+		cat <<'EOF'
 Extract coverage percentage from coverage.xml.
 
 Usage:
@@ -135,57 +135,63 @@ Returns:
   Prints coverage percentage to stdout
   Exit code 0 on success, 1 on failure
 EOF
-    return 0
-  fi
+		return 0
+	fi
 
-  local output_env=0
-  while [[ $# -gt 0 ]]; do
-    case $1 in
-      --output-env) output_env=1; shift ;;
-      *) log_error "Unknown option: $1"; return 1 ;;
-    esac
-  done
+	local output_env=0
+	while [[ $# -gt 0 ]]; do
+		case $1 in
+		--output-env)
+			output_env=1
+			shift
+			;;
+		*)
+			log_error "Unknown option: $1"
+			return 1
+			;;
+		esac
+	done
 
-  if [ ! -f "coverage.xml" ]; then
-    log_error "coverage.xml not found"
-    return 1
-  fi
+	if [ ! -f "coverage.xml" ]; then
+		log_error "coverage.xml not found"
+		return 1
+	fi
 
-  local coverage_pct
-  if [ $DRY_RUN -eq 1 ]; then
-    log_info "[DRY-RUN] Would extract coverage from coverage.xml"
-    return 0
-  fi
+	local coverage_pct
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would extract coverage from coverage.xml"
+		return 0
+	fi
 
-  # Extract coverage with detailed error handling
-  local extract_output
-  extract_output="$(uv run python "${SCRIPT_DIR}/extract-coverage.py" 2>&1)" || {
-    log_error "Failed to run extract-coverage.py"
-    log_error "Output: $extract_output"
-    return 1
-  }
-  
-  coverage_pct="$(echo "$extract_output" | grep "percentage=" | tail -1 | cut -d'=' -f2 | tr -d '\n' || true)"
-  
-  if [ -z "$coverage_pct" ]; then
-    log_error "Failed to extract coverage percentage from output"
-    log_error "Extract output: $extract_output"
-    return 1
-  fi
+	# Extract coverage with detailed error handling
+	local extract_output
+	extract_output="$(uv run python "${SCRIPT_DIR}/extract-coverage.py" 2>&1)" || {
+		log_error "Failed to run extract-coverage.py"
+		log_error "Output: $extract_output"
+		return 1
+	}
 
-  echo "$coverage_pct"
-  log_verbose "Extracted coverage: ${coverage_pct}%" >&2
+	coverage_pct="$(echo "$extract_output" | grep "percentage=" | tail -1 | cut -d'=' -f2 | tr -d '\n' || true)"
 
-  if [ $output_env -eq 1 ] && [ -n "${GITHUB_ENV:-}" ]; then
-    echo "COVERAGE_PERCENTAGE=$coverage_pct" >> "$GITHUB_ENV"
-    log_verbose "Set COVERAGE_PERCENTAGE=$coverage_pct in GitHub environment" >&2
-  fi
+	if [ -z "$coverage_pct" ]; then
+		log_error "Failed to extract coverage percentage from output"
+		log_error "Extract output: $extract_output"
+		return 1
+	fi
+
+	echo "$coverage_pct"
+	log_verbose "Extracted coverage: ${coverage_pct}%" >&2
+
+	if [ $output_env -eq 1 ] && [ -n "${GITHUB_ENV:-}" ]; then
+		echo "COVERAGE_PERCENTAGE=$coverage_pct" >>"$GITHUB_ENV"
+		log_verbose "Set COVERAGE_PERCENTAGE=$coverage_pct in GitHub environment" >&2
+	fi
 }
 
 # Coverage status function
 get_status() {
-  if [ "${1:-}" = "--help" ]; then
-    cat <<'EOF'
+	if [ "${1:-}" = "--help" ]; then
+		cat <<'EOF'
 Get coverage status and color coding.
 
 Usage:
@@ -199,50 +205,50 @@ Returns:
   STATUS: excellent|good|decent|poor|critical
   COLOR: brightgreen|green|yellow|orange|red
 EOF
-    return 0
-  fi
+		return 0
+	fi
 
-  local coverage_pct="${1:-}"
-  
-  # Try to get coverage from: 1) argument, 2) environment variable, 3) coverage.xml
-  if [ -z "$coverage_pct" ]; then
-    coverage_pct="${COVERAGE_PERCENTAGE:-}"
-    log_verbose "Using COVERAGE_PERCENTAGE from environment: ${coverage_pct}%" >&2
-  fi
-  
-  if [ -z "$coverage_pct" ]; then
-    log_verbose "Extracting coverage from coverage.xml" >&2
-    coverage_pct="$(extract_coverage)"
-    if [ $? -ne 0 ]; then
-      return 1
-    fi
-  fi
+	local coverage_pct="${1:-}"
 
-  local status color
-  if (( $(echo "$coverage_pct >= 90" | bc -l 2>/dev/null || echo 0) )); then
-    status="excellent"
-    color="brightgreen"
-  elif (( $(echo "$coverage_pct >= 80" | bc -l 2>/dev/null || echo 0) )); then
-    status="good"
-    color="green"
-  elif (( $(echo "$coverage_pct >= 70" | bc -l 2>/dev/null || echo 0) )); then
-    status="decent"
-    color="yellow"
-  elif (( $(echo "$coverage_pct >= 60" | bc -l 2>/dev/null || echo 0) )); then
-    status="poor"
-    color="orange"
-  else
-    status="critical"
-    color="red"
-  fi
+	# Try to get coverage from: 1) argument, 2) environment variable, 3) coverage.xml
+	if [ -z "$coverage_pct" ]; then
+		coverage_pct="${COVERAGE_PERCENTAGE:-}"
+		log_verbose "Using COVERAGE_PERCENTAGE from environment: ${coverage_pct}%" >&2
+	fi
 
-  echo "${status}|${color}|${coverage_pct}"
+	if [ -z "$coverage_pct" ]; then
+		log_verbose "Extracting coverage from coverage.xml" >&2
+		coverage_pct="$(extract_coverage)"
+		if [ $? -ne 0 ]; then
+			return 1
+		fi
+	fi
+
+	local status color
+	if (($(echo "$coverage_pct >= 90" | bc -l 2>/dev/null || echo 0))); then
+		status="excellent"
+		color="brightgreen"
+	elif (($(echo "$coverage_pct >= 80" | bc -l 2>/dev/null || echo 0))); then
+		status="good"
+		color="green"
+	elif (($(echo "$coverage_pct >= 70" | bc -l 2>/dev/null || echo 0))); then
+		status="decent"
+		color="yellow"
+	elif (($(echo "$coverage_pct >= 60" | bc -l 2>/dev/null || echo 0))); then
+		status="poor"
+		color="orange"
+	else
+		status="critical"
+		color="red"
+	fi
+
+	echo "${status}|${color}|${coverage_pct}"
 }
 
 # Badge generation function
 generate_badge() {
-  if [ "${1:-}" = "--help" ]; then
-    cat <<'EOF'
+	if [ "${1:-}" = "--help" ]; then
+		cat <<'EOF'
 Generate and update coverage badge.
 
 Usage:
@@ -256,56 +262,62 @@ Requires:
   - coverage.xml file
   - curl command for badge generation
 EOF
-    return 0
-  fi
+		return 0
+	fi
 
-  local output_path="assets/images/coverage-badge.svg"
-  while [[ $# -gt 0 ]]; do
-    case $1 in
-      --output) output_path="$2"; shift 2 ;;
-      *) log_error "Unknown option: $1"; return 1 ;;
-    esac
-  done
+	local output_path="assets/images/coverage-badge.svg"
+	while [[ $# -gt 0 ]]; do
+		case $1 in
+		--output)
+			output_path="$2"
+			shift 2
+			;;
+		*)
+			log_error "Unknown option: $1"
+			return 1
+			;;
+		esac
+	done
 
-  local status_info
-  status_info="$(get_status)"
-  if [ $? -ne 0 ]; then
-    return 1
-  fi
+	local status_info
+	status_info="$(get_status)"
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
 
-  local status color coverage_pct
-  IFS='|' read -r status color coverage_pct <<< "$status_info"
+	local status color coverage_pct
+	IFS='|' read -r status color coverage_pct <<<"$status_info"
 
-  log_info "Generating coverage badge: ${coverage_pct}% ($status)"
+	log_info "Generating coverage badge: ${coverage_pct}% ($status)"
 
-  if [ $DRY_RUN -eq 1 ]; then
-    log_info "[DRY-RUN] Would generate badge: ${coverage_pct}% with color $color"
-    log_info "[DRY-RUN] Would save to: $output_path"
-    return 0
-  fi
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would generate badge: ${coverage_pct}% with color $color"
+		log_info "[DRY-RUN] Would save to: $output_path"
+		return 0
+	fi
 
-  # Create directory if it doesn't exist
-  mkdir -p "$(dirname "$output_path")"
+	# Create directory if it doesn't exist
+	mkdir -p "$(dirname "$output_path")"
 
-  # Try shields.io first (CI uses harden-runner allowlist). Fallback to local.
-  local badge_url="https://img.shields.io/badge/coverage-${coverage_pct}%25-${color}.svg"
-  if curl -fsSL "$badge_url" -o "$output_path"; then
-    log_success "Coverage badge updated from shields.io: $output_path"
-    return 0
-  fi
+	# Try shields.io first (CI uses harden-runner allowlist). Fallback to local.
+	local badge_url="https://img.shields.io/badge/coverage-${coverage_pct}%25-${color}.svg"
+	if curl -fsSL "$badge_url" -o "$output_path"; then
+		log_success "Coverage badge updated from shields.io: $output_path"
+		return 0
+	fi
 
-  # Fallback: generate badge locally (no network egress)
-  local hex_color
-  case "$color" in
-    brightgreen) hex_color="#4c1" ;;
-    green)       hex_color="#4c1" ;;
-    yellow)      hex_color="#dfb317" ;;
-    orange)      hex_color="#fe7d37" ;;
-    red)         hex_color="#e05d44" ;;
-    *)           hex_color="#4c1" ;;
-  esac
+	# Fallback: generate badge locally (no network egress)
+	local hex_color
+	case "$color" in
+	brightgreen) hex_color="#4c1" ;;
+	green) hex_color="#4c1" ;;
+	yellow) hex_color="#dfb317" ;;
+	orange) hex_color="#fe7d37" ;;
+	red) hex_color="#e05d44" ;;
+	*) hex_color="#4c1" ;;
+	esac
 
-  cat > "$output_path" << EOF
+	cat >"$output_path" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="99" height="20">
     <linearGradient id="b" x2="0" y2="100%">
@@ -329,13 +341,13 @@ EOF
 </svg>
 EOF
 
-  log_success "Coverage badge updated locally: $output_path"
+	log_success "Coverage badge updated locally: $output_path"
 }
 
 # PR comment generation function
 generate_comment() {
-  if [ "${1:-}" = "--help" ]; then
-    cat <<'EOF'
+	if [ "${1:-}" = "--help" ]; then
+		cat <<'EOF'
 Generate PR comment with coverage info.
 
 Usage:
@@ -352,63 +364,69 @@ Environment Variables:
 Note:
   Only generates comment if in PR context (github.event_name == 'pull_request')
 EOF
-    return 0
-  fi
+		return 0
+	fi
 
-  local output_path="coverage-pr-comment.txt"
-  while [[ $# -gt 0 ]]; do
-    case $1 in
-      --output) output_path="$2"; shift 2 ;;
-      *) log_error "Unknown option: $1"; return 1 ;;
-    esac
-  done
+	local output_path="coverage-pr-comment.txt"
+	while [[ $# -gt 0 ]]; do
+		case $1 in
+		--output)
+			output_path="$2"
+			shift 2
+			;;
+		*)
+			log_error "Unknown option: $1"
+			return 1
+			;;
+		esac
+	done
 
-  # Check if we're in a PR context (if utils.sh is available)
-  if command -v is_pr_context >/dev/null 2>&1; then
-    if ! is_pr_context; then
-      log_info "Not in PR context, skipping comment generation"
-      return 0
-    fi
-  fi
+	# Check if we're in a PR context (if utils.sh is available)
+	if command -v is_pr_context >/dev/null 2>&1; then
+		if ! is_pr_context; then
+			log_info "Not in PR context, skipping comment generation"
+			return 0
+		fi
+	fi
 
-  local status_info
-  status_info="$(get_status)"
-  if [ $? -ne 0 ]; then
-    return 1
-  fi
+	local status_info
+	status_info="$(get_status)"
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
 
-  local status color coverage_pct
-  IFS='|' read -r status color coverage_pct <<< "$status_info"
+	local status color coverage_pct
+	IFS='|' read -r status color coverage_pct <<<"$status_info"
 
-  if [ $DRY_RUN -eq 1 ]; then
-    log_info "[DRY-RUN] Would generate PR comment with ${coverage_pct}% coverage"
-    return 0
-  fi
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would generate PR comment with ${coverage_pct}% coverage"
+		return 0
+	fi
 
-  # Generate comment content
-  local job_result="${JOB_RESULT:-success}"
-  local run_id="${GITHUB_RUN_ID:-unknown}"
-  local github_sha="${GITHUB_SHA:-unknown}"
-  local github_repo="${GITHUB_REPOSITORY:-unknown/unknown}"
-  local status_emoji build_status status_text
-  
-  # Determine coverage status emoji
-  if (( $(echo "$coverage_pct >= 80" | bc -l 2>/dev/null || echo 0) )); then
-    status_emoji="✅"
-    status_text="Target met (>80%)"
-  else
-    status_emoji="⚠️"
-    status_text="Below target (<80%)"
-  fi
-  
-  # Determine build status
-  if [ "$job_result" != "success" ]; then
-    build_status="❌ Tests failed"
-  else
-    build_status="✅ Tests passed"
-  fi
+	# Generate comment content
+	local job_result="${JOB_RESULT:-success}"
+	local run_id="${GITHUB_RUN_ID:-unknown}"
+	local github_sha="${GITHUB_SHA:-unknown}"
+	local github_repo="${GITHUB_REPOSITORY:-unknown/unknown}"
+	local status_emoji build_status status_text
 
-  cat > "$output_path" << EOF
+	# Determine coverage status emoji
+	if (($(echo "$coverage_pct >= 80" | bc -l 2>/dev/null || echo 0))); then
+		status_emoji="✅"
+		status_text="Target met (>80%)"
+	else
+		status_emoji="⚠️"
+		status_text="Below target (<80%)"
+	fi
+
+	# Determine build status
+	if [ "$job_result" != "success" ]; then
+		build_status="❌ Tests failed"
+	else
+		build_status="✅ Tests passed"
+	fi
+
+	cat >"$output_path" <<EOF
 <!-- coverage-report -->
 
 **Build:** $build_status
@@ -431,13 +449,13 @@ Or download manually:
 4. Extract and open \`index.html\` in your browser
 EOF
 
-  log_success "Coverage comment generated: $output_path"
+	log_success "Coverage comment generated: $output_path"
 }
 
 # Threshold enforcement function
 enforce_threshold() {
-  if [ "${1:-}" = "--help" ]; then
-    cat <<'EOF'
+	if [ "${1:-}" = "--help" ]; then
+		cat <<'EOF'
 Enforce minimum coverage threshold.
 
 Usage:
@@ -449,57 +467,57 @@ Arguments:
 Returns:
   Exit code 0 if coverage meets threshold, 1 if below threshold
 EOF
-    return 0
-  fi
+		return 0
+	fi
 
-  local min_coverage="${1:-}"
-  if [ -z "$min_coverage" ]; then
-    log_error "Minimum coverage percentage required"
-    return 1
-  fi
+	local min_coverage="${1:-}"
+	if [ -z "$min_coverage" ]; then
+		log_error "Minimum coverage percentage required"
+		return 1
+	fi
 
-  local coverage_pct
-  coverage_pct="$(extract_coverage)"
-  if [ $? -ne 0 ]; then
-    return 1
-  fi
+	local coverage_pct
+	coverage_pct="$(extract_coverage)"
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
 
-  log_info "Coverage: ${coverage_pct}% | Threshold: ${min_coverage}%"
+	log_info "Coverage: ${coverage_pct}% | Threshold: ${min_coverage}%"
 
-  if [ $DRY_RUN -eq 1 ]; then
-    log_info "[DRY-RUN] Would check if ${coverage_pct}% >= ${min_coverage}%"
-    return 0
-  fi
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would check if ${coverage_pct}% >= ${min_coverage}%"
+		return 0
+	fi
 
-  if (( $(echo "$coverage_pct >= $min_coverage" | bc -l 2>/dev/null || echo 0) )); then
-    log_success "Coverage threshold met: ${coverage_pct}% >= ${min_coverage}%"
-    return 0
-  else
-    log_error "Coverage below threshold: ${coverage_pct}% < ${min_coverage}%"
-    return 1
-  fi
+	if (($(echo "$coverage_pct >= $min_coverage" | bc -l 2>/dev/null || echo 0))); then
+		log_success "Coverage threshold met: ${coverage_pct}% >= ${min_coverage}%"
+		return 0
+	else
+		log_error "Coverage below threshold: ${coverage_pct}% < ${min_coverage}%"
+		return 1
+	fi
 }
 
 # Main command dispatcher
 case "$COMMAND" in
-  extract)
-    extract_coverage "$@"
-    ;;
-  status)
-    get_status "$@"
-    ;;
-  badge)
-    generate_badge "$@"
-    ;;
-  comment)
-    generate_comment "$@"
-    ;;
-  threshold)
-    enforce_threshold "$@"
-    ;;
-  *)
-    log_error "Unknown command: $COMMAND"
-    echo "Run 'coverage-manager.sh --help' for usage information"
-    exit 1
-    ;;
+extract)
+	extract_coverage "$@"
+	;;
+status)
+	get_status "$@"
+	;;
+badge)
+	generate_badge "$@"
+	;;
+comment)
+	generate_comment "$@"
+	;;
+threshold)
+	enforce_threshold "$@"
+	;;
+*)
+	log_error "Unknown command: $COMMAND"
+	echo "Run 'coverage-manager.sh --help' for usage information"
+	exit 1
+	;;
 esac

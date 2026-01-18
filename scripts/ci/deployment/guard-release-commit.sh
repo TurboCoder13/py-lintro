@@ -5,7 +5,7 @@ set -euo pipefail
 # Set ok=true in GITHUB_OUTPUT if last commit subject starts with 'chore(release):'
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  cat <<'EOF'
+	cat <<'EOF'
 Guard that last commit message is a release bump.
 
 Usage:
@@ -13,19 +13,18 @@ Usage:
 
 Writes ok=true|false to $GITHUB_OUTPUT.
 EOF
-  exit 0
+	exit 0
 fi
 
 msg=$(git log -1 --pretty=%s)
 echo "last: $msg"
 ok=false
 if echo "$msg" | grep -Eq '^chore\(release\):'; then
-  ok=true
+	ok=true
 fi
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
-  echo "ok=$ok" >> "$GITHUB_OUTPUT"
+	echo "ok=$ok" >>"$GITHUB_OUTPUT"
 else
-  echo "ok=$ok"
+	echo "ok=$ok"
 fi
-

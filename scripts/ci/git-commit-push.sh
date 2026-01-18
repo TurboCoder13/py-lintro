@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../utils/utils.sh"
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-    cat <<'EOF'
+	cat <<'EOF'
 Stage, commit, and push changes to git.
 
 Usage: git-commit-push.sh <file-pattern> <commit-message>
@@ -27,7 +27,7 @@ Examples:
   git-commit-push.sh "Formula/lintro.rb" "Update lintro to 1.0.0"
   git-commit-push.sh "." "Auto-fix formatting" --skip-if-empty
 EOF
-    exit 0
+	exit 0
 fi
 
 FILE_PATTERN="${1:?File pattern is required}"
@@ -46,13 +46,13 @@ git add "$FILE_PATTERN"
 
 # Check if there are staged changes
 if git diff --staged --quiet; then
-    if [[ "$SKIP_IF_EMPTY" == "--skip-if-empty" ]]; then
-        log_info "No changes to commit, skipping"
-        exit 0
-    else
-        log_warning "No changes to commit"
-        exit 0
-    fi
+	if [[ "$SKIP_IF_EMPTY" == "--skip-if-empty" ]]; then
+		log_info "No changes to commit, skipping"
+		exit 0
+	else
+		log_warning "No changes to commit"
+		exit 0
+	fi
 fi
 
 log_info "Committing changes"

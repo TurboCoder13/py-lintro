@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../utils/utils.sh"
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-    cat <<'EOF'
+	cat <<'EOF'
 Generate Homebrew formula for lintro from PyPI.
 
 Usage: generate-pypi-formula.sh <version> <output-file>
@@ -26,7 +26,7 @@ to generate dependency resource stanzas (replacing homebrew-pypi-poet).
 Examples:
   generate-pypi-formula.sh 1.0.0 Formula/lintro.rb
 EOF
-    exit 0
+	exit 0
 fi
 
 VERSION="${1:?Version is required}"
@@ -43,13 +43,13 @@ log_info "Generating lintro formula for version ${VERSION}"
 # Fetch package info using Python helper (outputs URL on line 1, SHA on line 2)
 log_info "Fetching package info from PyPI..."
 {
-    read -r TARBALL_URL
-    read -r TARBALL_SHA
+	read -r TARBALL_URL
+	read -r TARBALL_SHA
 } < <(python3 "$SCRIPT_DIR/fetch_package_info.py" lintro "$VERSION")
 
 if [[ -z "$TARBALL_URL" ]] || [[ -z "$TARBALL_SHA" ]]; then
-    log_error "Failed to fetch tarball info from PyPI"
-    exit 1
+	log_error "Failed to fetch tarball info from PyPI"
+	exit 1
 fi
 
 log_info "Tarball URL: ${TARBALL_URL}"
@@ -66,19 +66,19 @@ python3 -m venv "$ANALYSIS_VENV"
 log_info "Downloading and verifying tarball..."
 TARBALL_FILE="$TMPDIR/lintro-${VERSION}.tar.gz"
 if ! curl -sSfL "$TARBALL_URL" -o "$TARBALL_FILE"; then
-    log_error "Failed to download tarball from $TARBALL_URL"
-    exit 1
+	log_error "Failed to download tarball from $TARBALL_URL"
+	exit 1
 fi
 
 # Verify hash (use sha256sum on Linux, shasum on macOS)
 if command -v sha256sum &>/dev/null; then
-    ACTUAL_SHA=$(sha256sum "$TARBALL_FILE" | cut -d' ' -f1)
+	ACTUAL_SHA=$(sha256sum "$TARBALL_FILE" | cut -d' ' -f1)
 else
-    ACTUAL_SHA=$(shasum -a 256 "$TARBALL_FILE" | cut -d' ' -f1)
+	ACTUAL_SHA=$(shasum -a 256 "$TARBALL_FILE" | cut -d' ' -f1)
 fi
 if [[ "$ACTUAL_SHA" != "$TARBALL_SHA" ]]; then
-    log_error "SHA256 mismatch! Expected: $TARBALL_SHA, Got: $ACTUAL_SHA"
-    exit 1
+	log_error "SHA256 mismatch! Expected: $TARBALL_SHA, Got: $ACTUAL_SHA"
+	exit 1
 fi
 log_info "SHA256 verified"
 
@@ -88,52 +88,52 @@ log_info "Installing lintro from tarball (bypasses pip index propagation delay).
 # Build exclusion list for packages we handle specially
 EXCLUDE_ARGS=()
 for pkg in "${WHEEL_PACKAGES[@]}" "${HOMEBREW_PACKAGES[@]}"; do
-    EXCLUDE_ARGS+=("$pkg")
+	EXCLUDE_ARGS+=("$pkg")
 done
 
 log_info "Generating resources with generate_resources.py (importlib.metadata)..."
 RESOURCES=$("$ANALYSIS_VENV/bin/python" "$SCRIPT_DIR/generate_resources.py" lintro \
-    --exclude "${EXCLUDE_ARGS[@]}")
+	--exclude "${EXCLUDE_ARGS[@]}")
 
 # Validate resources were generated
 RESOURCE_COUNT=$(echo "$RESOURCES" | grep -c "^  resource " || echo "0")
 if [[ "$RESOURCE_COUNT" -lt 5 ]]; then
-    log_error "Expected multiple resource stanzas but only found ${RESOURCE_COUNT}"
-    log_error "generate_resources.py may have failed to analyze dependencies."
-    exit 1
+	log_error "Expected multiple resource stanzas but only found ${RESOURCE_COUNT}"
+	log_error "generate_resources.py may have failed to analyze dependencies."
+	exit 1
 fi
 log_info "Generated ${RESOURCE_COUNT} resource stanzas"
 
 # Write resources to temp files
-echo "$RESOURCES" > "$TMPDIR/resources.txt"
+echo "$RESOURCES" >"$TMPDIR/resources.txt"
 
 # Generate wheel resources for packages that can't build from source
 log_info "Generating wheel resources for special packages..."
 
 python3 "$SCRIPT_DIR/fetch_wheel_info.py" darglint \
-    --type universal \
-    --comment "darglint requires poetry to build - use wheel" \
-    > "$TMPDIR/darglint.txt" || {
-    log_error "Failed to fetch darglint wheel info"
-    exit 1
+	--type universal \
+	--comment "darglint requires poetry to build - use wheel" \
+	>"$TMPDIR/darglint.txt" || {
+	log_error "Failed to fetch darglint wheel info"
+	exit 1
 }
 
 python3 "$SCRIPT_DIR/fetch_wheel_info.py" pydantic_core \
-    --type platform \
-    --comment "pydantic_core requires Rust to build - use platform-specific wheels" \
-    > "$TMPDIR/pydantic.txt" || {
-    log_error "Failed to fetch pydantic_core wheel info"
-    exit 1
+	--type platform \
+	--comment "pydantic_core requires Rust to build - use platform-specific wheels" \
+	>"$TMPDIR/pydantic.txt" || {
+	log_error "Failed to fetch pydantic_core wheel info"
+	exit 1
 }
 
 # Render formula from template
 log_info "Rendering formula template..."
 python3 "$SCRIPT_DIR/render_formula.py" \
-    --tarball-url "$TARBALL_URL" \
-    --tarball-sha "$TARBALL_SHA" \
-    --poet-resources "$TMPDIR/resources.txt" \
-    --darglint-resource "$TMPDIR/darglint.txt" \
-    --pydantic-resource "$TMPDIR/pydantic.txt" \
-    --output "$OUTPUT_FILE"
+	--tarball-url "$TARBALL_URL" \
+	--tarball-sha "$TARBALL_SHA" \
+	--poet-resources "$TMPDIR/resources.txt" \
+	--darglint-resource "$TMPDIR/darglint.txt" \
+	--pydantic-resource "$TMPDIR/pydantic.txt" \
+	--output "$OUTPUT_FILE"
 
 log_success "Formula written to ${OUTPUT_FILE}"
