@@ -27,7 +27,11 @@ DO_PUSH=0          # 1 = push updated tags to origin
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pattern)
-      PATTERN="${2:-*}"; shift 2 ;;
+      if [[ $# -lt 2 ]]; then
+        echo "[err] --pattern requires a value" >&2
+        exit 2
+      fi
+      PATTERN="$2"; shift 2 ;;
     --resign-all)
       RESIGN_ALL=1; shift ;;
     --write)

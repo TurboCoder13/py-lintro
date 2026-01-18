@@ -137,6 +137,7 @@ detect_previous_version() {
     # Create temporary file for previous commit's pyproject.toml
     local temp_file
     temp_file=$(mktemp)
+    # shellcheck disable=SC2064 -- temp_file is set before trap; immediate expansion is intentional
     trap "rm -f '$temp_file'" EXIT
     
     # Extract pyproject.toml from previous commit
