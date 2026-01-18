@@ -19,23 +19,23 @@ set -euo pipefail
 
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-    echo "Usage: $0 [--help]"
-    echo ""
-    echo "Docker Buildx Configuration Validator"
-    echo "Validates Docker Buildx driver and cache configuration locally."
-    echo ""
-    echo "This script validates that:"
-    echo "  - Docker Buildx is properly configured"
-    echo "  - The docker-container driver works with cache backends"
-    echo "  - The build process completes successfully"
-    echo ""
-    echo "This is a diagnostic tool for:"
-    echo "  - Troubleshooting Docker build issues"
-    echo "  - Validating CI configuration changes locally"
-    echo "  - Debugging cache-related problems"
-    echo ""
-    echo "This is NOT part of the regular test suite."
-    exit 0
+	echo "Usage: $0 [--help]"
+	echo ""
+	echo "Docker Buildx Configuration Validator"
+	echo "Validates Docker Buildx driver and cache configuration locally."
+	echo ""
+	echo "This script validates that:"
+	echo "  - Docker Buildx is properly configured"
+	echo "  - The docker-container driver works with cache backends"
+	echo "  - The build process completes successfully"
+	echo ""
+	echo "This is a diagnostic tool for:"
+	echo "  - Troubleshooting Docker build issues"
+	echo "  - Validating CI configuration changes locally"
+	echo "  - Debugging cache-related problems"
+	echo ""
+	echo "This is NOT part of the regular test suite."
+	exit 0
 fi
 
 # Source shared utilities
@@ -59,12 +59,12 @@ docker buildx inspect test-builder
 # Try building the image with cache
 log_info "Building image with cache..."
 docker buildx build \
-  --platform linux/amd64 \
-  --cache-from type=local,src=/tmp/buildx-cache \
-  --cache-to type=local,dest=/tmp/buildx-cache,mode=max \
-  --load \
-  -t py-lintro:test \
-  .
+	--platform linux/amd64 \
+	--cache-from type=local,src=/tmp/buildx-cache \
+	--cache-to type=local,dest=/tmp/buildx-cache,mode=max \
+	--load \
+	-t py-lintro:test \
+	.
 
 log_success "Build successful!"
 

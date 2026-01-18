@@ -27,6 +27,7 @@ class Lintro < Formula
   depends_on "prettier"
   depends_on "python@3.13"
   depends_on "ruff"
+  depends_on "shfmt"
   depends_on "yamllint"
 
   # Pure Python library dependencies

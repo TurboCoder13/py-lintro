@@ -91,6 +91,7 @@ WORKDIR /app
 # Copy installed tools from builder
 COPY --from=builder /usr/local/bin/hadolint /usr/local/bin/
 COPY --from=builder /usr/local/bin/actionlint /usr/local/bin/
+COPY --from=builder /usr/local/bin/shfmt /usr/local/bin/
 COPY --from=builder /usr/local/bin/cargo /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustc /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustup /usr/local/bin/

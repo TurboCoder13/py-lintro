@@ -14,7 +14,7 @@ set -euo pipefail
 # with no side effects if $GITHUB_OUTPUT is not set.
 
 show_help() {
-  cat <<'USAGE'
+	cat <<'USAGE'
 Usage: scripts/ci/detect-changes.sh
 
 Detect repository changes and set has_changes output for GitHub Actions.
@@ -25,20 +25,18 @@ USAGE
 }
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  show_help
-  exit 0
+	show_help
+	exit 0
 fi
 
 if git diff --quiet --exit-code; then
-  echo "No changes detected."
-  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
-    echo "has_changes=false" >> "$GITHUB_OUTPUT"
-  fi
+	echo "No changes detected."
+	if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+		echo "has_changes=false" >>"$GITHUB_OUTPUT"
+	fi
 else
-  echo "Changes detected."
-  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
-    echo "has_changes=true" >> "$GITHUB_OUTPUT"
-  fi
+	echo "Changes detected."
+	if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+		echo "has_changes=true" >>"$GITHUB_OUTPUT"
+	fi
 fi
-
-

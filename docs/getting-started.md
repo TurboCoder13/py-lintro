@@ -75,6 +75,7 @@ Some tools require separate installation. Their minimum versions are also manage
 - `prettier` - JavaScript/TypeScript formatter (install via npm)
 - `hadolint` - Dockerfile linter (download from GitHub releases)
 - `actionlint` - GitHub Actions linter (download from GitHub releases)
+- `shfmt` - Shell script formatter (`brew install shfmt` or GitHub releases)
 
 ### Checking Versions
 
