@@ -311,6 +311,12 @@ def get_install_hints() -> dict[str, str]:
                 f"{versions.get('sqlfluff', '3.0.0')} "
                 f"or uv add sqlfluff>={versions.get('sqlfluff', '3.0.0')}"
             ),
+            "taplo": (
+                f"Install via: cargo install taplo-cli "
+                f"or download from https://github.com/tamasfe/taplo/releases "
+                f"(e.g., {versions.get('taplo', '0.8.0')} or release-taplo-cli-"
+                f"{versions.get('taplo', '0.8.0')})"
+            ),
         },
     )
 

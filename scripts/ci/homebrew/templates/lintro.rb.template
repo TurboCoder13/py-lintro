@@ -32,6 +32,7 @@ class Lintro < Formula
   depends_on "shellcheck"
   depends_on "shfmt"
   depends_on "sqlfluff"
+  depends_on "taplo"
   depends_on "yamllint"
 
   # Pure Python library dependencies
@@ -76,6 +77,7 @@ class Lintro < Formula
         - shellcheck - Shell script analyzer
         - shfmt - Shell script formatter
         - sqlfluff - SQL linter and formatter
+        - taplo - TOML linter and formatter
 
       Bundled tools:
         - darglint - Python docstring linter

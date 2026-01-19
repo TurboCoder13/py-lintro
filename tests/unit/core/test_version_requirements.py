@@ -277,6 +277,7 @@ def test_get_all_tool_versions(mock_run: MagicMock) -> None:
         "semgrep",
         "shellcheck",
         "shfmt",
+        "taplo",
     }
 
     assert_that(set(results.keys())).is_equal_to(expected_tools)
