@@ -13,12 +13,15 @@ def _find_project_root() -> Path:
 
     Returns:
         Path to the project root directory.
+
+    Raises:
+        RuntimeError: If pyproject.toml is not found in any parent directory.
     """
     path = Path(__file__).resolve()
     for parent in path.parents:
         if (parent / "pyproject.toml").exists():
             return parent
-    return path.parent.parent.parent.parent.parent  # fallback
+    raise RuntimeError("pyproject.toml not found in parent directories")
 
 
 # Paths to test samples

@@ -151,7 +151,7 @@ def _parse_single_finding(item: dict[str, object]) -> GitleaksIssue | None:
     tags_raw = item.get("Tags")
     tags: list[str] = []
     if isinstance(tags_raw, list):
-        tags = [str(t) for t in tags_raw if isinstance(t, str)]
+        tags = [t for t in tags_raw if isinstance(t, str)]
 
     return GitleaksIssue(
         file=file_path,

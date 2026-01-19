@@ -8,6 +8,7 @@ known secret formats and reports findings with detailed location information.
 from __future__ import annotations
 
 import json
+import os
 import subprocess  # nosec B404 - used safely with shell disabled
 import tempfile
 from dataclasses import dataclass
@@ -174,9 +175,19 @@ class GitleaksPlugin(BaseToolPlugin):
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
 
-        # Gitleaks scans directories, not individual files
-        # Use the common parent directory (cwd) as the source
-        source_path = ctx.cwd or "."
+        # Determine source path based on provided paths
+        # Gitleaks can scan both directories and individual files
+        if paths and len(paths) == 1:
+            # Single path provided - use it directly
+            source_path = paths[0]
+        elif paths and len(paths) > 1:
+            # Multiple paths - use common parent directory
+            source_path = str(
+                Path(os.path.commonpath([str(Path(p).resolve()) for p in paths])),
+            )
+        else:
+            # No paths provided - fall back to cwd
+            source_path = ctx.cwd or "."
 
         # Use a temporary file for the report (gitleaks can't write to /dev/stdout
         # in subprocess environments due to permission issues)

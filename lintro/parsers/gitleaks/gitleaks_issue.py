@@ -61,4 +61,9 @@ class GitleaksIssue(BaseIssue):
             Formatted issue message with redacted secret.
         """
         redacted_hint = "[REDACTED]" if self.secret else ""
-        return f"[{self.rule_id}] {self.description} {redacted_hint}".strip()
+        parts = [
+            f"[{self.rule_id}]" if self.rule_id else "",
+            self.description,
+            redacted_hint,
+        ]
+        return " ".join(part for part in parts if part)

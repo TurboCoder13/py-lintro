@@ -388,10 +388,12 @@ main() {
 					elif command -v shasum >/dev/null 2>&1; then
 						actual=$(shasum -a 256 "$tmpdir/gitleaks.tar.gz" | awk '{print $1}')
 					else
-						actual=""
+						echo -e "${RED}✗ Unable to compute checksum: no hash tool found (sha256sum or shasum required)${NC}"
+						rm -rf "$tmpdir"
+						exit 1
 					fi
-					if [ -n "$actual" ] && [ "$expected" != "$actual" ]; then
-						echo -e "${RED}✗ Checksum mismatch for gitleaks${NC}"
+					if [ "$expected" != "$actual" ]; then
+						echo -e "${RED}✗ Checksum mismatch for gitleaks (expected: $expected, got: $actual)${NC}"
 						rm -rf "$tmpdir"
 						exit 1
 					fi
