@@ -1,0 +1,13 @@
+# Gitleaks configuration for py-lintro
+# This file configures gitleaks to ignore intentional test fixtures containing
+# fake secrets for testing security tools.
+
+title = "Lintro Gitleaks Configuration"
+
+# Allowlist rules to ignore false positives in test sample files
+[allowlist]
+# The test_samples/ directory contains intentional example violations
+# for testing linting/security tools - these are not real secrets
+paths = [
+    '''test_samples/''',
+]
