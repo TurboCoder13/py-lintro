@@ -220,7 +220,7 @@ def test_fix_formats_toml_file(
     """Verify taplo fix formats TOML files.
 
     Runs taplo fix on a file with formatting issues and verifies
-    that fixes are applied.
+    that fixes are applied by checking both the result and file content.
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
@@ -233,6 +233,12 @@ def test_fix_formats_toml_file(
     assert_that(result.name).is_equal_to("taplo")
     # After fix, the file should be formatted
     assert_that(result.fixed_issues_count).is_greater_than_or_equal_to(0)
+
+    # Verify the file was actually reformatted
+    fixed_content = Path(temp_toml_file_with_issues).read_text()
+    # Taplo normalizes spacing around '=' to single space
+    assert_that(fixed_content).contains('name = "example"')
+    assert_that(fixed_content).contains('description = "Inconsistent spacing"')
 
 
 # --- Tests for TaploPlugin.set_options method ---

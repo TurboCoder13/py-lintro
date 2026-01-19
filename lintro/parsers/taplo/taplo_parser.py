@@ -10,6 +10,23 @@ import re
 
 from lintro.parsers.taplo.taplo_issue import TaploIssue
 
+# Pre-compiled regex patterns for taplo output parsing
+# Pattern for taplo error header: error[code]: message or warning[code]: message
+_HEADER_PATTERN: re.Pattern[str] = re.compile(
+    r"^(error|warning)\[([^\]]+)\]:\s*(.+)$",
+)
+
+# Pattern for location line:   --> file:line:column
+_LOCATION_PATTERN: re.Pattern[str] = re.compile(
+    r"^\s*-->\s*(.+):(\d+):(\d+)\s*$",
+)
+
+# Pattern for taplo fmt --check output:
+# ERROR taplo:format_files: the file is not properly formatted path="..."
+_FMT_CHECK_PATTERN: re.Pattern[str] = re.compile(
+    r'^ERROR\s+taplo:format_files:\s*(.+?)\s+path="([^"]+)"',
+)
+
 
 def parse_taplo_output(output: str | None) -> list[TaploIssue]:
     """Parse taplo output into a list of TaploIssue objects.
@@ -40,22 +57,6 @@ def parse_taplo_output(output: str | None) -> list[TaploIssue]:
     if not output or not output.strip():
         return issues
 
-    # Pattern for taplo error header: error[code]: message or warning[code]: message
-    header_pattern: re.Pattern[str] = re.compile(
-        r"^(error|warning)\[([^\]]+)\]:\s*(.+)$",
-    )
-
-    # Pattern for location line:   --> file:line:column
-    location_pattern: re.Pattern[str] = re.compile(
-        r"^\s*-->\s*(.+):(\d+):(\d+)\s*$",
-    )
-
-    # Pattern for taplo fmt --check output:
-    # ERROR taplo:format_files: the file is not properly formatted path="..."
-    fmt_check_pattern: re.Pattern[str] = re.compile(
-        r'^ERROR\s+taplo:format_files:\s*(.+?)\s+path="([^"]+)"',
-    )
-
     lines: list[str] = output.splitlines()
     i: int = 0
 
@@ -63,7 +64,7 @@ def parse_taplo_output(output: str | None) -> list[TaploIssue]:
         line: str = lines[i]
 
         # Try to match taplo fmt --check output first
-        fmt_match: re.Match[str] | None = fmt_check_pattern.match(line)
+        fmt_match: re.Match[str] | None = _FMT_CHECK_PATTERN.match(line)
         if fmt_match:
             message: str = fmt_match.group(1).strip()
             file_path: str = fmt_match.group(2)
@@ -81,7 +82,7 @@ def parse_taplo_output(output: str | None) -> list[TaploIssue]:
             continue
 
         # Try to match error/warning header
-        header_match: re.Match[str] | None = header_pattern.match(line)
+        header_match: re.Match[str] | None = _HEADER_PATTERN.match(line)
         if header_match:
             level: str = header_match.group(1)
             code: str = header_match.group(2)
@@ -94,7 +95,7 @@ def parse_taplo_output(output: str | None) -> list[TaploIssue]:
 
             # Search ahead for the location line (usually within 1-2 lines)
             for j in range(i + 1, min(i + 5, len(lines))):
-                location_match: re.Match[str] | None = location_pattern.match(lines[j])
+                location_match: re.Match[str] | None = _LOCATION_PATTERN.match(lines[j])
                 if location_match:
                     file_path = location_match.group(1)
                     line_num = int(location_match.group(2))

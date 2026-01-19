@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
-from typing import Any
 
 from loguru import logger
 
@@ -78,7 +77,7 @@ class TaploPlugin(BaseToolPlugin):
         array_trailing_comma: bool | None = None,
         indent_string: str | None = None,
         reorder_keys: bool | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> None:
         """Set Taplo-specific options with validation.
 
@@ -210,7 +209,7 @@ class TaploPlugin(BaseToolPlugin):
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
 
-        all_issues: list[Any] = []
+        all_issues: list[TaploIssue] = []
         all_outputs: list[str] = []
         all_success: bool = True
 

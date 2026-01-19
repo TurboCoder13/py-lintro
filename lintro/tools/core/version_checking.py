@@ -314,7 +314,8 @@ def get_install_hints() -> dict[str, str]:
             "taplo": (
                 f"Install via: cargo install taplo-cli "
                 f"or download from https://github.com/tamasfe/taplo/releases "
-                f"(v{versions.get('taplo', '0.9.0')}+)"
+                f"(e.g., {versions.get('taplo', '0.8.0')} or release-taplo-cli-"
+                f"{versions.get('taplo', '0.8.0')})"
             ),
         },
     )

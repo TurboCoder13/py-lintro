@@ -735,6 +735,28 @@ main() {
 		if download_with_retries "$gz_url" "$tmpdir/taplo.gz" 3; then
 			gunzip -c "$tmpdir/taplo.gz" >"$BIN_DIR/taplo"
 			chmod +x "$BIN_DIR/taplo"
+			# Attempt checksum verification when available
+			checksum_url="${gz_url}.sha256"
+			if download_with_retries "$checksum_url" "$tmpdir/taplo.gz.sha256" 3; then
+				echo -e "${BLUE}Verifying checksum for taplo...${NC}"
+				expected=$(awk '{print $1}' "$tmpdir/taplo.gz.sha256" | head -n1)
+				if command -v sha256sum >/dev/null 2>&1; then
+					actual=$(sha256sum "$tmpdir/taplo.gz" | awk '{print $1}')
+				elif command -v shasum >/dev/null 2>&1; then
+					actual=$(shasum -a 256 "$tmpdir/taplo.gz" | awk '{print $1}')
+				else
+					echo -e "${YELLOW}⚠ No sha256 tool available, skipping checksum verification${NC}"
+					actual="$expected"
+				fi
+				if [ "$expected" = "$actual" ]; then
+					echo -e "${GREEN}✓ Checksum verified${NC}"
+				else
+					echo -e "${RED}✗ Checksum mismatch for taplo (expected: $expected, got: $actual)${NC}"
+					rm -rf "$tmpdir"
+					exit 1
+				fi
+				rm -f "$tmpdir/taplo.gz.sha256" || true
+			fi
 			echo -e "${GREEN}✓ taplo installed successfully${NC}"
 		else
 			echo -e "${RED}✗ Failed to download taplo${NC}"

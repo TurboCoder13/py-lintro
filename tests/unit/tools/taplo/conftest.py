@@ -17,7 +17,7 @@ def taplo_plugin() -> TaploPlugin:
         A TaploPlugin instance.
     """
     with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
+        "lintro.plugins.base.verify_tool_version",
         return_value=None,
     ):
         return TaploPlugin()

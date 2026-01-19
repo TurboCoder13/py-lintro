@@ -123,8 +123,7 @@ def test_check_with_no_toml_files(
     non_toml_file = tmp_path / "test.txt"
     non_toml_file.write_text("Not a TOML file")
 
-    with patch.object(taplo_plugin, "_verify_tool_version", return_value=None):
-        result = taplo_plugin.check([str(non_toml_file)], {})
+    result = taplo_plugin.check([str(non_toml_file)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.output).contains("No")
