@@ -343,7 +343,7 @@ class TaploPlugin(BaseToolPlugin):
 
         logger.debug(f"[TaploPlugin] Fixing: {' '.join(fix_cmd)} (cwd={ctx.cwd})")
         try:
-            _, fix_output = self._run_subprocess(
+            _, _ = self._run_subprocess(
                 cmd=fix_cmd,
                 timeout=ctx.timeout,
                 cwd=ctx.cwd,

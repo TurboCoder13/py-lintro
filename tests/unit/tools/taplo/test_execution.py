@@ -123,7 +123,11 @@ def test_check_with_no_toml_files(
     non_toml_file = tmp_path / "test.txt"
     non_toml_file.write_text("Not a TOML file")
 
-    result = taplo_plugin.check([str(non_toml_file)], {})
+    with patch(
+        "lintro.plugins.execution_preparation.verify_tool_version",
+        return_value=None,
+    ):
+        result = taplo_plugin.check([str(non_toml_file)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.output).contains("No")
