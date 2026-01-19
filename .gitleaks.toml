@@ -8,6 +8,4 @@ title = "Lintro Gitleaks Configuration"
 [allowlist]
 # The test_samples/ directory contains intentional example violations
 # for testing linting/security tools - these are not real secrets
-paths = [
-    '''test_samples/''',
-]
+paths = ['''test_samples/''']

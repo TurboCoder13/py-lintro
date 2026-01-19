@@ -382,23 +382,26 @@ main() {
 			if download_with_retries "$checksum_url" "$tmpdir/checksums.txt" 3; then
 				echo -e "${BLUE}Verifying checksum for gitleaks...${NC}"
 				expected=$(grep "gitleaks_${GITLEAKS_VERSION}_${os}_${arch_name}.tar.gz" "$tmpdir/checksums.txt" | awk '{print $1}')
-				if [ -n "$expected" ]; then
-					if command -v sha256sum >/dev/null 2>&1; then
-						actual=$(sha256sum "$tmpdir/gitleaks.tar.gz" | awk '{print $1}')
-					elif command -v shasum >/dev/null 2>&1; then
-						actual=$(shasum -a 256 "$tmpdir/gitleaks.tar.gz" | awk '{print $1}')
-					else
-						echo -e "${RED}✗ Unable to compute checksum: no hash tool found (sha256sum or shasum required)${NC}"
-						rm -rf "$tmpdir"
-						exit 1
-					fi
-					if [ "$expected" != "$actual" ]; then
-						echo -e "${RED}✗ Checksum mismatch for gitleaks (expected: $expected, got: $actual)${NC}"
-						rm -rf "$tmpdir"
-						exit 1
-					fi
-					echo -e "${GREEN}✓ Checksum verified${NC}"
+				if [ -z "$expected" ]; then
+					echo -e "${RED}✗ Checksum entry not found for gitleaks_${GITLEAKS_VERSION}_${os}_${arch_name}.tar.gz in ${tmpdir}/checksums.txt${NC}"
+					rm -rf "$tmpdir"
+					exit 1
 				fi
+				if command -v sha256sum >/dev/null 2>&1; then
+					actual=$(sha256sum "$tmpdir/gitleaks.tar.gz" | awk '{print $1}')
+				elif command -v shasum >/dev/null 2>&1; then
+					actual=$(shasum -a 256 "$tmpdir/gitleaks.tar.gz" | awk '{print $1}')
+				else
+					echo -e "${RED}✗ Unable to compute checksum: no hash tool found (sha256sum or shasum required)${NC}"
+					rm -rf "$tmpdir"
+					exit 1
+				fi
+				if [ "$expected" != "$actual" ]; then
+					echo -e "${RED}✗ Checksum mismatch for gitleaks (expected: $expected, got: $actual)${NC}"
+					rm -rf "$tmpdir"
+					exit 1
+				fi
+				echo -e "${GREEN}✓ Checksum verified${NC}"
 			fi
 			tar -xzf "$tmpdir/gitleaks.tar.gz" -C "$tmpdir"
 			cp "$tmpdir/gitleaks" "$BIN_DIR/gitleaks"
