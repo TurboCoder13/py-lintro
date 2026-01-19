@@ -14,6 +14,7 @@ from loguru import logger
 
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
+from lintro.parsers.taplo.taplo_issue import TaploIssue
 from lintro.parsers.taplo.taplo_parser import parse_taplo_output
 from lintro.plugins.base import BaseToolPlugin
 from lintro.plugins.protocol import ToolDefinition
@@ -145,12 +146,14 @@ class TaploPlugin(BaseToolPlugin):
         self,
         timeout_val: int,
         initial_count: int | None = None,
+        initial_issues: list[TaploIssue] | None = None,
     ) -> ToolResult:
         """Handle timeout errors consistently.
 
         Args:
             timeout_val: The timeout value that was exceeded.
             initial_count: Optional initial issues count for fix operations.
+            initial_issues: Optional list of initial issues found before timeout.
 
         Returns:
             Standardized timeout error result.
@@ -161,13 +164,22 @@ class TaploPlugin(BaseToolPlugin):
             "  - Large codebase taking too long to process\n"
             "  - Need to increase timeout via --tool-options taplo:timeout=N"
         )
+        timeout_issue = TaploIssue(
+            file="execution",
+            line=0,
+            column=0,
+            level="error",
+            code="TIMEOUT",
+            message=f"Taplo execution timed out ({timeout_val}s limit exceeded)",
+        )
         if initial_count is not None and initial_count > 0:
+            combined_issues = (initial_issues or []) + [timeout_issue]
             return ToolResult(
                 name=self.definition.name,
                 success=False,
                 output=timeout_msg,
-                issues_count=initial_count,
-                issues=[],
+                issues_count=len(combined_issues),
+                issues=combined_issues,
                 initial_issues_count=initial_count,
                 fixed_issues_count=0,
                 remaining_issues_count=initial_count,
@@ -177,7 +189,7 @@ class TaploPlugin(BaseToolPlugin):
             success=False,
             output=timeout_msg,
             issues_count=1,
-            issues=[],
+            issues=[timeout_issue],
         )
 
     def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
@@ -385,6 +397,8 @@ class TaploPlugin(BaseToolPlugin):
             summary.append(
                 f"Found {remaining_count} issue(s) that cannot be auto-fixed",
             )
+        elif remaining_count == 0 and fixed_count > 0:
+            summary.append("All issues were successfully auto-fixed")
         final_summary = "\n".join(summary) if summary else "No fixes applied."
 
         return ToolResult(

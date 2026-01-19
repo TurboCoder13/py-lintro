@@ -50,21 +50,45 @@ def parse_taplo_output(output: str | None) -> list[TaploIssue]:
         r"^\s*-->\s*(.+):(\d+):(\d+)\s*$",
     )
 
+    # Pattern for taplo fmt --check output:
+    # ERROR taplo:format_files: the file is not properly formatted path="..."
+    fmt_check_pattern: re.Pattern[str] = re.compile(
+        r'^ERROR\s+taplo:format_files:\s*(.+?)\s+path="([^"]+)"',
+    )
+
     lines: list[str] = output.splitlines()
     i: int = 0
 
     while i < len(lines):
         line: str = lines[i]
 
+        # Try to match taplo fmt --check output first
+        fmt_match: re.Match[str] | None = fmt_check_pattern.match(line)
+        if fmt_match:
+            message: str = fmt_match.group(1).strip()
+            file_path: str = fmt_match.group(2)
+            issues.append(
+                TaploIssue(
+                    file=file_path,
+                    line=0,
+                    column=0,
+                    level="error",
+                    code="format",
+                    message=message,
+                ),
+            )
+            i += 1
+            continue
+
         # Try to match error/warning header
         header_match: re.Match[str] | None = header_pattern.match(line)
         if header_match:
             level: str = header_match.group(1)
             code: str = header_match.group(2)
-            message: str = header_match.group(3).strip()
+            message = header_match.group(3).strip()
 
             # Look for location in next lines
-            file_path: str = ""
+            file_path = ""
             line_num: int = 0
             column: int = 0
 

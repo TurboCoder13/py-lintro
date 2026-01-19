@@ -116,17 +116,14 @@ For full functionality, install these additional tools:
 - **Markdownlint-cli2** - `npm install -g markdownlint-cli2`
 - **Hadolint** - [GitHub Releases](https://github.com/hadolint/hadolint/releases)
 - **Actionlint** - [GitHub Releases](https://github.com/rhysd/actionlint/releases)
-<<<<<<< HEAD
 - **Semgrep** - `pipx install semgrep`, `pip install semgrep`, or `brew install semgrep`
 - **ShellCheck** - `brew install shellcheck` or
   [GitHub Releases](https://github.com/koalaman/shellcheck/releases)
 - **shfmt** - `brew install shfmt` or
   [GitHub Releases](https://github.com/mvdan/sh/releases)
 - **SQLFluff** - `pip install sqlfluff`
-=======
 - **Taplo** - `brew install taplo` or
   [GitHub Releases](https://github.com/tamasfe/taplo/releases)
->>>>>>> ac65c8c (docs: add Taplo to supported tools documentation)
 
 Check all tool versions with: `lintro list-tools`
 
