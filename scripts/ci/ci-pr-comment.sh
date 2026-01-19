@@ -16,6 +16,7 @@ fi
 # Generates and posts comments to PRs with lintro analysis results
 
 # Source shared utilities
+# shellcheck source=../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$(dirname "$0")/../utils/utils.sh"
 
 # Check if we're in a PR context

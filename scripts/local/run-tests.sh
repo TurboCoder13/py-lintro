@@ -7,7 +7,7 @@ set -euo pipefail
 # It automatically checks tool availability and runs appropriate tests.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../utils/utils.sh
+# shellcheck source=../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$SCRIPT_DIR/../utils/utils.sh"
 
 # Global variables
@@ -77,6 +77,8 @@ check_system_tool() {
 discover_tests() {
 	echo -e "${BLUE}Discovering tests to run...${NC}"
 	# Always run all tests in the tests directory
+	# SC2034: TEST_FILES is exported for use in subshells and other scripts
+	# shellcheck disable=SC2034
 	TEST_FILES=("tests")
 	echo -e "${GREEN}All tests in the tests directory will be run.${NC}"
 }
@@ -197,6 +199,8 @@ run_tests() {
 	fi
 
 	echo -e "${BLUE}Executing: ${cmd_prefix} ${tst_args[*]}${NC}"
+	# SC2086: cmd_prefix contains multiple space-separated args
+	# shellcheck disable=SC2086
 	run_and_report_tests ${cmd_prefix} "${tst_args[@]}"
 	return $?
 }
@@ -221,12 +225,17 @@ main() {
 	# Load environment variables from .env file if it exists
 	if [ -f .env ]; then
 		echo -e "${YELLOW}Loading environment variables from .env file...${NC}"
+		# SC2046: word splitting is intentional for env var export
+		# shellcheck disable=SC2046
 		export $(grep -v '^#' .env | xargs)
 	fi
 
 	# Handle command line arguments
+	# SC2034: verbose is used for conditional logic and exported via VERBOSE
+	# shellcheck disable=SC2034
 	local verbose=false
 	if [ "${1:-}" = "--verbose" ] || [ "${1:-}" = "-v" ]; then
+		# shellcheck disable=SC2034
 		verbose=true
 		VERBOSE=1
 		echo -e "${YELLOW}Verbose mode enabled${NC}"
@@ -300,7 +309,7 @@ main() {
 			# Verify files were copied
 			echo -e "${YELLOW}Verifying files in ${dest_dir} after copy:${NC}"
 			if [ -f "${dest_dir}/coverage.xml" ]; then
-				echo -e "${GREEN}✓ ${dest_dir}/coverage.xml exists (size: $(wc -c <${dest_dir}/coverage.xml) bytes)${NC}"
+				echo -e "${GREEN}✓ ${dest_dir}/coverage.xml exists (size: $(wc -c <"${dest_dir}/coverage.xml") bytes)${NC}"
 			else
 				echo -e "${RED}✗ ${dest_dir}/coverage.xml not found${NC}"
 			fi

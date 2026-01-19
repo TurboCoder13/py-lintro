@@ -107,7 +107,8 @@ shift
 # Source shared utilities for all coverage operations
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "${SCRIPT_DIR}/utils.sh" ]; then
-	# shellcheck source=utils.sh
+	# SC1091: path is dynamically constructed, file exists at runtime
+	# shellcheck source=utils.sh disable=SC1091
 	source "${SCRIPT_DIR}/utils.sh"
 else
 	# Basic logging if utils.sh not available
@@ -218,8 +219,7 @@ EOF
 
 	if [ -z "$coverage_pct" ]; then
 		log_verbose "Extracting coverage from coverage.xml" >&2
-		coverage_pct="$(extract_coverage)"
-		if [ $? -ne 0 ]; then
+		if ! coverage_pct="$(extract_coverage)"; then
 			return 1
 		fi
 	fi
@@ -280,8 +280,7 @@ EOF
 	done
 
 	local status_info
-	status_info="$(get_status)"
-	if [ $? -ne 0 ]; then
+	if ! status_info="$(get_status)"; then
 		return 1
 	fi
 
@@ -390,8 +389,7 @@ EOF
 	fi
 
 	local status_info
-	status_info="$(get_status)"
-	if [ $? -ne 0 ]; then
+	if ! status_info="$(get_status)"; then
 		return 1
 	fi
 
@@ -477,8 +475,7 @@ EOF
 	fi
 
 	local coverage_pct
-	coverage_pct="$(extract_coverage)"
-	if [ $? -ne 0 ]; then
+	if ! coverage_pct="$(extract_coverage)"; then
 		return 1
 	fi
 

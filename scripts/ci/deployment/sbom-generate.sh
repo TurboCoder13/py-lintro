@@ -229,37 +229,43 @@ else
 	log_warning "Fetch step skipped or repo URL not resolved; only imports will be processed."
 fi
 
-# Import provided local SBOMs
+# Import provided local SBOMs with unique aliases
+IMPORTED_COUNT=0
+IMPORT_IDS=()
 for f in "${IMPORT_FILES[@]:-}"; do
 	if [ -n "$f" ]; then
-		run_bomctl import --alias "${DOC_ALIAS}" --tag project:py-lintro --tag "run:$(date +%s)" "$f"
+		# Use unique alias for each import to avoid bomctl alias conflicts
+		UNIQUE_ALIAS="${DOC_ALIAS}_import_${IMPORTED_COUNT}"
+		run_bomctl import --alias "${UNIQUE_ALIAS}" --tag project:py-lintro --tag "run:$(date +%s)" "$f"
+		IMPORT_IDS+=("${UNIQUE_ALIAS}")
+		IMPORTED_COUNT=$((IMPORTED_COUNT + 1))
 	fi
 done
 
 # Decide on root document and merging strategy
 ROOT_ID=""
-IMPORT_COUNT=${#IMPORT_FILES[@]}
+IMPORT_COUNT=${IMPORTED_COUNT}
 MERGE_NEEDED=0
-if [ ${HAS_FETCH} -eq 1 ] || [ ${IMPORT_COUNT} -gt 1 ]; then
+if [ "${HAS_FETCH}" -eq 1 ] || [ "${IMPORT_COUNT}" -gt 1 ]; then
 	MERGE_NEEDED=1
 fi
 
-if [ ${MERGE_NEEDED} -eq 1 ]; then
-	if [ ${HAS_FETCH} -eq 1 ] && [ ${IMPORT_COUNT} -gt 0 ]; then
-		# Merge fetched document with imported alias into a single alias
-		run_bomctl merge --alias "${DOC_ALIAS}" --name "${DOC_NAME}" "${REPO_URL_RESOLVED}" "${DOC_ALIAS}"
-	elif [ ${HAS_FETCH} -eq 1 ] && [ ${IMPORT_COUNT} -eq 0 ]; then
+if [ "${MERGE_NEEDED}" -eq 1 ]; then
+	if [ "${HAS_FETCH}" -eq 1 ] && [ "${IMPORT_COUNT}" -gt 0 ]; then
+		# Merge fetched document with all imported documents
+		run_bomctl merge --alias "${DOC_ALIAS}" --name "${DOC_NAME}" "${REPO_URL_RESOLVED}" "${IMPORT_IDS[@]}"
+	elif [ "${HAS_FETCH}" -eq 1 ] && [ "${IMPORT_COUNT}" -eq 0 ]; then
 		# Merge single fetched doc into alias to standardize pushes
 		run_bomctl merge --alias "${DOC_ALIAS}" --name "${DOC_NAME}" "${REPO_URL_RESOLVED}"
 	else
-		# Multiple imports under the same alias; perform merge to consolidate
-		run_bomctl merge --alias "${DOC_ALIAS}" --name "${DOC_NAME}" "${DOC_ALIAS}"
+		# Multiple imports; merge all captured IDs
+		run_bomctl merge --alias "${DOC_ALIAS}" --name "${DOC_NAME}" "${IMPORT_IDS[@]}"
 	fi
 	ROOT_ID="${DOC_ALIAS}"
 else
-	# Single import only; alias points to the document
-	if [ ${IMPORT_COUNT} -eq 1 ]; then
-		ROOT_ID="${DOC_ALIAS}"
+	# Single import only; use first import alias as root
+	if [ "${IMPORT_COUNT}" -eq 1 ]; then
+		ROOT_ID="${IMPORT_IDS[0]}"
 	else
 		# Fetch-only without merge should not happen; default to alias
 		ROOT_ID="${DOC_ALIAS}"

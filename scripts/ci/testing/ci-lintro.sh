@@ -23,6 +23,8 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 fi
 
 # Source shared utilities
+# SC1091: path is dynamically constructed, file exists at runtime
+# shellcheck disable=SC1091
 source "$(dirname "$0")/../../utils/utils.sh"
 
 # Set up step summary if not in GitHub Actions
@@ -33,12 +35,13 @@ GITHUB_ENV="${GITHUB_ENV:-/dev/null}"
 # This prevents the "Fail on Linting Issues" step from triggering on empty value
 trap 'echo "CHK_EXIT_CODE=${CHK_EXIT_CODE:-1}" >> "$GITHUB_ENV"' EXIT
 
-echo "## 🔧 Lintro Code Quality & Analysis" >>$GITHUB_STEP_SUMMARY
-echo "" >>$GITHUB_STEP_SUMMARY
-
-echo "### 🛠️ Step 1: Running Lintro Checks" >>$GITHUB_STEP_SUMMARY
-echo "Running \`lintro check\` in Docker container against the entire project..." >>$GITHUB_STEP_SUMMARY
-echo "" >>$GITHUB_STEP_SUMMARY
+{
+	echo "## 🔧 Lintro Code Quality & Analysis"
+	echo ""
+	echo "### 🛠️ Step 1: Running Lintro Checks"
+	echo "Running \`lintro check\` in Docker container against the entire project..."
+	echo ""
+} >>"$GITHUB_STEP_SUMMARY"
 
 # NOTE: Docker image is pre-built by the workflow step "Build Docker image"
 # Do NOT rebuild here - it can fail silently and exit before setting CHK_EXIT_CODE
@@ -54,18 +57,19 @@ docker run --rm -v "$PWD:/code" -w /code py-lintro:latest lintro check . \
 CHK_EXIT_CODE=${PIPESTATUS[0]}
 set -e # Exit on error again
 
-echo "### 📊 Linting Results:" >>$GITHUB_STEP_SUMMARY
-echo '```' >>$GITHUB_STEP_SUMMARY
-if [ -f chk-output.txt ]; then
-	cat chk-output.txt >>$GITHUB_STEP_SUMMARY
-else
-	echo "No linting output captured" >>$GITHUB_STEP_SUMMARY
-fi
-echo '```' >>$GITHUB_STEP_SUMMARY
-echo "" >>$GITHUB_STEP_SUMMARY
-
-echo "**Linting exit code:** $CHK_EXIT_CODE" >>$GITHUB_STEP_SUMMARY
-echo "" >>$GITHUB_STEP_SUMMARY
+{
+	echo "### 📊 Linting Results:"
+	echo '```'
+	if [ -f chk-output.txt ]; then
+		cat chk-output.txt
+	else
+		echo "No linting output captured"
+	fi
+	echo '```'
+	echo ""
+	echo "**Linting exit code:** $CHK_EXIT_CODE"
+	echo ""
+} >>"$GITHUB_STEP_SUMMARY"
 
 # Keep full chk-output.txt; summarization now handled in PR comment script
 if [ ! -f chk-output.txt ]; then
@@ -73,18 +77,19 @@ if [ ! -f chk-output.txt ]; then
 fi
 
 # Store the exit code for the PR comment step
-echo "CHK_EXIT_CODE=$CHK_EXIT_CODE" >>$GITHUB_ENV
+echo "CHK_EXIT_CODE=$CHK_EXIT_CODE" >>"$GITHUB_ENV"
 
-echo "### 📋 Summary" >>$GITHUB_STEP_SUMMARY
-echo "- **Step 1:** Code quality checks performed with \`lintro check\` in Docker" >>$GITHUB_STEP_SUMMARY
-echo "- **Test files:** Excluded via \`.lintro-ignore\`" >>$GITHUB_STEP_SUMMARY
-echo "" >>$GITHUB_STEP_SUMMARY
-
-echo "---" >>$GITHUB_STEP_SUMMARY
-echo "🚀 **Lintro** provides a unified interface for multiple code quality tools!" >>$GITHUB_STEP_SUMMARY
-echo "This ensures consistent formatting and linting across different file types." >>$GITHUB_STEP_SUMMARY
+{
+	echo "### 📋 Summary"
+	echo "- **Step 1:** Code quality checks performed with \`lintro check\` in Docker"
+	echo "- **Test files:** Excluded via \`.lintro-ignore\`"
+	echo ""
+	echo "---"
+	echo "🚀 **Lintro** provides a unified interface for multiple code quality tools!"
+	echo "This ensures consistent formatting and linting across different file types."
+} >>"$GITHUB_STEP_SUMMARY"
 
 log_success "Docker lintro analysis completed with exit code $CHK_EXIT_CODE"
 
 # Exit with the check exit code
-exit $CHK_EXIT_CODE
+exit "$CHK_EXIT_CODE"

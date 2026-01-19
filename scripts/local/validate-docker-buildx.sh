@@ -40,6 +40,7 @@ fi
 
 # Source shared utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "${SCRIPT_DIR}/../utils/utils.sh"
 
 log_info "Validating Docker Buildx Configuration..."

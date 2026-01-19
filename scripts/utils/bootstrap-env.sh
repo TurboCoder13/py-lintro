@@ -76,19 +76,19 @@ log_info() {
 }
 
 # Build common flags for sub-scripts
-script_flags=""
-if [ $DRY_RUN -eq 1 ]; then
-	script_flags="$script_flags --dry-run"
+script_flags=()
+if [ "$DRY_RUN" -eq 1 ]; then
+	script_flags+=(--dry-run)
 fi
-if [ $VERBOSE -eq 1 ]; then
-	script_flags="$script_flags --verbose"
+if [ "$VERBOSE" -eq 1 ]; then
+	script_flags+=(--verbose)
 fi
 
 log_info "Starting environment bootstrap (Python ${PYTHON_VERSION})"
 
 # Component 1: Install uv (always required, even for Docker-centric jobs that skip sync)
 log_info "Step 1/5: Installing uv"
-if ! ./scripts/utils/install-uv.sh $script_flags; then
+if ! ./scripts/utils/install-uv.sh "${script_flags[@]}"; then
 	echo "[bootstrap-env] ERROR: Failed to install uv" >&2
 	exit 1
 fi
@@ -96,7 +96,7 @@ fi
 # Early exit check for Docker-centric jobs
 if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -eq 1 ] && [ "${BOOTSTRAP_SKIP_INSTALL_TOOLS:-0}" -eq 1 ]; then
 	log_info "Skipping remaining bootstrap steps (both BOOTSTRAP_SKIP_* flags set)"
-	if [ $DRY_RUN -eq 0 ] && [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
+	if [ "$DRY_RUN" -eq 0 ] && [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
 		echo "$HOME/.local/bin" >>"$GITHUB_PATH"
 	fi
 	log_info "Early-exit complete (uv installed)"
@@ -106,7 +106,7 @@ fi
 # Component 2: Setup Python version
 if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -ne 1 ]; then
 	log_info "Step 2/5: Setting up Python ${PYTHON_VERSION}"
-	if ! ./scripts/utils/setup-python.sh $script_flags "$PYTHON_VERSION"; then
+	if ! ./scripts/utils/setup-python.sh "${script_flags[@]}" "$PYTHON_VERSION"; then
 		echo "[bootstrap-env] ERROR: Failed to setup Python" >&2
 		exit 1
 	fi
@@ -117,7 +117,7 @@ fi
 # Component 3: Sync dependencies
 if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -ne 1 ]; then
 	log_info "Step 3/5: Syncing Python dependencies"
-	if ! ./scripts/utils/sync-deps.sh $script_flags --dev; then
+	if ! ./scripts/utils/sync-deps.sh "${script_flags[@]}" --dev; then
 		echo "[bootstrap-env] ERROR: Failed to sync dependencies" >&2
 		exit 1
 	fi
@@ -138,10 +138,10 @@ fi
 
 # Component 5: Ensure PATH persistence
 log_info "Step 5/5: Ensuring PATH persistence"
-if [ $DRY_RUN -eq 0 ] && [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
+if [ "$DRY_RUN" -eq 0 ] && [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
 	echo "$HOME/.local/bin" >>"$GITHUB_PATH"
 	log_info "Added $HOME/.local/bin to GitHub Actions PATH"
-elif [ $DRY_RUN -eq 1 ]; then
+elif [ "$DRY_RUN" -eq 1 ]; then
 	log_info "[DRY-RUN] Would add $HOME/.local/bin to PATH"
 fi
 

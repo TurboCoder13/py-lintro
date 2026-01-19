@@ -7,7 +7,7 @@ set -euo pipefail
 # It automatically installs missing tools and sets up the environment.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=../utils/utils.sh
+# shellcheck source=../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$SCRIPT_DIR/../utils/utils.sh"
 
 echo -e "${BLUE}=== Lintro Local Runner ===${NC}"
@@ -15,6 +15,8 @@ echo -e "${BLUE}=== Lintro Local Runner ===${NC}"
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
 	echo -e "${YELLOW}Loading environment variables from .env file...${NC}"
+	# SC2046: word splitting is intentional for env var export
+	# shellcheck disable=SC2046
 	export $(grep -v '^#' .env | xargs)
 fi
 

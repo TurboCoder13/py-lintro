@@ -38,6 +38,7 @@ TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
     ToolName.ACTIONLINT,
     ToolName.DARGLINT,
     ToolName.SEMGREP,
+    ToolName.SHELLCHECK,
     ToolName.SHFMT,
 }
 

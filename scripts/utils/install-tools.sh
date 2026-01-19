@@ -10,7 +10,8 @@ set -euo pipefail
 #   ./scripts/install-tools.sh [--help] [--dry-run] [--verbose] [--local|--docker]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=utils.sh
+# SC1091: path is dynamically constructed, file exists at runtime
+# shellcheck source=utils.sh disable=SC1091
 source "$SCRIPT_DIR/utils.sh"
 
 # Show help if requested
@@ -41,6 +42,8 @@ This script installs:
   - Mypy (Python static type checker)
   - Clippy (Rust linter; requires Rust toolchain)
   - Semgrep (Security scanner)
+  - ShellCheck (Shell script linter)
+  - shfmt (Shell script formatter)
 
 Use this script to set up a complete development environment.
 EOF
@@ -162,15 +165,17 @@ fi
 
 # Function to detect platform and architecture
 detect_platform() {
-	local os=$(uname -s)
-	local arch=$(uname -m)
+	local os
+	local arch
+	os=$(uname -s)
+	arch=$(uname -m)
 
 	# Normalize OS names for hadolint
 	case "$os" in
 	Darwin) os="Darwin" ;;
 	Linux) os="Linux" ;;
 	MINGW* | MSYS* | CYGWIN*) os="Windows" ;;
-	*) os="$os" ;;
+	*) ;; # keep original value
 	esac
 
 	# Normalize architecture names for hadolint
@@ -179,7 +184,7 @@ detect_platform() {
 	amd64) arch="x86_64" ;;
 	aarch64) arch="arm64" ;;
 	arm64) arch="arm64" ;;
-	*) arch="$arch" ;;
+	*) ;; # keep original value
 	esac
 
 	echo "${os}-${arch}"
@@ -199,7 +204,8 @@ install_python_package() {
 	if command -v uv &>/dev/null; then
 		if uv pip install "$full_package"; then
 			# Copy the executable to target directory if it exists in uv environment
-			local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
+			local uv_path
+			uv_path=$(uv run which "$package" 2>/dev/null || echo "")
 			if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
 				cp "$uv_path" "$BIN_DIR/$package"
 				chmod +x "$BIN_DIR/$package"
@@ -235,7 +241,8 @@ install_tool_curl() {
 	echo -e "${BLUE}Installing $tool_name...${NC}"
 
 	# Get platform info
-	local platform=$(detect_platform)
+	local platform
+	platform=$(detect_platform)
 	local download_url="${base_url}-${platform}"
 
 	echo -e "${YELLOW}Detected platform: $platform${NC}"
@@ -281,7 +288,8 @@ install_tool_curl() {
 				echo -e "${YELLOW}Trying Homebrew installation...${NC}"
 				if brew install hadolint; then
 					# Copy from Homebrew location to target
-					local brew_path=$(brew --prefix hadolint)/bin/hadolint
+					local brew_path
+					brew_path="$(brew --prefix hadolint)/bin/hadolint"
 					if [ -f "$brew_path" ]; then
 						cp "$brew_path" "$target_path"
 						chmod +x "$target_path"
@@ -409,7 +417,6 @@ main() {
 	elif command -v shfmt &>/dev/null; then
 		echo -e "${GREEN}✓ shfmt already installed${NC}"
 	else
-		tmpdir=$(mktemp -d)
 		os=$(uname -s | tr '[:upper:]' '[:lower:]')
 		arch=$(uname -m)
 		case "$arch" in
@@ -424,7 +431,6 @@ main() {
 			echo -e "${RED}✗ Failed to download shfmt${NC}"
 			exit 1
 		fi
-		rm -rf "$tmpdir"
 	fi
 
 	# Install Rust toolchain and clippy
@@ -440,6 +446,8 @@ main() {
 			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --component clippy
 			# Source cargo environment
 			if [ -f "$HOME/.cargo/env" ]; then
+				# SC1091: cargo env is created by rustup installer at runtime
+				# shellcheck disable=SC1091
 				source "$HOME/.cargo/env"
 			fi
 		else
@@ -579,6 +587,71 @@ main() {
 		exit 1
 	fi
 
+	# Install shellcheck (shell script linter)
+	echo -e "${BLUE}Installing shellcheck...${NC}"
+	SHELLCHECK_VERSION="0.11.0"
+
+	# Helper function for shellcheck binary installation
+	install_shellcheck_binary() {
+		local tmpdir
+		tmpdir=$(mktemp -d)
+		local os arch tar_url
+		os=$(uname -s | tr '[:upper:]' '[:lower:]')
+		arch=$(uname -m)
+		case "$arch" in
+		x86_64 | amd64) arch="x86_64" ;;
+		aarch64 | arm64) arch="aarch64" ;;
+		esac
+		tar_url="https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.${os}.${arch}.tar.xz"
+		if download_with_retries "$tar_url" "$tmpdir/shellcheck.tar.xz" 3; then
+			tar -xJf "$tmpdir/shellcheck.tar.xz" -C "$tmpdir"
+			cp "$tmpdir/shellcheck-v${SHELLCHECK_VERSION}/shellcheck" "$BIN_DIR/shellcheck"
+			chmod +x "$BIN_DIR/shellcheck"
+			rm -rf "$tmpdir"
+			return 0
+		else
+			rm -rf "$tmpdir"
+			return 1
+		fi
+	}
+
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install shellcheck v${SHELLCHECK_VERSION}"
+	elif command -v shellcheck &>/dev/null; then
+		# Check if installed version meets minimum requirement
+		installed_version=$(shellcheck --version 2>/dev/null | grep -oE 'version: [0-9]+\.[0-9]+\.[0-9]+' | cut -d' ' -f2)
+		if [ -n "$installed_version" ]; then
+			# Compare versions using portable version_ge function from utils.sh
+			if version_ge "$installed_version" "$SHELLCHECK_VERSION"; then
+				echo -e "${GREEN}✓ shellcheck v${installed_version} already installed (>= v${SHELLCHECK_VERSION})${NC}"
+			else
+				echo -e "${YELLOW}⚠ shellcheck v${installed_version} is older than required v${SHELLCHECK_VERSION}, upgrading...${NC}"
+				if install_shellcheck_binary; then
+					echo -e "${GREEN}✓ shellcheck upgraded to v${SHELLCHECK_VERSION}${NC}"
+				else
+					echo -e "${RED}✗ Failed to download shellcheck${NC}"
+					exit 1
+				fi
+			fi
+		else
+			# Could not parse version, treat as not installed
+			echo -e "${YELLOW}⚠ Could not determine shellcheck version, installing v${SHELLCHECK_VERSION}...${NC}"
+			if install_shellcheck_binary; then
+				echo -e "${GREEN}✓ shellcheck installed successfully${NC}"
+			else
+				echo -e "${RED}✗ Failed to download shellcheck${NC}"
+				exit 1
+			fi
+		fi
+	else
+		if install_shellcheck_binary; then
+			echo -e "${GREEN}✓ shellcheck installed successfully${NC}"
+		else
+			echo -e "${RED}✗ Failed to download shellcheck${NC}"
+			exit 1
+		fi
+	fi
+
 	# Install biome via bun (JavaScript/TypeScript linting and formatting)
 	echo -e "${BLUE}Installing biome...${NC}"
 
@@ -608,48 +681,6 @@ main() {
 
 	# Install yamllint (Python package)
 	echo -e "${BLUE}Installing yamllint...${NC}"
-
-	# Function to install Python package with fallbacks (uv pip preferred)
-	install_python_package() {
-		local package="$1"
-		local version="${2:-}"
-		local full_package="$package"
-
-		if [ -n "$version" ]; then
-			full_package="$package==$version"
-		fi
-
-		# Prefer uv pip when available
-		if command -v uv &>/dev/null; then
-			if uv pip install "$full_package"; then
-				# Copy the executable to target directory if it exists in uv environment
-				local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
-				if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
-					cp "$uv_path" "$BIN_DIR/$package"
-					chmod +x "$BIN_DIR/$package"
-					echo -e "${YELLOW}Copied $package from uv environment to $BIN_DIR${NC}"
-				fi
-				return 0
-			fi
-		fi
-
-		# Fallback to pip
-		if command -v pip &>/dev/null; then
-			if pip install "$full_package"; then
-				return 0
-			fi
-		fi
-
-		# Try system package managers as last resort
-		if command -v brew &>/dev/null; then
-			if brew install "$package"; then
-				return 0
-			fi
-		fi
-
-		return 1
-	}
-
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install yamllint"
 	elif install_python_package "yamllint"; then
@@ -686,6 +717,7 @@ main() {
 	echo "  - prettier (JavaScript/JSON formatting)"
 	echo "  - ruff (Python linting and formatting)"
 	echo "  - semgrep (Security scanning)"
+	echo "  - shellcheck (Shell script linting)"
 	echo "  - shfmt (Shell script formatting)"
 	echo "  - mypy (Python type checking)"
 	echo "  - yamllint (YAML linting)"
@@ -694,7 +726,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shfmt" "yamllint" "mypy")
+	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "yamllint" "mypy")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo

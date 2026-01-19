@@ -50,7 +50,7 @@ log_info() {
 }
 
 log_verbose() {
-	[ $VERBOSE -eq 1 ] && echo "[install-uv] [verbose] $*" || true
+	[ "$VERBOSE" -eq 1 ] && echo "[install-uv] [verbose] $*" || true
 }
 
 # Check if uv is already available
@@ -62,7 +62,7 @@ fi
 
 log_info "uv not found; installing from GitHub Releases"
 
-if [ $DRY_RUN -eq 1 ]; then
+if [ "$DRY_RUN" -eq 1 ]; then
 	log_info "[DRY-RUN] Would install uv from GitHub Releases"
 	exit 0
 fi
@@ -109,23 +109,23 @@ max_retries=3
 assets=("${primary}" "${fallback}")
 
 for asset in "${assets[@]}"; do
-	for attempt in $(seq 1 $max_retries); do
+	for attempt in $(seq 1 "$max_retries"); do
 		log_verbose "Attempting to download ${asset} (attempt ${attempt}/${max_retries})"
 		if gh release download "${tag_name}" -R astral-sh/uv -p "${asset}" -O "${tmpdir}/uv.tgz"; then
 			download_success=1
 			log_info "Successfully downloaded ${asset}"
 			break 2
 		else
-			if [ $attempt -lt $max_retries ]; then
+			if [ "$attempt" -lt "$max_retries" ]; then
 				sleep_time=$((attempt * 2))
 				log_verbose "Download failed, retrying in ${sleep_time} seconds..."
-				sleep $sleep_time
+				sleep "$sleep_time"
 			fi
 		fi
 	done
 done
 
-if [ $download_success -eq 0 ]; then
+if [ "$download_success" -eq 0 ]; then
 	echo "[install-uv] ERROR: Failed to download uv for ${tag_name}" >&2
 	exit 1
 fi

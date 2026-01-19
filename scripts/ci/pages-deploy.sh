@@ -25,6 +25,7 @@ if [ "${1:-}" = "--badge-path" ] && [ -n "${2:-}" ]; then
 fi
 
 # Source shared utilities
+# shellcheck source=../utils/utils.sh disable=SC1091 # Can't follow dynamic path; verified at runtime
 source "$(dirname "$0")/../utils/utils.sh"
 
 # Create coverage report directory

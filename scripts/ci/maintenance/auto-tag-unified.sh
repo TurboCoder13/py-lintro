@@ -57,6 +57,8 @@ if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
 fi
 
 # Source utilities
+# SC1091: path is dynamically constructed, file exists at runtime
+# shellcheck disable=SC1091
 source "$(dirname "${BASH_SOURCE[0]}")/../../utils/utils.sh"
 
 check_tag_exists() {
@@ -137,6 +139,8 @@ detect_previous_version() {
 	# Create temporary file for previous commit's pyproject.toml
 	local temp_file
 	temp_file=$(mktemp)
+	# SC2064: intentional early expansion - temp_file must be captured at trap creation time
+	# shellcheck disable=SC2064
 	trap "rm -f '$temp_file'" EXIT
 
 	# Extract pyproject.toml from previous commit
