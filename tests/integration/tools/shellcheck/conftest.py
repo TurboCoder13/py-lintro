@@ -25,6 +25,11 @@ VIOLATIONS_SAMPLE = SHELLCHECK_SAMPLES / "shellcheck_violations.sh"
 CLEAN_SAMPLE = SHELLCHECK_SAMPLES / "shellcheck_clean.sh"
 STYLE_ISSUES_SAMPLE = SHELLCHECK_SAMPLES / "shellcheck_style_issues.sh"
 
+# Validate sample files exist
+for sample in (VIOLATIONS_SAMPLE, CLEAN_SAMPLE, STYLE_ISSUES_SAMPLE):
+    if not sample.exists():
+        raise FileNotFoundError(f"ShellCheck sample file not found: {sample}")
+
 
 @pytest.fixture
 def shellcheck_violation_file(tmp_path: Path) -> str:

@@ -591,7 +591,7 @@ main() {
 
 	# Install shellcheck (shell script linter)
 	echo -e "${BLUE}Installing shellcheck...${NC}"
-	SHELLCHECK_VERSION="0.10.0"
+	SHELLCHECK_VERSION="0.11.0"
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install shellcheck v${SHELLCHECK_VERSION}"
 	elif command -v shellcheck &>/dev/null; then

@@ -230,15 +230,17 @@ else
 fi
 
 # Import provided local SBOMs
+IMPORTED_COUNT=0
 for f in "${IMPORT_FILES[@]:-}"; do
 	if [ -n "$f" ]; then
 		run_bomctl import --alias "${DOC_ALIAS}" --tag project:py-lintro --tag "run:$(date +%s)" "$f"
+		IMPORTED_COUNT=$((IMPORTED_COUNT + 1))
 	fi
 done
 
 # Decide on root document and merging strategy
 ROOT_ID=""
-IMPORT_COUNT=${#IMPORT_FILES[@]}
+IMPORT_COUNT=${IMPORTED_COUNT}
 MERGE_NEEDED=0
 if [ "${HAS_FETCH}" -eq 1 ] || [ "${IMPORT_COUNT}" -gt 1 ]; then
 	MERGE_NEEDED=1
