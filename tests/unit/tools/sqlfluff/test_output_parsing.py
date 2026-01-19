@@ -125,3 +125,10 @@ def test_parse_sqlfluff_output_invalid_json() -> None:
     issues = parse_sqlfluff_output("not valid json")
 
     assert_that(issues).is_empty()
+
+
+def test_parse_sqlfluff_output_none() -> None:
+    """Parse None input returns empty list."""
+    issues = parse_sqlfluff_output(None)
+
+    assert_that(issues).is_empty()

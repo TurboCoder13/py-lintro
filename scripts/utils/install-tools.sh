@@ -44,6 +44,7 @@ This script installs:
   - Semgrep (Security scanner)
   - ShellCheck (Shell script linter)
   - shfmt (Shell script formatter)
+  - SQLFluff (SQL linter and formatter)
 
 Use this script to set up a complete development environment.
 EOF
@@ -705,8 +706,8 @@ main() {
 	# Install sqlfluff (SQL linter and formatter)
 	echo -e "${BLUE}Installing sqlfluff...${NC}"
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install sqlfluff"
-	elif install_python_package "sqlfluff"; then
+		log_info "[DRY-RUN] Would install sqlfluff==3.0.0"
+	elif install_python_package "sqlfluff" "3.0.0"; then
 		echo -e "${GREEN}✓ sqlfluff installed successfully${NC}"
 	else
 		echo -e "${RED}✗ Failed to install sqlfluff${NC}"

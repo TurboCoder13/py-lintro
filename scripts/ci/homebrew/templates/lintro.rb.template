@@ -75,6 +75,7 @@ class Lintro < Formula
         - semgrep - Security scanner
         - shellcheck - Shell script analyzer
         - shfmt - Shell script formatter
+        - sqlfluff - SQL linter and formatter
 
       Bundled tools:
         - darglint - Python docstring linter

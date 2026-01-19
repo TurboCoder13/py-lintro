@@ -131,6 +131,9 @@ class SqlfluffPlugin(BaseToolPlugin):
         if templater_opt is not None:
             cmd.extend(["--templater", str(templater_opt)])
 
+        # Add end-of-options separator to handle filenames starting with '-'
+        cmd.append("--")
+
         # Add files
         cmd.extend(files)
 
@@ -168,6 +171,9 @@ class SqlfluffPlugin(BaseToolPlugin):
         templater_opt = self.options.get("templater")
         if templater_opt is not None:
             cmd.extend(["--templater", str(templater_opt)])
+
+        # Add end-of-options separator to handle filenames starting with '-'
+        cmd.append("--")
 
         # Add files
         cmd.extend(files)

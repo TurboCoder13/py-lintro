@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from unittest.mock import patch
 
 import pytest
@@ -10,14 +11,17 @@ from lintro.tools.definitions.sqlfluff import SqlfluffPlugin
 
 
 @pytest.fixture
-def sqlfluff_plugin() -> SqlfluffPlugin:
+def sqlfluff_plugin() -> Generator[SqlfluffPlugin, None, None]:
     """Provide a SqlfluffPlugin instance for testing.
 
-    Returns:
-        A SqlfluffPlugin instance.
+    The verify_tool_version is patched for the entire lifetime of the fixture
+    to prevent version check failures during check()/fix() calls.
+
+    Yields:
+        A SqlfluffPlugin instance with version checking disabled.
     """
     with patch(
         "lintro.plugins.execution_preparation.verify_tool_version",
         return_value=None,
     ):
-        return SqlfluffPlugin()
+        yield SqlfluffPlugin()

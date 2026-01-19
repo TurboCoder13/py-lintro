@@ -729,6 +729,9 @@ tab_space_size = 4
 
 [tool.sqlfluff.rules.capitalisation.keywords]
 capitalisation_policy = "upper"
+
+[tool.sqlfluff.rules.capitalisation.identifiers]
+extended_capitalisation_policy = "lower"
 ```
 
 **Available Options:**
@@ -744,13 +747,21 @@ capitalisation_policy = "upper"
 
 - `ansi` - ANSI SQL standard
 - `bigquery` - Google BigQuery
-- `postgres` - PostgreSQL
+- `clickhouse` - ClickHouse
+- `databricks` - Databricks SQL
+- `db2` - IBM Db2
+- `exasol` - Exasol
+- `hive` - Apache Hive
 - `mysql` - MySQL
-- `snowflake` - Snowflake
-- `sqlite` - SQLite
-- `tsql` - T-SQL (Microsoft SQL Server)
+- `oracle` - Oracle Database
+- `postgres` - PostgreSQL
 - `redshift` - Amazon Redshift
+- `snowflake` - Snowflake
+- `soql` - Salesforce SOQL
 - `sparksql` - Apache Spark SQL
+- `sqlite` - SQLite
+- `teradata` - Teradata
+- `tsql` - T-SQL (Microsoft SQL Server)
 
 **Usage Examples:**
 

@@ -29,19 +29,16 @@ def test_check_with_timeout(
     test_file = tmp_path / "test_query.sql"
     test_file.write_text("SELECT * FROM users;\n")
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    # Note: verify_tool_version is already patched by the sqlfluff_plugin fixture
+    with patch.object(
+        sqlfluff_plugin,
+        "_run_subprocess",
+        side_effect=subprocess.TimeoutExpired(
+            cmd=["sqlfluff"],
+            timeout=SQLFLUFF_DEFAULT_TIMEOUT,
+        ),
     ):
-        with patch.object(
-            sqlfluff_plugin,
-            "_run_subprocess",
-            side_effect=subprocess.TimeoutExpired(
-                cmd=["sqlfluff"],
-                timeout=SQLFLUFF_DEFAULT_TIMEOUT,
-            ),
-        ):
-            result = sqlfluff_plugin.check([str(test_file)], {})
+        result = sqlfluff_plugin.check([str(test_file)], {})
 
     assert_that(result.success).is_false()
 
@@ -59,16 +56,13 @@ def test_check_with_empty_output(
     test_file = tmp_path / "test_query.sql"
     test_file.write_text("SELECT * FROM users;\n")
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    # Note: verify_tool_version is already patched by the sqlfluff_plugin fixture
+    with patch.object(
+        sqlfluff_plugin,
+        "_run_subprocess",
+        return_value=(True, ""),
     ):
-        with patch.object(
-            sqlfluff_plugin,
-            "_run_subprocess",
-            return_value=(True, ""),
-        ):
-            result = sqlfluff_plugin.check([str(test_file)], {})
+        result = sqlfluff_plugin.check([str(test_file)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.issues_count).is_equal_to(0)
@@ -90,18 +84,15 @@ def test_fix_with_timeout(
     test_file = tmp_path / "test_query.sql"
     test_file.write_text("select * from users;\n")
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    # Note: verify_tool_version is already patched by the sqlfluff_plugin fixture
+    with patch.object(
+        sqlfluff_plugin,
+        "_run_subprocess",
+        side_effect=subprocess.TimeoutExpired(
+            cmd=["sqlfluff"],
+            timeout=SQLFLUFF_DEFAULT_TIMEOUT,
+        ),
     ):
-        with patch.object(
-            sqlfluff_plugin,
-            "_run_subprocess",
-            side_effect=subprocess.TimeoutExpired(
-                cmd=["sqlfluff"],
-                timeout=SQLFLUFF_DEFAULT_TIMEOUT,
-            ),
-        ):
-            result = sqlfluff_plugin.fix([str(test_file)], {})
+        result = sqlfluff_plugin.fix([str(test_file)], {})
 
     assert_that(result.success).is_false()

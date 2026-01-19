@@ -201,6 +201,8 @@ def test_check_clean_file(
 
     assert_that(result).is_not_none()
     assert_that(result.name).is_equal_to("sqlfluff")
+    assert_that(result.success).is_true()
+    assert_that(result.issues_count).is_equal_to(0)
 
 
 def test_check_empty_directory(
@@ -232,7 +234,7 @@ def test_fix_formats_sql_file(
     """Verify sqlfluff fix formats SQL files.
 
     Runs sqlfluff fix on a file with linting issues and verifies
-    that the operation completes.
+    that the operation completes successfully.
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
@@ -243,6 +245,8 @@ def test_fix_formats_sql_file(
 
     assert_that(result).is_not_none()
     assert_that(result.name).is_equal_to("sqlfluff")
+    assert_that(result.success).is_true()
+    assert_that(result.issues_count).is_equal_to(0)
 
 
 # --- Tests for SqlfluffPlugin.set_options method ---
