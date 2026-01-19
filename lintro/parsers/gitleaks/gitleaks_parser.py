@@ -21,6 +21,9 @@ def parse_gitleaks_output(output: str | None) -> list[GitleaksIssue]:
 
     Returns:
         List of parsed secret detection findings.
+
+    Raises:
+        ValueError: If the output is not valid JSON or is not a JSON array.
     """
     if not output or not output.strip():
         return []
@@ -35,12 +38,12 @@ def parse_gitleaks_output(output: str | None) -> list[GitleaksIssue]:
         data = json.loads(text)
     except json.JSONDecodeError as e:
         logger.warning(f"Failed to parse gitleaks JSON output: {e}")
-        return []
+        raise ValueError(f"Failed to parse gitleaks JSON output: {e}") from e
 
     # Gitleaks outputs a JSON array at root level
     if not isinstance(data, list):
         logger.warning("Gitleaks output is not a JSON array")
-        return []
+        raise ValueError("Gitleaks output is not a JSON array")
 
     issues: list[GitleaksIssue] = []
 

@@ -65,7 +65,7 @@ def test_gitleaks_check_parses_output(
     ) -> SimpleNamespace:
         # Handle version check calls (check for --version flag)
         if "--version" in cmd or "version" in cmd:
-            return SimpleNamespace(stdout="8.18.0", stderr="", returncode=0)
+            return SimpleNamespace(stdout="8.21.2", stderr="", returncode=0)
         # Handle actual check calls - write JSON to the report file
         report_path = _get_report_path(cmd)
         if report_path:
@@ -110,7 +110,7 @@ def test_gitleaks_check_handles_no_secrets(
     ) -> SimpleNamespace:
         # Handle version check calls (check for --version flag)
         if "--version" in cmd or "version" in cmd:
-            return SimpleNamespace(stdout="8.18.0", stderr="", returncode=0)
+            return SimpleNamespace(stdout="8.21.2", stderr="", returncode=0)
         # Handle actual check calls - write empty array to report file
         report_path = _get_report_path(cmd)
         if report_path:
@@ -131,7 +131,7 @@ def test_gitleaks_check_handles_unparseable_output(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    """On unparseable output, GitleaksPlugin.check should return empty issues.
+    """On unparseable output, GitleaksPlugin.check should fail gracefully.
 
     Args:
         monkeypatch: Pytest monkeypatch fixture.
@@ -149,7 +149,7 @@ def test_gitleaks_check_handles_unparseable_output(
     ) -> SimpleNamespace:
         # Handle version check calls (check for --version flag)
         if "--version" in cmd or "version" in cmd:
-            return SimpleNamespace(stdout="8.18.0", stderr="", returncode=0)
+            return SimpleNamespace(stdout="8.21.2", stderr="", returncode=0)
         # Handle actual check calls - write invalid JSON to report file
         report_path = _get_report_path(cmd)
         if report_path:
@@ -164,5 +164,6 @@ def test_gitleaks_check_handles_unparseable_output(
 
     assert_that(result).is_instance_of(ToolResult)
     assert_that(result.name).is_equal_to("gitleaks")
-    # Parser returns empty list for invalid JSON, success depends on returncode
+    # Parser raises ValueError for invalid JSON, which is caught and reported as failure
+    assert_that(result.success).is_false()
     assert_that(result.issues_count).is_equal_to(0)

@@ -34,15 +34,19 @@ def test_parse_gitleaks_whitespace_only() -> None:
 
 
 def test_parse_gitleaks_invalid_json() -> None:
-    """Invalid JSON should return empty list and log warning."""
-    issues = parse_gitleaks_output(output="not valid json")
-    assert_that(issues).is_empty()
+    """Invalid JSON should raise ValueError."""
+    import pytest
+
+    with pytest.raises(ValueError, match="Failed to parse gitleaks JSON output"):
+        parse_gitleaks_output(output="not valid json")
 
 
 def test_parse_gitleaks_non_array_json() -> None:
-    """Non-array JSON should return empty list."""
-    issues = parse_gitleaks_output(output='{"not": "an array"}')
-    assert_that(issues).is_empty()
+    """Non-array JSON should raise ValueError."""
+    import pytest
+
+    with pytest.raises(ValueError, match="Gitleaks output is not a JSON array"):
+        parse_gitleaks_output(output='{"not": "an array"}')
 
 
 def test_parse_gitleaks_handles_malformed_finding_gracefully() -> None:

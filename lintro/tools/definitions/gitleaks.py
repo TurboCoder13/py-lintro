@@ -258,6 +258,8 @@ class GitleaksPlugin(BaseToolPlugin):
                     issues=issues,
                 )
 
+            # parse_gitleaks_output raises ValueError on malformed JSON or
+            # unexpected structure; json.JSONDecodeError kept for defense-in-depth
             except (json.JSONDecodeError, ValueError) as e:
                 logger.error(f"Failed to parse gitleaks output: {e}")
                 return ToolResult(
