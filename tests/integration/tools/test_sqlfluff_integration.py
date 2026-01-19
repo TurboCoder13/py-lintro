@@ -34,12 +34,23 @@ def temp_sql_file_with_issues(tmp_path: Path) -> str:
     - Lowercase keywords
     - Missing aliases
 
+    Also creates a .sqlfluff config file with dialect=ansi since
+    SQLFluff v3.0.0+ requires a dialect to be specified.
+
     Args:
         tmp_path: Pytest fixture providing a temporary directory.
 
     Returns:
         Path to the created file as a string.
     """
+    # Create .sqlfluff config with dialect (required in v3.0.0+)
+    config_path = tmp_path / ".sqlfluff"
+    config_path.write_text(
+        """\
+[sqlfluff]
+dialect = ansi
+""",
+    )
     file_path = tmp_path / "query.sql"
     file_path.write_text(
         """\
@@ -58,12 +69,23 @@ def temp_sql_file_clean(tmp_path: Path) -> str:
     Creates a file containing properly formatted SQL that should pass
     sqlfluff checking with minimal issues.
 
+    Also creates a .sqlfluff config file with dialect=ansi since
+    SQLFluff v3.0.0+ requires a dialect to be specified.
+
     Args:
         tmp_path: Pytest fixture providing a temporary directory.
 
     Returns:
         Path to the created file as a string.
     """
+    # Create .sqlfluff config with dialect (required in v3.0.0+)
+    config_path = tmp_path / ".sqlfluff"
+    config_path.write_text(
+        """\
+[sqlfluff]
+dialect = ansi
+""",
+    )
     file_path = tmp_path / "clean.sql"
     file_path.write_text(
         """\
