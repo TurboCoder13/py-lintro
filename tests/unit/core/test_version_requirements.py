@@ -265,6 +265,7 @@ def test_get_all_tool_versions(mock_run: MagicMock) -> None:
         "bandit",
         "yamllint",
         "darglint",
+        "sqlfluff",
         "mypy",
         "pytest",
         "prettier",

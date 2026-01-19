@@ -689,6 +689,99 @@ coverage/
 **Lintro options:** use `--tool-options "biome:timeout=60"` or set `exclude_patterns`
 via CLI to adjust discovery; native configs remain primary.
 
+### SQL Tools
+
+#### SQLFluff Configuration
+
+**File:** `.sqlfluff`
+
+```ini
+[sqlfluff]
+dialect = ansi
+templater = jinja
+exclude_rules = L016,L031
+
+[sqlfluff:indentation]
+indent_unit = space
+tab_space_size = 4
+
+[sqlfluff:layout:type:comma]
+line_position = trailing
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = lower
+```
+
+**File:** `pyproject.toml`
+
+```toml
+[tool.sqlfluff.core]
+dialect = "ansi"
+templater = "jinja"
+exclude_rules = ["L016", "L031"]
+
+[tool.sqlfluff.indentation]
+indent_unit = "space"
+tab_space_size = 4
+
+[tool.sqlfluff.rules.capitalisation.keywords]
+capitalisation_policy = "upper"
+
+[tool.sqlfluff.rules.capitalisation.identifiers]
+extended_capitalisation_policy = "lower"
+```
+
+**Available Options:**
+
+| Option          | Type   | Description                                         |
+| --------------- | ------ | --------------------------------------------------- |
+| `dialect`       | string | SQL dialect (ansi, bigquery, postgres, mysql, etc.) |
+| `exclude_rules` | list   | List of rules to exclude from checking              |
+| `rules`         | list   | List of specific rules to include                   |
+| `templater`     | string | Templater to use (raw, jinja, python, placeholder)  |
+
+**Supported Dialects:**
+
+- `ansi` - ANSI SQL standard
+- `bigquery` - Google BigQuery
+- `clickhouse` - ClickHouse
+- `databricks` - Databricks SQL
+- `db2` - IBM Db2
+- `exasol` - Exasol
+- `hive` - Apache Hive
+- `mysql` - MySQL
+- `oracle` - Oracle Database
+- `postgres` - PostgreSQL
+- `redshift` - Amazon Redshift
+- `snowflake` - Snowflake
+- `soql` - Salesforce SOQL
+- `sparksql` - Apache Spark SQL
+- `sqlite` - SQLite
+- `teradata` - Teradata
+- `tsql` - T-SQL (Microsoft SQL Server)
+
+**Usage Examples:**
+
+```bash
+# Basic SQL check
+lintro check --tools sqlfluff
+
+# Format SQL files
+lintro format --tools sqlfluff
+
+# Check with specific dialect
+lintro check --tools sqlfluff --tool-options sqlfluff:dialect=postgres
+
+# Exclude specific rules
+lintro check --tools sqlfluff --tool-options sqlfluff:exclude_rules=L010,L014
+
+# Use jinja templater
+lintro check --tools sqlfluff --tool-options sqlfluff:templater=jinja
+```
+
 ### YAML Tools
 
 #### Yamllint Configuration
