@@ -127,6 +127,8 @@ if ((DO_WRITE)); then
 		if ((DO_PUSH)); then
 			echo "[info] Pushing updated tags to origin..."
 			# Push only those we changed
+			# SC2086: word splitting is intentional for multiple tags
+			# shellcheck disable=SC2086
 			git push origin ${updated_tags}
 		else
 			echo "[hint] To push: git push origin${updated_tags}"

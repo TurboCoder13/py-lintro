@@ -14,6 +14,12 @@ import pytest
 SAMPLE_DIR = Path(__file__).parent.parent.parent.parent.parent / "test_samples"
 SHELLCHECK_SAMPLES = SAMPLE_DIR / "tools" / "shell" / "shellcheck"
 
+# Validate sample paths exist at import time for clearer error messages
+if not SHELLCHECK_SAMPLES.exists():
+    raise FileNotFoundError(
+        f"ShellCheck test samples not found at: {SHELLCHECK_SAMPLES}",
+    )
+
 # Sample file paths
 VIOLATIONS_SAMPLE = SHELLCHECK_SAMPLES / "shellcheck_violations.sh"
 CLEAN_SAMPLE = SHELLCHECK_SAMPLES / "shellcheck_clean.sh"

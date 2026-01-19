@@ -67,10 +67,10 @@ def parse_shellcheck_output(output: str | None) -> list[ShellcheckIssue]:
         logger.debug(f"Failed to parse shellcheck output as JSON: {e}")
         return issues
 
-    # Handle json1 format: {"comments": [...]}
-    # Or plain JSON format: [...]
+    # Handle json1 format: {"comments": [...]} or plain JSON format: [...]
+    # Note: data may contain non-dict items, filtered by isinstance check below
     if isinstance(parsed, dict) and "comments" in parsed:
-        data: list[dict[str, Any]] = parsed["comments"]
+        data: list[Any] = parsed["comments"]
     elif isinstance(parsed, list):
         data = parsed
     else:

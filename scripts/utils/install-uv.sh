@@ -116,10 +116,10 @@ for asset in "${assets[@]}"; do
 			log_info "Successfully downloaded ${asset}"
 			break 2
 		else
-			if [ $attempt -lt $max_retries ]; then
+			if [ "$attempt" -lt "$max_retries" ]; then
 				sleep_time=$((attempt * 2))
 				log_verbose "Download failed, retrying in ${sleep_time} seconds..."
-				sleep $sleep_time
+				sleep "$sleep_time"
 			fi
 		fi
 	done

@@ -4,6 +4,8 @@ set -e
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
 	echo "Loading environment variables from .env file..."
+	# SC2046: word splitting is intentional for env var export
+	# shellcheck disable=SC2046
 	export $(grep -v '^#' .env | xargs)
 fi
 

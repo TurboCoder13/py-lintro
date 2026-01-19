@@ -95,6 +95,8 @@ get_coverage_status() {
 # Function to run lintro with common options
 run_lintro() {
 	local command="$1"
+	# SC2034: format is reserved for future use with --format flag
+	# shellcheck disable=SC2034
 	local format="${2:-grid}"
 	local exclude="${3:-$EXCLUDE_DIRS}"
 
@@ -175,6 +177,8 @@ set_github_env() {
 create_temp_dir() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
+	# SC2064: intentional early expansion - tmpdir must be captured at trap creation time
+	# shellcheck disable=SC2064
 	trap "rm -rf '$tmpdir'" EXIT
 	echo "$tmpdir"
 }
@@ -207,4 +211,36 @@ get_coverage_percentage() {
 	else
 		echo "0.00"
 	fi
+}
+
+# =============================================================================
+# Version Comparison Functions
+# =============================================================================
+
+# Compare two semantic versions (portable, no sort -V required)
+# Returns 0 if version1 >= version2, 1 otherwise
+# Usage: version_ge "1.2.3" "1.2.0" && echo "yes" || echo "no"
+version_ge() {
+	local version1="$1"
+	local version2="$2"
+
+	# Use awk for portable numeric comparison of version components
+	awk -v v1="$version1" -v v2="$version2" '
+	BEGIN {
+		# Split versions into components
+		n1 = split(v1, a1, ".")
+		n2 = split(v2, a2, ".")
+
+		# Compare each component
+		max = (n1 > n2) ? n1 : n2
+		for (i = 1; i <= max; i++) {
+			# Default missing components to 0
+			c1 = (i <= n1) ? a1[i] + 0 : 0
+			c2 = (i <= n2) ? a2[i] + 0 : 0
+
+			if (c1 > c2) exit 0  # version1 > version2
+			if (c1 < c2) exit 1  # version1 < version2
+		}
+		exit 0  # versions are equal
+	}'
 }

@@ -26,16 +26,12 @@ def test_check_with_timeout(
     test_file = tmp_path / "test_script.sh"
     test_file.write_text('#!/bin/bash\necho "Hello"\n')
 
-    with patch(
-        "lintro.plugins.execution_preparation.verify_tool_version",
-        return_value=None,
+    with patch.object(
+        shellcheck_plugin,
+        "_run_subprocess",
+        side_effect=subprocess.TimeoutExpired(cmd=["shellcheck"], timeout=30),
     ):
-        with patch.object(
-            shellcheck_plugin,
-            "_run_subprocess",
-            side_effect=subprocess.TimeoutExpired(cmd=["shellcheck"], timeout=30),
-        ):
-            result = shellcheck_plugin.check([str(test_file)], {})
+        result = shellcheck_plugin.check([str(test_file)], {})
 
     assert_that(result.success).is_false()
     # The timeout should be recorded in the output

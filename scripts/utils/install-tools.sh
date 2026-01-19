@@ -10,7 +10,8 @@ set -euo pipefail
 #   ./scripts/install-tools.sh [--help] [--dry-run] [--verbose] [--local|--docker]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=utils.sh
+# SC1091: path is dynamically constructed, file exists at runtime
+# shellcheck source=utils.sh disable=SC1091
 source "$SCRIPT_DIR/utils.sh"
 
 # Show help if requested
@@ -164,15 +165,17 @@ fi
 
 # Function to detect platform and architecture
 detect_platform() {
-	local os=$(uname -s)
-	local arch=$(uname -m)
+	local os
+	local arch
+	os=$(uname -s)
+	arch=$(uname -m)
 
 	# Normalize OS names for hadolint
 	case "$os" in
 	Darwin) os="Darwin" ;;
 	Linux) os="Linux" ;;
 	MINGW* | MSYS* | CYGWIN*) os="Windows" ;;
-	*) os="$os" ;;
+	*) ;; # keep original value
 	esac
 
 	# Normalize architecture names for hadolint
@@ -181,7 +184,7 @@ detect_platform() {
 	amd64) arch="x86_64" ;;
 	aarch64) arch="arm64" ;;
 	arm64) arch="arm64" ;;
-	*) arch="$arch" ;;
+	*) ;; # keep original value
 	esac
 
 	echo "${os}-${arch}"
@@ -201,7 +204,8 @@ install_python_package() {
 	if command -v uv &>/dev/null; then
 		if uv pip install "$full_package"; then
 			# Copy the executable to target directory if it exists in uv environment
-			local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
+			local uv_path
+			uv_path=$(uv run which "$package" 2>/dev/null || echo "")
 			if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
 				cp "$uv_path" "$BIN_DIR/$package"
 				chmod +x "$BIN_DIR/$package"
@@ -237,7 +241,8 @@ install_tool_curl() {
 	echo -e "${BLUE}Installing $tool_name...${NC}"
 
 	# Get platform info
-	local platform=$(detect_platform)
+	local platform
+	platform=$(detect_platform)
 	local download_url="${base_url}-${platform}"
 
 	echo -e "${YELLOW}Detected platform: $platform${NC}"
@@ -283,7 +288,8 @@ install_tool_curl() {
 				echo -e "${YELLOW}Trying Homebrew installation...${NC}"
 				if brew install hadolint; then
 					# Copy from Homebrew location to target
-					local brew_path=$(brew --prefix hadolint)/bin/hadolint
+					local brew_path
+					brew_path="$(brew --prefix hadolint)/bin/hadolint"
 					if [ -f "$brew_path" ]; then
 						cp "$brew_path" "$target_path"
 						chmod +x "$target_path"
@@ -442,6 +448,8 @@ main() {
 			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --component clippy
 			# Source cargo environment
 			if [ -f "$HOME/.cargo/env" ]; then
+				# SC1091: cargo env is created by rustup installer at runtime
+				# shellcheck disable=SC1091
 				source "$HOME/.cargo/env"
 			fi
 		else
@@ -590,8 +598,8 @@ main() {
 		# Check if installed version meets minimum requirement
 		installed_version=$(shellcheck --version 2>/dev/null | grep -oE 'version: [0-9]+\.[0-9]+\.[0-9]+' | cut -d' ' -f2 || echo "0.0.0")
 		if [ -n "$installed_version" ]; then
-			# Compare versions (using sort -V for version comparison)
-			if printf '%s\n%s' "$SHELLCHECK_VERSION" "$installed_version" | sort -V | head -n1 | grep -qF "$SHELLCHECK_VERSION"; then
+			# Compare versions using portable version_ge function from utils.sh
+			if version_ge "$installed_version" "$SHELLCHECK_VERSION"; then
 				echo -e "${GREEN}✓ shellcheck v${installed_version} already installed (>= v${SHELLCHECK_VERSION})${NC}"
 			else
 				echo -e "${YELLOW}⚠ shellcheck v${installed_version} is older than required v${SHELLCHECK_VERSION}, upgrading...${NC}"
@@ -684,7 +692,8 @@ main() {
 		if command -v uv &>/dev/null; then
 			if uv pip install "$full_package"; then
 				# Copy the executable to target directory if it exists in uv environment
-				local uv_path=$(uv run which "$package" 2>/dev/null || echo "")
+				local uv_path
+				uv_path=$(uv run which "$package" 2>/dev/null || echo "")
 				if [ -n "$uv_path" ] && [ -f "$uv_path" ]; then
 					cp "$uv_path" "$BIN_DIR/$package"
 					chmod +x "$BIN_DIR/$package"

@@ -158,12 +158,7 @@ class ShellcheckPlugin(BaseToolPlugin):
         cmd.extend(["--format", SHELLCHECK_DEFAULT_FORMAT])
 
         # Add severity option
-        severity_opt = self.options.get("severity", SHELLCHECK_DEFAULT_SEVERITY)
-        severity = (
-            str(severity_opt)
-            if severity_opt is not None
-            else SHELLCHECK_DEFAULT_SEVERITY
-        )
+        severity = str(self.options.get("severity") or SHELLCHECK_DEFAULT_SEVERITY)
         cmd.extend(["--severity", severity])
 
         # Add exclude codes

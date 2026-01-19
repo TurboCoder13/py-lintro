@@ -88,7 +88,7 @@ log_info "Starting environment bootstrap (Python ${PYTHON_VERSION})"
 
 # Component 1: Install uv (always required, even for Docker-centric jobs that skip sync)
 log_info "Step 1/5: Installing uv"
-if ! ./scripts/utils/install-uv.sh $script_flags; then
+if ! ./scripts/utils/install-uv.sh "$script_flags"; then
 	echo "[bootstrap-env] ERROR: Failed to install uv" >&2
 	exit 1
 fi
@@ -106,7 +106,7 @@ fi
 # Component 2: Setup Python version
 if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -ne 1 ]; then
 	log_info "Step 2/5: Setting up Python ${PYTHON_VERSION}"
-	if ! ./scripts/utils/setup-python.sh $script_flags "$PYTHON_VERSION"; then
+	if ! ./scripts/utils/setup-python.sh "$script_flags" "$PYTHON_VERSION"; then
 		echo "[bootstrap-env] ERROR: Failed to setup Python" >&2
 		exit 1
 	fi
@@ -117,7 +117,7 @@ fi
 # Component 3: Sync dependencies
 if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -ne 1 ]; then
 	log_info "Step 3/5: Syncing Python dependencies"
-	if ! ./scripts/utils/sync-deps.sh $script_flags --dev; then
+	if ! ./scripts/utils/sync-deps.sh "$script_flags" --dev; then
 		echo "[bootstrap-env] ERROR: Failed to sync dependencies" >&2
 		exit 1
 	fi

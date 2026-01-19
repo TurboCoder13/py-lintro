@@ -25,7 +25,8 @@ fi
 
 # Source common utilities for consistent logging
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-# shellcheck source=../../utils/utils.sh
+# SC1091: path is dynamically constructed, file exists at runtime
+# shellcheck source=../../utils/utils.sh disable=SC1091
 source "${SCRIPT_DIR}/../../utils/utils.sh"
 
 main() {

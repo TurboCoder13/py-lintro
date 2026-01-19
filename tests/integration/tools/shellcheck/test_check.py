@@ -94,6 +94,9 @@ def test_check_severity_filters_issues(
     shellcheck_plugin.set_options(severity="style")
     style_result = shellcheck_plugin.check([shellcheck_style_issues_file], {})
 
+    # Precondition: ensure we have issues to filter
+    assert_that(style_result.issues_count).is_greater_than(0)
+
     # Check with error severity (strictest, reports only errors)
     shellcheck_plugin.set_options(severity="error")
     error_result = shellcheck_plugin.check([shellcheck_style_issues_file], {})
@@ -118,6 +121,9 @@ def test_check_exclude_filters_issues(
 
     # Check without exclusions
     result_without_exclude = shellcheck_plugin.check([shellcheck_violation_file], {})
+
+    # Precondition: ensure we have issues to exclude
+    assert_that(result_without_exclude.issues_count).is_greater_than(0)
 
     # Check with common codes excluded
     shellcheck_plugin.set_options(exclude=["SC2086", "SC2002", "SC2206"])

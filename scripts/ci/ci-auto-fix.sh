@@ -59,7 +59,7 @@ if [ -n "$CHANGED" ]; then
 	git --no-pager diff --name-status
 
 	{
-		echo "\n### 🧹 Auto-format changes"
+		printf '\n### 🧹 Auto-format changes\n'
 		echo "The following files were modified by lintro format:"
 		echo '```'
 		git --no-pager diff --name-status
@@ -81,9 +81,9 @@ if [ -n "$CHANGED" ]; then
 	git push origin HEAD:"$HEAD_REF"
 	echo "Auto-format changes pushed back to PR branch."
 	{
-		echo "\n✅ Auto-format commit pushed back to PR branch (${HEAD_REF})."
+		printf '\n✅ Auto-format commit pushed back to PR branch (%s).\n' "${HEAD_REF}"
 	} >>"$GITHUB_STEP_SUMMARY" || true
 else
 	echo "No changes after formatting."
-	echo "\nNo auto-format changes detected." >>"$GITHUB_STEP_SUMMARY" || true
+	printf '\nNo auto-format changes detected.\n' >>"$GITHUB_STEP_SUMMARY" || true
 fi
