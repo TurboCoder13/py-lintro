@@ -185,9 +185,9 @@ def test_build_lint_command_with_exclude_rules(
     cmd = sqlfluff_plugin._build_lint_command(files=["test.sql"])
 
     assert_that(cmd).contains("--exclude-rules")
-    # Each rule should have its own --exclude-rules flag
-    exclude_count = cmd.count("--exclude-rules")
-    assert_that(exclude_count).is_equal_to(2)
+    # Rules should be comma-separated per SQLFluff CLI docs
+    exclude_idx = cmd.index("--exclude-rules")
+    assert_that(cmd[exclude_idx + 1]).is_equal_to("L001,L002")
 
 
 def test_build_lint_command_with_rules(sqlfluff_plugin: SqlfluffPlugin) -> None:
@@ -200,9 +200,9 @@ def test_build_lint_command_with_rules(sqlfluff_plugin: SqlfluffPlugin) -> None:
     cmd = sqlfluff_plugin._build_lint_command(files=["test.sql"])
 
     assert_that(cmd).contains("--rules")
-    # Each rule should have its own --rules flag
-    rules_count = cmd.count("--rules")
-    assert_that(rules_count).is_equal_to(2)
+    # Rules should be comma-separated per SQLFluff CLI docs
+    rules_idx = cmd.index("--rules")
+    assert_that(cmd[rules_idx + 1]).is_equal_to("L002,L003")
 
 
 def test_build_lint_command_with_templater(sqlfluff_plugin: SqlfluffPlugin) -> None:

@@ -54,9 +54,9 @@ def _parse_sqlfluff_violation(
     end_line = extract_int_field(violation, ["end_line_no"], default=None)
     end_column = extract_int_field(violation, ["end_line_pos"], default=None)
 
-    code = extract_str_field(violation, ["code"])
-    rule_name = extract_str_field(violation, ["name", "rule_name"])
-    message = extract_str_field(violation, ["description", "message"])
+    code = extract_str_field(violation, ["code"]) or ""
+    rule_name = extract_str_field(violation, ["name", "rule_name"]) or ""
+    message = extract_str_field(violation, ["description", "message"]) or ""
 
     return SqlfluffIssue(
         file=filepath,

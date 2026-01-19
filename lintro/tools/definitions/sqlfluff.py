@@ -114,17 +114,15 @@ class SqlfluffPlugin(BaseToolPlugin):
         if dialect_opt is not None:
             cmd.extend(["--dialect", str(dialect_opt)])
 
-        # Add exclude rules
+        # Add exclude rules (comma-separated per SQLFluff CLI docs)
         exclude_rules_opt = self.options.get("exclude_rules")
-        if exclude_rules_opt is not None and isinstance(exclude_rules_opt, list):
-            for rule in exclude_rules_opt:
-                cmd.extend(["--exclude-rules", str(rule)])
+        if isinstance(exclude_rules_opt, list) and exclude_rules_opt:
+            cmd.extend(["--exclude-rules", ",".join(map(str, exclude_rules_opt))])
 
-        # Add rules
+        # Add rules (comma-separated per SQLFluff CLI docs)
         rules_opt = self.options.get("rules")
-        if rules_opt is not None and isinstance(rules_opt, list):
-            for rule in rules_opt:
-                cmd.extend(["--rules", str(rule)])
+        if isinstance(rules_opt, list) and rules_opt:
+            cmd.extend(["--rules", ",".join(map(str, rules_opt))])
 
         # Add templater
         templater_opt = self.options.get("templater")
@@ -155,17 +153,15 @@ class SqlfluffPlugin(BaseToolPlugin):
         if dialect_opt is not None:
             cmd.extend(["--dialect", str(dialect_opt)])
 
-        # Add exclude rules
+        # Add exclude rules (comma-separated per SQLFluff CLI docs)
         exclude_rules_opt = self.options.get("exclude_rules")
-        if exclude_rules_opt is not None and isinstance(exclude_rules_opt, list):
-            for rule in exclude_rules_opt:
-                cmd.extend(["--exclude-rules", str(rule)])
+        if isinstance(exclude_rules_opt, list) and exclude_rules_opt:
+            cmd.extend(["--exclude-rules", ",".join(map(str, exclude_rules_opt))])
 
-        # Add rules
+        # Add rules (comma-separated per SQLFluff CLI docs)
         rules_opt = self.options.get("rules")
-        if rules_opt is not None and isinstance(rules_opt, list):
-            for rule in rules_opt:
-                cmd.extend(["--rules", str(rule)])
+        if isinstance(rules_opt, list) and rules_opt:
+            cmd.extend(["--rules", ",".join(map(str, rules_opt))])
 
         # Add templater
         templater_opt = self.options.get("templater")

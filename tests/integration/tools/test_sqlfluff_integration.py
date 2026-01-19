@@ -182,6 +182,8 @@ def test_check_file_with_issues(
     assert_that(result.name).is_equal_to("sqlfluff")
     # SQLFluff should detect at least one issue
     assert_that(result.issues_count).is_greater_than(0)
+    # success should be False when issues are detected
+    assert_that(result.success).is_false()
 
 
 def test_check_clean_file(
