@@ -32,7 +32,7 @@ def test_parse_rustfmt_output_empty_cases(
 
 def test_parse_rustfmt_output_diff_format() -> None:
     """Parser extracts issues from diff-style output."""
-    output = """Diff in src/main.rs at line 5:
+    output = """Diff in src/main.rs:5:
  fn main() {
 -    println!("hello");
 +    println!("hello");
@@ -49,12 +49,12 @@ def test_parse_rustfmt_output_diff_format() -> None:
 
 def test_parse_rustfmt_output_multiple_diffs() -> None:
     """Parser handles multiple diff sections."""
-    output = """Diff in src/main.rs at line 5:
+    output = """Diff in src/main.rs:5:
  fn main() {
 -    let x=1;
 +    let x = 1;
  }
-Diff in src/lib.rs at line 10:
+Diff in src/lib.rs:10:
  fn foo() {
 -    bar()
 +    bar();
@@ -83,10 +83,10 @@ src/lib.rs"""
 
 def test_parse_rustfmt_output_deduplicates_files() -> None:
     """Parser deduplicates issues by file path."""
-    output = """Diff in src/main.rs at line 5:
+    output = """Diff in src/main.rs:5:
 - old
 + new
-Diff in src/main.rs at line 10:
+Diff in src/main.rs:10:
 - another old
 + another new
 """
@@ -100,7 +100,7 @@ Diff in src/main.rs at line 10:
 def test_parse_rustfmt_output_mixed_content() -> None:
     """Parser handles mixed diff and other output."""
     output = """Checking src/main.rs...
-Diff in src/main.rs at line 5:
+Diff in src/main.rs:5:
  fn main() {
 -    let x=1;
 +    let x = 1;

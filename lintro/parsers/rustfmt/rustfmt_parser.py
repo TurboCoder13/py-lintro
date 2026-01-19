@@ -15,8 +15,8 @@ from loguru import logger
 
 from lintro.parsers.rustfmt.rustfmt_issue import RustfmtIssue
 
-# Pattern to match "Diff in <file> at line <n>:" format
-_DIFF_IN_RE = re.compile(r"^Diff in (?P<file>.+?) at line (?P<line>\d+):?$")
+# Pattern to match "Diff in <file>:<line>:" format (actual rustfmt output)
+_DIFF_IN_RE = re.compile(r"^Diff in (?P<file>.+?):(?P<line>\d+):?$")
 
 # Pattern to match file paths that would be reformatted
 # cargo fmt -- --check may output just the file path when using certain options
