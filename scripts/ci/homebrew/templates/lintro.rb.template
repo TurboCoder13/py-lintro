@@ -21,14 +21,17 @@ class Lintro < Formula
   # CLI tools installed via Homebrew
   depends_on "actionlint"
   depends_on "bandit"
+  depends_on "biome"
   depends_on "black"
   depends_on "gitleaks"
   depends_on "hadolint"
   depends_on "libyaml"
+  depends_on "markdownlint-cli2"
   depends_on "mypy"
   depends_on "prettier"
   depends_on "python@3.13"
   depends_on "ruff"
+  depends_on "rust" # provides clippy, rustfmt, and cargo for cargo-audit
   depends_on "semgrep"
   depends_on "shellcheck"
   depends_on "shfmt"
@@ -70,9 +73,13 @@ class Lintro < Formula
         - black - Python code formatter
         - mypy - Python type checker
         - bandit - Python security linter
+        - biome - JavaScript/TypeScript linter and formatter
+        - clippy - Rust linter (via rust)
+        - rustfmt - Rust formatter (via rust)
         - hadolint - Dockerfile linter
         - actionlint - GitHub Actions workflow linter
         - gitleaks - Secret detection in git repos
+        - markdownlint-cli2 - Markdown linter
         - prettier - Code formatter
         - yamllint - YAML linter
         - semgrep - Security scanner
@@ -83,6 +90,10 @@ class Lintro < Formula
 
       Bundled tools:
         - darglint - Python docstring linter
+
+      Optional (install manually via cargo):
+        - cargo-audit - Rust dependency vulnerability scanner
+          Install with: cargo install cargo-audit
 
       Get started:
         lintro check          # Check files for issues

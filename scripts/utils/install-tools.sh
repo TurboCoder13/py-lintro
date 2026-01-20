@@ -42,6 +42,7 @@ This script installs:
   - Mypy (Python static type checker)
   - Clippy (Rust linter; requires Rust toolchain)
   - Rustfmt (Rust formatter; requires Rust toolchain)
+  - Cargo-audit (Rust dependency vulnerability scanner; requires Rust toolchain)
   - Semgrep (Security scanner)
   - ShellCheck (Shell script linter)
   - shfmt (Shell script formatter)
@@ -525,6 +526,22 @@ main() {
 		fi
 	fi
 
+	# Install cargo-audit (Rust dependency vulnerability scanner)
+	echo -e "${BLUE}Installing cargo-audit...${NC}"
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install cargo-audit"
+	elif command -v cargo-audit &>/dev/null; then
+		echo -e "${GREEN}✓ cargo-audit already installed${NC}"
+	elif command -v cargo &>/dev/null; then
+		if cargo install cargo-audit --locked; then
+			echo -e "${GREEN}✓ cargo-audit installed successfully${NC}"
+		else
+			echo -e "${YELLOW}⚠ Failed to install cargo-audit (optional tool)${NC}"
+		fi
+	else
+		echo -e "${YELLOW}⚠ cargo not available, skipping cargo-audit${NC}"
+	fi
+
 	# Install ruff (Python linting and formatting)
 	echo -e "${BLUE}Installing ruff...${NC}"
 	if [ $DRY_RUN -eq 1 ]; then
@@ -831,6 +848,7 @@ main() {
 	echo "  - bandit (Python security checks)"
 	echo "  - biome (JavaScript/TypeScript linting and formatting)"
 	echo "  - black (Python formatting)"
+	echo "  - cargo-audit (Rust dependency vulnerability scanning)"
 	echo "  - clippy (Rust linting)"
 	echo "  - rustfmt (Rust formatting)"
 	echo "  - darglint (Python docstring validation)"
@@ -851,7 +869,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "rustfmt" "darglint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint" "mypy")
+	tools_to_verify=("actionlint" "bandit" "biome" "black" "cargo-audit" "clippy" "rustfmt" "darglint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint" "mypy")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo
