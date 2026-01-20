@@ -41,6 +41,7 @@ This script installs:
   - Bandit (Python security linter)
   - Mypy (Python static type checker)
   - Clippy (Rust linter; requires Rust toolchain)
+  - Rustfmt (Rust formatter; requires Rust toolchain)
   - Semgrep (Security scanner)
   - ShellCheck (Shell script linter)
   - shfmt (Shell script formatter)
@@ -491,17 +492,17 @@ main() {
 		fi
 	fi
 
-	# Install Rust toolchain and clippy
-	echo -e "${BLUE}Installing Rust toolchain and clippy...${NC}"
+	# Install Rust toolchain, clippy, and rustfmt
+	echo -e "${BLUE}Installing Rust toolchain, clippy, and rustfmt...${NC}"
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install Rust toolchain and clippy"
-	elif command -v rustc &>/dev/null && cargo clippy --version &>/dev/null; then
-		echo -e "${GREEN}✓ Rust toolchain and clippy already installed${NC}"
+		log_info "[DRY-RUN] Would install Rust toolchain, clippy, and rustfmt"
+	elif command -v rustc &>/dev/null && cargo clippy --version &>/dev/null && rustfmt --version &>/dev/null; then
+		echo -e "${GREEN}✓ Rust toolchain, clippy, and rustfmt already installed${NC}"
 	else
 		# Install rustup if not present
 		if ! command -v rustup &>/dev/null; then
 			echo -e "${YELLOW}Installing rustup...${NC}"
-			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --component clippy
+			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --component clippy --component rustfmt
 			# Source cargo environment
 			if [ -f "$HOME/.cargo/env" ]; then
 				# SC1091: cargo env is created by rustup installer at runtime
@@ -512,13 +513,14 @@ main() {
 			echo -e "${YELLOW}rustup already installed, updating toolchain...${NC}"
 			rustup update stable
 			rustup component add clippy
+			rustup component add rustfmt
 		fi
 
 		# Verify installation
-		if command -v rustc &>/dev/null && cargo clippy --version &>/dev/null; then
-			echo -e "${GREEN}✓ Rust toolchain and clippy installed successfully${NC}"
+		if command -v rustc &>/dev/null && cargo clippy --version &>/dev/null && rustfmt --version &>/dev/null; then
+			echo -e "${GREEN}✓ Rust toolchain, clippy, and rustfmt installed successfully${NC}"
 		else
-			echo -e "${RED}✗ Failed to install Rust toolchain and clippy${NC}"
+			echo -e "${RED}✗ Failed to install Rust toolchain, clippy, and rustfmt${NC}"
 			exit 1
 		fi
 	fi
@@ -830,6 +832,7 @@ main() {
 	echo "  - biome (JavaScript/TypeScript linting and formatting)"
 	echo "  - black (Python formatting)"
 	echo "  - clippy (Rust linting)"
+	echo "  - rustfmt (Rust formatting)"
 	echo "  - darglint (Python docstring validation)"
 	echo "  - gitleaks (Secret detection)"
 	echo "  - hadolint (Docker linting)"
@@ -848,7 +851,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint" "mypy")
+	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "rustfmt" "darglint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint" "mypy")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo
@@ -857,6 +860,14 @@ main() {
 				echo -e "${GREEN}✓ clippy: $version${NC}"
 			else
 				echo -e "${RED}✗ clippy: not found (requires cargo)${NC}"
+			fi
+		elif [ "$tool" = "rustfmt" ]; then
+			# Rustfmt is a rustup component
+			if command -v rustfmt &>/dev/null; then
+				version=$(rustfmt --version 2>/dev/null || echo "installed")
+				echo -e "${GREEN}✓ rustfmt: $version${NC}"
+			else
+				echo -e "${RED}✗ rustfmt: not found (requires rustup component add rustfmt)${NC}"
 			fi
 		elif command -v "$tool" &>/dev/null; then
 			version=$("$tool" --version 2>/dev/null || echo "installed")
