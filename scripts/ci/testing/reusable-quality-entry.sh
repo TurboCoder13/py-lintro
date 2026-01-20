@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 	cat <<'EOF'
-Run quality gate in reusable workflow: install tools, format, check, export version.
+Run quality gate in reusable workflow: install tools, check, export version.
 EOF
 	exit 0
 fi
@@ -11,7 +11,6 @@ fi
 ./scripts/utils/install-tools.sh --local
 echo "$HOME/.local/bin" >>"$GITHUB_PATH"
 
-uv run lintro format . --output-format grid
 uv run lintro check . --output-format grid
 
 python scripts/utils/extract-version.py | tee ver.txt

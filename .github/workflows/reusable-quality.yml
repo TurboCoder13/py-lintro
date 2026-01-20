@@ -3,7 +3,7 @@
 ---
 name: Reusable - Quality Gate & Version Export
 # Reusable workflow for quality checks and version extraction.
-# Sets up Python/uv environment, installs external tools, runs lintro format/check,
+# Sets up Python/uv environment, installs external tools, runs lintro check,
 # and exports project version for downstream workflows.
 
 'on':
