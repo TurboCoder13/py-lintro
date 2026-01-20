@@ -37,17 +37,24 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          # Extract unique usernames from CODEOWNERS (lines with @username)
-          owners=$(grep -oE '@[a-zA-Z0-9_-]+' .github/CODEOWNERS | sort -u | tr -d '@')
+          # Extract usernames from CODEOWNERS, filter out team entries (@org/team)
+          owners=$(grep -oE '@[a-zA-Z0-9_/-]+' .github/CODEOWNERS \
+            | sort -u | tr -d '@' | grep -E '^[A-Za-z0-9_-]+$')
 
           if [[ -z "$owners" ]]; then
-            echo "No CODEOWNERS found, skipping assignment"
+            echo "No valid individual CODEOWNERS found, skipping assignment"
             exit 0
           fi
 
           # Convert to array using mapfile (shellcheck-safe)
           mapfile -t owner_array <<< "$owners"
           count=${#owner_array[@]}
+
+          if [[ $count -eq 0 ]]; then
+            echo "No valid individual CODEOWNERS found, skipping assignment"
+            exit 0
+          fi
+
           random_index=$((RANDOM % count))
           selected="${owner_array[$random_index]}"
 
