@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+name: PR - Auto Assign
+# Automatically assigns a random CODEOWNER to new pull requests.
+# Ensures every PR has an assignee for accountability.
+
+'on':
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  assign:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          sparse-checkout: .github/CODEOWNERS
+          sparse-checkout-cone-mode: false
+
+      - name: Assign random CODEOWNER
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # Extract usernames from CODEOWNERS, filter out team entries (@org/team)
+          owners=$(grep -oE '@[a-zA-Z0-9_/-]+' .github/CODEOWNERS \
+            | sort -u | tr -d '@' | grep -E '^[A-Za-z0-9_-]+$')
+
+          if [[ -z "$owners" ]]; then
+            echo "No valid individual CODEOWNERS found, skipping assignment"
+            exit 0
+          fi
+
+          # Convert to array using mapfile (shellcheck-safe)
+          mapfile -t owner_array <<< "$owners"
+          count=${#owner_array[@]}
+
+          if [[ $count -eq 0 ]]; then
+            echo "No valid individual CODEOWNERS found, skipping assignment"
+            exit 0
+          fi
+
+          random_index=$((RANDOM % count))
+          selected="${owner_array[$random_index]}"
+
+          echo "Selected assignee: $selected (from $count CODEOWNERS)"
+          gh pr edit "$PR_NUMBER" --add-assignee "$selected"
