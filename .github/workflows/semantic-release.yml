@@ -99,6 +99,12 @@ jobs:
           steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
         run: scripts/ci/github/semantic-release-helpers.sh install_external_tools
 
+      - name: Run Lintro format
+        if: >-
+          ${{ steps.semrel.outputs.next_version != '' &&
+          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        run: uv run lintro format .
+
       - name: Run Lintro check
         if: >-
           ${{ steps.semrel.outputs.next_version != '' &&

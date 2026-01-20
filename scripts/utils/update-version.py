@@ -9,16 +9,16 @@ Usage:
 
 Notes:
 - Validates a basic semver-like version string (allows pre/dev/build tags).
+- Uses tomlkit for pyproject.toml to preserve formatting, comments, and style.
 """
 
 from __future__ import annotations
 
 import re
 import sys
-import tomllib
 from pathlib import Path
 
-import tomli_w
+import tomlkit
 
 VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:[a-zA-Z0-9._-]+)?$")
 
@@ -48,6 +48,8 @@ def _write_text(path: Path, content: str) -> None:
 def _update_pyproject_version(pyproject_path: Path, version: str) -> str:
     """Update ``project.version`` in ``pyproject.toml``.
 
+    Uses tomlkit to preserve existing file formatting, comments, and style.
+
     Args:
         pyproject_path: Path to the project TOML file.
         version: New version string to set.
@@ -55,17 +57,18 @@ def _update_pyproject_version(pyproject_path: Path, version: str) -> str:
     Returns:
         Previous version string if present, otherwise empty string.
     """
-    with pyproject_path.open("rb") as f:
-        data = tomllib.load(f)
-    old: str = str(data.get("project", {}).get("version", ""))
-    data.setdefault("project", {})["version"] = version
-    with pyproject_path.open("wb") as f:
-        tomli_w.dump(data, f)
+    content = _read_text(pyproject_path)
+    doc = tomlkit.parse(content)
+    old = str(doc.get("project", {}).get("version", ""))
+    doc["project"]["version"] = version
+    _write_text(pyproject_path, tomlkit.dumps(doc))
     return old
 
 
 def _update_dunder_version(init_path: Path, version: str) -> str:
     """Update ``__version__`` assignment in ``__init__.py``.
+
+    Uses regex substitution to preserve existing file formatting.
 
     Args:
         init_path: Path to the package ``__init__.py``.
@@ -75,12 +78,13 @@ def _update_dunder_version(init_path: Path, version: str) -> str:
         Previous version string if found, otherwise empty string.
     """
     content = _read_text(init_path)
-    m = re.search(r"^__version__\s*=\s*\"([^\"]+)\"\s*$", content, re.M)
-    old = m.group(1) if m else ""
+    m = re.search(r'^(__version__\s*=\s*)"[^"]+"', content, re.M)
+    old_match = re.search(r'^__version__\s*=\s*"([^"]+)"', content, re.M)
+    old = old_match.group(1) if old_match else ""
     if m:
         new_content = re.sub(
-            r"^__version__\s*=\s*\"([^\"]+)\"\s*$",
-            f'__version__ = "{version}"',
+            r'^(__version__\s*=\s*)"[^"]+"',
+            rf'\g<1>"{version}"',
             content,
             count=1,
             flags=re.M,
@@ -88,6 +92,8 @@ def _update_dunder_version(init_path: Path, version: str) -> str:
     else:
         # Append if not found
         new_content = content.rstrip() + f'\n__version__ = "{version}"\n'
+    # Ensure file ends with exactly one newline
+    new_content = new_content.rstrip() + "\n"
     _write_text(init_path, new_content)
     return old
 
