@@ -306,11 +306,11 @@ class RustfmtPlugin(BaseToolPlugin):
                 name=self.definition.name,
                 success=timeout_result.success,
                 output=timeout_result.output,
-                issues_count=timeout_result.issues_count,
+                issues_count=initial_count,
                 issues=initial_issues,
                 initial_issues_count=initial_count,
                 fixed_issues_count=0,
-                remaining_issues_count=timeout_result.issues_count,
+                remaining_issues_count=initial_count,
             )
 
         # If fix command failed, return early with the fix output
@@ -346,11 +346,11 @@ class RustfmtPlugin(BaseToolPlugin):
                 name=self.definition.name,
                 success=timeout_result.success,
                 output=timeout_result.output,
-                issues_count=timeout_result.issues_count,
+                issues_count=initial_count,
                 issues=initial_issues,
                 initial_issues_count=initial_count,
                 fixed_issues_count=0,
-                remaining_issues_count=timeout_result.issues_count,
+                remaining_issues_count=initial_count,
             )
 
         remaining_issues = parse_rustfmt_output(output=output_after)
