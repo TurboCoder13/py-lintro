@@ -23,7 +23,8 @@ _LOCATION_PATTERN: re.Pattern[str] = re.compile(
 
 # Pattern for taplo fmt --check output:
 # ERROR taplo:format_files: the file is not properly formatted path="..."
-# Also handles RUST_LOG=error format: ERROR the file is not properly formatted path="..."
+# Also handles RUST_LOG=error format:
+# ERROR the file is not properly formatted path="..."
 _FMT_CHECK_PATTERN: re.Pattern[str] = re.compile(
     r'^ERROR\s+(?:taplo:format_files:\s*)?(.+?)\s+path="([^"]+)"',
 )
