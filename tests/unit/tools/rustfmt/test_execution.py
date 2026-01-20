@@ -3,16 +3,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 from assertpy import assert_that
 
 from lintro.tools.definitions.rustfmt import RustfmtPlugin
-
-if TYPE_CHECKING:
-    pass
-
 
 # =============================================================================
 # Tests for RustfmtPlugin.check method
@@ -128,7 +123,10 @@ def test_check_with_no_rust_files(
     non_rs_file = tmp_path / "test.txt"
     non_rs_file.write_text("Not a Rust file")
 
-    with patch.object(rustfmt_plugin, "_verify_tool_version", return_value=None):
+    with patch(
+        "lintro.plugins.execution_preparation.verify_tool_version",
+        return_value=None,
+    ):
         result = rustfmt_plugin.check([str(non_rs_file)], {})
 
     assert_that(result.success).is_true()

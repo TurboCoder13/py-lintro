@@ -6,7 +6,9 @@ They verify the RustfmtPlugin definition, check command, fix command, and set_op
 
 from __future__ import annotations
 
+import re
 import shutil
+import subprocess
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -14,13 +16,47 @@ from typing import TYPE_CHECKING
 import pytest
 from assertpy import assert_that
 
+from packaging.version import Version
+
 if TYPE_CHECKING:
     from lintro.plugins.base import BaseToolPlugin
 
-# Skip all tests if rustfmt is not installed
+
+def _get_rustfmt_version() -> Version | None:
+    """Get the installed rustfmt version.
+
+    Returns:
+        Version object or None if not installed or version cannot be determined.
+    """
+    if shutil.which("rustfmt") is None:
+        return None
+    try:
+        result = subprocess.run(
+            ["rustfmt", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        # Output format: "rustfmt 1.8.0-stable (..."
+        match = re.search(r"(\d+\.\d+\.\d+)", result.stdout)
+        if match:
+            return Version(match.group(1))
+    except (subprocess.SubprocessError, ValueError):
+        pass
+    return None
+
+
+_RUSTFMT_MIN_VERSION = Version("1.8.0")
+_installed_version = _get_rustfmt_version()
+
+# Skip all tests if rustfmt is not installed or version is below minimum
 pytestmark = pytest.mark.skipif(
-    shutil.which("rustfmt") is None or shutil.which("cargo") is None,
-    reason="rustfmt or cargo not installed",
+    shutil.which("rustfmt") is None
+    or shutil.which("cargo") is None
+    or _installed_version is None
+    or _installed_version < _RUSTFMT_MIN_VERSION,
+    reason=f"rustfmt >= {_RUSTFMT_MIN_VERSION} or cargo not installed "
+    f"(found: {_installed_version})",
 )
 
 

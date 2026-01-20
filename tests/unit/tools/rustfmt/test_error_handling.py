@@ -4,17 +4,12 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 from assertpy import assert_that
 
 from lintro.parsers.rustfmt.rustfmt_parser import parse_rustfmt_output
 from lintro.tools.definitions.rustfmt import RustfmtPlugin
-
-if TYPE_CHECKING:
-    pass
-
 
 # =============================================================================
 # Tests for timeout handling
@@ -248,13 +243,5 @@ def test_parse_rustfmt_output_empty() -> None:
 def test_parse_rustfmt_output_none() -> None:
     """Parse None output returns empty list."""
     issues = parse_rustfmt_output(None)
-
-    assert_that(issues).is_empty()
-
-
-def test_parse_rustfmt_output_clean() -> None:
-    """Parse output when no issues found returns empty list."""
-    output = ""
-    issues = parse_rustfmt_output(output)
 
     assert_that(issues).is_empty()

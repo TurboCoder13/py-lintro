@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from loguru import logger
+
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.rustfmt.rustfmt_parser import parse_rustfmt_output
@@ -67,10 +69,22 @@ def _find_cargo_root(paths: list[str]) -> Path | None:
     try:
         common = Path(os.path.commonpath([str(r) for r in unique_roots]))
     except ValueError:
+        logger.warning(
+            "Multiple Cargo roots found on different drives; cannot determine "
+            "common workspace root. Skipping rustfmt.",
+        )
         return None
 
     manifest = common / "Cargo.toml"
-    return common if manifest.exists() else None
+    if manifest.exists():
+        return common
+
+    logger.warning(
+        "Multiple Cargo roots found ({}) without a common workspace Cargo.toml. "
+        "Consider creating a workspace or running rustfmt on each crate separately.",
+        ", ".join(str(r) for r in unique_roots),
+    )
+    return None
 
 
 def _build_rustfmt_check_command() -> list[str]:
@@ -196,10 +210,13 @@ class RustfmtPlugin(BaseToolPlugin):
         issues = parse_rustfmt_output(output=output)
         issues_count = len(issues)
 
+        # Preserve output when command failed, even if no issues were parsed
+        should_show_output = issues_count > 0 or not success_cmd
+
         return ToolResult(
             name=self.definition.name,
             success=bool(success_cmd) and issues_count == 0,
-            output=None if issues_count == 0 else output,
+            output=output if should_show_output else None,
             issues_count=issues_count,
             issues=issues,
         )
@@ -268,7 +285,7 @@ class RustfmtPlugin(BaseToolPlugin):
         # Run fix
         fix_cmd = _build_rustfmt_fix_command()
         try:
-            _, _ = run_subprocess_with_timeout(
+            fix_success, fix_output = run_subprocess_with_timeout(
                 tool=self,
                 cmd=fix_cmd,
                 timeout=ctx.timeout,
@@ -293,9 +310,22 @@ class RustfmtPlugin(BaseToolPlugin):
                 remaining_issues_count=timeout_result.issues_count,
             )
 
+        # If fix command failed, return early with the fix output
+        if not fix_success:
+            return ToolResult(
+                name=self.definition.name,
+                success=False,
+                output=fix_output,
+                issues_count=initial_count,
+                issues=initial_issues,
+                initial_issues_count=initial_count,
+                fixed_issues_count=0,
+                remaining_issues_count=initial_count,
+            )
+
         # Re-check after fix to count remaining issues
         try:
-            _, output_after = run_subprocess_with_timeout(
+            verify_success, output_after = run_subprocess_with_timeout(
                 tool=self,
                 cmd=check_cmd,
                 timeout=ctx.timeout,
@@ -324,10 +354,13 @@ class RustfmtPlugin(BaseToolPlugin):
         remaining_count = len(remaining_issues)
         fixed_count = max(0, initial_count - remaining_count)
 
+        # Success requires both: verification passed AND no remaining issues
+        overall_success = verify_success and remaining_count == 0
+
         return ToolResult(
             name=self.definition.name,
-            success=remaining_count == 0,
-            output=None,
+            success=overall_success,
+            output=output_after if not overall_success else None,
             issues_count=remaining_count,
             issues=remaining_issues,
             initial_issues_count=initial_count,
