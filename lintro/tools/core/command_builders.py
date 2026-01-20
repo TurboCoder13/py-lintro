@@ -350,7 +350,9 @@ class NodeJSBuilder(CommandBuilder):
         Returns:
             Command list to execute the tool via bunx or directly.
         """
-        package_name = self.package_names.get(tool_name_enum, tool_name)  # type: ignore[arg-type]
+        if tool_name_enum is None:
+            return [tool_name]
+        package_name = self.package_names.get(tool_name_enum, tool_name)
         # Prefer bunx (bun), fall back to npx (npm), then direct tool invocation
         if shutil.which("bunx"):
             return ["bunx", package_name]
@@ -361,7 +363,7 @@ class NodeJSBuilder(CommandBuilder):
 
 @register_command_builder
 class CargoBuilder(CommandBuilder):
-    """Builder for Cargo/Rust tools (Clippy).
+    """Builder for Cargo/Rust tools (Clippy, cargo-audit).
 
     Invokes Rust tools via cargo subcommands.
     """
@@ -377,7 +379,7 @@ class CargoBuilder(CommandBuilder):
         """
         from lintro.enums.tool_name import ToolName
 
-        return tool_name_enum == ToolName.CLIPPY
+        return tool_name_enum in {ToolName.CLIPPY, ToolName.CARGO_AUDIT}
 
     def get_command(
         self,
@@ -393,7 +395,18 @@ class CargoBuilder(CommandBuilder):
         Returns:
             Command list to execute the tool via cargo.
         """
-        return ["cargo", "clippy"]
+        from lintro.enums.tool_name import ToolName
+
+        if tool_name_enum is None:
+            return ["cargo", "clippy"]
+
+        # Mapping of cargo tools to their subcommands for extensibility
+        cargo_subcommands: dict[ToolName, str] = {
+            ToolName.CARGO_AUDIT: "audit",
+            ToolName.CLIPPY: "clippy",
+        }
+        subcommand = cargo_subcommands.get(tool_name_enum, "clippy")
+        return ["cargo", subcommand]
 
 
 @register_command_builder

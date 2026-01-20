@@ -1,0 +1,6 @@
+[package]
+name = "cargo_audit_sample"
+version = "0.1.0"
+edition = "2021"
+
+# No dependencies - ensures no vulnerabilities for clean test

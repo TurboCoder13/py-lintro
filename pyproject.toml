@@ -134,6 +134,7 @@ packages = [
   "lintro.parsers.bandit",
   "lintro.parsers.biome",
   "lintro.parsers.black",
+  "lintro.parsers.cargo_audit",
   "lintro.parsers.clippy",
   "lintro.parsers.darglint",
   "lintro.parsers.gitleaks",
@@ -242,6 +243,7 @@ actionlint = "1.7.5"
 markdownlint = "0.17.2"
 clippy = "1.92.0"
 rustfmt = "1.8.0"
+cargo_audit = "0.17.0"
 semgrep = "1.50.0"
 gitleaks = "8.21.2"
 shellcheck = "0.10.0"

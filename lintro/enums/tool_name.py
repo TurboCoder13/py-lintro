@@ -15,6 +15,7 @@ class ToolName(StrEnum):
     BANDIT = auto()
     BIOME = auto()
     BLACK = auto()
+    CARGO_AUDIT = auto()
     CLIPPY = auto()
     DARGLINT = auto()
     GITLEAKS = auto()
