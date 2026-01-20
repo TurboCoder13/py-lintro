@@ -56,12 +56,17 @@ def _update_pyproject_version(pyproject_path: Path, version: str) -> str:
 
     Returns:
         Previous version string if present, otherwise empty string.
+
+    Raises:
+        ValueError: If pyproject.toml is missing the [project] section.
     """
     content = _read_text(pyproject_path)
     doc = tomlkit.parse(content)
-    project = doc["project"]
-    old = str(project.get("version", "")) if hasattr(project, "get") else ""
-    project["version"] = version  # type: ignore[index]
+    project = doc.get("project")
+    if project is None:
+        raise ValueError("pyproject.toml missing [project] section")
+    old = str(project.get("version", ""))
+    project["version"] = version
     _write_text(pyproject_path, tomlkit.dumps(doc))
     return old
 

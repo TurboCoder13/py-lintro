@@ -36,9 +36,12 @@ class LintroBin < Formula
 
       However, the external tools must be installed separately.
       Install them via Homebrew:
-        brew install ruff black mypy bandit biome clippy rustfmt \\
+        brew install ruff black mypy bandit biome rust \\
           hadolint actionlint gitleaks markdownlint-cli2 prettier \\
-          yamllint semgrep shellcheck shfmt sqlfluff taplo rust
+          yamllint semgrep shellcheck shfmt sqlfluff taplo
+
+      After installing rust, add clippy and rustfmt via rustup:
+        rustup component add clippy rustfmt
 
       Optional Rust tools (install via cargo):
         cargo install cargo-audit
