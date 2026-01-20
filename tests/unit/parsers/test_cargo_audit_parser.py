@@ -141,6 +141,32 @@ def test_parse_cargo_audit_output_normalizes_severity() -> None:
     assert_that(result[0].severity).is_equal_to("MEDIUM")
 
 
+def test_parse_cargo_audit_output_none_severity() -> None:
+    """Parser handles RustSec 'none' severity level."""
+    output = """{
+        "vulnerabilities": {
+            "count": 1,
+            "list": [
+                {
+                    "advisory": {
+                        "id": "RUSTSEC-2021-0001",
+                        "title": "Informational advisory",
+                        "severity": "none"
+                    },
+                    "package": {
+                        "name": "test",
+                        "version": "1.0.0"
+                    }
+                }
+            ]
+        }
+    }"""
+    result = parse_cargo_audit_output(output)
+
+    assert_that(result).is_length(1)
+    assert_that(result[0].severity).is_equal_to("LOW")
+
+
 def test_parse_cargo_audit_output_invalid_json() -> None:
     """Parser handles invalid JSON gracefully."""
     output = "{invalid json}"

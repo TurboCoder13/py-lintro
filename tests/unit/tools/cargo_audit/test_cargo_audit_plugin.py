@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
+from subprocess import TimeoutExpired
 from unittest.mock import patch
 
 import pytest
@@ -104,13 +104,37 @@ def test_set_options_timeout(cargo_audit_plugin: CargoAuditPlugin) -> None:
 
 
 def test_set_options_invalid_timeout(cargo_audit_plugin: CargoAuditPlugin) -> None:
-    """Verify invalid timeout raises ValueError.
+    """Verify negative integer timeout raises ValueError.
 
     Args:
         cargo_audit_plugin: The plugin instance.
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="non-negative"):
         cargo_audit_plugin.set_options(timeout=-1)
+
+
+def test_set_options_negative_float_timeout(
+    cargo_audit_plugin: CargoAuditPlugin,
+) -> None:
+    """Verify negative float timeout raises ValueError.
+
+    Args:
+        cargo_audit_plugin: The plugin instance.
+    """
+    with pytest.raises(ValueError, match="non-negative"):
+        cargo_audit_plugin.set_options(timeout=-1.5)
+
+
+def test_set_options_non_numeric_timeout(
+    cargo_audit_plugin: CargoAuditPlugin,
+) -> None:
+    """Verify non-numeric timeout raises ValueError.
+
+    Args:
+        cargo_audit_plugin: The plugin instance.
+    """
+    with pytest.raises(ValueError, match="must be a number"):
+        cargo_audit_plugin.set_options(timeout="invalid")
 
 
 def test_fix_raises_not_implemented(cargo_audit_plugin: CargoAuditPlugin) -> None:
@@ -250,7 +274,7 @@ def test_check_timeout(
         with patch.object(
             cargo_audit_plugin,
             "_run_subprocess",
-            side_effect=subprocess.TimeoutExpired(
+            side_effect=TimeoutExpired(
                 cmd=["cargo", "audit"],
                 timeout=120,
             ),

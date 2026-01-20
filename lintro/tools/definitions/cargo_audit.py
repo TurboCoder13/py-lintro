@@ -88,12 +88,15 @@ class CargoAuditPlugin(BaseToolPlugin):
             **kwargs: Options to set, including timeout.
 
         Raises:
-            ValueError: If timeout is negative.
+            ValueError: If timeout is negative or not a number.
         """
         if "timeout" in kwargs:
             timeout = kwargs["timeout"]
-            if isinstance(timeout, int) and timeout < 0:
-                raise ValueError("timeout must be non-negative")
+            if timeout is not None:
+                if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+                    raise ValueError("timeout must be a number")
+                if timeout < 0:
+                    raise ValueError("timeout must be non-negative")
         super().set_options(**kwargs)
 
     def _build_command(self) -> list[str]:

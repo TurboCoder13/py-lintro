@@ -361,7 +361,7 @@ class NodeJSBuilder(CommandBuilder):
 
 @register_command_builder
 class CargoBuilder(CommandBuilder):
-    """Builder for Cargo/Rust tools (Clippy).
+    """Builder for Cargo/Rust tools (Clippy, cargo-audit).
 
     Invokes Rust tools via cargo subcommands.
     """
@@ -377,7 +377,7 @@ class CargoBuilder(CommandBuilder):
         """
         from lintro.enums.tool_name import ToolName
 
-        return tool_name_enum == ToolName.CLIPPY
+        return tool_name_enum in {ToolName.CLIPPY, ToolName.CARGO_AUDIT}
 
     def get_command(
         self,
@@ -393,6 +393,10 @@ class CargoBuilder(CommandBuilder):
         Returns:
             Command list to execute the tool via cargo.
         """
+        from lintro.enums.tool_name import ToolName
+
+        if tool_name_enum == ToolName.CARGO_AUDIT:
+            return ["cargo", "audit"]
         return ["cargo", "clippy"]
 
 

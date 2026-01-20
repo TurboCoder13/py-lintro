@@ -14,6 +14,11 @@ from lintro.parsers.cargo_audit.cargo_audit_issue import CargoAuditIssue
 def _extract_cargo_audit_json(raw_text: str) -> dict[str, Any]:
     """Extract cargo-audit's JSON object from output text.
 
+    This function finds JSON by locating the first '{' and last '}' in the output.
+    This approach works because cargo-audit outputs a single top-level JSON object.
+    It would not work for tools that output multiple JSON objects or have nested
+    structures where the last '}' doesn't correspond to the opening '{'.
+
     Args:
         raw_text: Raw stdout/stderr text from cargo-audit.
 
@@ -34,6 +39,8 @@ def _extract_cargo_audit_json(raw_text: str) -> dict[str, Any]:
         result: dict[str, Any] = json.loads(text)
         return result
 
+    # Fallback: find JSON boundaries. This works because cargo-audit outputs
+    # a single JSON object, so the first '{' and last '}' delimit it correctly.
     start: int = text.find("{")
     end: int = text.rfind("}")
     if start == -1 or end == -1 or end < start:
@@ -58,7 +65,7 @@ def _normalize_severity(severity: str | None) -> str:
 
     normalized = severity.upper().strip()
 
-    # Map common variations
+    # Map common variations (including RustSec's "none" severity level)
     severity_map = {
         "LOW": "LOW",
         "MEDIUM": "MEDIUM",
@@ -68,6 +75,7 @@ def _normalize_severity(severity: str | None) -> str:
         "INFORMATIONAL": "LOW",
         "MODERATE": "MEDIUM",
         "SEVERE": "HIGH",
+        "NONE": "LOW",
     }
 
     return severity_map.get(normalized, "UNKNOWN")
