@@ -7,7 +7,6 @@ known secret formats and reports findings with detailed location information.
 
 from __future__ import annotations
 
-import json
 import os
 import subprocess  # nosec B404 - used safely with shell disabled
 import tempfile
@@ -66,7 +65,7 @@ class GitleaksPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".gitleaks.toml"],
             version_command=["gitleaks", "version"],
-            min_version="8.18.0",
+            min_version="8.21.2",
             default_options={
                 "timeout": GITLEAKS_DEFAULT_TIMEOUT,
                 "no_git": True,  # Default to scanning files without git history
@@ -259,8 +258,8 @@ class GitleaksPlugin(BaseToolPlugin):
                 )
 
             # parse_gitleaks_output raises ValueError on malformed JSON or
-            # unexpected structure; json.JSONDecodeError kept for defense-in-depth
-            except (json.JSONDecodeError, ValueError) as e:
+            # unexpected structure
+            except ValueError as e:
                 logger.error(f"Failed to parse gitleaks output: {e}")
                 return ToolResult(
                     name=self.definition.name,
