@@ -304,3 +304,20 @@ ERROR operation failed error=some files were not properly formatted"""
 
     assert_that(result).is_length(1)
     assert_that(result[0].file).is_equal_to("test.toml")
+
+
+def test_parse_taplo_output_fmt_check_rust_log_error_format() -> None:
+    """Parse taplo fmt --check output when RUST_LOG=error is set.
+
+    When RUST_LOG=error is set, taplo outputs a simplified format without
+    the taplo:format_files: prefix.
+    """
+    output = """ERROR the file is not properly formatted path="/tmp/test.toml"
+ERROR operation failed error=some files were not properly formatted"""
+    result = parse_taplo_output(output)
+
+    assert_that(result).is_length(1)
+    assert_that(result[0].file).is_equal_to("/tmp/test.toml")
+    assert_that(result[0].level).is_equal_to("error")
+    assert_that(result[0].code).is_equal_to("format")
+    assert_that(result[0].message).is_equal_to("the file is not properly formatted")
