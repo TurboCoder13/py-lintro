@@ -119,10 +119,11 @@ class CargoAuditPlugin(BaseToolPlugin):
         """
         ctx = self._prepare_execution(paths, options)
         if ctx.should_skip:
+            # early_result is guaranteed non-None when should_skip is True
             return ctx.early_result  # type: ignore[return-value]
 
-        # Find Cargo.lock root
-        cargo_root = _find_cargo_root(paths)
+        # Find Cargo.lock root from filtered file list
+        cargo_root = _find_cargo_root(ctx.files)
         if cargo_root is None:
             return ToolResult(
                 name=self.definition.name,
@@ -148,11 +149,20 @@ class CargoAuditPlugin(BaseToolPlugin):
 
         issues = parse_cargo_audit_output(output)
 
-        # cargo-audit returns non-zero if vulnerabilities found
+        # Determine overall success: subprocess must succeed AND no issues found.
+        # cargo-audit returns non-zero if vulnerabilities found, but also if
+        # execution fails. If subprocess failed with no issues parsed, it's
+        # an execution error (not a clean scan).
+        overall_success = success and len(issues) == 0
+
+        # Show output when there are issues OR when subprocess failed without
+        # issues (execution error case)
+        should_show_output = bool(issues) or not success
+
         return ToolResult(
             name=self.definition.name,
-            success=len(issues) == 0,
-            output=output if issues else None,
+            success=overall_success,
+            output=output if should_show_output else None,
             issues_count=len(issues),
             issues=issues if issues else None,
         )

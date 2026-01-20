@@ -175,6 +175,19 @@ def test_cargo_builder_returns_cargo_clippy() -> None:
     assert_that(cmd).is_equal_to(["cargo", "clippy"])
 
 
+def test_cargo_builder_handles_cargo_audit() -> None:
+    """CargoBuilder can handle cargo_audit."""
+    builder = CargoBuilder()
+    assert_that(builder.can_handle(ToolName.CARGO_AUDIT)).is_true()
+
+
+def test_cargo_builder_returns_cargo_audit() -> None:
+    """CargoBuilder returns ['cargo', 'audit'] command for cargo_audit."""
+    builder = CargoBuilder()
+    cmd = builder.get_command("cargo_audit", ToolName.CARGO_AUDIT)
+    assert_that(cmd).is_equal_to(["cargo", "audit"])
+
+
 # =============================================================================
 # StandaloneBuilder tests
 # =============================================================================
