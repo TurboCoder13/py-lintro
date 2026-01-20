@@ -59,8 +59,9 @@ def _update_pyproject_version(pyproject_path: Path, version: str) -> str:
     """
     content = _read_text(pyproject_path)
     doc = tomlkit.parse(content)
-    old = str(doc.get("project", {}).get("version", ""))
-    doc["project"]["version"] = version
+    project = doc["project"]
+    old = str(project.get("version", "")) if hasattr(project, "get") else ""
+    project["version"] = version  # type: ignore[index]
     _write_text(pyproject_path, tomlkit.dumps(doc))
     return old
 
