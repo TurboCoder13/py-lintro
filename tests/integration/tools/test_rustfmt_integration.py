@@ -36,7 +36,7 @@ def _get_rustfmt_version() -> Version | None:
             text=True,
             timeout=10,
         )
-        # Output format: "rustfmt 1.8.0-stable (..."
+        # Output format: "rustfmt <version>-<channel> (<commit-hash> <date>)"
         match = re.search(r"(\d+\.\d+\.\d+)", result.stdout)
         if match:
             return Version(match.group(1))
