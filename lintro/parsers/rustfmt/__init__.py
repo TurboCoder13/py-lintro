@@ -1,0 +1,1 @@
+"""Rustfmt parser module."""

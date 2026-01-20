@@ -38,6 +38,7 @@ TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
     ToolName.BIOME,
     ToolName.ACTIONLINT,
     ToolName.DARGLINT,
+    ToolName.RUSTFMT,
     ToolName.SEMGREP,
     ToolName.SHELLCHECK,
     ToolName.SHFMT,

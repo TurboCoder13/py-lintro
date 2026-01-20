@@ -49,7 +49,8 @@ RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
         cp -p /root/.cargo/bin/cargo /usr/local/bin/cargo 2>/dev/null || true; \
         cp -p /root/.cargo/bin/rustc /usr/local/bin/rustc 2>/dev/null || true; \
         cp -p /root/.cargo/bin/rustup /usr/local/bin/rustup 2>/dev/null || true; \
-        chmod +x /usr/local/bin/cargo /usr/local/bin/rustc /usr/local/bin/rustup 2>/dev/null || true; \
+        cp -p /root/.cargo/bin/rustfmt /usr/local/bin/rustfmt 2>/dev/null || true; \
+        chmod +x /usr/local/bin/cargo /usr/local/bin/rustc /usr/local/bin/rustup /usr/local/bin/rustfmt 2>/dev/null || true; \
     fi
 
 # Copy project files and install Python dependencies
@@ -98,6 +99,7 @@ COPY --from=builder /usr/local/bin/gitleaks /usr/local/bin/
 COPY --from=builder /usr/local/bin/cargo /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustc /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustup /usr/local/bin/
+COPY --from=builder /usr/local/bin/rustfmt /usr/local/bin/
 COPY --from=builder /usr/local/bin/uv /usr/local/bin/
 COPY --from=builder /usr/local/bin/bun /usr/local/bin/
 COPY --from=builder /root/.bun/install/global /opt/bun/install/global

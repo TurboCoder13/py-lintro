@@ -59,6 +59,7 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "gitleaks": ["gitleaks"],
         # Rust/Cargo tools
         "clippy": ["cargo", "clippy"],
+        "rustfmt": ["rustfmt"],
         # Shell tools
         "shellcheck": ["shellcheck"],
         "shfmt": ["shfmt"],

@@ -24,6 +24,7 @@ class ToolName(StrEnum):
     PRETTIER = auto()
     PYTEST = auto()
     RUFF = auto()
+    RUSTFMT = auto()
     SEMGREP = auto()
     SHELLCHECK = auto()
     SHFMT = auto()
