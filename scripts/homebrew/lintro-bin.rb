@@ -34,12 +34,20 @@ class LintroBin < Formula
     <<~EOS
       lintro-bin is a standalone binary that doesn't require Python.
 
-      However, the external tools (ruff, black, mypy, etc.) must be installed
-      separately. Install them via:
-        brew install ruff black mypy
+      However, the external tools must be installed separately.
+      Install them via Homebrew:
+        brew install ruff black mypy bandit biome rust \\
+          hadolint actionlint gitleaks markdownlint-cli2 prettier \\
+          yamllint semgrep shellcheck shfmt sqlfluff taplo
 
-      Or via pip/pipx if you have Python:
-        pipx install ruff black mypy bandit
+      After installing rust, add clippy and rustfmt via rustup:
+        rustup component add clippy rustfmt
+
+      Optional Rust tools (install via cargo):
+        cargo install cargo-audit
+
+      Or for Python tools via pipx:
+        pipx install ruff black mypy bandit darglint yamllint sqlfluff semgrep
 
       For the Python-based version with bundled tools, use:
         brew install TurboCoder13/tap/lintro
