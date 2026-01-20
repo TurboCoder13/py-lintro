@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 from assertpy import assert_that
-
 from packaging.version import Version
 
 if TYPE_CHECKING:

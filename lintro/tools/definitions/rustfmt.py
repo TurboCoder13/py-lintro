@@ -131,7 +131,7 @@ class RustfmtPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=["rustfmt.toml", ".rustfmt.toml"],
             version_command=["rustfmt", "--version"],
-            min_version="1.0.0",
+            min_version="1.8.0",
             default_options={
                 "timeout": RUSTFMT_DEFAULT_TIMEOUT,
             },
@@ -277,6 +277,9 @@ class RustfmtPlugin(BaseToolPlugin):
                 output=timeout_result.output,
                 issues_count=timeout_result.issues_count,
                 issues=timeout_result.issues,
+                initial_issues_count=0,
+                fixed_issues_count=0,
+                remaining_issues_count=0,
             )
 
         initial_issues = parse_rustfmt_output(output=output_check)

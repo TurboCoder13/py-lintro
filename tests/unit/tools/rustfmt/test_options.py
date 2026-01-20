@@ -32,7 +32,7 @@ if TYPE_CHECKING:
         ("tool_type", ToolType.FORMATTER),
         ("priority", RUSTFMT_DEFAULT_PRIORITY),
         ("default_timeout", RUSTFMT_DEFAULT_TIMEOUT),
-        ("min_version", "1.0.0"),
+        ("min_version", "1.8.0"),
     ],
     ids=[
         "name_equals_rustfmt",
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
         "tool_type_is_formatter",
         "priority_equals_80",
         "default_timeout_equals_60",
-        "min_version_is_1.0.0",
+        "min_version_is_1.8.0",
     ],
 )
 def test_definition_attributes(
