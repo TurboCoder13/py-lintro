@@ -23,6 +23,10 @@ from lintro.tools.core.option_validators import (
     filter_none_options,
     validate_positive_int,
 )
+from lintro.tools.core.timeout_utils import (
+    create_timeout_result,
+    run_subprocess_with_timeout,
+)
 
 # Constants for Rustfmt configuration
 RUSTFMT_DEFAULT_TIMEOUT: int = 60
@@ -167,19 +171,26 @@ class RustfmtPlugin(BaseToolPlugin):
         cmd = _build_rustfmt_check_command()
 
         try:
-            success_cmd, output = self._run_subprocess(
+            success_cmd, output = run_subprocess_with_timeout(
+                tool=self,
                 cmd=cmd,
                 timeout=ctx.timeout,
                 cwd=str(cargo_root),
+                tool_name="rustfmt",
             )
         except subprocess.TimeoutExpired:
-            timeout_secs = int(ctx.timeout)
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=ctx.timeout,
+                cmd=cmd,
+                tool_name="rustfmt",
+            )
             return ToolResult(
                 name=self.definition.name,
-                success=False,
-                output=f"rustfmt execution timed out ({timeout_secs}s limit exceeded).",
-                issues_count=1,
-                issues=[],
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
+                issues=timeout_result.issues,
             )
 
         issues = parse_rustfmt_output(output=output)
@@ -225,24 +236,30 @@ class RustfmtPlugin(BaseToolPlugin):
             )
 
         check_cmd = _build_rustfmt_check_command()
-        timeout_secs = int(ctx.timeout)
-        timeout_msg = f"rustfmt execution timed out ({timeout_secs}s limit exceeded)."
 
         # First, count issues before fixing
         try:
-            _, output_check = self._run_subprocess(
+            _, output_check = run_subprocess_with_timeout(
+                tool=self,
                 cmd=check_cmd,
                 timeout=ctx.timeout,
                 cwd=str(cargo_root),
+                tool_name="rustfmt",
             )
         except subprocess.TimeoutExpired:
             # Timeout on initial check - can't determine issue counts
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=ctx.timeout,
+                cmd=check_cmd,
+                tool_name="rustfmt",
+            )
             return ToolResult(
                 name=self.definition.name,
-                success=False,
-                output=timeout_msg,
-                issues_count=0,
-                issues=[],
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
+                issues=timeout_result.issues,
             )
 
         initial_issues = parse_rustfmt_output(output=output_check)
@@ -251,40 +268,56 @@ class RustfmtPlugin(BaseToolPlugin):
         # Run fix
         fix_cmd = _build_rustfmt_fix_command()
         try:
-            _, _ = self._run_subprocess(
+            _, _ = run_subprocess_with_timeout(
+                tool=self,
                 cmd=fix_cmd,
                 timeout=ctx.timeout,
                 cwd=str(cargo_root),
+                tool_name="rustfmt",
             )
         except subprocess.TimeoutExpired:
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=ctx.timeout,
+                cmd=fix_cmd,
+                tool_name="rustfmt",
+            )
             return ToolResult(
                 name=self.definition.name,
-                success=False,
-                output=timeout_msg,
-                issues_count=1,
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
                 issues=initial_issues,
                 initial_issues_count=initial_count,
                 fixed_issues_count=0,
-                remaining_issues_count=1,
+                remaining_issues_count=timeout_result.issues_count,
             )
 
         # Re-check after fix to count remaining issues
         try:
-            _, output_after = self._run_subprocess(
+            _, output_after = run_subprocess_with_timeout(
+                tool=self,
                 cmd=check_cmd,
                 timeout=ctx.timeout,
                 cwd=str(cargo_root),
+                tool_name="rustfmt",
             )
         except subprocess.TimeoutExpired:
+            timeout_result = create_timeout_result(
+                tool=self,
+                timeout=ctx.timeout,
+                cmd=check_cmd,
+                tool_name="rustfmt",
+            )
             return ToolResult(
                 name=self.definition.name,
-                success=False,
-                output=timeout_msg,
-                issues_count=1,
+                success=timeout_result.success,
+                output=timeout_result.output,
+                issues_count=timeout_result.issues_count,
                 issues=initial_issues,
                 initial_issues_count=initial_count,
                 fixed_issues_count=0,
-                remaining_issues_count=1,
+                remaining_issues_count=timeout_result.issues_count,
             )
 
         remaining_issues = parse_rustfmt_output(output=output_after)

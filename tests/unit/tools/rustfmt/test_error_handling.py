@@ -84,8 +84,8 @@ def test_fix_with_timeout_on_initial_check(
 
     assert_that(result.success).is_false()
     assert_that(result.output).contains("timed out")
-    # When timeout on initial check, can't determine issue counts
-    assert_that(result.issues_count).is_equal_to(0)
+    # Timeout is counted as an execution failure (consistent with clippy)
+    assert_that(result.issues_count).is_equal_to(1)
 
 
 def test_fix_with_timeout_on_fix_command(
