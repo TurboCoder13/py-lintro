@@ -176,17 +176,27 @@ class GitleaksPlugin(BaseToolPlugin):
 
         # Determine source path based on provided paths
         # Gitleaks can scan both directories and individual files
+        cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
         if paths and len(paths) == 1:
             # Single path provided - use it directly
             source_path = paths[0]
         elif paths and len(paths) > 1:
-            # Multiple paths - use common parent directory
-            source_path = str(
-                Path(os.path.commonpath([str(Path(p).resolve()) for p in paths])),
-            )
+            # Multiple paths - resolve relative to ctx.cwd and find common parent
+            resolved_paths = [
+                str(Path(p) if Path(p).is_absolute() else cwd_path / p) for p in paths
+            ]
+            try:
+                source_path = str(Path(os.path.commonpath(resolved_paths)))
+            except ValueError:
+                # Paths on different drives or no common path - fall back to cwd
+                logger.warning(
+                    "Cannot determine common path for provided paths; "
+                    "falling back to working directory.",
+                )
+                source_path = str(cwd_path)
         else:
             # No paths provided - fall back to cwd
-            source_path = ctx.cwd or "."
+            source_path = str(cwd_path)
 
         # Use a temporary file for the report (gitleaks can't write to /dev/stdout
         # in subprocess environments due to permission issues)
