@@ -540,6 +540,59 @@ lintro check --tools semgrep --tool-options "semgrep:severity=ERROR"
 lintro check --tools semgrep --tool-options "semgrep:exclude=tests/*|vendor/*"
 ```
 
+#### Gitleaks Configuration
+
+**File:** `.gitleaks.toml`
+
+```toml
+# Custom rule example
+[[rules]]
+id = "custom-api-key"
+description = "Custom API Key Pattern"
+regex = '''custom_api_key_[a-zA-Z0-9]{32}'''
+tags = ["key", "custom"]
+
+# Allowlist to ignore false positives
+[allowlist]
+paths = [
+    '''test_samples/''',
+    '''\.git/''',
+]
+regexes = [
+    '''EXAMPLE''',
+    '''test_''',
+]
+```
+
+**Available Options:**
+
+| Option                 | Type    | Description                                  |
+| ---------------------- | ------- | -------------------------------------------- |
+| `no_git`               | boolean | Scan without git history (files only)        |
+| `config`               | string  | Path to custom gitleaks config file          |
+| `baseline_path`        | string  | Path to baseline file (ignore known secrets) |
+| `redact`               | boolean | Redact secrets in output (default: true)     |
+| `max_target_megabytes` | integer | Skip files larger than this size in MB       |
+
+**Usage Examples:**
+
+```bash
+# Basic scan with default config
+lintro check --tools gitleaks
+
+# Scan with git history (not just files)
+lintro check --tools gitleaks --tool-options gitleaks:no_git=False
+
+# Use custom config file
+lintro check --tools gitleaks --tool-options gitleaks:config=.gitleaks.toml
+
+# Use baseline to ignore known secrets
+lintro check --tools gitleaks --tool-options gitleaks:baseline_path=gitleaks-baseline.json
+
+# Limit file size to scan
+lintro check --tools gitleaks --tool-options gitleaks:max_target_megabytes=10
+```
+
 #### Darglint Configuration
 
 **File:** `.darglint`

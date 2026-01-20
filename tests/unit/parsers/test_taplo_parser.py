@@ -260,3 +260,47 @@ def test_parse_taplo_output_issue_dataclass_fields() -> None:
     assert_that(issue.level).is_equal_to("error")
     assert_that(issue.code).is_equal_to("test_code")
     assert_that(issue.message).is_equal_to("test message")
+
+
+# =============================================================================
+# Format check output tests (taplo fmt --check)
+# =============================================================================
+
+
+def test_parse_taplo_output_fmt_check_format() -> None:
+    """Parse taplo fmt --check output format.
+
+    Taplo fmt --check outputs:
+    ERROR taplo:format_files: the file is not properly formatted path="file.toml"
+    """
+    output = 'ERROR taplo:format_files: the file is not properly formatted path="/tmp/test.toml"'
+    result = parse_taplo_output(output)
+
+    assert_that(result).is_length(1)
+    assert_that(result[0].file).is_equal_to("/tmp/test.toml")
+    assert_that(result[0].level).is_equal_to("error")
+    assert_that(result[0].code).is_equal_to("format")
+    assert_that(result[0].message).is_equal_to("the file is not properly formatted")
+
+
+def test_parse_taplo_output_fmt_check_multiple_files() -> None:
+    """Parse taplo fmt --check output with multiple files."""
+    output = """ERROR taplo:format_files: the file is not properly formatted path="config.toml"
+ERROR taplo:format_files: the file is not properly formatted path="pyproject.toml"
+ERROR operation failed error=some files were not properly formatted"""
+    result = parse_taplo_output(output)
+
+    assert_that(result).is_length(2)
+    assert_that(result[0].file).is_equal_to("config.toml")
+    assert_that(result[1].file).is_equal_to("pyproject.toml")
+
+
+def test_parse_taplo_output_fmt_check_with_info_lines() -> None:
+    """Parse taplo fmt --check output with INFO lines mixed in."""
+    output = """ INFO taplo:format_files:collect_files: found files total=1 excluded=0
+ERROR taplo:format_files: the file is not properly formatted path="test.toml"
+ERROR operation failed error=some files were not properly formatted"""
+    result = parse_taplo_output(output)
+
+    assert_that(result).is_length(1)
+    assert_that(result[0].file).is_equal_to("test.toml")

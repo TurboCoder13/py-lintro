@@ -55,6 +55,8 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "hadolint": ["hadolint"],
         "actionlint": ["actionlint"],
         "taplo": ["taplo"],
+        # Security tools
+        "gitleaks": ["gitleaks"],
         # Rust/Cargo tools
         "clippy": ["cargo", "clippy"],
         # Shell tools

@@ -359,6 +359,62 @@ main() {
 	install_tool_curl "hadolint" \
 		"https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint"
 
+	# Install gitleaks (secret detection)
+	echo -e "${BLUE}Installing gitleaks...${NC}"
+	GITLEAKS_VERSION="8.21.2"
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install gitleaks v${GITLEAKS_VERSION}"
+	elif command -v gitleaks &>/dev/null; then
+		echo -e "${GREEN}✓ gitleaks already installed${NC}"
+	else
+		tmpdir=$(mktemp -d)
+		os=$(uname -s | tr '[:upper:]' '[:lower:]')
+		arch=$(uname -m)
+		case "$arch" in
+		x86_64 | amd64) arch_name="x64" ;;
+		aarch64 | arm64) arch_name="arm64" ;;
+		*) arch_name="x64" ;;
+		esac
+		tgz_url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_${os}_${arch_name}.tar.gz"
+		checksum_url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+		if download_with_retries "$tgz_url" "$tmpdir/gitleaks.tar.gz" 3; then
+			# Verify checksum if available
+			if download_with_retries "$checksum_url" "$tmpdir/checksums.txt" 3; then
+				echo -e "${BLUE}Verifying checksum for gitleaks...${NC}"
+				expected=$(grep "gitleaks_${GITLEAKS_VERSION}_${os}_${arch_name}.tar.gz" "$tmpdir/checksums.txt" | awk '{print $1}')
+				if [ -z "$expected" ]; then
+					echo -e "${RED}✗ Checksum entry not found for gitleaks_${GITLEAKS_VERSION}_${os}_${arch_name}.tar.gz in ${tmpdir}/checksums.txt${NC}"
+					rm -rf "$tmpdir"
+					exit 1
+				fi
+				if command -v sha256sum >/dev/null 2>&1; then
+					actual=$(sha256sum "$tmpdir/gitleaks.tar.gz" | awk '{print $1}')
+				elif command -v shasum >/dev/null 2>&1; then
+					actual=$(shasum -a 256 "$tmpdir/gitleaks.tar.gz" | awk '{print $1}')
+				else
+					echo -e "${RED}✗ Unable to compute checksum: no hash tool found (sha256sum or shasum required)${NC}"
+					rm -rf "$tmpdir"
+					exit 1
+				fi
+				if [ "$expected" != "$actual" ]; then
+					echo -e "${RED}✗ Checksum mismatch for gitleaks (expected: $expected, got: $actual)${NC}"
+					rm -rf "$tmpdir"
+					exit 1
+				fi
+				echo -e "${GREEN}✓ Checksum verified${NC}"
+			fi
+			tar -xzf "$tmpdir/gitleaks.tar.gz" -C "$tmpdir"
+			cp "$tmpdir/gitleaks" "$BIN_DIR/gitleaks"
+			chmod +x "$BIN_DIR/gitleaks"
+			echo -e "${GREEN}✓ gitleaks installed successfully${NC}"
+		else
+			echo -e "${RED}✗ Failed to download gitleaks${NC}"
+			rm -rf "$tmpdir"
+			exit 1
+		fi
+		rm -rf "$tmpdir"
+	fi
+
 	# Install actionlint (GitHub Actions workflow linter)
 	# Prebuilt binaries: https://github.com/rhysd/actionlint/releases
 	echo -e "${BLUE}Installing actionlint...${NC}"
@@ -775,6 +831,7 @@ main() {
 	echo "  - black (Python formatting)"
 	echo "  - clippy (Rust linting)"
 	echo "  - darglint (Python docstring validation)"
+	echo "  - gitleaks (Secret detection)"
 	echo "  - hadolint (Docker linting)"
 	echo "  - markdownlint-cli2 (Markdown linting)"
 	echo "  - prettier (JavaScript/JSON formatting)"
@@ -791,7 +848,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint" "mypy")
+	tools_to_verify=("actionlint" "bandit" "biome" "black" "clippy" "darglint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint" "mypy")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo

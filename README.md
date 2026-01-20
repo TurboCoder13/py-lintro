@@ -75,6 +75,7 @@ system.
 | [![Mypy](https://img.shields.io/badge/Mypy-type%20checking-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)                                       | 🐍 Python              | -        |
 | [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)                                 | 🐍 Python              | -        |
 | [![Semgrep](https://img.shields.io/badge/Semgrep-security-5b21b6?logo=semgrep&logoColor=white)](https://semgrep.dev/)                                         | 🔒 Multi-language      | -        |
+| [![Gitleaks](https://img.shields.io/badge/Gitleaks-secrets-dc2626?logo=git&logoColor=white)](https://gitleaks.io/)                                            | 🔐 Secret Detection    | -        |
 | [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                                        | 🟨 JS/TS · 🧾 JSON     | ✅       |
 | [![Biome](https://img.shields.io/badge/Biome-lint-60A5FA?logo=biome&logoColor=white)](https://biomejs.dev/)                                                   | 🟨 JS/TS · 🧾 JSON/CSS | ✅       |
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                           | 🧾 YAML                | -        |
@@ -117,6 +118,8 @@ For full functionality, install these additional tools:
 - **Hadolint** - [GitHub Releases](https://github.com/hadolint/hadolint/releases)
 - **Actionlint** - [GitHub Releases](https://github.com/rhysd/actionlint/releases)
 - **Semgrep** - `pipx install semgrep`, `pip install semgrep`, or `brew install semgrep`
+- **Gitleaks** - `brew install gitleaks` or
+  [GitHub Releases](https://github.com/gitleaks/gitleaks/releases)
 - **ShellCheck** - `brew install shellcheck` or
   [GitHub Releases](https://github.com/koalaman/shellcheck/releases)
 - **shfmt** - `brew install shfmt` or
