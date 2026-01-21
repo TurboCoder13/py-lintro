@@ -792,12 +792,13 @@ main() {
 
 	# Install taplo (TOML linter and formatter)
 	echo -e "${BLUE}Installing taplo...${NC}"
-	TAPLO_VERSION="0.9.3"
+	TAPLO_VERSION="0.10.0"
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install taplo v${TAPLO_VERSION}"
 	elif command -v taplo &>/dev/null; then
 		echo -e "${GREEN}✓ taplo already installed${NC}"
 	else
+		taplo_installed=false
 		tmpdir=$(mktemp -d)
 		os=$(uname -s | tr '[:upper:]' '[:lower:]')
 		arch=$(uname -m)
@@ -807,37 +808,66 @@ main() {
 		esac
 		# taplo releases use format: taplo-full-{os}-{arch}.gz
 		gz_url="https://github.com/tamasfe/taplo/releases/download/${TAPLO_VERSION}/taplo-full-${os}-${arch}.gz"
-		if download_with_retries "$gz_url" "$tmpdir/taplo.gz" 3; then
-			gunzip -c "$tmpdir/taplo.gz" >"$BIN_DIR/taplo"
-			chmod +x "$BIN_DIR/taplo"
-			# Attempt checksum verification when available
-			checksum_url="${gz_url}.sha256"
-			if download_with_retries "$checksum_url" "$tmpdir/taplo.gz.sha256" 3; then
-				echo -e "${BLUE}Verifying checksum for taplo...${NC}"
-				expected=$(awk '{print $1}' "$tmpdir/taplo.gz.sha256" | head -n1)
-				if command -v sha256sum >/dev/null 2>&1; then
-					actual=$(sha256sum "$tmpdir/taplo.gz" | awk '{print $1}')
-				elif command -v shasum >/dev/null 2>&1; then
-					actual=$(shasum -a 256 "$tmpdir/taplo.gz" | awk '{print $1}')
-				else
-					echo -e "${YELLOW}⚠ No sha256 tool available, skipping checksum verification${NC}"
-					actual="$expected"
+		# Check if GitHub release exists before attempting download
+		if curl -sfIL "$gz_url" >/dev/null 2>&1; then
+			if download_with_retries "$gz_url" "$tmpdir/taplo.gz" 3; then
+				# Verify checksum BEFORE installing binary
+				checksum_url="${gz_url}.sha256"
+				checksum_ok=true
+				if download_with_retries "$checksum_url" "$tmpdir/taplo.gz.sha256" 3; then
+					echo -e "${BLUE}Verifying checksum for taplo...${NC}"
+					expected=$(awk '{print $1}' "$tmpdir/taplo.gz.sha256" | head -n1)
+					if command -v sha256sum >/dev/null 2>&1; then
+						actual=$(sha256sum "$tmpdir/taplo.gz" | awk '{print $1}')
+					elif command -v shasum >/dev/null 2>&1; then
+						actual=$(shasum -a 256 "$tmpdir/taplo.gz" | awk '{print $1}')
+					else
+						echo -e "${YELLOW}⚠ No sha256 tool available, skipping checksum verification${NC}"
+						actual="$expected"
+					fi
+					if [ "$expected" = "$actual" ]; then
+						echo -e "${GREEN}✓ Checksum verified${NC}"
+					else
+						echo -e "${RED}✗ Checksum mismatch for taplo (expected: $expected, got: $actual)${NC}"
+						checksum_ok=false
+					fi
+					rm -f "$tmpdir/taplo.gz.sha256" || true
 				fi
-				if [ "$expected" = "$actual" ]; then
-					echo -e "${GREEN}✓ Checksum verified${NC}"
-				else
-					echo -e "${RED}✗ Checksum mismatch for taplo (expected: $expected, got: $actual)${NC}"
-					rm -rf "$tmpdir"
-					exit 1
+				# Only install if checksum passed (or wasn't available)
+				if [ "$checksum_ok" = true ]; then
+					gunzip -c "$tmpdir/taplo.gz" >"$BIN_DIR/taplo"
+					chmod +x "$BIN_DIR/taplo"
+					echo -e "${GREEN}✓ taplo installed successfully${NC}"
+					taplo_installed=true
 				fi
-				rm -f "$tmpdir/taplo.gz.sha256" || true
 			fi
-			echo -e "${GREEN}✓ taplo installed successfully${NC}"
 		else
-			echo -e "${RED}✗ Failed to download taplo${NC}"
-			exit 1
+			echo -e "${YELLOW}⚠ GitHub release for taplo v${TAPLO_VERSION} not available${NC}"
 		fi
 		rm -rf "$tmpdir"
+
+		# Fallback to package managers if binary download failed
+		if [ "$taplo_installed" = false ]; then
+			echo -e "${BLUE}Attempting fallback installation methods...${NC}"
+			if [ "$os" = "darwin" ] && command -v brew &>/dev/null; then
+				echo -e "${BLUE}Installing taplo via Homebrew...${NC}"
+				if brew install taplo; then
+					echo -e "${GREEN}✓ taplo installed via Homebrew${NC}"
+					taplo_installed=true
+				fi
+			elif command -v cargo &>/dev/null; then
+				echo -e "${BLUE}Installing taplo via cargo...${NC}"
+				if cargo install taplo-cli --locked; then
+					echo -e "${GREEN}✓ taplo installed via cargo${NC}"
+					taplo_installed=true
+				fi
+			fi
+		fi
+
+		if [ "$taplo_installed" = false ]; then
+			echo -e "${RED}✗ Failed to install taplo${NC}"
+			exit 1
+		fi
 	fi
 
 	echo ""
