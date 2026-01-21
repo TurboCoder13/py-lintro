@@ -846,18 +846,17 @@ main() {
 		fi
 		rm -rf "$tmpdir"
 
-		# Fallback to package managers if binary download failed
+		# Fallback to cargo if binary download failed
 		if [ "$taplo_installed" = false ]; then
-			echo -e "${BLUE}Attempting fallback installation methods...${NC}"
-			if [ "$os" = "darwin" ] && command -v brew &>/dev/null; then
-				echo -e "${BLUE}Installing taplo via Homebrew...${NC}"
-				if brew install taplo; then
-					echo -e "${GREEN}✓ taplo installed via Homebrew${NC}"
-					taplo_installed=true
-				fi
-			elif command -v cargo &>/dev/null; then
+			echo -e "${BLUE}Attempting fallback installation via cargo...${NC}"
+			if command -v cargo &>/dev/null; then
 				echo -e "${BLUE}Installing taplo via cargo...${NC}"
 				if cargo install taplo-cli --locked; then
+					# Copy from cargo bin to system bin for Dockerfile compatibility
+					if [ -f "$HOME/.cargo/bin/taplo" ]; then
+						cp "$HOME/.cargo/bin/taplo" "$BIN_DIR/taplo"
+						chmod +x "$BIN_DIR/taplo"
+					fi
 					echo -e "${GREEN}✓ taplo installed via cargo${NC}"
 					taplo_installed=true
 				fi
