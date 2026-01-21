@@ -120,6 +120,9 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `test-verify-imports.sh`            | Verify critical package imports in installed lintro      | `./scripts/ci/test-verify-imports.sh wheel`                                           |
 | `extract-version-from-tag.sh`       | Extract version from git tag (strips v prefix)           | `./scripts/ci/extract-version-from-tag.sh`                                            |
 | `git-commit-push.sh`                | Stage, commit, and push with github-actions[bot]         | `./scripts/ci/git-commit-push.sh <pattern> <message>`                                 |
+| `tools-image-summary.sh`            | Generate GitHub step summary for tools image build       | `./scripts/ci/tools-image-summary.sh --help`                                          |
+| `tools-image-tags.sh`               | Generate Docker image tags for tools image build         | `./scripts/ci/tools-image-tags.sh --help`                                             |
+| `tools-image-verify.sh`             | Verify required tools are installed in tools image       | `./scripts/ci/tools-image-verify.sh --help`                                           |
 
 #### Homebrew Scripts (`ci/homebrew/`)
 
