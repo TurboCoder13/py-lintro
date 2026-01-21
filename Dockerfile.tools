@@ -61,7 +61,7 @@ RUN ARCH=$(uname -m) && \
     unzip -q "${BUN_ZIP}" && \
     mv "bun-linux-${BUN_ARCH}/bun" /usr/local/bin/bun && \
     chmod +x /usr/local/bin/bun && \
-    ln -s /usr/local/bin/bun /usr/local/bin/node && \
+    ln -sf /usr/local/bin/bun /usr/local/bin/node && \
     rm -rf /tmp/bun* /tmp/SHASUMS256.txt
 
 # Install uv with pinned version from GitHub releases

@@ -42,7 +42,11 @@ IMAGE_BASE="${IMAGE_BASE:-ghcr.io/turbocoder13/lintro-tools}"
 FORCE_LATEST="${FORCE_LATEST:-false}"
 PR_NUMBER="${PR_NUMBER:-}"
 
-SHORT_SHA=$(git rev-parse --short HEAD)
+if [[ -n "${GITHUB_SHA:-}" ]]; then
+	SHORT_SHA="${GITHUB_SHA:0:7}"
+else
+	SHORT_SHA=$(git rev-parse --short HEAD)
+fi
 IS_PR=$([[ "$EVENT_NAME" == "pull_request" ]] && echo true || echo false)
 
 # Start with SHA tag (always included)
