@@ -1,0 +1,126 @@
+# =============================================================================
+# Dockerfile.tools - Pre-built tools image for CI optimization
+# =============================================================================
+# This image contains all external linting tools used by lintro.
+# It's built weekly and on changes to install-tools.sh or package.json.
+# The main Dockerfile uses this as a base to avoid rebuilding tools on every PR.
+#
+# Build: docker build -f Dockerfile.tools -t lintro-tools:local .
+# =============================================================================
+FROM python:3.13-slim@sha256:05b118ecc93ea09e30569706568fb251c71b77d2a3908d338b77be033e162b59
+
+# Tool versions as build args for easy updates
+# Note: Most tool versions are defined in scripts/utils/install-tools.sh
+ARG BUN_VERSION=1.3.6
+ARG UV_VERSION=0.9.21
+
+# Add labels for container identification
+LABEL maintainer="turbocoder13"
+LABEL org.opencontainers.image.source="https://github.com/turbocoder13/py-lintro"
+LABEL org.opencontainers.image.description="Pre-built tools image for lintro CI"
+LABEL org.opencontainers.image.licenses="MIT"
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_SYSTEM_PYTHON=1 \
+    BUN_INSTALL="/root/.bun" \
+    PATH="/usr/local/bin:/root/.cargo/bin:/root/.bun/bin:${PATH}"
+
+# Set shell options for pipefail before using pipes
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+WORKDIR /app
+
+# Install system dependencies
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    build-essential \
+    git \
+    unzip \
+    jq && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install bun with pinned version
+# Download from GitHub releases and verify checksum
+# Create node symlink so npm packages with #!/usr/bin/env node work via bun
+# hadolint ignore=DL3003,SC2086
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then BUN_ARCH="x64"; \
+    elif [ "$ARCH" = "aarch64" ]; then BUN_ARCH="aarch64"; \
+    else echo "Unsupported arch: $ARCH" && exit 1; fi && \
+    BUN_ZIP="bun-linux-${BUN_ARCH}.zip" && \
+    BUN_URL="https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/${BUN_ZIP}" && \
+    CHECKSUM_URL="https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/SHASUMS256.txt" && \
+    curl -fsSL "$BUN_URL" -o "/tmp/${BUN_ZIP}" && \
+    curl -fsSL "$CHECKSUM_URL" -o /tmp/SHASUMS256.txt && \
+    cd /tmp && grep "${BUN_ZIP}" SHASUMS256.txt | sha256sum -c - && \
+    unzip -q "${BUN_ZIP}" && \
+    mv "bun-linux-${BUN_ARCH}/bun" /usr/local/bin/bun && \
+    chmod +x /usr/local/bin/bun && \
+    ln -s /usr/local/bin/bun /usr/local/bin/node && \
+    rm -rf /tmp/bun* /tmp/SHASUMS256.txt
+
+# Install uv with pinned version from GitHub releases
+# hadolint ignore=DL3003,SC2086
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then UV_ARCH="x86_64"; \
+    elif [ "$ARCH" = "aarch64" ]; then UV_ARCH="aarch64"; \
+    else echo "Unsupported arch: $ARCH" && exit 1; fi && \
+    UV_TAR="uv-${UV_ARCH}-unknown-linux-gnu.tar.gz" && \
+    UV_URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/${UV_TAR}" && \
+    CHECKSUM_URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/${UV_TAR}.sha256" && \
+    curl -fsSL "$UV_URL" -o "/tmp/${UV_TAR}" && \
+    curl -fsSL "$CHECKSUM_URL" -o "/tmp/${UV_TAR}.sha256" && \
+    cd /tmp && sha256sum -c "${UV_TAR}.sha256" && \
+    tar -xzf "${UV_TAR}" && \
+    mv "uv-${UV_ARCH}-unknown-linux-gnu/uv" /usr/local/bin/uv && \
+    chmod +x /usr/local/bin/uv && \
+    rm -rf /tmp/uv*
+
+# Copy scripts and package.json for tool installation
+COPY scripts/ /app/scripts/
+COPY package.json /app/package.json
+
+# Install external tools and copy Rust tools to system-wide location
+# Note: rustup is not copied as it's only needed for installation, not runtime
+RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
+    /app/scripts/utils/install-tools.sh --docker && \
+    if [ -d "/root/.cargo/bin" ]; then \
+        cp -p /root/.cargo/bin/cargo /usr/local/bin/cargo && \
+        cp -p /root/.cargo/bin/rustc /usr/local/bin/rustc && \
+        cp -p /root/.cargo/bin/rustfmt /usr/local/bin/rustfmt && \
+        chmod +x /usr/local/bin/cargo /usr/local/bin/rustc /usr/local/bin/rustfmt; \
+    fi
+
+# Verify all tools are installed
+RUN bun --version && \
+    uv --version && \
+    cargo --version && \
+    rustc --version && \
+    actionlint --version && \
+    bandit --version && \
+    biome --version && \
+    black --version && \
+    cargo audit --version && \
+    cargo clippy --version && \
+    darglint --version && \
+    gitleaks version && \
+    hadolint --version && \
+    markdownlint-cli2 --version && \
+    mypy --version && \
+    prettier --version && \
+    ruff --version && \
+    semgrep --version && \
+    shellcheck --version && \
+    shfmt --version && \
+    sqlfluff --version && \
+    taplo --version && \
+    rustfmt --version && \
+    yamllint --version
+
+# The tools image doesn't need an entrypoint - it's used as a base for other images
+CMD ["bash"]
