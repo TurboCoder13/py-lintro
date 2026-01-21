@@ -852,13 +852,18 @@ main() {
 			if command -v cargo &>/dev/null; then
 				echo -e "${BLUE}Installing taplo via cargo...${NC}"
 				if cargo install taplo-cli --locked; then
-					# Copy from cargo bin to system bin for Dockerfile compatibility
-					if [ -f "$HOME/.cargo/bin/taplo" ]; then
-						cp "$HOME/.cargo/bin/taplo" "$BIN_DIR/taplo"
+					# Derive cargo bin directory from CARGO_HOME or default
+					cargo_bin="${CARGO_HOME:-$HOME/.cargo}/bin"
+					# Check for executable taplo in cargo bin, fall back to PATH
+					if [ -x "$cargo_bin/taplo" ]; then
+						cp "$cargo_bin/taplo" "$BIN_DIR/taplo"
 						chmod +x "$BIN_DIR/taplo"
+						echo -e "${GREEN}✓ taplo installed via cargo${NC}"
+						taplo_installed=true
+					elif command -v taplo &>/dev/null; then
+						echo -e "${GREEN}✓ taplo installed via cargo (found on PATH)${NC}"
+						taplo_installed=true
 					fi
-					echo -e "${GREEN}✓ taplo installed via cargo${NC}"
-					taplo_installed=true
 				fi
 			fi
 		fi
