@@ -297,6 +297,12 @@ module = ["scripts", "scripts.*", "scripts.utils", "scripts.utils.*"]
 disallow_untyped_defs = false
 check_untyped_defs = true
 
+[tool.uv]
+constraint-dependencies = [
+  # Security fix: TOCTOU vulnerability in directory creation (dependabot alert #4)
+  "virtualenv>=20.36.1",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
