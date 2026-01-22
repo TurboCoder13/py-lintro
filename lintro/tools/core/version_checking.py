@@ -116,7 +116,9 @@ def get_install_hints() -> dict[str, str]:
     """
     # Static templates mapping tool -> install hint template with {version} placeholder
     templates: dict[str, str] = {
-        "pytest": "Install via: pip install pytest>={version} or uv add pytest>={version}",
+        "pytest": (
+            "Install via: pip install pytest>={version} or uv add pytest>={version}"
+        ),
         "prettier": "Install via: bun add -d prettier@>={version}",
         "biome": "Install via: bun add -d @biomejs/biome@>={version}",
         "markdownlint": "Install via: bun add -d markdownlint-cli2@>={version}",
@@ -129,7 +131,9 @@ def get_install_hints() -> dict[str, str]:
         "clippy": "Install via: rustup component add clippy (requires Rust {version}+)",
         "rustfmt": "Install via: rustup component add rustfmt (v{version}+)",
         "cargo_audit": "Install via: cargo install cargo-audit (v{version}+)",
-        "semgrep": "Install via: pip install semgrep>={version} or brew install semgrep",
+        "semgrep": (
+            "Install via: pip install semgrep>={version} or brew install semgrep"
+        ),
         "gitleaks": (
             "Install via: https://github.com/gitleaks/gitleaks/releases (v{version}+)"
         ),
