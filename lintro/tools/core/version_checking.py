@@ -114,63 +114,49 @@ def get_install_hints() -> dict[str, str]:
     Returns:
         dict[str, str]: Dictionary mapping tool names to installation hint strings.
     """
-    versions = get_minimum_versions()
-    hints: dict[str, str] = {
-        "pytest": (
-            f"Install via: pip install pytest>={versions['pytest']} "
-            f"or uv add pytest>={versions['pytest']}"
-        ),
-        "prettier": (f"Install via: bun add -d prettier@>={versions['prettier']}"),
-        "biome": (f"Install via: bun add -d @biomejs/biome@>={versions['biome']}"),
-        "markdownlint": (
-            f"Install via: bun add -d markdownlint-cli2@>={versions['markdownlint']}"
-        ),
+    # Static templates mapping tool -> install hint template with {version} placeholder
+    templates: dict[str, str] = {
+        "pytest": "Install via: pip install pytest>={version} or uv add pytest>={version}",
+        "prettier": "Install via: bun add -d prettier@>={version}",
+        "biome": "Install via: bun add -d @biomejs/biome@>={version}",
+        "markdownlint": "Install via: bun add -d markdownlint-cli2@>={version}",
         "hadolint": (
-            f"Install via: https://github.com/hadolint/hadolint/releases "
-            f"(v{versions['hadolint']}+)"
+            "Install via: https://github.com/hadolint/hadolint/releases (v{version}+)"
         ),
         "actionlint": (
-            f"Install via: https://github.com/rhysd/actionlint/releases "
-            f"(v{versions['actionlint']}+)"
+            "Install via: https://github.com/rhysd/actionlint/releases (v{version}+)"
         ),
-        "clippy": (
-            f"Install via: rustup component add clippy "
-            f"(requires Rust {versions['clippy']}+)"
-        ),
-        "rustfmt": (
-            f"Install via: rustup component add rustfmt (v{versions['rustfmt']}+)"
-        ),
-        "cargo_audit": (
-            f"Install via: cargo install cargo-audit (v{versions['cargo_audit']}+)"
-        ),
-        "semgrep": (
-            f"Install via: pip install semgrep>="
-            f"{versions['semgrep']} or brew install semgrep"
-        ),
+        "clippy": "Install via: rustup component add clippy (requires Rust {version}+)",
+        "rustfmt": "Install via: rustup component add rustfmt (v{version}+)",
+        "cargo_audit": "Install via: cargo install cargo-audit (v{version}+)",
+        "semgrep": "Install via: pip install semgrep>={version} or brew install semgrep",
         "gitleaks": (
-            f"Install via: https://github.com/gitleaks/gitleaks/releases "
-            f"(v{versions['gitleaks']}+)"
+            "Install via: https://github.com/gitleaks/gitleaks/releases (v{version}+)"
         ),
         "shellcheck": (
-            f"Install via: https://github.com/koalaman/shellcheck/releases "
-            f"(v{versions['shellcheck']}+)"
+            "Install via: https://github.com/koalaman/shellcheck/releases (v{version}+)"
         ),
-        "shfmt": (
-            f"Install via: https://github.com/mvdan/sh/releases (v{versions['shfmt']}+)"
-        ),
+        "shfmt": "Install via: https://github.com/mvdan/sh/releases (v{version}+)",
         "sqlfluff": (
-            f"Install via: pip install sqlfluff>="
-            f"{versions['sqlfluff']} "
-            f"or uv add sqlfluff>={versions['sqlfluff']}"
+            "Install via: pip install sqlfluff>={version} or uv add sqlfluff>={version}"
         ),
         "taplo": (
-            f"Install via: cargo install taplo-cli "
-            f"or download from https://github.com/tamasfe/taplo/releases "
-            f"(v{versions['taplo']}+)"
+            "Install via: cargo install taplo-cli "
+            "or download from https://github.com/tamasfe/taplo/releases (v{version}+)"
         ),
     }
 
-    missing = set(versions) - set(hints)
+    versions = get_minimum_versions()
+    hints: dict[str, str] = {}
+
+    # Build hints only for tools that exist in versions
+    for tool, template in templates.items():
+        version = versions.get(tool)
+        if version is not None:
+            hints[tool] = template.format(version=version)
+
+    # Warn about tools in versions that don't have templates
+    missing = set(versions) - set(templates)
     if missing:
         logger.warning(
             "Missing install hints for tools: %s",
