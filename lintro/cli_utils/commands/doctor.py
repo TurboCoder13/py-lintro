@@ -87,7 +87,7 @@ def _compare_versions(installed: str, expected: str) -> str:
         expected: Expected minimum version string.
 
     Returns:
-        Status string: "ok", "outdated", or "unknown".
+        str: Status string - "ok", "outdated", or "unknown".
     """
     try:
         installed_parts = [int(x) for x in installed.split(".")[:3]]
@@ -125,6 +125,13 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
     Checks tools that must be installed separately (hadolint, actionlint,
     prettier, etc.). Bundled Python tools are managed via pip/uv.
 
+    Args:
+        json_output: If True, output results as JSON.
+        tools: Comma-separated list of tools to check, or None for all.
+
+    Raises:
+        SystemExit: If there are missing or outdated tools (non-JSON mode).
+
     Examples:
         lintro doctor
         lintro doctor --tools hadolint,actionlint,prettier
@@ -137,7 +144,7 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
     if uncovered_tools and not json_output:
         console.print(
             f"[yellow]Warning: No version command defined for: "
-            f"{', '.join(uncovered_tools)}[/yellow]"
+            f"{', '.join(uncovered_tools)}[/yellow]",
         )
 
     # Filter tools if specified
@@ -229,24 +236,26 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
         if unknown_count > 0:
             display_console.print(
                 f"[green]✅ {ok_count} tool(s) OK[/green], "
-                f"[dim]{unknown_count} with unknown version format[/dim]"
+                f"[dim]{unknown_count} with unknown version format[/dim]",
             )
         else:
             display_console.print(
-                f"[green]✅ All {total} tools are properly installed.[/green]"
+                f"[green]✅ All {total} tools are properly installed.[/green]",
             )
     else:
         if missing_count > 0:
             display_console.print(f"[red]✗ {missing_count} tool(s) missing[/red]")
         if outdated_count > 0:
-            display_console.print(f"[yellow]⚠ {outdated_count} tool(s) outdated[/yellow]")
+            display_console.print(
+                f"[yellow]⚠ {outdated_count} tool(s) outdated[/yellow]",
+            )
         if unknown_count > 0:
             display_console.print(
-                f"[dim]? {unknown_count} tool(s) with unknown version format[/dim]"
+                f"[dim]? {unknown_count} tool(s) with unknown version format[/dim]",
             )
         display_console.print()
         display_console.print(
-            "[dim]Run 'lintro versions --verbose' for installation instructions.[/dim]"
+            "[dim]Run 'lintro versions --verbose' for installation instructions.[/dim]",
         )
 
     # Exit with error if any tools are missing or outdated

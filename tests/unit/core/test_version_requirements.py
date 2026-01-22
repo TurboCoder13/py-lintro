@@ -106,35 +106,30 @@ def test_extract_version_from_output(
     assert_that(extract_version_from_output(output, tool_name)).is_equal_to(expected)
 
 
-def test_get_minimum_versions_from_pyproject() -> None:
-    """Test reading minimum versions from pyproject.toml."""
+def test_get_minimum_versions_from_tool_versions() -> None:
+    """Test reading minimum versions from _tool_versions.py."""
     versions = get_minimum_versions()
 
-    # Should include bundled tools from dependencies
-    assert_that(versions).contains_key("ruff")
-    assert_that(versions).contains_key("black")
-    assert_that(versions).contains_key("bandit")
-    assert_that(versions).contains_key("yamllint")
-    assert_that(versions).contains_key("darglint")
-
-    # Should include tools from [tool.lintro.versions]
+    # Should include external tools from _tool_versions.py
     assert_that(versions).contains_key("prettier")
     assert_that(versions).contains_key("hadolint")
     assert_that(versions).contains_key("actionlint")
     assert_that(versions).contains_key("pytest")
+    assert_that(versions).contains_key("biome")
+    assert_that(versions).contains_key("semgrep")
 
     # Versions should be strings
-    assert_that(versions["ruff"]).is_instance_of(str)
     assert_that(versions["prettier"]).is_instance_of(str)
+    assert_that(versions["hadolint"]).is_instance_of(str)
 
 
 def test_get_install_hints() -> None:
     """Test generating install hints."""
     hints = get_install_hints()
 
-    assert_that(hints).contains_key("ruff")
+    assert_that(hints).contains_key("pytest")
     assert_that(hints).contains_key("prettier")
-    assert_that(hints["ruff"]).contains("Install via:")
+    assert_that(hints["pytest"]).contains("Install via:")
     assert_that(hints["prettier"]).contains("bun add")
 
 
@@ -164,16 +159,16 @@ def test_check_tool_version_success(mock_run: MagicMock) -> None:
         (),
         {
             "returncode": 0,
-            "stdout": "ruff 0.14.4",
+            "stdout": "Prettier 3.7.3",
             "stderr": "",
         },
     )()
 
-    result = check_tool_version("ruff", ["ruff"])
+    result = check_tool_version("prettier", ["prettier"])
 
-    assert_that(result.name).is_equal_to("ruff")
-    assert_that(result.current_version).is_equal_to("0.14.4")
-    assert_that(result.min_version).is_equal_to("0.14.0")  # From pyproject.toml
+    assert_that(result.name).is_equal_to("prettier")
+    assert_that(result.current_version).is_equal_to("3.7.3")
+    assert_that(result.min_version).is_equal_to("3.7.3")  # From _tool_versions.py
     assert_that(result.version_check_passed).is_true()
     assert_that(result.error_message).is_none()
 
@@ -190,16 +185,16 @@ def test_check_tool_version_failure(mock_run: MagicMock) -> None:
         (),
         {
             "returncode": 0,
-            "stdout": "ruff 0.13.0",  # Older than minimum 0.14.0
+            "stdout": "Prettier 3.0.0",  # Older than minimum 3.7.3
             "stderr": "",
         },
     )()
 
-    result = check_tool_version("ruff", ["ruff"])
+    result = check_tool_version("prettier", ["prettier"])
 
-    assert_that(result.name).is_equal_to("ruff")
-    assert_that(result.current_version).is_equal_to("0.13.0")
-    assert_that(result.min_version).is_equal_to("0.14.0")
+    assert_that(result.name).is_equal_to("prettier")
+    assert_that(result.current_version).is_equal_to("3.0.0")
+    assert_that(result.min_version).is_equal_to("3.7.3")
     assert_that(result.version_check_passed).is_false()
     assert_that(result.error_message).contains("below minimum requirement")
 
@@ -288,24 +283,3 @@ def test_get_all_tool_versions(mock_run: MagicMock) -> None:
     for tool_name, info in results.items():
         assert_that(info).is_instance_of(ToolVersionInfo)
         assert_that(info.name).is_equal_to(tool_name)
-
-
-@pytest.mark.parametrize(
-    "specifier,expected",
-    [
-        (">=0.14.0", "0.14.0"),
-        ("==1.8.1", "1.8.1"),
-        (">=25.0.0,<26.0.0", "25.0.0"),
-        ("1.0.0", "1.0.0"),  # No operator
-    ],
-)
-def test_parse_version_specifier(specifier: str, expected: str) -> None:
-    """Test parsing PEP 508 version specifiers.
-
-    Args:
-        specifier: PEP 508 version specifier string.
-        expected: Expected parsed version string.
-    """
-    from lintro.tools.core.version_checking import _parse_version_specifier
-
-    assert_that(_parse_version_specifier(specifier)).is_equal_to(expected)

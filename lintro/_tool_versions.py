@@ -12,7 +12,8 @@ To update a version:
 2. Renovate will automatically create PRs for updates
 
 For shell scripts that need these versions, use:
-    python3 -c "from lintro._tool_versions import TOOL_VERSIONS; print(TOOL_VERSIONS['toolname'])"
+    python3 -c "from lintro._tool_versions import TOOL_VERSIONS; \
+print(TOOL_VERSIONS['toolname'])"
 """
 
 from __future__ import annotations

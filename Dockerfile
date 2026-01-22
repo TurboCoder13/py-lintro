@@ -38,9 +38,10 @@ RUN curl -fsSL https://bun.sh/install | bash && \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     mv /root/.local/bin/uv /usr/local/bin/uv
 
-# Copy project files (needed for tool version info in install-tools.sh)
+# Copy only _tool_versions.py first (needed for tool version info in install-tools.sh)
+# This preserves Docker layer cache - tool install won't rebuild on source changes
 COPY pyproject.toml /app/
-COPY lintro/ /app/lintro/
+COPY lintro/_tool_versions.py /app/lintro/_tool_versions.py
 
 # Copy scripts and package.json for tool installation
 COPY scripts/ /app/scripts/
@@ -56,6 +57,9 @@ RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
         cp -p /root/.cargo/bin/rustfmt /usr/local/bin/rustfmt 2>/dev/null || true; \
         chmod +x /usr/local/bin/cargo /usr/local/bin/rustc /usr/local/bin/rustup /usr/local/bin/rustfmt 2>/dev/null || true; \
     fi
+
+# Copy full source before installing Python dependencies
+COPY lintro/ /app/lintro/
 
 # Install Python dependencies
 RUN uv sync --dev --extra tools --no-progress && (uv cache clean || true)

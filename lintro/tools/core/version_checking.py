@@ -11,7 +11,8 @@ External tool versions are defined directly in lintro/_tool_versions.py. This en
 1. One place to update versions (_tool_versions.py)
 2. Renovate can track and update versions automatically via regex matching
 3. Installed packages have access to version requirements (no build-time generation)
-4. Shell scripts can read versions via: python3 -c "from lintro._tool_versions import ..."
+4. Shell scripts can read versions via:
+   python3 -c "from lintro._tool_versions import ..."
 
 Bundled Python tools (ruff, black, bandit, mypy, yamllint, darglint) are managed
 via pyproject.toml dependencies and don't need tracking in _tool_versions.py.
@@ -112,9 +113,6 @@ def get_install_hints() -> dict[str, str]:
 
     Returns:
         dict[str, str]: Dictionary mapping tool names to installation hint strings.
-
-    Raises:
-        KeyError: If a tool is missing from TOOL_VERSIONS (indicates code out of sync).
     """
     versions = get_minimum_versions()
     hints: dict[str, str] = {
@@ -122,17 +120,10 @@ def get_install_hints() -> dict[str, str]:
             f"Install via: pip install pytest>={versions['pytest']} "
             f"or uv add pytest>={versions['pytest']}"
         ),
-        "prettier": (
-            f"Install via: bun add -d "
-            f"prettier@>={versions['prettier']}"
-        ),
-        "biome": (
-            f"Install via: bun add -d "
-            f"@biomejs/biome@>={versions['biome']}"
-        ),
+        "prettier": (f"Install via: bun add -d prettier@>={versions['prettier']}"),
+        "biome": (f"Install via: bun add -d @biomejs/biome@>={versions['biome']}"),
         "markdownlint": (
-            f"Install via: bun add -d "
-            f"markdownlint-cli2@>={versions['markdownlint']}"
+            f"Install via: bun add -d markdownlint-cli2@>={versions['markdownlint']}"
         ),
         "hadolint": (
             f"Install via: https://github.com/hadolint/hadolint/releases "
@@ -147,12 +138,10 @@ def get_install_hints() -> dict[str, str]:
             f"(requires Rust {versions['clippy']}+)"
         ),
         "rustfmt": (
-            f"Install via: rustup component add rustfmt "
-            f"(v{versions['rustfmt']}+)"
+            f"Install via: rustup component add rustfmt (v{versions['rustfmt']}+)"
         ),
         "cargo_audit": (
-            f"Install via: cargo install cargo-audit "
-            f"(v{versions['cargo_audit']}+)"
+            f"Install via: cargo install cargo-audit (v{versions['cargo_audit']}+)"
         ),
         "semgrep": (
             f"Install via: pip install semgrep>="
@@ -167,8 +156,7 @@ def get_install_hints() -> dict[str, str]:
             f"(v{versions['shellcheck']}+)"
         ),
         "shfmt": (
-            f"Install via: https://github.com/mvdan/sh/releases "
-            f"(v{versions['shfmt']}+)"
+            f"Install via: https://github.com/mvdan/sh/releases (v{versions['shfmt']}+)"
         ),
         "sqlfluff": (
             f"Install via: pip install sqlfluff>="

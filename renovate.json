@@ -81,14 +81,20 @@
       "groupSlug": "linting-tools",
       "matchPackageNames": [
         "hadolint",
+        "hadolint/hadolint",
         "actionlint",
+        "rhysd/actionlint",
         "prettier",
         "markdownlint-cli2",
         "@biomejs/biome",
         "gitleaks",
+        "gitleaks/gitleaks",
         "shellcheck",
+        "koalaman/shellcheck",
         "shfmt",
-        "taplo"
+        "mvdan/sh",
+        "taplo",
+        "tamasfe/taplo"
       ],
       "automerge": false
     }
@@ -133,9 +139,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["Dockerfile\\.tools"],
-      "matchStrings": [
-        "ARG BUN_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"
-      ],
+      "matchStrings": ["ARG BUN_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "oven-sh/bun",
       "extractVersionTemplate": "^bun-v(?<version>.*)$"
@@ -143,9 +147,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["Dockerfile\\.tools"],
-      "matchStrings": [
-        "ARG UV_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"
-      ],
+      "matchStrings": ["ARG UV_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "astral-sh/uv"
     },
@@ -194,9 +196,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"biome\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"biome\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "npm",
       "packageNameTemplate": "@biomejs/biome"
     },
@@ -232,9 +232,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"shfmt\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"shfmt\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "mvdan/sh",
       "extractVersionTemplate": "^v(?<version>.*)$"
@@ -242,9 +240,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"taplo\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"taplo\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "tamasfe/taplo",
       "extractVersionTemplate": "^release-taplo-(?<version>.*)$"
@@ -252,9 +248,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"semgrep\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"semgrep\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "pypi",
       "packageNameTemplate": "semgrep"
     },
@@ -270,9 +264,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"pytest\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"pytest\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "pypi",
       "packageNameTemplate": "pytest"
     },
