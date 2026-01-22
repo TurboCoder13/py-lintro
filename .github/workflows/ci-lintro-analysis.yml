@@ -94,6 +94,8 @@ jobs:
           push: false
           load: true
           tags: py-lintro:latest
+          build-args: |
+            TOOLS_IMAGE=ghcr.io/turbocoder13/lintro-tools:latest
           # Cache disabled for docker driver - not supported
           # cache-from: type=gha
           # cache-to: type=gha,mode=max

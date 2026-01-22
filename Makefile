@@ -3,6 +3,9 @@
 # Include .env file if it exists
 -include .env
 
+# Pre-built tools image for faster Docker builds
+TOOLS_IMAGE ?= ghcr.io/turbocoder13/lintro-tools:latest
+
 # Default target
 all: setup test
 
@@ -52,7 +55,7 @@ lintro-format: format
 # Build Docker image
 docker-build:
 	@echo "Building Docker image..."
-	docker build -t py-lintro:latest .
+	docker build --build-arg TOOLS_IMAGE=$(TOOLS_IMAGE) -t py-lintro:latest .
 
 # Run tests in Docker
 docker-test:
