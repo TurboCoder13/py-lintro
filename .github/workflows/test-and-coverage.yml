@@ -174,7 +174,6 @@ jobs:
             bun.sh:443
             astral.sh:443
             sh.rustup.rs:443
-            deb.debian.org:80
             registry.npmjs.org:443
             crates.io:443
             static.crates.io:443
