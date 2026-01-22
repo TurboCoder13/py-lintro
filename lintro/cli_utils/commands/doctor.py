@@ -29,7 +29,7 @@ TOOL_COMMANDS: dict[str, list[str]] = {
     "hadolint": ["hadolint", "--version"],
     "markdownlint": ["markdownlint-cli2", "--version"],
     "prettier": ["prettier", "--version"],
-    "pytest": ["python", "-m", "pytest", "--version"],
+    "pytest": [sys.executable, "-m", "pytest", "--version"],
     "rustfmt": ["rustfmt", "--version"],
     "semgrep": ["semgrep", "--version"],
     "shellcheck": ["shellcheck", "--version"],
@@ -130,7 +130,7 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
         tools: Comma-separated list of tools to check, or None for all.
 
     Raises:
-        SystemExit: If there are missing or outdated tools (non-JSON mode).
+        SystemExit: If there are missing or outdated tools.
 
     Examples:
         lintro doctor

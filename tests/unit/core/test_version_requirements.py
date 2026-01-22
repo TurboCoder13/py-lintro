@@ -154,12 +154,13 @@ def test_check_tool_version_success(mock_run: MagicMock) -> None:
     Args:
         mock_run: Mocked subprocess.run function.
     """
+    min_prettier = get_minimum_versions()["prettier"]
     mock_run.return_value = type(
         "MockResult",
         (),
         {
             "returncode": 0,
-            "stdout": "Prettier 3.7.3",
+            "stdout": f"Prettier {min_prettier}",
             "stderr": "",
         },
     )()
@@ -167,8 +168,8 @@ def test_check_tool_version_success(mock_run: MagicMock) -> None:
     result = check_tool_version("prettier", ["prettier"])
 
     assert_that(result.name).is_equal_to("prettier")
-    assert_that(result.current_version).is_equal_to("3.7.3")
-    assert_that(result.min_version).is_equal_to("3.7.3")  # From _tool_versions.py
+    assert_that(result.current_version).is_equal_to(min_prettier)
+    assert_that(result.min_version).is_equal_to(min_prettier)
     assert_that(result.version_check_passed).is_true()
     assert_that(result.error_message).is_none()
 
@@ -180,12 +181,13 @@ def test_check_tool_version_failure(mock_run: MagicMock) -> None:
     Args:
         mock_run: Mocked subprocess.run function.
     """
+    min_prettier = get_minimum_versions()["prettier"]
     mock_run.return_value = type(
         "MockResult",
         (),
         {
             "returncode": 0,
-            "stdout": "Prettier 3.0.0",  # Older than minimum 3.7.3
+            "stdout": "Prettier 0.0.0",  # Always below any real minimum
             "stderr": "",
         },
     )()
@@ -193,8 +195,8 @@ def test_check_tool_version_failure(mock_run: MagicMock) -> None:
     result = check_tool_version("prettier", ["prettier"])
 
     assert_that(result.name).is_equal_to("prettier")
-    assert_that(result.current_version).is_equal_to("3.0.0")
-    assert_that(result.min_version).is_equal_to("3.7.3")
+    assert_that(result.current_version).is_equal_to("0.0.0")
+    assert_that(result.min_version).is_equal_to(min_prettier)
     assert_that(result.version_check_passed).is_false()
     assert_that(result.error_message).contains("below minimum requirement")
 

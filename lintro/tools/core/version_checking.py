@@ -170,4 +170,11 @@ def get_install_hints() -> dict[str, str]:
         ),
     }
 
+    missing = set(versions) - set(hints)
+    if missing:
+        logger.warning(
+            "Missing install hints for tools: %s",
+            ", ".join(sorted(missing)),
+        )
+
     return hints
