@@ -87,8 +87,6 @@ def build_macos_binary(arch: str = "arm64", verbose: bool = False) -> int:
         # macOS-specific options
         f"--macos-target-arch={arch}",
         "--macos-app-mode=console",
-        # Disable console window (not needed for CLI)
-        "--disable-console",
         # Include all lintro packages
     ]
 
