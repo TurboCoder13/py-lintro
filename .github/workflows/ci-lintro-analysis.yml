@@ -41,7 +41,6 @@ jobs:
             github.com:443
             api.github.com:443
             codeload.github.com:443
-            downloads.github.com:443
             release-assets.githubusercontent.com:443
             objects.githubusercontent.com:443
             ghcr.io:443
@@ -53,6 +52,15 @@ jobs:
             pypi.org:443
             files.pythonhosted.org:443
             static.rust-lang.org:443
+            bun.sh:443
+            astral.sh:443
+            sh.rustup.rs:443
+            deb.debian.org:80
+            registry.npmjs.org:443
+            crates.io:443
+            static.crates.io:443
+            index.crates.io:443
+            semgrep.dev:443
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:

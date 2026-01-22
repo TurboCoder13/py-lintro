@@ -10,9 +10,34 @@ set -euo pipefail
 #   ./scripts/install-tools.sh [--help] [--dry-run] [--verbose] [--local|--docker]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # SC1091: path is dynamically constructed, file exists at runtime
 # shellcheck source=utils.sh disable=SC1091
 source "$SCRIPT_DIR/utils.sh"
+
+# Get tool version from lintro/_tool_versions.py
+# This module is the single source of truth for all tool versions
+# Uses runpy.run_path() to execute the file directly without package installation
+get_tool_version() {
+	local tool_name="$1"
+	local version
+	version=$(python3 -c "
+import runpy
+import sys
+
+versions = runpy.run_path('$PROJECT_ROOT/lintro/_tool_versions.py')
+version = versions['TOOL_VERSIONS'].get('$tool_name')
+if version:
+    print(version)
+else:
+    sys.exit(1)
+" 2>/dev/null)
+	if [ -z "$version" ]; then
+		echo "ERROR: Version for '$tool_name' not found in lintro/_tool_versions.py" >&2
+		return 1
+	fi
+	echo "$version"
+}
 
 # Show help if requested
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
@@ -357,13 +382,13 @@ main() {
 
 	# Install hadolint (Docker linting)
 	# hadolint with checksum verification when available
-	HADOLINT_VERSION="2.12.0"
+	HADOLINT_VERSION=$(get_tool_version "hadolint") || exit 1
 	install_tool_curl "hadolint" \
 		"https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint"
 
 	# Install gitleaks (secret detection)
 	echo -e "${BLUE}Installing gitleaks...${NC}"
-	GITLEAKS_VERSION="8.21.2"
+	GITLEAKS_VERSION=$(get_tool_version "gitleaks") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install gitleaks v${GITLEAKS_VERSION}"
 	elif command -v gitleaks &>/dev/null; then
@@ -420,7 +445,7 @@ main() {
 	# Install actionlint (GitHub Actions workflow linter)
 	# Prebuilt binaries: https://github.com/rhysd/actionlint/releases
 	echo -e "${BLUE}Installing actionlint...${NC}"
-	ACTIONLINT_VERSION="v1.7.5"
+	ACTIONLINT_VERSION="v$(get_tool_version "actionlint")" || exit 1
 	# actionlint release assets are named actionlint_${version}_${os}_${arch}.tar.gz
 	# We'll try to download and extract the binary
 	tmpdir=$(mktemp -d)
@@ -471,7 +496,7 @@ main() {
 
 	# Install shfmt (shell script formatter)
 	echo -e "${BLUE}Installing shfmt...${NC}"
-	SHFMT_VERSION="3.10.0"
+	SHFMT_VERSION=$(get_tool_version "shfmt") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install shfmt v${SHFMT_VERSION}"
 	elif command -v shfmt &>/dev/null; then
@@ -655,9 +680,10 @@ main() {
 
 	# Install semgrep (security scanner)
 	echo -e "${BLUE}Installing semgrep...${NC}"
+	SEMGREP_VERSION=$(get_tool_version "semgrep") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install semgrep"
-	elif install_python_package "semgrep" "1.50.0"; then
+		log_info "[DRY-RUN] Would install semgrep==${SEMGREP_VERSION}"
+	elif install_python_package "semgrep" "$SEMGREP_VERSION"; then
 		echo -e "${GREEN}✓ semgrep installed successfully${NC}"
 	else
 		echo -e "${RED}✗ Failed to install semgrep${NC}"
@@ -666,7 +692,7 @@ main() {
 
 	# Install shellcheck (shell script linter)
 	echo -e "${BLUE}Installing shellcheck...${NC}"
-	SHELLCHECK_VERSION="0.11.0"
+	SHELLCHECK_VERSION=$(get_tool_version "shellcheck") || exit 1
 
 	# Helper function for shellcheck binary installation
 	install_shellcheck_binary() {
@@ -781,9 +807,10 @@ main() {
 
 	# Install sqlfluff (SQL linter and formatter)
 	echo -e "${BLUE}Installing sqlfluff...${NC}"
+	SQLFLUFF_VERSION=$(get_tool_version "sqlfluff") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install sqlfluff==3.0.0"
-	elif install_python_package "sqlfluff" "3.0.0"; then
+		log_info "[DRY-RUN] Would install sqlfluff==${SQLFLUFF_VERSION}"
+	elif install_python_package "sqlfluff" "$SQLFLUFF_VERSION"; then
 		echo -e "${GREEN}✓ sqlfluff installed successfully${NC}"
 	else
 		echo -e "${RED}✗ Failed to install sqlfluff${NC}"
@@ -792,12 +819,13 @@ main() {
 
 	# Install taplo (TOML linter and formatter)
 	echo -e "${BLUE}Installing taplo...${NC}"
-	TAPLO_VERSION="0.9.3"
+	TAPLO_VERSION=$(get_tool_version "taplo") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install taplo v${TAPLO_VERSION}"
 	elif command -v taplo &>/dev/null; then
 		echo -e "${GREEN}✓ taplo already installed${NC}"
 	else
+		taplo_installed=false
 		tmpdir=$(mktemp -d)
 		os=$(uname -s | tr '[:upper:]' '[:lower:]')
 		arch=$(uname -m)
@@ -807,37 +835,70 @@ main() {
 		esac
 		# taplo releases use format: taplo-full-{os}-{arch}.gz
 		gz_url="https://github.com/tamasfe/taplo/releases/download/${TAPLO_VERSION}/taplo-full-${os}-${arch}.gz"
-		if download_with_retries "$gz_url" "$tmpdir/taplo.gz" 3; then
-			gunzip -c "$tmpdir/taplo.gz" >"$BIN_DIR/taplo"
-			chmod +x "$BIN_DIR/taplo"
-			# Attempt checksum verification when available
-			checksum_url="${gz_url}.sha256"
-			if download_with_retries "$checksum_url" "$tmpdir/taplo.gz.sha256" 3; then
-				echo -e "${BLUE}Verifying checksum for taplo...${NC}"
-				expected=$(awk '{print $1}' "$tmpdir/taplo.gz.sha256" | head -n1)
-				if command -v sha256sum >/dev/null 2>&1; then
-					actual=$(sha256sum "$tmpdir/taplo.gz" | awk '{print $1}')
-				elif command -v shasum >/dev/null 2>&1; then
-					actual=$(shasum -a 256 "$tmpdir/taplo.gz" | awk '{print $1}')
-				else
-					echo -e "${YELLOW}⚠ No sha256 tool available, skipping checksum verification${NC}"
-					actual="$expected"
+		# Check if GitHub release exists before attempting download
+		if curl -sfIL "$gz_url" >/dev/null 2>&1; then
+			if download_with_retries "$gz_url" "$tmpdir/taplo.gz" 3; then
+				# Verify checksum BEFORE installing binary
+				checksum_url="${gz_url}.sha256"
+				checksum_ok=true
+				if download_with_retries "$checksum_url" "$tmpdir/taplo.gz.sha256" 3; then
+					echo -e "${BLUE}Verifying checksum for taplo...${NC}"
+					expected=$(awk '{print $1}' "$tmpdir/taplo.gz.sha256" | head -n1)
+					if command -v sha256sum >/dev/null 2>&1; then
+						actual=$(sha256sum "$tmpdir/taplo.gz" | awk '{print $1}')
+					elif command -v shasum >/dev/null 2>&1; then
+						actual=$(shasum -a 256 "$tmpdir/taplo.gz" | awk '{print $1}')
+					else
+						echo -e "${YELLOW}⚠ No sha256 tool available, skipping checksum verification${NC}"
+						actual="$expected"
+					fi
+					if [ "$expected" = "$actual" ]; then
+						echo -e "${GREEN}✓ Checksum verified${NC}"
+					else
+						echo -e "${RED}✗ Checksum mismatch for taplo (expected: $expected, got: $actual)${NC}"
+						checksum_ok=false
+					fi
+					rm -f "$tmpdir/taplo.gz.sha256" || true
 				fi
-				if [ "$expected" = "$actual" ]; then
-					echo -e "${GREEN}✓ Checksum verified${NC}"
-				else
-					echo -e "${RED}✗ Checksum mismatch for taplo (expected: $expected, got: $actual)${NC}"
-					rm -rf "$tmpdir"
-					exit 1
+				# Only install if checksum passed (or wasn't available)
+				if [ "$checksum_ok" = true ]; then
+					gunzip -c "$tmpdir/taplo.gz" >"$BIN_DIR/taplo"
+					chmod +x "$BIN_DIR/taplo"
+					echo -e "${GREEN}✓ taplo installed successfully${NC}"
+					taplo_installed=true
 				fi
-				rm -f "$tmpdir/taplo.gz.sha256" || true
 			fi
-			echo -e "${GREEN}✓ taplo installed successfully${NC}"
 		else
-			echo -e "${RED}✗ Failed to download taplo${NC}"
-			exit 1
+			echo -e "${YELLOW}⚠ GitHub release for taplo v${TAPLO_VERSION} not available${NC}"
 		fi
 		rm -rf "$tmpdir"
+
+		# Fallback to cargo if binary download failed
+		if [ "$taplo_installed" = false ]; then
+			echo -e "${BLUE}Attempting fallback installation via cargo...${NC}"
+			if command -v cargo &>/dev/null; then
+				echo -e "${BLUE}Installing taplo via cargo...${NC}"
+				if cargo install taplo-cli --locked; then
+					# Derive cargo bin directory from CARGO_HOME or default
+					cargo_bin="${CARGO_HOME:-$HOME/.cargo}/bin"
+					# Check for executable taplo in cargo bin, fall back to PATH
+					if [ -x "$cargo_bin/taplo" ]; then
+						cp "$cargo_bin/taplo" "$BIN_DIR/taplo"
+						chmod +x "$BIN_DIR/taplo"
+						echo -e "${GREEN}✓ taplo installed via cargo${NC}"
+						taplo_installed=true
+					elif command -v taplo &>/dev/null; then
+						echo -e "${GREEN}✓ taplo installed via cargo (found on PATH)${NC}"
+						taplo_installed=true
+					fi
+				fi
+			fi
+		fi
+
+		if [ "$taplo_installed" = false ]; then
+			echo -e "${RED}✗ Failed to install taplo${NC}"
+			exit 1
+		fi
 	fi
 
 	echo ""

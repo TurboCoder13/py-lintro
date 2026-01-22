@@ -81,10 +81,20 @@
       "groupSlug": "linting-tools",
       "matchPackageNames": [
         "hadolint",
+        "hadolint/hadolint",
         "actionlint",
+        "rhysd/actionlint",
         "prettier",
         "markdownlint-cli2",
-        "@biomejs/biome"
+        "@biomejs/biome",
+        "gitleaks",
+        "gitleaks/gitleaks",
+        "shellcheck",
+        "koalaman/shellcheck",
+        "shfmt",
+        "mvdan/sh",
+        "taplo",
+        "tamasfe/taplo"
       ],
       "automerge": false
     }
@@ -128,9 +138,37 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["scripts/utils/install-tools\\.sh"],
+      "managerFilePatterns": ["Dockerfile\\.tools"],
+      "matchStrings": ["ARG BUN_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "oven-sh/bun",
+      "extractVersionTemplate": "^bun-v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["Dockerfile\\.tools"],
+      "matchStrings": ["ARG UV_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "astral-sh/uv"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/reusable-sbom\\.yml$/",
+        "scripts/ci/deployment/sbom-install-binary-gh\\.sh"
+      ],
       "matchStrings": [
-        "HADOLINT_VERSION=\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "BOMCTL_VERSION[=:]\\s*v(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "bomctl/bomctl",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": [
+        "\"hadolint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "hadolint/hadolint",
@@ -138,9 +176,9 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["scripts/utils/install-tools\\.sh"],
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
       "matchStrings": [
-        "ACTIONLINT_VERSION=\"v(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "\"actionlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "rhysd/actionlint",
@@ -148,50 +186,96 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["pyproject\\.toml"],
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
       "matchStrings": [
-        "\\[tool\\.lintro\\.versions\\][\\s\\S]*?hadolint\\s*=\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
-      "datasourceTemplate": "github-releases",
-      "packageNameTemplate": "hadolint/hadolint",
-      "extractVersionTemplate": "^v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["pyproject\\.toml"],
-      "matchStrings": [
-        "\\[tool\\.lintro\\.versions\\][\\s\\S]*?actionlint\\s*=\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
-      "datasourceTemplate": "github-releases",
-      "packageNameTemplate": "rhysd/actionlint",
-      "extractVersionTemplate": "^v(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["pyproject\\.toml"],
-      "matchStrings": [
-        "\\[tool\\.lintro\\.versions\\][\\s\\S]*?prettier\\s*=\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "\"prettier\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "npm",
       "packageNameTemplate": "prettier"
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["pyproject\\.toml"],
-      "matchStrings": [
-        "\\[tool\\.lintro\\.versions\\][\\s\\S]*?biome\\s*=\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": ["\"biome\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "npm",
       "packageNameTemplate": "@biomejs/biome"
     },
     {
       "customType": "regex",
-      "managerFilePatterns": ["pyproject\\.toml"],
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
       "matchStrings": [
-        "\\[tool\\.lintro\\.versions\\][\\s\\S]*?markdownlint\\s*=\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "\"markdownlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "npm",
       "packageNameTemplate": "markdownlint-cli2"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": [
+        "\"gitleaks\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "gitleaks/gitleaks",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": [
+        "\"shellcheck\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "koalaman/shellcheck",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": ["\"shfmt\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "mvdan/sh",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": ["\"taplo\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "tamasfe/taplo",
+      "extractVersionTemplate": "^release-taplo-(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": ["\"semgrep\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+      "datasourceTemplate": "pypi",
+      "packageNameTemplate": "semgrep"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": [
+        "\"sqlfluff\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "pypi",
+      "packageNameTemplate": "sqlfluff"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": ["\"pytest\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+      "datasourceTemplate": "pypi",
+      "packageNameTemplate": "pytest"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": [
+        "\"cargo_audit\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "crate",
+      "packageNameTemplate": "cargo-audit"
     }
   ],
   "schedule": ["after 22:00", "before 23:00"],
