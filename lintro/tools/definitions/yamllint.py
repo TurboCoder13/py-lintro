@@ -326,6 +326,10 @@ class YamllintPlugin(BaseToolPlugin):
                 results["all_success"] = False
             results["total_issues"] += issues_count
 
+            # Store raw output when there are issues OR when execution failed
+            # This ensures error messages are visible even if parsing fails
+            if output and (issues or not success):
+                results["all_outputs"].append(output)
             if issues:
                 results["all_issues"].extend(issues)
         except subprocess.TimeoutExpired:
@@ -418,6 +422,7 @@ class YamllintPlugin(BaseToolPlugin):
 
         # Accumulate results across all files
         results: dict[str, Any] = {
+            "all_outputs": [],
             "all_issues": [],
             "all_success": True,
             "skipped_files": [],
@@ -439,28 +444,40 @@ class YamllintPlugin(BaseToolPlugin):
             for file_path in yaml_files:
                 self._process_single_file(file_path, ctx.timeout, results)
 
-        # Build output message if there are skipped files or execution failures
-        output: str | None = None
-        if results["timeout_count"] > 0 or results["execution_failures"] > 0:
-            output_lines: list[str] = []
-            if results["timeout_count"] > 0:
-                output_lines.append(
-                    f"Skipped {results['timeout_count']} file(s) due to timeout "
-                    f"({ctx.timeout}s limit exceeded):",
-                )
-                for file in results["skipped_files"]:
-                    output_lines.append(f"  - {file}")
-            if results["execution_failures"] > 0:
-                output_lines.append(
-                    f"Failed to process {results['execution_failures']} file(s) "
-                    "due to execution errors",
-                )
-            output = "\n".join(output_lines) if output_lines else None
+        # Build combined output from all collected outputs
+        combined_output = (
+            "\n".join(results["all_outputs"]) if results["all_outputs"] else None
+        )
+
+        # Append timeout/failure messages if any
+        if results["timeout_count"] > 0:
+            timeout_msg = (
+                f"Skipped {results['timeout_count']} file(s) due to timeout "
+                f"({ctx.timeout}s limit exceeded):"
+            )
+            for file in results["skipped_files"]:
+                timeout_msg += f"\n  - {file}"
+            combined_output = (
+                f"{combined_output}\n\n{timeout_msg}"
+                if combined_output
+                else timeout_msg
+            )
+
+        if results["execution_failures"] > 0:
+            failure_msg = (
+                f"Failed to process {results['execution_failures']} file(s) "
+                "due to execution errors"
+            )
+            combined_output = (
+                f"{combined_output}\n\n{failure_msg}"
+                if combined_output
+                else failure_msg
+            )
 
         return ToolResult(
             name=self.definition.name,
             success=results["all_success"],
-            output=output,
+            output=combined_output,
             issues_count=results["total_issues"],
             issues=results["all_issues"],
         )
