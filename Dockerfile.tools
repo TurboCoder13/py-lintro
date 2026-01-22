@@ -81,6 +81,9 @@ RUN ARCH=$(uname -m) && \
     chmod +x /usr/local/bin/uv && \
     rm -rf /tmp/uv*
 
+# Copy lintro source (needed for tool version info in install-tools.sh)
+COPY lintro/ /app/lintro/
+
 # Copy scripts and package.json for tool installation
 COPY scripts/ /app/scripts/
 COPY package.json /app/package.json
