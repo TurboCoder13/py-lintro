@@ -145,6 +145,8 @@ packages = [
   "lintro.parsers.semgrep",
   "lintro.parsers.yamllint",
   "lintro.parsers.mypy",
+  "lintro.parsers.oxfmt",
+  "lintro.parsers.oxlint",
   "lintro.parsers.shellcheck",
   "lintro.parsers.shfmt",
   "lintro.parsers.sqlfluff",
