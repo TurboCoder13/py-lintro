@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import mock_open, patch
 
-import pytest
 from assertpy import assert_that
 
 from lintro.utils.native_parsers import _load_json_config, _load_native_tool_config

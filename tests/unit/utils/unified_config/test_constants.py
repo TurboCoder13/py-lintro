@@ -15,7 +15,6 @@ def test_global_settings_line_length_has_expected_tools() -> None:
 
     assert_that(tools).contains_key("ruff")
     assert_that(tools).contains_key("black")
-    assert_that(tools).contains_key("prettier")
     assert_that(tools).contains_key("markdownlint")
     assert_that(tools).contains_key("yamllint")
 
@@ -26,7 +25,6 @@ def test_global_settings_line_length_has_injectable_tools() -> None:
 
     assert_that(injectable).contains("ruff")
     assert_that(injectable).contains("black")
-    assert_that(injectable).contains("prettier")
 
 
 def test_global_settings_has_multiple_settings() -> None:
@@ -41,7 +39,7 @@ def test_global_settings_has_multiple_settings() -> None:
 
 def test_default_tool_priorities_formatters_before_linters() -> None:
     """Verify formatters have lower priority (run first) than linters."""
-    assert_that(DEFAULT_TOOL_PRIORITIES["prettier"]).is_less_than(
+    assert_that(DEFAULT_TOOL_PRIORITIES["black"]).is_less_than(
         DEFAULT_TOOL_PRIORITIES["bandit"],
     )
     assert_that(DEFAULT_TOOL_PRIORITIES["black"]).is_less_than(
@@ -64,7 +62,6 @@ def test_default_tool_priorities_pytest_runs_last() -> None:
 def test_default_tool_priorities_has_expected_tools() -> None:
     """Verify DEFAULT_TOOL_PRIORITIES includes expected tools."""
     expected_tools = [
-        "prettier",
         "black",
         "ruff",
         "markdownlint",

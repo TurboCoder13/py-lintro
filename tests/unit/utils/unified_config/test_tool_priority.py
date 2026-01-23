@@ -14,7 +14,6 @@ from lintro.utils.unified_config import get_tool_priority
 @pytest.mark.parametrize(
     ("tool_name", "expected_priority"),
     [
-        ("prettier", 10),
         ("black", 15),
         ("ruff", 20),
         ("markdownlint", 30),
@@ -23,7 +22,6 @@ from lintro.utils.unified_config import get_tool_priority
         ("pytest", 100),
     ],
     ids=[
-        "prettier",
         "black",
         "ruff",
         "markdownlint",

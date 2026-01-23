@@ -10,8 +10,8 @@ from lintro.utils.unified_config import is_tool_injectable
 
 @pytest.mark.parametrize(
     "tool_name",
-    ["ruff", "black", "prettier", "markdownlint", "yamllint"],
-    ids=["ruff", "black", "prettier", "markdownlint", "yamllint"],
+    ["ruff", "black", "markdownlint", "yamllint"],
+    ids=["ruff", "black", "markdownlint", "yamllint"],
 )
 def test_is_tool_injectable_returns_true_for_injectable_tools(tool_name: str) -> None:
     """Verify injectable tools are correctly identified.
@@ -24,8 +24,8 @@ def test_is_tool_injectable_returns_true_for_injectable_tools(tool_name: str) ->
 
 @pytest.mark.parametrize(
     "tool_name",
-    ["RUFF", "Black", "PRETTIER", "MarkdownLint"],
-    ids=["RUFF_upper", "Black_mixed", "PRETTIER_upper", "MarkdownLint_mixed"],
+    ["RUFF", "Black", "MarkdownLint"],
+    ids=["RUFF_upper", "Black_mixed", "MarkdownLint_mixed"],
 )
 def test_is_tool_injectable_is_case_insensitive(tool_name: str) -> None:
     """Verify tool name matching is case-insensitive.

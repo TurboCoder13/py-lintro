@@ -16,24 +16,24 @@ def test_get_ordered_tools_priority_ordering(mock_empty_tool_order_config: Any) 
     Args:
         mock_empty_tool_order_config: Mock empty tool order configuration.
     """
-    result = get_ordered_tools(["ruff", "black", "prettier"])
-    assert_that(result).is_equal_to(["prettier", "black", "ruff"])
+    result = get_ordered_tools(["ruff", "black", "bandit"])
+    assert_that(result).is_equal_to(["black", "ruff", "bandit"])
 
 
 def test_get_ordered_tools_alphabetical_ordering() -> None:
     """Verify alphabetical ordering when strategy is 'alphabetical'."""
-    result = get_ordered_tools(["ruff", "black", "prettier"], tool_order="alphabetical")
-    assert_that(result).is_equal_to(["black", "prettier", "ruff"])
+    result = get_ordered_tools(["ruff", "black", "bandit"], tool_order="alphabetical")
+    assert_that(result).is_equal_to(["bandit", "black", "ruff"])
 
 
 def test_get_ordered_tools_custom_ordering() -> None:
     """Verify custom ordering puts specified tools first."""
     result = get_ordered_tools(
-        ["ruff", "black", "prettier", "mypy"],
-        tool_order=["mypy", "prettier"],
+        ["ruff", "black", "bandit", "mypy"],
+        tool_order=["mypy", "bandit"],
     )
     assert_that(result[0]).is_equal_to("mypy")
-    assert_that(result[1]).is_equal_to("prettier")
+    assert_that(result[1]).is_equal_to("bandit")
     # Remaining tools should be ordered by priority
     assert_that(result).is_length(4)
 
@@ -41,10 +41,10 @@ def test_get_ordered_tools_custom_ordering() -> None:
 def test_get_ordered_tools_invalid_strategy_falls_back_to_priority() -> None:
     """Verify invalid strategy argument falls back to priority ordering."""
     result = get_ordered_tools(
-        ["ruff", "black", "prettier"],
+        ["ruff", "black", "bandit"],
         tool_order="invalid_strategy",
     )
-    assert_that(result).is_equal_to(["prettier", "black", "ruff"])
+    assert_that(result).is_equal_to(["black", "ruff", "bandit"])
 
 
 def test_get_ordered_tools_invalid_config_strategy_falls_back_to_priority() -> None:
@@ -53,5 +53,5 @@ def test_get_ordered_tools_invalid_config_strategy_falls_back_to_priority() -> N
         "lintro.utils.unified_config.get_tool_order_config",
         return_value={"strategy": "invalid_strategy"},
     ):
-        result = get_ordered_tools(["ruff", "black", "prettier"])
-        assert_that(result).is_equal_to(["prettier", "black", "ruff"])
+        result = get_ordered_tools(["ruff", "black", "bandit"])
+        assert_that(result).is_equal_to(["black", "ruff", "bandit"])

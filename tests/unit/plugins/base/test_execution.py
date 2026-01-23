@@ -369,10 +369,12 @@ def test_get_executable_command_nodejs_tool_with_bunx(
     Args:
         fake_tool_plugin: Fixture providing a FakeToolPlugin instance.
     """
-    with patch("shutil.which", return_value="/usr/bin/bunx"):
-        result = fake_tool_plugin._get_executable_command("prettier")
+    from lintro.enums.tool_name import ToolName
 
-        assert_that(result).contains("bunx", "prettier")
+    with patch("shutil.which", return_value="/usr/bin/bunx"):
+        result = fake_tool_plugin._get_executable_command(ToolName.MARKDOWNLINT)
+
+        assert_that(result).contains("bunx", "markdownlint-cli2")
 
 
 def test_get_executable_command_nodejs_tool_without_bunx(
@@ -383,10 +385,12 @@ def test_get_executable_command_nodejs_tool_without_bunx(
     Args:
         fake_tool_plugin: Fixture providing a FakeToolPlugin instance.
     """
-    with patch("shutil.which", return_value=None):
-        result = fake_tool_plugin._get_executable_command("prettier")
+    from lintro.enums.tool_name import ToolName
 
-        assert_that(result).is_equal_to(["prettier"])
+    with patch("shutil.which", return_value=None):
+        result = fake_tool_plugin._get_executable_command(ToolName.MARKDOWNLINT)
+
+        assert_that(result).is_equal_to(["markdownlint-cli2"])
 
 
 def test_get_executable_command_cargo_tool(fake_tool_plugin: FakeToolPlugin) -> None:
