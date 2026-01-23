@@ -12,7 +12,7 @@ Priority order (highest to lowest):
 1. CLI --tool-options (always wins)
 2. [tool.lintro.<tool>] in pyproject.toml
 3. [tool.lintro] global settings in pyproject.toml
-4. Native tool config (e.g., .prettierrc, [tool.ruff])
+4. Native tool config (e.g., [tool.ruff])
 5. Tool defaults
 
 This module re-exports from split submodules for backwards compatibility.

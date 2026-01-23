@@ -131,7 +131,6 @@ def load_lintro_global_config() -> dict[str, Any]:
     tool_sections = {
         "ruff",
         "black",
-        "prettier",
         "yamllint",
         "markdownlint",
         "markdownlint-cli2",
@@ -140,7 +139,6 @@ def load_lintro_global_config() -> dict[str, Any]:
         "actionlint",
         "pytest",
         "mypy",
-        "biome",
         "clippy",
         "pydoclint",
         "post_checks",

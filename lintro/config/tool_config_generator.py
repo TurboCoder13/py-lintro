@@ -36,7 +36,6 @@ ENFORCE_CLI_FLAGS: dict[str, dict[str, str]] = {
     "line_length": {
         "ruff": "--line-length",
         "black": "--line-length",
-        "prettier": "--print-width",
     },
     "target_python": {
         "ruff": "--target-version",
@@ -65,10 +64,8 @@ def _convert_python_version_for_mypy(version: str) -> str:
 # Tool config format for defaults generation
 TOOL_CONFIG_FORMATS: dict[str, ConfigFormat] = {
     "bandit": ConfigFormat.YAML,
-    "biome": ConfigFormat.JSON,
     "hadolint": ConfigFormat.YAML,
     "markdownlint": ConfigFormat.JSON,
-    "prettier": ConfigFormat.JSON,
     "yamllint": ConfigFormat.YAML,
 }
 
@@ -85,21 +82,6 @@ NATIVE_KEY_MAPPINGS: dict[str, dict[str, str]] = {
 
 # Native config file patterns for checking if tool has native config
 NATIVE_CONFIG_PATTERNS: dict[str, list[str]] = {
-    "biome": [
-        "biome.json",
-        "biome.jsonc",
-    ],
-    "prettier": [
-        ".prettierrc",
-        ".prettierrc.json",
-        ".prettierrc.yaml",
-        ".prettierrc.yml",
-        ".prettierrc.js",
-        ".prettierrc.cjs",
-        ".prettierrc.toml",
-        "prettier.config.js",
-        "prettier.config.cjs",
-    ],
     "markdownlint": [
         ".markdownlint-cli2.jsonc",
         ".markdownlint-cli2.yaml",
@@ -157,7 +139,7 @@ def get_enforce_cli_args(
     across different tools for shared concerns like line length.
 
     Args:
-        tool_name: Name of the tool (e.g., "ruff", "prettier").
+        tool_name: Name of the tool (e.g., "ruff", "black").
         lintro_config: Lintro configuration.
 
     Returns:
@@ -202,7 +184,7 @@ def has_native_config(tool_name: str) -> bool:
     current working directory and moving upward to find the project root.
 
     Args:
-        tool_name: Name of the tool (e.g., "prettier", "markdownlint").
+        tool_name: Name of the tool (e.g., "markdownlint").
 
     Returns:
         bool: True if a native config file exists.
@@ -393,8 +375,6 @@ def get_defaults_injection_args(
 
     # Tool-specific config flags
     config_flags: dict[str, list[str]] = {
-        "biome": ["--config-path", config_str],
-        "prettier": ["--config", config_str],
         "yamllint": ["-c", config_str],
         "markdownlint": ["--config", config_str],
         "hadolint": ["--config", config_str],

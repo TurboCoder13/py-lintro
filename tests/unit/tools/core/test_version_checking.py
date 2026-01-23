@@ -76,7 +76,7 @@ def test_get_minimum_versions_contains_expected_tools() -> None:
     """Return versions for expected external tools."""
     result = get_minimum_versions()
     # Check for some expected tools
-    expected_tools = ["prettier", "hadolint", "actionlint", "biome"]
+    expected_tools = ["hadolint", "actionlint"]
     for tool in expected_tools:
         assert_that(tool in result).is_true()
 
@@ -113,7 +113,7 @@ def test_get_install_hints_pip_for_python_tools() -> None:
 def test_get_install_hints_bun_for_node_tools() -> None:
     """Node.js tools have bun install hints."""
     result = get_install_hints()
-    assert_that("bun add" in result.get("prettier", "")).is_true()
+    assert_that("bun add" in result.get("markdownlint", "")).is_true()
 
 
 def test_get_install_hints_external_tools() -> None:

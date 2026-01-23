@@ -17,7 +17,7 @@ DEFAULT_ACTION: str = "fmt"
 @click.option(
     "--tools",
     default=None,
-    help="Comma-separated list of tools to run (e.g., ruff,prettier) or 'all'.",
+    help="Comma-separated list of tools to run (e.g., ruff,black) or 'all'.",
 )
 @click.option(
     "--tool-options",

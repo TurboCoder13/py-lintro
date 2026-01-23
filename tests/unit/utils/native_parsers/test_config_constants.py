@@ -6,9 +6,7 @@ import pytest
 from assertpy import assert_that
 
 from lintro.utils.native_parsers import (
-    BIOME_CONFIG_FILES,
     MARKDOWNLINT_CONFIG_FILES,
-    PRETTIER_CONFIG_FILES,
     YAMLLINT_CONFIG_FILES,
 )
 
@@ -17,8 +15,6 @@ from lintro.utils.native_parsers import (
     ("config_list", "expected_files"),
     [
         (YAMLLINT_CONFIG_FILES, [".yamllint", ".yamllint.yaml", ".yamllint.yml"]),
-        (PRETTIER_CONFIG_FILES, [".prettierrc", ".prettierrc.json"]),
-        (BIOME_CONFIG_FILES, ["biome.json", "biome.jsonc"]),
         (
             MARKDOWNLINT_CONFIG_FILES,
             [
@@ -29,7 +25,7 @@ from lintro.utils.native_parsers import (
             ],
         ),
     ],
-    ids=["yamllint_files", "prettier_files", "biome_files", "markdownlint_files"],
+    ids=["yamllint_files", "markdownlint_files"],
 )
 def test_config_file_lists_contain_expected_files(
     config_list: tuple[str, ...],

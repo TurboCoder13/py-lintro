@@ -40,22 +40,6 @@ PLUGIN_DEFINITIONS: list[tuple[ToolName, str, bool, ToolType, list[str], list[st
         ["pyproject.toml"],
     ),
     (
-        ToolName.PRETTIER,
-        "lintro.tools.definitions.prettier.PrettierPlugin",
-        True,
-        ToolType.FORMATTER,
-        ["formatter"],
-        [".prettierrc", ".prettierrc.json", ".prettierrc.yml"],
-    ),
-    (
-        ToolName.BIOME,
-        "lintro.tools.definitions.biome.BiomePlugin",
-        True,
-        ToolType.LINTER | ToolType.FORMATTER,
-        ["JavaScript", "TypeScript"],
-        ["biome.json", "biome.jsonc"],
-    ),
-    (
         ToolName.HADOLINT,
         "lintro.tools.definitions.hadolint.HadolintPlugin",
         False,

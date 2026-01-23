@@ -48,8 +48,6 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "pytest": ["python", "-m", "pytest"],
         # Node.js tools
         # Note: Users must install these tools explicitly via bun
-        "prettier": ["prettier"],
-        "biome": ["biome"],
         "markdownlint": ["markdownlint-cli2"],
         # Binary tools
         "hadolint": ["hadolint"],
