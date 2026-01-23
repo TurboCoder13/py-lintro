@@ -67,7 +67,7 @@ class OxlintPlugin(BaseToolPlugin):
             tool_type=ToolType.LINTER,
             file_patterns=OXLINT_FILE_PATTERNS,
             priority=OXLINT_DEFAULT_PRIORITY,
-            conflicts_with=["biome"],
+            conflicts_with=[],
             native_configs=[".oxlintrc.json"],
             version_command=["oxlint", "--version"],
             min_version="1.0.0",

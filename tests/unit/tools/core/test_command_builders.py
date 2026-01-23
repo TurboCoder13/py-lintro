@@ -55,10 +55,10 @@ def test_python_bundled_builder_handles_mypy() -> None:
     assert_that(builder.can_handle(ToolName.MYPY)).is_true()
 
 
-def test_python_bundled_builder_does_not_handle_prettier() -> None:
+def test_python_bundled_builder_does_not_handle_markdownlint() -> None:
     """PythonBundledBuilder does not handle Node.js tools."""
     builder = PythonBundledBuilder()
-    assert_that(builder.can_handle(ToolName.PRETTIER)).is_false()
+    assert_that(builder.can_handle(ToolName.MARKDOWNLINT)).is_false()
 
 
 def test_python_bundled_builder_prefers_path_binary() -> None:
@@ -163,18 +163,6 @@ def test_pytest_builder_skips_python_module_when_compiled() -> None:
 # =============================================================================
 
 
-def test_nodejs_builder_handles_prettier() -> None:
-    """NodeJSBuilder can handle prettier."""
-    builder = NodeJSBuilder()
-    assert_that(builder.can_handle(ToolName.PRETTIER)).is_true()
-
-
-def test_nodejs_builder_handles_biome() -> None:
-    """NodeJSBuilder can handle biome."""
-    builder = NodeJSBuilder()
-    assert_that(builder.can_handle(ToolName.BIOME)).is_true()
-
-
 def test_nodejs_builder_handles_markdownlint() -> None:
     """NodeJSBuilder can handle markdownlint."""
     builder = NodeJSBuilder()
@@ -191,16 +179,16 @@ def test_nodejs_builder_uses_bunx_when_available() -> None:
     """NodeJSBuilder uses bunx when available."""
     builder = NodeJSBuilder()
     with patch("shutil.which", return_value="/usr/local/bin/bunx"):
-        cmd = builder.get_command("prettier", ToolName.PRETTIER)
-        assert_that(cmd).is_equal_to(["bunx", "prettier"])
+        cmd = builder.get_command("markdownlint", ToolName.MARKDOWNLINT)
+        assert_that(cmd).is_equal_to(["bunx", "markdownlint-cli2"])
 
 
 def test_nodejs_builder_falls_back_to_tool_name() -> None:
     """NodeJSBuilder falls back to tool name when bunx not available."""
     builder = NodeJSBuilder()
     with patch("shutil.which", return_value=None):
-        cmd = builder.get_command("prettier", ToolName.PRETTIER)
-        assert_that(cmd).is_equal_to(["prettier"])
+        cmd = builder.get_command("markdownlint", ToolName.MARKDOWNLINT)
+        assert_that(cmd).is_equal_to(["markdownlint"])
 
 
 # =============================================================================
@@ -312,7 +300,7 @@ def test_registry_is_registered() -> None:
     CommandBuilderRegistry.register(PythonBundledBuilder())
 
     assert_that(CommandBuilderRegistry.is_registered(ToolName.RUFF)).is_true()
-    assert_that(CommandBuilderRegistry.is_registered(ToolName.PRETTIER)).is_false()
+    assert_that(CommandBuilderRegistry.is_registered(ToolName.MARKDOWNLINT)).is_false()
 
 
 def test_registry_clear() -> None:

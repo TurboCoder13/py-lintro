@@ -77,7 +77,7 @@ class OxfmtPlugin(BaseToolPlugin):
             tool_type=ToolType.FORMATTER,
             file_patterns=OXFMT_FILE_PATTERNS,
             priority=OXFMT_DEFAULT_PRIORITY,
-            conflicts_with=["prettier", "biome"],
+            conflicts_with=[],
             native_configs=[".oxfmtrc.json", ".oxfmtrc.jsonc"],
             version_command=["oxfmt", "--version"],
             min_version="0.1.0",

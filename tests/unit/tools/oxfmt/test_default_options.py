@@ -105,8 +105,7 @@ def test_definition_conflicts_with(oxfmt_plugin: OxfmtPlugin) -> None:
         oxfmt_plugin: The OxfmtPlugin instance to test.
     """
     conflicts = oxfmt_plugin.definition.conflicts_with
-    assert_that(conflicts).contains("prettier")
-    assert_that(conflicts).contains("biome")
+    assert_that(conflicts).is_empty()
 
 
 # =============================================================================

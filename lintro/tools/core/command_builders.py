@@ -322,7 +322,7 @@ class PytestBuilder(CommandBuilder):
 
 @register_command_builder
 class NodeJSBuilder(CommandBuilder):
-    """Builder for Node.js tools (Prettier, Biome, Markdownlint).
+    """Builder for Node.js tools (Markdownlint).
 
     Uses bunx to run Node.js tools when available, falling back to
     direct tool invocation if bunx is not found.
@@ -341,8 +341,6 @@ class NodeJSBuilder(CommandBuilder):
             from lintro.enums.tool_name import ToolName
 
             self._package_names = {
-                ToolName.BIOME: "@biomejs/biome",
-                ToolName.PRETTIER: "prettier",
                 ToolName.MARKDOWNLINT: "markdownlint-cli2",
             }
         return self._package_names

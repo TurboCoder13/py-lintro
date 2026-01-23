@@ -28,8 +28,6 @@ def _get_all_tool_names() -> list[str]:
     return [
         "ruff",
         "black",
-        "prettier",
-        "biome",
         "yamllint",
         "markdownlint",
         "bandit",

@@ -16,7 +16,6 @@ from lintro.formatters.formatter import (
 )
 from lintro.parsers.bandit.bandit_issue import BanditIssue
 from lintro.parsers.base_issue import BaseIssue
-from lintro.parsers.biome.biome_issue import BiomeIssue
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.ruff.ruff_format_issue import RuffFormatIssue
 from lintro.parsers.ruff.ruff_issue import RuffIssue
@@ -134,21 +133,21 @@ def test_format_issues_shows_non_fixable_status() -> None:
 def test_format_issues_shows_severity() -> None:
     """Verify Severity column shows severity values."""
     issues = [
-        BiomeIssue(
-            file="src/main.js",
+        BanditIssue(
+            file="src/main.py",
             line=10,
-            column=5,
-            code="lint/style/noVar",
-            message="Use let or const",
-            severity="error",
-            fixable=True,
+            col_offset=5,
+            test_id="B101",
+            issue_text="Use assert_that instead of assert",
+            issue_severity="HIGH",
+            issue_confidence="HIGH",
         ),
     ]
 
     result = format_issues(issues, output_format="grid")
 
     assert_that(result).contains("Severity")
-    assert_that(result).contains("error")
+    assert_that(result).contains("HIGH")
 
 
 # =============================================================================
@@ -382,15 +381,6 @@ def test_format_issues_with_sections_without_grouping() -> None:
         ),
         BlackIssue(file="test.py", message="test"),
         RuffFormatIssue(file="test.py"),
-        BiomeIssue(
-            file="test.js",
-            line=1,
-            column=1,
-            code="lint/test",
-            message="test",
-            severity="error",
-            fixable=True,
-        ),
         BanditIssue(
             file="test.py",
             line=1,
@@ -401,7 +391,7 @@ def test_format_issues_with_sections_without_grouping() -> None:
             issue_confidence="HIGH",
         ),
     ],
-    ids=["ruff", "black", "ruff_format", "biome", "bandit"],
+    ids=["ruff", "black", "ruff_format", "bandit"],
 )
 def test_all_tool_issues_produce_tables_with_standard_columns(issue: BaseIssue) -> None:
     """Verify all tool issue types produce tables with standard columns.
