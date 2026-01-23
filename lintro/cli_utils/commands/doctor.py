@@ -22,13 +22,11 @@ from lintro.tools.core.version_parsing import extract_version_from_output
 # Map tool names to commands (external tools only)
 TOOL_COMMANDS: dict[str, list[str]] = {
     "actionlint": ["actionlint", "--version"],
-    "biome": ["biome", "--version"],
     "cargo_audit": ["cargo", "audit", "--version"],
     "clippy": ["cargo", "clippy", "--version"],
     "gitleaks": ["gitleaks", "version"],
     "hadolint": ["hadolint", "--version"],
     "markdownlint": ["markdownlint-cli2", "--version"],
-    "prettier": ["prettier", "--version"],
     "pytest": [sys.executable, "-m", "pytest", "--version"],
     "rustfmt": ["rustfmt", "--version"],
     "semgrep": ["semgrep", "--version"],
@@ -123,7 +121,7 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
     """Check external tool installation status and version compatibility.
 
     Checks tools that must be installed separately (hadolint, actionlint,
-    prettier, etc.). Bundled Python tools are managed via pip/uv.
+    etc.). Bundled Python tools are managed via pip/uv.
 
     Args:
         json_output: If True, output results as JSON.
@@ -134,7 +132,7 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
 
     Examples:
         lintro doctor
-        lintro doctor --tools hadolint,actionlint,prettier
+        lintro doctor --tools hadolint,actionlint
         lintro doctor --json
     """
     console = Console(stderr=True)

@@ -43,7 +43,7 @@ class LintroConfig(BaseModel):
         """Get configuration for a specific tool.
 
         Args:
-            tool_name: Name of the tool (e.g., "ruff", "prettier").
+            tool_name: Name of the tool (e.g., "ruff", "black").
 
         Returns:
             LintroToolConfig: Tool configuration. Returns default config if not
