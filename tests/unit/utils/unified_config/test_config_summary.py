@@ -33,7 +33,6 @@ def test_get_tool_config_summary_returns_dict_for_all_standard_tools() -> None:
 
         assert_that(result).contains_key("ruff")
         assert_that(result).contains_key("black")
-        assert_that(result).contains_key("prettier")
         assert_that(result).contains_key("yamllint")
         assert_that(result).contains_key("markdownlint")
 

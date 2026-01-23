@@ -35,7 +35,7 @@ def test_group_by_normalization() -> None:
 def test_tool_name_normalization() -> None:
     """Normalize tool names from strings and enum instances."""
     assert_that(normalize_tool_name("ruff")).is_equal_to(ToolName.RUFF)
-    assert_that(normalize_tool_name(ToolName.PRETTIER)).is_equal_to(ToolName.PRETTIER)
+    assert_that(normalize_tool_name(ToolName.RUFF)).is_equal_to(ToolName.RUFF)
 
 
 def test_yamllint_format_normalization() -> None:
