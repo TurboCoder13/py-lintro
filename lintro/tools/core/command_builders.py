@@ -378,7 +378,7 @@ class NodeJSBuilder(CommandBuilder):
             return ["bunx", package_name]
         if shutil.which("npx"):
             return ["npx", package_name]
-        return [tool_name]
+        return [package_name]
 
 
 @register_command_builder
