@@ -183,12 +183,12 @@ def test_nodejs_builder_uses_bunx_when_available() -> None:
         assert_that(cmd).is_equal_to(["bunx", "markdownlint-cli2"])
 
 
-def test_nodejs_builder_falls_back_to_tool_name() -> None:
-    """NodeJSBuilder falls back to tool name when bunx not available."""
+def test_nodejs_builder_falls_back_to_package_name() -> None:
+    """NodeJSBuilder falls back to package name when bunx not available."""
     builder = NodeJSBuilder()
     with patch("shutil.which", return_value=None):
         cmd = builder.get_command("markdownlint", ToolName.MARKDOWNLINT)
-        assert_that(cmd).is_equal_to(["markdownlint"])
+        assert_that(cmd).is_equal_to(["markdownlint-cli2"])
 
 
 # =============================================================================
