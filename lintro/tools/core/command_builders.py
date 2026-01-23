@@ -403,8 +403,8 @@ class NodeJSBuilder(CommandBuilder):
         if shutil.which("bunx"):
             return ["bunx", binary_name]
         if shutil.which("npx"):
-            return ["npx", binary_name]
-        return [tool_name]
+            return ["npx", package_name]
+        return [package_name]
 
 
 @register_command_builder
