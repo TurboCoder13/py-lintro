@@ -38,9 +38,6 @@ name: Build - Docker Image & Registry
 permissions:
   contents: read
 
-env:
-  TOOLS_IMAGE: ghcr.io/turbocoder13/lintro-tools:latest
-
 jobs:
   build-and-test:
     runs-on: ubuntu-24.04
@@ -106,8 +103,6 @@ jobs:
           push: false
           load: true
           tags: py-lintro:latest
-          build-args: |
-            TOOLS_IMAGE=${{ env.TOOLS_IMAGE }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
@@ -202,8 +197,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            TOOLS_IMAGE=${{ env.TOOLS_IMAGE }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: true
