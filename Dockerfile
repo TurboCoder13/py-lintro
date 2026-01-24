@@ -3,7 +3,7 @@
 # =============================================================================
 # Use the pre-built tools image to avoid rebuilding tools on every CI run.
 # Override with --build-arg TOOLS_IMAGE=<image> for local builds.
-ARG TOOLS_IMAGE=ghcr.io/turbocoder13/lintro-tools:latest
+ARG TOOLS_IMAGE=ghcr.io/turbocoder13/lintro-tools:latest@sha256:8d0e9c9630dce2907a395f415886bd95c33a22011ba6ff6f3f5acb00f87ceeae
 FROM ${TOOLS_IMAGE} AS tools
 
 # =============================================================================
