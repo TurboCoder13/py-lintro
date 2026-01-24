@@ -82,6 +82,8 @@ jobs:
           python-version: '3.13'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Skip external tools (bun, etc.) - this workflow only needs Python and git
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
       - name: Read version from pyproject.toml
         id: version
