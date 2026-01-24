@@ -289,8 +289,18 @@ def _write_defaults_config(
     Raises:
         ImportError: If PyYAML is not installed and YAML format is requested.
     """
-    suffix_map = {ConfigFormat.JSON: ".json", ConfigFormat.YAML: ".yaml"}
-    suffix = suffix_map.get(config_format, ".json")
+    # Tool-specific suffixes required by some tools (e.g., markdownlint-cli2 v0.17+
+    # enforces strict config file naming conventions)
+    tool_suffix_overrides: dict[str, str] = {
+        "markdownlint": ".markdownlint-cli2.jsonc",
+    }
+
+    tool_lower = tool_name.lower()
+    if tool_lower in tool_suffix_overrides:
+        suffix = tool_suffix_overrides[tool_lower]
+    else:
+        suffix_map = {ConfigFormat.JSON: ".json", ConfigFormat.YAML: ".yaml"}
+        suffix = suffix_map.get(config_format, ".json")
 
     temp_fd, temp_path_str = tempfile.mkstemp(
         prefix=f"lintro-{tool_name}-defaults-",

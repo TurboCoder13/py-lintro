@@ -6,9 +6,11 @@ from lintro.config.enforce_config import EnforceConfig
 from lintro.config.lintro_config import LintroConfig
 from lintro.config.tool_config_generator import (
     _convert_python_version_for_mypy,
+    _write_defaults_config,
     get_defaults_injection_args,
     get_enforce_cli_args,
 )
+from lintro.enums.config_format import ConfigFormat
 
 
 def test_returns_empty_when_no_enforce_settings() -> None:
@@ -113,3 +115,37 @@ def test_returns_empty_for_none_path() -> None:
     )
 
     assert_that(args).is_empty()
+
+
+def test_markdownlint_config_uses_correct_suffix() -> None:
+    """Should use .markdownlint-cli2.jsonc suffix for markdownlint.
+
+    markdownlint-cli2 v0.17+ requires config files to follow strict naming
+    conventions. The temp config file must end with a recognized suffix.
+    """
+    config_path = _write_defaults_config(
+        defaults={"config": {"MD013": {"line_length": 100}}},
+        tool_name="markdownlint",
+        config_format=ConfigFormat.JSON,
+    )
+
+    try:
+        assert_that(str(config_path)).ends_with(".markdownlint-cli2.jsonc")
+        assert_that(config_path.exists()).is_true()
+    finally:
+        config_path.unlink(missing_ok=True)
+
+
+def test_generic_tool_config_uses_json_suffix() -> None:
+    """Should use .json suffix for tools without special requirements."""
+    config_path = _write_defaults_config(
+        defaults={"some": "config"},
+        tool_name="prettier",
+        config_format=ConfigFormat.JSON,
+    )
+
+    try:
+        assert_that(str(config_path)).ends_with(".json")
+        assert_that(config_path.exists()).is_true()
+    finally:
+        config_path.unlink(missing_ok=True)
