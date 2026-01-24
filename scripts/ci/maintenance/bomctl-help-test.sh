@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test bomctl binary by displaying first 40 lines of help output
 #

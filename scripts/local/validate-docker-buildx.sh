@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Docker Buildx Configuration Validator
 # Validates Docker Buildx driver and cache configuration locally

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Docker Build and Test Script
 # Handles Docker image building and testing

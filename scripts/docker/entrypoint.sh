@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # entrypoint.sh - Flexible Docker entrypoint for lintro
 #
 # This entrypoint supports multiple invocation styles:

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # CI Lintro Analysis Script
 # Handles running lintro analysis in Docker for CI pipeline with GitHub Actions integration

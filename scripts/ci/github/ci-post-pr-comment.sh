@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # CI Post PR Comment Script
 # Handles posting comments to PRs using GitHub API

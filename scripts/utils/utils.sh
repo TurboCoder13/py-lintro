@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Shared utilities for workflow scripts
 # This file contains common functions and variables used across multiple scripts
