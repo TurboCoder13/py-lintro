@@ -35,6 +35,17 @@ if ! is_pr_context; then
 	exit 0
 fi
 
+# Validate required environment variables
+if [ -z "${PR_NUMBER:-}" ]; then
+	log_error "PR_NUMBER environment variable is required"
+	exit 1
+fi
+
+if [ -z "${GITHUB_REPOSITORY:-}" ]; then
+	log_error "GITHUB_REPOSITORY environment variable is required"
+	exit 1
+fi
+
 # Get the comment file from argument
 COMMENT_FILE="${1:-pr-comment.txt}"
 
