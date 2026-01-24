@@ -44,6 +44,8 @@ jobs:
         uses: ./.github/actions/setup-env
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Skip external tools - this workflow only needs Python for scripts
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
       - name: Delete previous Coverage comments
         env:
