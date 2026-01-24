@@ -22,8 +22,10 @@ GITHUB_RUN_ID="${GITHUB_RUN_ID:-}"
 GITHUB_SHA="${GITHUB_SHA:-}"
 
 # Function to check if we're in a PR context
+# Handles both pull_request and pull_request_target events
 is_pr_context() {
-	[ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]
+	local event="${GITHUB_EVENT_NAME:-}"
+	[ "$event" = "pull_request" ] || [ "$event" = "pull_request_target" ]
 }
 
 # Function to log messages with colors
@@ -48,15 +50,17 @@ log_verbose() {
 }
 
 # Function to generate PR comment file
+# Usage: generate_pr_comment "title" "status" "content" "output_file" ["tool_name"]
 generate_pr_comment() {
 	local title="$1"
 	local status="$2"
 	local content="$3"
 	local output_file="$4"
+	local tool_name="${5:-lintro}"
 
 	local comment="## $title
 
-This PR has been analyzed using **lintro** - our unified code quality tool.
+This PR has been analyzed using **$tool_name** - our unified code quality tool.
 
 ### 📊 Status: $status
 
@@ -172,14 +176,24 @@ set_github_env() {
 # Utility Functions
 # =============================================================================
 
+# Array to track temporary directories for cleanup
+_TEMP_DIRS=()
+
+# Cleanup function for temporary directories
+_cleanup_temp_dirs() {
+	for dir in "${_TEMP_DIRS[@]}"; do
+		rm -rf "$dir"
+	done
+}
+
 # Create a temporary directory with automatic cleanup on exit
+# Multiple calls accumulate directories instead of overwriting the trap
 # Usage: tmpdir=$(create_temp_dir)
 create_temp_dir() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
-	# SC2064: intentional early expansion - tmpdir must be captured at trap creation time
-	# shellcheck disable=SC2064
-	trap "rm -rf '$tmpdir'" EXIT
+	_TEMP_DIRS+=("$tmpdir")
+	trap _cleanup_temp_dirs EXIT
 	echo "$tmpdir"
 }
 
