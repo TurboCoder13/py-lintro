@@ -14,6 +14,9 @@ name: Quality Check - CI Pipeline
 permissions:
   contents: read
 
+env:
+  TOOLS_IMAGE: ghcr.io/turbocoder13/lintro-tools:latest
+
 jobs:
   docker-lintro-analysis:
     name: 🛠️ Docker Lintro Code Quality & Analysis
@@ -95,7 +98,7 @@ jobs:
           load: true
           tags: py-lintro:latest
           build-args: |
-            TOOLS_IMAGE=ghcr.io/turbocoder13/lintro-tools:latest
+            TOOLS_IMAGE=${{ env.TOOLS_IMAGE }}
           # Cache disabled for docker driver - not supported
           # cache-from: type=gha
           # cache-to: type=gha,mode=max
