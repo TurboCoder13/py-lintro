@@ -64,7 +64,8 @@ All workflows use `step-security/harden-runner` with strict egress policies:
   with:
     egress-policy: 'block'
     allowed-endpoints: >
-      github.com:443 api.github.com:443 pypi.org:443 files.pythonhosted.org:443
+      github.com:443 api.github.com:443 pypi.org:443 pypi.python.org:443
+      upload.pypi.org:443 files.pythonhosted.org:443
 ```
 
 ### Action Pinning
