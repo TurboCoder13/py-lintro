@@ -1,71 +1,32 @@
 # =============================================================================
-# Stage 1: Builder - Install all tools and dependencies
+# Stage 1: Tools - Pre-built external tools (updated weekly)
 # =============================================================================
-FROM python:3.13-slim@sha256:05b118ecc93ea09e30569706568fb251c71b77d2a3908d338b77be033e162b59 AS builder
+# Use the pre-built tools image to avoid rebuilding tools on every CI run.
+FROM ghcr.io/turbocoder13/lintro-tools:latest@sha256:8d0e9c9630dce2907a395f415886bd95c33a22011ba6ff6f3f5acb00f87ceeae AS tools
 
-# Tool versions as build args for easy updates
-ARG HADOLINT_VERSION=2.12.0
-ARG ACTIONLINT_VERSION=1.7.5
+# =============================================================================
+# Stage 2: Builder - Add Python dependencies to tools image
+# =============================================================================
+FROM tools AS builder
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/usr/local/bin:/root/.cargo/bin:${PATH}"
 
-# Set shell options for pipefail before using pipes
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
 WORKDIR /app
 
-# Install system dependencies
-# hadolint ignore=DL3008
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    build-essential \
-    git \
-    unzip \
-    jq && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Copy dependency files first for better layer caching
+COPY pyproject.toml uv.lock /app/
 
-# Install bun (JavaScript runtime and package manager)
-RUN curl -fsSL https://bun.sh/install | bash && \
-    mv /root/.bun/bin/bun /usr/local/bin/bun && \
-    chmod +x /usr/local/bin/bun
-
-# Install uv (Python package manager)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    mv /root/.local/bin/uv /usr/local/bin/uv
-
-# Copy only _tool_versions.py first (needed for tool version info in install-tools.sh)
-# This preserves Docker layer cache - tool install won't rebuild on source changes
-COPY pyproject.toml /app/
-COPY lintro/_tool_versions.py /app/lintro/_tool_versions.py
-
-# Copy scripts and package.json for tool installation
-COPY scripts/ /app/scripts/
-COPY package.json /app/package.json
-
-# Install external tools and copy Rust tools to system-wide location
-RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
-    /app/scripts/utils/install-tools.sh --docker && \
-    if [ -d "/root/.cargo/bin" ]; then \
-        cp -p /root/.cargo/bin/cargo /usr/local/bin/cargo 2>/dev/null || true; \
-        cp -p /root/.cargo/bin/rustc /usr/local/bin/rustc 2>/dev/null || true; \
-        cp -p /root/.cargo/bin/rustup /usr/local/bin/rustup 2>/dev/null || true; \
-        cp -p /root/.cargo/bin/rustfmt /usr/local/bin/rustfmt 2>/dev/null || true; \
-        chmod +x /usr/local/bin/cargo /usr/local/bin/rustc /usr/local/bin/rustup /usr/local/bin/rustfmt 2>/dev/null || true; \
-    fi
-
-# Copy full source before installing Python dependencies
+# Copy full source
 COPY lintro/ /app/lintro/
 
 # Install Python dependencies
 RUN uv sync --dev --extra tools --no-progress && (uv cache clean || true)
 
 # =============================================================================
-# Stage 2: Runtime - Minimal image with only what's needed to run
+# Stage 3: Runtime - Minimal image with only what's needed to run
 # =============================================================================
 FROM python:3.13-slim@sha256:05b118ecc93ea09e30569706568fb251c71b77d2a3908d338b77be033e162b59 AS runtime
 
@@ -95,7 +56,7 @@ RUN useradd -m lintro
 
 WORKDIR /app
 
-# Copy installed tools from builder
+# Copy installed tools from builder (which got them from tools image)
 COPY --from=builder /usr/local/bin/hadolint /usr/local/bin/
 COPY --from=builder /usr/local/bin/actionlint /usr/local/bin/
 COPY --from=builder /usr/local/bin/shellcheck /usr/local/bin/
@@ -104,7 +65,6 @@ COPY --from=builder /usr/local/bin/taplo /usr/local/bin/
 COPY --from=builder /usr/local/bin/gitleaks /usr/local/bin/
 COPY --from=builder /usr/local/bin/cargo /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustc /usr/local/bin/
-COPY --from=builder /usr/local/bin/rustup /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustfmt /usr/local/bin/
 COPY --from=builder /usr/local/bin/uv /usr/local/bin/
 COPY --from=builder /usr/local/bin/bun /usr/local/bin/

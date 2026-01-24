@@ -47,11 +47,14 @@ if ! command -v docker &>/dev/null; then
 	exit 1
 fi
 
+# Pre-built tools image for faster builds
+TOOLS_IMAGE="${TOOLS_IMAGE:-ghcr.io/turbocoder13/lintro-tools:latest}"
+
 # Build the Docker image if it doesn't exist
 IMAGE_NAME="py-lintro:latest"
 if ! docker image inspect "$IMAGE_NAME" &>/dev/null; then
 	echo -e "${YELLOW}Building Docker image...${NC}"
-	if ! docker build -t "$IMAGE_NAME" .; then
+	if ! docker build --build-arg "TOOLS_IMAGE=${TOOLS_IMAGE}" -t "$IMAGE_NAME" .; then
 		echo -e "${RED}Error: Failed to build Docker image${NC}"
 		exit 1
 	fi

@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        TOOLS_IMAGE: ${TOOLS_IMAGE:-ghcr.io/turbocoder13/lintro-tools:latest}
     logging:
       driver: local
       options:
@@ -20,7 +22,11 @@ services:
   # Usage: docker compose run --rm test-integration
   # Note: This service mounts to /app for testing the current source code
   test-integration:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TOOLS_IMAGE: ${TOOLS_IMAGE:-ghcr.io/turbocoder13/lintro-tools:latest}
     image: py-lintro-test:latest
     logging:
       driver: local
