@@ -46,6 +46,9 @@ jobs:
         uses: ./.github/actions/setup-env
         with:
           python-version: ${{ inputs.python-version }}
+        env:
+          # Skip external tools - build only needs Python and uv
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
       - name: Sync dependencies
         run: uv sync --dev --no-progress

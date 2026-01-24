@@ -81,6 +81,9 @@ jobs:
         uses: ./.github/actions/setup-env
         with:
           python-version: '3.13'
+        env:
+          # Skip external tools - publish only needs Python and uv
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
       - name: Ensure tag points to a commit on main
         run: bash scripts/ci/ensure-tag-on-main.sh
 
