@@ -18,8 +18,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Copy pyproject.toml first for better layer caching
-COPY pyproject.toml /app/
+# Copy dependency files first for better layer caching
+COPY pyproject.toml uv.lock /app/
 
 # Copy full source
 COPY lintro/ /app/lintro/
