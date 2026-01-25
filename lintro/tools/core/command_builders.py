@@ -454,7 +454,6 @@ class StandaloneBuilder(CommandBuilder):
                 {
                     ToolName.HADOLINT,
                     ToolName.ACTIONLINT,
-                    ToolName.DARGLINT,
                 },
             )
         return self._tools

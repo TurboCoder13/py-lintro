@@ -38,7 +38,6 @@ TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
     ToolName.PRETTIER,
     ToolName.BIOME,
     ToolName.ACTIONLINT,
-    ToolName.DARGLINT,
     ToolName.RUSTFMT,
     ToolName.SEMGREP,
     ToolName.SHELLCHECK,
@@ -278,7 +277,7 @@ def extract_version_from_output(output: str, tool_name: str | ToolName) -> str |
 
     elif tool_name in TOOLS_WITH_SIMPLE_VERSION_PATTERN:
         # Tools that output simple version numbers: BANDIT, HADOLINT, PRETTIER,
-        # BIOME, ACTIONLINT, DARGLINT, SEMGREP, SHFMT, SQLFLUFF
+        # BIOME, ACTIONLINT, SEMGREP, SHFMT, SQLFLUFF
         match = re.search(VERSION_NUMBER_PATTERN, output)
         if match:
             return match.group(1)

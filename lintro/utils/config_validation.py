@@ -80,7 +80,6 @@ def get_tool_config_summary() -> dict[str, ToolConfigInfo]:
         ToolName.PRETTIER,
         ToolName.YAMLLINT,
         ToolName.MARKDOWNLINT,
-        ToolName.DARGLINT,
         ToolName.BANDIT,
         ToolName.HADOLINT,
         ToolName.ACTIONLINT,

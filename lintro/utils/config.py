@@ -31,7 +31,6 @@ __all__ = [
     # Tool-specific loaders
     "load_ruff_config",
     "load_bandit_config",
-    "load_darglint_config",
     "load_black_config",
     "load_mypy_config",
     "load_pydoclint_config",
@@ -137,7 +136,6 @@ def load_lintro_global_config() -> dict[str, Any]:
         "markdownlint",
         "markdownlint-cli2",
         "bandit",
-        "darglint",
         "hadolint",
         "actionlint",
         "pytest",
@@ -256,15 +254,6 @@ def load_bandit_config() -> dict[str, Any]:
         dict[str, Any]: Bandit configuration dictionary.
     """
     return load_tool_config_from_pyproject("bandit")
-
-
-def load_darglint_config() -> dict[str, Any]:
-    """Load darglint configuration from pyproject.toml.
-
-    Returns:
-        dict[str, Any]: Darglint configuration dictionary.
-    """
-    return load_tool_config_from_pyproject("darglint")
 
 
 def load_pydoclint_config() -> dict[str, Any]:

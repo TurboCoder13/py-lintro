@@ -41,13 +41,6 @@ def _get_plugin_instance(plugin_class_path: str) -> BaseToolPlugin:
     module = importlib.import_module(module_path)  # nosemgrep: non-literal-import
     plugin_class = getattr(module, class_name)
 
-    # Some plugins require mocking during instantiation
-    if "darglint" in module_path:
-        with patch(
-            "lintro.tools.definitions.darglint.load_darglint_config",
-            return_value={},
-        ):
-            return cast(BaseToolPlugin, plugin_class())
     return cast(BaseToolPlugin, plugin_class())
 
 
@@ -140,11 +133,6 @@ TOOLS_THAT_CANNOT_FIX = [
         "lintro.tools.definitions.markdownlint.MarkdownlintPlugin",
         "cannot fix issues",
         id="markdownlint",
-    ),
-    pytest.param(
-        "lintro.tools.definitions.darglint.DarglintPlugin",
-        "cannot automatically fix",
-        id="darglint",
     ),
     pytest.param(
         "lintro.tools.definitions.mypy.MypyPlugin",

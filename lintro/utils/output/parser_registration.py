@@ -19,7 +19,6 @@ from lintro.parsers.biome.biome_parser import parse_biome_output
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
 from lintro.parsers.clippy.clippy_parser import parse_clippy_output
-from lintro.parsers.darglint.darglint_parser import parse_darglint_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
 from lintro.parsers.mypy.mypy_parser import parse_mypy_output
@@ -150,12 +149,6 @@ def register_all_parsers() -> None:
     ParserRegistry.register(
         ToolName.MYPY.value,
         parse_mypy_output,
-    )
-
-    # Darglint - Docstring linter
-    ParserRegistry.register(
-        ToolName.DARGLINT.value,
-        parse_darglint_output,
     )
 
     # Actionlint - GitHub Actions linter

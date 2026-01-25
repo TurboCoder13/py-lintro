@@ -256,7 +256,6 @@ def _convert_pyproject_to_config(data: dict[str, Any]) -> dict[str, Any]:
         "biome",
         "black",
         "clippy",
-        "darglint",
         "hadolint",
         "markdownlint",
         "mypy",

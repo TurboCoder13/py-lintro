@@ -45,7 +45,7 @@ def test_default_tool_priorities_formatters_before_linters() -> None:
         DEFAULT_TOOL_PRIORITIES["bandit"],
     )
     assert_that(DEFAULT_TOOL_PRIORITIES["black"]).is_less_than(
-        DEFAULT_TOOL_PRIORITIES["darglint"],
+        DEFAULT_TOOL_PRIORITIES["bandit"],
     )
     assert_that(DEFAULT_TOOL_PRIORITIES["ruff"]).is_less_than(
         DEFAULT_TOOL_PRIORITIES["bandit"],

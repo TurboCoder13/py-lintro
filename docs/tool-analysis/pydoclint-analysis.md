@@ -20,8 +20,8 @@ uv pip install pydoclint
 
 ## Output Format
 
-pydoclint outputs issues with the file path on its own line, followed by indented
-issue lines:
+pydoclint outputs issues with the file path on its own line, followed by indented issue
+lines:
 
 ```
 path/file.py
@@ -41,27 +41,27 @@ src/module.py
 
 ### Function/Method Arguments (DOC1xx)
 
-| Code   | Description                                       |
-| ------ | ------------------------------------------------- |
-| DOC101 | Docstring has fewer arguments than signature      |
-| DOC102 | Docstring has more arguments than signature       |
-| DOC103 | Docstring arguments differ from signature         |
-| DOC104 | Arguments in different order                      |
-| DOC105 | Argument type hints don't match                   |
-| DOC106 | Duplicate argument in docstring                   |
-| DOC107 | No type hints in signature, not required in docs  |
-| DOC108 | Type hints in signature but not in docstring      |
-| DOC109 | `--arg-type-hints-in-docstring` but none in docs  |
-| DOC110 | Not all args have type hints in docstring         |
-| DOC111 | Missing `**kwargs` in docstring                   |
+| Code   | Description                                      |
+| ------ | ------------------------------------------------ |
+| DOC101 | Docstring has fewer arguments than signature     |
+| DOC102 | Docstring has more arguments than signature      |
+| DOC103 | Docstring arguments differ from signature        |
+| DOC104 | Arguments in different order                     |
+| DOC105 | Argument type hints don't match                  |
+| DOC106 | Duplicate argument in docstring                  |
+| DOC107 | No type hints in signature, not required in docs |
+| DOC108 | Type hints in signature but not in docstring     |
+| DOC109 | `--arg-type-hints-in-docstring` but none in docs |
+| DOC110 | Not all args have type hints in docstring        |
+| DOC111 | Missing `**kwargs` in docstring                  |
 
 ### Return Values (DOC2xx)
 
-| Code   | Description                                       |
-| ------ | ------------------------------------------------- |
-| DOC201 | Missing return section in docstring               |
-| DOC202 | Return section but no return in function          |
-| DOC203 | Return type mismatch                              |
+| Code   | Description                              |
+| ------ | ---------------------------------------- |
+| DOC201 | Missing return section in docstring      |
+| DOC202 | Return section but no return in function |
+| DOC203 | Return type mismatch                     |
 
 ### Class Docstrings (DOC3xx)
 
@@ -76,22 +76,22 @@ src/module.py
 
 ### Raises Documentation (DOC5xx)
 
-| Code   | Description                                       |
-| ------ | ------------------------------------------------- |
-| DOC501 | Raises section but no raises in body              |
-| DOC502 | Raises in body but not documented                 |
-| DOC503 | Raises in docstring don't match body              |
-| DOC504 | Raises `AssertionError` but not documented        |
+| Code   | Description                                |
+| ------ | ------------------------------------------ |
+| DOC501 | Raises section but no raises in body       |
+| DOC502 | Raises in body but not documented          |
+| DOC503 | Raises in docstring don't match body       |
+| DOC504 | Raises `AssertionError` but not documented |
 
 ### Class Attributes (DOC6xx)
 
-| Code   | Description                                       |
-| ------ | ------------------------------------------------- |
-| DOC601 | Class has fewer attributes in docstring           |
-| DOC602 | Class has more attributes in docstring            |
-| DOC603 | Class attributes differ from docstring            |
-| DOC604 | Class attributes in different order               |
-| DOC605 | Class attribute type hints don't match            |
+| Code   | Description                             |
+| ------ | --------------------------------------- |
+| DOC601 | Class has fewer attributes in docstring |
+| DOC602 | Class has more attributes in docstring  |
+| DOC603 | Class attributes differ from docstring  |
+| DOC604 | Class attributes in different order     |
+| DOC605 | Class attribute type hints don't match  |
 
 ## Configuration Options
 
@@ -103,8 +103,8 @@ pydoclint supports three docstring styles:
 - `google` - Google-style docstrings (lintro's default)
 - `sphinx` - Sphinx-style docstrings
 
-Note: While pydoclint defaults to `numpy`, lintro defaults to `google` to match
-common project conventions.
+Note: While pydoclint defaults to `numpy`, lintro defaults to `google` to match common
+project conventions.
 
 ### Boolean Options
 
@@ -133,14 +133,14 @@ lintro chk --tools pydoclint --tool-options pydoclint:style=numpy
 
 pydoclint is the recommended replacement for darglint:
 
-| Feature              | pydoclint             | darglint                   |
-| -------------------- | --------------------- | -------------------------- |
-| Actively maintained  | Yes                   | Maintenance mode           |
-| Python 3.11+ support | Full                  | Limited                    |
-| Speed                | Fast                  | Slower                     |
-| Output format        | Simple text           | Multiple formats           |
-| Configuration        | pyproject.toml        | .darglint, setup.cfg       |
-| Style support        | Google, NumPy, Sphinx | Google, Sphinx, NumPy      |
+| Feature              | pydoclint             | darglint              |
+| -------------------- | --------------------- | --------------------- |
+| Actively maintained  | Yes                   | Maintenance mode      |
+| Python 3.11+ support | Full                  | Limited               |
+| Speed                | Fast                  | Slower                |
+| Output format        | Simple text           | Multiple formats      |
+| Configuration        | pyproject.toml        | .darglint, setup.cfg  |
+| Style support        | Google, NumPy, Sphinx | Google, Sphinx, NumPy |
 
 ## Migration from darglint
 

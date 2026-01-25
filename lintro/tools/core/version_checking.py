@@ -14,7 +14,7 @@ External tool versions are defined directly in lintro/_tool_versions.py. This en
 4. Shell scripts can read versions via:
    python3 -c "from lintro._tool_versions import ..."
 
-Bundled Python tools (ruff, black, bandit, mypy, yamllint, darglint) are managed
+Bundled Python tools (ruff, black, bandit, mypy, yamllint) are managed
 via pyproject.toml dependencies and don't need tracking in _tool_versions.py.
 
 ## Adding a New Tool

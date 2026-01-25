@@ -257,12 +257,6 @@ def test_standalone_builder_handles_actionlint() -> None:
     assert_that(builder.can_handle(ToolName.ACTIONLINT)).is_true()
 
 
-def test_standalone_builder_handles_darglint() -> None:
-    """StandaloneBuilder can handle darglint."""
-    builder = StandaloneBuilder()
-    assert_that(builder.can_handle(ToolName.DARGLINT)).is_true()
-
-
 def test_standalone_builder_does_not_handle_ruff() -> None:
     """StandaloneBuilder does not handle Python bundled tools."""
     builder = StandaloneBuilder()

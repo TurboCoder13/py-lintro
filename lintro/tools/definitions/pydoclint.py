@@ -65,7 +65,7 @@ class PydoclintPlugin(BaseToolPlugin):
             tool_type=ToolType.LINTER | ToolType.DOCUMENTATION,
             file_patterns=PYDOCLINT_FILE_PATTERNS,
             priority=PYDOCLINT_DEFAULT_PRIORITY,
-            conflicts_with=["darglint"],
+            conflicts_with=[],
             native_configs=["pyproject.toml", ".pydoclint.toml"],
             version_command=["pydoclint", "--version"],
             default_options={

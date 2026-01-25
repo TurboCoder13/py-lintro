@@ -1,7 +1,7 @@
 """Doctor command for checking external tool installation status.
 
 This command checks tools that users must install separately (not bundled with lintro).
-Bundled Python tools (ruff, black, bandit, mypy, yamllint, darglint) are installed
+Bundled Python tools (ruff, black, bandit, mypy, yamllint) are installed
 as dependencies and managed via pyproject.toml - use `pip check` or `uv sync` for those.
 """
 

@@ -8,7 +8,6 @@ has properly configured definitions.
 from __future__ import annotations
 
 from typing import cast
-from unittest.mock import patch
 
 import pytest
 from assertpy import assert_that
@@ -89,14 +88,6 @@ PLUGIN_DEFINITIONS: list[tuple[ToolName, str, bool, ToolType, list[str], list[st
         ["mypy.ini", "pyproject.toml"],
     ),
     (
-        ToolName.DARGLINT,
-        "lintro.tools.definitions.darglint.DarglintPlugin",
-        False,
-        ToolType.LINTER,
-        ["docstring", "Python"],
-        [".darglint"],
-    ),
-    (
         ToolName.BANDIT,
         "lintro.tools.definitions.bandit.BanditPlugin",
         False,
@@ -130,14 +121,6 @@ def _get_plugin_instance(plugin_class_path: str) -> BaseToolPlugin:
     # Safe: module_path comes from hardcoded PLUGIN_DEFINITIONS, not user input
     module = importlib.import_module(module_path)  # nosemgrep: non-literal-import
     plugin_class = getattr(module, class_name)
-
-    # Some plugins require mocking during instantiation
-    if "darglint" in module_path:
-        with patch(
-            "lintro.tools.definitions.darglint.load_darglint_config",
-            return_value={},
-        ):
-            return cast(BaseToolPlugin, plugin_class())
     return cast(BaseToolPlugin, plugin_class())
 
 

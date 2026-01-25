@@ -33,12 +33,12 @@ def test_plugin_init_with_style_config() -> None:
     assert_that(plugin.options.get("style")).is_equal_to("numpy")
 
 
-def test_plugin_definition_conflicts_with_darglint() -> None:
-    """Plugin definition includes darglint in conflicts_with."""
+def test_plugin_definition_has_empty_conflicts_with() -> None:
+    """Plugin definition has empty conflicts_with list."""
     with patch(
         "lintro.tools.definitions.pydoclint.load_pydoclint_config",
         return_value={},
     ):
         plugin = PydoclintPlugin()
 
-    assert_that(plugin.definition.conflicts_with).contains("darglint")
+    assert_that(plugin.definition.conflicts_with).is_empty()

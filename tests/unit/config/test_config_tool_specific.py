@@ -1,7 +1,7 @@
 """Unit tests for tool-specific config loaders.
 
 This module contains function-based pytest tests for tool-specific config
-loaders including ruff, mypy, bandit, darglint, and black.
+loaders including ruff, mypy, bandit, and black.
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ from assertpy import assert_that
 from lintro.utils.config import (
     load_bandit_config,
     load_black_config,
-    load_darglint_config,
     load_mypy_config,
     load_ruff_config,
 )
@@ -106,7 +105,7 @@ def test_load_ruff_config_handles_empty_config(mock_load_tool_config: Any) -> No
 
 
 # =============================================================================
-# Tests for tool-specific config loaders (bandit, darglint, black)
+# Tests for tool-specific config loaders (bandit, black)
 # =============================================================================
 
 
@@ -119,13 +118,6 @@ def test_load_ruff_config_handles_empty_config(mock_load_tool_config: Any) -> No
             {"exclude_dirs": ["tests"]},
             {"exclude_dirs": ["tests"]},
             id="bandit-config",
-        ),
-        pytest.param(
-            load_darglint_config,
-            "darglint",
-            {"strictness": "full"},
-            {"strictness": "full"},
-            id="darglint-config",
         ),
         pytest.param(
             load_black_config,

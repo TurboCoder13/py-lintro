@@ -67,8 +67,6 @@ tools:
     enabled: true
   actionlint:
     enabled: true
-  darglint:
-    enabled: true
 """
 
 MINIMAL_CONFIG_TEMPLATE = """\

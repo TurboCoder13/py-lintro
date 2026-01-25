@@ -8,7 +8,6 @@ codebase and catches definition errors early.
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import patch
 
 import pytest
 from assertpy import assert_that
@@ -74,16 +73,6 @@ TOOL_SPECS = [
     ),
     (ToolName.BANDIT, "lintro.tools.definitions.bandit", "BanditPlugin", 30, 90, False),
 ]
-
-# Darglint needs special handling due to config loading
-DARGLINT_SPEC = (
-    ToolName.DARGLINT,
-    "lintro.tools.definitions.darglint",
-    "DarglintPlugin",
-    15,
-    45,
-    False,
-)
 
 
 def _create_plugin_instance(module_path: str, class_name: str) -> Any:
@@ -277,72 +266,6 @@ def test_tool_definition_can_fix(
     """
     plugin = _create_plugin_instance(module_path, class_name)
     assert_that(plugin.definition.can_fix).is_equal_to(expected_can_fix)
-
-
-# =============================================================================
-# Tests for darglint definition (requires mocked config loading)
-# =============================================================================
-
-
-@pytest.fixture
-def darglint_plugin() -> Any:
-    """Provide DarglintPlugin with mocked config loading.
-
-    Returns:
-        An instance of DarglintPlugin with mocked config loading.
-    """
-    with patch(
-        "lintro.tools.definitions.darglint.load_darglint_config",
-        return_value={},
-    ):
-        from lintro.tools.definitions.darglint import DarglintPlugin
-
-        return DarglintPlugin()
-
-
-def test_darglint_definition_name(darglint_plugin: Any) -> None:
-    """Darglint has correct name in definition.
-
-    Args:
-        darglint_plugin: DarglintPlugin instance for testing.
-    """
-    assert_that(darglint_plugin.definition.name).is_equal_to(ToolName.DARGLINT)
-
-
-def test_darglint_definition_has_description(darglint_plugin: Any) -> None:
-    """Darglint has non-empty description.
-
-    Args:
-        darglint_plugin: DarglintPlugin instance for testing.
-    """
-    assert_that(darglint_plugin.definition.description).is_not_empty()
-
-
-def test_darglint_definition_timeout(darglint_plugin: Any) -> None:
-    """Darglint has correct default timeout.
-
-    Args:
-        darglint_plugin: DarglintPlugin instance for testing.
-    """
-    assert_that(darglint_plugin.definition.default_timeout).is_equal_to(15)
-
-
-def test_darglint_definition_priority(darglint_plugin: Any) -> None:
-    """Darglint has correct priority.
-
-    Args:
-        darglint_plugin: DarglintPlugin instance for testing.
-    """
-    assert_that(darglint_plugin.definition.priority).is_equal_to(45)
-
-
-def test_darglint_definition_can_fix(darglint_plugin: Any) -> None:
-    """Darglint cannot fix issues.
-
-    Args:
-        darglint_plugin: DarglintPlugin instance for testing.
-    """
-    assert_that(darglint_plugin.definition.can_fix).is_false()
 
 
 # =============================================================================
