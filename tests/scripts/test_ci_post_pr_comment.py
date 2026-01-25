@@ -285,7 +285,8 @@ def test_script_has_proper_shebang(ci_script_path: Path) -> None:
     with open(ci_script_path) as f:
         first_line = f.readline().strip()
 
-    assert_that(first_line).starts_with("#!/bin/bash")
+    # Accept both portable and traditional shebangs
+    assert_that(first_line).matches(r"^#!(/usr/bin/env bash|/bin/bash)")
 
 
 def test_script_sources_utilities(ci_script_path: Path) -> None:
