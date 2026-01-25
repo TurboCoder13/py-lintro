@@ -220,47 +220,8 @@ Override via command line:
 lintro chk --tools pydoclint --tool-options pydoclint:style=numpy
 ```
 
-## Comparison with darglint
-
-pydoclint is the recommended replacement for darglint:
-
-| Feature              | pydoclint             | darglint              |
-| -------------------- | --------------------- | --------------------- |
-| Actively maintained  | Yes                   | Maintenance mode      |
-| Python 3.11+ support | Full                  | Limited               |
-| Speed                | Fast                  | Slower                |
-| Output format        | Simple text           | Multiple formats      |
-| Configuration        | pyproject.toml        | .darglint, setup.cfg  |
-| Style support        | Google, NumPy, Sphinx | Google, Sphinx, NumPy |
-
-## Migration from darglint
-
-1. Install pydoclint: `pip install pydoclint`
-2. Update your configuration:
-
-**Before (darglint):**
-
-```toml
-[tool.darglint]
-strictness = "full"
-```
-
-**After (pydoclint):**
-
-```toml
-[tool.pydoclint]
-style = "google"
-```
-
-3. Run with lintro:
-
-```bash
-lintro chk --tools pydoclint
-```
-
 ## Integration Notes
 
-- pydoclint conflicts with darglint (both check docstrings)
 - Priority: 45 (runs before formatters)
 - Does not support auto-fix (documentation must be fixed manually)
 - Works well with ruff's D (pydocstyle) rules for complementary coverage

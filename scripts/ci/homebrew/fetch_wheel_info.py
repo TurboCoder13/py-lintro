@@ -6,7 +6,7 @@ Generates Homebrew resource stanzas for packages that require wheel installation
 
 Usage:
     # Universal wheel (py3-none-any)
-    python3 fetch_wheel_info.py darglint --type universal
+    python3 fetch_wheel_info.py pydoclint --type universal
 
     # Platform-specific wheels (macos arm64/x86_64)
     python3 fetch_wheel_info.py pydantic_core --type platform

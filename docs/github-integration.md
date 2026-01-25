@@ -23,7 +23,7 @@ The repository includes pre-configured GitHub Actions workflows. To activate the
 - 🛠️ **Auto-fixing** with `lintro format` where possible
 - 📊 **Detailed reporting** in GitHub Actions summaries
 - 🚀 **Multi-tool analysis:**
-  - Python: Ruff + Darglint
+  - Python: Ruff + pydoclint
   - Python formatting (post-check): Black
   - YAML: Yamllint
   - JSON: Prettier
@@ -152,7 +152,7 @@ Edit the workflow files to match your project structure:
 - name: Run Lintro Quality Check
   run: |
     # Adjust paths for your project
-    uv run lintro check src/ tests/ --tools ruff,darglint --output-format grid
+    uv run lintro check src/ tests/ --tools ruff,pydoclint --output-format grid
     uv run lintro check .github/ --tools yamllint --output-format grid
     uv run lintro check *.json --tools prettier --output-format grid
 ```
@@ -404,7 +404,7 @@ Reference installation docs:
 ```yaml
 # Python-only quality check
 - name: Python Quality
-  run: uv run lintro check src/ tests/ --tools ruff,darglint --output-format grid
+  run: uv run lintro check src/ tests/ --tools ruff,pydoclint --output-format grid
 
 # Frontend-only quality check
 - name: Frontend Quality
@@ -421,7 +421,7 @@ Reference installation docs:
 strategy:
   matrix:
     python-version: ['3.11', '3.12', '3.13']
-    tool: ['ruff', 'darglint', 'prettier']
+    tool: ['ruff', 'pydoclint', 'prettier']
 ```
 
 ### Conditional Execution

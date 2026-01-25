@@ -56,7 +56,7 @@ Options:
 
 This script installs:
   - Ruff (Python linter and formatter)
-  - Darglint (docstring linter)
+  - Pydoclint (docstring linter)
   - Black (Python formatter; runs as a post-check in Lintro)
   - Prettier (code formatter)
   - Markdownlint-cli2 (Markdown linter)
@@ -793,15 +793,15 @@ main() {
 		exit 1
 	fi
 
-	# Install darglint (Python package)
-	echo -e "${BLUE}Installing darglint...${NC}"
+	# Install pydoclint (Python docstring linter)
+	echo -e "${BLUE}Installing pydoclint...${NC}"
 
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install darglint==1.8.1"
-	elif install_python_package "darglint" "1.8.1"; then
-		echo -e "${GREEN}✓ darglint installed successfully${NC}"
+		log_info "[DRY-RUN] Would install pydoclint"
+	elif install_python_package "pydoclint"; then
+		echo -e "${GREEN}✓ pydoclint installed successfully${NC}"
 	else
-		echo -e "${RED}✗ Failed to install darglint${NC}"
+		echo -e "${RED}✗ Failed to install pydoclint${NC}"
 		exit 1
 	fi
 
@@ -912,7 +912,7 @@ main() {
 	echo "  - cargo-audit (Rust dependency vulnerability scanning)"
 	echo "  - clippy (Rust linting)"
 	echo "  - rustfmt (Rust formatting)"
-	echo "  - darglint (Python docstring validation)"
+	echo "  - pydoclint (Python docstring validation)"
 	echo "  - gitleaks (Secret detection)"
 	echo "  - hadolint (Docker linting)"
 	echo "  - markdownlint-cli2 (Markdown linting)"
@@ -930,7 +930,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "biome" "black" "cargo-audit" "clippy" "rustfmt" "darglint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint" "mypy")
+	tools_to_verify=("actionlint" "bandit" "biome" "black" "cargo-audit" "clippy" "rustfmt" "pydoclint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint" "mypy")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo

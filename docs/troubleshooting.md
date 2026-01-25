@@ -30,7 +30,7 @@ If using pipx, ensure `~/.local/bin` is in your PATH.
 
 ```bash
 # Install tools individually
-pip install ruff darglint
+pip install ruff pydoclint
 npm install -g prettier
 pip install yamllint
 

@@ -16,7 +16,7 @@ implementations with the core tools themselves.
 - ⚠️ **Limited**: Runtime rule customization, watch mode, cache control, statistics
 - 🚀 **Enhanced**: Combined linting/formatting, smart fix handling, unified API
 
-### [Darglint Analysis](./darglint-analysis.md)
+### [pydoclint Analysis](./pydoclint-analysis.md)
 
 **Python Docstring Linter**
 

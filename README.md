@@ -87,7 +87,7 @@ system.
 | [![Taplo](https://img.shields.io/badge/Taplo-lint%2Bformat-9b4dca?logo=toml&logoColor=white)](https://taplo.tamasfe.dev/)                                     | 🧾 TOML                | ✅       |
 | [![Markdownlint](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2) | 📝 Markdown            | -        |
 | [![Clippy](https://img.shields.io/badge/Clippy-lint-000000?logo=rust&logoColor=white)](https://github.com/rust-lang/rust-clippy)                              | 🦀 Rust                | ✅       |
-| [![Darglint](https://img.shields.io/badge/Darglint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/terrencepreilly/darglint)               | 🐍 Python              | -        |
+| [![pydoclint](https://img.shields.io/badge/pydoclint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/jsh9/pydoclint)               | 🐍 Python              | -        |
 
 <!-- markdownlint-enable MD013 MD060 -->
 
@@ -107,7 +107,7 @@ These Python tools are automatically installed with Lintro:
 - **Bandit** - Python security linter
 - **Mypy** - Python static type checker
 - **Yamllint** - YAML linter
-- **Darglint** - Python docstring linter
+- **pydoclint** - Python docstring linter
 
 ### Optional External Tools
 

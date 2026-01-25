@@ -47,7 +47,7 @@ class LintroBin < Formula
         cargo install cargo-audit
 
       Or for Python tools via pipx:
-        pipx install ruff black mypy bandit darglint yamllint sqlfluff semgrep
+        pipx install ruff black mypy bandit pydoclint yamllint sqlfluff semgrep
 
       For the Python-based version with bundled tools, use:
         brew install TurboCoder13/tap/lintro

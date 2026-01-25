@@ -224,7 +224,7 @@ When using the `--output` option, files are created in your current directory:
 ./scripts/docker/docker-lintro.sh check src/ tests/ --output-format grid
 
 # Use only specific tools
-./scripts/docker/docker-lintro.sh check --tools ruff,darglint --output-format grid
+./scripts/docker/docker-lintro.sh check --tools ruff,pydoclint --output-format grid
 ```
 
 ### Code Formatting

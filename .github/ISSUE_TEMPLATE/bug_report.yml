@@ -75,7 +75,7 @@ body:
       label: Tools involved
       options:
         - label: Ruff
-        - label: Darglint
+        - label: pydoclint
         - label: Prettier
         - label: Yamllint
         - label: Hadolint

@@ -278,7 +278,7 @@ tool_priorities = { ruff = 5, black = 10, prettier = 1 }
 | ruff         | 20       | Linter/Formatter |
 | markdownlint | 30       | Linter           |
 | yamllint     | 35       | Linter           |
-| darglint     | 40       | Linter           |
+| pydoclint     | 40       | Linter           |
 | bandit       | 45       | Security         |
 | hadolint     | 50       | Infrastructure   |
 | actionlint   | 55       | Infrastructure   |
@@ -593,45 +593,28 @@ lintro check --tools gitleaks --tool-options gitleaks:baseline_path=gitleaks-bas
 lintro check --tools gitleaks --tool-options gitleaks:max_target_megabytes=10
 ```
 
-#### Darglint Configuration
-
-**File:** `.darglint`
-
-```ini
-[darglint]
-docstring_style = google
-strictness = full
-ignore_regex = ^_(.*)|^test_(.*)
-ignore = DAR101,DAR201
-enable = DAR104
-```
+#### pydoclint Configuration
 
 **File:** `pyproject.toml`
 
 ```toml
-[tool.darglint]
-docstring_style = "google"
-strictness = "full"
-enable = "DAR104"
-ignore = "DAR101,DAR201"
-ignore_regex = "^_(.*)"
-```
-
-**File:** `setup.cfg`
-
-```ini
-[darglint]
-docstring_style = google
-strictness = full
+[tool.pydoclint]
+style = "google"
+arg-type-hints-in-docstring = false
+arg-type-hints-in-signature = true
+check-return-types = false
+check-arg-order = true
+skip-checking-short-docstrings = true
 ```
 
 **Available Options:**
 
-- `docstring_style`: `google`, `sphinx`, `numpy`
-- `strictness`: `short`, `long`, `full`
-- `ignore`: Comma-separated error codes
-- `enable`: Enable specific checks
-- `ignore_regex`: Regex pattern for ignoring functions
+- `style`: `google`, `numpy`, `sphinx`
+- `arg-type-hints-in-docstring`: Require types in docstring (default: true)
+- `arg-type-hints-in-signature`: Require type annotations (default: true)
+- `check-return-types`: Validate return types match (default: true)
+- `check-arg-order`: Verify argument order matches signature
+- `skip-checking-short-docstrings`: Skip single-line docstrings
 
 ### Frontend Tools
 
@@ -1301,14 +1284,14 @@ project/
 
 ```toml
 [lintro]
-default_tools = ["ruff", "darglint", "prettier", "yamllint"]
+default_tools = ["ruff", "pydoclint", "prettier", "yamllint"]
 table_format = true
 group_by = "auto"
 exclude_patterns = ["migrations", "node_modules", "dist"]
 
 [lintro.timeouts]
 default = 30
-darglint = 45
+pydoclint = 45
 prettier = 60
 
 [lintro.paths]
@@ -1366,7 +1349,7 @@ lintro check --tools ruff,black --ignore-conflicts
 lintro check --tools ruff
 
 # Process directories separately
-lintro check src/ --tools ruff,darglint
+lintro check src/ --tools ruff,pydoclint
 lintro check tests/ --tools ruff
 
 # Exclude heavy directories
@@ -1395,7 +1378,7 @@ lintro check --output-format json --output results.json
 {
   "summary": {
     "total_issues": 15,
-    "tools_run": ["ruff", "darglint"],
+    "tools_run": ["ruff", "pydoclint"],
     "files_checked": 42
   },
   "issues": [
@@ -1467,7 +1450,7 @@ quality:
 
 # Tool installation
 install-tools:
-	pip install ruff darglint
+	pip install ruff pydoclint
 	npm install -g prettier
 ```
 
@@ -1567,7 +1550,7 @@ lintro list-tools
 
 # Test individual tools
 ruff check src/
-darglint src/main.py
+pydoclint src/main.py
 prettier --check package.json
 ```
 

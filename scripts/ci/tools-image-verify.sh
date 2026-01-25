@@ -44,7 +44,7 @@ docker run --rm "$IMAGE" bash -c '
     black --version
     cargo audit --version
     cargo clippy --version
-    darglint --version
+    pydoclint --version
     gitleaks version
     hadolint --version
     markdownlint-cli2 --version

@@ -6,7 +6,7 @@ Usage:
         --tarball-url "https://..." \
         --tarball-sha "abc123" \
         --poet-resources poet_output.txt \
-        --darglint-resource darglint.txt \
+        --pydoclint-resource pydoclint.txt \
         --pydantic-resource pydantic.txt \
         --output Formula/lintro.rb
 """
@@ -58,9 +58,9 @@ def main() -> None:
         help="Path to poet resources file (or - for stdin)",
     )
     parser.add_argument(
-        "--darglint-resource",
+        "--pydoclint-resource",
         required=True,
-        help="Path to darglint resource stanza file",
+        help="Path to pydoclint resource stanza file",
     )
     parser.add_argument(
         "--pydantic-resource",
@@ -82,7 +82,7 @@ def main() -> None:
         "{{TARBALL_URL}}",
         "{{TARBALL_SHA}}",
         "{{POET_RESOURCES}}",
-        "{{DARGLINT_RESOURCE}}",
+        "{{PYDOCLINT_RESOURCE}}",
         "{{PYDANTIC_CORE_RESOURCE}}",
     ]
     for placeholder in placeholders:
@@ -94,14 +94,14 @@ def main() -> None:
 
     # Read resources (strip trailing whitespace to avoid extra blank lines)
     poet_resources = read_file_content(args.poet_resources).rstrip()
-    darglint_resource = read_file_content(args.darglint_resource).rstrip()
+    pydoclint_resource = read_file_content(args.pydoclint_resource).rstrip()
     pydantic_resource = read_file_content(args.pydantic_resource).rstrip()
 
     # Render template
     rendered = template.replace("{{TARBALL_URL}}", args.tarball_url)
     rendered = rendered.replace("{{TARBALL_SHA}}", args.tarball_sha)
     rendered = rendered.replace("{{POET_RESOURCES}}", poet_resources)
-    rendered = rendered.replace("{{DARGLINT_RESOURCE}}", darglint_resource)
+    rendered = rendered.replace("{{PYDOCLINT_RESOURCE}}", pydoclint_resource)
     rendered = rendered.replace("{{PYDANTIC_CORE_RESOURCE}}", pydantic_resource)
 
     # Output

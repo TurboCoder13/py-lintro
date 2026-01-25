@@ -65,7 +65,7 @@ versions are centrally managed in `pyproject.toml`:
   `--ignore-missing-imports` by default unless you override via `set_options()` or
   `--tool-options`)
 - `yamllint` - YAML linter
-- `darglint` - Python docstring linter
+- `pydoclint` - Python docstring linter
 
 ### Optional External Tools
 
@@ -175,7 +175,7 @@ needs.
 
 ```bash
 # Check Python files
-lintro check src/ tests/ --tools ruff,darglint
+lintro check src/ tests/ --tools ruff,pydoclint
 
 # Format Python code
 lintro format src/ --tools ruff
@@ -191,7 +191,7 @@ lintro check src/ --tool-options "black:line_length=100,black:target_version=py3
 
 - **Ruff** - Fast Python linter and formatter
 - **Black** - Python formatter (runs as a post-check by default)
-- **Darglint** - Docstring validation
+- **pydoclint** - Docstring validation
 
 ### JavaScript/TypeScript Projects
 
@@ -393,7 +393,7 @@ For faster checks in large codebases:
 lintro check --tools ruff
 
 # Only check documentation
-lintro check --tools darglint
+lintro check --tools pydoclint
 ```
 
 ### 4. Save Results for Analysis
@@ -415,7 +415,7 @@ Fix issues incrementally by tool type:
 lintro format --tools ruff,prettier
 
 # Then address linting issues
-lintro check --tools darglint,yamllint
+lintro check --tools pydoclint,yamllint
 ```
 
 ## Integration Examples
@@ -490,7 +490,7 @@ Add to `.vscode/tasks.json`:
 lintro list-tools
 
 # Install missing tools
-pip install ruff darglint
+pip install ruff pydoclint
 ```
 
 **2. No files to check:**

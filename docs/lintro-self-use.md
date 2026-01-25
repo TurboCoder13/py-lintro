@@ -22,7 +22,7 @@ Lintro runs multiple specialized tools on different file types:
 - **Ruff**: Fast Python linter and formatter
   - Checks import order, unused variables, code style
   - Auto-fixes many issues when possible
-- **Darglint**: Validates Python docstring completeness
+- **pydoclint**: Validates Python docstring completeness
   - Ensures all functions have proper documentation
   - Checks docstring format consistency
 
@@ -55,7 +55,7 @@ jobs:
   quality-check: # 🔍 Lintro runs first
     name: 🔍 Code Quality (Lintro)
     steps:
-      - run: uv run lintro check lintro/ tests/ --tools ruff,darglint
+      - run: uv run lintro check lintro/ tests/ --tools ruff,pydoclint
 
   test-coverage: # 🧪 Tests run after quality passes
     needs: quality-check
@@ -68,7 +68,7 @@ Different tools for different file types:
 
 ```bash
 # Python code quality
-uv run lintro check lintro/ tests/ --tools ruff,darglint
+uv run lintro check lintro/ tests/ --tools ruff,pydoclint
 
 # YAML validation
 uv run lintro check .github/ --tools yamllint
@@ -92,7 +92,7 @@ As of the latest run:
 
 - **31 Python issues** detected by Ruff (mostly unused imports)
 - **Auto-fixable**: Most issues can be resolved automatically
-- **Docstring coverage**: Validated by Darglint
+- **Docstring coverage**: Validated by pydoclint
 - **YAML/JSON**: Well-formatted and valid
 
 ## 🔍 Local Development
@@ -101,7 +101,7 @@ Run the same checks locally during development:
 
 ```bash
 # Check all Python files
-uv run lintro check lintro/ tests/ --tools ruff,darglint
+uv run lintro check lintro/ tests/ --tools ruff,pydoclint
 
 # Auto-fix issues
 uv run lintro format lintro/ tests/ --tools ruff
