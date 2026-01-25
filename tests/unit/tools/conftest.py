@@ -111,7 +111,6 @@ def tsc_plugin() -> TscPlugin:
     return TscPlugin()
 
 
-
 # -----------------------------------------------------------------------------
 # Shared patch fixtures for subprocess and tool availability
 # -----------------------------------------------------------------------------
