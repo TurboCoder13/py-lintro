@@ -88,47 +88,44 @@ jobs:
       - name: Read current version from pyproject.toml
         id: current
         run: scripts/ci/github/semantic-release-helpers.sh read_current_version
-        # yamllint enable
+
+      - name: Check if version bump needed
+        id: needs_bump
+        env:
+          NEXT_VERSION: ${{ steps.semrel.outputs.next_version }}
+          CURRENT_VERSION: ${{ steps.current.outputs.current_version }}
+        run: |
+          if [[ -n "$NEXT_VERSION" && "$NEXT_VERSION" != "$CURRENT_VERSION" ]]; then
+            echo "required=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Skip if no new version
-        if: >-
-          ${{ steps.semrel.outputs.next_version == '' ||
-          steps.semrel.outputs.next_version == steps.current.outputs.current_version }}
+        if: steps.needs_bump.outputs.required != 'true'
         run: >
           scripts/ci/github/semantic-release-helpers.sh skip_no_new_version
           "${{ steps.semrel.outputs.next_version }}"
           "${{ steps.current.outputs.current_version }}"
 
       - name: Update version files
-        if: >-
-          ${{ steps.semrel.outputs.next_version != '' &&
-          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        if: steps.needs_bump.outputs.required == 'true'
         run: >
           scripts/ci/github/semantic-release-helpers.sh update_version_files
           "${{ steps.semrel.outputs.next_version }}"
 
       - name: Install external tools for Lintro (formatting)
-        if: >-
-          ${{ steps.semrel.outputs.next_version != '' &&
-          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        if: steps.needs_bump.outputs.required == 'true'
         run: scripts/ci/github/semantic-release-helpers.sh install_external_tools
 
       - name: Run Lintro format
-        if: >-
-          ${{ steps.semrel.outputs.next_version != '' &&
-          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        if: steps.needs_bump.outputs.required == 'true'
         run: uv run lintro format .
 
       - name: Run Lintro check
-        if: >-
-          ${{ steps.semrel.outputs.next_version != '' &&
-          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        if: steps.needs_bump.outputs.required == 'true'
         run: uv run lintro check . --output-format grid
 
       - name: Create Release PR
-        if: >-
-          ${{ steps.semrel.outputs.next_version != '' &&
-          steps.semrel.outputs.next_version != steps.current.outputs.current_version }}
+        if: steps.needs_bump.outputs.required == 'true'
         id: cpr
         # yamllint disable-line rule:line-length
         uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 # v8

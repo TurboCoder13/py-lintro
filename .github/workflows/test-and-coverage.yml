@@ -79,8 +79,11 @@ jobs:
             semgrep.dev:443
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-      - name: Environment setup
-        uses: ./.github/actions/setup-env
+      - name: Set up Docker Buildx
+        # yamllint disable-line rule:line-length
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        with:
+          driver: docker
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
@@ -181,8 +184,6 @@ jobs:
             semgrep.dev:443
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-      - name: Environment setup
-        uses: ./.github/actions/setup-env
       - name: Download coverage XML artifact (fallback for comment generation)
         if: always()
         continue-on-error: true

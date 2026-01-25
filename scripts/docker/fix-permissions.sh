@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # fix-permissions.sh - Fix permissions for mounted volumes in Docker
 #
 # This script ensures the current user can write to mounted volumes.

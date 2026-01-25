@@ -73,24 +73,13 @@ if [[ -f coverage.xml ]] && [[ -s coverage.xml ]]; then
 		exit 0
 	fi
 
-	# Fallback: try Python script with uv run
+	# Fallback: try Python script (uses stdlib only, no uv needed)
 	log_info "Attempting Python extraction..."
-	if output=$(uv run python scripts/utils/extract-coverage.py 2>&1); then
-		if percentage_line=$(echo "$output" | grep "^percentage="); then
-			percentage="${percentage_line#percentage=}"
-			output_coverage "$percentage"
-			log_success "Coverage extracted via Python: $percentage%"
-			exit 0
-		fi
-	fi
-
-	# Final fallback: try python3 directly
-	log_info "Attempting python3 fallback..."
 	if output=$(python3 scripts/utils/extract-coverage.py 2>&1); then
 		if percentage_line=$(echo "$output" | grep "^percentage="); then
 			percentage="${percentage_line#percentage=}"
 			output_coverage "$percentage"
-			log_success "Coverage extracted via python3: $percentage%"
+			log_success "Coverage extracted via Python: $percentage%"
 			exit 0
 		fi
 	fi

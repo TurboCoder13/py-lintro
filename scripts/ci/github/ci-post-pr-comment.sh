@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # CI Post PR Comment Script
 # Handles posting comments to PRs using GitHub API
@@ -24,15 +24,36 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 	exit 0
 fi
 
+# Compute script directory for absolute path references
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
 # Source shared utilities
 # SC1091: path is dynamically constructed, file exists at runtime
 # shellcheck disable=SC1091
-source "$(dirname "$0")/../../utils/utils.sh"
+source "$SCRIPT_DIR/../../utils/utils.sh"
 
 # Check if we're in a PR context
 if ! is_pr_context; then
 	log_info "Not in a PR context, skipping comment posting"
 	exit 0
+fi
+
+# Validate required environment variables
+if [ -z "${PR_NUMBER:-}" ]; then
+	log_error "PR_NUMBER environment variable is required"
+	exit 1
+fi
+
+if [ -z "${GITHUB_REPOSITORY:-}" ]; then
+	log_error "GITHUB_REPOSITORY environment variable is required"
+	exit 1
+fi
+
+# GITHUB_TOKEN is required when gh CLI is not available (curl fallback)
+if ! command -v gh &>/dev/null && [ -z "${GITHUB_TOKEN:-}" ]; then
+	log_error "GITHUB_TOKEN environment variable is required when gh CLI is not available"
+	exit 1
 fi
 
 # Get the comment file from argument
@@ -63,7 +84,7 @@ if [ -n "$MARKER" ]; then
 	fi
 
 	# Extract the first comment id containing the marker (prefer latest by scanning from end)
-	COMMENT_ID=$(echo "$EXISTING_JSON" | uv run python scripts/utils/find_comment_with_marker.py "$MARKER")
+	COMMENT_ID=$(echo "$EXISTING_JSON" | python3 "$REPO_ROOT/scripts/utils/find_comment_with_marker.py" "$MARKER")
 
 	if [ -n "$COMMENT_ID" ]; then
 		log_info "Found existing comment with marker (id=$COMMENT_ID); preparing merged body"
@@ -71,11 +92,11 @@ if [ -n "$MARKER" ]; then
 		NEW_FILE=$(mktemp)
 		MERGED_FILE=$(mktemp)
 		# Dump previous body
-		echo "$EXISTING_JSON" | uv run python scripts/utils/extract_comment_body.py "$COMMENT_ID" >"$PREV_FILE"
+		echo "$EXISTING_JSON" | python3 "$REPO_ROOT/scripts/utils/extract_comment_body.py" "$COMMENT_ID" >"$PREV_FILE"
 		# Read new body
 		cat "$COMMENT_FILE" >"$NEW_FILE"
 		# Merge with Python utility and write to file to avoid argument length limits
-		uv run python scripts/utils/merge_pr_comment.py "$MARKER" "$NEW_FILE" --previous-file "$PREV_FILE" >"$MERGED_FILE"
+		python3 "$REPO_ROOT/scripts/utils/merge_pr_comment.py" "$MARKER" "$NEW_FILE" --previous-file "$PREV_FILE" >"$MERGED_FILE"
 		# Post update via gh or curl
 		if command -v gh &>/dev/null; then
 			gh api "repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT_ID" -X PATCH -F body=@"$MERGED_FILE" >/dev/null
@@ -83,7 +104,7 @@ if [ -n "$MARKER" ]; then
 			log_success "PR comment updated successfully via gh api"
 			exit 0
 		else
-			JSON_BODY=$(uv run python scripts/utils/json_encode_body.py <"$MERGED_FILE")
+			JSON_BODY=$(python3 "$REPO_ROOT/scripts/utils/json_encode_body.py" <"$MERGED_FILE")
 			curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
 				-H "Accept: application/vnd.github+json" \
 				-H "X-GitHub-Api-Version: 2022-11-28" \
@@ -115,7 +136,7 @@ if command -v gh &>/dev/null; then
 else
 	log_info "gh not found, using curl to post PR comment"
 	# Fallback without requiring jq: safely JSON-encode body using Python
-	JSON_BODY=$(uv run python scripts/utils/json_encode_body.py "$COMMENT_FILE")
+	JSON_BODY=$(python3 "$REPO_ROOT/scripts/utils/json_encode_body.py" "$COMMENT_FILE")
 	curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
 		-H "Accept: application/vnd.github+json" \
 		-H "X-GitHub-Api-Version: 2022-11-28" \

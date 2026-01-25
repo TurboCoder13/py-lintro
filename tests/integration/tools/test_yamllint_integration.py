@@ -202,11 +202,11 @@ def test_check_yaml_file_with_syntax_error(
 
     assert_that(result).is_not_none()
     assert_that(result.name).is_equal_to("yamllint")
-    # Yamllint should report issues for syntax errors
-    # The key assertion: output should be preserved even if parsing fails
+    # Yamllint must report failure or issues for syntax errors - never silently pass
+    assert (not result.success) or (result.issues_count > 0)
+    # The key assertion: output should always be preserved even if parsing fails
     # to extract structured issues
-    if not result.success or result.issues_count > 0:
-        assert_that(result.output).is_not_none()
+    assert_that(result.output).is_not_none()
 
 
 def test_check_empty_directory(

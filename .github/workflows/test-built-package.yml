@@ -81,6 +81,14 @@ jobs:
             files.pythonhosted.org:443
         run: scripts/ci/maintenance/egress-audit-lite.sh "true"
 
+      - name: Cache uv dependencies
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
       - name: Environment setup
         uses: ./.github/actions/setup-env
         with:

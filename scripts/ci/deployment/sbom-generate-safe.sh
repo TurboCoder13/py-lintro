@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Generate SBOMs safely with error handling
 # Consolidates the common SBOM generation pattern used in workflows

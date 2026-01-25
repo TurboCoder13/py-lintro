@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Shared utilities for workflow scripts
 # This file contains common functions and variables used across multiple scripts
@@ -22,8 +22,10 @@ GITHUB_RUN_ID="${GITHUB_RUN_ID:-}"
 GITHUB_SHA="${GITHUB_SHA:-}"
 
 # Function to check if we're in a PR context
+# Handles both pull_request and pull_request_target events
 is_pr_context() {
-	[ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]
+	local event="${GITHUB_EVENT_NAME:-}"
+	[ "$event" = "pull_request" ] || [ "$event" = "pull_request_target" ]
 }
 
 # Function to log messages with colors
@@ -48,15 +50,17 @@ log_verbose() {
 }
 
 # Function to generate PR comment file
+# Usage: generate_pr_comment "title" "status" "content" "output_file" ["tool_name"]
 generate_pr_comment() {
 	local title="$1"
 	local status="$2"
 	local content="$3"
 	local output_file="$4"
+	local tool_name="${5:-lintro}"
 
 	local comment="## $title
 
-This PR has been analyzed using **lintro** - our unified code quality tool.
+This PR has been analyzed using **$tool_name** - our unified code quality tool.
 
 ### 📊 Status: $status
 
@@ -172,14 +176,38 @@ set_github_env() {
 # Utility Functions
 # =============================================================================
 
+# Array to track temporary directories for cleanup
+_TEMP_DIRS=()
+
+# Cleanup function for temporary directories
+_cleanup_temp_dirs() {
+	for dir in "${_TEMP_DIRS[@]}"; do
+		rm -rf "$dir"
+	done
+}
+
 # Create a temporary directory with automatic cleanup on exit
+# Multiple calls accumulate directories instead of overwriting the trap
+# Chains with any existing EXIT trap to avoid clobbering other cleanup handlers
 # Usage: tmpdir=$(create_temp_dir)
 create_temp_dir() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
-	# SC2064: intentional early expansion - tmpdir must be captured at trap creation time
-	# shellcheck disable=SC2064
-	trap "rm -rf '$tmpdir'" EXIT
+	_TEMP_DIRS+=("$tmpdir")
+	# Chain with existing EXIT trap instead of clobbering it
+	local existing_trap
+	existing_trap=$(trap -p EXIT | sed -n "s/^trap -- '\(.*\)' EXIT$/\1/p")
+	if [ -n "$existing_trap" ]; then
+		# SC2064: We intentionally expand $existing_trap now to capture its value
+		# shellcheck disable=SC2064
+		# Guard against duplicate trap chaining
+		case "$existing_trap" in
+		*"_cleanup_temp_dirs"*) trap "$existing_trap" EXIT ;;
+		*) trap "$existing_trap; _cleanup_temp_dirs" EXIT ;;
+		esac
+	else
+		trap _cleanup_temp_dirs EXIT
+	fi
 	echo "$tmpdir"
 }
 
@@ -205,8 +233,10 @@ get_coverage_percentage() {
 	local coverage_file="${1:-coverage.xml}"
 	if [[ -f "$coverage_file" ]]; then
 		# Extract line-rate attribute and convert to percentage
+		# Use portable sed instead of grep -oP for macOS/BSD compatibility
 		local line_rate
-		line_rate=$(grep -oP 'line-rate="\K[^"]+' "$coverage_file" 2>/dev/null || echo "0")
+		line_rate=$(sed -n 's/.*line-rate="\([^"]*\)".*/\1/p' "$coverage_file" | head -n1)
+		line_rate=${line_rate:-0}
 		awk -v lr="$line_rate" 'BEGIN { printf "%.2f", lr * 100 }'
 	else
 		echo "0.00"
