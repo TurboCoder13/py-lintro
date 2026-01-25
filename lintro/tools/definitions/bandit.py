@@ -317,18 +317,31 @@ class BanditPlugin(BaseToolPlugin):
         if ctx.should_skip:
             return ctx.early_result  # type: ignore[return-value]
 
-        cmd: list[str] = self._build_check_command(files=ctx.rel_files)
-        logger.debug(f"[bandit] Running: {' '.join(cmd[:10])}... (cwd={ctx.cwd})")
+        # Use absolute paths to avoid running from inside Python package directories.
+        # When bandit runs from inside lintro/, it may trigger imports that corrupt
+        # the JSON output with loguru messages.
+        cmd: list[str] = self._build_check_command(files=ctx.files)
+        logger.debug(f"[bandit] Running: {' '.join(cmd[:10])}...")
 
         output: str
         execution_failure: bool = False
         try:
-            success, combined = self._run_subprocess(
-                cmd=cmd,
+            # Run subprocess directly to capture stdout and stderr separately.
+            # Bandit outputs JSON to stdout, but stderr may contain info/warning
+            # messages that would corrupt JSON parsing if combined.
+            result = subprocess.run(  # nosec B603 - cmd is validated
+                cmd,
+                capture_output=True,
+                text=True,
                 timeout=ctx.timeout,
-                cwd=ctx.cwd,
+                # Don't set cwd - use absolute paths instead to avoid
+                # running from inside Python package directories
             )
-            output = (combined or "").strip()
+            # Use only stdout for JSON parsing
+            output = (result.stdout or "").strip()
+            # Log stderr for debugging if present
+            if result.stderr:
+                logger.debug(f"[bandit] stderr: {result.stderr[:500]}")
         except subprocess.TimeoutExpired:
             timeout_msg = (
                 f"Bandit execution timed out ({ctx.timeout}s limit exceeded).\n\n"
