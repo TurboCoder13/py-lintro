@@ -23,6 +23,7 @@ class ToolName(StrEnum):
     MARKDOWNLINT = auto()
     MYPY = auto()
     PRETTIER = auto()
+    PYDOCLINT = auto()
     PYTEST = auto()
     RUFF = auto()
     RUSTFMT = auto()

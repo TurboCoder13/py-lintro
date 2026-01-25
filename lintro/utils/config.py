@@ -34,6 +34,7 @@ __all__ = [
     "load_darglint_config",
     "load_black_config",
     "load_mypy_config",
+    "load_pydoclint_config",
     # Backward compatibility
     "get_central_line_length",
     "validate_line_length_consistency",
@@ -143,6 +144,7 @@ def load_lintro_global_config() -> dict[str, Any]:
         "mypy",
         "biome",
         "clippy",
+        "pydoclint",
         "post_checks",
         "versions",
     }
@@ -263,6 +265,15 @@ def load_darglint_config() -> dict[str, Any]:
         dict[str, Any]: Darglint configuration dictionary.
     """
     return load_tool_config_from_pyproject("darglint")
+
+
+def load_pydoclint_config() -> dict[str, Any]:
+    """Load pydoclint configuration from pyproject.toml.
+
+    Returns:
+        dict[str, Any]: Pydoclint configuration dictionary.
+    """
+    return load_tool_config_from_pyproject("pydoclint")
 
 
 def load_black_config() -> dict[str, Any]:
