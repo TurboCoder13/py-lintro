@@ -32,6 +32,8 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from lintro.plugins.subprocess_executor import is_compiled_binary
+
 if TYPE_CHECKING:
     from lintro.enums.tool_name import ToolName
 
@@ -164,8 +166,6 @@ def _is_compiled_binary() -> bool:
     Returns:
         True if running as a compiled binary, False otherwise.
     """
-    from lintro.plugins.subprocess_executor import is_compiled_binary
-
     return is_compiled_binary()
 
 
@@ -243,6 +243,14 @@ class PythonBundledBuilder(CommandBuilder):
             logger.debug(f"Found {tool_name} in PATH: {tool_path}")
             return [tool_path]
 
+        # Skip python -m fallback when compiled (sys.executable is the lintro binary)
+        if _is_compiled_binary():
+            logger.debug(
+                f"Tool {tool_name} not in PATH and running as compiled binary, "
+                "skipping python -m fallback",
+            )
+            return [tool_name]
+
         # Fallback to python -m for pip installs where binary isn't in PATH
         python_exe = sys.executable
         if python_exe:
@@ -295,6 +303,14 @@ class PytestBuilder(CommandBuilder):
         if tool_path:
             logger.debug(f"Found pytest in PATH: {tool_path}")
             return [tool_path]
+
+        # Skip python -m fallback when compiled (sys.executable is the lintro binary)
+        if _is_compiled_binary():
+            logger.debug(
+                "pytest not in PATH and running as compiled binary, "
+                "skipping python -m fallback",
+            )
+            return ["pytest"]
 
         # Fallback to python -m for pip installs where binary isn't in PATH
         python_exe = sys.executable

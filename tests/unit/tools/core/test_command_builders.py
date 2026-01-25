@@ -72,12 +72,33 @@ def test_python_bundled_builder_prefers_path_binary() -> None:
 def test_python_bundled_builder_falls_back_to_python_module() -> None:
     """PythonBundledBuilder falls back to python -m when tool not in PATH."""
     builder = PythonBundledBuilder()
-    with patch("shutil.which", return_value=None):
+    with (
+        patch("shutil.which", return_value=None),
+        patch(
+            "lintro.tools.core.command_builders._is_compiled_binary",
+            return_value=False,
+        ),
+    ):
         cmd = builder.get_command("ruff", ToolName.RUFF)
         # Should return [python_exe, "-m", "ruff"]
         assert_that(cmd).is_length(3)
         assert_that(cmd[1]).is_equal_to("-m")
         assert_that(cmd[2]).is_equal_to("ruff")
+
+
+def test_python_bundled_builder_skips_python_module_when_compiled() -> None:
+    """PythonBundledBuilder skips python -m fallback when compiled."""
+    builder = PythonBundledBuilder()
+    with (
+        patch("shutil.which", return_value=None),
+        patch(
+            "lintro.tools.core.command_builders._is_compiled_binary",
+            return_value=True,
+        ),
+    ):
+        cmd = builder.get_command("ruff", ToolName.RUFF)
+        # Should return just [tool_name] when compiled
+        assert_that(cmd).is_equal_to(["ruff"])
 
 
 # =============================================================================
@@ -108,12 +129,33 @@ def test_pytest_builder_prefers_path_binary() -> None:
 def test_pytest_builder_falls_back_to_python_module() -> None:
     """PytestBuilder falls back to python -m pytest when not in PATH."""
     builder = PytestBuilder()
-    with patch("shutil.which", return_value=None):
+    with (
+        patch("shutil.which", return_value=None),
+        patch(
+            "lintro.tools.core.command_builders._is_compiled_binary",
+            return_value=False,
+        ),
+    ):
         cmd = builder.get_command("pytest", ToolName.PYTEST)
         # Should return [python_exe, "-m", "pytest"]
         assert_that(cmd).is_length(3)
         assert_that(cmd[1]).is_equal_to("-m")
         assert_that(cmd[2]).is_equal_to("pytest")
+
+
+def test_pytest_builder_skips_python_module_when_compiled() -> None:
+    """PytestBuilder skips python -m fallback when compiled."""
+    builder = PytestBuilder()
+    with (
+        patch("shutil.which", return_value=None),
+        patch(
+            "lintro.tools.core.command_builders._is_compiled_binary",
+            return_value=True,
+        ),
+    ):
+        cmd = builder.get_command("pytest", ToolName.PYTEST)
+        # Should return just ["pytest"] when compiled
+        assert_that(cmd).is_equal_to(["pytest"])
 
 
 # =============================================================================
