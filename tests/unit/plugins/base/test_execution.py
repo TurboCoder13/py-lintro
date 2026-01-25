@@ -312,22 +312,53 @@ def test_prepare_execution_successful_returns_context_with_files(
         pytest.param("pytest", ["-m", "pytest"], id="python_bundled_pytest"),
     ],
 )
-def test_get_executable_command_python_bundled_tools(
+def test_get_executable_command_python_bundled_tools_fallback(
     fake_tool_plugin: FakeToolPlugin,
     tool_name: str,
     expected_contains: list[str],
 ) -> None:
-    """Verify Python bundled tools return python -m command.
+    """Verify Python bundled tools fall back to python -m when not in PATH.
 
     Args:
         fake_tool_plugin: Fixture providing a FakeToolPlugin instance.
         tool_name: Name of the tool being tested.
         expected_contains: List of expected substrings in the command.
     """
-    result = fake_tool_plugin._get_executable_command(tool_name)
+    with (
+        patch("shutil.which", return_value=None),
+        patch(
+            "lintro.tools.core.command_builders._is_compiled_binary",
+            return_value=False,
+        ),
+    ):
+        result = fake_tool_plugin._get_executable_command(tool_name)
 
     for item in expected_contains:
         assert_that(result).contains(item)
+
+
+@pytest.mark.parametrize(
+    "tool_name",
+    [
+        pytest.param("ruff", id="python_bundled_ruff"),
+        pytest.param("pytest", id="python_bundled_pytest"),
+    ],
+)
+def test_get_executable_command_python_bundled_tools_path_binary(
+    fake_tool_plugin: FakeToolPlugin,
+    tool_name: str,
+) -> None:
+    """Verify Python bundled tools prefer PATH binary when available.
+
+    Args:
+        fake_tool_plugin: Fixture providing a FakeToolPlugin instance.
+        tool_name: Name of the tool being tested.
+    """
+    expected_path = f"/usr/local/bin/{tool_name}"
+    with patch("shutil.which", return_value=expected_path):
+        result = fake_tool_plugin._get_executable_command(tool_name)
+
+    assert_that(result).is_equal_to([expected_path])
 
 
 def test_get_executable_command_nodejs_tool_with_bunx(
