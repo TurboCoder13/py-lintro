@@ -200,7 +200,11 @@ create_temp_dir() {
 	if [ -n "$existing_trap" ]; then
 		# SC2064: We intentionally expand $existing_trap now to capture its value
 		# shellcheck disable=SC2064
-		trap "$existing_trap; _cleanup_temp_dirs" EXIT
+		# Guard against duplicate trap chaining
+		case "$existing_trap" in
+		*"_cleanup_temp_dirs"*) trap "$existing_trap" EXIT ;;
+		*) trap "$existing_trap; _cleanup_temp_dirs" EXIT ;;
+		esac
 	else
 		trap _cleanup_temp_dirs EXIT
 	fi
