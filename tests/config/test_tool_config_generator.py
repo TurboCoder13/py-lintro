@@ -164,7 +164,7 @@ def test_hadolint_key_mapping_exists() -> None:
     hadolint_mappings = NATIVE_KEY_MAPPINGS["hadolint"]
     assert_that(hadolint_mappings).contains_key("trusted_registries")
     assert_that(hadolint_mappings["trusted_registries"]).is_equal_to(
-        "trustedRegistries"
+        "trustedRegistries",
     )
 
 
