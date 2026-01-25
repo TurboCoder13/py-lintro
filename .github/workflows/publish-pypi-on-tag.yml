@@ -38,7 +38,8 @@ jobs:
 
   sbom:
     name: Generate and verify SBOM
-    needs: [build, quality]
+    # SBOM runs in parallel - does own checkout and uses GitHub Dependency Graph API
+    if: ${{ !startsWith(github.ref_name, 'actions-v') }}
     uses: ./.github/workflows/reusable-sbom.yml
     permissions:
       contents: read

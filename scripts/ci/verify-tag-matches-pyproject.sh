@@ -34,7 +34,7 @@ if [[ ! -f "${FILE}" ]]; then
 	exit 2
 fi
 
-ver_line=$(uv run python scripts/utils/extract-version.py --file "${FILE}")
+ver_line=$(python3 scripts/utils/extract-version.py --file "${FILE}")
 echo "${ver_line}"
 version="${ver_line#version=}"
 
