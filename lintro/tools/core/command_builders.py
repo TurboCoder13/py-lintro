@@ -178,10 +178,11 @@ def _is_compiled_binary() -> bool:
 class PythonBundledBuilder(CommandBuilder):
     """Builder for Python tools bundled with Lintro.
 
-    Handles: ruff, black, bandit, yamllint, mypy, darglint.
+    Handles: ruff, black, bandit, yamllint, mypy.
 
-    When running as a compiled binary, uses runtime discovery to find
-    tools in PATH. Otherwise, uses Python module execution.
+    Prefers PATH-based discovery to support various installation methods
+    (Homebrew, system packages, pipx, uv tool). Falls back to Python module
+    execution for pip installs where the binary isn't in PATH.
     """
 
     _tools: frozenset[ToolName] | None = None
@@ -225,6 +226,10 @@ class PythonBundledBuilder(CommandBuilder):
     ) -> list[str]:
         """Get command for Python bundled tool.
 
+        Prefers PATH binary if available (works with Homebrew, system packages,
+        pipx, uv tool, etc.). Falls back to python -m for pip installs where
+        the tool binary isn't in PATH.
+
         Args:
             tool_name: String name of the tool.
             tool_name_enum: Tool name enum.
@@ -232,18 +237,16 @@ class PythonBundledBuilder(CommandBuilder):
         Returns:
             Command list to execute the tool.
         """
-        if _is_compiled_binary():
-            from lintro.tools.core.runtime_discovery import get_tool_path
+        # Prefer PATH binary if available - works with Homebrew, apt, pipx, etc.
+        tool_path = shutil.which(tool_name)
+        if tool_path:
+            logger.debug(f"Found {tool_name} in PATH: {tool_path}")
+            return [tool_path]
 
-            tool_path = get_tool_path(tool_name)
-            if tool_path:
-                return [tool_path]
-            logger.debug(f"Tool {tool_name} not found in PATH, using name directly")
-            return [tool_name]
-
-        # Normal mode: use Python module execution
+        # Fallback to python -m for pip installs where binary isn't in PATH
         python_exe = sys.executable
         if python_exe:
+            logger.debug(f"Tool {tool_name} not in PATH, using python -m")
             return [python_exe, "-m", tool_name]
         return [tool_name]
 
@@ -253,7 +256,7 @@ class PytestBuilder(CommandBuilder):
     """Builder for pytest (special case of Python tool).
 
     Pytest is handled separately because it uses a different module
-    invocation pattern and requires special handling for compiled binaries.
+    invocation pattern. Prefers PATH-based discovery like PythonBundledBuilder.
     """
 
     def can_handle(self, tool_name_enum: ToolName | None) -> bool:
@@ -276,6 +279,10 @@ class PytestBuilder(CommandBuilder):
     ) -> list[str]:
         """Get command for pytest.
 
+        Prefers PATH binary if available (works with Homebrew, system packages,
+        pipx, uv tool, etc.). Falls back to python -m for pip installs where
+        the tool binary isn't in PATH.
+
         Args:
             tool_name: String name of the tool.
             tool_name_enum: Tool name enum.
@@ -283,17 +290,16 @@ class PytestBuilder(CommandBuilder):
         Returns:
             Command list to execute pytest.
         """
-        if _is_compiled_binary():
-            from lintro.tools.core.runtime_discovery import get_tool_path
+        # Prefer PATH binary if available - works with Homebrew, apt, pipx, etc.
+        tool_path = shutil.which("pytest")
+        if tool_path:
+            logger.debug(f"Found pytest in PATH: {tool_path}")
+            return [tool_path]
 
-            tool_path = get_tool_path("pytest")
-            if tool_path:
-                return [tool_path]
-            return ["pytest"]
-
-        # Normal mode: use Python module execution
+        # Fallback to python -m for pip installs where binary isn't in PATH
         python_exe = sys.executable
         if python_exe:
+            logger.debug("pytest not in PATH, using python -m pytest")
             return [python_exe, "-m", "pytest"]
         return ["pytest"]
 
