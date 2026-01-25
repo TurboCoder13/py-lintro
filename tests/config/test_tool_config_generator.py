@@ -5,7 +5,9 @@ from assertpy import assert_that
 from lintro.config.enforce_config import EnforceConfig
 from lintro.config.lintro_config import LintroConfig
 from lintro.config.tool_config_generator import (
+    NATIVE_KEY_MAPPINGS,
     _convert_python_version_for_mypy,
+    _transform_keys_for_native_config,
     _write_defaults_config,
     get_defaults_injection_args,
     get_enforce_cli_args,
@@ -147,5 +149,91 @@ def test_generic_tool_config_uses_json_suffix() -> None:
     try:
         assert_that(str(config_path)).ends_with(".json")
         assert_that(config_path.exists()).is_true()
+    finally:
+        config_path.unlink(missing_ok=True)
+
+
+# =============================================================================
+# Key transformation tests
+# =============================================================================
+
+
+def test_hadolint_key_mapping_exists() -> None:
+    """Should have key mappings defined for hadolint."""
+    assert_that(NATIVE_KEY_MAPPINGS).contains_key("hadolint")
+    hadolint_mappings = NATIVE_KEY_MAPPINGS["hadolint"]
+    assert_that(hadolint_mappings).contains_key("trusted_registries")
+    assert_that(hadolint_mappings["trusted_registries"]).is_equal_to(
+        "trustedRegistries"
+    )
+
+
+def test_transform_keys_converts_hadolint_trusted_registries() -> None:
+    """Should convert trusted_registries to trustedRegistries for hadolint."""
+    defaults = {
+        "ignored": ["DL3006"],
+        "trusted_registries": ["docker.io", "gcr.io"],
+    }
+
+    transformed = _transform_keys_for_native_config(defaults, "hadolint")
+
+    assert_that(transformed).contains_key("trustedRegistries")
+    assert_that(transformed).does_not_contain_key("trusted_registries")
+    assert_that(transformed["trustedRegistries"]).is_equal_to(["docker.io", "gcr.io"])
+    # "ignored" should remain unchanged
+    assert_that(transformed).contains_key("ignored")
+    assert_that(transformed["ignored"]).is_equal_to(["DL3006"])
+
+
+def test_transform_keys_preserves_unmapped_keys() -> None:
+    """Should preserve keys that have no mapping."""
+    defaults = {
+        "ignored": ["DL3006"],
+        "custom_key": "value",
+    }
+
+    transformed = _transform_keys_for_native_config(defaults, "hadolint")
+
+    assert_that(transformed).contains_key("ignored")
+    assert_that(transformed).contains_key("custom_key")
+
+
+def test_transform_keys_returns_unchanged_for_unknown_tool() -> None:
+    """Should return defaults unchanged for tools without mappings."""
+    defaults = {
+        "some_key": "value",
+        "another_key": 123,
+    }
+
+    transformed = _transform_keys_for_native_config(defaults, "prettier")
+
+    assert_that(transformed).is_equal_to(defaults)
+
+
+def test_hadolint_config_file_has_correct_keys() -> None:
+    """Should write hadolint config with camelCase keys."""
+    import yaml
+
+    defaults = {
+        "ignored": [],
+        "trusted_registries": ["docker.io", "gcr.io"],
+    }
+
+    config_path = _write_defaults_config(
+        defaults=defaults,
+        tool_name="hadolint",
+        config_format=ConfigFormat.YAML,
+    )
+
+    try:
+        content = config_path.read_text()
+        parsed = yaml.safe_load(content)
+
+        # Should have camelCase key
+        assert_that(parsed).contains_key("trustedRegistries")
+        assert_that(parsed).does_not_contain_key("trusted_registries")
+        assert_that(parsed["trustedRegistries"]).is_equal_to(["docker.io", "gcr.io"])
+        # ignored should remain as-is
+        assert_that(parsed).contains_key("ignored")
     finally:
         config_path.unlink(missing_ok=True)

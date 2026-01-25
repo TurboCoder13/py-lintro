@@ -72,6 +72,17 @@ TOOL_CONFIG_FORMATS: dict[str, ConfigFormat] = {
     "yamllint": ConfigFormat.YAML,
 }
 
+# Key mappings for tools that use different naming conventions in their native configs.
+# Maps lintro config keys (snake_case) to native tool keys (often camelCase).
+NATIVE_KEY_MAPPINGS: dict[str, dict[str, str]] = {
+    "hadolint": {
+        "trusted_registries": "trustedRegistries",
+        "require_labels": "requireLabels",
+        "strict_labels": "strictLabels",
+        # "ignored" stays as "ignored" (same in both formats)
+    },
+}
+
 # Native config file patterns for checking if tool has native config
 NATIVE_CONFIG_PATTERNS: dict[str, list[str]] = {
     "biome": [
@@ -271,6 +282,41 @@ def generate_defaults_config(
         return None
 
 
+def _transform_keys_for_native_config(
+    defaults: dict[str, Any],
+    tool_name: str,
+) -> dict[str, Any]:
+    """Transform lintro config keys to native tool key format.
+
+    Some tools (like hadolint) use camelCase keys in their native config files,
+    while lintro uses snake_case for consistency. This function transforms keys
+    to match the native tool's expected format.
+
+    Args:
+        defaults: Default configuration dictionary with lintro keys.
+        tool_name: Name of the tool.
+
+    Returns:
+        dict[str, Any]: Configuration with keys transformed to native format.
+    """
+    key_mapping = NATIVE_KEY_MAPPINGS.get(tool_name.lower(), {})
+    if not key_mapping:
+        return defaults
+
+    transformed: dict[str, Any] = {}
+    for key, value in defaults.items():
+        native_key = key_mapping.get(key, key)
+        transformed[native_key] = value
+
+    if transformed != defaults:
+        logger.debug(
+            f"Transformed config keys for {tool_name}: "
+            f"{list(defaults.keys())} -> {list(transformed.keys())}",
+        )
+
+    return transformed
+
+
 def _write_defaults_config(
     defaults: dict[str, Any],
     tool_name: str,
@@ -310,12 +356,15 @@ def _write_defaults_config(
     temp_path = Path(temp_path_str)
     _temp_files.append(temp_path)
 
+    # Transform keys to native format before writing
+    native_defaults = _transform_keys_for_native_config(defaults, tool_lower)
+
     if config_format == ConfigFormat.YAML:
         if yaml is None:
             raise ImportError("PyYAML required for YAML output")
-        content = yaml.dump(defaults, default_flow_style=False)
+        content = yaml.dump(native_defaults, default_flow_style=False)
     else:
-        content = json.dumps(defaults, indent=2)
+        content = json.dumps(native_defaults, indent=2)
 
     temp_path.write_text(content, encoding="utf-8")
     logger.debug(f"Generated defaults config for {tool_name}: {temp_path}")
