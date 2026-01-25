@@ -25,17 +25,13 @@ COPY lintro/ /app/lintro/
 # Install Python dependencies
 RUN uv sync --dev --extra tools --no-progress && (uv cache clean || true)
 
-# Ensure clippy binaries are in /usr/local/bin (needed until tools image is rebuilt)
-# Uses rustup which for deterministic toolchain resolution
+# Ensure clippy shims are in /usr/local/bin (needed until tools image is rebuilt)
+# Copy the rustup proxy shims which delegate to the actual toolchain binaries
 RUN if [ ! -f /usr/local/bin/clippy-driver ]; then \
         rustup component add clippy && \
-        TOOLCHAIN_BIN=$(dirname "$(rustup which rustc)") && \
-        if [ -z "$TOOLCHAIN_BIN" ] || [ ! -d "$TOOLCHAIN_BIN" ]; then \
-            echo "ERROR: Could not resolve rustup toolchain bin directory" >&2 && exit 1; \
-        fi && \
         for bin in clippy-driver cargo-clippy; do \
-            if [ -f "$TOOLCHAIN_BIN/$bin" ]; then \
-                cp -p "$TOOLCHAIN_BIN/$bin" "/usr/local/bin/$bin" && \
+            if [ -f "/root/.cargo/bin/$bin" ]; then \
+                cp -p "/root/.cargo/bin/$bin" "/usr/local/bin/$bin" && \
                 chmod +x "/usr/local/bin/$bin"; \
             fi; \
         done; \

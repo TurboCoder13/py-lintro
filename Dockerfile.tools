@@ -88,21 +88,21 @@ COPY lintro/ /app/lintro/
 COPY scripts/ /app/scripts/
 COPY package.json /app/package.json
 
-# Install external tools and copy Rust tools to system-wide location
-# Copy actual binaries from rustup toolchain (not shims) for standalone operation
-# Use rustup which to deterministically resolve the toolchain bin path
+# Install external tools and copy Rust tool shims to system-wide location
+# Note: We copy the rustup proxy shims (not actual binaries) because the
+# actual binaries require shared libraries from the toolchain's lib directory.
+# The shims delegate to the toolchain binaries via rustup.
 RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
     /app/scripts/utils/install-tools.sh --docker && \
     rustup component add clippy && \
-    TOOLCHAIN_BIN=$(dirname "$(rustup which rustc)") && \
-    if [ -z "$TOOLCHAIN_BIN" ] || [ ! -d "$TOOLCHAIN_BIN" ]; then \
-        echo "ERROR: Could not resolve rustup toolchain bin directory" >&2 && exit 1; \
+    if [ ! -d "/root/.cargo/bin" ]; then \
+        echo "ERROR: /root/.cargo/bin not found" >&2 && exit 1; \
     fi && \
     for bin in cargo rustc rustfmt clippy-driver cargo-clippy; do \
-        if [ ! -f "$TOOLCHAIN_BIN/$bin" ]; then \
-            echo "ERROR: Missing required binary: $TOOLCHAIN_BIN/$bin" >&2 && exit 1; \
+        if [ ! -f "/root/.cargo/bin/$bin" ]; then \
+            echo "ERROR: Missing required shim: /root/.cargo/bin/$bin" >&2 && exit 1; \
         fi && \
-        cp -p "$TOOLCHAIN_BIN/$bin" "/usr/local/bin/$bin" && \
+        cp -p "/root/.cargo/bin/$bin" "/usr/local/bin/$bin" && \
         chmod +x "/usr/local/bin/$bin"; \
     done
 
