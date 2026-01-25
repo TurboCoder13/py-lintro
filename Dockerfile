@@ -26,14 +26,19 @@ COPY lintro/ /app/lintro/
 RUN uv sync --dev --extra tools --no-progress && (uv cache clean || true)
 
 # Ensure clippy binaries are in /usr/local/bin (needed until tools image is rebuilt)
-# hadolint ignore=SC2046
+# Uses rustup which for deterministic toolchain resolution
 RUN if [ ! -f /usr/local/bin/clippy-driver ]; then \
-        TOOLCHAIN_BIN=$(find /root/.rustup/toolchains -name "bin" -type d 2>/dev/null | head -1) && \
-        if [ -n "$TOOLCHAIN_BIN" ] && [ -f "$TOOLCHAIN_BIN/clippy-driver" ]; then \
-            cp -p "$TOOLCHAIN_BIN/clippy-driver" /usr/local/bin/clippy-driver && \
-            cp -p "$TOOLCHAIN_BIN/cargo-clippy" /usr/local/bin/cargo-clippy && \
-            chmod +x /usr/local/bin/clippy-driver /usr/local/bin/cargo-clippy; \
-        fi; \
+        rustup component add clippy && \
+        TOOLCHAIN_BIN=$(dirname "$(rustup which rustc)") && \
+        if [ -z "$TOOLCHAIN_BIN" ] || [ ! -d "$TOOLCHAIN_BIN" ]; then \
+            echo "ERROR: Could not resolve rustup toolchain bin directory" >&2 && exit 1; \
+        fi && \
+        for bin in clippy-driver cargo-clippy; do \
+            if [ -f "$TOOLCHAIN_BIN/$bin" ]; then \
+                cp -p "$TOOLCHAIN_BIN/$bin" "/usr/local/bin/$bin" && \
+                chmod +x "/usr/local/bin/$bin"; \
+            fi; \
+        done; \
     fi
 
 # =============================================================================
