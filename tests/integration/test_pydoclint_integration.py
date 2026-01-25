@@ -1,4 +1,8 @@
-"""Integration tests for pydoclint core."""
+"""Integration tests for pydoclint core.
+
+Note: The simplified pydoclint plugin reads configuration from [tool.pydoclint]
+in pyproject.toml. See docs/tool-analysis/pydoclint-analysis.md for settings.
+"""
 
 import shutil
 import subprocess
@@ -21,14 +25,9 @@ def run_pydoclint_directly(file_path: Path) -> tuple[bool, str, int]:
 
     Args:
         file_path: Path to the file to check with pydoclint.
-
-    Returns:
-        tuple[bool, str, int]: Success status, output text, and issue count.
     """
     cmd = [
         "pydoclint",
-        "--style",
-        "google",
         "--quiet",
         str(file_path),
     ]
@@ -100,7 +99,6 @@ def test_pydoclint_reports_violations_through_lintro(tmp_path: Path) -> None:
     logger.info("[TEST] Running PydoclintTool through lintro on sample file...")
     tool = ToolRegistry.get("pydoclint")
     assert_that(tool).is_not_none()
-    tool.set_options(style="google")
     result = tool.check([str(sample_file)], {})
     logger.info(
         f"[LOG] Lintro PydoclintTool found {result.issues_count} issues. "
@@ -126,7 +124,6 @@ def test_pydoclint_output_consistency_direct_vs_lintro(tmp_path: Path) -> None:
     logger.info("[TEST] Comparing pydoclint CLI and Lintro PydoclintTool outputs...")
     tool = ToolRegistry.get("pydoclint")
     assert_that(tool).is_not_none()
-    tool.set_options(style="google")
     direct_success, direct_output, direct_issues = run_pydoclint_directly(sample_file)
     result = tool.check([str(sample_file)], {})
     logger.info(
@@ -167,6 +164,7 @@ def test_pydoclint_clean_file_passes(tmp_path: Path) -> None:
     """
     _ensure_pydoclint_available()
     clean_file = tmp_path / "clean_module.py"
+    # Clean file following Google style with types in annotations, not docstrings
     clean_file.write_text(
         '''"""Clean module with proper docstrings."""
 
@@ -175,11 +173,11 @@ def add_numbers(a: int, b: int) -> int:
     """Add two numbers together.
 
     Args:
-        a (int): The first number.
-        b (int): The second number.
+        a: The first number.
+        b: The second number.
 
     Returns:
-        int: The sum of a and b.
+        The sum of a and b.
     """
     return a + b
 ''',
@@ -187,7 +185,6 @@ def add_numbers(a: int, b: int) -> int:
     logger.info("[TEST] Running PydoclintTool on a clean file...")
     tool = ToolRegistry.get("pydoclint")
     assert_that(tool).is_not_none()
-    tool.set_options(style="google")
     result = tool.check([str(clean_file)], {})
     logger.info(f"[LOG] Result: success={result.success}, issues={result.issues_count}")
     assert_that(result.success).is_true().described_as(

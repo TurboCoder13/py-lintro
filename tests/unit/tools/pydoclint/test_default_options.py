@@ -6,7 +6,6 @@ import pytest
 from assertpy import assert_that
 
 from lintro.tools.definitions.pydoclint import (
-    PYDOCLINT_DEFAULT_STYLE,
     PYDOCLINT_DEFAULT_TIMEOUT,
     PydoclintPlugin,
 )
@@ -16,18 +15,10 @@ from lintro.tools.definitions.pydoclint import (
     ("option_name", "expected_value"),
     [
         ("timeout", PYDOCLINT_DEFAULT_TIMEOUT),
-        ("style", PYDOCLINT_DEFAULT_STYLE),
-        ("check_return_types", True),
-        ("check_arg_order", True),
-        ("skip_checking_short_docstrings", True),
         ("quiet", True),
     ],
     ids=[
         "timeout_equals_default",
-        "style_equals_default",
-        "check_return_types_is_true",
-        "check_arg_order_is_true",
-        "skip_checking_short_docstrings_is_true",
         "quiet_is_true",
     ],
 )
