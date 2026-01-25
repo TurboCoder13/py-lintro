@@ -113,8 +113,11 @@ def test_check_with_no_python_files(
     non_py_file = tmp_path / "test.txt"
     non_py_file.write_text("Not a python file")
 
-    with patch.object(pydoclint_plugin, "_verify_tool_version", return_value=None):
+    with patch(
+        "lintro.plugins.execution_preparation.verify_tool_version",
+        return_value=None,
+    ):
         result = pydoclint_plugin.check([str(non_py_file)], {})
 
     assert_that(result.success).is_true()
-    assert_that(result.output).contains("No")
+    assert_that(result.output).contains("No .py/.pyi files found")

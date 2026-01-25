@@ -23,13 +23,12 @@ def test_parse_path_with_spaces() -> None:
     Note: pydoclint file path pattern requires the path to end with .py/.pyi.
     Paths with spaces are preserved as-is.
     """
-    # The file pattern requires .py/.pyi extension
-    output = """src/my_module/helper.py
+    output = """src/my module/helper file.py
     10: DOC101: Test message"""
     result = parse_pydoclint_output(output=output)
 
     assert_that(result).is_length(1)
-    assert_that(result[0].file).is_equal_to("src/my_module/helper.py")
+    assert_that(result[0].file).is_equal_to("src/my module/helper file.py")
 
 
 def test_parse_message_with_special_characters() -> None:

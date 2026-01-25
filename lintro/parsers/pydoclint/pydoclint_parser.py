@@ -76,21 +76,30 @@ def parse_pydoclint_output(output: str | None) -> list[PydoclintIssue]:
 
         # Check if this is an issue line (has leading whitespace)
         issue_match = PYDOCLINT_ISSUE_PATTERN.match(line)
-        if issue_match and current_file:
-            line_num = _safe_int(issue_match.group("line"))
-            code = issue_match.group("code")
-            message = issue_match.group("message")
+        if issue_match:
+            if current_file:
+                line_num = _safe_int(issue_match.group("line"))
+                code = issue_match.group("code")
+                message = issue_match.group("message")
 
-            issues.append(
-                PydoclintIssue(
-                    file=current_file,
-                    line=line_num,
-                    column=0,  # pydoclint doesn't provide column info
-                    code=code,
-                    message=message,
-                ),
-            )
-        elif not issue_match:
+                issues.append(
+                    PydoclintIssue(
+                        file=current_file,
+                        line=line_num,
+                        column=0,  # pydoclint doesn't provide column info
+                        code=code,
+                        message=message,
+                    ),
+                )
+            else:
+                # Issue found but no file context - log for debugging
+                logger.warning(
+                    f"Pydoclint issue found without file context: "
+                    f"line={issue_match.group('line')}, "
+                    f"code={issue_match.group('code')}, "
+                    f"message={issue_match.group('message')}",
+                )
+        else:
             logger.debug(f"Line did not match pydoclint pattern: {line}")
 
     return issues

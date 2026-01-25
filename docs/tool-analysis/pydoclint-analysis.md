@@ -20,37 +20,78 @@ uv pip install pydoclint
 
 ## Output Format
 
-pydoclint outputs issues in a simple text format:
+pydoclint outputs issues with the file path on its own line, followed by indented
+issue lines:
 
 ```
-path/file.py:line:col: DOCxxx: message
+path/file.py
+    line: DOCxxx: message
 ```
 
 Example output:
 
 ```
-src/module.py:10:5: DOC101: Function `calculate` has 2 argument(s) in signature: ['a', 'b']. Arguments 1 to 2 are not documented.
-src/module.py:25:1: DOC201: Function `process` does not have a return section in docstring.
-src/module.py:40:5: DOC301: Function `validate` does not have a Raises section in docstring.
+src/module.py
+    10: DOC101: Function `calculate` has 2 argument(s) in signature: ['a', 'b']. Arguments 1 to 2 are not documented.
+    25: DOC201: Function `process` does not have a return section in docstring.
+    40: DOC301: `__init__` has a docstring but the class doesn't.
 ```
 
 ## Common Error Codes
 
-| Code   | Description                                      |
-| ------ | ------------------------------------------------ |
-| DOC101 | Missing argument in docstring                    |
-| DOC102 | Extra argument in docstring                      |
-| DOC103 | Argument in docstring doesn't exist in signature |
-| DOC104 | Argument type mismatch                           |
-| DOC105 | Argument order mismatch                          |
-| DOC201 | Missing return section                           |
-| DOC202 | Return type specified but no return section      |
-| DOC203 | Return type mismatch                             |
-| DOC301 | Missing Raises section                           |
-| DOC302 | Raises documented but not raised                 |
-| DOC401 | Class attribute documentation issues             |
-| DOC501 | Raises section but no raises in body             |
-| DOC502 | Raises not documented                            |
+### Function/Method Arguments (DOC1xx)
+
+| Code   | Description                                       |
+| ------ | ------------------------------------------------- |
+| DOC101 | Docstring has fewer arguments than signature      |
+| DOC102 | Docstring has more arguments than signature       |
+| DOC103 | Docstring arguments differ from signature         |
+| DOC104 | Arguments in different order                      |
+| DOC105 | Argument type hints don't match                   |
+| DOC106 | Duplicate argument in docstring                   |
+| DOC107 | No type hints in signature, not required in docs  |
+| DOC108 | Type hints in signature but not in docstring      |
+| DOC109 | `--arg-type-hints-in-docstring` but none in docs  |
+| DOC110 | Not all args have type hints in docstring         |
+| DOC111 | Missing `**kwargs` in docstring                   |
+
+### Return Values (DOC2xx)
+
+| Code   | Description                                       |
+| ------ | ------------------------------------------------- |
+| DOC201 | Missing return section in docstring               |
+| DOC202 | Return section but no return in function          |
+| DOC203 | Return type mismatch                              |
+
+### Class Docstrings (DOC3xx)
+
+| Code   | Description                                       |
+| ------ | ------------------------------------------------- |
+| DOC301 | `__init__` has docstring but class doesn't        |
+| DOC302 | Class and `__init__` both have docstring          |
+| DOC303 | `__init__` should have args in its own docstring  |
+| DOC304 | Class docstring has `Args` but not for `__init__` |
+| DOC305 | Class docstring missing `Args` for `__init__`     |
+| DOC306 | `__init__` `Args` don't belong in class docstring |
+
+### Raises Documentation (DOC5xx)
+
+| Code   | Description                                       |
+| ------ | ------------------------------------------------- |
+| DOC501 | Raises section but no raises in body              |
+| DOC502 | Raises in body but not documented                 |
+| DOC503 | Raises in docstring don't match body              |
+| DOC504 | Raises `AssertionError` but not documented        |
+
+### Class Attributes (DOC6xx)
+
+| Code   | Description                                       |
+| ------ | ------------------------------------------------- |
+| DOC601 | Class has fewer attributes in docstring           |
+| DOC602 | Class has more attributes in docstring            |
+| DOC603 | Class attributes differ from docstring            |
+| DOC604 | Class attributes in different order               |
+| DOC605 | Class attribute type hints don't match            |
 
 ## Configuration Options
 
@@ -58,9 +99,12 @@ src/module.py:40:5: DOC301: Function `validate` does not have a Raises section i
 
 pydoclint supports three docstring styles:
 
-- `google` (default) - Google-style docstrings
-- `numpy` - NumPy-style docstrings
+- `numpy` - NumPy-style docstrings (pydoclint's native default)
+- `google` - Google-style docstrings (lintro's default)
 - `sphinx` - Sphinx-style docstrings
+
+Note: While pydoclint defaults to `numpy`, lintro defaults to `google` to match
+common project conventions.
 
 ### Boolean Options
 
@@ -89,14 +133,14 @@ lintro chk --tools pydoclint --tool-options pydoclint:style=numpy
 
 pydoclint is the recommended replacement for darglint:
 
-| Feature              | pydoclint             | darglint             |
-| -------------------- | --------------------- | -------------------- |
-| Actively maintained  | Yes                   | No (deprecated)      |
-| Python 3.11+ support | Full                  | Limited              |
-| Speed                | Fast                  | Slower               |
-| Output format        | Simple text           | Multiple formats     |
-| Configuration        | pyproject.toml        | .darglint, setup.cfg |
-| Style support        | Google, NumPy, Sphinx | Google, Sphinx       |
+| Feature              | pydoclint             | darglint                   |
+| -------------------- | --------------------- | -------------------------- |
+| Actively maintained  | Yes                   | Maintenance mode           |
+| Python 3.11+ support | Full                  | Limited                    |
+| Speed                | Fast                  | Slower                     |
+| Output format        | Simple text           | Multiple formats           |
+| Configuration        | pyproject.toml        | .darglint, setup.cfg       |
+| Style support        | Google, NumPy, Sphinx | Google, Sphinx, NumPy      |
 
 ## Migration from darglint
 
