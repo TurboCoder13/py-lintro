@@ -6,6 +6,70 @@ pydoclint is a Python docstring linter that validates docstrings match function
 signatures. It checks for missing, extra, or incorrectly documented parameters, return
 values, and raised exceptions.
 
+## Recommended Configuration
+
+The following configuration follows **Google Python Style Guide** best practices, which
+state that type hints belong in function signatures, not duplicated in docstrings:
+
+> "The description should include required type(s) **if the code does not contain a
+> corresponding type annotation.**"
+
+```toml
+[tool.pydoclint]
+style = "google"
+arg-type-hints-in-docstring = false  # Types in annotations, not docstrings
+arg-type-hints-in-signature = true   # Require type annotations in signatures
+check-return-types = false           # Don't require return types in docstrings
+check-arg-order = true               # Verify argument order matches signature
+skip-checking-short-docstrings = true
+```
+
+### Why These Settings?
+
+**Modern Python style** uses type annotations in function signatures for type checking
+(mypy, pyright) while docstrings focus on **semantic descriptions** of what parameters
+represent and how to use them.
+
+**Without this configuration**, pydoclint defaults to requiring duplicated type
+information:
+
+```python
+# pydoclint default expectation (REDUNDANT):
+def process(path: str, timeout: int) -> bool:
+    """Process a file.
+
+    Args:
+        path (str): File path.      # ← duplicated type
+        timeout (int): Seconds.     # ← duplicated type
+
+    Returns:
+        bool: Success status.       # ← duplicated type
+    """
+```
+
+**With recommended configuration** (types only in annotations):
+
+```python
+# Clean, non-redundant style:
+def process(path: str, timeout: int) -> bool:
+    """Process a file.
+
+    Args:
+        path: File path to process.
+        timeout: Maximum seconds to wait.
+
+    Returns:
+        True if successful, False otherwise.
+    """
+```
+
+This approach:
+
+- Eliminates maintenance burden of keeping types synchronized
+- Follows Google Python Style Guide
+- Works with type checkers (mypy reads annotations, not docstrings)
+- Keeps docstrings focused on **what** and **why**, not type information
+
 ## Installation
 
 ```bash
@@ -95,6 +159,9 @@ src/module.py
 
 ## Configuration Options
 
+pydoclint automatically reads `pyproject.toml` with `[tool.pydoclint]` section. Options
+use dashes in TOML (e.g., `arg-type-hints-in-docstring`).
+
 ### Style
 
 pydoclint supports three docstring styles:
@@ -106,24 +173,48 @@ pydoclint supports three docstring styles:
 Note: While pydoclint defaults to `numpy`, lintro defaults to `google` to match common
 project conventions.
 
-### Boolean Options
+### Type Hint Location Options
 
-- `check_return_types` - Check return type documentation (default: True)
-- `check_arg_order` - Check argument order matches signature (default: True)
-- `skip_checking_short_docstrings` - Skip short docstrings (default: True)
-- `quiet` - Suppress non-error output (default: True)
+| Option                         | Default | Recommended | Description                                |
+| ------------------------------ | ------- | ----------- | ------------------------------------------ |
+| `arg-type-hints-in-docstring`  | `true`  | `false`     | Require types in docstring Args section    |
+| `arg-type-hints-in-signature`  | `true`  | `true`      | Require type annotations in signatures     |
+| `check-return-types`           | `true`  | `false`     | Validate return types match between doc/annotation |
+
+Setting `arg-type-hints-in-docstring = false` eliminates DOC105, DOC109, DOC110 errors
+that require duplicating type information already present in annotations.
+
+Setting `check-return-types = false` eliminates DOC203 errors for return type mismatches.
+
+### Validation Options
+
+| Option                            | Default | Description                              |
+| --------------------------------- | ------- | ---------------------------------------- |
+| `check-arg-order`                 | `true`  | Verify argument order matches signature  |
+| `skip-checking-short-docstrings`  | `true`  | Skip validation for single-line docstrings |
+| `quiet`                           | `true`  | Suppress non-error output                |
 
 ## Lintro Configuration
 
-In `pyproject.toml`:
+pydoclint reads its configuration directly from `[tool.pydoclint]` in `pyproject.toml`.
+Lintro-specific options (like timeout) go in `[tool.lintro.pydoclint]`:
 
 ```toml
-[tool.lintro.pydoclint]
+# Native pydoclint configuration (read by pydoclint directly)
+[tool.pydoclint]
 style = "google"
+arg-type-hints-in-docstring = false
+arg-type-hints-in-signature = true
+check-return-types = false
+check-arg-order = true
+skip-checking-short-docstrings = true
+
+# Lintro-specific options
+[tool.lintro.pydoclint]
 timeout = 30
 ```
 
-Or via command line:
+Override via command line:
 
 ```bash
 lintro chk --tools pydoclint --tool-options pydoclint:style=numpy
@@ -173,6 +264,36 @@ lintro chk --tools pydoclint
 - Priority: 45 (runs before formatters)
 - Does not support auto-fix (documentation must be fixed manually)
 - Works well with ruff's D (pydocstyle) rules for complementary coverage
+
+## Ruff D/DOC vs Standalone pydoclint
+
+Ruff provides two docstring-related rule sets:
+
+- **D rules (pydocstyle)**: Style and formatting checks
+- **DOC rules (ruff's pydoclint)**: Limited semantic validation (subset of standalone pydoclint)
+
+### Comparison Table
+
+| Aspect                    | Ruff D (pydocstyle) | Ruff DOC      | Standalone pydoclint |
+| ------------------------- | ------------------- | ------------- | -------------------- |
+| **Focus**                 | Style/format        | Limited semantic | Full semantic     |
+| **Docstring presence**    | D100-D107           | -             | -                    |
+| **Formatting**            | D200-D215           | -             | -                    |
+| **Punctuation/style**     | D300-D409           | -             | -                    |
+| **Missing returns**       | -                   | DOC201        | DOC201               |
+| **Extraneous returns**    | -                   | DOC202        | DOC202               |
+| **Missing yields**        | -                   | DOC402        | DOC402-404           |
+| **Missing exceptions**    | -                   | DOC501        | DOC501-503           |
+| **Arg mismatches**        | -                   | DOC102 only   | DOC101-111           |
+| **Class attributes**      | -                   | -             | DOC601-605           |
+| **`__init__` docstrings** | -                   | -             | DOC301-306           |
+
+### Summary
+
+- **Ruff D rules** handle **format** (presence, indentation, punctuation, style)
+- **Standalone pydoclint** handles **content accuracy** (arguments match, types match, raises documented)
+- **Ruff DOC rules** provide a small subset of pydoclint functionality
+- Using both ruff D and standalone pydoclint provides the most comprehensive coverage
 
 ## Best Practices
 
