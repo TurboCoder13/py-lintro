@@ -89,14 +89,19 @@ COPY scripts/ /app/scripts/
 COPY package.json /app/package.json
 
 # Install external tools and copy Rust tools to system-wide location
-# Note: rustup is not copied as it's only needed for installation, not runtime
+# Copy actual binaries from rustup toolchain (not shims) for standalone operation
+# hadolint ignore=SC2046
 RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
     /app/scripts/utils/install-tools.sh --docker && \
-    if [ -d "/root/.cargo/bin" ]; then \
-        cp -p /root/.cargo/bin/cargo /usr/local/bin/cargo && \
-        cp -p /root/.cargo/bin/rustc /usr/local/bin/rustc && \
-        cp -p /root/.cargo/bin/rustfmt /usr/local/bin/rustfmt && \
-        chmod +x /usr/local/bin/cargo /usr/local/bin/rustc /usr/local/bin/rustfmt; \
+    TOOLCHAIN_BIN=$(find /root/.rustup/toolchains -name "bin" -type d | head -1) && \
+    if [ -n "$TOOLCHAIN_BIN" ] && [ -d "$TOOLCHAIN_BIN" ]; then \
+        cp -p "$TOOLCHAIN_BIN/cargo" /usr/local/bin/cargo && \
+        cp -p "$TOOLCHAIN_BIN/rustc" /usr/local/bin/rustc && \
+        cp -p "$TOOLCHAIN_BIN/rustfmt" /usr/local/bin/rustfmt && \
+        cp -p "$TOOLCHAIN_BIN/clippy-driver" /usr/local/bin/clippy-driver && \
+        cp -p "$TOOLCHAIN_BIN/cargo-clippy" /usr/local/bin/cargo-clippy && \
+        chmod +x /usr/local/bin/cargo /usr/local/bin/rustc /usr/local/bin/rustfmt \
+            /usr/local/bin/clippy-driver /usr/local/bin/cargo-clippy; \
     fi
 
 # Verify all tools are installed
