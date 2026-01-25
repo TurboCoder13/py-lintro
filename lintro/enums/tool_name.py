@@ -31,6 +31,7 @@ class ToolName(StrEnum):
     SHFMT = auto()
     SQLFLUFF = auto()
     TAPLO = auto()
+    TSC = auto()
     YAMLLINT = auto()
 
 
