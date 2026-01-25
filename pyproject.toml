@@ -46,6 +46,7 @@ dependencies = [
   "black>=25.0.0",
   "bandit>=1.8.0",
   "mypy>=1.14.1",
+  "pydoclint>=0.5.0",
 ]
 authors = [{ name = "TurboCoder13", email = "turbocoder13@gmail.com" }]
 
@@ -151,6 +152,7 @@ packages = [
   "lintro.parsers.shfmt",
   "lintro.parsers.sqlfluff",
   "lintro.parsers.taplo",
+  "lintro.parsers.pydoclint",
   "lintro.plugins",
   "lintro.tools",
   "lintro.tools.core",
