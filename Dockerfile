@@ -25,6 +25,18 @@ COPY lintro/ /app/lintro/
 # Install Python dependencies
 RUN uv sync --dev --extra tools --no-progress && (uv cache clean || true)
 
+# Ensure clippy shims are in /usr/local/bin (needed until tools image is rebuilt)
+# Copy the rustup proxy shims which delegate to the actual toolchain binaries
+RUN if [ ! -f /usr/local/bin/clippy-driver ]; then \
+        rustup component add clippy && \
+        for bin in clippy-driver cargo-clippy; do \
+            if [ -f "/root/.cargo/bin/$bin" ]; then \
+                cp -p "/root/.cargo/bin/$bin" "/usr/local/bin/$bin" && \
+                chmod +x "/usr/local/bin/$bin"; \
+            fi; \
+        done; \
+    fi
+
 # =============================================================================
 # Stage 3: Runtime - Minimal image with only what's needed to run
 # =============================================================================
@@ -66,6 +78,8 @@ COPY --from=builder /usr/local/bin/gitleaks /usr/local/bin/
 COPY --from=builder /usr/local/bin/cargo /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustc /usr/local/bin/
 COPY --from=builder /usr/local/bin/rustfmt /usr/local/bin/
+COPY --from=builder /usr/local/bin/clippy-driver /usr/local/bin/
+COPY --from=builder /usr/local/bin/cargo-clippy /usr/local/bin/
 COPY --from=builder /usr/local/bin/uv /usr/local/bin/
 COPY --from=builder /usr/local/bin/bun /usr/local/bin/
 COPY --from=builder /root/.bun/install/global /opt/bun/install/global

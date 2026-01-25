@@ -177,11 +177,14 @@ def test_fix_with_remaining_issues(
     assert_that(combined).contains("black")
 
 
-def test_fix_skipped_no_files(
+def test_fix_no_files_shows_zero(
     console_capture: tuple[Callable[[str], None], list[str]],
     fake_tool_result_factory: Callable[..., FakeToolResult],
 ) -> None:
-    """Display skipped status when no files to format.
+    """Display PASS with 0 fixed/remaining when no files to format.
+
+    Note: "No files to format" means the tool ran successfully but found no
+    files - this is PASS with 0 issues, not SKIPPED (consistent with check mode).
 
     Args:
         console_capture: Mock console output capture.
@@ -198,7 +201,9 @@ def test_fix_skipped_no_files(
     print_summary_table(capture, Action.FIX, [result])
 
     combined = "".join(output)
-    assert_that(combined).contains("SKIPPED")
+    assert_that(combined).contains("PASS")
+    # Should show 0 for both Fixed and Remaining, not SKIPPED
+    assert_that(combined).does_not_contain("SKIPPED")
 
 
 def test_fix_parsing_remaining_from_output(

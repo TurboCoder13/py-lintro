@@ -88,16 +88,23 @@ COPY lintro/ /app/lintro/
 COPY scripts/ /app/scripts/
 COPY package.json /app/package.json
 
-# Install external tools and copy Rust tools to system-wide location
-# Note: rustup is not copied as it's only needed for installation, not runtime
+# Install external tools and copy Rust tool shims to system-wide location
+# Note: We copy the rustup proxy shims (not actual binaries) because the
+# actual binaries require shared libraries from the toolchain's lib directory.
+# The shims delegate to the toolchain binaries via rustup.
 RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
     /app/scripts/utils/install-tools.sh --docker && \
-    if [ -d "/root/.cargo/bin" ]; then \
-        cp -p /root/.cargo/bin/cargo /usr/local/bin/cargo && \
-        cp -p /root/.cargo/bin/rustc /usr/local/bin/rustc && \
-        cp -p /root/.cargo/bin/rustfmt /usr/local/bin/rustfmt && \
-        chmod +x /usr/local/bin/cargo /usr/local/bin/rustc /usr/local/bin/rustfmt; \
-    fi
+    rustup component add clippy && \
+    if [ ! -d "/root/.cargo/bin" ]; then \
+        echo "ERROR: /root/.cargo/bin not found" >&2 && exit 1; \
+    fi && \
+    for bin in cargo rustc rustfmt clippy-driver cargo-clippy; do \
+        if [ ! -f "/root/.cargo/bin/$bin" ]; then \
+            echo "ERROR: Missing required shim: /root/.cargo/bin/$bin" >&2 && exit 1; \
+        fi && \
+        cp -p "/root/.cargo/bin/$bin" "/usr/local/bin/$bin" && \
+        chmod +x "/usr/local/bin/$bin"; \
+    done
 
 # Verify all tools are installed
 RUN bun --version && \

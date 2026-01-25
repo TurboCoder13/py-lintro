@@ -71,7 +71,10 @@ class BiomePlugin(BaseToolPlugin):
             min_version="1.0.0",
             default_options={
                 "timeout": BIOME_DEFAULT_TIMEOUT,
-                "use_vcs_ignore": True,
+                # VCS ignore disabled by default: lintro handles file discovery
+                # and respects .gitignore. Biome's VCS integration causes issues
+                # in Docker due to path resolution with mounted volumes.
+                "use_vcs_ignore": False,
                 "verbose_fix_output": False,
             },
             default_timeout=BIOME_DEFAULT_TIMEOUT,
@@ -80,8 +83,10 @@ class BiomePlugin(BaseToolPlugin):
     def __post_init__(self) -> None:
         """Initialize the tool with default options."""
         super().__post_init__()
-        # Enable VCS ignore by default to respect .gitignore patterns
-        self.options.setdefault("use_vcs_ignore", True)
+        # VCS ignore disabled by default: lintro handles file discovery
+        # and respects .gitignore. Biome's VCS integration causes issues
+        # in Docker due to path resolution with mounted volumes.
+        self.options.setdefault("use_vcs_ignore", False)
 
     def set_options(  # type: ignore[override]
         self,

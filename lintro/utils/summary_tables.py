@@ -138,77 +138,72 @@ def print_summary_table(
                 else:
                     status_display = "\033[91m❌ FAIL\033[0m"  # red
 
-                # Check if files were excluded
+                # Get result output for parsing
+                # Note: "No files to fix" means the tool ran successfully but
+                # found no files - this is PASS with 0 fixed/remaining, not SKIPPED
+                # (consistent with check mode behavior)
                 result_output: str = getattr(result, "output", "")
-                if result_output and any(
-                    (
-                        msg in result_output
-                        for msg in ["No files to", "No Python files found to"]
-                    ),
-                ):
-                    fixed_display: str = "\033[93mSKIPPED\033[0m"  # yellow
-                    remaining_display: str = "\033[93mSKIPPED\033[0m"  # yellow
+
+                # Prefer standardized counts from ToolResult
+                remaining_std = getattr(result, "remaining_issues_count", None)
+                fixed_std = getattr(result, "fixed_issues_count", None)
+
+                if remaining_std is not None:
+                    try:
+                        remaining_count: int | str = int(remaining_std)
+                    except (ValueError, TypeError):
+                        remaining_count = DEFAULT_REMAINING_COUNT
                 else:
-                    # Prefer standardized counts from ToolResult
-                    remaining_std = getattr(result, "remaining_issues_count", None)
-                    fixed_std = getattr(result, "fixed_issues_count", None)
-
-                    if remaining_std is not None:
-                        try:
-                            remaining_count: int | str = int(remaining_std)
-                        except (ValueError, TypeError):
-                            remaining_count = DEFAULT_REMAINING_COUNT
-                    else:
-                        # Parse output to determine remaining issues
-                        remaining_count = 0
-                        if result_output and (
-                            "remaining" in result_output.lower()
-                            or "cannot be auto-fixed" in result_output.lower()
-                        ):
-                            # Try multiple patterns to match different
-                            # output formats
-                            remaining_match = RE_CANNOT_AUTOFIX.search(
-                                result_output,
+                    # Parse output to determine remaining issues
+                    remaining_count = 0
+                    if result_output and (
+                        "remaining" in result_output.lower()
+                        or "cannot be auto-fixed" in result_output.lower()
+                    ):
+                        # Try multiple patterns to match different
+                        # output formats
+                        remaining_match = RE_CANNOT_AUTOFIX.search(
+                            result_output,
+                        )
+                        if not remaining_match:
+                            remaining_match = RE_REMAINING_OR_CANNOT.search(
+                                result_output.lower(),
                             )
-                            if not remaining_match:
-                                remaining_match = RE_REMAINING_OR_CANNOT.search(
-                                    result_output.lower(),
-                                )
-                            if remaining_match:
-                                try:
-                                    remaining_count = int(remaining_match.group(1))
-                                except (ValueError, TypeError):
-                                    remaining_count = DEFAULT_REMAINING_COUNT
-                            elif not success:
+                        if remaining_match:
+                            try:
+                                remaining_count = int(remaining_match.group(1))
+                            except (ValueError, TypeError):
                                 remaining_count = DEFAULT_REMAINING_COUNT
+                        elif not success:
+                            remaining_count = DEFAULT_REMAINING_COUNT
 
-                    if fixed_std is not None:
-                        try:
-                            fixed_display_value = int(fixed_std)
-                        except (ValueError, TypeError):
-                            fixed_display_value = 0
-                    else:
-                        # Fall back to issues_count when fixed is unknown
-                        try:
-                            fixed_display_value = int(issues_count)
-                        except (ValueError, TypeError):
-                            fixed_display_value = 0
+                if fixed_std is not None:
+                    try:
+                        fixed_display_value = int(fixed_std)
+                    except (ValueError, TypeError):
+                        fixed_display_value = 0
+                else:
+                    # Fall back to issues_count when fixed is unknown
+                    try:
+                        fixed_display_value = int(issues_count)
+                    except (ValueError, TypeError):
+                        fixed_display_value = 0
 
-                    # Fixed issues display
-                    fixed_display = f"\033[92m{fixed_display_value}\033[0m"  # green
+                # Fixed issues display
+                fixed_display: str = f"\033[92m{fixed_display_value}\033[0m"  # green
 
-                    # Remaining issues display
-                    if isinstance(remaining_count, str):
-                        # Display sentinel value verbatim
-                        remaining_display = (
-                            f"\033[93m{remaining_count}\033[0m"  # yellow
-                        )
-                    else:
-                        remaining_display = (
-                            f"\033[91m{remaining_count}\033[0m"  # red
-                            if remaining_count > 0
-                            else f"\033[92m{remaining_count}\033[0m"  # green
-                        )
+                # Remaining issues display
+                if isinstance(remaining_count, str):
+                    # Display sentinel value verbatim
+                    remaining_display: str = (
+                        f"\033[93m{remaining_count}\033[0m"  # yellow
+                    )
+                else:
+                    remaining_display = (
+                        f"\033[91m{remaining_count}\033[0m"  # red
+                        if remaining_count > 0
+                        else f"\033[92m{remaining_count}\033[0m"  # green
+                    )
             else:  # check
                 # Check if this is an execution failure (timeout/error)
                 # vs linting issues
