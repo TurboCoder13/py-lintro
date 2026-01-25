@@ -96,8 +96,9 @@ fi
 # Early exit check for Docker-centric jobs
 if [ "${BOOTSTRAP_SKIP_SYNC:-0}" -eq 1 ] && [ "${BOOTSTRAP_SKIP_INSTALL_TOOLS:-0}" -eq 1 ]; then
 	log_info "Skipping remaining bootstrap steps (both BOOTSTRAP_SKIP_* flags set)"
-	if [ "$DRY_RUN" -eq 0 ] && [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
-		echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+	if [ "$DRY_RUN" -eq 0 ] && [ -n "${GITHUB_PATH:-}" ]; then
+		[ -d "$HOME/.local/bin" ] && echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+		[ -d "$HOME/.bun/bin" ] && echo "$HOME/.bun/bin" >>"$GITHUB_PATH"
 	fi
 	log_info "Early-exit complete (uv installed)"
 	exit 0
@@ -138,11 +139,18 @@ fi
 
 # Component 5: Ensure PATH persistence
 log_info "Step 5/5: Ensuring PATH persistence"
-if [ "$DRY_RUN" -eq 0 ] && [ -n "${GITHUB_PATH:-}" ] && [ -d "$HOME/.local/bin" ]; then
-	echo "$HOME/.local/bin" >>"$GITHUB_PATH"
-	log_info "Added $HOME/.local/bin to GitHub Actions PATH"
+if [ "$DRY_RUN" -eq 0 ] && [ -n "${GITHUB_PATH:-}" ]; then
+	if [ -d "$HOME/.local/bin" ]; then
+		echo "$HOME/.local/bin" >>"$GITHUB_PATH"
+		log_info "Added $HOME/.local/bin to GitHub Actions PATH"
+	fi
+	# Add bun global bin directory (used by prettier, markdownlint-cli2, biome)
+	if [ -d "$HOME/.bun/bin" ]; then
+		echo "$HOME/.bun/bin" >>"$GITHUB_PATH"
+		log_info "Added $HOME/.bun/bin to GitHub Actions PATH"
+	fi
 elif [ "$DRY_RUN" -eq 1 ]; then
-	log_info "[DRY-RUN] Would add $HOME/.local/bin to PATH"
+	log_info "[DRY-RUN] Would add $HOME/.local/bin and $HOME/.bun/bin to PATH"
 fi
 
 log_info "Environment bootstrap complete ✅"
