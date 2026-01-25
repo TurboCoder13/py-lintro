@@ -17,12 +17,15 @@ if TYPE_CHECKING:
     ("option_name", "expected_value"),
     [
         ("timeout", BIOME_DEFAULT_TIMEOUT),
-        ("use_vcs_ignore", True),
+        # use_vcs_ignore disabled by default: lintro handles file discovery
+        # and respects .gitignore. Biome's VCS integration causes issues
+        # in Docker due to path resolution with mounted volumes.
+        ("use_vcs_ignore", False),
         ("verbose_fix_output", False),
     ],
     ids=[
         "timeout_equals_default",
-        "use_vcs_ignore_is_true",
+        "use_vcs_ignore_is_false",
         "verbose_fix_output_is_false",
     ],
 )
