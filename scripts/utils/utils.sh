@@ -188,12 +188,22 @@ _cleanup_temp_dirs() {
 
 # Create a temporary directory with automatic cleanup on exit
 # Multiple calls accumulate directories instead of overwriting the trap
+# Chains with any existing EXIT trap to avoid clobbering other cleanup handlers
 # Usage: tmpdir=$(create_temp_dir)
 create_temp_dir() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
 	_TEMP_DIRS+=("$tmpdir")
-	trap _cleanup_temp_dirs EXIT
+	# Chain with existing EXIT trap instead of clobbering it
+	local existing_trap
+	existing_trap=$(trap -p EXIT | sed -n "s/^trap -- '\(.*\)' EXIT$/\1/p")
+	if [ -n "$existing_trap" ]; then
+		# SC2064: We intentionally expand $existing_trap now to capture its value
+		# shellcheck disable=SC2064
+		trap "$existing_trap; _cleanup_temp_dirs" EXIT
+	else
+		trap _cleanup_temp_dirs EXIT
+	fi
 	echo "$tmpdir"
 }
 
@@ -219,8 +229,10 @@ get_coverage_percentage() {
 	local coverage_file="${1:-coverage.xml}"
 	if [[ -f "$coverage_file" ]]; then
 		# Extract line-rate attribute and convert to percentage
+		# Use portable sed instead of grep -oP for macOS/BSD compatibility
 		local line_rate
-		line_rate=$(grep -oP 'line-rate="\K[^"]+' "$coverage_file" 2>/dev/null || echo "0")
+		line_rate=$(sed -n 's/.*line-rate="\([^"]*\)".*/\1/p' "$coverage_file" | head -n1)
+		line_rate=${line_rate:-0}
 		awk -v lr="$line_rate" 'BEGIN { printf "%.2f", lr * 100 }'
 	else
 		echo "0.00"

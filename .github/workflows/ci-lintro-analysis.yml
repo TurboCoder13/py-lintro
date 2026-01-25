@@ -15,6 +15,7 @@ name: Quality Check - CI Pipeline
       - 'pyproject.toml'
       - 'Dockerfile'
       - '.github/workflows/ci-lintro-analysis.yml'
+      - '.github/actions/**'
   pull_request:
     branches: [main]
     paths:
@@ -24,6 +25,7 @@ name: Quality Check - CI Pipeline
       - 'pyproject.toml'
       - 'Dockerfile'
       - '.github/workflows/ci-lintro-analysis.yml'
+      - '.github/actions/**'
 
 permissions:
   contents: read
