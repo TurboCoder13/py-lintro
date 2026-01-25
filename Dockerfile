@@ -25,6 +25,17 @@ COPY lintro/ /app/lintro/
 # Install Python dependencies
 RUN uv sync --dev --extra tools --no-progress && (uv cache clean || true)
 
+# Ensure clippy binaries are in /usr/local/bin (needed until tools image is rebuilt)
+# hadolint ignore=SC2046
+RUN if [ ! -f /usr/local/bin/clippy-driver ]; then \
+        TOOLCHAIN_BIN=$(find /root/.rustup/toolchains -name "bin" -type d 2>/dev/null | head -1) && \
+        if [ -n "$TOOLCHAIN_BIN" ] && [ -f "$TOOLCHAIN_BIN/clippy-driver" ]; then \
+            cp -p "$TOOLCHAIN_BIN/clippy-driver" /usr/local/bin/clippy-driver && \
+            cp -p "$TOOLCHAIN_BIN/cargo-clippy" /usr/local/bin/cargo-clippy && \
+            chmod +x /usr/local/bin/clippy-driver /usr/local/bin/cargo-clippy; \
+        fi; \
+    fi
+
 # =============================================================================
 # Stage 3: Runtime - Minimal image with only what's needed to run
 # =============================================================================
