@@ -11,7 +11,7 @@ enforce:
 
 execution:
   enabled_tools: []
-  tool_order: 'priority'
+  tool_order: "priority"
   fail_fast: false
   parallel: true
   max_workers: 10 # 1-32, defaults to CPU count if omitted
@@ -24,9 +24,9 @@ defaults:
     singleQuote: true
     tabWidth: 2
     printWidth: 100
-    trailingComma: 'es5'
+    trailingComma: "es5"
     overrides:
-      - files: '*.md'
+      - files: "*.md"
         options:
           printWidth: 88
 
@@ -37,9 +37,9 @@ defaults:
       tables: false
 
   yamllint:
-    extends: 'default'
+    extends: "default"
     rules:
-      comments-indentation: 'disable'
+      comments-indentation: "disable"
       comments:
         min-spaces-from-content: 1
       truthy:
@@ -51,11 +51,11 @@ defaults:
   hadolint:
     ignored: []
     trusted_registries:
-      - 'docker.io'
-      - 'gcr.io'
-      - 'ghcr.io'
-      - 'quay.io'
-      - 'registry.hub.docker.com'
+      - "docker.io"
+      - "gcr.io"
+      - "ghcr.io"
+      - "quay.io"
+      - "registry.hub.docker.com"
 
 # Tool enable/disable settings.
 # Full tool configs are in native files (pyproject.toml, etc.)
