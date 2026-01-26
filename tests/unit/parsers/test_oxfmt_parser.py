@@ -126,7 +126,9 @@ file.css"""
     result = parse_oxfmt_output(output)
     assert_that(result).is_length(10)
     extensions = [issue.file.split(".")[-1] for issue in result]
-    assert_that(extensions).contains("js", "mjs", "cjs", "jsx", "ts", "tsx", "json")
+    assert_that(extensions).contains(
+        "js", "mjs", "cjs", "jsx", "ts", "mts", "cts", "tsx", "json", "css",
+    )
 
 
 def test_parse_oxfmt_output_file_with_spaces_in_name() -> None:
