@@ -185,6 +185,10 @@ class OxlintPlugin(BaseToolPlugin):
             "json",
         ]
 
+        # Add quiet flag if enabled (suppress warnings, only report errors)
+        if self.options.get("quiet", False):
+            cmd.append("--quiet")
+
         # Add Lintro config injection args if available
         config_args = self._build_config_args()
         if config_args:
@@ -247,6 +251,11 @@ class OxlintPlugin(BaseToolPlugin):
             "--format",
             "json",
         ]
+
+        # Add quiet flag if enabled (suppress warnings, only report errors)
+        if self.options.get("quiet", False):
+            check_cmd.append("--quiet")
+
         if config_args:
             check_cmd.extend(config_args)
         check_cmd.extend(ctx.rel_files)

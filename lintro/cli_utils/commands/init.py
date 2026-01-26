@@ -288,5 +288,5 @@ def init_command(
     console.print("  [dim]3.[/dim] Run [cyan]lintro check .[/cyan] to lint")
     if with_native_configs:
         console.print(
-            "  [dim]3.[/dim] Commit the config files to your repository",
+            "  [dim]4.[/dim] Commit the config files to your repository",
         )

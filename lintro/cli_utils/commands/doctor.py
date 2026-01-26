@@ -27,6 +27,8 @@ TOOL_COMMANDS: dict[str, list[str]] = {
     "gitleaks": ["gitleaks", "version"],
     "hadolint": ["hadolint", "--version"],
     "markdownlint": ["markdownlint-cli2", "--version"],
+    "oxfmt": ["oxfmt", "--version"],
+    "oxlint": ["oxlint", "--version"],
     "pytest": [sys.executable, "-m", "pytest", "--version"],
     "rustfmt": ["rustfmt", "--version"],
     "semgrep": ["semgrep", "--version"],
