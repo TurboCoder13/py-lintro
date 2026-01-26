@@ -86,7 +86,8 @@
         "rhysd/actionlint",
         "prettier",
         "markdownlint-cli2",
-        "@biomejs/biome",
+        "oxlint",
+        "oxfmt",
         "gitleaks",
         "gitleaks/gitleaks",
         "shellcheck",
@@ -196,9 +197,16 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": ["\"biome\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+      "matchStrings": ["\"oxlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "npm",
-      "packageNameTemplate": "@biomejs/biome"
+      "packageNameTemplate": "oxlint"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": ["\"oxfmt\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+      "datasourceTemplate": "npm",
+      "packageNameTemplate": "oxfmt"
     },
     {
       "customType": "regex",
