@@ -356,7 +356,7 @@ class OxfmtPlugin(BaseToolPlugin):
 
         # Add verbose raw formatting output only when explicitly requested
         if (
-            self.options.get("verbose_fix_output", False)
+            merged_options.get("verbose_fix_output", False)
             and fix_output
             and fix_output.strip()
         ):

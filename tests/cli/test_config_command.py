@@ -47,7 +47,7 @@ def mock_config() -> LintroConfig:
         ),
         tools={
             "ruff": LintroToolConfig(enabled=True),
-            "prettier": LintroToolConfig(enabled=True),
+            "black": LintroToolConfig(enabled=True),
         },
         config_path="/path/to/.lintro-config.yaml",
     )
