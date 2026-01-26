@@ -25,7 +25,7 @@ def reset_registry() -> Generator[None, None, None]:
     """Reset the command builder registry before and after each test.
 
     Yields:
-        None after clearing the registry and before restoring.
+        None: After clearing the registry and before restoring.
     """
     original_builders = CommandBuilderRegistry._builders.copy()
     yield
@@ -255,12 +255,6 @@ def test_standalone_builder_handles_actionlint() -> None:
     """StandaloneBuilder can handle actionlint."""
     builder = StandaloneBuilder()
     assert_that(builder.can_handle(ToolName.ACTIONLINT)).is_true()
-
-
-def test_standalone_builder_handles_darglint() -> None:
-    """StandaloneBuilder can handle darglint."""
-    builder = StandaloneBuilder()
-    assert_that(builder.can_handle(ToolName.DARGLINT)).is_true()
 
 
 def test_standalone_builder_does_not_handle_ruff() -> None:

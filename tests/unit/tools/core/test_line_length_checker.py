@@ -53,22 +53,22 @@ def test_line_length_violation_all_fields_set() -> None:
 
 
 @pytest.fixture
-def mock_ruff_available() -> Generator[MagicMock]:
+def mock_ruff_available() -> Generator[MagicMock, None, None]:
     """Mock shutil.which to return ruff as available.
 
     Yields:
-        Mock: Configured mock for shutil.which.
+        MagicMock: Configured mock for shutil.which.
     """
     with patch("shutil.which", return_value="/usr/bin/ruff") as mock:
         yield mock
 
 
 @pytest.fixture
-def mock_subprocess() -> Generator[MagicMock]:
+def mock_subprocess() -> Generator[MagicMock, None, None]:
     """Mock subprocess.run for testing.
 
     Yields:
-        Mock: Configured mock for subprocess.run.
+        MagicMock: Configured mock for subprocess.run.
     """
     with patch("subprocess.run") as mock:
         mock.return_value = MagicMock(stdout="[]", returncode=0)

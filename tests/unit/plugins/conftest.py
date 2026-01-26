@@ -71,7 +71,7 @@ def clean_registry() -> Generator[None]:
     and restores it after, ensuring tests don't pollute each other.
 
     Yields:
-        None, but saves and restores registry state.
+        None: Saves and restores registry state.
     """
     original_tools = dict(ToolRegistry._tools)
     original_instances = dict(ToolRegistry._instances)
@@ -89,7 +89,7 @@ def empty_registry() -> Generator[None]:
     Clears the registry before the test and restores it after.
 
     Yields:
-        None, but clears and restores registry state.
+        None: Clears and restores registry state.
     """
     original_tools = dict(ToolRegistry._tools)
     original_instances = dict(ToolRegistry._instances)
@@ -106,7 +106,7 @@ def reset_discovery_state() -> Generator[None]:
     """Reset discovery state before and after test.
 
     Yields:
-        None, but resets discovery state.
+        None: Resets discovery state.
     """
     reset_discovery()
     try:

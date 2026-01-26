@@ -19,6 +19,7 @@ class ExecutionConfig(BaseModel):
     """Execution control settings.
 
     Attributes:
+        model_config: Pydantic model configuration.
         enabled_tools: List of tool names to run. If empty/None, all tools run.
         tool_order: Execution order strategy. One of:
             - "priority": Use default priority (formatters before linters)

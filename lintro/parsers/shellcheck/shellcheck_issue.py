@@ -27,6 +27,7 @@ class ShellcheckIssue(BaseIssue):
     - message: Human-readable description of the issue
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         level: Severity level (error, warning, info, style).
         code: SC code number as string (e.g., "SC2086").
         end_line: Line number where the issue ends (0 if not available).

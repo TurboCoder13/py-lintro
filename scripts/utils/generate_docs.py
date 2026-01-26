@@ -27,7 +27,7 @@ def generate_version_table() -> str:
         "black": "Python code formatter",
         "bandit": "Python security linter",
         "yamllint": "YAML linter",
-        "darglint": "Python docstring linter",
+        "pydoclint": "Python docstring linter",
     }
 
     external_tools = {
@@ -76,7 +76,7 @@ def main() -> None:
     versions = get_minimum_versions()
     hints = get_install_hints()
 
-    bundled_tools = ["ruff", "black", "bandit", "yamllint", "darglint"]
+    bundled_tools = ["ruff", "black", "bandit", "yamllint", "pydoclint"]
     for tool in bundled_tools:
         version = versions.get(tool, "unknown")
         print(f"- {tool}: {version}")

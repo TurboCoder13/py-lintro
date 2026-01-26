@@ -3,10 +3,6 @@
 import pytest
 from assertpy import assert_that
 
-from lintro.enums.darglint_strictness import (
-    DarglintStrictness,
-    normalize_darglint_strictness,
-)
 from lintro.enums.group_by import GroupBy, normalize_group_by
 from lintro.enums.hadolint_enums import (
     HadolintFailureThreshold,
@@ -61,16 +57,6 @@ def test_hadolint_normalization() -> None:
     assert_that(normalize_hadolint_format("bogus")).is_equal_to(HadolintFormat.TTY)
     assert_that(normalize_hadolint_threshold("bogus")).is_equal_to(
         HadolintFailureThreshold.INFO,
-    )
-
-
-def test_darglint_strictness_normalization() -> None:
-    """Normalize darglint strictness strings and enum values."""
-    assert_that(normalize_darglint_strictness("full")).is_equal_to(
-        DarglintStrictness.FULL,
-    )
-    assert_that(normalize_darglint_strictness(DarglintStrictness.SHORT)).is_equal_to(
-        DarglintStrictness.SHORT,
     )
 
 

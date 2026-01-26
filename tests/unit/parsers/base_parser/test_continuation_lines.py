@@ -20,7 +20,7 @@ def test_collect_continuation_lines_with_indented_lines() -> None:
 
 
 def test_collect_continuation_lines_with_colon_prefix() -> None:
-    """Collect lines with colon prefix (darglint style)."""
+    """Collect lines with colon prefix."""
     lines = ["error:", ": detail1", ": detail2", "next"]
     message, next_idx = collect_continuation_lines(
         lines,

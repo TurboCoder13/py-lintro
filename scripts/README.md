@@ -135,7 +135,7 @@ Scripts for generating and updating Homebrew formulas.
 | `generate-binary-formula.sh` | Generate lintro-bin.rb formula for binaries        | `./scripts/ci/homebrew/generate-binary-formula.sh ...`     |
 | `pypi_utils.py`              | Shared PyPI API utilities module                   | Imported by other Python scripts                           |
 | `fetch_package_info.py`      | Fetch package tarball info from PyPI               | `python3 fetch_package_info.py lintro 1.0.0`               |
-| `fetch_wheel_info.py`        | Fetch wheel info and generate resource stanzas     | `python3 fetch_wheel_info.py darglint --type universal`    |
+| `fetch_wheel_info.py`        | Fetch wheel info and generate resource stanzas     | `python3 fetch_wheel_info.py pydoclint --type universal`   |
 | `render_formula.py`          | Render Homebrew formula from template              | `python3 render_formula.py --tarball-url ... -o out.rb`    |
 | `generate_resources.py`      | Generate Homebrew resource stanzas (replaces poet) | `python3 generate_resources.py lintro --exclude pkg1 pkg2` |
 
@@ -422,7 +422,7 @@ Installs all external tools required by Lintro.
 
 **Features:**
 
-- Installs hadolint, prettier, ruff, yamllint, darglint
+- Installs hadolint, prettier, ruff, yamllint, pydoclint
 - Supports local and Docker installation modes
 - Uses consistent installation methods
 - Verifies installations
@@ -493,7 +493,7 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 - **prettier**: JavaScript/JSON formatting
 - **ruff**: Python linting and formatting
 - **yamllint**: YAML linting
-- **darglint**: Python docstring validation
+- **pydoclint**: Python docstring validation
 
 ### GitHub Actions Requirements
 

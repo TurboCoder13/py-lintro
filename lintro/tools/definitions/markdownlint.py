@@ -315,6 +315,9 @@ class MarkdownlintPlugin(BaseToolPlugin):
             paths: List of file or directory paths to fix.
             options: Runtime options that override defaults.
 
+        Returns:
+            ToolResult: Never returns, always raises NotImplementedError.
+
         Raises:
             NotImplementedError: Markdownlint is a linter only and cannot fix issues.
         """

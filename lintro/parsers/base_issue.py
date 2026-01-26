@@ -26,12 +26,10 @@ class BaseIssue:
     suitable for the unified formatter. Subclasses can customize the mapping
     by setting DISPLAY_FIELD_MAP class variable instead of overriding the method.
 
-    Class Variables:
-        DISPLAY_FIELD_MAP: Maps display keys to attribute names for custom fields.
-            Default mappings: code→code, severity→severity, fixable→fixable.
-            Example: {"severity": "level"} to map self.level to severity output.
-
     Attributes:
+        DISPLAY_FIELD_MAP: Maps display keys to attribute names for custom fields.
+            Default mappings: code->code, severity->severity, fixable->fixable.
+            Example: {"severity": "level"} to map self.level to severity output.
         file: File path where the issue was found.
         line: Line number where the issue was found (1-based, 0 means unknown).
         column: Column number where the issue was found (1-based, 0 means unknown).

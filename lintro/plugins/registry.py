@@ -36,11 +36,6 @@ class ToolRegistry:
     and listing tools.
 
     The registry is thread-safe and uses lazy instantiation for tool instances.
-
-    Attributes:
-        _tools: Mapping of tool names to tool classes.
-        _instances: Mapping of tool names to tool instances (lazily created).
-        _lock: Threading lock for thread-safe operations.
     """
 
     _tools: dict[str, type[BaseToolPlugin]] = {}

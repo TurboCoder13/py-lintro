@@ -41,7 +41,7 @@ class Lintro < Formula
 
   # Pure Python library dependencies
 {{POET_RESOURCES}}
-{{DARGLINT_RESOURCE}}
+{{PYDOCLINT_RESOURCE}}
 
 {{PYDANTIC_CORE_RESOURCE}}
 
@@ -89,7 +89,7 @@ class Lintro < Formula
         - taplo - TOML linter and formatter
 
       Bundled tools:
-        - darglint - Python docstring linter
+        - pydoclint - Python docstring linter
 
       Optional (install manually via cargo):
         - cargo-audit - Rust dependency vulnerability scanner

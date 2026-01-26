@@ -155,7 +155,6 @@ def check_command(
     if tool_options:
         tool_option_parts.append(tool_options)
 
-    # Removed darglint_timeout and prettier_timeout handling
     combined_tool_options: str | None = (
         ",".join(tool_option_parts) if tool_option_parts else None
     )
@@ -235,7 +234,6 @@ def check(
         args.extend(["--group-by", group_by])
     if ignore_conflicts:
         args.append("--ignore-conflicts")
-    # Removed darglint_timeout and prettier_timeout handling
     if verbose:
         args.append("--verbose")
     if no_log:

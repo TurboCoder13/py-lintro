@@ -1,6 +1,6 @@
-"""Module demonstrating multiple darglint violations.
+"""Module demonstrating multiple pydoclint violations.
 
-This module contains functions that intentionally violate darglint rules
+This module contains functions that intentionally violate pydoclint rules
 to help test the linter's functionality.
 """
 
@@ -48,7 +48,7 @@ def inconsistent_param_doc(
 
 
 def missing_raises_doc(
-    value,
+    value: Any,
 ) -> None:
     """Missing raises documentation.
 
@@ -84,44 +84,6 @@ def incorrect_param_order(
     }
 
 
-def function_without_docstring(param1: str, param2: int) -> bool:
-    """Missing docstring entirely."""
-    return param1 == str(param2)
-
-
-def bad_docstring_format(
-    param1: str,
-    param2: int,
-) -> str:
-    """Bad docstring format.
-
-    Args:
-        param1: First parameter
-        param2: Second parameter
-        param3: This parameter doesn't exist
-
-    Returns:
-        str: The result
-    """
-    return f"{param1}{param2}"
-
-
-def missing_type_info(
-    param1,
-    param2,
-) -> str:
-    """Missing type information in docstring.
-
-    Args:
-        param1: First parameter
-        param2: Second parameter
-
-    Returns:
-        The result
-    """
-    return f"{param1}{param2}"
-
-
 def extra_param_doc(
     param1: str,
 ) -> str:
@@ -147,3 +109,37 @@ def missing_args_section(
         str: The result.
     """
     return f"{param1}{param2}"
+
+
+def type_mismatch_in_doc(
+    value: str,
+) -> int:
+    """Type mismatch in documentation.
+
+    Args:
+        value: The value to convert (should be documented as str).
+
+    Returns:
+        str: The converted value (but function returns int).
+    """
+    return len(value)
+
+
+class ExampleClass:
+    """Example class with docstring violations."""
+
+    def missing_self_doc(self, param: str) -> None:
+        """Method missing documentation.
+
+        Args:
+            param: The parameter.
+        """
+        pass
+
+    def wrong_return_type(self) -> str:
+        """Method with wrong return type documentation.
+
+        Returns:
+            int: Should be str.
+        """
+        return "hello"

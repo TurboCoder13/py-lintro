@@ -17,6 +17,7 @@ class TaploIssue(BaseIssue):
     """Represents an issue found by taplo.
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         level: Severity level (error, warning).
         code: Rule code (e.g., invalid_value, expected_table_array).
     """

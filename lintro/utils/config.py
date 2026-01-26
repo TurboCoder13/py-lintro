@@ -31,9 +31,9 @@ __all__ = [
     # Tool-specific loaders
     "load_ruff_config",
     "load_bandit_config",
-    "load_darglint_config",
     "load_black_config",
     "load_mypy_config",
+    "load_pydoclint_config",
     # Backward compatibility
     "get_central_line_length",
     "validate_line_length_consistency",
@@ -136,13 +136,13 @@ def load_lintro_global_config() -> dict[str, Any]:
         "markdownlint",
         "markdownlint-cli2",
         "bandit",
-        "darglint",
         "hadolint",
         "actionlint",
         "pytest",
         "mypy",
         "biome",
         "clippy",
+        "pydoclint",
         "post_checks",
         "versions",
     }
@@ -256,13 +256,13 @@ def load_bandit_config() -> dict[str, Any]:
     return load_tool_config_from_pyproject("bandit")
 
 
-def load_darglint_config() -> dict[str, Any]:
-    """Load darglint configuration from pyproject.toml.
+def load_pydoclint_config() -> dict[str, Any]:
+    """Load pydoclint configuration from pyproject.toml.
 
     Returns:
-        dict[str, Any]: Darglint configuration dictionary.
+        dict[str, Any]: Pydoclint configuration dictionary.
     """
-    return load_tool_config_from_pyproject("darglint")
+    return load_tool_config_from_pyproject("pydoclint")
 
 
 def load_black_config() -> dict[str, Any]:

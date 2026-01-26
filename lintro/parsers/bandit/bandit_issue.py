@@ -11,6 +11,7 @@ class BanditIssue(BaseIssue):
     """Represents a security issue found by Bandit.
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         col_offset: int: Column offset of the issue.
         issue_severity: str: Severity level (LOW, MEDIUM, HIGH).
         issue_confidence: str: Confidence level (LOW, MEDIUM, HIGH).

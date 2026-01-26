@@ -21,16 +21,15 @@ from lintro.plugins.base import BaseToolPlugin, ExecutionContext
 
 if TYPE_CHECKING:
     from lintro.tools.definitions.clippy import ClippyPlugin
-    from lintro.tools.definitions.darglint import DarglintPlugin
     from lintro.tools.definitions.mypy import MypyPlugin
 
 
 @pytest.fixture
-def mock_subprocess_run() -> Generator[MagicMock]:
+def mock_subprocess_run() -> Generator[MagicMock, None, None]:
     """Mock subprocess.run for tool testing.
 
     Yields:
-        Mock: Configured mock for subprocess operations.
+        MagicMock: Configured mock for subprocess operations.
     """
     with patch("subprocess.run") as mock_run:
         mock_process = Mock()
@@ -97,22 +96,6 @@ def clippy_plugin() -> ClippyPlugin:
     from lintro.tools.definitions.clippy import ClippyPlugin
 
     return ClippyPlugin()
-
-
-@pytest.fixture
-def darglint_plugin() -> DarglintPlugin:
-    """Provide a DarglintPlugin instance for testing.
-
-    Returns:
-        A DarglintPlugin instance.
-    """
-    from lintro.tools.definitions.darglint import DarglintPlugin
-
-    with patch(
-        "lintro.tools.definitions.darglint.load_darglint_config",
-        return_value={},
-    ):
-        return DarglintPlugin()
 
 
 # -----------------------------------------------------------------------------

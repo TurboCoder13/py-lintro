@@ -13,6 +13,7 @@ class ClippyIssue(BaseIssue):
     """Represents a Clippy linting issue.
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         code: Clippy lint code (e.g., clippy::needless_return).
         level: Severity level (e.g., warning, error).
         end_line: Optional end line number.

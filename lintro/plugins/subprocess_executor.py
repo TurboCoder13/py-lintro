@@ -135,7 +135,7 @@ def run_subprocess(
         Tuple of (success, output) where success indicates return code 0.
 
     Raises:
-        TimeoutExpired: If command times out.
+        subprocess.TimeoutExpired: If command times out.
         FileNotFoundError: If command executable is not found.
     """
     validate_subprocess_command(cmd)
@@ -220,7 +220,7 @@ def run_subprocess_streaming(
         Tuple of (success, output) where success indicates return code 0.
 
     Raises:
-        TimeoutExpired: If command times out.
+        subprocess.TimeoutExpired: If command times out.
         FileNotFoundError: If command executable is not found.
     """
     validate_subprocess_command(cmd)

@@ -65,18 +65,18 @@ fi
 
 # Run lintro in Docker using the Docker entrypoint directly
 # We mount the current directory to /code to match ci-lintro.sh
-# Note: darglint timeout increased for Docker (Docker is slower than local)
+# Note: pydoclint timeout increased for Docker (Docker is slower than local)
 echo -e "${BLUE}Running lintro in Docker container...${NC}"
 echo -e "${YELLOW}Arguments: $*${NC}"
 
-# Check if the command is 'check' and add darglint timeout if not already specified
-if [[ "$1" == "check" ]] && [[ "$*" != *"--tool-options"*"darglint"* ]]; then
+# Check if the command is 'check' and add pydoclint timeout if not already specified
+if [[ "$1" == "check" ]] && [[ "$*" != *"--tool-options"*"pydoclint"* ]]; then
 	docker run --rm \
 		--log-driver=local \
 		-v "$(pwd):/code" \
 		-w /code \
 		"$IMAGE_NAME" \
-		lintro "$@" --tool-options darglint:timeout=120
+		lintro "$@" --tool-options pydoclint:timeout=120
 else
 	docker run --rm \
 		--log-driver=local \

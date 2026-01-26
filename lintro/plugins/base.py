@@ -213,6 +213,9 @@ class BaseToolPlugin(ABC):
             paths: List of file or directory paths to fix.
             options: Tool-specific options that override defaults.
 
+        Returns:
+            ToolResult containing fix results and any remaining issues.
+
         Raises:
             NotImplementedError: If the tool doesn't support fixing.
         """

@@ -14,7 +14,7 @@ def mock_empty_pyproject() -> Iterator[MagicMock]:
     """Fixture that mocks load_pyproject to return an empty dict.
 
     Yields:
-        Mock object for load_pyproject function.
+        MagicMock: Mock object for load_pyproject function.
     """
     with patch("lintro.utils.config.load_pyproject") as mock_load:
         mock_load.return_value = {}

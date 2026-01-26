@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Generator
 from unittest.mock import patch
 
 import pytest
 
 
 @pytest.fixture
-def mock_empty_tool_order_config() -> Any:
+def mock_empty_tool_order_config() -> Generator[None]:
     """Mock get_tool_order_config to return empty dict.
 
     Yields:
-        Context manager for mocking tool order config.
+        None: Context manager for mocking tool order config.
     """
     with patch(
         "lintro.utils.config_priority.get_tool_order_config",
@@ -23,11 +23,11 @@ def mock_empty_tool_order_config() -> Any:
 
 
 @pytest.fixture
-def mock_empty_configs() -> Any:
+def mock_empty_configs() -> Generator[None]:
     """Mock all config loaders to return empty dicts.
 
     Yields:
-        Context manager for mocking all config loaders.
+        None: Context manager for mocking all config loaders.
     """
     with (
         patch(

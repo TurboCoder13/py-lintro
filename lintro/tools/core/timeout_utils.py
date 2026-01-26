@@ -48,7 +48,7 @@ def run_subprocess_with_timeout(
         timeout error message.
 
     Raises:
-        TimeoutExpired: If command times out (re-raised from subprocess).
+        subprocess.TimeoutExpired: If command times out (re-raised with context).
     """
     tool_name = tool_name or tool.definition.name
 

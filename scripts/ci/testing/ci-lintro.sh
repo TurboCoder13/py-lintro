@@ -48,12 +48,12 @@ trap 'echo "CHK_EXIT_CODE=${CHK_EXIT_CODE:-1}" >> "$GITHUB_ENV"' EXIT
 
 # Run lintro check in Docker container against the entire project
 # The .lintro-ignore file will automatically exclude test_samples/
-# Note: darglint timeout increased for CI (Docker is slower than local)
+# Note: pydoclint timeout increased for CI (Docker is slower than local)
 set +e # Don't exit on error
 # Use the image entrypoint to invoke lintro directly; avoid shell passthrough
 # Use tee to write output to both stdout (build logs) and chk-output.txt (step summary/PR comments)
 docker run --rm -v "$PWD:/code" -w /code py-lintro:latest lintro check . \
-	--tool-options darglint:timeout=120 2>&1 | tee chk-output.txt
+	--tool-options pydoclint:timeout=120 2>&1 | tee chk-output.txt
 CHK_EXIT_CODE=${PIPESTATUS[0]}
 set -e # Exit on error again
 

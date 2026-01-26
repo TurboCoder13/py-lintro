@@ -37,7 +37,7 @@ What is the bug?
 ### Tools Involved
 
 - [ ] Ruff
-- [ ] Darglint
+- [ ] pydoclint
 - [ ] Prettier
 - [ ] Yamllint
 - [ ] Hadolint

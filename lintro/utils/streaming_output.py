@@ -29,8 +29,8 @@ class StreamingResultHandler:
 
     Attributes:
         output_format: Output format (grid, json, jsonl, etc.).
-        output_file: Optional file path for output.
         action: The action being performed.
+        output_file: Optional file path for output.
     """
 
     output_format: str

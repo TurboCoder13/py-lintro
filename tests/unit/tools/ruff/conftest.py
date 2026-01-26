@@ -48,7 +48,7 @@ def mock_ruff_tool() -> MagicMock:
 
 
 @pytest.fixture
-def ruff_plugin() -> Generator[RuffPlugin]:
+def ruff_plugin() -> Generator[RuffPlugin, None, None]:
     """Provide a RuffPlugin instance for testing.
 
     Sets LINTRO_TEST_MODE environment variable to skip config loading.

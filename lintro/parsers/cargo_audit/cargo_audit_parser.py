@@ -23,10 +23,10 @@ def _extract_cargo_audit_json(raw_text: str) -> dict[str, Any]:
         raw_text: Raw stdout/stderr text from cargo-audit.
 
     Returns:
-        Parsed JSON object.
+        dict[str, Any]: Parsed JSON object.
 
     Raises:
-        JSONDecodeError: If JSON cannot be parsed.
+        json.JSONDecodeError: If JSON cannot be parsed.
         ValueError: If no JSON object boundaries are found.
     """
     if not raw_text or not raw_text.strip():

@@ -58,7 +58,7 @@ defaults:
       - 'registry.hub.docker.com'
 
 # Tool enable/disable settings.
-# Full tool configs are in native files (pyproject.toml, .darglint, etc.)
+# Full tool configs are in native files (pyproject.toml, etc.)
 # or in the defaults section above.
 tools:
   # Ruff - Python linter and formatter (config in pyproject.toml [tool.ruff])
@@ -93,8 +93,8 @@ tools:
   actionlint:
     enabled: true
 
-  # Darglint - Docstring linter (config in .darglint)
-  darglint:
+  # Pydoclint - Python docstring linter
+  pydoclint:
     enabled: true
 
   # Pytest - Test runner (config in pyproject.toml [tool.pytest.ini_options])

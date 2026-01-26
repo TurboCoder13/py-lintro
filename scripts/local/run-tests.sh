@@ -93,7 +93,7 @@ ensure_python_cli_tools() {
 		"mypy>=1.14.1"
 		"ruff>=0.14.0"
 		"yamllint>=1.37.1"
-		"darglint==1.8.1"
+		"pydoclint>=0.5.0"
 		"pytest>=9.0.1"
 	)
 	for pkg in "${pkgs[@]}"; do

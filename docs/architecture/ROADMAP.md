@@ -81,15 +81,9 @@ lintro/tools/implementations/pytest/markers.py  # Line 112: bare except
 **Tasks:**
 
 - [ ] Replace `toml` with `tomllib` (Python 3.11+ stdlib)
-- [ ] Evaluate `darglint` alternatives (stagnant since 2021)
+- [x] Replace `darglint` with `pydoclint` (darglint stagnant since 2021)
 - [ ] Audit all dependencies for security advisories
 - [ ] Update pinned versions to latest stable
-
-**Candidates for darglint replacement:**
-
-- `pydoclint` - actively maintained
-- `interrogate` - docstring coverage
-- Ruff docstring rules (already integrated)
 
 ---
 
@@ -280,7 +274,7 @@ name = "lintro"
 
 ### P1: Complete Python Ecosystem
 
-**Current:** Ruff, Black, Mypy, Bandit, Darglint, Pytest
+**Current:** Ruff, Black, Mypy, Bandit, pydoclint, Pytest
 
 **Add:**
 

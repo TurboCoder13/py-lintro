@@ -49,7 +49,7 @@ def stream_json_lines(
         tool_name: Name of the tool for logging purposes.
 
     Yields:
-        Parsed issue objects as they are processed.
+        IssueT: Parsed issue objects as they are processed.
 
     Examples:
         >>> def parse(item):
@@ -106,7 +106,7 @@ def stream_text_lines(
         strip_ansi: Whether to strip ANSI escape codes before parsing.
 
     Yields:
-        Parsed issue objects as they are processed.
+        IssueT: Parsed issue objects as they are processed.
 
     Examples:
         >>> def parse(line):
@@ -161,7 +161,7 @@ def stream_json_array_fallback(
         tool_name: Name of the tool for logging purposes.
 
     Yields:
-        Parsed issue objects.
+        IssueT: Parsed issue objects.
     """
     if not output or output.strip() in ("[]", "{}"):
         return
@@ -204,7 +204,7 @@ class StreamingParser:
     how individual items/lines are converted to issues.
 
     Attributes:
-        tool_name: Name of the tool for logging.
+        tool_name (str): Name of the tool for logging.
 
     Examples:
         >>> class MyStreamingParser(StreamingParser):
@@ -214,6 +214,8 @@ class StreamingParser:
         >>> for issue in parser.stream_json_lines(output):
         ...     print(issue)
     """
+
+    tool_name: str
 
     def __init__(self, tool_name: str = "tool") -> None:
         """Initialize streaming parser.
@@ -231,6 +233,9 @@ class StreamingParser:
         Args:
             item: Dictionary from JSON parsing.
 
+        Returns:
+            BaseIssue | None: Parsed issue or None if item should be skipped.
+
         Raises:
             NotImplementedError: If not overridden in subclass.
         """
@@ -243,6 +248,9 @@ class StreamingParser:
 
         Args:
             line: Text line to parse.
+
+        Returns:
+            BaseIssue | None: Parsed issue or None if line should be skipped.
 
         Raises:
             NotImplementedError: If not overridden in subclass.
@@ -259,7 +267,7 @@ class StreamingParser:
             output: String or iterable of lines to parse.
 
         Yields:
-            Parsed issues.
+            BaseIssue: Parsed issues.
         """
         yield from stream_json_lines(output, self.parse_item, self.tool_name)
 
@@ -275,7 +283,7 @@ class StreamingParser:
             strip_ansi: Whether to strip ANSI codes.
 
         Yields:
-            Parsed issues.
+            BaseIssue: Parsed issues.
         """
         yield from stream_text_lines(output, self.parse_line, strip_ansi)
 
@@ -289,7 +297,7 @@ class StreamingParser:
             output: String containing JSON array or JSON Lines.
 
         Yields:
-            Parsed issues.
+            BaseIssue: Parsed issues.
         """
         yield from stream_json_array_fallback(output, self.parse_item, self.tool_name)
 

@@ -15,7 +15,7 @@ def shellcheck_plugin() -> Generator[ShellcheckPlugin, None, None]:
     """Provide a ShellcheckPlugin instance for testing.
 
     Yields:
-        A ShellcheckPlugin instance with version check mocked.
+        ShellcheckPlugin: A ShellcheckPlugin instance with version check mocked.
     """
     with patch(
         "lintro.plugins.execution_preparation.verify_tool_version",

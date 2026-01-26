@@ -7,8 +7,7 @@ This document outlines the coding standards and best practices for the Lintro pr
 ### General Guidelines
 
 - Follow [PEP 8](https://peps.python.org/pep-0008/) for code style
-- Use [Darglint](https://github.com/terrencepreilly/darglint) for docstring argument
-  checking
+- Use [pydoclint](https://github.com/jsh9/pydoclint) for docstring argument checking
 - Use [Prettier](https://prettier.io/) for frontend code formatting
 
 ### Type Hints
@@ -195,7 +194,7 @@ lintro/
 │   ├── biome/
 │   ├── black/
 │   ├── clippy/
-│   ├── darglint/
+│   ├── pydoclint/
 │   ├── hadolint/
 │   ├── markdownlint/
 │   ├── mypy/
@@ -213,7 +212,7 @@ lintro/
 │       ├── tool_biome.py
 │       ├── tool_black.py
 │       ├── tool_clippy.py
-│       ├── tool_darglint.py
+│       ├── tool_pydoclint.py
 │       ├── tool_hadolint.py
 │       ├── tool_markdownlint.py
 │       ├── tool_mypy.py
@@ -280,7 +279,7 @@ feat: add support for mypy integration
 - Use meaningful test names that describe what is being tested
 
 ```python
-def test_darglint_tool_checks_docstrings_correctly():
+def test_pydoclint_tool_checks_docstrings_correctly():
     # Test implementation
     pass
 
@@ -472,7 +471,7 @@ from lintro.formatters.base_formatter import TableDescriptor
 from typing import List
 
 
-class DarglintTableDescriptor(TableDescriptor):
+class PydoclintTableDescriptor(TableDescriptor):
   def get_columns(self) -> List[str]:
     return ["File", "Line", "Code", "Message"]
 
@@ -538,8 +537,8 @@ formatted_output = format_issues(issues, output_format="plain")
 ## Example Usage
 
 ```python
-issues = parse_darglint_output(raw_output)
-print(format_darglint_issues(issues, style="markdown"))
+issues = parse_pydoclint_output(raw_output)
+print(format_pydoclint_issues(issues, style="markdown"))
 ```
 
 ---

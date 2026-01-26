@@ -14,7 +14,7 @@ test_samples/
     ├── python/                   # Python tool test files
     │   ├── ruff/                 # Ruff-specific samples
     │   ├── bandit/               # Bandit security linter samples
-    │   ├── darglint/             # Darglint docstring linter samples
+    │   ├── pydoclint/            # pydoclint docstring linter samples
     │   ├── mypy/                 # MyPy type checker samples
     │   └── pytest/               # Pytest test runner samples
     ├── javascript/               # JavaScript/TypeScript tool samples

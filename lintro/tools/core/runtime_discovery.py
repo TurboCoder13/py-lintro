@@ -42,7 +42,7 @@ TOOL_VERSION_COMMANDS: dict[str, list[str]] = {
     "black": ["black", "--version"],
     "mypy": ["mypy", "--version"],
     "bandit": ["bandit", "--version"],
-    "darglint": ["darglint", "--version"],
+    "pydoclint": ["pydoclint", "--version"],
     "yamllint": ["yamllint", "--version"],
     "pytest": ["pytest", "--version"],
     "biome": ["biome", "--version"],

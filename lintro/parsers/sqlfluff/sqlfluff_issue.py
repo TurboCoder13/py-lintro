@@ -13,6 +13,7 @@ class SqlfluffIssue(BaseIssue):
     """Represents an issue found by SQLFluff.
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         code: Rule code (e.g., L010, LT01).
         rule_name: Full rule name (e.g., capitalisation.keywords).
         end_line: End line number for multi-line issues.

@@ -17,7 +17,7 @@ def encode_body_as_json(body: str) -> str:
     """Encode comment body as JSON for GitHub API.
 
     Args:
-        body (str): The comment body text to encode.
+        body: The comment body text to encode.
 
     Returns:
         str: JSON-encoded body ready for API request.
@@ -29,7 +29,7 @@ def encode_file_as_json(file_path: str) -> str:
     """Encode file contents as JSON for GitHub API.
 
     Args:
-        file_path (str): Path to file containing comment body.
+        file_path: Path to file containing comment body.
 
     Returns:
         str: JSON-encoded body ready for API request.

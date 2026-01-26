@@ -32,7 +32,6 @@ def _get_all_tool_names() -> list[str]:
         "biome",
         "yamllint",
         "markdownlint",
-        "darglint",
         "bandit",
         "hadolint",
         "actionlint",

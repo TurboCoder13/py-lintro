@@ -41,8 +41,8 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "black": ["black"],
         "bandit": ["bandit"],
         "yamllint": ["yamllint"],
-        "darglint": ["darglint"],
         "sqlfluff": ["sqlfluff"],
+        "pydoclint": ["pydoclint"],
         # Python user tools - require module-based invocation
         "mypy": ["python", "-m", "mypy"],
         "pytest": ["python", "-m", "pytest"],

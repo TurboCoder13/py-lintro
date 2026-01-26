@@ -131,11 +131,6 @@ def test_format_tool_output_falls_back_to_raw_for_unknown_tool() -> None:
             "src/main.js",
         ),
         (
-            "darglint",
-            "src/main.py:10:1: DAR101 Missing docstring",
-            "src/main.py",
-        ),
-        (
             "markdownlint",
             "README.md:10: MD013 Line too long",
             "README.md",
@@ -164,7 +159,6 @@ def test_format_tool_output_falls_back_to_raw_for_unknown_tool() -> None:
         "hadolint",
         "actionlint",
         "biome",
-        "darglint",
         "markdownlint",
         "clippy",
         "pytest",

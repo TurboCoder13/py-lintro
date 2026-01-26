@@ -37,5 +37,5 @@ log_info "Testing Docker image - Version"
 docker run --rm py-lintro:latest lintro --version
 
 log_info "Testing Docker lintro script"
-# Note: darglint timeout increased for CI (Docker is slower than local)
-./scripts/docker/docker-lintro.sh check . --tool-options darglint:timeout=180
+# Note: pydoclint timeout increased for CI (Docker is slower than local)
+./scripts/docker/docker-lintro.sh check . --tool-options pydoclint:timeout=180

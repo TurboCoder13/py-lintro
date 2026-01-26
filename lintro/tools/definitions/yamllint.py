@@ -489,6 +489,9 @@ class YamllintPlugin(BaseToolPlugin):
             paths: List of file or directory paths (unused).
             options: Runtime options (unused).
 
+        Returns:
+            ToolResult: Never returns, always raises NotImplementedError.
+
         Raises:
             NotImplementedError: Yamllint does not support fixing issues.
         """

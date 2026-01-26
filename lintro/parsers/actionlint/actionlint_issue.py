@@ -11,6 +11,7 @@ class ActionlintIssue(BaseIssue):
     """Represents a single actionlint issue parsed from CLI output.
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         level: Severity level (e.g., "error", "warning").
         code: Optional rule/code identifier, when present.
     """

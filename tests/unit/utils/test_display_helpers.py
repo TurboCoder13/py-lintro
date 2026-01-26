@@ -33,7 +33,7 @@ def console_capture() -> Generator[tuple[list[str], Callable[..., None]], None, 
     """Provide a mock console function that captures output.
 
     Yields:
-        Tuple of (output list, mock console function).
+        tuple[list[str], Callable[..., None]]: Output list and mock console function.
     """
     output: list[str] = []
 

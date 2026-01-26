@@ -56,7 +56,7 @@ def patch_pytest_tool_for_check(
         prepare_execution_return: Return value for prepare_test_execution.
 
     Yields:
-        None
+        None: Context manager for patches.
     """
     with (
         patch.object(tool, "_get_executable_command", return_value=["pytest"]),
@@ -78,7 +78,7 @@ def sample_pytest_plugin() -> Generator[PytestPlugin, None, None]:
     Uses mocks to avoid filesystem operations during initialization.
 
     Yields:
-        A PytestPlugin instance.
+        PytestPlugin: A PytestPlugin instance.
     """
     from lintro.tools.definitions.pytest import PytestPlugin
 

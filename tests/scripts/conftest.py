@@ -1,13 +1,14 @@
 """Shared fixtures for CI script tests."""
 
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
 
 
 @pytest.fixture
-def temp_script_dir():
+def temp_script_dir() -> Generator[Path, None, None]:
     """Create a temporary directory with script testing setup.
 
     Yields:

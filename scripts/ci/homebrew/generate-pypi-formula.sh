@@ -34,7 +34,7 @@ VERSION="${1:?Version is required}"
 OUTPUT_FILE="${2:?Output file is required}"
 
 # Packages that require special handling (can't build from source in Homebrew)
-WHEEL_PACKAGES=("darglint" "pydantic_core")
+WHEEL_PACKAGES=("pydoclint" "pydantic_core")
 
 # Packages available as Homebrew formulae (use depends_on instead of bundling)
 HOMEBREW_PACKAGES=("bandit" "black" "mypy" "ruff" "yamllint")
@@ -111,11 +111,11 @@ echo "$RESOURCES" >"$TMPDIR/resources.txt"
 # Generate wheel resources for packages that can't build from source
 log_info "Generating wheel resources for special packages..."
 
-python3 "$SCRIPT_DIR/fetch_wheel_info.py" darglint \
+python3 "$SCRIPT_DIR/fetch_wheel_info.py" pydoclint \
 	--type universal \
-	--comment "darglint requires poetry to build - use wheel" \
-	>"$TMPDIR/darglint.txt" || {
-	log_error "Failed to fetch darglint wheel info"
+	--comment "pydoclint - use wheel for consistency" \
+	>"$TMPDIR/pydoclint.txt" || {
+	log_error "Failed to fetch pydoclint wheel info"
 	exit 1
 }
 
@@ -133,7 +133,7 @@ python3 "$SCRIPT_DIR/render_formula.py" \
 	--tarball-url "$TARBALL_URL" \
 	--tarball-sha "$TARBALL_SHA" \
 	--poet-resources "$TMPDIR/resources.txt" \
-	--darglint-resource "$TMPDIR/darglint.txt" \
+	--pydoclint-resource "$TMPDIR/pydoclint.txt" \
 	--pydantic-resource "$TMPDIR/pydantic.txt" \
 	--output "$OUTPUT_FILE"
 
