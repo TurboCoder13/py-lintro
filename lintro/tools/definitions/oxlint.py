@@ -114,8 +114,7 @@ class OxlintPlugin(BaseToolPlugin):
             quiet=quiet,
             verbose_fix_output=verbose_fix_output,
         )
-        for key, value in options.items():
-            self.options[key] = value
+        super().set_options(**options, **kwargs)
 
     def _create_timeout_result(
         self,
@@ -177,6 +176,7 @@ class OxlintPlugin(BaseToolPlugin):
         # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(paths, options)
         if ctx.should_skip:
+            # early_result is guaranteed non-None when should_skip is True
             return ctx.early_result  # type: ignore[return-value]
 
         # Build Oxlint command with JSON format
@@ -236,6 +236,7 @@ class OxlintPlugin(BaseToolPlugin):
             no_files_message="No files to fix.",
         )
         if ctx.should_skip:
+            # early_result is guaranteed non-None when should_skip is True
             return ctx.early_result  # type: ignore[return-value]
 
         # Get Lintro config injection args if available
