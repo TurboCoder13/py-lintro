@@ -11,6 +11,7 @@ class LintroToolConfig(BaseModel):
     an explicit config source path.
 
     Attributes:
+        model_config: Pydantic model configuration (class-level).
         enabled: Whether the tool is enabled.
         config_source: Optional explicit path to native config file.
             If not set, tool uses its own config discovery.

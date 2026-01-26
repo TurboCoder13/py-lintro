@@ -196,20 +196,7 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 
 [tool.ruff.lint]
-select = [
-  "E",
-  "F",
-  "W",
-  "I",
-  "COM",
-  "N",
-  "D",
-  "DOC",
-  "UP",
-  "B",
-  "C4",
-  "SIM",
-]
+select = ["E", "F", "W", "I", "COM", "N", "D", "DOC", "UP", "B", "C4", "SIM"]
 ignore = []
 preview = true
 explicit-preview-rules = true
