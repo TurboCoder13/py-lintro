@@ -94,13 +94,9 @@ def test_tool_manager_get_tool_execution_order_with_conflicts() -> None:
     """Verify conflict resolution in execution order."""
     tm = ToolManager()
 
-    # Get tool instances to set conflicts
-    ruff_tool = tm.get_tool(ToolName.RUFF)
-    black_tool = tm.get_tool(ToolName.BLACK)
-
-    # Save original conflicts
-    ruff_tool.definition.conflicts_with.copy()
-    black_tool.definition.conflicts_with.copy()
+    # Verify tools exist before testing conflict resolution
+    assert tm.get_tool(ToolName.RUFF) is not None
+    assert tm.get_tool(ToolName.BLACK) is not None
 
     try:
         # Temporarily modify conflicts (note: ToolDefinition is frozen, so we need
