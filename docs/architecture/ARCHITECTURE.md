@@ -290,9 +290,9 @@ Hierarchical configuration with clear precedence.
 name: ruff
 type: linter
 languages: [python]
-file_patterns: ['*.py', '*.pyi']
-check_command: ['ruff', 'check', '--output-format=json']
-fix_command: ['ruff', 'check', '--fix', '--output-format=json']
+file_patterns: ["*.py", "*.pyi"]
+check_command: ["ruff", "check", "--output-format=json"]
+fix_command: ["ruff", "check", "--fix", "--output-format=json"]
 parser: json_lines
 field_mapping:
   code: code
