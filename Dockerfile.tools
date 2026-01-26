@@ -113,7 +113,6 @@ RUN bun --version && \
     rustc --version && \
     actionlint --version && \
     bandit --version && \
-    biome --version && \
     black --version && \
     cargo audit --version && \
     cargo clippy --version && \
@@ -122,6 +121,8 @@ RUN bun --version && \
     hadolint --version && \
     markdownlint-cli2 --version && \
     mypy --version && \
+    oxfmt --version && \
+    oxlint --version && \
     prettier --version && \
     ruff --version && \
     semgrep --version && \

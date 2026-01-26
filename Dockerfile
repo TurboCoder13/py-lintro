@@ -105,10 +105,12 @@ RUN printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/prettier/bi
     chmod +x /usr/local/bin/prettier && \
     printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/markdownlint-cli2/markdownlint-cli2-bin.mjs "$@"\n' > /usr/local/bin/markdownlint-cli2 && \
     chmod +x /usr/local/bin/markdownlint-cli2 && \
-    printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/@biomejs/biome/bin/biome "$@"\n' > /usr/local/bin/biome && \
-    chmod +x /usr/local/bin/biome && \
     printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/typescript/bin/tsc "$@"\n' > /usr/local/bin/tsc && \
-    chmod +x /usr/local/bin/tsc
+    chmod +x /usr/local/bin/tsc && \
+    printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/oxlint/bin/oxlint "$@"\n' > /usr/local/bin/oxlint && \
+    chmod +x /usr/local/bin/oxlint && \
+    printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/oxfmt/bin/oxfmt "$@"\n' > /usr/local/bin/oxfmt && \
+    chmod +x /usr/local/bin/oxfmt
 
 # Copy Python virtual environment and application from builder
 COPY --from=builder /app/.venv /app/.venv
