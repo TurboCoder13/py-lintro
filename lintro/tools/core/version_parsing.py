@@ -36,6 +36,7 @@ TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
     ToolName.GITLEAKS,
     ToolName.HADOLINT,
     ToolName.PRETTIER,
+    ToolName.PYDOCLINT,
     ToolName.BIOME,
     ToolName.ACTIONLINT,
     ToolName.RUSTFMT,

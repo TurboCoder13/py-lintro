@@ -264,6 +264,7 @@ def test_get_all_tool_versions(mock_run: MagicMock) -> None:
         "mypy",
         "pytest",
         "prettier",
+        "pydoclint",
         "biome",
         "hadolint",
         "actionlint",
