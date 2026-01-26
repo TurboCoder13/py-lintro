@@ -127,7 +127,16 @@ file.css"""
     assert_that(result).is_length(10)
     extensions = [issue.file.split(".")[-1] for issue in result]
     assert_that(extensions).contains(
-        "js", "mjs", "cjs", "jsx", "ts", "mts", "cts", "tsx", "json", "css",
+        "js",
+        "mjs",
+        "cjs",
+        "jsx",
+        "ts",
+        "mts",
+        "cts",
+        "tsx",
+        "json",
+        "css",
     )
 
 
