@@ -22,6 +22,7 @@ from lintro.plugins.registry import register_tool
 from lintro.tools.core.option_validators import (
     filter_none_options,
     validate_bool,
+    validate_list,
 )
 
 # Constants for oxfmt configuration
@@ -88,18 +89,27 @@ class OxfmtPlugin(BaseToolPlugin):
             default_timeout=OXFMT_DEFAULT_TIMEOUT,
         )
 
-    def set_options(
+    def set_options(  # type: ignore[override]
         self,
+        exclude_patterns: list[str] | None = None,
+        include_venv: bool = False,
         verbose_fix_output: bool | None = None,
         **kwargs: Any,
     ) -> None:
         """Set oxfmt-specific options.
 
         Args:
+            exclude_patterns: List of patterns to exclude.
+            include_venv: Whether to include virtual environment directories.
             verbose_fix_output: If True, include raw oxfmt output in fix().
             **kwargs: Other tool options.
         """
+        validate_list(exclude_patterns, "exclude_patterns")
         validate_bool(verbose_fix_output, "verbose_fix_output")
+
+        if exclude_patterns is not None:
+            self.exclude_patterns = exclude_patterns.copy()
+        self.include_venv = include_venv
 
         options = filter_none_options(
             verbose_fix_output=verbose_fix_output,
@@ -130,10 +140,10 @@ class OxfmtPlugin(BaseToolPlugin):
         )
         timeout_issue = OxfmtIssue(
             file="execution",
-            line=0,
+            line=1,
             code="TIMEOUT",
             message=timeout_msg,
-            column=0,
+            column=1,
         )
         combined_issues = (initial_issues or []) + [timeout_issue]
         return ToolResult(
@@ -357,15 +367,12 @@ class OxfmtPlugin(BaseToolPlugin):
         # Success means no remaining issues
         success: bool = remaining_count == 0
 
-        # Combine initial and remaining issues
-        all_issues = (initial_issues or []) + (remaining_issues or [])
-
         return ToolResult(
             name=self.definition.name,
             success=success,
             output=final_output,
             issues_count=remaining_count,
-            issues=all_issues,
+            issues=remaining_issues or [],
             initial_issues_count=initial_count,
             fixed_issues_count=fixed_count,
             remaining_issues_count=remaining_count,
