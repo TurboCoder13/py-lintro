@@ -277,8 +277,7 @@ def extract_version_from_output(output: str, tool_name: str | ToolName) -> str |
             return match.group(1)
 
     elif tool_name in TOOLS_WITH_SIMPLE_VERSION_PATTERN:
-        # Tools that output simple version numbers: BANDIT, HADOLINT, PRETTIER,
-        # BIOME, ACTIONLINT, SEMGREP, SHFMT, SQLFLUFF
+        # Tools that output simple version numbers (see TOOLS_WITH_SIMPLE_VERSION_PATTERN)
         match = re.search(VERSION_NUMBER_PATTERN, output)
         if match:
             return match.group(1)

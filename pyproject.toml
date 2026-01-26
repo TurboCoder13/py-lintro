@@ -206,12 +206,11 @@ select = [
   "D",
   "DOC",
   "UP",
-  "ANN",
   "B",
   "C4",
   "SIM",
 ]
-ignore = ["ANN"]
+ignore = []
 preview = true
 explicit-preview-rules = true
 

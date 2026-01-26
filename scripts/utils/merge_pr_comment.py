@@ -76,9 +76,9 @@ def merge_comment_bodies(
         )
 
         if place_new_above:
-            merged = f"{marker_line}\n\n{collapsed_prev}\n{normalized_new}\n"
-        else:
             merged = f"{marker_line}\n\n{normalized_new}\n\n{collapsed_prev}\n"
+        else:
+            merged = f"{marker_line}\n\n{collapsed_prev}\n{normalized_new}\n"
     else:
         merged = f"{marker_line}\n\n{normalized_new}\n"
 
