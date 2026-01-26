@@ -78,7 +78,7 @@ def test_compare_versions(version1: str, version2: str, expected: int) -> None:
         ("bandit", "__main__.py 1.8.6", "1.8.6"),
         ("hadolint", "Haskell Dockerfile Linter 2.14.0", "2.14.0"),
         ("actionlint", "actionlint 1.7.5", "1.7.5"),
-        ("darglint", "1.8.1", "1.8.1"),
+        ("pydoclint", "pydoclint 0.5.9", "0.5.9"),
         ("semgrep", "semgrep 1.148.0", "1.148.0"),
         ("ruff", "ruff 0.14.4", "0.14.4"),
         ("yamllint", "yamllint 1.37.1", "1.37.1"),

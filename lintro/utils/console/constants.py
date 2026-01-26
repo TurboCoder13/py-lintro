@@ -15,7 +15,7 @@ from typing import Any
 
 TOOL_EMOJIS: dict[str, str] = {
     "ruff": "🦀",
-    "darglint": "📝",
+    "pydoclint": "📝",
     "hadolint": "🐳",
     "yamllint": "📄",
     "black": "🖤",

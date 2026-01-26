@@ -121,8 +121,8 @@ def test_format_tool_output_falls_back_to_raw_for_unknown_tool() -> None:
             ".github/workflows/ci.yml",
         ),
         (
-            "darglint",
-            "src/main.py:10:1: DAR101 Missing docstring",
+            "pydoclint",
+            "src/main.py:10:1: DOC101 Missing docstring",
             "src/main.py",
         ),
         (
@@ -152,7 +152,7 @@ def test_format_tool_output_falls_back_to_raw_for_unknown_tool() -> None:
         "black",
         "hadolint",
         "actionlint",
-        "darglint",
+        "pydoclint",
         "markdownlint",
         "clippy",
         "pytest",
