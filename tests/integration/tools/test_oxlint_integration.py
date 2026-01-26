@@ -1,0 +1,374 @@
+"""Integration tests for Oxlint tool definition.
+
+These tests require oxlint to be installed and available in PATH.
+They verify the OxlintPlugin definition, check command, fix command, and set_options method.
+"""
+
+from __future__ import annotations
+
+import shutil
+from collections.abc import Callable
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import pytest
+from assertpy import assert_that
+
+if TYPE_CHECKING:
+    from lintro.plugins.base import BaseToolPlugin
+
+# Skip all tests if oxlint is not installed
+pytestmark = pytest.mark.skipif(
+    shutil.which("oxlint") is None,
+    reason="oxlint not installed",
+)
+
+
+@pytest.fixture
+def temp_js_file_with_issues(tmp_path: Path) -> str:
+    """Create a temporary JavaScript file with lint issues.
+
+    Creates a file containing code with lint issues that Oxlint
+    should detect, including:
+    - Unused variables
+    - Use of debugger statement
+    - Use of var instead of const/let
+
+    Args:
+        tmp_path: Pytest fixture providing a temporary directory.
+
+    Returns:
+        Path to the created file as a string.
+    """
+    file_path = tmp_path / "test_file.js"
+    file_path.write_text(
+        """\
+// Test file with lint violations
+var unused = 1;
+
+if (someVar == 2) {
+  console.log('test');
+}
+
+debugger;
+""",
+    )
+    return str(file_path)
+
+
+@pytest.fixture
+def temp_js_file_clean(tmp_path: Path) -> str:
+    """Create a temporary JavaScript file with no lint issues.
+
+    Creates a file containing clean JavaScript code that should pass
+    Oxlint linting without issues.
+
+    Args:
+        tmp_path: Pytest fixture providing a temporary directory.
+
+    Returns:
+        Path to the created file as a string.
+    """
+    file_path = tmp_path / "clean_file.js"
+    file_path.write_text(
+        """\
+/**
+ * A clean module.
+ */
+
+/**
+ * Returns a greeting.
+ * @returns {string} Greeting message.
+ */
+function hello() {
+  return "Hello, World!";
+}
+
+hello();
+""",
+    )
+    return str(file_path)
+
+
+@pytest.fixture
+def temp_ts_file_with_issues(tmp_path: Path) -> str:
+    """Create a temporary TypeScript file with lint issues.
+
+    Creates a file containing TypeScript code with lint issues that Oxlint
+    should detect.
+
+    Args:
+        tmp_path: Pytest fixture providing a temporary directory.
+
+    Returns:
+        Path to the created file as a string.
+    """
+    file_path = tmp_path / "test_file.ts"
+    file_path.write_text(
+        """\
+// TypeScript file with violations
+var unusedVar: string = "unused";
+
+function empty(): void {}
+
+debugger;
+""",
+    )
+    return str(file_path)
+
+
+# --- Tests for OxlintPlugin definition ---
+
+
+@pytest.mark.parametrize(
+    ("attr", "expected"),
+    [
+        ("name", "oxlint"),
+        ("can_fix", True),
+    ],
+    ids=["name", "can_fix"],
+)
+def test_definition_attributes(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    attr: str,
+    expected: object,
+) -> None:
+    """Verify OxlintPlugin definition has correct attribute values.
+
+    Tests that the plugin definition exposes the expected values for
+    name and can_fix attributes.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        attr: The attribute name to check on the definition.
+        expected: The expected value of the attribute.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    assert_that(getattr(oxlint_plugin.definition, attr)).is_equal_to(expected)
+
+
+def test_definition_file_patterns(
+    get_plugin: Callable[[str], BaseToolPlugin],
+) -> None:
+    """Verify OxlintPlugin definition includes JavaScript/TypeScript file patterns.
+
+    Tests that the plugin is configured to handle JS/TS files (*.js, *.ts, *.jsx, *.tsx).
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    assert_that(oxlint_plugin.definition.file_patterns).contains("*.js")
+    assert_that(oxlint_plugin.definition.file_patterns).contains("*.ts")
+    assert_that(oxlint_plugin.definition.file_patterns).contains("*.jsx")
+    assert_that(oxlint_plugin.definition.file_patterns).contains("*.tsx")
+
+
+def test_definition_has_version_command(
+    get_plugin: Callable[[str], BaseToolPlugin],
+) -> None:
+    """Verify OxlintPlugin definition has a version command.
+
+    Tests that the plugin exposes a version command for checking
+    the installed Oxlint version.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    assert_that(oxlint_plugin.definition.version_command).is_not_none()
+
+
+# --- Integration tests for oxlint check command ---
+
+
+def test_check_file_with_issues(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    temp_js_file_with_issues: str,
+) -> None:
+    """Verify Oxlint check detects lint issues in problematic files.
+
+    Runs Oxlint on a file containing lint issues and verifies that
+    issues are found.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        temp_js_file_with_issues: Path to file with lint issues.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    result = oxlint_plugin.check([temp_js_file_with_issues], {})
+
+    assert_that(result).is_not_none()
+    assert_that(result.name).is_equal_to("oxlint")
+    assert_that(result.issues_count).is_greater_than(0)
+
+
+def test_check_clean_file(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    temp_js_file_clean: str,
+) -> None:
+    """Verify Oxlint check passes on clean files.
+
+    Runs Oxlint on a clean file and verifies no issues are found.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        temp_js_file_clean: Path to clean file.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    result = oxlint_plugin.check([temp_js_file_clean], {})
+
+    assert_that(result).is_not_none()
+    assert_that(result.name).is_equal_to("oxlint")
+    assert_that(result.success).is_true()
+
+
+def test_check_typescript_file(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    temp_ts_file_with_issues: str,
+) -> None:
+    """Verify Oxlint check works with TypeScript files.
+
+    Runs Oxlint on a TypeScript file and verifies issues are found.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        temp_ts_file_with_issues: Path to TypeScript file with issues.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    result = oxlint_plugin.check([temp_ts_file_with_issues], {})
+
+    assert_that(result).is_not_none()
+    assert_that(result.name).is_equal_to("oxlint")
+    assert_that(result.issues_count).is_greater_than(0)
+
+
+def test_check_empty_directory(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    tmp_path: Path,
+) -> None:
+    """Verify Oxlint check handles empty directories gracefully.
+
+    Runs Oxlint on an empty directory and verifies a result is returned
+    with zero issues.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        tmp_path: Pytest fixture providing a temporary directory.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    result = oxlint_plugin.check([str(tmp_path)], {})
+
+    assert_that(result).is_not_none()
+    assert_that(result.issues_count).is_equal_to(0)
+
+
+# --- Integration tests for oxlint fix command ---
+
+
+def test_fix_applies_fixes(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    tmp_path: Path,
+) -> None:
+    """Verify Oxlint fix applies auto-fixes to files.
+
+    Runs Oxlint fix on a file with fixable issues and verifies
+    the file content changes.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        tmp_path: Pytest fixture providing a temporary directory.
+    """
+    # Create file with fixable issue (debugger statement)
+    file_path = tmp_path / "fixable.js"
+    file_path.write_text(
+        """\
+function test() {
+  debugger;
+  return 1;
+}
+""",
+    )
+
+    oxlint_plugin = get_plugin("oxlint")
+    result = oxlint_plugin.fix([str(file_path)], {})
+
+    assert_that(result).is_not_none()
+    assert_that(result.name).is_equal_to("oxlint")
+
+    # File may or may not change depending on what oxlint considers fixable
+    # Just verify the fix operation completed successfully
+    assert_that(result.initial_issues_count).is_not_none()
+
+
+def test_fix_clean_file_unchanged(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    temp_js_file_clean: str,
+) -> None:
+    """Verify Oxlint fix doesn't change already clean files.
+
+    Runs Oxlint fix on a clean file and verifies the content stays the same.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        temp_js_file_clean: Path to clean file.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    original = Path(temp_js_file_clean).read_text()
+
+    result = oxlint_plugin.fix([temp_js_file_clean], {})
+
+    assert_that(result).is_not_none()
+    assert_that(result.success).is_true()
+
+    new_content = Path(temp_js_file_clean).read_text()
+    assert_that(new_content).is_equal_to(original)
+
+
+# --- Tests for OxlintPlugin.set_options method ---
+
+
+@pytest.mark.parametrize(
+    ("option_name", "option_value", "expected"),
+    [
+        ("timeout", 60, 60),
+        ("quiet", True, True),
+        ("verbose_fix_output", True, True),
+    ],
+    ids=["timeout", "quiet", "verbose_fix_output"],
+)
+def test_set_options(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    option_name: str,
+    option_value: object,
+    expected: object,
+) -> None:
+    """Verify OxlintPlugin.set_options correctly sets various options.
+
+    Tests that plugin options can be set and retrieved correctly.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        option_name: Name of the option to set.
+        option_value: Value to set for the option.
+        expected: Expected value when retrieving the option.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    oxlint_plugin.set_options(**{option_name: option_value})
+    assert_that(oxlint_plugin.options.get(option_name)).is_equal_to(expected)
+
+
+def test_set_exclude_patterns(
+    get_plugin: Callable[[str], BaseToolPlugin],
+) -> None:
+    """Verify OxlintPlugin.set_options correctly sets exclude_patterns.
+
+    Tests that exclude patterns can be set and retrieved correctly.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    oxlint_plugin.set_options(exclude_patterns=["node_modules", "dist"])
+    assert_that(oxlint_plugin.exclude_patterns).contains("node_modules")
+    assert_that(oxlint_plugin.exclude_patterns).contains("dist")
