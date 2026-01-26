@@ -58,7 +58,7 @@ class OxfmtPlugin(BaseToolPlugin):
     """Oxfmt code formatter plugin.
 
     This plugin integrates oxfmt with Lintro for formatting
-    JavaScript, TypeScript, CSS, HTML, JSON, YAML, and more.
+    JavaScript, TypeScript, CSS, HTML, JSON, Markdown, and more.
     """
 
     @property
