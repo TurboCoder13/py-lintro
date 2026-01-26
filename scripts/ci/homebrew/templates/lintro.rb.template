@@ -62,6 +62,11 @@ class Lintro < Formula
 
     # Install lintro itself
     venv.pip_install_and_link buildpath
+
+    # Install oxlint and oxfmt via npm (node dependency provides npm)
+    system "npm", "install", "-g", "--prefix", libexec, "oxlint", "oxfmt"
+    bin.install_symlink Dir[libexec/"bin/oxlint"]
+    bin.install_symlink Dir[libexec/"bin/oxfmt"]
   end
 
   def caveats
@@ -73,8 +78,6 @@ class Lintro < Formula
         - black - Python code formatter
         - mypy - Python type checker
         - bandit - Python security linter
-        - oxlint - JavaScript/TypeScript linter (Rust-based, 50-100x faster than ESLint)
-        - oxfmt - JavaScript/TypeScript formatter (30x faster than Prettier)
         - clippy - Rust linter (via rust)
         - rustfmt - Rust formatter (via rust)
         - hadolint - Dockerfile linter
@@ -88,6 +91,12 @@ class Lintro < Formula
         - shfmt - Shell script formatter
         - sqlfluff - SQL linter and formatter
         - taplo - TOML linter and formatter
+        - clippy - Rust linter (via rust)
+        - rustfmt - Rust formatter (via rust)
+
+      Included tools (installed via npm):
+        - oxlint - JavaScript/TypeScript linter (Rust-based)
+        - oxfmt - JavaScript/TypeScript formatter
 
       Bundled tools:
         - pydoclint - Python docstring linter
