@@ -57,37 +57,37 @@ def test_with_native_configs_creates_all_files() -> None:
 
         # Check all files were created
         assert_that(Path(".lintro-config.yaml").exists()).is_true()
-        assert_that(Path(".prettierrc.json").exists()).is_true()
-        assert_that(Path(".prettierignore").exists()).is_true()
         assert_that(Path(".markdownlint-cli2.jsonc").exists()).is_true()
 
 
-def test_prettierignore_has_correct_content() -> None:
-    """Test that .prettierignore has correct content."""
+def test_markdownlint_config_has_correct_content() -> None:
+    """Test that .markdownlint-cli2.jsonc has correct content."""
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(init_command, ["--with-native-configs"])
         assert_that(result.exit_code).is_equal_to(0)
 
-        content = Path(".prettierignore").read_text()
-        assert_that(content).contains("node_modules")
-        assert_that(content).contains(".venv")
-        assert_that(content).contains("dist")
+        import json
+
+        content = Path(".markdownlint-cli2.jsonc").read_text()
+        data = json.loads(content)
+        assert_that(data).contains("config")
+        assert_that(data["config"]).contains("MD013")
 
 
 def test_native_configs_skips_existing_without_force() -> None:
     """Test that native configs are skipped if they exist without --force."""
     runner = CliRunner()
     with runner.isolated_filesystem():
-        # Create existing prettier config
-        Path(".prettierrc.json").write_text('{"existing": true}')
+        # Create existing markdownlint config
+        Path(".markdownlint-cli2.jsonc").write_text('{"existing": true}')
 
         result = runner.invoke(init_command, ["--with-native-configs"])
         assert_that(result.exit_code).is_equal_to(0)
-        assert_that(result.output).contains("Skipped .prettierrc.json")
+        assert_that(result.output).contains("Skipped .markdownlint-cli2.jsonc")
 
         # Original content should be preserved
-        content = Path(".prettierrc.json").read_text()
+        content = Path(".markdownlint-cli2.jsonc").read_text()
         assert_that(content).is_equal_to('{"existing": true}')
 
 
@@ -100,8 +100,6 @@ def test_output_shows_all_created_files() -> None:
         # Should show multiple files were created
         assert_that(result.output).matches(r"Created \d+ files")
         assert_that(result.output).contains(".lintro-config.yaml")
-        assert_that(result.output).contains(".prettierrc.json")
-        assert_that(result.output).contains(".prettierignore")
         assert_that(result.output).contains(".markdownlint-cli2.jsonc")
 
 
