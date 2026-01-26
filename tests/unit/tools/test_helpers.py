@@ -245,7 +245,7 @@ def patch_plugin_for_check_test(
     files: list[str] | None = None,
     timeout: int = 30,
     cwd: str = "/test/project",
-) -> Generator[MagicMock]:
+) -> Generator[MagicMock, None, None]:
     """Context manager for patching a plugin to test the check method.
 
     This helper patches _prepare_execution and _run_subprocess to allow
@@ -259,7 +259,7 @@ def patch_plugin_for_check_test(
         cwd: Working directory for execution context.
 
     Yields:
-        The mock execution context.
+        MagicMock: The mock execution context.
 
     Example:
         with patch_plugin_for_check_test(ruff_plugin, (True, "")) as ctx:
@@ -290,7 +290,7 @@ def patch_plugin_for_fix_test(
     files: list[str] | None = None,
     timeout: int = 30,
     cwd: str = "/test/project",
-) -> Generator[MagicMock]:
+) -> Generator[MagicMock, None, None]:
     """Context manager for patching a plugin to test the fix method.
 
     Similar to patch_plugin_for_check_test but configured for fix operations.
@@ -303,7 +303,7 @@ def patch_plugin_for_fix_test(
         cwd: Working directory for execution context.
 
     Yields:
-        The mock execution context.
+        MagicMock: The mock execution context.
 
     Example:
         with patch_plugin_for_fix_test(ruff_plugin, (True, "1 fixed")) as ctx:

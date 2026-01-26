@@ -16,7 +16,7 @@ from lintro.utils.output import OutputManager
 
 
 @pytest.fixture
-def temp_output_dir() -> Generator[str]:
+def temp_output_dir() -> Generator[str, None, None]:
     """Provide a temporary directory path and clean up afterwards.
 
     Yields:

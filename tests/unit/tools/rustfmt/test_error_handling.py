@@ -115,10 +115,10 @@ def test_fix_with_timeout_on_fix_command(
             cwd: Working directory.
 
         Returns:
-            Tuple of (success, output).
+            tuple[bool, str]: Tuple of (success, output).
 
         Raises:
-            TimeoutExpired: On second call (fix command).
+            subprocess.TimeoutExpired: On second call (fix command).
         """
         nonlocal call_count
         call_count += 1
@@ -173,10 +173,10 @@ def test_fix_with_timeout_on_verification(
             cwd: Working directory.
 
         Returns:
-            Tuple of (success, output).
+            tuple[bool, str]: Tuple of (success, output).
 
         Raises:
-            TimeoutExpired: On third call (verification).
+            subprocess.TimeoutExpired: On third call (verification).
         """
         nonlocal call_count
         call_count += 1

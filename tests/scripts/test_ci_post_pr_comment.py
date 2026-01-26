@@ -49,7 +49,7 @@ def test_script_help_output(ci_script_path: Path) -> None:
     """Test that the script displays help when requested.
 
     Args:
-        ci_script_path (Path): Path to the script being tested.
+        ci_script_path: Path to the script being tested.
     """
     result = subprocess.run(
         [str(ci_script_path), "--help"],
@@ -68,7 +68,7 @@ def test_script_help_short_flag(ci_script_path: Path) -> None:
     """Test that the script displays help with -h flag.
 
     Args:
-        ci_script_path (Path): Path to the script being tested.
+        ci_script_path: Path to the script being tested.
     """
     result = subprocess.run(
         [str(ci_script_path), "-h"],
@@ -85,7 +85,7 @@ def test_script_exits_when_not_in_pr_context(ci_script_path: Path) -> None:
     """Test that script exits gracefully when not in PR context.
 
     Args:
-        ci_script_path (Path): Path to the script being tested.
+        ci_script_path: Path to the script being tested.
     """
     # Create a temporary comment file
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
@@ -117,7 +117,7 @@ def test_script_fails_with_missing_comment_file(ci_script_path: Path) -> None:
     """Test that script fails when comment file doesn't exist.
 
     Args:
-        ci_script_path (Path): Path to the script being tested.
+        ci_script_path: Path to the script being tested.
     """
     # Set up minimal PR context environment
     env = os.environ.copy()
@@ -148,7 +148,7 @@ def test_script_uses_default_comment_file(ci_script_path: Path) -> None:
     """Test that script uses default comment file when none specified.
 
     Args:
-        ci_script_path (Path): Path to the script being tested.
+        ci_script_path: Path to the script being tested.
     """
     # Create default comment file
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -203,8 +203,8 @@ def test_script_integrates_with_python_utilities(
     arguments.
 
     Args:
-        ci_script_path (Path): Path to the script being tested.
-        sample_data_dir (Path): Path to test sample files.
+        ci_script_path: Path to the script being tested.
+        sample_data_dir: Path to test sample files.
     """
     # Create a test comment file
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
@@ -260,7 +260,7 @@ def test_script_syntax_check(ci_script_path: Path) -> None:
     """Test that the script has valid bash syntax.
 
     Args:
-        ci_script_path (Path): Path to the script being tested.
+        ci_script_path: Path to the script being tested.
 
     Raises:
         AssertionError: If the script has syntax errors.
@@ -280,7 +280,7 @@ def test_script_has_proper_shebang(ci_script_path: Path) -> None:
     """Test that the script has proper shebang line.
 
     Args:
-        ci_script_path (Path): Path to the script being tested.
+        ci_script_path: Path to the script being tested.
     """
     with open(ci_script_path) as f:
         first_line = f.readline().strip()
@@ -293,7 +293,7 @@ def test_script_sources_utilities(ci_script_path: Path) -> None:
     """Test that the script sources the required utilities.
 
     Args:
-        ci_script_path (Path): Path to the script being tested.
+        ci_script_path: Path to the script being tested.
     """
     content = ci_script_path.read_text()
 
@@ -311,7 +311,7 @@ def test_script_handles_marker_logic(ci_script_path: Path) -> None:
     """Test that the script contains proper marker handling logic.
 
     Args:
-        ci_script_path (Path): Path to the script being tested.
+        ci_script_path: Path to the script being tested.
     """
     content = ci_script_path.read_text()
 

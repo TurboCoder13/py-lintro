@@ -30,7 +30,7 @@ def mock_run_lint_tools_simple() -> Generator[MagicMock, None, None]:
     """Mock the run_lint_tools_simple function used by check/format commands.
 
     Yields:
-        A MagicMock instance for the mocked function.
+        MagicMock: A MagicMock instance for the mocked function.
     """
     with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock_check:
         with patch(
@@ -47,7 +47,7 @@ def mock_run_lint_tools_check() -> Generator[MagicMock, None, None]:
     """Mock run_lint_tools_simple specifically for check command.
 
     Yields:
-        A MagicMock instance for the mocked check function.
+        MagicMock: A MagicMock instance for the mocked check function.
     """
     with patch("lintro.cli_utils.commands.check.run_lint_tools_simple") as mock:
         mock.return_value = EXIT_SUCCESS
@@ -59,7 +59,7 @@ def mock_run_lint_tools_format() -> Generator[MagicMock, None, None]:
     """Mock run_lint_tools_simple specifically for format command.
 
     Yields:
-        A MagicMock instance for the mocked format function.
+        MagicMock: A MagicMock instance for the mocked format function.
     """
     with patch("lintro.cli_utils.commands.format.run_lint_tools_simple") as mock:
         mock.return_value = EXIT_SUCCESS
@@ -71,7 +71,7 @@ def mock_tool_registry() -> Generator[MagicMock, None, None]:
     """Mock ToolRegistry with common tools.
 
     Yields:
-        A MagicMock instance for the ToolRegistry.
+        MagicMock: A MagicMock instance for the ToolRegistry.
     """
     with patch("lintro.plugins.registry.ToolRegistry") as mock:
         mock.get_names.return_value = ["ruff", "black", "mypy", "pytest"]
@@ -85,7 +85,7 @@ def mock_subprocess_success() -> Generator[MagicMock, None, None]:
     """Mock successful subprocess execution.
 
     Yields:
-        A MagicMock instance for subprocess.run.
+        MagicMock: A MagicMock instance for subprocess.run.
     """
     with patch("subprocess.run") as mock:
         mock.return_value = MagicMock(

@@ -21,7 +21,7 @@ def mock_manager_dependencies() -> Generator[None, None, None]:
     allowing UnifiedConfigManager to be instantiated without filesystem access.
 
     Yields:
-        Context manager for mocking config dependencies.
+        None: Context manager for mocking config dependencies.
     """
     with (
         patch(

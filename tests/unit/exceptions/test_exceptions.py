@@ -112,11 +112,7 @@ def test_exception_args_preserved() -> None:
 
 
 def test_exception_chaining() -> None:
-    """Test exceptions can be chained with __cause__.
-
-    Raises:
-        original: The original exception being raised.
-    """
+    """Test exceptions can be chained with __cause__."""
     original = ValueError("original error")
     try:
         try:

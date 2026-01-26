@@ -18,7 +18,7 @@ def sqlfluff_plugin() -> Generator[SqlfluffPlugin, None, None]:
     to prevent version check failures during check()/fix() calls.
 
     Yields:
-        A SqlfluffPlugin instance with version checking disabled.
+        SqlfluffPlugin: A SqlfluffPlugin instance with version checking disabled.
     """
     with patch(
         "lintro.plugins.execution_preparation.verify_tool_version",

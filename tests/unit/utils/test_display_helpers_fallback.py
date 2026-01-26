@@ -37,7 +37,7 @@ def console_capture() -> Generator[tuple[list[str], Callable[..., None]], None, 
     """Provide a mock console function that captures output.
 
     Yields:
-        Tuple of (output list, mock console function).
+        tuple[list[str], Callable[..., None]]: Output list and mock console function.
     """
     output: list[str] = []
 
@@ -52,7 +52,7 @@ def mock_click_unavailable() -> Generator[None, None, None]:
     """Mock import to make click unavailable.
 
     Yields:
-        None after setting up the mock import.
+        None: After setting up the mock import.
     """
     original_import = builtins.__import__
 

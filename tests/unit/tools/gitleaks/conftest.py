@@ -15,7 +15,7 @@ def gitleaks_plugin() -> Generator[GitleaksPlugin, None, None]:
     """Provide a GitleaksPlugin instance for testing.
 
     Yields:
-        A GitleaksPlugin instance with version check mocked.
+        GitleaksPlugin: A GitleaksPlugin instance with version check mocked.
     """
     with patch(
         "lintro.plugins.execution_preparation.verify_tool_version",

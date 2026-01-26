@@ -16,7 +16,7 @@ def reset_registry() -> Generator[None, None, None]:
     """Reset the parser registry before and after each test.
 
     Yields:
-        None after clearing the registry and before restoring.
+        None: After clearing the registry and before restoring.
     """
     # Store original parsers
     original_parsers = ParserRegistry._parsers.copy()
