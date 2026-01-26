@@ -21,7 +21,7 @@ class Lintro < Formula
   # CLI tools installed via Homebrew
   depends_on "actionlint"
   depends_on "bandit"
-  depends_on "biome"
+  depends_on "node"  # Required for oxlint and oxfmt via npm
   depends_on "black"
   depends_on "gitleaks"
   depends_on "hadolint"
@@ -73,7 +73,8 @@ class Lintro < Formula
         - black - Python code formatter
         - mypy - Python type checker
         - bandit - Python security linter
-        - biome - JavaScript/TypeScript linter and formatter
+        - oxlint - JavaScript/TypeScript linter (Rust-based, 50-100x faster than ESLint)
+        - oxfmt - JavaScript/TypeScript formatter (30x faster than Prettier)
         - clippy - Rust linter (via rust)
         - rustfmt - Rust formatter (via rust)
         - hadolint - Dockerfile linter

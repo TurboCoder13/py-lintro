@@ -68,6 +68,8 @@ This script installs:
   - Clippy (Rust linter; requires Rust toolchain)
   - Rustfmt (Rust formatter; requires Rust toolchain)
   - Cargo-audit (Rust dependency vulnerability scanner; requires Rust toolchain)
+  - Oxlint (JavaScript/TypeScript linter)
+  - Oxfmt (JavaScript/TypeScript formatter)
   - Semgrep (Security scanner)
   - ShellCheck (Shell script linter)
   - shfmt (Shell script formatter)
@@ -755,30 +757,34 @@ main() {
 		fi
 	fi
 
-	# Install biome via bun (JavaScript/TypeScript linting and formatting)
-	echo -e "${BLUE}Installing biome...${NC}"
+	# Install oxlint via bun (JavaScript/TypeScript linting)
+	echo -e "${BLUE}Installing oxlint...${NC}"
 
 	# Ensure bun is available (should already be installed for prettier)
 	if ! ensure_bun_installed; then
 		exit 1
 	fi
 
-	# Read biome version from package.json if it exists
-	# Check devDependencies first, then dependencies, then fall back to latest
-	if [ -f "package.json" ]; then
-		BIOME_VERSION=$(jq -r '.devDependencies."@biomejs/biome" // .dependencies."@biomejs/biome" // "latest"' package.json 2>/dev/null || echo "latest")
-		# Strip caret prefix if present (e.g., "^2.3.9" -> "2.3.9")
-		BIOME_VERSION="${BIOME_VERSION#^}"
+	OXLINT_VERSION=$(get_tool_version "oxlint") || exit 1
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install oxlint@${OXLINT_VERSION} globally via bun"
+	elif bun add -g "oxlint@${OXLINT_VERSION}"; then
+		echo -e "${GREEN}✓ oxlint@${OXLINT_VERSION} installed successfully${NC}"
 	else
-		BIOME_VERSION="latest"
+		echo -e "${RED}✗ Failed to install oxlint${NC}"
+		exit 1
 	fi
 
+	# Install oxfmt via bun (JavaScript/TypeScript formatting)
+	echo -e "${BLUE}Installing oxfmt...${NC}"
+
+	OXFMT_VERSION=$(get_tool_version "oxfmt") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install @biomejs/biome@${BIOME_VERSION} globally via bun"
-	elif bun add -g "@biomejs/biome@${BIOME_VERSION}"; then
-		echo -e "${GREEN}✓ @biomejs/biome@${BIOME_VERSION} installed successfully${NC}"
+		log_info "[DRY-RUN] Would install oxfmt@${OXFMT_VERSION} globally via bun"
+	elif bun add -g "oxfmt@${OXFMT_VERSION}"; then
+		echo -e "${GREEN}✓ oxfmt@${OXFMT_VERSION} installed successfully${NC}"
 	else
-		echo -e "${RED}✗ Failed to install biome${NC}"
+		echo -e "${RED}✗ Failed to install oxfmt${NC}"
 		exit 1
 	fi
 
@@ -907,7 +913,6 @@ main() {
 	echo -e "${YELLOW}Installed tools:${NC}"
 	echo "  - actionlint (GitHub Actions linting)"
 	echo "  - bandit (Python security checks)"
-	echo "  - biome (JavaScript/TypeScript linting and formatting)"
 	echo "  - black (Python formatting)"
 	echo "  - cargo-audit (Rust dependency vulnerability scanning)"
 	echo "  - clippy (Rust linting)"
@@ -916,6 +921,9 @@ main() {
 	echo "  - gitleaks (Secret detection)"
 	echo "  - hadolint (Docker linting)"
 	echo "  - markdownlint-cli2 (Markdown linting)"
+	echo "  - mypy (Python type checking)"
+	echo "  - oxfmt (JavaScript/TypeScript formatting)"
+	echo "  - oxlint (JavaScript/TypeScript linting)"
 	echo "  - prettier (JavaScript/JSON formatting)"
 	echo "  - ruff (Python linting and formatting)"
 	echo "  - semgrep (Security scanning)"
@@ -923,14 +931,13 @@ main() {
 	echo "  - shfmt (Shell script formatting)"
 	echo "  - sqlfluff (SQL linting and formatting)"
 	echo "  - taplo (TOML linting and formatting)"
-	echo "  - mypy (Python type checking)"
 	echo "  - yamllint (YAML linting)"
 	echo ""
 
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "biome" "black" "cargo-audit" "clippy" "rustfmt" "pydoclint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint" "mypy")
+	tools_to_verify=("actionlint" "bandit" "black" "cargo-audit" "clippy" "rustfmt" "darglint" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo
