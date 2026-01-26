@@ -21,21 +21,21 @@ from __future__ import annotations
 # External tools that users must install separately
 # These are updated by Renovate via regex matching
 TOOL_VERSIONS: dict[str, str] = {
-    "actionlint": "1.7.5",
-    "biome": "2.3.9",
+    "actionlint": "1.7.10",
+    "biome": "2.3.13",
     "cargo_audit": "0.17.0",
     "clippy": "1.92.0",
-    "gitleaks": "8.21.2",
-    "hadolint": "2.12.0",
-    "markdownlint": "0.17.2",
-    "prettier": "3.7.3",
+    "gitleaks": "8.30.0",
+    "hadolint": "2.14.0",
+    "markdownlint": "0.20.0",
+    "prettier": "3.8.1",
     "pytest": "8.0.0",
     "rustfmt": "1.8.0",
     "semgrep": "1.50.0",
     "shellcheck": "0.11.0",
-    "shfmt": "3.10.0",
+    "shfmt": "3.12.0",
     "sqlfluff": "3.0.0",
-    "taplo": "0.10.0",
+    "taplo": "0.13.0",
 }
 
 
