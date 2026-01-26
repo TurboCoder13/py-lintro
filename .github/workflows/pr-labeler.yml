@@ -5,7 +5,7 @@ name: PR - Auto Label
 # Automatically applies labels to pull requests based on changed files.
 # Uses path patterns defined in .github/labeler.yml
 
-'on':
+"on":
   pull_request_target:
     types: [opened, synchronize, reopened]
 
@@ -21,7 +21,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
