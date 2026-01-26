@@ -17,16 +17,16 @@ inputs:
       style
       test
   require-scope:
-    description: 'Require a scope like type(scope): subject'
+    description: "Require a scope like type(scope): subject"
     required: false
-    default: 'false'
+    default: "false"
   comment-on-fail:
-    description: 'Post a guidance comment on the PR when invalid'
+    description: "Post a guidance comment on the PR when invalid"
     required: false
-    default: 'true'
+    default: "true"
 outputs:
   ok:
-    description: 'true if the PR title is valid'
+    description: "true if the PR title is valid"
     value: ${{ steps.validate.outputs.ok }}
 runs:
   using: composite

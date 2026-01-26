@@ -20,11 +20,11 @@ inputs:
   policy:
     description: Egress policy (block or audit)
     required: false
-    default: 'block'
+    default: "block"
   extra-endpoints:
     description: Additional endpoints to allow (space-separated)
     required: false
-    default: ''
+    default: ""
 
 runs:
   using: composite

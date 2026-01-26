@@ -5,11 +5,11 @@ name: Testing - Full Suite & Coverage
 # Executes comprehensive test suite in Docker, generates coverage reports,
 # uploads artifacts, and posts coverage information to PRs.
 
-'on':
+"on":
   push:
     branches: [main]
     paths:
-      - '**.py'
+      - "**.py"
       - pyproject.toml
       - .github/workflows/test-and-coverage.yml
       - scripts/local/run-tests.sh
@@ -57,7 +57,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -177,7 +177,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -224,4 +224,4 @@ jobs:
         uses: ./.github/actions/post-pr-comment
         with:
           file: coverage-pr-comment.txt
-          marker: '<!-- coverage-report -->'
+          marker: "<!-- coverage-report -->"

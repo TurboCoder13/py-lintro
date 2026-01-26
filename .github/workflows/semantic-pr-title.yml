@@ -5,7 +5,7 @@ name: Quality Check - PR Title Validation
 # Validates PR titles follow Conventional Commits format. Comments with guidance
 # and blocks merges if title format is invalid to ensure semantic release compatibility.
 
-'on':
+"on":
   pull_request:
     types: [opened, edited, synchronize, reopened, ready_for_review]
 
@@ -24,7 +24,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -50,8 +50,8 @@ jobs:
             revert
             style
             test
-          REQUIRE_SCOPE: 'false'
-          COMMENT_ON_FAIL: 'true'
+          REQUIRE_SCOPE: "false"
+          COMMENT_ON_FAIL: "true"
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: scripts/ci/github/semantic-pr-title-check.sh
 

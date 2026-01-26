@@ -1,9 +1,9 @@
 ---
 name: Question
 about: Ask a question about Lintro
-title: '[question] '
-labels: ['question', 'needs-triage']
-assignees: ''
+title: "[question] "
+labels: ["question", "needs-triage"]
+assignees: ""
 ---
 
 ## Question
