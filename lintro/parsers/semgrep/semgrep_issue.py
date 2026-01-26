@@ -13,6 +13,7 @@ class SemgrepIssue(BaseIssue):
     """Represents an issue found by Semgrep.
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         check_id: Rule ID that triggered this issue.
         end_line: Ending line number of the issue.
         end_column: Ending column number of the issue.

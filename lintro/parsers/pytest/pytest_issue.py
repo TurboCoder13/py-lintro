@@ -13,6 +13,7 @@ class PytestIssue(BaseIssue):
     """Represents a pytest test result (failure, error, or skip).
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         test_name: Name of the test.
         test_status: Status of the test (FAILED, ERROR, SKIPPED, etc.).
         duration: Duration of the test in seconds.

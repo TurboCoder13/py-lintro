@@ -9,7 +9,7 @@ import pytest
 
 
 @pytest.fixture
-def temp_project_dir() -> Generator[Path]:
+def temp_project_dir() -> Generator[Path, None, None]:
     """Create a temporary directory structure for integration testing.
 
     Yields:

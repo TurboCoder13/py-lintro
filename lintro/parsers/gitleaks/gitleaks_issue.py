@@ -13,6 +13,7 @@ class GitleaksIssue(BaseIssue):
     """Represents a secret detection finding from Gitleaks.
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         rule_id: The rule ID that triggered the detection (e.g., aws-access-key-id).
         description: Description of the secret type detected.
         secret: The detected secret value (should be redacted for display).

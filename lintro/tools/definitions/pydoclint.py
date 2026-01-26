@@ -83,6 +83,9 @@ class PydoclintPlugin(BaseToolPlugin):
         Args:
             file_path: Path to the Python file to process.
             timeout: Timeout in seconds for the pydoclint command.
+
+        Returns:
+            FileProcessingResult with processing outcome.
         """
         cmd = self._build_command() + [str(file_path)]
         try:
@@ -114,6 +117,9 @@ class PydoclintPlugin(BaseToolPlugin):
         Args:
             paths: List of file or directory paths to check.
             options: Runtime options that override defaults.
+
+        Returns:
+            ToolResult with check results.
         """
         ctx = self._prepare_execution(paths=paths, options=options)
         if ctx.should_skip:
@@ -139,6 +145,9 @@ class PydoclintPlugin(BaseToolPlugin):
         Args:
             paths: List of file or directory paths to fix.
             options: Tool-specific options.
+
+        Returns:
+            ToolResult: Never returns, always raises NotImplementedError.
 
         Raises:
             NotImplementedError: Pydoclint does not support fixing issues.

@@ -17,8 +17,8 @@ def extract_comment_body(json_payload: str, comment_id: str) -> str:
     """Extract the body of a comment with the given ID.
 
     Args:
-        json_payload (str): JSON response from GitHub API comments endpoint.
-        comment_id (str): The ID of the comment to extract.
+        json_payload: JSON response from GitHub API comments endpoint.
+        comment_id: The ID of the comment to extract.
 
     Returns:
         str: The comment body text, or empty string if not found.

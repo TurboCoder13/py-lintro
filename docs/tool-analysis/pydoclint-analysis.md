@@ -87,14 +87,14 @@ uv pip install pydoclint
 pydoclint outputs issues with the file path on its own line, followed by indented issue
 lines:
 
-```
+```text
 path/file.py
     line: DOCxxx: message
 ```
 
 Example output:
 
-```
+```text
 src/module.py
     10: DOC101: Function `calculate` has 2 argument(s) in signature: ['a', 'b']. Arguments 1 to 2 are not documented.
     25: DOC201: Function `process` does not have a return section in docstring.
@@ -175,24 +175,25 @@ project conventions.
 
 ### Type Hint Location Options
 
-| Option                         | Default | Recommended | Description                                |
-| ------------------------------ | ------- | ----------- | ------------------------------------------ |
-| `arg-type-hints-in-docstring`  | `true`  | `false`     | Require types in docstring Args section    |
-| `arg-type-hints-in-signature`  | `true`  | `true`      | Require type annotations in signatures     |
-| `check-return-types`           | `true`  | `false`     | Validate return types match between doc/annotation |
+| Option                        | Default | Recommended | Description                                        |
+| ----------------------------- | ------- | ----------- | -------------------------------------------------- |
+| `arg-type-hints-in-docstring` | `true`  | `false`     | Require types in docstring Args section            |
+| `arg-type-hints-in-signature` | `true`  | `true`      | Require type annotations in signatures             |
+| `check-return-types`          | `true`  | `false`     | Validate return types match between doc/annotation |
 
 Setting `arg-type-hints-in-docstring = false` eliminates DOC105, DOC109, DOC110 errors
 that require duplicating type information already present in annotations.
 
-Setting `check-return-types = false` eliminates DOC203 errors for return type mismatches.
+Setting `check-return-types = false` eliminates DOC203 errors for return type
+mismatches.
 
 ### Validation Options
 
-| Option                            | Default | Description                              |
-| --------------------------------- | ------- | ---------------------------------------- |
-| `check-arg-order`                 | `true`  | Verify argument order matches signature  |
-| `skip-checking-short-docstrings`  | `true`  | Skip validation for single-line docstrings |
-| `quiet`                           | `true`  | Suppress non-error output                |
+| Option                           | Default | Description                                |
+| -------------------------------- | ------- | ------------------------------------------ |
+| `check-arg-order`                | `true`  | Verify argument order matches signature    |
+| `skip-checking-short-docstrings` | `true`  | Skip validation for single-line docstrings |
+| `quiet`                          | `true`  | Suppress non-error output                  |
 
 ## Lintro Configuration
 
@@ -231,28 +232,30 @@ lintro chk --tools pydoclint --tool-options pydoclint:style=numpy
 Ruff provides two docstring-related rule sets:
 
 - **D rules (pydocstyle)**: Style and formatting checks
-- **DOC rules (ruff's pydoclint)**: Limited semantic validation (subset of standalone pydoclint)
+- **DOC rules (ruff's pydoclint)**: Limited semantic validation (subset of standalone
+  pydoclint)
 
 ### Comparison Table
 
-| Aspect                    | Ruff D (pydocstyle) | Ruff DOC      | Standalone pydoclint |
-| ------------------------- | ------------------- | ------------- | -------------------- |
-| **Focus**                 | Style/format        | Limited semantic | Full semantic     |
-| **Docstring presence**    | D100-D107           | -             | -                    |
-| **Formatting**            | D200-D215           | -             | -                    |
-| **Punctuation/style**     | D300-D409           | -             | -                    |
-| **Missing returns**       | -                   | DOC201        | DOC201               |
-| **Extraneous returns**    | -                   | DOC202        | DOC202               |
-| **Missing yields**        | -                   | DOC402        | DOC402-404           |
-| **Missing exceptions**    | -                   | DOC501        | DOC501-503           |
-| **Arg mismatches**        | -                   | DOC102 only   | DOC101-111           |
-| **Class attributes**      | -                   | -             | DOC601-605           |
-| **`__init__` docstrings** | -                   | -             | DOC301-306           |
+| Aspect                    | Ruff D (pydocstyle) | Ruff DOC         | Standalone pydoclint |
+| ------------------------- | ------------------- | ---------------- | -------------------- |
+| **Focus**                 | Style/format        | Limited semantic | Full semantic        |
+| **Docstring presence**    | D100-D107           | -                | -                    |
+| **Formatting**            | D200-D215           | -                | -                    |
+| **Punctuation/style**     | D300-D409           | -                | -                    |
+| **Missing returns**       | -                   | DOC201           | DOC201               |
+| **Extraneous returns**    | -                   | DOC202           | DOC202               |
+| **Missing yields**        | -                   | DOC402           | DOC402-404           |
+| **Missing exceptions**    | -                   | DOC501           | DOC501-503           |
+| **Arg mismatches**        | -                   | DOC102 only      | DOC101-111           |
+| **Class attributes**      | -                   | -                | DOC601-605           |
+| **`__init__` docstrings** | -                   | -                | DOC301-306           |
 
 ### Summary
 
 - **Ruff D rules** handle **format** (presence, indentation, punctuation, style)
-- **Standalone pydoclint** handles **content accuracy** (arguments match, types match, raises documented)
+- **Standalone pydoclint** handles **content accuracy** (arguments match, types match,
+  raises documented)
 - **Ruff DOC rules** provide a small subset of pydoclint functionality
 - Using both ruff D and standalone pydoclint provides the most comprehensive coverage
 

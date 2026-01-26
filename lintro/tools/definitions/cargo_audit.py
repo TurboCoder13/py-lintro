@@ -174,6 +174,9 @@ class CargoAuditPlugin(BaseToolPlugin):
             paths: List of paths (unused).
             options: Additional options (unused).
 
+        Returns:
+            ToolResult: Never returns, always raises NotImplementedError.
+
         Raises:
             NotImplementedError: Always, as cargo-audit cannot auto-fix.
         """

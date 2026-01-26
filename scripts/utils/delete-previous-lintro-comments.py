@@ -39,7 +39,7 @@ def get_env_var(name: str) -> str:
     """Get an environment variable or exit with error.
 
     Args:
-        name (str): Name of the environment variable.
+        name: Name of the environment variable.
 
     Returns:
         str: Value of the environment variable.
@@ -59,9 +59,9 @@ def get_pr_comments(
     """Fetch all comments for a pull request with pagination and retries.
 
     Args:
-        repo (str): Repository in 'owner/repo' format.
-        pr_number (str): Pull request number.
-        token (str): GitHub API token.
+        repo: Repository in 'owner/repo' format.
+        pr_number: Pull request number.
+        token: GitHub API token.
 
     Returns:
         list[dict[str, str | int]]: List of comment objects.
@@ -111,9 +111,9 @@ def delete_comment(repo: str, comment_id: int, token: str) -> None:
     """Delete a comment by ID.
 
     Args:
-        repo (str): Repository in 'owner/repo' format.
-        comment_id (int): Comment ID.
-        token (str): GitHub API token.
+        repo: Repository in 'owner/repo' format.
+        comment_id: Comment ID.
+        token: GitHub API token.
     """
     base_url: str = os.environ.get("GITHUB_API_URL", "https://api.github.com").rstrip(
         "/",

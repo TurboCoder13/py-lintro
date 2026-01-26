@@ -43,11 +43,11 @@ def cli_runner() -> CliRunner:
 
 
 @pytest.fixture
-def temp_dir() -> Generator[Path]:
+def temp_dir() -> Generator[Path, None, None]:
     """Provide a temporary directory for testing.
 
     Yields:
-        temp_dir (Path): Path to the temporary directory.
+        Path: Path to the temporary directory.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         yield Path(temp_dir)
@@ -60,7 +60,7 @@ def ruff_violation_file(temp_dir: Path) -> str:
     return normalized path.
 
     Args:
-        temp_dir (Path): Temporary directory fixture.
+        temp_dir: Temporary directory fixture.
 
     Returns:
         str: Normalized path to the copied ruff_violations.py file.

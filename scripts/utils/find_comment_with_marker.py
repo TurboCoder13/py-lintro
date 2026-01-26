@@ -18,8 +18,8 @@ def find_comment_id(json_payload: str, marker: str) -> str | None:
     """Find the ID of the most recent comment containing the marker.
 
     Args:
-        json_payload (str): JSON response from GitHub API comments endpoint.
-        marker (str): Marker string to search for in comment bodies.
+        json_payload: JSON response from GitHub API comments endpoint.
+        marker: Marker string to search for in comment bodies.
 
     Returns:
         str | None: Comment ID if found, None otherwise.

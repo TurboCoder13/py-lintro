@@ -363,6 +363,9 @@ class MypyPlugin(BaseToolPlugin):
             paths: Paths or files passed for completeness.
             options: Runtime options (unused).
 
+        Returns:
+            ToolResult: Never returns, always raises NotImplementedError.
+
         Raises:
             NotImplementedError: Always, because mypy cannot fix issues.
         """

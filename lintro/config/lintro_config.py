@@ -23,6 +23,7 @@ class LintroConfig(BaseModel):
     4. tools: Per-tool enable/disable and config source
 
     Attributes:
+        model_config: Pydantic model configuration.
         execution: Execution control settings.
         enforce: Cross-cutting settings enforced via CLI flags.
         defaults: Fallback configs for tools without native configs.

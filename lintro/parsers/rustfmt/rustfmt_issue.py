@@ -16,6 +16,7 @@ class RustfmtIssue(BaseIssue):
     a file that would be reformatted.
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         fixable: Whether the issue can be auto-fixed (always True for rustfmt).
     """
 

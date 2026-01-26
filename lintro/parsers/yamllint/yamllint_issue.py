@@ -12,6 +12,7 @@ class YamllintIssue(BaseIssue):
     """Represents an issue found by yamllint.
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         level: Severity level (error, warning)
         rule: Rule name that was violated (e.g., line-length, trailing-spaces)
     """

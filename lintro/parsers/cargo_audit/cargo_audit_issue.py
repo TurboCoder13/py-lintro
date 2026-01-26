@@ -11,6 +11,7 @@ class CargoAuditIssue(BaseIssue):
     """Represents a security vulnerability found by cargo-audit.
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         advisory_id: RustSec advisory ID (e.g., RUSTSEC-2021-0124).
         package_name: Name of the vulnerable crate.
         package_version: Version of the vulnerable crate.

@@ -25,7 +25,7 @@ def reset_registry() -> Generator[None, None, None]:
     """Reset the command builder registry before and after each test.
 
     Yields:
-        None after clearing the registry and before restoring.
+        None: After clearing the registry and before restoring.
     """
     original_builders = CommandBuilderRegistry._builders.copy()
     yield

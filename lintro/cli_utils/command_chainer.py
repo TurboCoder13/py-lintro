@@ -30,16 +30,16 @@ class CommandChainer:
     - Normalization of arguments (splitting joined commands)
     - Grouping of commands with their arguments
     - Sequential execution with proper error handling
-
-    Attributes:
-        group: The Click group containing available commands.
-        separator: The character used to separate commands (default: ",").
     """
 
     def __init__(self, group: click.Group, separator: str = ",") -> None:
         """Initialize the command chainer.
 
         Args:
+            group: The Click group containing available commands.
+            separator: The character used to separate commands (default: ",").
+
+        Attributes:
             group: The Click group containing available commands.
             separator: The character used to separate commands.
         """

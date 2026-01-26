@@ -10,6 +10,7 @@ class EnforceConfig(BaseModel):
     across different tools for shared concerns.
 
     Attributes:
+        model_config: Pydantic model configuration.
         line_length: Line length limit injected via CLI flags.
             Injected as: --line-length (ruff, black), --print-width (prettier)
         target_python: Python version target (e.g., "py313").

@@ -60,7 +60,7 @@ def _iter_nonempty_lines(text: str) -> Iterable[str]:
         text: Input text to split into lines.
 
     Yields:
-        Non-empty lines stripped of surrounding whitespace.
+        str: Non-empty lines stripped of surrounding whitespace.
     """
     for ln in text.splitlines():
         if ln.strip():

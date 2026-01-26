@@ -268,6 +268,9 @@ class HadolintPlugin(BaseToolPlugin):
             paths: List of file or directory paths to fix.
             options: Tool-specific options.
 
+        Returns:
+            ToolResult: Never returns, always raises NotImplementedError.
+
         Raises:
             NotImplementedError: Hadolint does not support fixing issues.
         """

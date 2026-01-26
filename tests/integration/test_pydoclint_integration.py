@@ -25,6 +25,9 @@ def run_pydoclint_directly(file_path: Path) -> tuple[bool, str, int]:
 
     Args:
         file_path: Path to the file to check with pydoclint.
+
+    Returns:
+        tuple[bool, str, int]: A tuple of (success, output, issues_count).
     """
     cmd = [
         "pydoclint",

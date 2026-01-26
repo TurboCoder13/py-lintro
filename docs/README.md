@@ -132,7 +132,7 @@ lintro test
 | --------------------- | ---------------- | ----------------------- | ---------------------------------------------------------------- |
 | **Ruff**              | Python           | Linting & Formatting    | [Config Guide](configuration.md#ruff-configuration)              |
 | **Black**             | Python           | Formatting (Post-check) | [Config Guide](configuration.md#post-checks-configuration)       |
-| **pydoclint**          | Python           | Docstring Validation    | [Analysis](tool-analysis/pydoclint-analysis.md)                   |
+| **pydoclint**         | Python           | Docstring Validation    | [Analysis](tool-analysis/pydoclint-analysis.md)                  |
 | **Bandit**            | Python           | Security Linting        | [Analysis](tool-analysis/bandit-analysis.md)                     |
 | **Pytest**            | Python           | Test Runner             | [Analysis](tool-analysis/pytest-analysis.md)                     |
 | **Prettier**          | JS/TS/JSON/CSS   | Code Formatting         | [Analysis](tool-analysis/prettier-analysis.md)                   |

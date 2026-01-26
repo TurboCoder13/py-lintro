@@ -11,23 +11,21 @@ class ToolType(Flag):
     This enum defines the different types of tools that can be used in Lintro.
     Tools can be of multiple types (e.g., a core can be both a linter and a formatter),
     which is why this is a Flag enum rather than a regular Enum.
-
-    Attributes:
-        LINTER = Tool that checks code for issues
-        FORMATTER = Tool that formats code
-        TYPE_CHECKER = Tool that checks types
-        DOCUMENTATION = Tool that checks documentation
-        SECURITY = Tool that checks for security issues
-        INFRASTRUCTURE = Tool that checks infrastructure code
-        TEST_RUNNER = Tool that runs tests
     """
 
+    #: Tool that checks code for issues
     LINTER = auto()
+    #: Tool that formats code
     FORMATTER = auto()
+    #: Tool that checks types
     TYPE_CHECKER = auto()
+    #: Tool that checks documentation
     DOCUMENTATION = auto()
+    #: Tool that checks for security issues
     SECURITY = auto()
+    #: Tool that checks infrastructure code
     INFRASTRUCTURE = auto()
+    #: Tool that runs tests
     TEST_RUNNER = auto()
 
 

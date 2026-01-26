@@ -303,6 +303,7 @@ arg-type-hints-in-signature = true
 check-return-types = false
 check-arg-order = true
 skip-checking-short-docstrings = true
+allow-init-docstring = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

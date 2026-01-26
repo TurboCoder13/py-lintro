@@ -25,11 +25,11 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def mock_subprocess_run() -> Generator[MagicMock]:
+def mock_subprocess_run() -> Generator[MagicMock, None, None]:
     """Mock subprocess.run for tool testing.
 
     Yields:
-        Mock: Configured mock for subprocess operations.
+        MagicMock: Configured mock for subprocess operations.
     """
     with patch("subprocess.run") as mock_run:
         mock_process = Mock()

@@ -24,6 +24,7 @@ class GhcrVersion:
     Attributes:
         id: Numeric version id.
         tags: List of tags bound to this version.
+        created_at: ISO timestamp when version was created.
     """
 
     id: int = field(default=0)

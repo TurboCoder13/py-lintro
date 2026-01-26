@@ -11,8 +11,6 @@ class PrettierIssue(BaseIssue):
 
     Attributes:
         code: Tool-specific code identifying the rule.
-        line: Line number, if provided by Prettier.
-        column: Column number, if provided by Prettier.
     """
 
     code: str = field(default="")

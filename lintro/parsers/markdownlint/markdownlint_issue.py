@@ -10,8 +10,7 @@ class MarkdownlintIssue(BaseIssue):
     """Represents an issue found by markdownlint-cli2.
 
     Attributes:
-        code: Rule code that was violated (e.g., MD013, MD041)
-        column: Column number where the issue occurs (if available)
+        code: Rule code that was violated (e.g., MD013, MD041).
     """
 
     code: str = field(default="")

@@ -123,6 +123,9 @@ class LintroPlugin(Protocol):
         Args:
             paths: List of file or directory paths to check.
             options: Tool-specific options that override defaults.
+
+        Returns:
+            ToolResult containing check results and any issues found.
         """
         ...
 
@@ -132,6 +135,9 @@ class LintroPlugin(Protocol):
         Args:
             paths: List of file or directory paths to fix.
             options: Tool-specific options that override defaults.
+
+        Returns:
+            ToolResult containing fix results and any remaining issues.
         """
         ...
 

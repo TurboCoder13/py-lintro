@@ -62,7 +62,7 @@ def _extract_semgrep_json(raw_text: str) -> dict[str, Any]:
         Parsed JSON object.
 
     Raises:
-        JSONDecodeError: If JSON cannot be parsed.
+        json.JSONDecodeError: If JSON cannot be parsed.
         ValueError: If no JSON object boundaries are found.
     """
     if not raw_text or not raw_text.strip():
@@ -333,6 +333,9 @@ class SemgrepPlugin(BaseToolPlugin):
         Args:
             paths: List of file or directory paths to fix.
             options: Tool-specific options.
+
+        Returns:
+            ToolResult: Never returns, always raises NotImplementedError.
 
         Raises:
             NotImplementedError: Semgrep does not support fixing issues.

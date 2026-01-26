@@ -356,6 +356,9 @@ class PytestPlugin(BaseToolPlugin):
             paths: List of file paths (unused).
             options: Runtime options (unused).
 
+        Returns:
+            ToolResult: Never returns, always raises NotImplementedError.
+
         Raises:
             NotImplementedError: pytest does not support fixing issues.
         """

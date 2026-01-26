@@ -21,7 +21,7 @@ def _normalize_newline(value: str) -> str:
     """Normalize newlines to Unix style.
 
     Args:
-        value (str): The text to normalize.
+        value: The text to normalize.
 
     Returns:
         str: Normalized text with Unix newlines.
@@ -44,10 +44,10 @@ def merge_comment_bodies(
     timestamp label. The new body is placed above or below per `place_new_above`.
 
     Args:
-        marker (str): Marker string used to identify the comment.
-        previous_body (str | None): Existing comment body to preserve, if any.
-        new_body (str): Freshly generated body for the current run.
-        place_new_above (bool): If True, place new_body above the collapsed
+        marker: Marker string used to identify the comment.
+        previous_body: Existing comment body to preserve, if any.
+        new_body: Freshly generated body for the current run.
+        place_new_above: If True, place new_body above the collapsed
             previous section; otherwise, place it below.
 
     Returns:

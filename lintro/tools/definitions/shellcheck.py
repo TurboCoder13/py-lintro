@@ -247,6 +247,9 @@ class ShellcheckPlugin(BaseToolPlugin):
             paths: List of file or directory paths to fix.
             options: Tool-specific options.
 
+        Returns:
+            ToolResult: Never returns, always raises NotImplementedError.
+
         Raises:
             NotImplementedError: Shellcheck does not support fixing issues.
         """
