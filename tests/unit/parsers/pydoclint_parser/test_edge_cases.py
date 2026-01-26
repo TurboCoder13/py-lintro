@@ -68,9 +68,8 @@ def test_parse_high_line_numbers() -> None:
     assert_that(result[0].column).is_equal_to(0)  # pydoclint doesn't report columns
 
 
-def test_parse_windows_path() -> None:
-    """Parse issue with Windows-style path (forward slashes preserved)."""
-    # pydoclint typically outputs forward slashes even on Windows
+def test_parse_nested_path() -> None:
+    """Parse issue with nested directory path."""
     output = """src/module/test.py
     10: DOC101: Test message"""
     result = parse_pydoclint_output(output=output)

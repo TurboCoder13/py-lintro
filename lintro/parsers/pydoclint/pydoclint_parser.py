@@ -17,7 +17,7 @@ from lintro.parsers.pydoclint.pydoclint_issue import PydoclintIssue
 #   /path/to/file.py
 #       10: DOC101: Function `foo` has 1 argument(s) ...
 # File path is on its own line, issues start with whitespace then line number
-PYDOCLINT_FILE_PATTERN = re.compile(r"^(?P<file>\S.+\.pyi?)$")
+PYDOCLINT_FILE_PATTERN = re.compile(r"^(?P<file>\S.*\.pyi?)$")
 PYDOCLINT_ISSUE_PATTERN = re.compile(
     r"^\s+(?P<line>\d+):\s*(?P<code>DOC\d+):\s*(?P<message>.+)$",
 )

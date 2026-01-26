@@ -263,7 +263,7 @@ Ruff provides two docstring-related rule sets:
 
 1. **Use with ruff D rules**: pydoclint validates content, ruff D validates format
 2. **Set consistent style**: Match your project's docstring convention
-3. **Enable check_arg_order**: Catches documentation that doesn't match signature order
+3. **Enable check-arg-order**: Catches documentation that doesn't match signature order
 4. **Skip short docstrings**: Single-line docstrings often don't need full documentation
 
 ## Example Usage
