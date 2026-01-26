@@ -77,8 +77,11 @@ def test_check_returns_issues_when_unformatted_files(
 
         assert_that(result.success).is_false()
         assert_that(result.issues_count).is_equal_to(2)
-        assert_that(result.issues[0].file).is_equal_to("test.js")
-        assert_that(result.issues[1].file).is_equal_to("other.ts")
+        assert_that(result.issues).is_not_none()
+        issues = result.issues
+        assert issues is not None
+        assert_that(issues[0].file).is_equal_to("test.js")
+        assert_that(issues[1].file).is_equal_to("other.ts")
 
 
 def test_check_timeout_handling(
@@ -99,8 +102,8 @@ def test_check_timeout_handling(
         issues=[
             OxfmtIssue(
                 file="execution",
-                line=0,
-                column=0,
+                line=1,
+                column=1,
                 code="TIMEOUT",
                 message="Oxfmt execution timed out",
             ),

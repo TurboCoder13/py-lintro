@@ -107,8 +107,8 @@ def test_fix_timeout_during_initial_check(
         issues=[
             OxfmtIssue(
                 file="execution",
-                line=0,
-                column=0,
+                line=1,
+                column=1,
                 code="TIMEOUT",
                 message="Oxfmt execution timed out",
             ),
@@ -170,8 +170,8 @@ def test_fix_timeout_during_fix_command(
             ),
             OxfmtIssue(
                 file="execution",
-                line=0,
-                column=0,
+                line=1,
+                column=1,
                 code="TIMEOUT",
                 message="Oxfmt execution timed out",
             ),
