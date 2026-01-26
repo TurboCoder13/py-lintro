@@ -10,7 +10,7 @@ from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.oxfmt.oxfmt_issue import OxfmtIssue
 
 
-def parse_oxfmt_output(output: str) -> list[OxfmtIssue]:
+def parse_oxfmt_output(output: str | None) -> list[OxfmtIssue]:
     """Parse oxfmt output into a list of OxfmtIssue objects.
 
     Args:
