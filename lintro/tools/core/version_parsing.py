@@ -37,7 +37,6 @@ TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
     ToolName.HADOLINT,
     ToolName.PYDOCLINT,
     ToolName.ACTIONLINT,
-    ToolName.DARGLINT,
     ToolName.OXFMT,
     ToolName.OXLINT,
     ToolName.RUSTFMT,
