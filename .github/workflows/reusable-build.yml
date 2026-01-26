@@ -7,14 +7,14 @@ name: Reusable - Build & Package Validation
 # Sets up environment, syncs dependencies, builds sdist/wheel, validates with twine,
 # and uploads distribution artifacts.
 
-'on':
+"on":
   workflow_call:
     inputs:
       python-version:
         description: Python version to use
         type: string
         required: false
-        default: '3.13'
+        default: "3.13"
 
 permissions:
   contents: read
@@ -29,7 +29,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -48,7 +48,7 @@ jobs:
           python-version: ${{ inputs.python-version }}
         env:
           # Skip external tools - build only needs Python and uv
-          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: "1"
 
       - name: Sync dependencies
         run: uv sync --dev --no-progress

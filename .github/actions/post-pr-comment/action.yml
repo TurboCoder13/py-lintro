@@ -8,11 +8,11 @@ inputs:
   marker:
     description: Marker string for previous comment deletion (optional)
     required: false
-    default: ''
+    default: ""
   merge-update:
     description: If true, edit previous comment (if found) and collapse history
     required: false
-    default: 'true'
+    default: "true"
 runs:
   using: composite
   steps:

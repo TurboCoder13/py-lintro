@@ -6,7 +6,7 @@ name: Reusable - SBOM Generation & Verification
 # Creates SBOM in multiple formats, verifies with bomctl, and uploads artifacts
 # with proper naming for traceability.
 
-'on':
+"on":
   workflow_call:
     inputs:
       use-release-token:
@@ -40,7 +40,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443

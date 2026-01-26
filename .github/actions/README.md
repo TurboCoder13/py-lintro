@@ -67,7 +67,7 @@ Example:
 - name: Setup Docker (Buildx + login)
   uses: ./.github/actions/setup-docker
   with:
-    login: 'true'
+    login: "true"
     registry: ghcr.io
     username: ${{ github.actor }}
     password: ${{ secrets.GITHUB_TOKEN }}
@@ -95,7 +95,7 @@ Example:
   uses: ./.github/actions/post-pr-comment
   with:
     file: pr-comment.txt
-    marker: '<!-- lintro-report -->'
+    marker: "<!-- lintro-report -->"
 ```
 
 ## .github/actions/pages-deploy
@@ -164,7 +164,7 @@ Example:
   uses: ./.github/actions/harden-runner-preset
   with:
     preset: python
-    extra-endpoints: 'custom.example.com:443'
+    extra-endpoints: "custom.example.com:443"
 ```
 
 Notes:

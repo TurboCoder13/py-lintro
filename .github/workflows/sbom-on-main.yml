@@ -6,7 +6,7 @@ name: Security - SBOM Generation
 # Fetches dependency information and creates signed attestations for supply chain
 # security. Calls the reusable SBOM workflow with elevated token permissions.
 
-'on':
+"on":
   push:
     branches:
       - main

@@ -6,16 +6,16 @@ name: Publish - PyPI Production
 # Validates tag matches pyproject.toml version, runs quality/build checks,
 # generates SBOM, and uses OIDC for secure publishing.
 
-'on':
+"on":
   push:
     tags:
-      - '*.*.*'
+      - "*.*.*"
       - v*.*.*
-      - '*.*.*a*'
+      - "*.*.*a*"
       - v*.*.*a*
-      - '*.*.*b*'
+      - "*.*.*b*"
       - v*.*.*b*
-      - '*.*.*rc*'
+      - "*.*.*rc*"
       - v*.*.*rc*
   workflow_dispatch:
 
@@ -64,7 +64,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -90,10 +90,10 @@ jobs:
       - name: Environment setup
         uses: ./.github/actions/setup-env
         with:
-          python-version: '3.13'
+          python-version: "3.13"
         env:
           # Skip external tools - publish only needs Python and uv
-          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: "1"
       - name: Ensure tag points to a commit on main
         run: bash scripts/ci/ensure-tag-on-main.sh
 
@@ -137,7 +137,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -163,7 +163,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Checkout homebrew-tap
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6

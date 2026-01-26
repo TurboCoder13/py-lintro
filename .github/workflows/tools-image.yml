@@ -6,10 +6,10 @@ name: Build - Tools Image
 # Runs weekly to pick up base image security updates and on changes to tool configs.
 # Can be called as a reusable workflow by other workflows.
 
-'on':
+"on":
   schedule:
     # Weekly on Sunday at 00:00 UTC
-    - cron: '0 0 * * 0'
+    - cron: "0 0 * * 0"
   push:
     branches: [main]
     paths:
@@ -23,9 +23,9 @@ name: Build - Tools Image
   workflow_dispatch:
     inputs:
       force_latest:
-        description: 'Force push to :latest tag (use with caution)'
+        description: "Force push to :latest tag (use with caution)"
         required: false
-        default: 'false'
+        default: "false"
 
   # Reusable workflow support
   workflow_call:
@@ -110,7 +110,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443

@@ -6,11 +6,11 @@ name: Testing - Built Package Validation
 # editable mode. This catches packaging issues like circular imports, missing files,
 # and entry point errors that only manifest when installed as a dependency.
 
-'on':
+"on":
   push:
     branches: [main]
     paths:
-      - '**.py'
+      - "**.py"
       - pyproject.toml
       - MANIFEST.in
       - .github/workflows/test-built-package.yml
@@ -18,7 +18,7 @@ name: Testing - Built Package Validation
   pull_request:
     branches: [main]
     paths:
-      - '**.py'
+      - "**.py"
       - pyproject.toml
       - MANIFEST.in
       - scripts/ci/test-*.sh
@@ -56,7 +56,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -92,10 +92,10 @@ jobs:
       - name: Environment setup
         uses: ./.github/actions/setup-env
         with:
-          python-version: '3.13'
+          python-version: "3.13"
         env:
-          BOOTSTRAP_SKIP_SYNC: '1'
-          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
+          BOOTSTRAP_SKIP_SYNC: "1"
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: "1"
 
       - name: Build ${{ matrix.package-type }}
         run: uv build ${{ matrix.build-flag }} --out-dir dist/

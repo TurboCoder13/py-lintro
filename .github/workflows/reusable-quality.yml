@@ -6,7 +6,7 @@ name: Reusable - Quality Gate & Version Export
 # Sets up Python/uv environment, installs external tools, runs lintro check,
 # and exports project version for downstream workflows.
 
-'on':
+"on":
   workflow_call:
     outputs:
       version:
@@ -28,7 +28,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -60,7 +60,7 @@ jobs:
       - name: Environment setup
         uses: ./.github/actions/setup-env
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Sync dependencies
         run: uv sync --dev --no-progress
