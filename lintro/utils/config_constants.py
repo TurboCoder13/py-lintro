@@ -92,10 +92,12 @@ GLOBAL_SETTINGS: dict[str, dict[str, Any]] = {
 DEFAULT_TOOL_PRIORITIES: dict[str, int] = {
     ToolName.BLACK: 15,
     ToolName.RUFF: 20,
+    ToolName.OXFMT: 25,
     ToolName.MARKDOWNLINT: 30,
     ToolName.YAMLLINT: 35,
     ToolName.BANDIT: 45,
     ToolName.HADOLINT: 50,
+    ToolName.OXLINT: 50,
     ToolName.ACTIONLINT: 55,
     ToolName.PYTEST: 100,
 }

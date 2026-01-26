@@ -23,7 +23,6 @@
   "devDependencies": {
     "markdownlint-cli2": "^0.17.2",
     "oxfmt": "^0.26.0",
-    "oxlint": "^1.41.0",
-    "prettier": "^3.7.3"
+    "oxlint": "^1.41.0"
   }
 }
