@@ -18,57 +18,57 @@ analysis compares Lintro's wrapper with core tsc behavior.
 
 ## Lintro Implementation Analysis
 
-### Preserved Features
+### ✅ Preserved Features
 
-- Invokes tsc with `--noEmit --pretty false` for type checking without output
-- Respects native `tsconfig.json` configuration (auto-discovered or via `--project`)
-- Supports `--strict` mode toggle
-- Supports `--skipLibCheck` for faster checks (enabled by default)
-- File discovery for `*.ts`, `*.tsx`, `*.mts`, `*.cts`
-- Intelligent command fallback: direct `tsc` -> `bunx tsc` -> `npx tsc`
-- Parses tsc output into structured `ToolResult` with file/line/column/code
+- ✅ Invokes tsc with `--noEmit --pretty false` for type checking without output
+- ✅ Respects native `tsconfig.json` configuration (auto-discovered or via `--project`)
+- ✅ Supports `--strict` mode toggle
+- ✅ Supports `--skipLibCheck` for faster checks (enabled by default)
+- ✅ File discovery for `*.ts`, `*.tsx`, `*.mts`, `*.cts`
+- ✅ Intelligent command fallback: direct `tsc` -> `bunx tsc` -> `npx tsc`
+- ✅ Parses tsc output into structured `ToolResult` with file/line/column/code
 
-### Limited / Missing
+### ⚠️ Limited / Missing
 
 **Build & Watch Modes:**
 
-- No `--watch` mode (continuous compilation)
-- No `--build` mode (composite project building)
-- No `--incremental` caching (each run is fresh)
+- ❌ No `--watch` mode (continuous compilation)
+- ❌ No `--build` mode (composite project building)
+- ❌ No `--incremental` caching (each run is fresh)
 
 **Output Generation:**
 
-- No JavaScript emission (always uses `--noEmit`)
-- No declaration file generation (`--declaration`, `--declarationMap`)
-- No sourcemap generation (`--sourceMap`, `--inlineSourceMap`)
-- No output directory control (`--outDir`, `--outFile`)
+- ❌ No JavaScript emission (always uses `--noEmit`)
+- ❌ No declaration file generation (`--declaration`, `--declarationMap`)
+- ❌ No sourcemap generation (`--sourceMap`, `--inlineSourceMap`)
+- ❌ No output directory control (`--outDir`, `--outFile`)
 
 **Compiler Options (config-file-only):**
 
-- `target`, `module`, `moduleResolution` - must be set in tsconfig.json
-- `paths`, `baseUrl`, `rootDir`, `rootDirs` - must be set in tsconfig.json
-- `lib`, `types`, `typeRoots` - must be set in tsconfig.json
-- `esModuleInterop`, `allowSyntheticDefaultImports` - must be set in tsconfig.json
-- `jsx`, `jsxFactory`, `jsxFragmentFactory` - must be set in tsconfig.json
-- `experimentalDecorators`, `emitDecoratorMetadata` - must be set in tsconfig.json
-- All other `compilerOptions` not exposed via `--tool-options`
+- ⚠️ `target`, `module`, `moduleResolution` - must be set in tsconfig.json
+- ⚠️ `paths`, `baseUrl`, `rootDir`, `rootDirs` - must be set in tsconfig.json
+- ⚠️ `lib`, `types`, `typeRoots` - must be set in tsconfig.json
+- ⚠️ `esModuleInterop`, `allowSyntheticDefaultImports` - must be set in tsconfig.json
+- ⚠️ `jsx`, `jsxFactory`, `jsxFragmentFactory` - must be set in tsconfig.json
+- ⚠️ `experimentalDecorators`, `emitDecoratorMetadata` - must be set in tsconfig.json
+- ⚠️ All other `compilerOptions` not exposed via `--tool-options`
 
 **Advanced Features:**
 
-- No project references support
-- No plugins configuration
-- No `--generateTrace` performance profiling
-- No custom diagnostic formatting
-- No `--listFiles`, `--listEmittedFiles` introspection
+- ❌ No project references support
+- ❌ No plugins configuration
+- ❌ No `--generateTrace` performance profiling
+- ❌ No custom diagnostic formatting
+- ❌ No `--listFiles`, `--listEmittedFiles` introspection
 
-### Enhancements
+### 🚀 Enhancements
 
-- Safe timeout handling (default 60s) with structured timeout result
-- Auto config discovery prioritizes `tsconfig.json` in working directory
-- Normalized `ToolResult` with parsed issues from `tsc_parser`
-- Priority 82, tool type `LINTER | TYPE_CHECKER`, same as mypy
-- Windows path normalization in parser output
-- Graceful handling when tsc is not installed with helpful install hints
+- ✅ Safe timeout handling (default 60s) with structured timeout result
+- ✅ Auto config discovery prioritizes `tsconfig.json` in working directory
+- ✅ Normalized `ToolResult` with parsed issues from `tsc_parser`
+- ✅ Priority 82, tool type `LINTER | TYPE_CHECKER`, same as mypy
+- ✅ Windows path normalization in parser output
+- ✅ Graceful handling when tsc is not installed with helpful install hints
 
 ## Usage Comparison
 
