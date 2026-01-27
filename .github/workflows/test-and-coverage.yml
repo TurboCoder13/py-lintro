@@ -11,10 +11,14 @@ name: Testing - Full Suite & Coverage
     paths:
       - '**.py'
       - pyproject.toml
+      - package.json
       - .github/workflows/test-and-coverage.yml
       - scripts/local/run-tests.sh
       - scripts/docker/docker-test.sh
+      - scripts/utils/install-tools.sh
+      - scripts/ci/tools-image-*.sh
       - Dockerfile
+      - Dockerfile.tools
       - docker-compose.yml
   pull_request:
     branches: [main]
@@ -27,6 +31,7 @@ jobs:
   run-test-suite:
     permissions:
       contents: read
+      packages: write
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     concurrency:
@@ -79,12 +84,20 @@ jobs:
             semgrep.dev:443
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Resolve tools image
+        id: tools
+        uses: ./.github/actions/resolve-tools-image
+        with:
+          # yamllint disable-line rule:line-length
+          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
       - name: Set up Docker Buildx
         # yamllint disable-line rule:line-length
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
           driver: docker
       - name: Run comprehensive test suite (with Docker tests)
+        env:
+          TOOLS_IMAGE: ${{ steps.tools.outputs.image }}
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
       - name: Upload coverage report as artifact
