@@ -103,5 +103,7 @@ DEFAULT_TOOL_PRIORITIES: dict[str, int] = {
     ToolName.BIOME: 50,
     ToolName.HADOLINT: 50,
     ToolName.ACTIONLINT: 55,
+    ToolName.MYPY: 82,
+    ToolName.TSC: 82,
     ToolName.PYTEST: 100,
 }
