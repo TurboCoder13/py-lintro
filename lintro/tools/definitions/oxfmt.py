@@ -22,7 +22,6 @@ from lintro.plugins.registry import register_tool
 from lintro.tools.core.option_validators import (
     filter_none_options,
     validate_bool,
-    validate_int,
     validate_list,
     validate_str,
 )
@@ -73,7 +72,7 @@ class OxfmtPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".oxfmtrc.json", ".oxfmtrc.jsonc"],
             version_command=["oxfmt", "--version"],
-            min_version="0.1.0",
+            min_version="0.27.0",
             default_options={
                 "timeout": OXFMT_DEFAULT_TIMEOUT,
                 "verbose_fix_output": False,
@@ -88,11 +87,6 @@ class OxfmtPlugin(BaseToolPlugin):
         verbose_fix_output: bool | None = None,
         config: str | None = None,
         ignore_path: str | None = None,
-        print_width: int | None = None,
-        tab_width: int | None = None,
-        use_tabs: bool | None = None,
-        semi: bool | None = None,
-        single_quote: bool | None = None,
         **kwargs: Any,
     ) -> None:
         """Set oxfmt-specific options.
@@ -103,22 +97,16 @@ class OxfmtPlugin(BaseToolPlugin):
             verbose_fix_output: If True, include raw oxfmt output in fix().
             config: Path to oxfmt config file (--config).
             ignore_path: Path to ignore file (--ignore-path).
-            print_width: Line width (--print-width).
-            tab_width: Tab width (--tab-width).
-            use_tabs: Use tabs instead of spaces (--use-tabs / --no-use-tabs).
-            semi: Add semicolons (--semi / --no-semi).
-            single_quote: Use single quotes (--single-quote / --no-single-quote).
             **kwargs: Other tool options.
+
+        Note:
+            Formatting options (print_width, tab_width, use_tabs, semi, single_quote)
+            are only supported via config file (.oxfmtrc.json), not CLI flags.
         """
         validate_list(exclude_patterns, "exclude_patterns")
         validate_bool(verbose_fix_output, "verbose_fix_output")
         validate_str(config, "config")
         validate_str(ignore_path, "ignore_path")
-        validate_int(print_width, "print_width", min_value=1)
-        validate_int(tab_width, "tab_width", min_value=1)
-        validate_bool(use_tabs, "use_tabs")
-        validate_bool(semi, "semi")
-        validate_bool(single_quote, "single_quote")
 
         if exclude_patterns is not None:
             self.exclude_patterns = exclude_patterns.copy()
@@ -128,11 +116,6 @@ class OxfmtPlugin(BaseToolPlugin):
             verbose_fix_output=verbose_fix_output,
             config=config,
             ignore_path=ignore_path,
-            print_width=print_width,
-            tab_width=tab_width,
-            use_tabs=use_tabs,
-            semi=semi,
-            single_quote=single_quote,
         )
         super().set_options(**options, **kwargs)
 
@@ -185,6 +168,10 @@ class OxfmtPlugin(BaseToolPlugin):
 
         Returns:
             List of CLI arguments to pass to oxfmt.
+
+        Note:
+            Formatting options (print_width, tab_width, use_tabs, semi, single_quote)
+            are only supported via config file (.oxfmtrc.json), not CLI flags.
         """
         args: list[str] = []
 
@@ -197,33 +184,6 @@ class OxfmtPlugin(BaseToolPlugin):
         ignore_path = options.get("ignore_path")
         if ignore_path:
             args.extend(["--ignore-path", str(ignore_path)])
-
-        # Formatting options
-        print_width = options.get("print_width")
-        if print_width is not None:
-            args.extend(["--print-width", str(print_width)])
-
-        tab_width = options.get("tab_width")
-        if tab_width is not None:
-            args.extend(["--tab-width", str(tab_width)])
-
-        use_tabs = options.get("use_tabs")
-        if use_tabs is True:
-            args.append("--use-tabs")
-        elif use_tabs is False:
-            args.append("--no-use-tabs")
-
-        semi = options.get("semi")
-        if semi is True:
-            args.append("--semi")
-        elif semi is False:
-            args.append("--no-semi")
-
-        single_quote = options.get("single_quote")
-        if single_quote is True:
-            args.append("--single-quote")
-        elif single_quote is False:
-            args.append("--no-single-quote")
 
         return args
 
