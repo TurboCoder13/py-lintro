@@ -78,6 +78,8 @@ system.
 | [![Gitleaks](https://img.shields.io/badge/Gitleaks-secrets-dc2626?logo=git&logoColor=white)](https://gitleaks.io/)                                            | 🔐 Secret Detection    | -        |
 | [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                                        | 🟨 JS/TS · 🧾 JSON     | ✅       |
 | [![Biome](https://img.shields.io/badge/Biome-lint-60A5FA?logo=biome&logoColor=white)](https://biomejs.dev/)                                                   | 🟨 JS/TS · 🧾 JSON/CSS | ✅       |
+| [![Oxlint](https://img.shields.io/badge/Oxlint-lint-e05d44?logo=javascript&logoColor=white)](https://oxc.rs/)                                                 | 🟨 JS/TS               | ✅       |
+| [![Oxfmt](https://img.shields.io/badge/Oxfmt-format-e05d44?logo=javascript&logoColor=white)](https://oxc.rs/)                                                 | 🟨 JS/TS               | ✅       |
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                           | 🧾 YAML                | -        |
 | [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)                            | 🐳 Dockerfile          | -        |
 | [![Actionlint](https://img.shields.io/badge/Actionlint-lint-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)                         | ⚙️ GitHub Actions      | -        |
