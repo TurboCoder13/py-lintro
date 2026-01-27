@@ -22,7 +22,9 @@ from lintro.plugins.registry import register_tool
 from lintro.tools.core.option_validators import (
     filter_none_options,
     validate_bool,
+    validate_int,
     validate_list,
+    validate_str,
 )
 
 # Constants for oxfmt configuration
@@ -93,6 +95,13 @@ class OxfmtPlugin(BaseToolPlugin):
         exclude_patterns: list[str] | None = None,
         include_venv: bool = False,
         verbose_fix_output: bool | None = None,
+        config: str | None = None,
+        ignore_path: str | None = None,
+        print_width: int | None = None,
+        tab_width: int | None = None,
+        use_tabs: bool | None = None,
+        semi: bool | None = None,
+        single_quote: bool | None = None,
         **kwargs: Any,
     ) -> None:
         """Set oxfmt-specific options.
@@ -101,10 +110,24 @@ class OxfmtPlugin(BaseToolPlugin):
             exclude_patterns: List of patterns to exclude.
             include_venv: Whether to include virtual environment directories.
             verbose_fix_output: If True, include raw oxfmt output in fix().
+            config: Path to oxfmt config file (--config).
+            ignore_path: Path to ignore file (--ignore-path).
+            print_width: Line width (--print-width).
+            tab_width: Tab width (--tab-width).
+            use_tabs: Use tabs instead of spaces (--use-tabs / --no-use-tabs).
+            semi: Add semicolons (--semi / --no-semi).
+            single_quote: Use single quotes (--single-quote / --no-single-quote).
             **kwargs: Other tool options.
         """
         validate_list(exclude_patterns, "exclude_patterns")
         validate_bool(verbose_fix_output, "verbose_fix_output")
+        validate_str(config, "config")
+        validate_str(ignore_path, "ignore_path")
+        validate_int(print_width, "print_width", min_value=1)
+        validate_int(tab_width, "tab_width", min_value=1)
+        validate_bool(use_tabs, "use_tabs")
+        validate_bool(semi, "semi")
+        validate_bool(single_quote, "single_quote")
 
         if exclude_patterns is not None:
             self.exclude_patterns = exclude_patterns.copy()
@@ -112,6 +135,13 @@ class OxfmtPlugin(BaseToolPlugin):
 
         options = filter_none_options(
             verbose_fix_output=verbose_fix_output,
+            config=config,
+            ignore_path=ignore_path,
+            print_width=print_width,
+            tab_width=tab_width,
+            use_tabs=use_tabs,
+            semi=semi,
+            single_quote=single_quote,
         )
         super().set_options(**options, **kwargs)
 
@@ -155,6 +185,56 @@ class OxfmtPlugin(BaseToolPlugin):
             fixed_issues_count=0,
             remaining_issues_count=len(combined_issues),
         )
+
+    def _build_oxfmt_args(self, options: dict[str, object]) -> list[str]:
+        """Build CLI arguments from options.
+
+        Args:
+            options: Options dict to build args from (use merged_options).
+
+        Returns:
+            List of CLI arguments to pass to oxfmt.
+        """
+        args: list[str] = []
+
+        # Config file override
+        config = options.get("config")
+        if config:
+            args.extend(["--config", str(config)])
+
+        # Ignore file path
+        ignore_path = options.get("ignore_path")
+        if ignore_path:
+            args.extend(["--ignore-path", str(ignore_path)])
+
+        # Formatting options
+        print_width = options.get("print_width")
+        if print_width is not None:
+            args.extend(["--print-width", str(print_width)])
+
+        tab_width = options.get("tab_width")
+        if tab_width is not None:
+            args.extend(["--tab-width", str(tab_width)])
+
+        use_tabs = options.get("use_tabs")
+        if use_tabs is True:
+            args.append("--use-tabs")
+        elif use_tabs is False:
+            args.append("--no-use-tabs")
+
+        semi = options.get("semi")
+        if semi is True:
+            args.append("--semi")
+        elif semi is False:
+            args.append("--no-semi")
+
+        single_quote = options.get("single_quote")
+        if single_quote is True:
+            args.append("--single-quote")
+        elif single_quote is False:
+            args.append("--no-single-quote")
+
+        return args
 
     def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with oxfmt without making changes.
@@ -205,6 +285,11 @@ class OxfmtPlugin(BaseToolPlugin):
         if config_args:
             cmd.extend(config_args)
             logger.debug("[OxfmtPlugin] Using Lintro config injection")
+
+        # Add oxfmt-specific CLI arguments from options
+        oxfmt_args = self._build_oxfmt_args(merged_options)
+        if oxfmt_args:
+            cmd.extend(oxfmt_args)
 
         cmd.extend(ctx.rel_files)
         logger.debug(f"[OxfmtPlugin] Running: {' '.join(cmd)} (cwd={ctx.cwd})")
@@ -263,6 +348,9 @@ class OxfmtPlugin(BaseToolPlugin):
         # Get Lintro config injection args
         config_args = self._build_config_args()
 
+        # Add oxfmt-specific CLI arguments from options
+        oxfmt_args = self._build_oxfmt_args(merged_options)
+
         # Check for issues first using --list-different
         # Note: --check and --list-different are mutually exclusive in oxfmt
         check_cmd: list[str] = self._get_executable_command(tool_name="oxfmt") + [
@@ -270,6 +358,8 @@ class OxfmtPlugin(BaseToolPlugin):
         ]
         if config_args:
             check_cmd.extend(config_args)
+        if oxfmt_args:
+            check_cmd.extend(oxfmt_args)
         check_cmd.extend(ctx.rel_files)
         logger.debug(
             f"[OxfmtPlugin] Checking: {' '.join(check_cmd)} (cwd={ctx.cwd})",
@@ -296,6 +386,8 @@ class OxfmtPlugin(BaseToolPlugin):
         ]
         if config_args:
             fix_cmd.extend(config_args)
+        if oxfmt_args:
+            fix_cmd.extend(oxfmt_args)
         fix_cmd.extend(ctx.rel_files)
         logger.debug(f"[OxfmtPlugin] Fixing: {' '.join(fix_cmd)} (cwd={ctx.cwd})")
 

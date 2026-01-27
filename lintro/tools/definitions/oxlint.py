@@ -10,6 +10,8 @@ import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
 from typing import Any
 
+from loguru import logger
+
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.oxlint.oxlint_issue import OxlintIssue
@@ -19,9 +21,11 @@ from lintro.plugins.protocol import ToolDefinition
 from lintro.plugins.registry import register_tool
 from lintro.tools.core.option_validators import (
     filter_none_options,
+    normalize_str_or_list,
     validate_bool,
     validate_list,
     validate_positive_int,
+    validate_str,
 )
 
 # Constants for Oxlint configuration
@@ -88,6 +92,11 @@ class OxlintPlugin(BaseToolPlugin):
         timeout: int | None = None,
         quiet: bool | None = None,
         verbose_fix_output: bool | None = None,
+        config: str | None = None,
+        tsconfig: str | None = None,
+        allow: list[str] | str | None = None,
+        deny: list[str] | str | None = None,
+        warn: list[str] | str | None = None,
         **kwargs: Any,
     ) -> None:
         """Set Oxlint-specific options.
@@ -98,12 +107,24 @@ class OxlintPlugin(BaseToolPlugin):
             timeout: Timeout in seconds (default: 30).
             quiet: If True, suppress warnings and only report errors.
             verbose_fix_output: If True, include raw Oxlint output in fix().
+            config: Path to Oxlint config file (--config).
+            tsconfig: Path to tsconfig.json for TypeScript support (--tsconfig).
+            allow: Rules to allow/turn off (--allow). Can be string or list.
+            deny: Rules to deny/report as errors (--deny). Can be string or list.
+            warn: Rules to warn on (--warn). Can be string or list.
             **kwargs: Additional options (ignored for compatibility).
         """
         validate_list(exclude_patterns, "exclude_patterns")
         validate_positive_int(timeout, "timeout")
         validate_bool(quiet, "quiet")
         validate_bool(verbose_fix_output, "verbose_fix_output")
+        validate_str(config, "config")
+        validate_str(tsconfig, "tsconfig")
+
+        # Normalize rule lists (accept string or list)
+        allow_list = normalize_str_or_list(allow, "allow")
+        deny_list = normalize_str_or_list(deny, "deny")
+        warn_list = normalize_str_or_list(warn, "warn")
 
         if exclude_patterns is not None:
             self.exclude_patterns = exclude_patterns.copy()
@@ -113,13 +134,18 @@ class OxlintPlugin(BaseToolPlugin):
             timeout=timeout,
             quiet=quiet,
             verbose_fix_output=verbose_fix_output,
+            config=config,
+            tsconfig=tsconfig,
+            allow=allow_list,
+            deny=deny_list,
+            warn=warn_list,
         )
         super().set_options(**options, **kwargs)
 
     def _create_timeout_result(
         self,
         timeout_val: int,
-        initial_issues: list[Any] | None = None,
+        initial_issues: list[OxlintIssue] | None = None,
         initial_count: int = 0,
     ) -> ToolResult:
         """Create a ToolResult for timeout scenarios.
@@ -163,6 +189,45 @@ class OxlintPlugin(BaseToolPlugin):
             remaining_issues_count=remaining_count,
         )
 
+    def _build_oxlint_args(self, options: dict[str, object]) -> list[str]:
+        """Build CLI arguments from options.
+
+        Args:
+            options: Options dict to build args from (use merged_options).
+
+        Returns:
+            List of CLI arguments to pass to oxlint.
+        """
+        args: list[str] = []
+
+        # Config file override
+        config = options.get("config")
+        if config:
+            args.extend(["--config", str(config)])
+
+        # TypeScript config
+        tsconfig = options.get("tsconfig")
+        if tsconfig:
+            args.extend(["--tsconfig", str(tsconfig)])
+
+        # Rule severity options
+        allow_rules = options.get("allow")
+        if allow_rules and isinstance(allow_rules, list):
+            for rule in allow_rules:
+                args.extend(["--allow", rule])
+
+        deny_rules = options.get("deny")
+        if deny_rules and isinstance(deny_rules, list):
+            for rule in deny_rules:
+                args.extend(["--deny", rule])
+
+        warn_rules = options.get("warn")
+        if warn_rules and isinstance(warn_rules, list):
+            for rule in warn_rules:
+                args.extend(["--warn", rule])
+
+        return args
+
     def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with Oxlint without making changes.
 
@@ -173,11 +238,32 @@ class OxlintPlugin(BaseToolPlugin):
         Returns:
             ToolResult with check results.
         """
+        # Merge runtime options
+        merged_options = dict(self.options)
+        merged_options.update(options)
+
         # Use shared preparation for version check, path validation, file discovery
-        ctx = self._prepare_execution(paths, options)
+        ctx = self._prepare_execution(
+            paths,
+            merged_options,
+            no_files_message="No files to check.",
+        )
         if ctx.should_skip:
-            # early_result is guaranteed non-None when should_skip is True
-            return ctx.early_result  # type: ignore[return-value]
+            assert ctx.early_result is not None
+            return ctx.early_result
+
+        logger.debug(
+            f"[OxlintPlugin] Discovered {len(ctx.files)} files matching patterns: "
+            f"{self.definition.file_patterns}",
+        )
+        logger.debug(
+            f"[OxlintPlugin] Exclude patterns applied: {self.exclude_patterns}",
+        )
+        if ctx.files:
+            logger.debug(
+                f"[OxlintPlugin] Files to check (first 10): {ctx.files[:10]}",
+            )
+        logger.debug(f"[OxlintPlugin] Working directory: {ctx.cwd}")
 
         # Build Oxlint command with JSON format
         cmd: list[str] = self._get_executable_command(tool_name="oxlint") + [
@@ -193,8 +279,15 @@ class OxlintPlugin(BaseToolPlugin):
         config_args = self._build_config_args()
         if config_args:
             cmd.extend(config_args)
+            logger.debug("[OxlintPlugin] Using Lintro config injection")
+
+        # Add Oxlint-specific CLI arguments from options
+        oxlint_args = self._build_oxlint_args(merged_options)
+        if oxlint_args:
+            cmd.extend(oxlint_args)
 
         cmd.extend(ctx.rel_files)
+        logger.debug(f"[OxlintPlugin] Running: {' '.join(cmd)} (cwd={ctx.cwd})")
 
         try:
             result = self._run_subprocess(
@@ -206,7 +299,7 @@ class OxlintPlugin(BaseToolPlugin):
             return self._create_timeout_result(timeout_val=ctx.timeout)
 
         output: str = result[1]
-        issues: list[Any] = parse_oxlint_output(output=output)
+        issues: list[OxlintIssue] = parse_oxlint_output(output=output)
         issues_count: int = len(issues)
         success: bool = issues_count == 0
 
@@ -233,18 +326,25 @@ class OxlintPlugin(BaseToolPlugin):
         Returns:
             ToolResult: Result object with counts and messages.
         """
+        # Merge runtime options
+        merged_options = dict(self.options)
+        merged_options.update(options)
+
         # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(
             paths,
-            options,
+            merged_options,
             no_files_message="No files to fix.",
         )
         if ctx.should_skip:
-            # early_result is guaranteed non-None when should_skip is True
-            return ctx.early_result  # type: ignore[return-value]
+            assert ctx.early_result is not None
+            return ctx.early_result
 
         # Get Lintro config injection args if available
         config_args = self._build_config_args()
+
+        # Add Oxlint-specific CLI arguments from options
+        oxlint_args = self._build_oxlint_args(merged_options)
 
         # Build check command for counting issues
         check_cmd: list[str] = self._get_executable_command(tool_name="oxlint") + [
@@ -258,7 +358,13 @@ class OxlintPlugin(BaseToolPlugin):
 
         if config_args:
             check_cmd.extend(config_args)
+        if oxlint_args:
+            check_cmd.extend(oxlint_args)
+
         check_cmd.extend(ctx.rel_files)
+        logger.debug(
+            f"[OxlintPlugin] Checking: {' '.join(check_cmd)} (cwd={ctx.cwd})",
+        )
 
         # Check for initial issues
         try:
@@ -271,7 +377,7 @@ class OxlintPlugin(BaseToolPlugin):
             return self._create_timeout_result(timeout_val=ctx.timeout)
 
         check_output: str = check_result[1]
-        initial_issues: list[Any] = parse_oxlint_output(output=check_output)
+        initial_issues: list[OxlintIssue] = parse_oxlint_output(output=check_output)
         initial_count: int = len(initial_issues)
 
         # Now fix the issues
@@ -280,7 +386,10 @@ class OxlintPlugin(BaseToolPlugin):
         ]
         if config_args:
             fix_cmd.extend(config_args)
+        if oxlint_args:
+            fix_cmd.extend(oxlint_args)
         fix_cmd.extend(ctx.rel_files)
+        logger.debug(f"[OxlintPlugin] Fixing: {' '.join(fix_cmd)} (cwd={ctx.cwd})")
 
         try:
             fix_result = self._run_subprocess(
@@ -311,7 +420,9 @@ class OxlintPlugin(BaseToolPlugin):
             )
 
         final_check_output: str = final_check_result[1]
-        remaining_issues: list[Any] = parse_oxlint_output(output=final_check_output)
+        remaining_issues: list[OxlintIssue] = parse_oxlint_output(
+            output=final_check_output,
+        )
         remaining_count: int = len(remaining_issues)
 
         # Calculate fixed issues
@@ -335,7 +446,7 @@ class OxlintPlugin(BaseToolPlugin):
 
         # Add verbose raw fix output only when explicitly requested
         if (
-            self.options.get("verbose_fix_output", False)
+            merged_options.get("verbose_fix_output", False)
             and fix_output
             and fix_output.strip()
         ):
