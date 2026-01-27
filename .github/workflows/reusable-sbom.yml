@@ -38,7 +38,7 @@ jobs:
         ${{ inputs.use-release-token && secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
           egress-policy: 'block'
           allowed-endpoints: >
@@ -63,7 +63,7 @@ jobs:
           BOMCTL_VERSION: v0.4.3
         run: bash scripts/ci/deployment/sbom-install-binary-gh.sh
       - name: Restore bomctl cache
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
         with:
           path: ${{ env.XDG_CACHE_HOME }}
           # yamllint disable-line rule:line-length
