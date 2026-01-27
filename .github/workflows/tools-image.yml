@@ -4,6 +4,7 @@
 name: Build - Tools Image
 # Builds and publishes the pre-built tools image used by the main Dockerfile.
 # Runs weekly to pick up base image security updates and on changes to tool configs.
+# Can be called as a reusable workflow by other workflows.
 
 'on':
   schedule:
@@ -16,6 +17,7 @@ name: Build - Tools Image
       - scripts/utils/install-tools.sh
       - scripts/ci/tools-image-*.sh
       - package.json
+      - lintro/_tool_versions.py
       - .github/workflows/tools-image.yml
   pull_request:
     branches: [main]
@@ -24,6 +26,7 @@ name: Build - Tools Image
       - scripts/utils/install-tools.sh
       - scripts/ci/tools-image-*.sh
       - package.json
+      - lintro/_tool_versions.py
       - .github/workflows/tools-image.yml
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
@@ -33,27 +36,81 @@ name: Build - Tools Image
         required: false
         default: 'false'
 
+  # Reusable workflow support
+  workflow_call:
+    inputs:
+      skip_if_unchanged:
+        description: 'Skip build if tool files unchanged (for workflow_call)'
+        type: boolean
+        default: true
+    outputs:
+      image-tag:
+        description: 'The tools image tag to use'
+        value: ${{ jobs.resolve-tag.outputs.tag }}
+
 permissions:
   contents: read
 
 jobs:
+  # Detect if tool files changed (for workflow_call only, path filters don't apply)
+  check-changes:
+    name: Check Tool Changes
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'workflow_call'
+    permissions:
+      contents: read
+    outputs:
+      tools-changed: ${{ steps.filter.outputs.tools }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check for tool file changes
+        id: filter
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        with:
+          filters: |
+            tools:
+              - Dockerfile.tools
+              - scripts/utils/install-tools.sh
+              - scripts/ci/tools-image-*.sh
+              - package.json
+              - lintro/_tool_versions.py
+              - .github/workflows/tools-image.yml
+
   build-tools-image:
     name: Build Tools Image
     runs-on: ubuntu-24.04
+    needs: [check-changes]
+    # Run if: not workflow_call, OR changes detected, OR skip_if_unchanged=false
+    if: >-
+      (github.event_name != 'workflow_call') ||
+      (needs.check-changes.outputs.tools-changed == 'true') ||
+      (inputs.skip_if_unchanged == false)
     permissions:
       contents: read
       packages: write
       id-token: write
     timeout-minutes: 45
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.draft == false
     defaults:
       run:
         shell: bash
     concurrency:
       group: tools-image-${{ github.ref }}
       cancel-in-progress: true
+    outputs:
+      primary-tag: ${{ steps.tags.outputs.primary_tag }}
 
     steps:
       - name: Harden Runner
@@ -144,3 +201,26 @@ jobs:
           PUSH_LATEST: ${{ steps.tags.outputs.push_latest }}
           PR_TAG: ${{ steps.tags.outputs.pr_tag }}
         run: scripts/ci/tools-image-summary.sh
+
+  # Output the appropriate image tag for callers
+  resolve-tag:
+    name: Resolve Image Tag
+    runs-on: ubuntu-24.04
+    needs: [check-changes, build-tools-image]
+    if: always() && github.event_name == 'workflow_call'
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
+
+      - name: Resolve image tag
+        id: resolve
+        env:
+          BUILD_TAG: ${{ needs.build-tools-image.outputs.primary-tag }}
+          BUILD_RESULT: ${{ needs.build-tools-image.result }}
+        run: scripts/ci/tools-image-resolve-tag.sh
