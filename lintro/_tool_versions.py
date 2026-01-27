@@ -27,7 +27,7 @@ TOOL_VERSIONS: dict[str, str] = {
     "gitleaks": "8.21.2",
     "hadolint": "2.12.0",
     "markdownlint": "0.17.2",
-    "oxfmt": "0.1.0",
+    "oxfmt": "0.26.0",
     "oxlint": "1.0.0",
     "pytest": "8.0.0",
     "rustfmt": "1.8.0",

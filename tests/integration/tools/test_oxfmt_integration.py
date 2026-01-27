@@ -54,8 +54,8 @@ const obj={a:1,b:2,c:3}
 def temp_js_file_formatted(tmp_path: Path) -> str:
     """Create a temporary JavaScript file that is already formatted.
 
-    Creates a file containing properly formatted JavaScript code that should pass
-    Oxfmt checking without issues.
+    Creates a file and formats it with oxfmt to ensure it passes checking
+    regardless of oxfmt version differences.
 
     Args:
         tmp_path: Pytest fixture providing a temporary directory.
@@ -63,15 +63,19 @@ def temp_js_file_formatted(tmp_path: Path) -> str:
     Returns:
         Path to the created file as a string.
     """
+    import subprocess
+
     file_path = tmp_path / "formatted_file.js"
+    # Write unformatted code first
     file_path.write_text(
         """\
-function foo(x, y, z) {
-  return x + y + z;
-}
-
-const obj = { a: 1, b: 2, c: 3 };
+function foo(x,y,z){return x+y+z}
+const obj={a:1,b:2,c:3}
 """,
+    )
+    # Format it with oxfmt so it's guaranteed to be "formatted" for this version
+    subprocess.run(
+        ["oxfmt", "--write", str(file_path)], check=True, capture_output=True
     )
     return str(file_path)
 
