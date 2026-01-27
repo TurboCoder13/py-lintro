@@ -372,3 +372,114 @@ def test_set_exclude_patterns(
     oxlint_plugin.set_options(exclude_patterns=["node_modules", "dist"])
     assert_that(oxlint_plugin.exclude_patterns).contains("node_modules")
     assert_that(oxlint_plugin.exclude_patterns).contains("dist")
+
+
+# --- Integration tests for new oxlint options ---
+
+
+@pytest.mark.parametrize(
+    ("option_name", "option_value", "expected"),
+    [
+        ("config", ".oxlintrc.json", ".oxlintrc.json"),
+        ("tsconfig", "tsconfig.json", "tsconfig.json"),
+    ],
+    ids=["config", "tsconfig"],
+)
+def test_set_config_options(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    option_name: str,
+    option_value: object,
+    expected: object,
+) -> None:
+    """Verify OxlintPlugin.set_options correctly sets config options.
+
+    Tests that config and tsconfig options can be set and retrieved correctly.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        option_name: Name of the option to set.
+        option_value: Value to set for the option.
+        expected: Expected value when retrieving the option.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    oxlint_plugin.set_options(**{option_name: option_value})
+    assert_that(oxlint_plugin.options.get(option_name)).is_equal_to(expected)
+
+
+def test_set_deny_option(
+    get_plugin: Callable[[str], BaseToolPlugin],
+) -> None:
+    """Verify OxlintPlugin.set_options correctly sets deny option.
+
+    Tests that deny rules can be set and retrieved correctly.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    oxlint_plugin.set_options(deny=["no-debugger", "eqeqeq"])
+    assert_that(oxlint_plugin.options.get("deny")).is_equal_to(
+        ["no-debugger", "eqeqeq"],
+    )
+
+
+def test_set_allow_option(
+    get_plugin: Callable[[str], BaseToolPlugin],
+) -> None:
+    """Verify OxlintPlugin.set_options correctly sets allow option.
+
+    Tests that allow rules can be set and retrieved correctly.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    oxlint_plugin.set_options(allow=["no-console"])
+    assert_that(oxlint_plugin.options.get("allow")).is_equal_to(["no-console"])
+
+
+def test_set_warn_option(
+    get_plugin: Callable[[str], BaseToolPlugin],
+) -> None:
+    """Verify OxlintPlugin.set_options correctly sets warn option.
+
+    Tests that warn rules can be set and retrieved correctly.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+    """
+    oxlint_plugin = get_plugin("oxlint")
+    oxlint_plugin.set_options(warn=["complexity"])
+    assert_that(oxlint_plugin.options.get("warn")).is_equal_to(["complexity"])
+
+
+def test_deny_option_affects_check_output(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    tmp_path: Path,
+) -> None:
+    """Verify deny option affects check output.
+
+    Tests that denying a rule causes it to be reported as an error.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        tmp_path: Pytest fixture providing a temporary directory.
+    """
+    # Create file with debugger statement
+    file_path = tmp_path / "test.js"
+    file_path.write_text(
+        """\
+function test() {
+  debugger;
+  return 1;
+}
+""",
+    )
+
+    oxlint_plugin = get_plugin("oxlint")
+    oxlint_plugin.set_options(deny=["no-debugger"])
+    result = oxlint_plugin.check([str(file_path)], {})
+
+    # Should detect the debugger statement
+    assert_that(result).is_not_none()
+    assert_that(result.issues_count).is_greater_than(0)
