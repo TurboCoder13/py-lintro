@@ -30,7 +30,7 @@ def _get_all_tool_names() -> list[str]:
     """
     from lintro.plugins.registry import ToolRegistry
 
-    return sorted(ToolRegistry.get_all().keys())
+    return ToolRegistry.get_names()
 
 
 @click.command()

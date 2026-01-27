@@ -157,6 +157,30 @@ def _strip_jsonc_comments(content: str) -> str:
     return "".join(result)
 
 
+def _strip_trailing_commas(content: str) -> str:
+    """Strip trailing commas from JSON content.
+
+    Removes trailing commas before closing brackets/braces that are
+    invalid in strict JSON but common in JSONC (e.g., tsconfig.json).
+
+    Args:
+        content: JSON content with potential trailing commas.
+
+    Returns:
+        Content with trailing commas removed.
+
+    Note:
+        This is a simple regex-based approach that works for most cases.
+        It may incorrectly modify strings containing patterns like ',]'
+        but such strings are rare in configuration files.
+    """
+    import re
+
+    # Remove trailing commas before ] or } (with optional whitespace)
+    content = re.sub(r",(\s*[\]\}])", r"\1", content)
+    return content
+
+
 def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
     """Load native configuration for a specific tool.
 
@@ -324,8 +348,9 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
             if config_path.exists():
                 try:
                     content = config_path.read_text(encoding="utf-8")
-                    # tsconfig.json may have comments (JSONC format)
+                    # tsconfig.json may have comments and trailing commas (JSONC format)
                     content = _strip_jsonc_comments(content)
+                    content = _strip_trailing_commas(content)
                     loaded = json.loads(content)
                     if isinstance(loaded, dict):
                         # Return a summary of the most relevant options
