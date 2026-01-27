@@ -7,6 +7,7 @@ They verify the OxlintPlugin definition, check command, fix command, and set_opt
 from __future__ import annotations
 
 import shutil
+import subprocess
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -17,10 +18,34 @@ from assertpy import assert_that
 if TYPE_CHECKING:
     from lintro.plugins.base import BaseToolPlugin
 
-# Skip all tests if oxlint is not installed
+
+def oxlint_is_available() -> bool:
+    """Check if oxlint is installed and actually works.
+
+    This is more robust than just checking shutil.which() because wrapper
+    scripts may exist even when the underlying npm package isn't installed.
+
+    Returns:
+        True if oxlint is available and functional, False otherwise.
+    """
+    if shutil.which("oxlint") is None:
+        return False
+    try:
+        result = subprocess.run(
+            ["oxlint", "--version"],
+            capture_output=True,
+            timeout=10,
+            check=False,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+
+
+# Skip all tests if oxlint is not installed or not working
 pytestmark = pytest.mark.skipif(
-    shutil.which("oxlint") is None,
-    reason="oxlint not installed",
+    not oxlint_is_available(),
+    reason="oxlint not installed or not working",
 )
 
 
