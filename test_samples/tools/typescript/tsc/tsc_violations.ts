@@ -3,8 +3,8 @@
 // Type mismatch: string assigned to number
 const count: number = "hello";
 
-// Missing return type annotation (implicit any in strict mode)
-function greet(name: string) {
+// Implicit any on parameter (triggers noImplicitAny in strict mode)
+function greet(name) {
     return `Hello, ${name}`;
 }
 
@@ -24,6 +24,6 @@ function getEmailLength(user: User): number {
     return user.email.length;
 }
 
-// Type assertion that's incorrect
+// Direct incompatible assignment from unknown to number
 const value: unknown = "hello";
-const num: number = value as number;
+const num: number = value;
