@@ -10,7 +10,8 @@ from __future__ import annotations
 import shutil
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
-from typing import Any
+from pathlib import Path
+from typing import Any, NoReturn
 
 from loguru import logger
 
@@ -117,12 +118,18 @@ class TscPlugin(BaseToolPlugin):
         # Last resort - hope tsc is in PATH
         return ["tsc"]
 
-    def _build_command(self, files: list[str]) -> list[str]:
+    def _build_command(
+        self,
+        files: list[str],
+        cwd: str | Path | None = None,
+    ) -> list[str]:
         """Build the tsc invocation command.
 
         Args:
             files: Relative file paths that should be checked by tsc.
-                   Note: When using --project, files are determined by tsconfig.json.
+                   Note: When using --project or tsconfig.json exists,
+                   files are determined by the config file.
+            cwd: Working directory for checking tsconfig.json existence.
 
         Returns:
             A list of command arguments ready to be executed.
@@ -136,16 +143,10 @@ class TscPlugin(BaseToolPlugin):
         project_opt = self.options.get("project")
         if project_opt:
             cmd.extend(["--project", str(project_opt)])
-        else:
-            # If no explicit project, tsc will look for tsconfig.json in cwd
-            # We don't pass files when tsconfig.json exists (tsc uses its config)
-            pass
 
-        # Strict mode override
+        # Strict mode override (--strict is off by default, no flag needed for False)
         if self.options.get("strict") is True:
             cmd.append("--strict")
-        elif self.options.get("strict") is False:
-            cmd.append("--noStrict")
 
         # Skip lib check (faster, avoids issues with node_modules types)
         if self.options.get("skip_lib_check", True):
@@ -155,8 +156,12 @@ class TscPlugin(BaseToolPlugin):
         # When tsconfig.json is present, tsc determines files from it
         if not project_opt and files:
             # Check if tsconfig.json exists in cwd (tsc will use it automatically)
-            # In this case, we don't pass files
-            cmd.extend(files)
+            cwd_path = Path(cwd) if cwd is not None else None
+            tsconfig_exists = (
+                cwd_path is not None and (cwd_path / "tsconfig.json").exists()
+            )
+            if not tsconfig_exists:
+                cmd.extend(files)
 
         return cmd
 
@@ -196,7 +201,7 @@ class TscPlugin(BaseToolPlugin):
         logger.debug("[tsc] Discovered {} TypeScript file(s)", len(ctx.files))
 
         # Build command
-        cmd = self._build_command(files=ctx.rel_files)
+        cmd = self._build_command(files=ctx.rel_files, cwd=ctx.cwd)
         logger.debug("[tsc] Running with cwd={} and cmd={}", ctx.cwd, cmd)
 
         try:
@@ -240,7 +245,7 @@ class TscPlugin(BaseToolPlugin):
             issues=issues,
         )
 
-    def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
+    def fix(self, paths: list[str], options: dict[str, object]) -> NoReturn:
         """Tsc does not support auto-fixing.
 
         Args:
