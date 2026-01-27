@@ -373,3 +373,96 @@ def test_set_options(
     oxfmt_plugin = get_plugin("oxfmt")
     oxfmt_plugin.set_options(**{option_name: option_value})
     assert_that(oxfmt_plugin.options.get(option_name)).is_equal_to(expected)
+
+
+# --- Integration tests for new oxfmt options ---
+
+
+@pytest.mark.parametrize(
+    ("option_name", "option_value", "expected"),
+    [
+        ("config", ".oxfmtrc.json", ".oxfmtrc.json"),
+        ("ignore_path", ".oxfmtignore", ".oxfmtignore"),
+        ("print_width", 120, 120),
+        ("tab_width", 4, 4),
+        ("use_tabs", True, True),
+        ("semi", False, False),
+        ("single_quote", True, True),
+    ],
+    ids=[
+        "config",
+        "ignore_path",
+        "print_width",
+        "tab_width",
+        "use_tabs",
+        "semi",
+        "single_quote",
+    ],
+)
+def test_set_formatting_options(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    option_name: str,
+    option_value: object,
+    expected: object,
+) -> None:
+    """Verify OxfmtPlugin.set_options correctly sets formatting options.
+
+    Tests that formatting options can be set and retrieved correctly.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        option_name: Name of the option to set.
+        option_value: Value to set for the option.
+        expected: Expected value when retrieving the option.
+    """
+    oxfmt_plugin = get_plugin("oxfmt")
+    oxfmt_plugin.set_options(**{option_name: option_value})
+    assert_that(oxfmt_plugin.options.get(option_name)).is_equal_to(expected)
+
+
+def test_set_exclude_patterns(
+    get_plugin: Callable[[str], BaseToolPlugin],
+) -> None:
+    """Verify OxfmtPlugin.set_options correctly sets exclude_patterns.
+
+    Tests that exclude patterns can be set and retrieved correctly.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+    """
+    oxfmt_plugin = get_plugin("oxfmt")
+    oxfmt_plugin.set_options(exclude_patterns=["node_modules", "dist"])
+    assert_that(oxfmt_plugin.exclude_patterns).contains("node_modules")
+    assert_that(oxfmt_plugin.exclude_patterns).contains("dist")
+
+
+def test_formatting_options_accepted_by_fix(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    tmp_path: Path,
+) -> None:
+    """Verify formatting options are accepted and passed to oxfmt.
+
+    Tests that setting print_width is accepted by the plugin and the fix
+    command completes successfully. Exact formatting output depends on
+    oxfmt version and is not verified.
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        tmp_path: Pytest fixture providing a temporary directory.
+    """
+    # Create file with a long line
+    file_path = tmp_path / "test.js"
+    file_path.write_text(
+        "const longLine = { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7, h: 8, i: 9 };\n",
+    )
+
+    oxfmt_plugin = get_plugin("oxfmt")
+    # Set a narrow print width
+    oxfmt_plugin.set_options(print_width=40)
+
+    result = oxfmt_plugin.fix([str(file_path)], {})
+
+    assert_that(result).is_not_none()
+    assert_that(result.name).is_equal_to("oxfmt")
+    # Verify the option was stored correctly
+    assert_that(oxfmt_plugin.options.get("print_width")).is_equal_to(40)
