@@ -24,6 +24,7 @@ def oxlint_is_available() -> bool:
 
     This is more robust than just checking shutil.which() because wrapper
     scripts may exist even when the underlying npm package isn't installed.
+    We verify the tool works by actually linting a simple JavaScript snippet.
 
     Returns:
         True if oxlint is available and functional, False otherwise.
@@ -31,13 +32,29 @@ def oxlint_is_available() -> bool:
     if shutil.which("oxlint") is None:
         return False
     try:
-        result = subprocess.run(
+        # First check --version works
+        version_result = subprocess.run(
             ["oxlint", "--version"],
             capture_output=True,
             timeout=10,
             check=False,
         )
-        return result.returncode == 0
+        if version_result.returncode != 0:
+            return False
+
+        # Then verify it can actually lint code (catches missing npm packages)
+        # oxlint returns 0 for clean files, non-zero for files with issues
+        # Use --quiet to minimize output and lint valid code that should pass
+        lint_result = subprocess.run(
+            ["oxlint", "--stdin-filename", "test.js"],
+            input=b"const x = 1;\n",
+            capture_output=True,
+            timeout=10,
+            check=False,
+        )
+        # returncode 0 = clean, 1 = issues found, other = error
+        # We accept 0 or 1 as "working" - anything else is a tool failure
+        return lint_result.returncode in (0, 1)
     except (subprocess.TimeoutExpired, OSError):
         return False
 
