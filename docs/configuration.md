@@ -794,6 +794,15 @@ lintro check src/ --tools tsc,oxlint,oxfmt
 Oxlint is a fast JavaScript/TypeScript linter (50-100x faster than ESLint) with 655+
 built-in rules from ESLint, TypeScript, React, JSX-a11y, Unicorn, and more.
 
+**Native Config Detection:**
+
+Lintro detects these oxlint config files:
+
+- `.oxlintrc.json`
+- `oxlint.json`
+
+When a native config exists, Lintro uses it automatically and skips generating defaults.
+
 **Installation:**
 
 ```bash
@@ -860,6 +869,15 @@ lintro check --tools oxlint --tool-options "oxlint:tsconfig=tsconfig.app.json"
 
 Oxfmt is a fast JavaScript/TypeScript formatter (30x faster than Prettier) that
 provides Prettier-compatible formatting with minimal configuration.
+
+**Native Config Detection:**
+
+Lintro detects these oxfmt config files:
+
+- `.oxfmtrc.json`
+- `.oxfmtrc.jsonc` (supports comments)
+
+When a native config exists, Lintro uses it automatically and skips generating defaults.
 
 **Installation:**
 

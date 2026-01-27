@@ -66,6 +66,8 @@ TOOL_CONFIG_FORMATS: dict[str, ConfigFormat] = {
     "bandit": ConfigFormat.YAML,
     "hadolint": ConfigFormat.YAML,
     "markdownlint": ConfigFormat.JSON,
+    "oxfmt": ConfigFormat.JSON,
+    "oxlint": ConfigFormat.JSON,
     "yamllint": ConfigFormat.YAML,
 }
 
@@ -107,6 +109,14 @@ NATIVE_CONFIG_PATTERNS: dict[str, list[str]] = {
         ".bandit.yml",
         "bandit.yaml",
         "bandit.yml",
+    ],
+    "oxlint": [
+        ".oxlintrc.json",
+        "oxlint.json",
+    ],
+    "oxfmt": [
+        ".oxfmtrc.json",
+        ".oxfmtrc.jsonc",
     ],
 }
 
@@ -379,6 +389,8 @@ def get_defaults_injection_args(
         "markdownlint": ["--config", config_str],
         "hadolint": ["--config", config_str],
         "bandit": ["-c", config_str],
+        "oxlint": ["--config", config_str],
+        "oxfmt": ["--config", config_str],
     }
 
     return config_flags.get(tool_lower, [])
