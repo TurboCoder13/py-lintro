@@ -24,7 +24,16 @@ permissions:
   contents: read
 
 jobs:
+  # Build tools image if tool files changed, otherwise use :latest
+  tools-image:
+    uses: ./.github/workflows/tools-image.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
   run-test-suite:
+    needs: [tools-image]
     permissions:
       contents: read
     runs-on: ubuntu-24.04
@@ -41,6 +50,7 @@ jobs:
     env:
       LINTRO_OUTPUT_DIR: /tmp/lintro
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TOOLS_IMAGE: ${{ needs.tools-image.outputs.image-tag }}
     outputs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}
     steps:
@@ -84,6 +94,14 @@ jobs:
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
           driver: docker
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log tools image tag
+        run: 'echo "Using tools image: $TOOLS_IMAGE"'
       - name: Run comprehensive test suite (with Docker tests)
         run: ./scripts/docker/docker-test.sh
       # (moved) Upload coverage badge artifact happens after badge generation below
