@@ -72,7 +72,7 @@ class OxlintPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".oxlintrc.json"],
             version_command=["oxlint", "--version"],
-            min_version="1.0.0",
+            min_version="1.42.0",
             default_options={
                 "timeout": OXLINT_DEFAULT_TIMEOUT,
                 "quiet": False,
