@@ -6,7 +6,6 @@ They verify the TscPlugin definition, check command, and set_options method.
 
 from __future__ import annotations
 
-import shutil
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -14,13 +13,15 @@ from typing import TYPE_CHECKING
 import pytest
 from assertpy import assert_that
 
+from tests.integration.tools.tsc.conftest import tsc_is_available
+
 if TYPE_CHECKING:
     from lintro.plugins.base import BaseToolPlugin
 
-# Skip all tests if tsc is not installed
+# Skip all tests if tsc is not installed or not working
 pytestmark = pytest.mark.skipif(
-    shutil.which("tsc") is None,
-    reason="tsc not installed",
+    not tsc_is_available(),
+    reason="tsc not installed or not working",
 )
 
 
