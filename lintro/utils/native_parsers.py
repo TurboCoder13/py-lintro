@@ -24,6 +24,8 @@ MARKDOWNLINT_CONFIG_FILES = [
     ".markdownlint.yml",
     ".markdownlint.jsonc",
 ]
+OXLINT_CONFIG_FILES = [".oxlintrc.json", "oxlint.json"]
+OXFMT_CONFIG_FILES = [".oxfmtrc.json", ".oxfmtrc.jsonc"]
 
 
 def _load_json_config(config_path: Path) -> dict[str, Any]:
@@ -253,6 +255,37 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                         f"Could not read markdownlint config {config_path}: "
                         f"{type(e).__name__}: {e}",
                     )
+        return {}
+
+    # Oxlint: check native config files
+    if tool_enum == ToolName.OXLINT:
+        for config_file in OXLINT_CONFIG_FILES:
+            config_path = Path(config_file)
+            if config_path.exists():
+                return _load_json_config(config_path)
+        return {}
+
+    # Oxfmt: check native config files (supports JSONC comments)
+    if tool_enum == ToolName.OXFMT:
+        for config_file in OXFMT_CONFIG_FILES:
+            config_path = Path(config_file)
+            if not config_path.exists():
+                continue
+            try:
+                with config_path.open(encoding="utf-8") as f:
+                    content = f.read()
+                    # Strip JSONC comments safely
+                    if config_file.endswith(".jsonc"):
+                        content = _strip_jsonc_comments(content)
+                    loaded = json.loads(content)
+                    return loaded if isinstance(loaded, dict) else {}
+            except json.JSONDecodeError as e:
+                logger.warning(
+                    f"Failed to parse oxfmt config {config_file}: {e.msg} "
+                    f"(line {e.lineno}, col {e.colno})",
+                )
+            except OSError as e:
+                logger.debug(f"Could not read oxfmt config {config_file}: {e}")
         return {}
 
     return {}
