@@ -77,4 +77,15 @@ if [[ "$IS_PR" == "true" && -n "$PR_NUMBER" ]]; then
 fi
 
 echo "tags=${TAGS}" >>"$GITHUB_OUTPUT"
+
+# Output primary tag for reusable workflow callers
+# For PRs, use the PR tag; otherwise use the SHA tag
+if [[ "$IS_PR" == "true" && -n "$PR_NUMBER" ]]; then
+	PRIMARY_TAG="${IMAGE_BASE}:pr-${PR_NUMBER}"
+else
+	PRIMARY_TAG="${IMAGE_BASE}:sha-${SHORT_SHA}"
+fi
+echo "primary_tag=${PRIMARY_TAG}" >>"$GITHUB_OUTPUT"
+
 echo "Generated tags: ${TAGS}"
+echo "Primary tag: ${PRIMARY_TAG}"
