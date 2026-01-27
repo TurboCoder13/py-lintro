@@ -887,16 +887,14 @@ brew install oxfmt
 
 **Available Options via `--tool-options`:**
 
-| Option         | Type    | Description                                |
-| -------------- | ------- | ------------------------------------------ |
-| `config`       | string  | Path to config file (--config)             |
-| `ignore_path`  | string  | Path to ignore file (--ignore-path)        |
-| `print_width`  | integer | Line width (--print-width, default: 80)    |
-| `tab_width`    | integer | Tab width (--tab-width, default: 2)        |
-| `use_tabs`     | boolean | Use tabs instead of spaces (--use-tabs)    |
-| `semi`         | boolean | Add semicolons (--semi / --no-semi)        |
-| `single_quote` | boolean | Use single quotes (--single-quote)         |
-| `timeout`      | integer | Execution timeout in seconds (default: 30) |
+| Option        | Type    | Description                                |
+| ------------- | ------- | ------------------------------------------ |
+| `config`      | string  | Path to config file (--config)             |
+| `ignore_path` | string  | Path to ignore file (--ignore-path)        |
+| `timeout`     | integer | Execution timeout in seconds (default: 30) |
+
+> **Note:** Formatting options (`printWidth`, `tabWidth`, `useTabs`, `semi`, `singleQuote`)
+> are only supported via config file (`.oxfmtrc.json`), not CLI flags.
 
 **Usage Examples:**
 
@@ -907,20 +905,14 @@ lintro check --tools oxfmt
 # Format files
 lintro format --tools oxfmt
 
-# Set line width
-lintro format --tools oxfmt --tool-options "oxfmt:print_width=120"
-
-# Use tabs instead of spaces
-lintro format --tools oxfmt --tool-options "oxfmt:use_tabs=True"
-
-# No semicolons, single quotes
-lintro format --tools oxfmt --tool-options "oxfmt:semi=False,oxfmt:single_quote=True"
-
 # Use custom config file
 lintro format --tools oxfmt --tool-options "oxfmt:config=.oxfmtrc.custom.json"
 
 # Use custom ignore file
 lintro format --tools oxfmt --tool-options "oxfmt:ignore_path=.oxfmtignore"
+
+# Increase timeout
+lintro format --tools oxfmt --tool-options "oxfmt:timeout=60"
 ```
 
 ### SQL Tools
