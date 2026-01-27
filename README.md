@@ -117,6 +117,8 @@ For full functionality, install these additional tools:
 
 - **Prettier** - `npm install -g prettier`
 - **Markdownlint-cli2** - `npm install -g markdownlint-cli2`
+- **Oxlint** - `bun add -g oxlint` or `npm install -g oxlint`
+- **Oxfmt** - `bun add -g oxfmt` or `npm install -g oxfmt`
 - **Hadolint** - [GitHub Releases](https://github.com/hadolint/hadolint/releases)
 - **Actionlint** - [GitHub Releases](https://github.com/rhysd/actionlint/releases)
 - **Semgrep** - `pipx install semgrep`, `pip install semgrep`, or `brew install semgrep`
