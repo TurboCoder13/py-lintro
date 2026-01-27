@@ -24,6 +24,7 @@ def oxfmt_is_available() -> bool:
 
     This is more robust than just checking shutil.which() because wrapper
     scripts may exist even when the underlying npm package isn't installed.
+    We verify the tool works by actually formatting a simple JavaScript snippet.
 
     Returns:
         True if oxfmt is available and functional, False otherwise.
@@ -31,13 +32,25 @@ def oxfmt_is_available() -> bool:
     if shutil.which("oxfmt") is None:
         return False
     try:
-        result = subprocess.run(
+        # First check --version works
+        version_result = subprocess.run(
             ["oxfmt", "--version"],
             capture_output=True,
             timeout=10,
             check=False,
         )
-        return result.returncode == 0
+        if version_result.returncode != 0:
+            return False
+
+        # Then verify it can actually format code (catches missing npm packages)
+        format_result = subprocess.run(
+            ["oxfmt", "--stdin-filepath", "test.js"],
+            input=b"const x=1;\n",
+            capture_output=True,
+            timeout=10,
+            check=False,
+        )
+        return format_result.returncode == 0
     except (subprocess.TimeoutExpired, OSError):
         return False
 
