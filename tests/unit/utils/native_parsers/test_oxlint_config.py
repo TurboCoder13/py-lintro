@@ -40,7 +40,7 @@ def test_load_oxlint_config_from_oxlint_json(
     """
     config = {"plugins": ["react"], "rules": {"eqeqeq": "warn"}}
     (temp_cwd / "oxlint.json").write_text(
-        '{"plugins": ["react"], "rules": {"eqeqeq": "warn"}}'
+        '{"plugins": ["react"], "rules": {"eqeqeq": "warn"}}',
     )
 
     result = _load_native_tool_config("oxlint")
