@@ -24,95 +24,6 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture
-def temp_ts_file_with_type_errors(tmp_path: Path) -> str:
-    """Create a temporary TypeScript file with type errors.
-
-    Creates a file containing code with deliberate type annotation violations
-    that tsc should detect, including:
-    - Assigning string to a number-typed variable
-    - Passing wrong argument types to functions
-
-    Args:
-        tmp_path: Pytest fixture providing a temporary directory.
-
-    Returns:
-        Path to the created file as a string.
-    """
-    file_path = tmp_path / "type_errors.ts"
-    file_path.write_text(
-        """\
-const count: number = "hello";
-
-function add(a: number, b: number): number {
-    return a + b;
-}
-
-const result = add("1", "2");
-""",
-    )
-    return str(file_path)
-
-
-@pytest.fixture
-def temp_ts_file_type_correct(tmp_path: Path) -> str:
-    """Create a temporary TypeScript file with correct types.
-
-    Creates a file containing properly typed TypeScript code that should
-    pass tsc type checking without errors.
-
-    Args:
-        tmp_path: Pytest fixture providing a temporary directory.
-
-    Returns:
-        Path to the created file as a string.
-    """
-    file_path = tmp_path / "type_correct.ts"
-    file_path.write_text(
-        """\
-const count: number = 42;
-
-function add(a: number, b: number): number {
-    return a + b;
-}
-
-const result: number = add(1, 2);
-""",
-    )
-    return str(file_path)
-
-
-@pytest.fixture
-def temp_tsx_file_with_issues(tmp_path: Path) -> str:
-    """Create a temporary TSX file with type errors.
-
-    Creates a file containing JSX/TSX code with type issues for testing
-    that tsc handles .tsx files correctly.
-
-    Args:
-        tmp_path: Pytest fixture providing a temporary directory.
-
-    Returns:
-        Path to the created file as a string.
-    """
-    file_path = tmp_path / "component.tsx"
-    file_path.write_text(
-        """\
-interface Props {
-    name: string;
-    count: number;
-}
-
-function Component(props: Props) {
-    // Type error: passing string where number expected
-    const doubled: number = props.name;
-    return <div>{doubled}</div>;
-}
-""",
-    )
-    return str(file_path)
-
-
 # --- Tests for TscPlugin definition ---
 
 
@@ -161,7 +72,7 @@ def test_definition_file_patterns(get_plugin: Callable[[str], BaseToolPlugin]) -
 
 def test_check_file_with_type_errors(
     get_plugin: Callable[[str], BaseToolPlugin],
-    temp_ts_file_with_type_errors: str,
+    tsc_violation_file: str,
 ) -> None:
     """Verify tsc check detects type errors in problematic files.
 
@@ -170,10 +81,10 @@ def test_check_file_with_type_errors(
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
-        temp_ts_file_with_type_errors: Path to file with type errors.
+        tsc_violation_file: Path to file with type errors from test_samples.
     """
     tsc_plugin = get_plugin("tsc")
-    result = tsc_plugin.check([temp_ts_file_with_type_errors], {})
+    result = tsc_plugin.check([tsc_violation_file], {})
 
     assert_that(result).is_not_none()
     assert_that(result.name).is_equal_to("tsc")
@@ -182,7 +93,7 @@ def test_check_file_with_type_errors(
 
 def test_check_type_correct_file(
     get_plugin: Callable[[str], BaseToolPlugin],
-    temp_ts_file_type_correct: str,
+    tsc_clean_file: str,
 ) -> None:
     """Verify tsc check passes on type-correct files.
 
@@ -190,10 +101,10 @@ def test_check_type_correct_file(
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
-        temp_ts_file_type_correct: Path to file with correct types.
+        tsc_clean_file: Path to file with correct types from test_samples.
     """
     tsc_plugin = get_plugin("tsc")
-    result = tsc_plugin.check([temp_ts_file_type_correct], {})
+    result = tsc_plugin.check([tsc_clean_file], {})
 
     assert_that(result).is_not_none()
     assert_that(result.name).is_equal_to("tsc")
