@@ -134,7 +134,7 @@ def test_definition_file_patterns(
 ) -> None:
     """Verify OxfmtPlugin definition includes JavaScript/TypeScript file patterns.
 
-    Tests that the plugin is configured to handle JS/TS/CSS/HTML and other files.
+    Tests that the plugin is configured to handle JS/TS and related framework files.
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
@@ -144,7 +144,9 @@ def test_definition_file_patterns(
     assert_that(oxfmt_plugin.definition.file_patterns).contains("*.ts")
     assert_that(oxfmt_plugin.definition.file_patterns).contains("*.jsx")
     assert_that(oxfmt_plugin.definition.file_patterns).contains("*.tsx")
-    assert_that(oxfmt_plugin.definition.file_patterns).contains("*.json")
+    assert_that(oxfmt_plugin.definition.file_patterns).contains("*.vue")
+    assert_that(oxfmt_plugin.definition.file_patterns).contains("*.svelte")
+    assert_that(oxfmt_plugin.definition.file_patterns).contains("*.astro")
 
 
 def test_definition_has_version_command(

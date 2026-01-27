@@ -121,10 +121,11 @@ file.ts
 file.mts
 file.cts
 file.tsx
-file.json
-file.css"""
+file.vue
+file.svelte
+file.astro"""
     result = parse_oxfmt_output(output)
-    assert_that(result).is_length(10)
+    assert_that(result).is_length(11)
     extensions = [issue.file.split(".")[-1] for issue in result]
     assert_that(extensions).contains(
         "js",
@@ -135,8 +136,9 @@ file.css"""
         "mts",
         "cts",
         "tsx",
-        "json",
-        "css",
+        "vue",
+        "svelte",
+        "astro",
     )
 
 
@@ -146,3 +148,40 @@ def test_parse_oxfmt_output_file_with_spaces_in_name() -> None:
     result = parse_oxfmt_output(output)
     assert_that(result).is_length(1)
     assert_that(result[0].file).is_equal_to("src/my component.js")
+
+
+def test_parse_oxfmt_output_filters_error_messages() -> None:
+    """Error messages from oxfmt are filtered out."""
+    output = """Expected at least one target file
+src/file.js
+error: Something went wrong
+src/other.ts"""
+    result = parse_oxfmt_output(output)
+    assert_that(result).is_length(2)
+    assert_that(result[0].file).is_equal_to("src/file.js")
+    assert_that(result[1].file).is_equal_to("src/other.ts")
+
+
+def test_parse_oxfmt_output_filters_non_supported_extensions() -> None:
+    """Files with unsupported extensions are filtered out."""
+    output = """src/file.js
+src/styles.css
+src/config.json
+src/readme.md
+src/component.tsx"""
+    result = parse_oxfmt_output(output)
+    # Only .js and .tsx are valid oxfmt extensions
+    assert_that(result).is_length(2)
+    assert_that(result[0].file).is_equal_to("src/file.js")
+    assert_that(result[1].file).is_equal_to("src/component.tsx")
+
+
+def test_parse_oxfmt_output_filters_warning_messages() -> None:
+    """Warning messages from oxfmt are filtered out."""
+    output = """WARNING: Some warning
+src/file.ts
+Warning: Another warning
+warning: lowercase warning"""
+    result = parse_oxfmt_output(output)
+    assert_that(result).is_length(1)
+    assert_that(result[0].file).is_equal_to("src/file.ts")

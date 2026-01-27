@@ -73,7 +73,9 @@ def test_definition_file_patterns(oxfmt_plugin: OxfmtPlugin) -> None:
     assert_that(patterns).contains("*.ts")
     assert_that(patterns).contains("*.jsx")
     assert_that(patterns).contains("*.tsx")
-    assert_that(patterns).contains("*.json")
+    assert_that(patterns).contains("*.vue")
+    assert_that(patterns).contains("*.svelte")
+    assert_that(patterns).contains("*.astro")
 
 
 def test_definition_native_configs(oxfmt_plugin: OxfmtPlugin) -> None:
