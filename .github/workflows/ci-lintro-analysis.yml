@@ -9,23 +9,23 @@ name: Quality Check - CI Pipeline
   push:
     branches: [main]
     paths:
-      - 'lintro/**'
-      - 'tests/**'
-      - 'scripts/**'
-      - 'pyproject.toml'
-      - 'Dockerfile'
-      - '.github/workflows/ci-lintro-analysis.yml'
-      - '.github/actions/**'
+      - "lintro/**"
+      - "tests/**"
+      - "scripts/**"
+      - "pyproject.toml"
+      - "Dockerfile"
+      - ".github/workflows/ci-lintro-analysis.yml"
+      - ".github/actions/**"
   pull_request:
     branches: [main]
     paths:
-      - 'lintro/**'
-      - 'tests/**'
-      - 'scripts/**'
-      - 'pyproject.toml'
-      - 'Dockerfile'
-      - '.github/workflows/ci-lintro-analysis.yml'
-      - '.github/actions/**'
+      - "lintro/**"
+      - "tests/**"
+      - "scripts/**"
+      - "pyproject.toml"
+      - "Dockerfile"
+      - ".github/workflows/ci-lintro-analysis.yml"
+      - ".github/actions/**"
 
 permissions:
   contents: read
