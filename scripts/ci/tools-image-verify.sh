@@ -40,7 +40,6 @@ docker run --rm "$IMAGE" bash -c '
     echo "Linting and formatting tools:"
     actionlint --version
     bandit --version
-    biome --version
     black --version
     cargo audit --version
     cargo clippy --version
@@ -49,6 +48,8 @@ docker run --rm "$IMAGE" bash -c '
     hadolint --version
     markdownlint-cli2 --version
     mypy --version
+    oxfmt --version
+    oxlint --version
     prettier --version
     ruff --version
     semgrep --version
