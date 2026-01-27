@@ -316,7 +316,8 @@ def test_build_command_without_strict(tsc_plugin: TscPlugin) -> None:
     with patch.object(tsc_plugin, "_get_tsc_command", return_value=["tsc"]):
         cmd = tsc_plugin._build_command(files=["src/main.ts"])
 
-    assert_that(cmd).contains("--noStrict")
+    # --strict is off by default in tsc, so no flag is emitted when strict=False
+    assert_that("--strict" in cmd).is_false()
 
 
 def test_build_command_without_skip_lib_check(tsc_plugin: TscPlugin) -> None:

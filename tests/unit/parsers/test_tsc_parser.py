@@ -107,7 +107,7 @@ def test_parse_tsc_output_deep_nested_path() -> None:
     )
 
 
-def test_parse_tsc_output_invalid_json() -> None:
+def test_parse_tsc_output_skips_non_matching_lines() -> None:
     """Skip non-matching lines gracefully."""
     output = """Starting compilation...
 not valid tsc output

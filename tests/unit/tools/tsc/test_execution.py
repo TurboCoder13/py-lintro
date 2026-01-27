@@ -115,7 +115,10 @@ def test_check_with_no_typescript_files(
     non_ts_file = tmp_path / "test.txt"
     non_ts_file.write_text("Not a TypeScript file")
 
-    with patch.object(tsc_plugin, "_verify_tool_version", return_value=None):
+    with patch(
+        "lintro.plugins.execution_preparation.verify_tool_version",
+        return_value=None,
+    ):
         result = tsc_plugin.check([str(non_ts_file)], {})
 
     assert_that(result.success).is_true()
