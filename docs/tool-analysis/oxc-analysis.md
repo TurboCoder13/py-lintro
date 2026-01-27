@@ -38,13 +38,17 @@ This analysis compares Lintro's wrapper implementations with the core tools.
 - `quiet`: Suppress warnings, only report errors
 - `timeout`: Configurable execution timeout
 - `verbose_fix_output`: Include raw output in fix results
+- `config`: Path to Oxlint config file (--config)
+- `tsconfig`: Path to tsconfig.json for TypeScript support (--tsconfig)
+- `allow`: Rules to allow/turn off (--allow)
+- `deny`: Rules to deny/report as errors (--deny)
+- `warn`: Rules to warn on (--warn)
 
 **Limited/Missing Features:**
 
-- No direct access to `--allow`, `--deny`, `--warn` flags
-- No plugin enabling (`--react-perf-plugin`, `--nextjs-plugin`)
-- No runtime `--config` or `--tsconfig` override
-- No watch mode or cache control
+- No plugin enabling flags (`--react-perf-plugin`, `--nextjs-plugin`)
+- No watch mode (`--watch`)
+- No cache control
 
 ### Usage Comparison
 
@@ -99,11 +103,16 @@ oxlint_plugin.set_options(quiet=True, exclude_patterns=["node_modules"])
 
 - `timeout`: Configurable execution timeout
 - `verbose_fix_output`: Include raw output in fix results
+- `config`: Path to oxfmt config file (--config)
+- `ignore_path`: Path to ignore file (--ignore-path)
+- `print_width`: Line width (--print-width)
+- `tab_width`: Tab width (--tab-width)
+- `use_tabs`: Use tabs instead of spaces (--use-tabs / --no-use-tabs)
+- `semi`: Add semicolons (--semi / --no-semi)
+- `single_quote`: Use single quotes (--single-quote / --no-single-quote)
 
 **Limited/Missing Features:**
 
-- No runtime formatting options (print width, tabs, quotes, etc.)
-- No `--config` or `--ignore-path` override
 - No stdin/stdout piping support
 - No explicit parser selection
 
@@ -245,23 +254,38 @@ Example `.oxfmtrc.json`:
 
 ---
 
+## Out of Scope for Lintro
+
+The Oxc project includes additional components that are not integrated into Lintro:
+
+| Component       | Purpose             | Reason for Exclusion             |
+| --------------- | ------------------- | -------------------------------- |
+| **Parser**      | AST parsing library | Internal library, not a CLI tool |
+| **Transformer** | Code transpilation  | Build tool, not lint/format      |
+| **Resolver**    | Module resolution   | Internal library, not a CLI tool |
+| **Minifier**    | Code minification   | Build tool, not lint/format      |
+
+These components are intended for use by other tools and build systems, not for direct
+invocation in a linting/formatting workflow.
+
+---
+
 ## Limitations and Workarounds
 
 ### Oxlint Limitations
 
-| Limitation                | Workaround                       |
-| ------------------------- | -------------------------------- |
-| No runtime rule selection | Configure in `.oxlintrc.json`    |
-| No plugin CLI flags       | Configure plugins in config file |
-| No watch mode via Lintro  | Use `oxlint --watch` directly    |
+| Limitation               | Workaround                            |
+| ------------------------ | ------------------------------------- |
+| No plugin enabling flags | Configure plugins in `.oxlintrc.json` |
+| No watch mode via Lintro | Use `oxlint --watch` directly         |
+| No cache control         | Use native oxlint cache options       |
 
 ### Oxfmt Limitations
 
-| Limitation                    | Workaround                      |
-| ----------------------------- | ------------------------------- |
-| No runtime formatting options | Configure in `.oxfmtrc.json`    |
-| No stdin support via Lintro   | Use `oxfmt` directly for piping |
-| No parser override            | Use appropriate file extensions |
+| Limitation                  | Workaround                      |
+| --------------------------- | ------------------------------- |
+| No stdin support via Lintro | Use `oxfmt` directly for piping |
+| No explicit parser override | Use appropriate file extensions |
 
 ---
 
@@ -269,14 +293,12 @@ Example `.oxfmtrc.json`:
 
 ### Oxlint Enhancements
 
-1. Support `--allow`, `--deny`, `--warn` flags
-2. Plugin enable/disable at runtime
-3. Support `--config` and `--tsconfig` paths
-4. Watch mode integration
+1. Plugin enable/disable flags at runtime (`--react-perf-plugin`, etc.)
+2. Watch mode integration
+3. Cache control options
 
 ### Oxfmt Enhancements
 
-1. Runtime formatting options (print width, tabs, quotes)
-2. Support `--config` and `--ignore-path`
-3. Stdin/stdout support
-4. Diff output mode
+1. Stdin/stdout support for piping
+2. Diff output mode
+3. Explicit parser selection

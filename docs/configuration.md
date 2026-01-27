@@ -725,6 +725,140 @@ coverage/
 **Lintro options:** use `--tool-options "biome:timeout=60"` or set `exclude_patterns`
 via CLI to adjust discovery; native configs remain primary.
 
+#### Oxlint Configuration
+
+Oxlint is a fast JavaScript/TypeScript linter (50-100x faster than ESLint) with 655+
+built-in rules from ESLint, TypeScript, React, JSX-a11y, Unicorn, and more.
+
+**Installation:**
+
+```bash
+# npm/bun
+npm install -g oxlint
+bun add -g oxlint
+
+# Homebrew (macOS)
+brew install oxlint
+```
+
+**File:** `.oxlintrc.json`
+
+```json
+{
+  "rules": {
+    "no-debugger": "error",
+    "no-console": "warn",
+    "eqeqeq": "error"
+  },
+  "plugins": ["react", "unicorn"],
+  "ignorePatterns": ["dist/**", "node_modules/**"]
+}
+```
+
+**Available Options via `--tool-options`:**
+
+| Option     | Type        | Description                                     |
+| ---------- | ----------- | ----------------------------------------------- |
+| `config`   | string      | Path to config file (--config)                  |
+| `tsconfig` | string      | Path to tsconfig.json (--tsconfig)              |
+| `allow`    | list\[str\] | Rules to allow (turn off)                       |
+| `deny`     | list\[str\] | Rules to deny (report as errors)                |
+| `warn`     | list\[str\] | Rules to warn on (report as warnings)           |
+| `quiet`    | boolean     | Suppress warnings, only report errors (--quiet) |
+| `timeout`  | integer     | Execution timeout in seconds (default: 30)      |
+
+**Usage Examples:**
+
+```bash
+# Basic check
+lintro check --tools oxlint
+
+# Auto-fix issues
+lintro format --tools oxlint
+
+# Suppress warnings (errors only)
+lintro check --tools oxlint --tool-options "oxlint:quiet=True"
+
+# Deny specific rules (report as errors)
+lintro check --tools oxlint --tool-options "oxlint:deny=no-debugger|no-console"
+
+# Allow specific rules (ignore them)
+lintro check --tools oxlint --tool-options "oxlint:allow=no-unused-vars"
+
+# Use custom config file
+lintro check --tools oxlint --tool-options "oxlint:config=.oxlintrc.custom.json"
+
+# Specify tsconfig for TypeScript projects
+lintro check --tools oxlint --tool-options "oxlint:tsconfig=tsconfig.app.json"
+```
+
+#### Oxfmt Configuration
+
+Oxfmt is a fast JavaScript/TypeScript formatter (30x faster than Prettier) that
+provides Prettier-compatible formatting with minimal configuration.
+
+**Installation:**
+
+```bash
+# npm/bun
+npm install -g oxfmt
+bun add -g oxfmt
+
+# Homebrew (macOS)
+brew install oxfmt
+```
+
+**File:** `.oxfmtrc.json` or `.oxfmtrc.jsonc`
+
+```json
+{
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5"
+}
+```
+
+**Available Options via `--tool-options`:**
+
+| Option         | Type    | Description                                |
+| -------------- | ------- | ------------------------------------------ |
+| `config`       | string  | Path to config file (--config)             |
+| `ignore_path`  | string  | Path to ignore file (--ignore-path)        |
+| `print_width`  | integer | Line width (--print-width, default: 80)    |
+| `tab_width`    | integer | Tab width (--tab-width, default: 2)        |
+| `use_tabs`     | boolean | Use tabs instead of spaces (--use-tabs)    |
+| `semi`         | boolean | Add semicolons (--semi / --no-semi)        |
+| `single_quote` | boolean | Use single quotes (--single-quote)         |
+| `timeout`      | integer | Execution timeout in seconds (default: 30) |
+
+**Usage Examples:**
+
+```bash
+# Basic check
+lintro check --tools oxfmt
+
+# Format files
+lintro format --tools oxfmt
+
+# Set line width
+lintro format --tools oxfmt --tool-options "oxfmt:print_width=120"
+
+# Use tabs instead of spaces
+lintro format --tools oxfmt --tool-options "oxfmt:use_tabs=True"
+
+# No semicolons, single quotes
+lintro format --tools oxfmt --tool-options "oxfmt:semi=False,oxfmt:single_quote=True"
+
+# Use custom config file
+lintro format --tools oxfmt --tool-options "oxfmt:config=.oxfmtrc.custom.json"
+
+# Use custom ignore file
+lintro format --tools oxfmt --tool-options "oxfmt:ignore_path=.oxfmtignore"
+```
+
 ### SQL Tools
 
 #### SQLFluff Configuration
