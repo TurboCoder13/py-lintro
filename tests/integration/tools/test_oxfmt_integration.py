@@ -132,9 +132,9 @@ def test_definition_attributes(
 def test_definition_file_patterns(
     get_plugin: Callable[[str], BaseToolPlugin],
 ) -> None:
-    """Verify OxfmtPlugin definition includes JavaScript/TypeScript file patterns.
+    """Verify OxfmtPlugin definition includes JavaScript/TypeScript/Vue file patterns.
 
-    Tests that the plugin is configured to handle JS/TS and related framework files.
+    Tests that the plugin is configured to handle JS/TS and Vue files.
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
@@ -145,8 +145,6 @@ def test_definition_file_patterns(
     assert_that(oxfmt_plugin.definition.file_patterns).contains("*.jsx")
     assert_that(oxfmt_plugin.definition.file_patterns).contains("*.tsx")
     assert_that(oxfmt_plugin.definition.file_patterns).contains("*.vue")
-    assert_that(oxfmt_plugin.definition.file_patterns).contains("*.svelte")
-    assert_that(oxfmt_plugin.definition.file_patterns).contains("*.astro")
 
 
 def test_definition_has_version_command(
