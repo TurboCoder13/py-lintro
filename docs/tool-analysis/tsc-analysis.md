@@ -2,8 +2,8 @@
 
 ## Overview
 
-TSC is the TypeScript compiler that performs static type checking on TypeScript files. This
-analysis compares Lintro's wrapper with core tsc behavior.
+TSC is the TypeScript compiler that performs static type checking on TypeScript files.
+This analysis compares Lintro's wrapper with core tsc behavior.
 
 ## Core Tool Capabilities
 
@@ -92,7 +92,8 @@ lintro check src/ --tools tsc --tool-options "tsc:project=tsconfig.build.json"
 ## Configuration Strategy
 
 - **Native config preferred:** If `tsconfig.json` exists, tsc uses it automatically
-- **No config injection:** Lintro cannot modify tsconfig.json settings; tool is "Native only"
+- **No config injection:** Lintro cannot modify tsconfig.json settings; tool is "Native
+  only"
 - **Tool options available:**
   - `tsc:project` (string) - path to tsconfig.json file
   - `tsc:strict` (bool) - enable `--strict` flag

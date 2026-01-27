@@ -387,8 +387,8 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                 try:
                     import configparser
 
-                    parser = configparser.ConfigParser()
-                    parser.read(config_path)
+                    parser = configparser.ConfigParser(interpolation=None)
+                    parser.read(config_path, encoding="utf-8")
                     # Convert to dict, focusing on [mypy] section
                     result = {}
                     if "mypy" in parser:
