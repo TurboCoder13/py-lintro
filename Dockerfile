@@ -40,7 +40,7 @@ RUN if [ ! -f /usr/local/bin/clippy-driver ]; then \
 # =============================================================================
 # Stage 3: Runtime - Minimal image with only what's needed to run
 # =============================================================================
-FROM python:3.13-slim@sha256:05b118ecc93ea09e30569706568fb251c71b77d2a3908d338b77be033e162b59 AS runtime
+FROM python:3.13-slim@sha256:51e1a0a317fdb6e170dc791bbeae63fac5272c82f43958ef74a34e170c6f8b18 AS runtime
 
 # Add Docker labels
 LABEL maintainer="turbocoder13"
