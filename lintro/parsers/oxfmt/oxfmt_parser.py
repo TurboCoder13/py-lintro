@@ -34,8 +34,6 @@ _VALID_EXTENSIONS: tuple[str, ...] = (
     ".cts",
     ".tsx",
     ".vue",
-    ".svelte",
-    ".astro",
 )
 
 
