@@ -79,6 +79,8 @@ system.
 | [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)                            | 🐳 Dockerfile          | -        |
 | [![Markdownlint](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2) | 📝 Markdown            | -        |
 | [![Mypy](https://img.shields.io/badge/Mypy-type%20checking-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)                                       | 🐍 Python              | -        |
+| [![Oxfmt](https://img.shields.io/badge/Oxfmt-format-e05d44?logo=javascript&logoColor=white)](https://oxc.rs/)                                                 | 🟨 JS/TS               | ✅       |
+| [![Oxlint](https://img.shields.io/badge/Oxlint-lint-e05d44?logo=javascript&logoColor=white)](https://oxc.rs/)                                                 | 🟨 JS/TS               | ✅       |
 | [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                                        | 🟨 JS/TS · 🧾 JSON     | ✅       |
 | [![pydoclint](https://img.shields.io/badge/pydoclint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/jsh9/pydoclint)                       | 🐍 Python              | -        |
 | [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                                   | 🐍 Python              | ✅       |
