@@ -389,20 +389,10 @@ def test_set_options(
     [
         ("config", ".oxfmtrc.json", ".oxfmtrc.json"),
         ("ignore_path", ".oxfmtignore", ".oxfmtignore"),
-        ("print_width", 120, 120),
-        ("tab_width", 4, 4),
-        ("use_tabs", True, True),
-        ("semi", False, False),
-        ("single_quote", True, True),
     ],
     ids=[
         "config",
         "ignore_path",
-        "print_width",
-        "tab_width",
-        "use_tabs",
-        "semi",
-        "single_quote",
     ],
 )
 def test_set_formatting_options(
@@ -411,9 +401,13 @@ def test_set_formatting_options(
     option_value: object,
     expected: object,
 ) -> None:
-    """Verify OxfmtPlugin.set_options correctly sets formatting options.
+    """Verify OxfmtPlugin.set_options correctly sets CLI options.
 
-    Tests that formatting options can be set and retrieved correctly.
+    Tests that CLI options can be set and retrieved correctly.
+
+    Note:
+        Formatting options (print_width, tab_width, use_tabs, semi, single_quote)
+        are only supported via config file (.oxfmtrc.json), not CLI flags.
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
@@ -442,20 +436,27 @@ def test_set_exclude_patterns(
     assert_that(oxfmt_plugin.exclude_patterns).contains("dist")
 
 
-def test_formatting_options_accepted_by_fix(
+def test_config_option_accepted_by_fix(
     get_plugin: Callable[[str], BaseToolPlugin],
     tmp_path: Path,
 ) -> None:
-    """Verify formatting options are accepted and passed to oxfmt.
+    """Verify config option is accepted and passed to oxfmt.
 
-    Tests that setting print_width is accepted by the plugin and the fix
-    command completes successfully. Exact formatting output depends on
-    oxfmt version and is not verified.
+    Tests that setting config path is accepted by the plugin and the fix
+    command completes successfully.
+
+    Note:
+        Formatting options (print_width, tab_width, use_tabs, semi, single_quote)
+        are only supported via config file (.oxfmtrc.json), not CLI flags.
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
         tmp_path: Pytest fixture providing a temporary directory.
     """
+    # Create a config file
+    config_path = tmp_path / ".oxfmtrc.json"
+    config_path.write_text('{"printWidth": 40}\n')
+
     # Create file with a long line
     file_path = tmp_path / "test.js"
     file_path.write_text(
@@ -463,12 +464,12 @@ def test_formatting_options_accepted_by_fix(
     )
 
     oxfmt_plugin = get_plugin("oxfmt")
-    # Set a narrow print width
-    oxfmt_plugin.set_options(print_width=40)
+    # Set the config path
+    oxfmt_plugin.set_options(config=str(config_path))
 
     result = oxfmt_plugin.fix([str(file_path)], {})
 
     assert_that(result).is_not_none()
     assert_that(result.name).is_equal_to("oxfmt")
     # Verify the option was stored correctly
-    assert_that(oxfmt_plugin.options.get("print_width")).is_equal_to(40)
+    assert_that(oxfmt_plugin.options.get("config")).is_equal_to(str(config_path))
