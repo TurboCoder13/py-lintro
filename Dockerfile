@@ -101,6 +101,7 @@ ENV CARGO_HOME=/home/lintro/.cargo \
 RUN ln -sf /usr/local/bin/bun /usr/local/bin/bunx
 
 # Create wrapper scripts for Node.js tools (uses bun as runtime)
+# Only create wrappers for tools that are actually installed in the tools image
 RUN printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/prettier/bin/prettier.cjs "$@"\n' > /usr/local/bin/prettier && \
     chmod +x /usr/local/bin/prettier && \
     printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/markdownlint-cli2/markdownlint-cli2-bin.mjs "$@"\n' > /usr/local/bin/markdownlint-cli2 && \
