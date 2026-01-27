@@ -4,6 +4,7 @@
 # Use the pre-built tools image to avoid rebuilding tools on every CI run.
 # TOOLS_IMAGE can be overridden via --build-arg for PR builds with new tools.
 ARG TOOLS_IMAGE=ghcr.io/turbocoder13/lintro-tools:latest
+# hadolint ignore=DL3006
 FROM ${TOOLS_IMAGE} AS tools
 
 # =============================================================================
