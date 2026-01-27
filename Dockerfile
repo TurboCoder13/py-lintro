@@ -2,7 +2,9 @@
 # Stage 1: Tools - Pre-built external tools (updated weekly)
 # =============================================================================
 # Use the pre-built tools image to avoid rebuilding tools on every CI run.
-FROM ghcr.io/turbocoder13/lintro-tools:latest@sha256:8d0e9c9630dce2907a395f415886bd95c33a22011ba6ff6f3f5acb00f87ceeae AS tools
+# TOOLS_IMAGE can be overridden via --build-arg for PR builds with new tools.
+ARG TOOLS_IMAGE=ghcr.io/turbocoder13/lintro-tools:latest
+FROM ${TOOLS_IMAGE} AS tools
 
 # =============================================================================
 # Stage 2: Builder - Add Python dependencies to tools image
