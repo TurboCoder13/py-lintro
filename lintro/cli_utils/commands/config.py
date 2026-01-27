@@ -20,23 +20,17 @@ from lintro.utils.unified_config import (
 
 
 def _get_all_tool_names() -> list[str]:
-    """Get list of all known tool names.
+    """Get list of all registered tool names.
+
+    Dynamically retrieves tool names from the plugin registry to ensure
+    all tools are included without manual maintenance.
 
     Returns:
         list[str]: Sorted list of tool names.
     """
-    return [
-        "ruff",
-        "black",
-        "prettier",
-        "biome",
-        "yamllint",
-        "markdownlint",
-        "bandit",
-        "hadolint",
-        "actionlint",
-        "pytest",
-    ]
+    from lintro.plugins.registry import ToolRegistry
+
+    return sorted(ToolRegistry.get_all().keys())
 
 
 @click.command()
