@@ -87,6 +87,7 @@ system.
 | [![shfmt](https://img.shields.io/badge/shfmt-format-4EAA25?logo=gnubash&logoColor=white)](https://github.com/mvdan/sh)                                        | 🐚 Shell Scripts       | ✅       |
 | [![SQLFluff](https://img.shields.io/badge/SQLFluff-lint%2Bformat-4b5563?logo=database&logoColor=white)](https://sqlfluff.com/)                                | 🗃️ SQL                 | ✅       |
 | [![Taplo](https://img.shields.io/badge/Taplo-lint%2Bformat-9b4dca?logo=toml&logoColor=white)](https://taplo.tamasfe.dev/)                                     | 🧾 TOML                | ✅       |
+| [![TypeScript](https://img.shields.io/badge/TypeScript-type%20check-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)                 | 🟨 JS/TS               | -        |
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                           | 🧾 YAML                | -        |
 
 <!-- markdownlint-enable MD013 MD060 -->
@@ -127,6 +128,8 @@ For full functionality, install these additional tools:
 - **SQLFluff** - `pip install sqlfluff`
 - **Taplo** - `brew install taplo` or
   [GitHub Releases](https://github.com/tamasfe/taplo/releases)
+- **TypeScript** - `brew install typescript`, `bun add -g typescript`, or
+  `npm install -g typescript`
 
 Check all tool versions with: `lintro list-tools`
 

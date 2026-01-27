@@ -129,6 +129,7 @@ RUN bun --version && \
     shfmt --version && \
     sqlfluff --version && \
     taplo --version && \
+    tsc --version && \
     rustfmt --version && \
     yamllint --version
 

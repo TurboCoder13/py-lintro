@@ -73,6 +73,7 @@ This script installs:
   - shfmt (Shell script formatter)
   - SQLFluff (SQL linter and formatter)
   - Taplo (TOML linter and formatter)
+  - TypeScript (TypeScript compiler and type checker)
 
 Use this script to set up a complete development environment.
 EOF
@@ -901,6 +902,23 @@ main() {
 		fi
 	fi
 
+	# Install typescript via bun (TypeScript compiler)
+	echo -e "${BLUE}Installing typescript...${NC}"
+
+	if ! ensure_bun_installed; then
+		exit 1
+	fi
+
+	TYPESCRIPT_VERSION=$(get_tool_version "typescript") || exit 1
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install typescript@${TYPESCRIPT_VERSION} globally via bun"
+	elif bun add -g "typescript@${TYPESCRIPT_VERSION}"; then
+		echo -e "${GREEN}✓ typescript@${TYPESCRIPT_VERSION} installed successfully${NC}"
+	else
+		echo -e "${RED}✗ Failed to install typescript${NC}"
+		exit 1
+	fi
+
 	echo ""
 	echo -e "${GREEN}=== Installation Complete! ===${NC}"
 	echo ""
@@ -923,6 +941,7 @@ main() {
 	echo "  - shfmt (Shell script formatting)"
 	echo "  - sqlfluff (SQL linting and formatting)"
 	echo "  - taplo (TOML linting and formatting)"
+	echo "  - tsc (TypeScript type checking)"
 	echo "  - mypy (Python type checking)"
 	echo "  - yamllint (YAML linting)"
 	echo ""
@@ -930,7 +949,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "biome" "black" "cargo-audit" "clippy" "rustfmt" "pydoclint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "yamllint" "mypy")
+	tools_to_verify=("actionlint" "bandit" "biome" "black" "cargo-audit" "clippy" "rustfmt" "pydoclint" "gitleaks" "hadolint" "markdownlint-cli2" "prettier" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "tsc" "yamllint" "mypy")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo
