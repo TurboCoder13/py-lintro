@@ -75,7 +75,9 @@ const obj={a:1,b:2,c:3}
     )
     # Format it with oxfmt so it's guaranteed to be "formatted" for this version
     subprocess.run(
-        ["oxfmt", "--write", str(file_path)], check=True, capture_output=True
+        ["oxfmt", "--write", str(file_path)],
+        check=True,
+        capture_output=True,
     )
     return str(file_path)
 
