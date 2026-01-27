@@ -112,7 +112,7 @@ def test_parse_oxfmt_output_deeply_nested_path() -> None:
 
 
 def test_parse_oxfmt_output_various_extensions() -> None:
-    """Handle various JavaScript/TypeScript file extensions."""
+    """Handle various JavaScript/TypeScript/Vue file extensions."""
     output = """file.js
 file.mjs
 file.cjs
@@ -121,11 +121,9 @@ file.ts
 file.mts
 file.cts
 file.tsx
-file.vue
-file.svelte
-file.astro"""
+file.vue"""
     result = parse_oxfmt_output(output)
-    assert_that(result).is_length(11)
+    assert_that(result).is_length(9)
     extensions = [issue.file.split(".")[-1] for issue in result]
     assert_that(extensions).contains(
         "js",
@@ -137,8 +135,6 @@ file.astro"""
         "cts",
         "tsx",
         "vue",
-        "svelte",
-        "astro",
     )
 
 

@@ -84,14 +84,14 @@ oxlint_plugin.set_options(quiet=True, exclude_patterns=["node_modules"])
 
 ### Oxfmt Core Capabilities
 
-- **Formatting**: JS, TS, JSX, TSX, Vue, Svelte, Astro
+- **Formatting**: JS, TS, JSX, TSX, Vue
 - **Performance**: Approximately 30x faster than Prettier
 - **Check mode**: Verify formatting via `--check --list-different`
 - **Write mode**: Format in place via `--write`
 - **Prettier compatibility**: Aims for Prettier-compatible output
 
 > **Note**: Unlike Prettier, oxfmt currently only supports JavaScript/TypeScript
-> and framework files. It does not support JSON, CSS, HTML, or Markdown formatting.
+> and Vue files. It does not support Svelte, Astro, JSON, CSS, HTML, or Markdown.
 
 ### Oxfmt Lintro Implementation
 
@@ -140,7 +140,7 @@ result = oxfmt_plugin.fix(["src/"])
 | -------------- | ----------------------------- |
 | **JavaScript** | `.js`, `.mjs`, `.cjs`, `.jsx` |
 | **TypeScript** | `.ts`, `.mts`, `.cts`, `.tsx` |
-| **Frameworks** | `.vue`, `.svelte`, `.astro`   |
+| **Frameworks** | `.vue`                        |
 
 ---
 

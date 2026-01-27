@@ -30,8 +30,8 @@ from lintro.tools.core.option_validators import (
 # Constants for oxfmt configuration
 OXFMT_DEFAULT_TIMEOUT: int = 30
 OXFMT_DEFAULT_PRIORITY: int = 80
-# Note: oxfmt (from oxc toolchain) only supports JavaScript/TypeScript files.
-# Unlike Prettier, it does not support JSON, CSS, HTML, Markdown, etc.
+# Note: oxfmt (from oxc toolchain) supports JavaScript/TypeScript and Vue files.
+# Unlike Prettier, it does not support Svelte, Astro, JSON, CSS, HTML, Markdown, etc.
 OXFMT_FILE_PATTERNS: list[str] = [
     "*.js",
     "*.mjs",
@@ -42,8 +42,6 @@ OXFMT_FILE_PATTERNS: list[str] = [
     "*.cts",
     "*.tsx",
     "*.vue",
-    "*.svelte",
-    "*.astro",
 ]
 
 
@@ -53,7 +51,7 @@ class OxfmtPlugin(BaseToolPlugin):
     """Oxfmt code formatter plugin.
 
     This plugin integrates oxfmt with Lintro for formatting
-    JavaScript, TypeScript, Vue, Svelte, and Astro files.
+    JavaScript, TypeScript, and Vue files.
     """
 
     @property

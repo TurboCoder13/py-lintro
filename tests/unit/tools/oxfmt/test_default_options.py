@@ -63,7 +63,7 @@ def test_definition_attributes(
 
 
 def test_definition_file_patterns(oxfmt_plugin: OxfmtPlugin) -> None:
-    """Definition includes JavaScript/TypeScript file patterns.
+    """Definition includes JavaScript/TypeScript/Vue file patterns.
 
     Args:
         oxfmt_plugin: The OxfmtPlugin instance to test.
@@ -74,8 +74,6 @@ def test_definition_file_patterns(oxfmt_plugin: OxfmtPlugin) -> None:
     assert_that(patterns).contains("*.jsx")
     assert_that(patterns).contains("*.tsx")
     assert_that(patterns).contains("*.vue")
-    assert_that(patterns).contains("*.svelte")
-    assert_that(patterns).contains("*.astro")
 
 
 def test_definition_native_configs(oxfmt_plugin: OxfmtPlugin) -> None:
