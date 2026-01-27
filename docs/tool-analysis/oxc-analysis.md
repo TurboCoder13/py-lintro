@@ -108,11 +108,9 @@ oxlint_plugin.set_options(quiet=True, exclude_patterns=["node_modules"])
 - `verbose_fix_output`: Include raw output in fix results
 - `config`: Path to oxfmt config file (--config)
 - `ignore_path`: Path to ignore file (--ignore-path)
-- `print_width`: Line width (--print-width)
-- `tab_width`: Tab width (--tab-width)
-- `use_tabs`: Use tabs instead of spaces (--use-tabs / --no-use-tabs)
-- `semi`: Add semicolons (--semi / --no-semi)
-- `single_quote`: Use single quotes (--single-quote / --no-single-quote)
+
+> **Note:** Formatting options (`printWidth`, `tabWidth`, `useTabs`, `semi`, `singleQuote`)
+> are only supported via config file (`.oxfmtrc.json`), not CLI flags.
 
 **Limited/Missing Features:**
 
