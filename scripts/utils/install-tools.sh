@@ -957,7 +957,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "black" "cargo-audit" "clippy" "rustfmt" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "tsc" "yamllint")
+	tools_to_verify=("actionlint" "bandit" "black" "cargo-audit" "clippy" "rustfmt" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "prettier" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "tsc" "yamllint")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo
