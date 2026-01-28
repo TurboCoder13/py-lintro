@@ -70,24 +70,24 @@ system.
 
 | Tool                                                                                                                                                          | Language               | Auto-fix |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | -------- |
-| [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                                   | 🐍 Python              | ✅       |
-| [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                                        | 🐍 Python              | ✅       |
-| [![Mypy](https://img.shields.io/badge/Mypy-type%20checking-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)                                       | 🐍 Python              | -        |
-| [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)                                 | 🐍 Python              | -        |
-| [![Semgrep](https://img.shields.io/badge/Semgrep-security-5b21b6?logo=semgrep&logoColor=white)](https://semgrep.dev/)                                         | 🔒 Multi-language      | -        |
-| [![Gitleaks](https://img.shields.io/badge/Gitleaks-secrets-dc2626?logo=git&logoColor=white)](https://gitleaks.io/)                                            | 🔐 Secret Detection    | -        |
-| [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                                        | 🟨 JS/TS · 🧾 JSON     | ✅       |
-| [![Biome](https://img.shields.io/badge/Biome-lint-60A5FA?logo=biome&logoColor=white)](https://biomejs.dev/)                                                   | 🟨 JS/TS · 🧾 JSON/CSS | ✅       |
-| [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                           | 🧾 YAML                | -        |
-| [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)                            | 🐳 Dockerfile          | -        |
 | [![Actionlint](https://img.shields.io/badge/Actionlint-lint-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)                         | ⚙️ GitHub Actions      | -        |
+| [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)                                 | 🐍 Python              | -        |
+| [![Biome](https://img.shields.io/badge/Biome-lint-60A5FA?logo=biome&logoColor=white)](https://biomejs.dev/)                                                   | 🟨 JS/TS · 🧾 JSON/CSS | ✅       |
+| [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                                        | 🐍 Python              | ✅       |
+| [![Clippy](https://img.shields.io/badge/Clippy-lint-000000?logo=rust&logoColor=white)](https://github.com/rust-lang/rust-clippy)                              | 🦀 Rust                | ✅       |
+| [![Gitleaks](https://img.shields.io/badge/Gitleaks-secrets-dc2626?logo=git&logoColor=white)](https://gitleaks.io/)                                            | 🔐 Secret Detection    | -        |
+| [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)                            | 🐳 Dockerfile          | -        |
+| [![Markdownlint](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2) | 📝 Markdown            | -        |
+| [![Mypy](https://img.shields.io/badge/Mypy-type%20checking-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)                                       | 🐍 Python              | -        |
+| [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                                        | 🟨 JS/TS · 🧾 JSON     | ✅       |
+| [![pydoclint](https://img.shields.io/badge/pydoclint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/jsh9/pydoclint)                       | 🐍 Python              | -        |
+| [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                                   | 🐍 Python              | ✅       |
+| [![Semgrep](https://img.shields.io/badge/Semgrep-security-5b21b6?logo=semgrep&logoColor=white)](https://semgrep.dev/)                                         | 🔒 Multi-language      | -        |
 | [![ShellCheck](https://img.shields.io/badge/ShellCheck-lint-4EAA25?logo=gnubash&logoColor=white)](https://www.shellcheck.net/)                                | 🐚 Shell Scripts       | -        |
 | [![shfmt](https://img.shields.io/badge/shfmt-format-4EAA25?logo=gnubash&logoColor=white)](https://github.com/mvdan/sh)                                        | 🐚 Shell Scripts       | ✅       |
 | [![SQLFluff](https://img.shields.io/badge/SQLFluff-lint%2Bformat-4b5563?logo=database&logoColor=white)](https://sqlfluff.com/)                                | 🗃️ SQL                 | ✅       |
 | [![Taplo](https://img.shields.io/badge/Taplo-lint%2Bformat-9b4dca?logo=toml&logoColor=white)](https://taplo.tamasfe.dev/)                                     | 🧾 TOML                | ✅       |
-| [![Markdownlint](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2) | 📝 Markdown            | -        |
-| [![Clippy](https://img.shields.io/badge/Clippy-lint-000000?logo=rust&logoColor=white)](https://github.com/rust-lang/rust-clippy)                              | 🦀 Rust                | ✅       |
-| [![pydoclint](https://img.shields.io/badge/pydoclint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/jsh9/pydoclint)                       | 🐍 Python              | -        |
+| [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                           | 🧾 YAML                | -        |
 
 <!-- markdownlint-enable MD013 MD060 -->
 

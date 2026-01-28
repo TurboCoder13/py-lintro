@@ -118,6 +118,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `test-venv-setup.sh`                | Create isolated Python 3.13 virtual environment          | `./scripts/ci/test-venv-setup.sh`                                                     |
 | `test-verify-cli.sh`                | Verify lintro CLI entry points in installed package      | `./scripts/ci/test-verify-cli.sh`                                                     |
 | `test-verify-imports.sh`            | Verify critical package imports in installed lintro      | `./scripts/ci/test-verify-imports.sh wheel`                                           |
+| `extract-test-summary.sh`           | Extract pytest test summary to JSON for PR comments      | `./scripts/ci/testing/extract-test-summary.sh <log> <out.json>`                       |
 | `extract-version-from-tag.sh`       | Extract version from git tag (strips v prefix)           | `./scripts/ci/extract-version-from-tag.sh`                                            |
 | `git-commit-push.sh`                | Stage, commit, and push with github-actions[bot]         | `./scripts/ci/git-commit-push.sh <pattern> <message>`                                 |
 | `tools-image-summary.sh`            | Generate GitHub step summary for tools image build       | `./scripts/ci/tools-image-summary.sh --help`                                          |

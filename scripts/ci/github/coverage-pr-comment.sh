@@ -2,14 +2,14 @@
 set -euo pipefail
 
 # Coverage PR Comment Script
-# Generates and posts comments to PRs with coverage information
+# Generates and posts comments to PRs with coverage and test summary information
 
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
 	echo "Usage: $0 [--help|-h]"
 	echo ""
 	echo "Coverage PR Comment Script"
-	echo "Generates a PR comment with coverage info within a GitHub Actions run."
+	echo "Generates a PR comment with coverage and test info within a GitHub Actions run."
 	echo ""
 	echo "This script is intended for CI and will no-op outside pull_request events."
 	exit 0
@@ -42,6 +42,76 @@ else
 	STATUS_TEXT="Below target (<80%)"
 fi
 
+# Try to load test summary from JSON file if available
+TEST_SUMMARY_TABLE=""
+COVERAGE_DETAILS=""
+
+if [ -f "test-summary.json" ]; then
+	log_info "Loading test summary from test-summary.json"
+
+	# Expected JSON structure from extract-test-summary.sh:
+	# {
+	#   "tests": { "passed": N, "failed": N, "skipped": N, "errors": N, "total": N, "duration": N.N },
+	#   "coverage": { "percentage": N.N, "lines_covered": N, "lines_total": N, "lines_missing": N, "files": N }
+	# }
+	# Note: grep patterns expect "key": value format with single space after colon.
+	# Using head -1/tail -1 to disambiguate keys that appear in multiple objects.
+
+	# Extract test values using grep/sed (portable, no jq required)
+	TEST_PASSED=$(grep -o '"passed": [0-9]*' test-summary.json | grep -o '[0-9]*' || echo "0")
+	TEST_FAILED=$(grep -o '"failed": [0-9]*' test-summary.json | grep -o '[0-9]*' || echo "0")
+	TEST_SKIPPED=$(grep -o '"skipped": [0-9]*' test-summary.json | grep -o '[0-9]*' || echo "0")
+	TEST_TOTAL=$(grep -o '"total": [0-9]*' test-summary.json | grep -o '[0-9]*' | head -1 || echo "0")
+	TEST_DURATION=$(grep -o '"duration": [0-9.]*' test-summary.json | grep -o '[0-9.]*' || echo "0")
+
+	# Extract coverage details
+	COV_LINES_COVERED=$(grep -o '"lines_covered": [0-9]*' test-summary.json | grep -o '[0-9]*' || echo "0")
+	COV_LINES_TOTAL=$(grep -o '"lines_total": [0-9]*' test-summary.json | grep -o '[0-9]*' || echo "0")
+	COV_LINES_MISSING=$(grep -o '"lines_missing": [0-9]*' test-summary.json | grep -o '[0-9]*' || echo "0")
+	COV_FILES=$(grep -o '"files": [0-9]*' test-summary.json | grep -o '[0-9]*' | tail -1 || echo "0")
+
+	# Validate extracted values are reasonable
+	if [ "${TEST_TOTAL:-0}" -gt 0 ] && [ "${TEST_PASSED:-0}" -gt "${TEST_TOTAL}" ]; then
+		log_warning "Extracted TEST_PASSED ($TEST_PASSED) > TEST_TOTAL ($TEST_TOTAL); resetting to 0"
+		TEST_PASSED=0
+		TEST_FAILED=0
+		TEST_SKIPPED=0
+	fi
+
+	# Format duration
+	DURATION_STR="${TEST_DURATION}s"
+
+	# Determine test status emoji
+	if [ "${TEST_FAILED:-0}" -gt 0 ]; then
+		TEST_STATUS_EMOJI="❌ FAIL"
+	else
+		TEST_STATUS_EMOJI="✅ PASS"
+	fi
+
+	# Build test summary table
+	TEST_SUMMARY_TABLE="### 🧪 Test Results
+
+| Tool | Status | Passed | Failed | Skipped | Total | Duration |
+|------|--------|--------|--------|---------|-------|----------|
+| 🧪 pytest | $TEST_STATUS_EMOJI | $TEST_PASSED | $TEST_FAILED | $TEST_SKIPPED | $TEST_TOTAL | $DURATION_STR |
+"
+
+	# Build coverage details section
+	if [ "${COV_LINES_TOTAL:-0}" -gt 0 ]; then
+		COVERAGE_DETAILS="### 📊 Coverage Summary
+
+| Metric | Value |
+|--------|-------|
+| Coverage | **${COVERAGE_VALUE}%** |
+| Lines Covered | ${COV_LINES_COVERED} / ${COV_LINES_TOTAL} |
+| Lines Missing | ${COV_LINES_MISSING} |
+| Files Analyzed | ${COV_FILES} |
+"
+	fi
+else
+	log_warning "test-summary.json not found, using basic format"
+fi
+
 # Create the comment content with marker
 CONTENT="<!-- coverage-report -->
 
@@ -51,6 +121,8 @@ CONTENT="<!-- coverage-report -->
 
 **Status:** $STATUS_TEXT
 
+$TEST_SUMMARY_TABLE
+$COVERAGE_DETAILS
 ### 📋 Coverage Details
 - **Generated:** $(date +%Y-%m-%d)
 - **Commit:** [$GITHUB_SHA](https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA)

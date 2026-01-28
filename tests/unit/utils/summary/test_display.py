@@ -275,6 +275,8 @@ def test_non_pytest_test_tool(
 ) -> None:
     """Display basic pass/fail for non-pytest tools in test action.
 
+    Tool names with underscores are displayed with hyphens for consistency.
+
     Args:
         console_capture: Mock console output capture.
         fake_tool_result_factory: Factory for creating fake tool results.
@@ -289,7 +291,8 @@ def test_non_pytest_test_tool(
     print_summary_table(capture, Action.TEST, [result])
 
     combined = "".join(output)
-    assert_that(combined).contains("other_test_runner")
+    # Underscores are converted to hyphens for display
+    assert_that(combined).contains("other-test-runner")
     assert_that(combined).contains("PASS")
 
 
@@ -323,6 +326,36 @@ def test_multiple_tools_displayed(
     assert_that(combined).contains("mypy")
 
 
+def test_tools_sorted_alphabetically(
+    console_capture: tuple[Callable[[str], None], list[str]],
+    fake_tool_result_factory: Callable[..., FakeToolResult],
+) -> None:
+    """Display tools in alphabetical order regardless of input order.
+
+    Args:
+        console_capture: Mock console output capture.
+        fake_tool_result_factory: Factory for creating fake tool results.
+    """
+    capture, output = console_capture
+    # Input in non-alphabetical order: ruff, bandit, clippy
+    results = [
+        fake_tool_result_factory(name="ruff", success=True, issues_count=0),
+        fake_tool_result_factory(name="bandit", success=True, issues_count=0),
+        fake_tool_result_factory(name="clippy", success=True, issues_count=0),
+    ]
+
+    print_summary_table(capture, Action.CHECK, results)
+
+    combined = "".join(output)
+    # Verify alphabetical order: bandit < clippy < ruff
+    bandit_pos = combined.find("bandit")
+    clippy_pos = combined.find("clippy")
+    ruff_pos = combined.find("ruff")
+
+    assert_that(bandit_pos).is_less_than(clippy_pos)
+    assert_that(clippy_pos).is_less_than(ruff_pos)
+
+
 # =============================================================================
 # Tests for edge cases in print_summary_table
 # =============================================================================
@@ -348,7 +381,10 @@ def test_unknown_tool_name(
     console_capture: tuple[Callable[[str], None], list[str]],
     fake_tool_result_factory: Callable[..., FakeToolResult],
 ) -> None:
-    """Handle unknown tool name gracefully by displaying it as-is.
+    """Handle unknown tool name gracefully with underscore-to-hyphen conversion.
+
+    Tool names with underscores are displayed with hyphens for consistency
+    with actual CLI tool naming conventions.
 
     Args:
         console_capture: Mock console output capture.
@@ -364,7 +400,8 @@ def test_unknown_tool_name(
     print_summary_table(capture, Action.CHECK, [result])
 
     combined = "".join(output)
-    assert_that(combined).contains("unknown_tool_xyz")
+    # Underscores are converted to hyphens for display
+    assert_that(combined).contains("unknown-tool-xyz")
 
 
 # =============================================================================

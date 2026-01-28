@@ -113,7 +113,24 @@ jobs:
       - name: Run comprehensive test suite (with Docker tests)
         env:
           TOOLS_IMAGE: ${{ steps.tools.outputs.image }}
-        run: ./scripts/docker/docker-test.sh
+        run: |
+          ./scripts/docker/docker-test.sh 2>&1 | tee test-output.log
+          # Preserve exit code from docker-test.sh
+          exit "${PIPESTATUS[0]}"
+      - name: Extract test summary
+        if: always()
+        run: |
+          chmod +x ./scripts/ci/testing/extract-test-summary.sh
+          ./scripts/ci/testing/extract-test-summary.sh \
+            test-output.log test-summary.json || true
+      - name: Upload test summary artifact
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: test-summary
+          path: test-summary.json
+          retention-days: 30
+          if-no-files-found: warn
       # (moved) Upload coverage badge artifact happens after badge generation below
       - name: Upload coverage report as artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -219,6 +236,14 @@ jobs:
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: coverage-xml
+          path: .
+      - name: Download test summary artifact
+        if: always()
+        continue-on-error: true
+        # yamllint disable-line rule:line-length
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: test-summary
           path: .
       - name: Generate coverage PR comment (always)
         if: always()
