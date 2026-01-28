@@ -35,29 +35,35 @@ def _normalize_newline(value: str) -> str:
 
 
 def _extract_details_blocks(content: str) -> tuple[str, list[str]]:
-    """Extract <details> blocks and remaining content from a string.
+    """Extract history <details> blocks and remaining content from a string.
+
+    Only extracts <details> blocks that are history entries (identified by
+    summary text containing "Previous run" or "Run #"). Other <details>
+    blocks (e.g., user-created collapsibles) are left intact in the remaining
+    content.
 
     Args:
         content: The content to parse.
 
     Returns:
-        Tuple of (content outside details blocks, list of details blocks).
+        Tuple of (content outside history details blocks, list of history blocks).
     """
-    # Pattern to match <details>...</details> blocks (non-greedy, assumes no nesting)
-    # This simple approach works for flat history blocks without nested details
-    details_pattern = re.compile(
-        r"<details>\s*\n.*?</details>",
+    # Pattern to match <details>...</details> blocks that are history entries
+    # History blocks have summaries containing "Previous run" or "Run #" patterns
+    # Uses non-greedy match to handle multiple blocks; assumes no nesting
+    history_pattern = re.compile(
+        r"<details>\s*<summary>[^<]*(Previous run|Run #)[^<]*</summary>.*?</details>",
         re.DOTALL,
     )
 
-    details_blocks: list[str] = details_pattern.findall(content)
-    remaining_content: str = details_pattern.sub("", content).strip()
+    details_blocks: list[str] = history_pattern.findall(content)
+    # findall returns the captured group, not the full match; use finditer instead
+    details_blocks = [m.group(0) for m in history_pattern.finditer(content)]
+    remaining_content: str = history_pattern.sub("", content).strip()
 
     return remaining_content, details_blocks
 
 
-# Reserved for future use in parsing details blocks for deduplication or sorting.
-# Currently covered only by unit tests; may be used when history management evolves.
 def _extract_timestamp_from_details(details_block: str) -> str | None:
     """Extract timestamp from a details block summary.
 
@@ -72,6 +78,32 @@ def _extract_timestamp_from_details(details_block: str) -> str | None:
     timestamp_pattern = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \w+")
     match = timestamp_pattern.search(details_block)
     return match.group(0) if match else None
+
+
+def _sort_history_by_timestamp(history_blocks: list[str]) -> list[str]:
+    """Sort history blocks by timestamp, newest first.
+
+    Blocks without timestamps are placed at the end to preserve order
+    for malformed or legacy entries.
+
+    Args:
+        history_blocks: List of <details>...</details> blocks to sort.
+
+    Returns:
+        List of blocks sorted by timestamp (newest first).
+    """
+
+    def sort_key(block: str) -> tuple[int, str]:
+        timestamp = _extract_timestamp_from_details(block)
+        if timestamp:
+            # Return (0, timestamp) so blocks with timestamps sort first
+            # Negate by using reverse=True in sort, or use descending string
+            return (0, timestamp)
+        # Blocks without timestamps go last, maintain relative order
+        return (1, "")
+
+    # Sort by timestamp descending (newest first)
+    return sorted(history_blocks, key=sort_key, reverse=True)
 
 
 def merge_comment_bodies(
@@ -95,6 +127,9 @@ def merge_comment_bodies(
         new_body: Freshly generated body for the current run.
         place_new_above: If True, place new_body above the historical
             sections; otherwise, place it below. Defaults to True.
+            Use ``place_new_above=False`` for chronological log-style display
+            where the latest entry appears at the bottom (e.g., deployment logs
+            or audit trails where older entries should be visible first).
 
     Returns:
         str: The merged comment body ready to send to the GitHub API.
@@ -128,14 +163,15 @@ def merge_comment_bodies(
     if prev_current_content.strip():
         new_history_block: str = (
             f"<details>\n"
-            f"<summary>\U0001f4dc Previous run ({now_utc})</summary>\n\n"
+            f"<summary>📜 Previous run ({now_utc})</summary>\n\n"
             f"{prev_current_content.strip()}\n"
             f"</details>"
         )
         history_blocks.append(new_history_block)
 
-    # Add existing historical blocks (already in order from previous merge)
+    # Add existing historical blocks and sort by timestamp to ensure newest-first order
     history_blocks.extend(existing_history)
+    history_blocks = _sort_history_by_timestamp(history_blocks)
 
     # Limit history to MAX_HISTORY_RUNS
     history_blocks = history_blocks[:MAX_HISTORY_RUNS]

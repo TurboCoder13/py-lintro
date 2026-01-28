@@ -83,6 +83,55 @@ Content 1
     assert_that(blocks[1]).contains("Run #1")
 
 
+def test_extract_details_blocks_no_newline_after_tag() -> None:
+    """Extract details block when no newline follows opening tag."""
+    content = """Main content
+
+<details><summary>Previous run (2026-01-25)</summary>
+
+Inner content
+</details>
+
+After details"""
+
+    remaining, blocks = _extract_details_blocks(content)
+
+    assert_that(remaining).contains("Main content")
+    assert_that(remaining).contains("After details")
+    assert_that(blocks).is_length(1)
+    assert_that(blocks[0]).contains("Previous run")
+    assert_that(blocks[0]).contains("Inner content")
+
+
+def test_extract_details_blocks_preserves_non_history_blocks() -> None:
+    """Non-history details blocks are preserved in remaining content."""
+    content = """Main content
+
+<details>
+<summary>Click to expand</summary>
+
+User-created collapsible content
+</details>
+
+<details>
+<summary>Previous run (2026-01-25)</summary>
+
+Historical content
+</details>
+
+After details"""
+
+    remaining, blocks = _extract_details_blocks(content)
+
+    # Non-history block should be in remaining content
+    assert_that(remaining).contains("Click to expand")
+    assert_that(remaining).contains("User-created collapsible content")
+    # History block should be extracted
+    assert_that(blocks).is_length(1)
+    assert_that(blocks[0]).contains("Previous run")
+    assert_that(blocks[0]).contains("Historical content")
+
+
 # =============================================================================
 # Tests for _extract_timestamp_from_details
 # =============================================================================
@@ -242,8 +291,9 @@ def test_merge_history_limit_enforced() -> None:
     marker = "<!-- test -->"
 
     # Create previous body with MAX_HISTORY_RUNS history blocks
+    # Use "Run #N" format to match the history pattern
     history_blocks = "\n\n".join(
-        f"<details>\n<summary>Run {i}</summary>\nContent {i}\n</details>"
+        f"<details>\n<summary>Run #{i} (2026-01-25 0{i}:00:00 UTC)</summary>\nContent {i}\n</details>"
         for i in range(MAX_HISTORY_RUNS)
     )
     previous = f"<!-- test -->\n\nCurrent content\n\n{history_blocks}"
