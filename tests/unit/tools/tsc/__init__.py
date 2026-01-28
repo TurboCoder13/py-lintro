@@ -1,1 +1,1 @@
-"""Unit tests for the tsc plugin."""
+"""Unit tests for tsc tool plugin."""

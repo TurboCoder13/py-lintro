@@ -3,12 +3,28 @@
 Tsc is the TypeScript compiler which performs static type checking on
 TypeScript files. It helps catch type-related bugs before runtime by
 analyzing type annotations and inferences.
+
+File Targeting Behavior:
+    By default, lintro respects your file selection even when tsconfig.json exists.
+    This is achieved by creating a temporary tsconfig that extends your project's
+    config but overrides the `include` pattern to target only the specified files.
+
+    To use native tsconfig.json file selection instead, set `use_project_files=True`.
+
+Example:
+    # Check only specific files (default behavior)
+    lintro check src/utils.ts --tools tsc
+
+    # Check all files defined in tsconfig.json
+    lintro check . --tools tsc --tool-options "tsc:use_project_files=True"
 """
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess  # nosec B404 - used safely with shell disabled
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NoReturn
@@ -61,6 +77,7 @@ class TscPlugin(BaseToolPlugin):
                 "project": None,
                 "strict": None,
                 "skip_lib_check": True,
+                "use_project_files": False,
             },
             default_timeout=TSC_DEFAULT_TIMEOUT,
         )
@@ -70,6 +87,7 @@ class TscPlugin(BaseToolPlugin):
         project: str | None = None,
         strict: bool | None = None,
         skip_lib_check: bool | None = None,
+        use_project_files: bool | None = None,
         **kwargs: Any,
     ) -> None:
         """Set tsc-specific options.
@@ -78,6 +96,9 @@ class TscPlugin(BaseToolPlugin):
             project: Path to tsconfig.json file.
             strict: Enable strict type checking mode.
             skip_lib_check: Skip type checking of declaration files (default: True).
+            use_project_files: When True, use tsconfig.json's include/files patterns
+                instead of lintro's file targeting. Default is False, meaning lintro
+                respects your file selection even when tsconfig.json exists.
             **kwargs: Other tool options.
 
         Raises:
@@ -89,11 +110,14 @@ class TscPlugin(BaseToolPlugin):
             raise ValueError("strict must be a boolean")
         if skip_lib_check is not None and not isinstance(skip_lib_check, bool):
             raise ValueError("skip_lib_check must be a boolean")
+        if use_project_files is not None and not isinstance(use_project_files, bool):
+            raise ValueError("use_project_files must be a boolean")
 
         options: dict[str, object] = {
             "project": project,
             "strict": strict,
             "skip_lib_check": skip_lib_check,
+            "use_project_files": use_project_files,
         }
         options = {k: v for k, v in options.items() if v is not None}
         super().set_options(**options, **kwargs)
@@ -118,18 +142,100 @@ class TscPlugin(BaseToolPlugin):
         # Last resort - hope tsc is in PATH
         return ["tsc"]
 
+    def _find_tsconfig(self, cwd: Path) -> Path | None:
+        """Find tsconfig.json in the working directory or via project option.
+
+        Args:
+            cwd: Working directory to search for tsconfig.json.
+
+        Returns:
+            Path to tsconfig.json if found, None otherwise.
+        """
+        # Check explicit project option first
+        project_opt = self.options.get("project")
+        if project_opt and isinstance(project_opt, str):
+            project_path = Path(project_opt)
+            if project_path.is_absolute():
+                return project_path if project_path.exists() else None
+            resolved = cwd / project_path
+            return resolved if resolved.exists() else None
+
+        # Check for tsconfig.json in cwd
+        tsconfig = cwd / "tsconfig.json"
+        return tsconfig if tsconfig.exists() else None
+
+    def _create_temp_tsconfig(
+        self,
+        base_tsconfig: Path,
+        files: list[str],
+        cwd: Path,
+    ) -> Path:
+        """Create a temporary tsconfig.json that extends the base config.
+
+        This allows lintro to respect user file selection while preserving
+        all compiler options from the project's tsconfig.json.
+
+        Args:
+            base_tsconfig: Path to the original tsconfig.json to extend.
+            files: List of file paths to include (relative to cwd).
+            cwd: Working directory for resolving paths.
+
+        Returns:
+            Path to the temporary tsconfig.json file.
+
+        Raises:
+            OSError: If the temporary file cannot be created or written.
+        """
+        # Calculate relative path from temp dir to base tsconfig
+        # We'll create temp file in cwd to keep paths simple
+        relative_base = (
+            base_tsconfig.relative_to(cwd)
+            if base_tsconfig.is_relative_to(cwd)
+            else base_tsconfig
+        )
+
+        temp_config = {
+            "extends": f"./{relative_base}",
+            "include": files,
+            "exclude": [],
+            "compilerOptions": {
+                # Ensure noEmit is set (type checking only)
+                "noEmit": True,
+            },
+        }
+
+        # Create temp file in cwd so relative paths in extends work correctly
+        fd, temp_path = tempfile.mkstemp(
+            suffix=".json",
+            prefix=".lintro-tsc-",
+            dir=str(cwd),
+        )
+        try:
+            with open(fd, "w", encoding="utf-8") as f:
+                json.dump(temp_config, f, indent=2)
+        except OSError:
+            # Clean up on failure
+            Path(temp_path).unlink(missing_ok=True)
+            raise
+
+        logger.debug(
+            "[tsc] Created temp tsconfig at {} extending {} with {} files",
+            temp_path,
+            relative_base,
+            len(files),
+        )
+        return Path(temp_path)
+
     def _build_command(
         self,
         files: list[str],
-        cwd: str | Path | None = None,
+        project_path: str | Path | None = None,
     ) -> list[str]:
         """Build the tsc invocation command.
 
         Args:
-            files: Relative file paths that should be checked by tsc.
-                   Note: When using --project or tsconfig.json exists,
-                   files are determined by the config file.
-            cwd: Working directory for checking tsconfig.json existence.
+            files: Relative file paths (used only when no project config).
+            project_path: Path to tsconfig.json to use (temp or user-specified).
 
         Returns:
             A list of command arguments ready to be executed.
@@ -139,10 +245,9 @@ class TscPlugin(BaseToolPlugin):
         # Core flags for linting (no output, machine-readable format)
         cmd.extend(["--noEmit", "--pretty", "false"])
 
-        # Project flag (uses tsconfig.json)
-        project_opt = self.options.get("project")
-        if project_opt:
-            cmd.extend(["--project", str(project_opt)])
+        # Project flag (uses tsconfig.json - either temp, explicit, or auto-discovered)
+        if project_path:
+            cmd.extend(["--project", str(project_path)])
 
         # Strict mode override (--strict is off by default, no flag needed for False)
         if self.options.get("strict") is True:
@@ -152,21 +257,20 @@ class TscPlugin(BaseToolPlugin):
         if self.options.get("skip_lib_check", True):
             cmd.append("--skipLibCheck")
 
-        # Only pass files if no project/tsconfig is being used
-        # When tsconfig.json is present, tsc determines files from it
-        if not project_opt and files:
-            # Check if tsconfig.json exists in cwd (tsc will use it automatically)
-            cwd_path = Path(cwd) if cwd is not None else None
-            tsconfig_exists = (
-                cwd_path is not None and (cwd_path / "tsconfig.json").exists()
-            )
-            if not tsconfig_exists:
-                cmd.extend(files)
+        # Only pass files directly if no project config is being used
+        if not project_path and files:
+            cmd.extend(files)
 
         return cmd
 
     def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with tsc.
+
+        By default, lintro respects your file selection even when tsconfig.json exists.
+        This is achieved by creating a temporary tsconfig that extends your project's
+        config but targets only the specified files.
+
+        To use native tsconfig.json file selection instead, set use_project_files=True.
 
         Args:
             paths: List of file or directory paths to check.
@@ -200,50 +304,101 @@ class TscPlugin(BaseToolPlugin):
 
         logger.debug("[tsc] Discovered {} TypeScript file(s)", len(ctx.files))
 
-        # Build command
-        cmd = self._build_command(files=ctx.rel_files, cwd=ctx.cwd)
-        logger.debug("[tsc] Running with cwd={} and cmd={}", ctx.cwd, cmd)
+        # Determine project configuration strategy
+        cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
+        use_project_files = merged_options.get("use_project_files", False)
+        explicit_project_opt = merged_options.get("project")
+        explicit_project = str(explicit_project_opt) if explicit_project_opt else None
+        temp_tsconfig: Path | None = None
+        project_path: str | None = None
 
         try:
-            success, output = self._run_subprocess(
-                cmd=cmd,
-                timeout=ctx.timeout,
-                cwd=ctx.cwd,
+            # Find existing tsconfig.json
+            base_tsconfig = self._find_tsconfig(cwd_path)
+
+            if use_project_files or explicit_project:
+                # Native mode: use tsconfig.json as-is for file selection
+                # or explicit project path was provided
+                project_path = explicit_project or (
+                    str(base_tsconfig) if base_tsconfig else None
+                )
+                logger.debug(
+                    "[tsc] Using native tsconfig file selection: {}",
+                    project_path,
+                )
+            elif base_tsconfig:
+                # Lintro mode: create temp tsconfig to respect file targeting
+                # while preserving compiler options from the project's config
+                temp_tsconfig = self._create_temp_tsconfig(
+                    base_tsconfig=base_tsconfig,
+                    files=ctx.rel_files,
+                    cwd=cwd_path,
+                )
+                project_path = str(temp_tsconfig)
+                logger.debug(
+                    "[tsc] Using temp tsconfig for file targeting: {}",
+                    project_path,
+                )
+            else:
+                # No tsconfig.json found - pass files directly
+                project_path = None
+                logger.debug("[tsc] No tsconfig.json found, passing files directly")
+
+            # Build command
+            cmd = self._build_command(
+                files=ctx.rel_files if not project_path else [],
+                project_path=project_path,
             )
-        except subprocess.TimeoutExpired:
-            timeout_result = create_timeout_result(
-                tool=self,
-                timeout=ctx.timeout,
-                cmd=cmd,
-            )
+            logger.debug("[tsc] Running with cwd={} and cmd={}", ctx.cwd, cmd)
+
+            try:
+                success, output = self._run_subprocess(
+                    cmd=cmd,
+                    timeout=ctx.timeout,
+                    cwd=ctx.cwd,
+                )
+            except subprocess.TimeoutExpired:
+                timeout_result = create_timeout_result(
+                    tool=self,
+                    timeout=ctx.timeout,
+                    cmd=cmd,
+                )
+                return ToolResult(
+                    name=self.definition.name,
+                    success=timeout_result.success,
+                    output=timeout_result.output,
+                    issues_count=timeout_result.issues_count,
+                    issues=timeout_result.issues,
+                )
+
+            # Parse output
+            issues = parse_tsc_output(output=output)
+            issues_count = len(issues)
+
+            if not success and issues_count == 0:
+                # Execution failed but no structured issues were parsed
+                return ToolResult(
+                    name=self.definition.name,
+                    success=False,
+                    output=output or "tsc execution failed.",
+                    issues_count=0,
+                )
+
             return ToolResult(
                 name=self.definition.name,
-                success=timeout_result.success,
-                output=timeout_result.output,
-                issues_count=timeout_result.issues_count,
-                issues=timeout_result.issues,
+                success=issues_count == 0,
+                output=None,
+                issues_count=issues_count,
+                issues=issues,
             )
-
-        # Parse output
-        issues = parse_tsc_output(output=output)
-        issues_count = len(issues)
-
-        if not success and issues_count == 0:
-            # Execution failed but no structured issues were parsed
-            return ToolResult(
-                name=self.definition.name,
-                success=False,
-                output=output or "tsc execution failed.",
-                issues_count=0,
-            )
-
-        return ToolResult(
-            name=self.definition.name,
-            success=issues_count == 0,
-            output=None,
-            issues_count=issues_count,
-            issues=issues,
-        )
+        finally:
+            # Clean up temp tsconfig
+            if temp_tsconfig and temp_tsconfig.exists():
+                try:
+                    temp_tsconfig.unlink()
+                    logger.debug("[tsc] Cleaned up temp tsconfig: {}", temp_tsconfig)
+                except OSError as e:
+                    logger.warning("[tsc] Failed to clean up temp tsconfig: {}", e)
 
     def fix(self, paths: list[str], options: dict[str, object]) -> NoReturn:
         """Tsc does not support auto-fixing.
