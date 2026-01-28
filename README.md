@@ -88,6 +88,7 @@ system.
 | [![Markdownlint](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2) | 📝 Markdown            | -        |
 | [![Clippy](https://img.shields.io/badge/Clippy-lint-000000?logo=rust&logoColor=white)](https://github.com/rust-lang/rust-clippy)                              | 🦀 Rust                | ✅       |
 | [![pydoclint](https://img.shields.io/badge/pydoclint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/jsh9/pydoclint)                       | 🐍 Python              | -        |
+| [![TypeScript](https://img.shields.io/badge/TypeScript-type%20check-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)                 | 🟨 JS/TS               | -        |
 
 <!-- markdownlint-enable MD013 MD060 -->
 
@@ -127,6 +128,8 @@ For full functionality, install these additional tools:
 - **SQLFluff** - `pip install sqlfluff`
 - **Taplo** - `brew install taplo` or
   [GitHub Releases](https://github.com/tamasfe/taplo/releases)
+- **TypeScript** - `brew install typescript`, `bun add -g typescript`, or
+  `npm install -g typescript`
 
 Check all tool versions with: `lintro list-tools`
 

@@ -329,13 +329,14 @@ class NodeJSBuilder(CommandBuilder):
     """
 
     _package_names: dict[ToolName, str] | None = None
+    _binary_names: dict[ToolName, str] | None = None
 
     @property
     def package_names(self) -> dict[ToolName, str]:
-        """Get mapping of tools to package names.
+        """Get mapping of tools to npm package names.
 
         Returns:
-            Dictionary mapping ToolName to package name.
+            Dictionary mapping ToolName to npm package name.
         """
         if self._package_names is None:
             from lintro.enums.tool_name import ToolName
@@ -344,8 +345,27 @@ class NodeJSBuilder(CommandBuilder):
                 ToolName.BIOME: "@biomejs/biome",
                 ToolName.PRETTIER: "prettier",
                 ToolName.MARKDOWNLINT: "markdownlint-cli2",
+                ToolName.TSC: "typescript",
             }
         return self._package_names
+
+    @property
+    def binary_names(self) -> dict[ToolName, str]:
+        """Get mapping of tools to executable binary names.
+
+        For most tools, the binary name matches the package name.
+        This mapping is only needed when they differ (e.g., typescript -> tsc).
+
+        Returns:
+            Dictionary mapping ToolName to binary name.
+        """
+        if self._binary_names is None:
+            from lintro.enums.tool_name import ToolName
+
+            self._binary_names = {
+                ToolName.TSC: "tsc",  # Package is "typescript", binary is "tsc"
+            }
+        return self._binary_names
 
     def can_handle(self, tool_name_enum: ToolName | None) -> bool:
         """Check if this builder handles the tool.
@@ -374,12 +394,18 @@ class NodeJSBuilder(CommandBuilder):
         """
         if tool_name_enum is None:
             return [tool_name]
-        package_name = self.package_names.get(tool_name_enum, tool_name)
+
+        # Get binary name (falls back to package name if not specified)
+        binary_name = self.binary_names.get(
+            tool_name_enum,
+            self.package_names.get(tool_name_enum, tool_name),
+        )
+
         # Prefer bunx (bun), fall back to npx (npm), then direct tool invocation
         if shutil.which("bunx"):
-            return ["bunx", package_name]
+            return ["bunx", binary_name]
         if shutil.which("npx"):
-            return ["npx", package_name]
+            return ["npx", binary_name]
         return [tool_name]
 
 

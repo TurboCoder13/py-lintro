@@ -148,6 +148,10 @@ def get_install_hints() -> dict[str, str]:
             "Install via: cargo install taplo-cli "
             "or download from https://github.com/tamasfe/taplo/releases (v{version}+)"
         ),
+        "typescript": (
+            "Install via: bun add -g typescript@{version}, "
+            "npm install -g typescript@{version}, or brew install typescript"
+        ),
     }
 
     versions = get_minimum_versions()

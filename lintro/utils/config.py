@@ -143,6 +143,7 @@ def load_lintro_global_config() -> dict[str, Any]:
         "biome",
         "clippy",
         "pydoclint",
+        "tsc",
         "post_checks",
         "versions",
     }

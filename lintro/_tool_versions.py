@@ -36,6 +36,7 @@ TOOL_VERSIONS: dict[str, str] = {
     "shfmt": "3.10.0",
     "sqlfluff": "3.0.0",
     "taplo": "0.10.0",
+    "typescript": "5.7.3",
 }
 
 

@@ -30,6 +30,8 @@ MARKDOWNLINT_CONFIG_FILES = [
     ".markdownlint.yml",
     ".markdownlint.jsonc",
 ]
+TSC_CONFIG_FILES = ["tsconfig.json"]
+MYPY_CONFIG_FILES = ["mypy.ini", ".mypy.ini"]
 
 
 def _load_json_config(config_path: Path) -> dict[str, Any]:
@@ -153,6 +155,30 @@ def _strip_jsonc_comments(content: str) -> str:
         logger.warning("Unclosed block comment in JSONC content")
 
     return "".join(result)
+
+
+def _strip_trailing_commas(content: str) -> str:
+    """Strip trailing commas from JSON content.
+
+    Removes trailing commas before closing brackets/braces that are
+    invalid in strict JSON but common in JSONC (e.g., tsconfig.json).
+
+    Args:
+        content: JSON content with potential trailing commas.
+
+    Returns:
+        Content with trailing commas removed.
+
+    Note:
+        This is a simple regex-based approach that works for most cases.
+        It may incorrectly modify strings containing patterns like ',]'
+        but such strings are rare in configuration files.
+    """
+    import re
+
+    # Remove trailing commas before ] or } (with optional whitespace)
+    content = re.sub(r",(\s*[\]\}])", r"\1", content)
+    return content
 
 
 def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
@@ -313,6 +339,63 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                         f"Could not read markdownlint config {config_path}: "
                         f"{type(e).__name__}: {e}",
                     )
+        return {}
+
+    # TSC (TypeScript Compiler): check tsconfig.json
+    if tool_enum == ToolName.TSC:
+        for config_file in TSC_CONFIG_FILES:
+            config_path = Path(config_file)
+            if config_path.exists():
+                try:
+                    content = config_path.read_text(encoding="utf-8")
+                    # tsconfig.json may have comments and trailing commas (JSONC format)
+                    content = _strip_jsonc_comments(content)
+                    content = _strip_trailing_commas(content)
+                    loaded = json.loads(content)
+                    if isinstance(loaded, dict):
+                        # Return a summary of the most relevant options
+                        result: dict[str, Any] = {}
+                        if "extends" in loaded:
+                            result["extends"] = loaded["extends"]
+                        if "compilerOptions" in loaded:
+                            result["compilerOptions"] = loaded["compilerOptions"]
+                        if "include" in loaded:
+                            result["include"] = loaded["include"]
+                        if "exclude" in loaded:
+                            result["exclude"] = loaded["exclude"]
+                        return result if result else loaded
+                except json.JSONDecodeError as e:
+                    logger.warning(
+                        f"Failed to parse tsconfig.json: {e.msg} "
+                        f"(line {e.lineno}, col {e.colno})",
+                    )
+                except OSError as e:
+                    logger.debug(f"Could not read tsconfig.json: {e}")
+        return {}
+
+    # Mypy: check mypy.ini or pyproject.toml [tool.mypy]
+    if tool_enum == ToolName.MYPY:
+        # First check pyproject.toml [tool.mypy]
+        mypy_config = tool_section.get("mypy", {})
+        if isinstance(mypy_config, dict) and mypy_config:
+            return mypy_config
+
+        # Then check mypy.ini / .mypy.ini
+        for config_file in MYPY_CONFIG_FILES:
+            config_path = Path(config_file)
+            if config_path.exists():
+                try:
+                    import configparser
+
+                    parser = configparser.ConfigParser(interpolation=None)
+                    parser.read(config_path, encoding="utf-8")
+                    # Convert to dict, focusing on [mypy] section
+                    result = {}
+                    if "mypy" in parser:
+                        result = dict(parser["mypy"])
+                    return result
+                except (configparser.Error, OSError) as e:
+                    logger.debug(f"Could not read mypy config {config_file}: {e}")
         return {}
 
     return {}

@@ -83,6 +83,8 @@ Some tools require separate installation. Their minimum versions are also manage
 - `shfmt` - Shell script formatter (`brew install shfmt` or GitHub releases)
 - `sqlfluff` - SQL linter and formatter (`pip install sqlfluff`)
 - `taplo` - TOML linter and formatter (`brew install taplo` or GitHub releases)
+- `typescript` - TypeScript compiler for type checking (`brew install typescript`,
+  `bun add -g typescript`, or `npm install -g typescript`)
 
 ### Checking Versions
 
@@ -210,6 +212,23 @@ lintro check src/ --tools biome,prettier
 
 - **Biome** - Linter for JS/TS/JSON/CSS
 - **Prettier** - Code formatter for JS, TS, JSON, CSS, HTML
+
+### TypeScript Type Checking
+
+```bash
+# Type check TypeScript files with tsc
+lintro check src/ --tools tsc
+
+# With strict mode enabled
+lintro check src/ --tools tsc --tool-options "tsc:strict=True"
+
+# Use specific tsconfig
+lintro check src/ --tools tsc --tool-options "tsc:project=tsconfig.app.json"
+```
+
+**Tools:**
+
+- **TypeScript Compiler (tsc)** - Static type checking for TypeScript files
 
 ### Markdown Files
 
