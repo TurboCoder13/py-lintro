@@ -17,4 +17,5 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      run: $GITHUB_ACTION_PATH/../../../scripts/utils/bootstrap-env.sh "${{ inputs.python-version }}"
+        PYTHON_VERSION: ${{ inputs.python-version }}
+      run: $GITHUB_ACTION_PATH/../../../scripts/utils/bootstrap-env.sh "$PYTHON_VERSION"
