@@ -31,16 +31,7 @@ permissions:
   contents: read
 
 jobs:
-  # Build tools image if tool files changed, otherwise use :latest
-  tools-image:
-    uses: ./.github/workflows/tools-image.yml
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-
   build-and-test:
-    needs: [tools-image]
     runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
@@ -130,7 +121,7 @@ jobs:
         run: ./scripts/docker/docker-test.sh
 
   publish:
-    needs: [tools-image, build-and-test]
+    needs: build-and-test
     runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
@@ -140,8 +131,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      TOOLS_IMAGE: ${{ needs.tools-image.outputs.image-tag }}
     if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.force_publish == 'true') # yamllint disable-line rule:line-length
     concurrency:
       group: docker-publish-${{ github.ref }}
