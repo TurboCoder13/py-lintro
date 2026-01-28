@@ -5,23 +5,23 @@ name: Reporting - Scheduled Lintro Analysis
 # Runs comprehensive lintro analysis weekly on schedule or manual dispatch.
 # Generates detailed markdown report and uploads as workflow artifact.
 
-'on':
+"on":
   push:
     branches: [main]
     paths:
-      - '**.py'
-      - '**.yml'
-      - '**.yaml'
-      - '**.json'
-      - '**.md'
-      - '**.sh'
+      - "**.py"
+      - "**.yml"
+      - "**.yaml"
+      - "**.json"
+      - "**.md"
+      - "**.sh"
       - Dockerfile
       - pyproject.toml
       - .github/workflows/lintro-report-scheduled.yml
       - scripts/local/local-lintro.sh
   schedule:
     # Run weekly on Sunday at 00:00 UTC
-    - cron: '0 0 * * 0'
+    - cron: "0 0 * * 0"
   workflow_dispatch:
 
 permissions:
@@ -41,7 +41,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443

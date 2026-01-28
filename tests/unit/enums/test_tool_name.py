@@ -17,11 +17,9 @@ from lintro.enums.tool_name import ToolName, normalize_tool_name
         (ToolName.PYTEST, "pytest"),
         (ToolName.BANDIT, "bandit"),
         (ToolName.ACTIONLINT, "actionlint"),
-        (ToolName.BIOME, "biome"),
         (ToolName.CLIPPY, "clippy"),
         (ToolName.HADOLINT, "hadolint"),
         (ToolName.MARKDOWNLINT, "markdownlint"),
-        (ToolName.PRETTIER, "prettier"),
         (ToolName.YAMLLINT, "yamllint"),
     ],
 )

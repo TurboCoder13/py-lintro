@@ -6,14 +6,14 @@ name: Security - CodeQL Code Scanning
 # Scans Python code only, uploads results to GitHub Security tab.
 # JS not scanned - only prettier in node_modules (dev dependency).
 
-'on':
+"on":
   push:
     branches: [main]
   pull_request:
     branches: [main]
   schedule:
     # Run weekly on Monday at 05:00 UTC
-    - cron: '0 5 * * 1'
+    - cron: "0 5 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -34,7 +34,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -60,4 +60,4 @@ jobs:
         # yamllint disable-line rule:line-length
         uses: github/codeql-action/analyze@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v4
         with:
-          category: '/language:all'
+          category: "/language:all"

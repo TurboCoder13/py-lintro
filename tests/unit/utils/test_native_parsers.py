@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import mock_open, patch
 
-import pytest
 from assertpy import assert_that
 
 from lintro.utils.native_parsers import _load_json_config, _load_native_tool_config
@@ -118,60 +117,6 @@ def test_load_yamllint_config_os_error_returns_empty() -> None:
 
         # OS errors should return empty dict gracefully
         assert_that(result).is_equal_to({})
-
-
-# =============================================================================
-# _load_native_tool_config - Prettier Parse Errors
-# =============================================================================
-
-
-def test_load_prettier_package_json_parse_error_logs_warning(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Verify JSON parse error in package.json logs warning.
-
-    Args:
-        tmp_path: Pytest temporary directory fixture.
-        monkeypatch: Pytest monkeypatch fixture.
-    """
-    # Create package.json with invalid JSON
-    pkg_json = tmp_path / "package.json"
-    pkg_json.write_text("{ invalid json }")
-
-    # Change to temp directory so Path("package.json") finds our file
-    monkeypatch.chdir(tmp_path)
-
-    with patch("lintro.utils.native_parsers.logger") as mock_logger:
-        result = _load_native_tool_config("prettier")
-
-        assert_that(result).is_equal_to({})
-        mock_logger.warning.assert_called()
-        warning_msg = mock_logger.warning.call_args[0][0]
-        assert_that(warning_msg).contains("Failed to parse prettier config")
-
-
-# =============================================================================
-# _load_native_tool_config - Biome Parse Errors
-# =============================================================================
-
-
-def test_load_biome_config_parse_error_logs_warning() -> None:
-    """Verify JSON parse error in biome.json logs warning."""
-    with (
-        patch("lintro.utils.native_parsers.Path.exists", return_value=True),
-        patch(
-            "lintro.utils.native_parsers.Path.read_text",
-            return_value="{ bad json }",
-        ),
-        patch("lintro.utils.native_parsers.logger") as mock_logger,
-    ):
-        result = _load_native_tool_config("biome")
-
-        assert_that(result).is_equal_to({})
-        mock_logger.warning.assert_called()
-        warning_msg = mock_logger.warning.call_args[0][0]
-        assert_that(warning_msg).contains("Failed to parse Biome config")
 
 
 # =============================================================================

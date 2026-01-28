@@ -39,7 +39,6 @@ QUICK_CLI_TIMEOUT: int = 10
 PYTEST_DEFAULT_TIMEOUT: int = 300
 RUFF_DEFAULT_TIMEOUT: int = 30
 YAMLLINT_DEFAULT_TIMEOUT: int = 15
-BIOME_DEFAULT_TIMEOUT: int = 30
 
 # =============================================================================
 # Test Limits

@@ -125,13 +125,13 @@ def test_tool_sections() -> None:
     """Should extract tool-specific sections."""
     data = {
         "ruff": {"enabled": True},
-        "prettier": {"enabled": False},
+        "markdownlint": {"enabled": False},
     }
 
     result = _convert_pyproject_to_config(data)
 
     assert_that(result["tools"]["ruff"]).is_equal_to({"enabled": True})
-    assert_that(result["tools"]["prettier"]).is_equal_to({"enabled": False})
+    assert_that(result["tools"]["markdownlint"]).is_equal_to({"enabled": False})
 
 
 def test_execution_settings() -> None:

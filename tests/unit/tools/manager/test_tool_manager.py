@@ -94,13 +94,9 @@ def test_tool_manager_get_tool_execution_order_with_conflicts() -> None:
     """Verify conflict resolution in execution order."""
     tm = ToolManager()
 
-    # Get tool instances to set conflicts
-    ruff_tool = tm.get_tool(ToolName.RUFF)
-    prettier_tool = tm.get_tool(ToolName.PRETTIER)
-
-    # Save original conflicts
-    ruff_tool.definition.conflicts_with.copy()
-    prettier_tool.definition.conflicts_with.copy()
+    # Verify tools exist before testing conflict resolution
+    assert tm.get_tool(ToolName.RUFF) is not None
+    assert tm.get_tool(ToolName.BLACK) is not None
 
     try:
         # Temporarily modify conflicts (note: ToolDefinition is frozen, so we need
@@ -110,14 +106,14 @@ def test_tool_manager_get_tool_execution_order_with_conflicts() -> None:
         # Since ToolDefinition is frozen, we can't modify conflicts_with directly
         # This test verifies the conflict resolution logic works with the
         # existing tool configurations
-        order = tm.get_tool_execution_order([ToolName.RUFF, ToolName.PRETTIER])
+        order = tm.get_tool_execution_order([ToolName.RUFF, ToolName.BLACK])
 
         # Both should be returned since they don't have conflicts defined
         assert_that(len(order)).is_equal_to(2)
 
         # With ignore_conflicts=True, all tools should be returned
         order_all = tm.get_tool_execution_order(
-            [ToolName.RUFF, ToolName.PRETTIER],
+            [ToolName.RUFF, ToolName.BLACK],
             ignore_conflicts=True,
         )
         assert_that(len(order_all)).is_equal_to(2)

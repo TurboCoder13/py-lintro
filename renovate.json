@@ -86,7 +86,8 @@
         "rhysd/actionlint",
         "prettier",
         "markdownlint-cli2",
-        "@biomejs/biome",
+        "oxlint",
+        "oxfmt",
         "gitleaks",
         "gitleaks/gitleaks",
         "shellcheck",
@@ -110,18 +111,14 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^\\.github/workflows/test-and-coverage\\.yml$/"],
-      "matchStrings": [
-        "CODECOV_VERSION:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
-      ],
+      "matchStrings": ["CODECOV_VERSION:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "codecov/uploader"
     },
     {
       "customType": "regex",
       "managerFilePatterns": ["Dockerfile"],
-      "matchStrings": [
-        "ARG HADOLINT_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"
-      ],
+      "matchStrings": ["ARG HADOLINT_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "hadolint/hadolint",
       "extractVersionTemplate": "^v(?<version>.*)$"
@@ -129,9 +126,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["Dockerfile"],
-      "matchStrings": [
-        "ARG ACTIONLINT_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"
-      ],
+      "matchStrings": ["ARG ACTIONLINT_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "rhysd/actionlint",
       "extractVersionTemplate": "^v(?<version>.*)$"
@@ -157,9 +152,7 @@
         "/^\\.github/workflows/reusable-sbom\\.yml$/",
         "scripts/ci/deployment/sbom-install-binary-gh\\.sh"
       ],
-      "matchStrings": [
-        "BOMCTL_VERSION[=:]\\s*v(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"
-      ],
+      "matchStrings": ["BOMCTL_VERSION[=:]\\s*v(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "bomctl/bomctl",
       "extractVersionTemplate": "^v(?<version>.*)$"
@@ -167,9 +160,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"hadolint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"hadolint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "hadolint/hadolint",
       "extractVersionTemplate": "^v(?<version>.*)$"
@@ -177,9 +168,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"actionlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"actionlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "rhysd/actionlint",
       "extractVersionTemplate": "^v(?<version>.*)$"
@@ -187,34 +176,35 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"prettier\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"prettier\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "npm",
       "packageNameTemplate": "prettier"
     },
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": ["\"biome\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+      "matchStrings": ["\"oxlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "npm",
-      "packageNameTemplate": "@biomejs/biome"
+      "packageNameTemplate": "oxlint"
     },
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"markdownlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"oxfmt\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+      "datasourceTemplate": "npm",
+      "packageNameTemplate": "oxfmt"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["lintro/_tool_versions\\.py"],
+      "matchStrings": ["\"markdownlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "npm",
       "packageNameTemplate": "markdownlint-cli2"
     },
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"gitleaks\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"gitleaks\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "gitleaks/gitleaks",
       "extractVersionTemplate": "^v(?<version>.*)$"
@@ -222,9 +212,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"shellcheck\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"shellcheck\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "koalaman/shellcheck",
       "extractVersionTemplate": "^v(?<version>.*)$"
@@ -255,9 +243,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"sqlfluff\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"sqlfluff\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "pypi",
       "packageNameTemplate": "sqlfluff"
     },
@@ -271,9 +257,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["lintro/_tool_versions\\.py"],
-      "matchStrings": [
-        "\"cargo_audit\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
+      "matchStrings": ["\"cargo_audit\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
       "datasourceTemplate": "crate",
       "packageNameTemplate": "cargo-audit"
     }

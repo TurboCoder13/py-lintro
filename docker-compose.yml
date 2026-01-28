@@ -11,8 +11,8 @@ services:
     logging:
       driver: local
       options:
-        max-size: '10m'
-        max-file: '3'
+        max-size: "10m"
+        max-file: "3"
     volumes:
       # Mount current directory to /code (not /app to avoid overwriting the app)
       - ${PWD:-./}:/code
@@ -31,8 +31,8 @@ services:
     logging:
       driver: local
       options:
-        max-size: '10m'
-        max-file: '3'
+        max-size: "10m"
+        max-file: "3"
     working_dir: /app
     volumes:
       # Mount source to /app for testing against current code
@@ -41,7 +41,7 @@ services:
     command:
       - /app/scripts/local/run-tests.sh
     entrypoint:
-      - ''
+      - ""
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1

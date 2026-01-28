@@ -497,5 +497,5 @@ class YamllintPlugin(BaseToolPlugin):
         """
         raise NotImplementedError(
             "Yamllint cannot automatically fix issues. Use a YAML formatter "
-            "like Prettier for formatting, or manually fix the reported issues.",
+            "or manually fix the reported issues.",
         )

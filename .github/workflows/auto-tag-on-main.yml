@@ -5,7 +5,7 @@ name: Release - Auto Tag Creation
 # Automatically creates and pushes version tags when pyproject.toml version changes
 # on main branch. Guards against duplicate tags and validates release commit format.
 
-'on':
+"on":
   push:
     branches: [main]
     paths:
@@ -28,7 +28,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: "block"
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -79,11 +79,11 @@ jobs:
       - name: Environment setup
         uses: ./.github/actions/setup-env
         with:
-          python-version: '3.13'
+          python-version: "3.13"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Skip external tools (bun, etc.) - this workflow only needs Python and git
-          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: "1"
 
       - name: Read version from pyproject.toml
         id: version

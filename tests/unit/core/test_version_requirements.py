@@ -77,9 +77,8 @@ def test_compare_versions(version1: str, version2: str, expected: int) -> None:
         ("black", "black, 25.9.0 (compiled: yes)", "25.9.0"),
         ("bandit", "__main__.py 1.8.6", "1.8.6"),
         ("hadolint", "Haskell Dockerfile Linter 2.14.0", "2.14.0"),
-        ("prettier", "Prettier 3.7.3", "3.7.3"),
         ("actionlint", "actionlint 1.7.5", "1.7.5"),
-        ("biome", "Biome CLI v2.3.8", "2.3.8"),
+        ("pydoclint", "pydoclint 0.5.9", "0.5.9"),
         ("semgrep", "semgrep 1.148.0", "1.148.0"),
         ("ruff", "ruff 0.14.4", "0.14.4"),
         ("yamllint", "yamllint 1.37.1", "1.37.1"),
@@ -110,16 +109,14 @@ def test_get_minimum_versions_from_tool_versions() -> None:
     versions = get_minimum_versions()
 
     # Should include external tools from _tool_versions.py
-    assert_that(versions).contains_key("prettier")
     assert_that(versions).contains_key("hadolint")
     assert_that(versions).contains_key("actionlint")
     assert_that(versions).contains_key("pytest")
-    assert_that(versions).contains_key("biome")
     assert_that(versions).contains_key("semgrep")
 
     # Versions should be strings
-    assert_that(versions["prettier"]).is_instance_of(str)
     assert_that(versions["hadolint"]).is_instance_of(str)
+    assert_that(versions["actionlint"]).is_instance_of(str)
 
 
 def test_get_install_hints() -> None:
@@ -127,9 +124,9 @@ def test_get_install_hints() -> None:
     hints = get_install_hints()
 
     assert_that(hints).contains_key("pytest")
-    assert_that(hints).contains_key("prettier")
+    assert_that(hints).contains_key("markdownlint")
     assert_that(hints["pytest"]).contains("Install via:")
-    assert_that(hints["prettier"]).contains("bun add")
+    assert_that(hints["markdownlint"]).contains("bun add")
 
 
 def test_version_caching() -> None:
@@ -153,22 +150,22 @@ def test_check_tool_version_success(mock_run: MagicMock) -> None:
     Args:
         mock_run: Mocked subprocess.run function.
     """
-    min_prettier = get_minimum_versions()["prettier"]
+    min_hadolint = get_minimum_versions()["hadolint"]
     mock_run.return_value = type(
         "MockResult",
         (),
         {
             "returncode": 0,
-            "stdout": f"Prettier {min_prettier}",
+            "stdout": f"Haskell Dockerfile Linter {min_hadolint}",
             "stderr": "",
         },
     )()
 
-    result = check_tool_version("prettier", ["prettier"])
+    result = check_tool_version("hadolint", ["hadolint"])
 
-    assert_that(result.name).is_equal_to("prettier")
-    assert_that(result.current_version).is_equal_to(min_prettier)
-    assert_that(result.min_version).is_equal_to(min_prettier)
+    assert_that(result.name).is_equal_to("hadolint")
+    assert_that(result.current_version).is_equal_to(min_hadolint)
+    assert_that(result.min_version).is_equal_to(min_hadolint)
     assert_that(result.version_check_passed).is_true()
     assert_that(result.error_message).is_none()
 
@@ -180,22 +177,22 @@ def test_check_tool_version_failure(mock_run: MagicMock) -> None:
     Args:
         mock_run: Mocked subprocess.run function.
     """
-    min_prettier = get_minimum_versions()["prettier"]
+    min_hadolint = get_minimum_versions()["hadolint"]
     mock_run.return_value = type(
         "MockResult",
         (),
         {
             "returncode": 0,
-            "stdout": "Prettier 0.0.0",  # Always below any real minimum
+            "stdout": "Haskell Dockerfile Linter 0.0.0",  # Always below any real minimum
             "stderr": "",
         },
     )()
 
-    result = check_tool_version("prettier", ["prettier"])
+    result = check_tool_version("hadolint", ["hadolint"])
 
-    assert_that(result.name).is_equal_to("prettier")
+    assert_that(result.name).is_equal_to("hadolint")
     assert_that(result.current_version).is_equal_to("0.0.0")
-    assert_that(result.min_version).is_equal_to(min_prettier)
+    assert_that(result.min_version).is_equal_to(min_hadolint)
     assert_that(result.version_check_passed).is_false()
     assert_that(result.error_message).contains("below minimum requirement")
 
@@ -263,9 +260,7 @@ def test_get_all_tool_versions(mock_run: MagicMock) -> None:
         "sqlfluff",
         "mypy",
         "pytest",
-        "prettier",
         "pydoclint",
-        "biome",
         "hadolint",
         "actionlint",
         "markdownlint",

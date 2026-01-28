@@ -107,7 +107,7 @@ tools:
     enabled: true
   prettier:
     enabled: true
-    config_source: '.prettierrc' # Optional: explicit native config path
+    config_source: ".prettierrc" # Optional: explicit native config path
 ```
 
 ### Configuration Report Command
@@ -511,7 +511,7 @@ quality enforcement across 30+ languages.
 rules:
   - id: custom-security-rule
     pattern: eval(...)
-    message: 'Avoid using eval() - potential code injection'
+    message: "Avoid using eval() - potential code injection"
     languages: [python]
     severity: ERROR
 ```
@@ -644,24 +644,24 @@ module.exports = {
   tabWidth: 2,
   semi: true,
   singleQuote: true,
-  trailingComma: 'es5',
+  trailingComma: "es5",
   bracketSpacing: true,
-  arrowParens: 'avoid',
+  arrowParens: "avoid",
   printWidth: 80,
 
   // Override for specific file types
   overrides: [
     {
-      files: '*.json',
+      files: "*.json",
       options: {
         tabWidth: 4,
       },
     },
     {
-      files: '*.md',
+      files: "*.md",
       options: {
         printWidth: 120,
-        proseWrap: 'always',
+        proseWrap: "always",
       },
     },
   ],
@@ -724,6 +724,150 @@ coverage/
 
 **Lintro options:** use `--tool-options "biome:timeout=60"` or set `exclude_patterns`
 via CLI to adjust discovery; native configs remain primary.
+
+#### Oxlint Configuration
+
+Oxlint is a fast JavaScript/TypeScript linter (50-100x faster than ESLint) with 655+
+built-in rules from ESLint, TypeScript, React, JSX-a11y, Unicorn, and more.
+
+**Native Config Detection:**
+
+Lintro detects these oxlint config files:
+
+- `.oxlintrc.json`
+- `oxlint.json`
+
+When a native config exists, Lintro uses it automatically and skips generating defaults.
+
+**Installation:**
+
+```bash
+# npm/bun
+npm install -g oxlint
+bun add -g oxlint
+
+# Homebrew (macOS)
+brew install oxlint
+```
+
+**File:** `.oxlintrc.json`
+
+```json
+{
+  "rules": {
+    "no-debugger": "error",
+    "no-console": "warn",
+    "eqeqeq": "error"
+  },
+  "plugins": ["react", "unicorn"],
+  "ignorePatterns": ["dist/**", "node_modules/**"]
+}
+```
+
+**Available Options via `--tool-options`:**
+
+| Option     | Type        | Description                                     |
+| ---------- | ----------- | ----------------------------------------------- |
+| `config`   | string      | Path to config file (--config)                  |
+| `tsconfig` | string      | Path to tsconfig.json (--tsconfig)              |
+| `allow`    | list\[str\] | Rules to allow (turn off)                       |
+| `deny`     | list\[str\] | Rules to deny (report as errors)                |
+| `warn`     | list\[str\] | Rules to warn on (report as warnings)           |
+| `quiet`    | boolean     | Suppress warnings, only report errors (--quiet) |
+| `timeout`  | integer     | Execution timeout in seconds (default: 30)      |
+
+**Usage Examples:**
+
+```bash
+# Basic check
+lintro check --tools oxlint
+
+# Auto-fix issues
+lintro format --tools oxlint
+
+# Suppress warnings (errors only)
+lintro check --tools oxlint --tool-options "oxlint:quiet=True"
+
+# Deny specific rules (report as errors)
+lintro check --tools oxlint --tool-options "oxlint:deny=no-debugger|no-console"
+
+# Allow specific rules (ignore them)
+lintro check --tools oxlint --tool-options "oxlint:allow=no-unused-vars"
+
+# Use custom config file
+lintro check --tools oxlint --tool-options "oxlint:config=.oxlintrc.custom.json"
+
+# Specify tsconfig for TypeScript projects
+lintro check --tools oxlint --tool-options "oxlint:tsconfig=tsconfig.app.json"
+```
+
+#### Oxfmt Configuration
+
+Oxfmt is a fast JavaScript/TypeScript formatter (30x faster than Prettier) that
+provides Prettier-compatible formatting with minimal configuration.
+
+**Native Config Detection:**
+
+Lintro detects these oxfmt config files:
+
+- `.oxfmtrc.json`
+- `.oxfmtrc.jsonc` (supports comments)
+
+When a native config exists, Lintro uses it automatically and skips generating defaults.
+
+**Installation:**
+
+```bash
+# npm/bun
+npm install -g oxfmt
+bun add -g oxfmt
+
+# Homebrew (macOS)
+brew install oxfmt
+```
+
+**File:** `.oxfmtrc.json` or `.oxfmtrc.jsonc`
+
+```json
+{
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5"
+}
+```
+
+**Available Options via `--tool-options`:**
+
+| Option        | Type    | Description                                |
+| ------------- | ------- | ------------------------------------------ |
+| `config`      | string  | Path to config file (--config)             |
+| `ignore_path` | string  | Path to ignore file (--ignore-path)        |
+| `timeout`     | integer | Execution timeout in seconds (default: 30) |
+
+> **Note:** Formatting options (`printWidth`, `tabWidth`, `useTabs`, `semi`, `singleQuote`)
+> are only supported via config file (`.oxfmtrc.json`), not CLI flags.
+
+**Usage Examples:**
+
+```bash
+# Basic check
+lintro check --tools oxfmt
+
+# Format files
+lintro format --tools oxfmt
+
+# Use custom config file
+lintro format --tools oxfmt --tool-options "oxfmt:config=.oxfmtrc.custom.json"
+
+# Use custom ignore file
+lintro format --tools oxfmt --tool-options "oxfmt:ignore_path=.oxfmtignore"
+
+# Increase timeout
+lintro format --tools oxfmt --tool-options "oxfmt:timeout=60"
+```
 
 ### SQL Tools
 
@@ -849,7 +993,7 @@ rules:
 
   # Truthy values
   truthy:
-    allowed-values: ['true', 'false']
+    allowed-values: ["true", "false"]
     check-keys: true
 ```
 

@@ -211,6 +211,27 @@ lintro check src/ --tools biome,prettier
 - **Biome** - Linter for JS/TS/JSON/CSS
 - **Prettier** - Code formatter for JS, TS, JSON, CSS, HTML
 
+### JavaScript/TypeScript Projects (Oxc Tools)
+
+```bash
+# Check JS/TS files with Oxlint (50-100x faster than ESLint)
+lintro check src/ --tools oxlint
+
+# Format JS/TS files with Oxfmt (30x faster than Prettier)
+lintro format src/ --tools oxfmt
+
+# Suppress warnings, only report errors
+lintro check src/ --tools oxlint --tool-options "oxlint:quiet=True"
+
+# Configure formatting options
+lintro format src/ --tools oxfmt --tool-options "oxfmt:print_width=120"
+```
+
+**Tools:**
+
+- **Oxlint** - Fast JavaScript/TypeScript linter with 655+ built-in rules
+- **Oxfmt** - Fast JavaScript/TypeScript formatter (Prettier-compatible)
+
 ### Markdown Files
 
 ```bash

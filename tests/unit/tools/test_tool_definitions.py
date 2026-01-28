@@ -20,15 +20,6 @@ TOOL_SPECS = [
     # (tool_name, module_path, class_name, timeout, priority, can_fix)
     (ToolName.RUFF, "lintro.tools.definitions.ruff", "RuffPlugin", 30, 85, True),
     (ToolName.BLACK, "lintro.tools.definitions.black", "BlackPlugin", 30, 90, True),
-    (
-        ToolName.PRETTIER,
-        "lintro.tools.definitions.prettier",
-        "PrettierPlugin",
-        30,
-        80,
-        True,
-    ),
-    (ToolName.BIOME, "lintro.tools.definitions.biome", "BiomePlugin", 30, 50, True),
     (ToolName.CLIPPY, "lintro.tools.definitions.clippy", "ClippyPlugin", 120, 85, True),
     (ToolName.MYPY, "lintro.tools.definitions.mypy", "MypyPlugin", 60, 82, False),
     (

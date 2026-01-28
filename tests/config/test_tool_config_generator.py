@@ -1,5 +1,8 @@
 """Tests for tool_config_generator module."""
 
+from pathlib import Path
+
+import pytest
 from assertpy import assert_that
 
 from lintro.config.enforce_config import EnforceConfig
@@ -11,6 +14,7 @@ from lintro.config.tool_config_generator import (
     _write_defaults_config,
     get_defaults_injection_args,
     get_enforce_cli_args,
+    has_native_config,
 )
 from lintro.enums.config_format import ConfigFormat
 
@@ -237,3 +241,86 @@ def test_hadolint_config_file_has_correct_keys() -> None:
         assert_that(parsed).contains_key("ignored")
     finally:
         config_path.unlink(missing_ok=True)
+
+
+# =============================================================================
+# Oxlint and Oxfmt config tests
+# =============================================================================
+
+
+def test_get_defaults_injection_args_oxlint() -> None:
+    """Should return correct config args for oxlint."""
+    config_path = Path("/tmp/test.json")
+    args = get_defaults_injection_args("oxlint", config_path)
+
+    assert_that(args).is_equal_to(["--config", "/tmp/test.json"])
+
+
+def test_get_defaults_injection_args_oxfmt() -> None:
+    """Should return correct config args for oxfmt."""
+    config_path = Path("/tmp/test.json")
+    args = get_defaults_injection_args("oxfmt", config_path)
+
+    assert_that(args).is_equal_to(["--config", "/tmp/test.json"])
+
+
+def test_has_native_config_oxlint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Should detect oxlint native config file.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".oxlintrc.json").write_text('{"rules": {}}')
+
+    assert_that(has_native_config("oxlint")).is_true()
+
+
+def test_has_native_config_oxfmt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Should detect oxfmt native config file.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".oxfmtrc.json").write_text('{"printWidth": 100}')
+
+    assert_that(has_native_config("oxfmt")).is_true()
+
+
+def test_has_native_config_oxlint_not_found(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Should return False when no oxlint config exists.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    assert_that(has_native_config("oxlint")).is_false()
+
+
+def test_has_native_config_oxfmt_not_found(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Should return False when no oxfmt config exists.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    assert_that(has_native_config("oxfmt")).is_false()
