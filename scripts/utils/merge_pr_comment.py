@@ -56,9 +56,8 @@ def _extract_details_blocks(content: str) -> tuple[str, list[str]]:
         re.DOTALL,
     )
 
-    details_blocks: list[str] = history_pattern.findall(content)
     # findall returns the captured group, not the full match; use finditer instead
-    details_blocks = [m.group(0) for m in history_pattern.finditer(content)]
+    details_blocks: list[str] = [m.group(0) for m in history_pattern.finditer(content)]
     remaining_content: str = history_pattern.sub("", content).strip()
 
     return remaining_content, details_blocks

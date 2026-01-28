@@ -7,6 +7,7 @@ and extracts test results into a JSON summary file for PR comments.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -83,8 +84,11 @@ tests/test_qux.py ................                                       [100%]
 
 
 def test_extract_from_lintro_table_format() -> None:
-    """Extract test summary from lintro table format output."""
-    # Note: The pattern expects "| <emoji> pytest" format, not just "| pytest"
+    """Extract test summary from lintro table format output.
+
+    Note: The pattern supports both emoji and non-emoji formats
+    (e.g., '| 🧪 pytest' or '| pytest').
+    """
     lintro_output = """
 | Tool | Status | Passed | Failed | Skipped | Total | Duration |
 |------|--------|--------|--------|---------|-------|----------|
@@ -158,8 +162,6 @@ def test_extract_with_coverage_xml() -> None:
 
 def test_extract_from_environment_variables() -> None:
     """Extract test summary from environment variables when no input file."""
-    import os
-
     env = os.environ.copy()
     env["TEST_PASSED"] = "42"
     env["TEST_FAILED"] = "1"

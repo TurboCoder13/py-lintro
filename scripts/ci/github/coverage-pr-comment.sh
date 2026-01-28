@@ -133,6 +133,7 @@ if [ -f "test-summary.json" ]; then
 	TEST_PASSED=$(parse_json_field "test-summary.json" "passed")
 	TEST_FAILED=$(parse_json_field "test-summary.json" "failed")
 	TEST_SKIPPED=$(parse_json_field "test-summary.json" "skipped")
+	TEST_ERRORS=$(parse_json_field "test-summary.json" "errors")
 	TEST_TOTAL=$(parse_json_field "test-summary.json" "total" "first")
 	TEST_DURATION=$(parse_json_field "test-summary.json" "duration")
 
@@ -146,6 +147,7 @@ if [ -f "test-summary.json" ]; then
 	TEST_PASSED=$(validate_test_value "$TEST_PASSED" "TEST_PASSED")
 	TEST_FAILED=$(validate_test_value "$TEST_FAILED" "TEST_FAILED")
 	TEST_SKIPPED=$(validate_test_value "$TEST_SKIPPED" "TEST_SKIPPED")
+	TEST_ERRORS=$(validate_test_value "$TEST_ERRORS" "TEST_ERRORS")
 	TEST_TOTAL=$(validate_test_value "$TEST_TOTAL" "TEST_TOTAL")
 
 	# Validate logical consistency
@@ -156,9 +158,10 @@ if [ -f "test-summary.json" ]; then
 			TEST_PASSED=0
 			TEST_FAILED=0
 			TEST_SKIPPED=0
+			TEST_ERRORS=0
 		fi
-		# Sanity check: passed + failed + skipped should not exceed total
-		SUM=$((TEST_PASSED + TEST_FAILED + TEST_SKIPPED))
+		# Sanity check: passed + failed + skipped + errors should not exceed total
+		SUM=$((TEST_PASSED + TEST_FAILED + TEST_SKIPPED + TEST_ERRORS))
 		if [ "$SUM" -gt "${TEST_TOTAL}" ]; then
 			log_warning "Test counts sum ($SUM) exceeds total ($TEST_TOTAL); data may be inconsistent"
 		fi
@@ -168,7 +171,7 @@ if [ -f "test-summary.json" ]; then
 	DURATION_STR="${TEST_DURATION}s"
 
 	# Determine test status emoji
-	if [ "${TEST_FAILED:-0}" -gt 0 ]; then
+	if [ "${TEST_FAILED:-0}" -gt 0 ] || [ "${TEST_ERRORS:-0}" -gt 0 ]; then
 		TEST_STATUS_EMOJI="❌ FAIL"
 	else
 		TEST_STATUS_EMOJI="✅ PASS"
@@ -177,9 +180,9 @@ if [ -f "test-summary.json" ]; then
 	# Build test summary table
 	TEST_SUMMARY_TABLE="### 🧪 Test Results
 
-| Tool | Status | Passed | Failed | Skipped | Total | Duration |
-|------|--------|--------|--------|---------|-------|----------|
-| 🧪 pytest | $TEST_STATUS_EMOJI | $TEST_PASSED | $TEST_FAILED | $TEST_SKIPPED | $TEST_TOTAL | $DURATION_STR |
+| Tool | Status | Passed | Failed | Errors | Skipped | Total | Duration |
+|------|--------|--------|--------|--------|---------|-------|----------|
+| 🧪 pytest | $TEST_STATUS_EMOJI | $TEST_PASSED | $TEST_FAILED | $TEST_ERRORS | $TEST_SKIPPED | $TEST_TOTAL | $DURATION_STR |
 "
 
 	# Build coverage details section
