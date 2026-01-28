@@ -110,8 +110,7 @@ runs:
         push: ${{ inputs.push == 'true' }}
         load: ${{ inputs.push != 'true' }}
         tags: ${{ inputs.image-name }}:pr-${{ github.event.pull_request.number }}
-        # Note: cache-to not supported with docker driver, cache-from still works
-        cache-from: type=gha,scope=tools-image
+        # Note: GHA cache not supported with docker driver
 
     - name: Resolve image tag
       id: resolve

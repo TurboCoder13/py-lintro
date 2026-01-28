@@ -114,8 +114,7 @@ jobs:
           tags: py-lintro:latest
           build-args: |
             TOOLS_IMAGE=${{ steps.tools.outputs.image }}
-          # Note: cache-to not supported with docker driver, cache-from still works
-          cache-from: type=gha
+          # Note: GHA cache not supported with docker driver
           provenance: false
       - name: Test Docker Image
         run: ./scripts/docker/docker-build-test.sh

@@ -100,10 +100,12 @@ jobs:
           TOOLS_IMAGE: ${{ steps.tools.outputs.image }}
           TOOLS_CHANGED: ${{ steps.tools.outputs.changed }}
         run: |
-          echo "## Tools Image Resolution" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image:** \`${TOOLS_IMAGE}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Changed:** ${TOOLS_CHANGED}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Tools Image Resolution"
+            echo ""
+            echo "- **Image:** \`${TOOLS_IMAGE}\`"
+            echo "- **Changed:** ${TOOLS_CHANGED}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   docker:
     name: Docker Build & Test
