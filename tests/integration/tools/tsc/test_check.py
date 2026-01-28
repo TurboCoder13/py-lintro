@@ -140,8 +140,16 @@ def test_check_empty_directory(
         ("project", "tsconfig.json", "tsconfig.json"),
         ("strict", True, True),
         ("skip_lib_check", True, True),
+        ("use_project_files", True, True),
+        ("use_project_files", False, False),
     ],
-    ids=["project", "strict", "skip_lib_check"],
+    ids=[
+        "project",
+        "strict",
+        "skip_lib_check",
+        "use_project_files_true",
+        "use_project_files_false",
+    ],
 )
 def test_set_options(
     get_plugin: Callable[[str], BaseToolPlugin],
@@ -162,3 +170,80 @@ def test_set_options(
     tsc_plugin = get_plugin("tsc")
     tsc_plugin.set_options(**{option_name: option_value})
     assert_that(tsc_plugin.options.get(option_name)).is_equal_to(expected)
+
+
+# --- Tests for file targeting with tsconfig.json ---
+
+
+def test_file_targeting_with_tsconfig(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    tmp_path: Path,
+) -> None:
+    """Verify tsc respects file targeting even when tsconfig.json exists.
+
+    Creates a project with tsconfig.json and multiple files, then verifies
+    that only the specified file is checked (not all files in the project).
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        tmp_path: Pytest fixture providing a temporary directory.
+    """
+    # Create tsconfig.json
+    tsconfig = tmp_path / "tsconfig.json"
+    tsconfig.write_text('{"compilerOptions": {"strict": true}}')
+
+    # Create two TypeScript files - one clean, one with errors
+    clean_file = tmp_path / "clean.ts"
+    clean_file.write_text("const x: number = 42;\nexport { x };\n")
+
+    error_file = tmp_path / "error.ts"
+    error_file.write_text("const y: number = 'string';\nexport { y };\n")
+
+    tsc_plugin = get_plugin("tsc")
+
+    # Check only the clean file - should pass
+    result = tsc_plugin.check([str(clean_file)], {})
+    assert_that(result.issues_count).is_equal_to(0)
+
+    # Check only the error file - should find issues
+    result = tsc_plugin.check([str(error_file)], {})
+    assert_that(result.issues_count).is_greater_than(0)
+
+
+def test_use_project_files_checks_all_files(
+    get_plugin: Callable[[str], BaseToolPlugin],
+    tmp_path: Path,
+) -> None:
+    """Verify use_project_files=True uses tsconfig.json file selection.
+
+    When use_project_files is True, tsc should check all files defined
+    in tsconfig.json, not just the files passed to check().
+
+    Args:
+        get_plugin: Fixture factory to get plugin instances.
+        tmp_path: Pytest fixture providing a temporary directory.
+    """
+    # Create tsconfig.json that includes all .ts files
+    tsconfig = tmp_path / "tsconfig.json"
+    tsconfig.write_text(
+        '{"compilerOptions": {"strict": true}, "include": ["*.ts"]}',
+    )
+
+    # Create a clean file and an error file
+    clean_file = tmp_path / "clean.ts"
+    clean_file.write_text("const x: number = 42;\nexport { x };\n")
+
+    error_file = tmp_path / "error.ts"
+    error_file.write_text("const y: number = 'string';\nexport { y };\n")
+
+    tsc_plugin = get_plugin("tsc")
+
+    # With use_project_files=True, checking just clean.ts should still find
+    # errors because tsc checks all files in tsconfig.json
+    result = tsc_plugin.check(
+        [str(clean_file)],
+        {"use_project_files": True},
+    )
+
+    # Should find the error in error.ts even though we only passed clean.ts
+    assert_that(result.issues_count).is_greater_than(0)

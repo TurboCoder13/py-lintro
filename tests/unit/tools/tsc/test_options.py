@@ -285,9 +285,11 @@ def test_build_command_with_project(tsc_plugin: TscPlugin) -> None:
     Args:
         tsc_plugin: The TscPlugin instance to test.
     """
-    tsc_plugin.set_options(project="tsconfig.build.json")
     with patch.object(tsc_plugin, "_get_tsc_command", return_value=["tsc"]):
-        cmd = tsc_plugin._build_command(files=[])
+        cmd = tsc_plugin._build_command(
+            files=[],
+            project_path="tsconfig.build.json",
+        )
 
     assert_that(cmd).contains("--project")
     assert_that(cmd).contains("tsconfig.build.json")
