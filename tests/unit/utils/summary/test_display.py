@@ -293,6 +293,9 @@ def test_non_pytest_test_tool(
     combined = "".join(output)
     # Underscores are converted to hyphens for display
     assert_that(combined).contains("other-test-runner")
+    assert_that(combined).does_not_contain(
+        "other_test_runner",
+    )  # original with underscore
     assert_that(combined).contains("PASS")
 
 
@@ -402,6 +405,9 @@ def test_unknown_tool_name(
     combined = "".join(output)
     # Underscores are converted to hyphens for display
     assert_that(combined).contains("unknown-tool-xyz")
+    assert_that(combined).does_not_contain(
+        "unknown_tool_xyz",
+    )  # original with underscore
 
 
 # =============================================================================
