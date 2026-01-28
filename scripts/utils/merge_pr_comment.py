@@ -95,14 +95,15 @@ def _sort_history_by_timestamp(history_blocks: list[str]) -> list[str]:
     def sort_key(block: str) -> tuple[int, str]:
         timestamp = _extract_timestamp_from_details(block)
         if timestamp:
-            # Return (0, timestamp) so blocks with timestamps sort first
-            # Negate by using reverse=True in sort, or use descending string
-            return (0, timestamp)
+            # (0, x) sorts before (1, "") so dated blocks come first.
+            # Invert chars so newer timestamps sort first (descending).
+            inverted = "".join(chr(126 - ord(c)) for c in timestamp)
+            return (0, inverted)
         # Blocks without timestamps go last, maintain relative order
         return (1, "")
 
-    # Sort by timestamp descending (newest first)
-    return sorted(history_blocks, key=sort_key, reverse=True)
+    # Sort ascending: (0, inverted_timestamp) < (1, "") puts dated first, newest first
+    return sorted(history_blocks, key=sort_key)
 
 
 def merge_comment_bodies(
