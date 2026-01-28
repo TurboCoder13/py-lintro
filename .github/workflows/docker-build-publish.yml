@@ -2,38 +2,18 @@
 # For license details, see the repository root LICENSE file.
 ---
 name: Build - Docker Image & Registry
-# Builds and tests Docker image on PR changes. Publishes to GHCR on main branch pushes,
-# releases, or manual dispatch. Includes multi-platform support and SBOM generation.
+# Builds and tests Docker image. Called by build-test-pipeline.yml for push/PR events.
+# Can also be triggered directly for releases or manual dispatch.
 
 'on':
-  push:
-    branches: [main]
-    paths:
-      - Dockerfile
-      - Dockerfile.tools
-      - docker-compose.yml
-      - scripts/docker/docker-lintro.sh
-      - scripts/docker/docker-test.sh
-      - scripts/utils/install-tools.sh
-      - scripts/ci/tools-image-*.sh
-      - pyproject.toml
-      - package.json
-      - lintro/**
-  pull_request:
-    branches: [main]
-    paths:
-      - Dockerfile
-      - Dockerfile.tools
-      - docker-compose.yml
-      - scripts/docker/docker-lintro.sh
-      - scripts/docker/docker-test.sh
-      - scripts/utils/install-tools.sh
-      - scripts/ci/tools-image-*.sh
-      - pyproject.toml
-      - package.json
-      - lintro/**
-    # Avoid heavy builds for draft PRs
-    types: [opened, synchronize, reopened, ready_for_review]
+  # Called by orchestrator workflow (build-test-pipeline.yml)
+  workflow_call:
+    inputs:
+      tools-image:
+        description: 'Tools image reference to use for the build'
+        required: true
+        type: string
+  # Direct triggers (not handled by orchestrator)
   release:
     types: [published, edited]
   workflow_dispatch:
@@ -42,6 +22,10 @@ name: Build - Docker Image & Registry
         description: 'Run publish on this branch (manual testing)'
         required: false
         default: 'false'
+      tools-image:
+        description: 'Tools image override (leave empty for auto-resolve)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -59,9 +43,6 @@ jobs:
     concurrency:
       group: docker-${{ github.ref }}
       cancel-in-progress: true
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.draft == false
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
@@ -97,12 +78,27 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: true
-      - name: Resolve tools image
-        id: tools
+      # Only resolve tools image when triggered directly (not via workflow_call)
+      - name: Resolve tools image (direct trigger)
+        id: tools-resolve
+        if: inputs.tools-image == ''
         uses: ./.github/actions/resolve-tools-image
         with:
+          push: 'true'
+      - name: Set tools image
+        id: tools
+        env:
           # yamllint disable-line rule:line-length
-          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+          INPUT_IMAGE: ${{ inputs.tools-image }}
+          RESOLVED_IMAGE: ${{ steps.tools-resolve.outputs.image }}
+        run: |
+          if [[ -n "$INPUT_IMAGE" ]]; then
+            echo "Using provided tools image: $INPUT_IMAGE"
+            echo "image=${INPUT_IMAGE}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Using resolved tools image: $RESOLVED_IMAGE"
+            echo "image=${RESOLVED_IMAGE}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Set up Docker Buildx
         # yamllint disable-line rule:line-length
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
@@ -179,11 +175,26 @@ jobs:
           fetch-tags: true
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Resolve tools image
-        id: tools
+      # Only resolve tools image when triggered directly (not via workflow_call)
+      - name: Resolve tools image (direct trigger)
+        id: tools-resolve
+        if: inputs.tools-image == ''
         uses: ./.github/actions/resolve-tools-image
         with:
           push: 'true'
+      - name: Set tools image
+        id: tools
+        env:
+          INPUT_IMAGE: ${{ inputs.tools-image }}
+          RESOLVED_IMAGE: ${{ steps.tools-resolve.outputs.image }}
+        run: |
+          if [[ -n "$INPUT_IMAGE" ]]; then
+            echo "Using provided tools image: $INPUT_IMAGE"
+            echo "image=${INPUT_IMAGE}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Using resolved tools image: $RESOLVED_IMAGE"
+            echo "image=${RESOLVED_IMAGE}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Set job permissions
         shell: bash
         run: >-

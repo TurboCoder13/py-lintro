@@ -4,25 +4,27 @@
 name: Testing - Full Suite & Coverage
 # Executes comprehensive test suite in Docker, generates coverage reports,
 # uploads artifacts, and posts coverage information to PRs.
+# Called by build-test-pipeline.yml for push/PR events.
 
 'on':
-  push:
-    branches: [main]
-    paths:
-      - '**.py'
-      - pyproject.toml
-      - package.json
-      - .github/workflows/test-and-coverage.yml
-      - scripts/local/run-tests.sh
-      - scripts/docker/docker-test.sh
-      - scripts/utils/install-tools.sh
-      - scripts/ci/tools-image-*.sh
-      - Dockerfile
-      - Dockerfile.tools
-      - docker-compose.yml
-  pull_request:
-    branches: [main]
+  # Called by orchestrator workflow (build-test-pipeline.yml)
+  workflow_call:
+    inputs:
+      tools-image:
+        description: 'Tools image reference to use for tests'
+        required: true
+        type: string
+    outputs:
+      coverage-percentage:
+        description: 'Coverage percentage from test run'
+        value: ${{ jobs.run-test-suite.outputs.coverage-percentage }}
+  # Direct trigger for manual runs
   workflow_dispatch:
+    inputs:
+      tools-image:
+        description: 'Tools image override (leave empty for auto-resolve)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -40,9 +42,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.draft == false
     env:
       LINTRO_OUTPUT_DIR: /tmp/lintro
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -84,12 +83,28 @@ jobs:
             semgrep.dev:443
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-      - name: Resolve tools image
-        id: tools
+        with:
+          fetch-depth: 0
+      # Only resolve tools image when triggered directly (not via workflow_call)
+      - name: Resolve tools image (direct trigger)
+        id: tools-resolve
+        if: inputs.tools-image == ''
         uses: ./.github/actions/resolve-tools-image
         with:
-          # yamllint disable-line rule:line-length
-          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+          push: 'true'
+      - name: Set tools image
+        id: tools
+        env:
+          INPUT_IMAGE: ${{ inputs.tools-image }}
+          RESOLVED_IMAGE: ${{ steps.tools-resolve.outputs.image }}
+        run: |
+          if [[ -n "$INPUT_IMAGE" ]]; then
+            echo "Using provided tools image: $INPUT_IMAGE"
+            echo "image=${INPUT_IMAGE}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Using resolved tools image: $RESOLVED_IMAGE"
+            echo "image=${RESOLVED_IMAGE}" >> "$GITHUB_OUTPUT"
+          fi
       - name: Set up Docker Buildx
         # yamllint disable-line rule:line-length
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0

@@ -1,0 +1,125 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+name: Pipeline - Build & Test
+# Orchestrates the build and test workflows with a shared tools image resolution.
+# This ensures the tools image is built only once and reused across all jobs.
+
+'on':
+  push:
+    branches: [main]
+    paths:
+      # Docker-related
+      - Dockerfile
+      - Dockerfile.tools
+      - docker-compose.yml
+      - scripts/docker/**
+      # Tools and dependencies
+      - scripts/utils/install-tools.sh
+      - scripts/ci/tools-image-*.sh
+      - pyproject.toml
+      - package.json
+      # Python source code
+      - 'lintro/**'
+      - '**.py'
+      # Test scripts
+      - scripts/local/run-tests.sh
+      # This workflow
+      - .github/workflows/build-test-pipeline.yml
+      - .github/actions/resolve-tools-image/**
+  pull_request:
+    branches: [main]
+    # Avoid heavy builds for draft PRs
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-tools:
+    name: Resolve Tools Image
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 30
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.draft == false
+    outputs:
+      image: ${{ steps.tools.outputs.image }}
+      changed: ${{ steps.tools.outputs.changed }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            static.rust-lang.org:443
+            bun.sh:443
+            astral.sh:443
+            sh.rustup.rs:443
+            deb.debian.org:80
+            registry.npmjs.org:443
+            crates.io:443
+            static.crates.io:443
+            index.crates.io:443
+            semgrep.dev:443
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+      - name: Resolve tools image
+        id: tools
+        uses: ./.github/actions/resolve-tools-image
+        with:
+          # yamllint disable-line rule:line-length
+          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+      - name: Summary
+        env:
+          TOOLS_IMAGE: ${{ steps.tools.outputs.image }}
+          TOOLS_CHANGED: ${{ steps.tools.outputs.changed }}
+        run: |
+          echo "## Tools Image Resolution" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image:** \`${TOOLS_IMAGE}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Changed:** ${TOOLS_CHANGED}" >> "$GITHUB_STEP_SUMMARY"
+
+  docker:
+    name: Docker Build & Test
+    needs: resolve-tools
+    uses: ./.github/workflows/docker-build-publish.yml
+    with:
+      tools-image: ${{ needs.resolve-tools.outputs.image }}
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
+
+  tests:
+    name: Test Suite & Coverage
+    needs: resolve-tools
+    uses: ./.github/workflows/test-and-coverage.yml
+    with:
+      tools-image: ${{ needs.resolve-tools.outputs.image }}
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
