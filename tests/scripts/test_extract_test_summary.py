@@ -14,7 +14,9 @@ from pathlib import Path
 
 from assertpy import assert_that
 
-SCRIPT_PATH = Path("scripts/ci/testing/extract-test-summary.sh").resolve()
+# Compute repo root from this test file location (tests/scripts/test_*.py -> repo root)
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+SCRIPT_PATH = _REPO_ROOT / "scripts/ci/testing/extract-test-summary.sh"
 
 
 def test_script_help_output() -> None:

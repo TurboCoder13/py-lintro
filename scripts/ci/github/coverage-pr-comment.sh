@@ -76,16 +76,9 @@ validate_test_value() {
 	local value="$1"
 	local field_name="$2"
 
-	# Check if value is a valid non-negative number
+	# Check if value is a valid non-negative number (regex ensures non-negative)
 	if ! [[ "$value" =~ ^[0-9]+\.?[0-9]*$ ]]; then
 		log_warning "Invalid $field_name value: $value; using 0"
-		echo "0"
-		return
-	fi
-
-	# Check for negative (shouldn't happen with regex above, but defensive)
-	if [ "$(echo "$value < 0" | bc -l 2>/dev/null || echo "0")" = "1" ]; then
-		log_warning "Negative $field_name value: $value; using 0"
 		echo "0"
 		return
 	fi

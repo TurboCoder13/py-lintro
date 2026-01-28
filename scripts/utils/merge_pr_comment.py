@@ -142,12 +142,12 @@ def merge_comment_bodies(
     if marker_line in normalized_new:
         normalized_new = normalized_new.replace(marker_line, "").strip()
 
-    now_utc: str = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S %Z")
-
     if not previous_body:
         return f"{marker_line}\n\n{normalized_new}\n"
 
     normalized_prev: str = _normalize_newline(previous_body).strip()
+
+    now_utc: str = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     # Remove any leading marker line from previous to avoid duplication
     if normalized_prev.startswith(marker_line):
