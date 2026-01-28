@@ -56,6 +56,7 @@ docker run --rm "$IMAGE" bash -c '
     shfmt --version
     sqlfluff --version
     taplo --version
+    tsc --version
     rustfmt --version
     yamllint --version
 '

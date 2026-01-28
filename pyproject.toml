@@ -150,6 +150,7 @@ packages = [
   "lintro.parsers.sqlfluff",
   "lintro.parsers.taplo",
   "lintro.parsers.pydoclint",
+  "lintro.parsers.tsc",
   "lintro.plugins",
   "lintro.tools",
   "lintro.tools.core",

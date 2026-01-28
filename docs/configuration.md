@@ -725,6 +725,70 @@ coverage/
 **Lintro options:** use `--tool-options "biome:timeout=60"` or set `exclude_patterns`
 via CLI to adjust discovery; native configs remain primary.
 
+### TypeScript Tools
+
+#### TypeScript Compiler (tsc) Configuration
+
+The TypeScript Compiler provides static type checking for TypeScript projects. Lintro
+wraps `tsc --noEmit` to check types without generating output files.
+
+**Installation:**
+
+```bash
+# Homebrew (macOS/Linux)
+brew install typescript
+
+# npm
+npm install -g typescript
+
+# bun
+bun add -g typescript
+```
+
+**File:** `tsconfig.json`
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+**Available Options via `--tool-options`:**
+
+| Option           | Type    | Description                                             |
+| ---------------- | ------- | ------------------------------------------------------- |
+| `project`        | string  | Path to tsconfig.json (--project)                       |
+| `strict`         | boolean | Enable all strict type checking options                 |
+| `skip_lib_check` | boolean | Skip type checking of declaration files (default: true) |
+| `timeout`        | integer | Execution timeout in seconds (default: 60)              |
+
+**Usage Examples:**
+
+```bash
+# Basic type check (uses tsconfig.json if present)
+lintro check src/ --tools tsc
+
+# Enable strict mode
+lintro check src/ --tools tsc --tool-options "tsc:strict=True"
+
+# Use specific config file
+lintro check src/ --tools tsc --tool-options "tsc:project=tsconfig.build.json"
+
+# Disable library check for faster execution
+lintro check src/ --tools tsc --tool-options "tsc:skip_lib_check=True"
+
+# Combine with other JS/TS tools
+lintro check src/ --tools tsc,biome,prettier
+```
+
 ### SQL Tools
 
 #### SQLFluff Configuration
