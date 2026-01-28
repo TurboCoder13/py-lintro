@@ -33,8 +33,12 @@ name: Pipeline - Build & Test
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
+# Permissions needed by child workflows (docker-build-publish, test-and-coverage)
 permissions:
   contents: read
+  packages: write
+  pull-requests: write
+  id-token: write
 
 jobs:
   resolve-tools:
@@ -108,9 +112,6 @@ jobs:
     with:
       tools-image: ${{ needs.resolve-tools.outputs.image }}
     secrets: inherit
-    permissions:
-      contents: read
-      packages: write
 
   tests:
     name: Test Suite & Coverage
@@ -119,7 +120,3 @@ jobs:
     with:
       tools-image: ${{ needs.resolve-tools.outputs.image }}
     secrets: inherit
-    permissions:
-      contents: read
-      packages: write
-      pull-requests: write
