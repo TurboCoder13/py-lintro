@@ -43,6 +43,18 @@ def _safe_cast(
         return default
 
 
+def _format_tool_display_name(tool_name: str) -> str:
+    """Format tool name for display (convert underscores to hyphens).
+
+    Args:
+        tool_name: Raw tool name (may contain underscores).
+
+    Returns:
+        Display name with hyphens instead of underscores.
+    """
+    return tool_name.replace("_", "-")
+
+
 def print_summary_table(
     console_output_func: Callable[..., None],
     action: Action,
@@ -58,14 +70,21 @@ def print_summary_table(
     try:
         from tabulate import tabulate
 
+        # Sort results alphabetically by tool name for consistent output
+        sorted_results = sorted(
+            tool_results,
+            key=lambda r: getattr(r, "name", "unknown").lower(),
+        )
+
         summary_data: list[list[str]] = []
-        for result in tool_results:
+        for result in sorted_results:
             tool_name: str = getattr(result, "name", "unknown")
             issues_count: int = getattr(result, "issues_count", 0)
             success: bool = getattr(result, "success", True)
 
             emoji: str = get_tool_emoji(tool_name)
-            tool_display: str = f"{emoji} {tool_name}"
+            display_name: str = _format_tool_display_name(tool_name)
+            tool_display: str = f"{emoji} {display_name}"
 
             # Special handling for pytest/test action
             # Safely check if this is pytest by normalizing the tool name

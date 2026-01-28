@@ -118,6 +118,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `test-venv-setup.sh`                | Create isolated Python 3.13 virtual environment          | `./scripts/ci/test-venv-setup.sh`                                                     |
 | `test-verify-cli.sh`                | Verify lintro CLI entry points in installed package      | `./scripts/ci/test-verify-cli.sh`                                                     |
 | `test-verify-imports.sh`            | Verify critical package imports in installed lintro      | `./scripts/ci/test-verify-imports.sh wheel`                                           |
+| `extract-test-summary.sh`           | Extract pytest test summary to JSON for PR comments      | `./scripts/ci/testing/extract-test-summary.sh <log> <out.json>`                       |
 | `extract-version-from-tag.sh`       | Extract version from git tag (strips v prefix)           | `./scripts/ci/extract-version-from-tag.sh`                                            |
 | `git-commit-push.sh`                | Stage, commit, and push with github-actions[bot]         | `./scripts/ci/git-commit-push.sh <pattern> <message>`                                 |
 | `tools-image-summary.sh`            | Generate GitHub step summary for tools image build       | `./scripts/ci/tools-image-summary.sh --help`                                          |
@@ -237,6 +238,60 @@ Generates and updates the coverage badge with color coding.
 ```bash
 ./scripts/ci/coverage-badge-update.sh
 ```
+
+#### `extract-test-summary.sh`
+
+Extracts test results from pytest output and generates a JSON summary for PR comments.
+
+**Features:**
+
+- Parses standard pytest output format (`N passed, M failed, K skipped in X.XXs`)
+- Parses lintro table format output (pipe-separated columns)
+- Extracts coverage data from `coverage.xml` when present
+- Falls back to environment variables when no input file is provided
+- Supports quiet mode (`--quiet`) to suppress console output
+
+**JSON Output Structure:**
+
+```json
+{
+  "tests": {
+    "passed": 100,
+    "failed": 2,
+    "skipped": 5,
+    "errors": 0,
+    "total": 107,
+    "duration": 12.34
+  },
+  "coverage": {
+    "percentage": 85.5,
+    "lines_covered": 1200,
+    "lines_total": 1404,
+    "lines_missing": 204,
+    "files": 42
+  }
+}
+```
+
+**Usage:**
+
+```bash
+# Extract from pytest output file
+./scripts/ci/testing/extract-test-summary.sh test-output.log test-summary.json
+
+# Extract with quiet mode (no console output)
+./scripts/ci/testing/extract-test-summary.sh --quiet test-output.log
+
+# Use environment variables (when file not provided)
+export TEST_PASSED=100 TEST_FAILED=0 TEST_TOTAL=100
+./scripts/ci/testing/extract-test-summary.sh "" test-summary.json
+```
+
+**Integration:**
+
+This script integrates with `coverage-pr-comment.sh` which reads the generated
+`test-summary.json` to build PR comment content. The JSON format uses single-space after
+colons for compatibility with grep-based parsers.
 
 #### `sbom-generate.sh`
 
