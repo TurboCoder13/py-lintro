@@ -9,24 +9,100 @@ set -euo pipefail
 # Show help if requested
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
 	cat <<'EOF'
-Usage: extract-test-summary.sh <test-output-file> <output-json-file>
+Usage: extract-test-summary.sh [OPTIONS] <test-output-file> [output-json-file]
 
 Extract test summary from pytest output and save to JSON.
 
 Arguments:
   test-output-file   Path to file containing pytest output
-  output-json-file   Path to write the JSON summary
+  output-json-file   Path to write the JSON summary (default: test-summary.json)
+
+Options:
+  -q, --quiet        Suppress summary output (only write JSON)
+  -h, --help         Show this help message
 
 Example:
   ./extract-test-summary.sh test-output.log test-summary.json
+  ./extract-test-summary.sh --quiet test-output.log
+
+Environment Variables:
+  If no input file is provided or file doesn't exist, the script will use:
+  TEST_PASSED, TEST_FAILED, TEST_SKIPPED, TEST_ERRORS, TEST_TOTAL, TEST_DURATION
 EOF
 	exit 0
 fi
+
+# Parse options
+QUIET=0
+while [[ "${1:-}" == -* ]]; do
+	case "$1" in
+	-q | --quiet)
+		QUIET=1
+		shift
+		;;
+	*)
+		echo "Unknown option: $1" >&2
+		exit 1
+		;;
+	esac
+done
 
 # Source shared utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../../utils/utils.sh disable=SC1091
 source "$SCRIPT_DIR/../../utils/utils.sh"
+
+# validate_numeric - Ensure value is numeric, fallback to 0 if not
+# Args:
+#   $1: Value to validate
+# Returns: The value if numeric, "0" otherwise
+validate_numeric() {
+	local val="$1"
+	if [[ "$val" =~ ^[0-9]+\.?[0-9]*$ ]]; then
+		echo "$val"
+	else
+		echo "0"
+	fi
+}
+
+# extract_count - Extract a test count from pytest output
+# Handles multiple output formats including standard pytest and plugin variations.
+#
+# Args:
+#   $1: Output text to search
+#   $2: Status name (e.g., "passed", "failed", "skipped")
+#
+# Returns: The count or "0" if not found
+extract_count() {
+	local output="$1"
+	local status="$2"
+	local count
+
+	# Try standard "N status" format (e.g., "10 passed")
+	count=$(echo "$output" | grep -oE "[0-9]+ $status" | grep -oE '[0-9]+' | head -1 || true)
+	if [ -n "$count" ]; then
+		echo "$count"
+		return
+	fi
+
+	# Try "status: N" format (some plugins use this, case-insensitive)
+	count=$(echo "$output" | grep -ioE "$status: *[0-9]+" | grep -oE '[0-9]+' | head -1 || true)
+	if [ -n "$count" ]; then
+		echo "$count"
+		return
+	fi
+
+	# Try "STATUS: N" uppercase format
+	local upper_status
+	upper_status=$(echo "$status" | tr '[:lower:]' '[:upper:]')
+	count=$(echo "$output" | grep -oE "$upper_status: *[0-9]+" | grep -oE '[0-9]+' | head -1 || true)
+	if [ -n "$count" ]; then
+		echo "$count"
+		return
+	fi
+
+	echo "0"
+}
 
 # Parse arguments
 INPUT_FILE="${1:-}"
@@ -47,7 +123,8 @@ else
 
 	# Try to extract from lintro table format first
 	# Format: | 🧪 pytest | ❌ FAIL   | 3253     | 2        | 26        | 3281    | 82.06s     |
-	LINTRO_LINE=$(echo "$OUTPUT" | grep -E '^\| .* pytest' | tail -1 || echo "")
+	# Also matches simpler format: | pytest | PASS | ... |
+	LINTRO_LINE=$(echo "$OUTPUT" | grep -E '^\|.*pytest' | tail -1 || echo "")
 
 	if [ -n "$LINTRO_LINE" ]; then
 		# Parse lintro table format (pipe-separated columns)
@@ -60,9 +137,11 @@ else
 		ERRORS="0"
 	else
 		# Fallback: Extract counts from standard pytest output format
-		PASSED=$(echo "$OUTPUT" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | head -1 || echo "0")
-		FAILED=$(echo "$OUTPUT" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' | head -1 || echo "0")
-		SKIPPED=$(echo "$OUTPUT" | grep -oE '[0-9]+ skipped' | grep -oE '[0-9]+' | head -1 || echo "0")
+		# Uses extract_count helper to handle format variations (plugins, etc.)
+		PASSED=$(extract_count "$OUTPUT" "passed")
+		FAILED=$(extract_count "$OUTPUT" "failed")
+		SKIPPED=$(extract_count "$OUTPUT" "skipped")
+		# Handle "error" or "errors" variants
 		ERRORS=$(echo "$OUTPUT" | grep -oE '[0-9]+ errors?' | grep -oE '[0-9]+' | head -1 || echo "0")
 		DURATION=$(echo "$OUTPUT" | grep -oE 'in [0-9]+\.[0-9]+s' | grep -oE '[0-9]+\.[0-9]+' | tail -1 || echo "0")
 
@@ -93,8 +172,8 @@ if [ -f "coverage.xml" ]; then
 	COVERAGE_PERCENTAGE=$(awk -v lr="$LINE_RATE" 'BEGIN { printf "%.1f", lr * 100 }')
 
 	# Extract lines covered and valid from coverage.xml
-	LINES_COVERED=$(sed -n 's/.*lines-covered="\([^"]*\)".*/\1/p' coverage.xml | head -n1 || echo "0")
-	LINES_VALID=$(sed -n 's/.*lines-valid="\([^"]*\)".*/\1/p' coverage.xml | head -n1 || echo "0")
+	LINES_COVERED=$(sed -n 's/.*lines-covered="\([^"]*\)".*/\1/p' coverage.xml | head -n1)
+	LINES_VALID=$(sed -n 's/.*lines-valid="\([^"]*\)".*/\1/p' coverage.xml | head -n1)
 
 	COVERAGE_LINES_COVERED="${LINES_COVERED:-0}"
 	COVERAGE_LINES_TOTAL="${LINES_VALID:-0}"
@@ -104,7 +183,22 @@ if [ -f "coverage.xml" ]; then
 	COVERAGE_FILES=$(grep -c '<class ' coverage.xml 2>/dev/null || echo "0")
 fi
 
+# Validate all values are numeric before JSON generation
+PASSED=$(validate_numeric "$PASSED")
+FAILED=$(validate_numeric "$FAILED")
+SKIPPED=$(validate_numeric "$SKIPPED")
+ERRORS=$(validate_numeric "$ERRORS")
+TOTAL=$(validate_numeric "$TOTAL")
+DURATION=$(validate_numeric "$DURATION")
+COVERAGE_PERCENTAGE=$(validate_numeric "$COVERAGE_PERCENTAGE")
+COVERAGE_LINES_COVERED=$(validate_numeric "$COVERAGE_LINES_COVERED")
+COVERAGE_LINES_TOTAL=$(validate_numeric "$COVERAGE_LINES_TOTAL")
+COVERAGE_LINES_MISSING=$(validate_numeric "$COVERAGE_LINES_MISSING")
+COVERAGE_FILES=$(validate_numeric "$COVERAGE_FILES")
+
 # Generate JSON output
+# Note: JSON uses single space after colon ("key": value) for compatibility
+# with grep-based parsers in coverage-pr-comment.sh and similar scripts.
 cat >"$OUTPUT_FILE" <<EOF
 {
   "tests": {
@@ -125,6 +219,9 @@ cat >"$OUTPUT_FILE" <<EOF
 }
 EOF
 
-log_success "Test summary extracted to $OUTPUT_FILE"
-echo "  Tests: $PASSED passed, $FAILED failed, $SKIPPED skipped, $TOTAL total (${DURATION}s)"
-echo "  Coverage: ${COVERAGE_PERCENTAGE}% (${COVERAGE_LINES_COVERED}/${COVERAGE_LINES_TOTAL} lines, ${COVERAGE_FILES} files)"
+# Output summary unless quiet mode is enabled
+if [ "$QUIET" -eq 0 ]; then
+	log_success "Test summary extracted to $OUTPUT_FILE"
+	echo "  Tests: $PASSED passed, $FAILED failed, $SKIPPED skipped, $TOTAL total (${DURATION}s)"
+	echo "  Coverage: ${COVERAGE_PERCENTAGE}% (${COVERAGE_LINES_COVERED}/${COVERAGE_LINES_TOTAL} lines, ${COVERAGE_FILES} files)"
+fi
