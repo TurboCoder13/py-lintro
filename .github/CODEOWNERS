@@ -1,68 +1,56 @@
-# Narrow CODEOWNERS to critical areas; exclude dependency files so Renovate patch automerge is unblocked.
+# CODEOWNERS - Define code ownership for pull request reviews
+#
+# Rules are evaluated top-to-bottom; LAST matching pattern wins.
+# To exclude files from review requirements, place them at the end with no owner.
 
-# Default: no global owner for everything
-
-# App/library code requires review
-lintro/**               @lgtm-hq/maintainers
-scripts/**              @lgtm-hq/maintainers
-
-# GitHub workflows (keep human review)
-.github/workflows/**    @lgtm-hq/maintainers
-
-# Explicitly exclude common dependency files from CODEOWNERS (no match means no owner)
-# pyproject, lockfiles, JS deps, Dockerfiles remain unmanaged by CODEOWNERS on purpose
-# pyproject & Python deps
-pyproject.toml          
-requirements*.txt       
-
-# Node deps
-package.json            
-package-lock.json       
-
-# Docker
-Dockerfile              
-.dockerignore           
-# Require review for changes to workflows and scripts
-.github/workflows/*  @lgtm-hq/maintainers
-scripts/**           @lgtm-hq/maintainers
-# Protect workflow files – require review by the repo owner for any changes
-.github/workflows/*  @lgtm-hq/maintainers
-
-# Global owners - these people will be the default owners for everything in
-# the repo. Unless a later match takes precedence, they will be requested for
-# review when someone opens a pull request.
+# =============================================================================
+# Global default - all files require maintainer review
+# =============================================================================
 * @lgtm-hq/maintainers
 
-# Core package files
+# =============================================================================
+# Core package and source code
+# =============================================================================
 /lintro/ @lgtm-hq/maintainers
-/pyproject.toml @lgtm-hq/maintainers
-/README.md @lgtm-hq/maintainers
-/CHANGELOG.md @lgtm-hq/maintainers
-/MANIFEST.in @lgtm-hq/maintainers
+/scripts/ @lgtm-hq/maintainers
 
-# CI/CD and workflows
+# =============================================================================
+# CI/CD and GitHub configuration
+# =============================================================================
 /.github/workflows/ @lgtm-hq/maintainers
 /.github/actions/ @lgtm-hq/maintainers
-/scripts/ci/ @lgtm-hq/maintainers
-/scripts/docker/ @lgtm-hq/maintainers
-/scripts/local/ @lgtm-hq/maintainers
-/scripts/utils/ @lgtm-hq/maintainers
 
+# =============================================================================
 # Documentation
+# =============================================================================
 /docs/ @lgtm-hq/maintainers
+/README.md @lgtm-hq/maintainers
+/CHANGELOG.md @lgtm-hq/maintainers
 
+# =============================================================================
 # Tests
+# =============================================================================
 /tests/ @lgtm-hq/maintainers
 /test_samples/ @lgtm-hq/maintainers
 
-# Configuration files
-/pytest.ini @lgtm-hq/maintainers
-/tox.ini @lgtm-hq/maintainers
-/renovate.json @lgtm-hq/maintainers
+# =============================================================================
+# Dependency files - EXCLUDED from code review requirements
+# These are placed LAST so they override the global owner.
+# This allows Renovate patch automerge to work without blocking on reviews.
+# =============================================================================
 
-# Docker files
-/Dockerfile @lgtm-hq/maintainers
-/docker-compose.yml @lgtm-hq/maintainers
+# Python dependencies
+pyproject.toml
+requirements*.txt
+uv.lock
 
-# Assets and images
-/assets/ @lgtm-hq/maintainers 
+# Node dependencies
+package.json
+package-lock.json
+
+# Docker files (often updated by Renovate for base image updates)
+Dockerfile
+Dockerfile.*
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
