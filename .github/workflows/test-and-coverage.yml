@@ -107,7 +107,7 @@ jobs:
           fi
         # yamllint disable-line rule:line-length
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@33fed32c1ba8775f20366ec9e8d0cd9fe8fc1dd3 # v1
       - name: Run comprehensive test suite (with Docker tests)
         env:
           TOOLS_IMAGE: ${{ steps.tools.outputs.image }}
