@@ -123,6 +123,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `git-commit-push.sh`                | Stage, commit, and push with github-actions[bot]         | `./scripts/ci/git-commit-push.sh <pattern> <message>`                                 |
 | `tools-image-summary.sh`            | Generate GitHub step summary for tools image build       | `./scripts/ci/tools-image-summary.sh --help`                                          |
 | `tools-image-tags.sh`               | Generate Docker image tags for tools image build         | `./scripts/ci/tools-image-tags.sh --help`                                             |
+| `tools-image-resolve-tag.sh`        | Resolve tools image tag for reusable workflow callers    | `./scripts/ci/tools-image-resolve-tag.sh --help`                                      |
 | `tools-image-verify.sh`             | Verify required tools are installed in tools image       | `./scripts/ci/tools-image-verify.sh --help`                                           |
 
 #### Homebrew Scripts (`ci/homebrew/`)
