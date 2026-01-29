@@ -368,8 +368,9 @@ class ClippyPlugin(BaseToolPlugin):
         remaining_count = len(remaining_issues)
         fixed_count = max(0, initial_count - remaining_count)
 
-        # Preserve output when fix leaves remaining issues with no parsed output
-        should_show_output = remaining_count > 0 and len(remaining_issues) == 0
+        # Preserve output when command fails but no issues were parsed
+        # This allows users to see error messages like compilation failures
+        should_show_output = not success_after and remaining_count == 0
 
         return ToolResult(
             name=self.definition.name,
