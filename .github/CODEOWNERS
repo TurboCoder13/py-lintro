@@ -3,11 +3,11 @@
 # Default: no global owner for everything
 
 # App/library code requires review
-lintro/**               @TurboCoder13
-scripts/**              @TurboCoder13
+lintro/**               @lgtm-hq/maintainers
+scripts/**              @lgtm-hq/maintainers
 
 # GitHub workflows (keep human review)
-.github/workflows/**    @TurboCoder13
+.github/workflows/**    @lgtm-hq/maintainers
 
 # Explicitly exclude common dependency files from CODEOWNERS (no match means no owner)
 # pyproject, lockfiles, JS deps, Dockerfiles remain unmanaged by CODEOWNERS on purpose
@@ -23,46 +23,46 @@ package-lock.json
 Dockerfile              
 .dockerignore           
 # Require review for changes to workflows and scripts
-.github/workflows/*  @TurboCoder13
-scripts/**           @TurboCoder13
+.github/workflows/*  @lgtm-hq/maintainers
+scripts/**           @lgtm-hq/maintainers
 # Protect workflow files – require review by the repo owner for any changes
-.github/workflows/*  @TurboCoder13
+.github/workflows/*  @lgtm-hq/maintainers
 
 # Global owners - these people will be the default owners for everything in
 # the repo. Unless a later match takes precedence, they will be requested for
 # review when someone opens a pull request.
-* @TurboCoder13
+* @lgtm-hq/maintainers
 
 # Core package files
-/lintro/ @TurboCoder13
-/pyproject.toml @TurboCoder13
-/README.md @TurboCoder13
-/CHANGELOG.md @TurboCoder13
-/MANIFEST.in @TurboCoder13
+/lintro/ @lgtm-hq/maintainers
+/pyproject.toml @lgtm-hq/maintainers
+/README.md @lgtm-hq/maintainers
+/CHANGELOG.md @lgtm-hq/maintainers
+/MANIFEST.in @lgtm-hq/maintainers
 
 # CI/CD and workflows
-/.github/workflows/ @TurboCoder13
-/.github/actions/ @TurboCoder13
-/scripts/ci/ @TurboCoder13
-/scripts/docker/ @TurboCoder13
-/scripts/local/ @TurboCoder13
-/scripts/utils/ @TurboCoder13
+/.github/workflows/ @lgtm-hq/maintainers
+/.github/actions/ @lgtm-hq/maintainers
+/scripts/ci/ @lgtm-hq/maintainers
+/scripts/docker/ @lgtm-hq/maintainers
+/scripts/local/ @lgtm-hq/maintainers
+/scripts/utils/ @lgtm-hq/maintainers
 
 # Documentation
-/docs/ @TurboCoder13
+/docs/ @lgtm-hq/maintainers
 
 # Tests
-/tests/ @TurboCoder13
-/test_samples/ @TurboCoder13
+/tests/ @lgtm-hq/maintainers
+/test_samples/ @lgtm-hq/maintainers
 
 # Configuration files
-/pytest.ini @TurboCoder13
-/tox.ini @TurboCoder13
-/renovate.json @TurboCoder13
+/pytest.ini @lgtm-hq/maintainers
+/tox.ini @lgtm-hq/maintainers
+/renovate.json @lgtm-hq/maintainers
 
 # Docker files
-/Dockerfile @TurboCoder13
-/docker-compose.yml @TurboCoder13
+/Dockerfile @lgtm-hq/maintainers
+/docker-compose.yml @lgtm-hq/maintainers
 
 # Assets and images
-/assets/ @TurboCoder13 
+/assets/ @lgtm-hq/maintainers 
