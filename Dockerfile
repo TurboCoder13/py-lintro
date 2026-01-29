@@ -87,8 +87,8 @@ COPY --from=builder /usr/local/bin/cargo-clippy /usr/local/bin/
 COPY --from=builder /usr/local/bin/uv /usr/local/bin/
 COPY --from=builder /usr/local/bin/bun /usr/local/bin/
 COPY --from=builder /root/.bun/install/global /opt/bun/install/global
-COPY --from=builder /root/.cargo /home/lintro/.cargo
-COPY --from=builder /root/.rustup /home/lintro/.rustup
+COPY --chown=lintro:lintro --from=builder /root/.cargo /home/lintro/.cargo
+COPY --chown=lintro:lintro --from=builder /root/.rustup /home/lintro/.rustup
 
 # Set Rust environment for lintro user and bun global install location
 # RUFF_CACHE_DIR set to /tmp to avoid permission issues with mounted volumes
@@ -118,8 +118,8 @@ COPY scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY scripts/docker/fix-permissions.sh /usr/local/bin/fix-permissions.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/fix-permissions.sh
 
-# Create /code directory for volume mounts and fix Rust directory ownership
-RUN mkdir -p /code && chown -R lintro:lintro /app /code /home/lintro/.cargo /home/lintro/.rustup
+# Create /code directory for volume mounts and set ownership
+RUN mkdir -p /code && chown -R lintro:lintro /app /code
 
 # Health check to verify lintro is working
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

@@ -86,7 +86,6 @@ def build_macos_binary(arch: str = "arm64", verbose: bool = False) -> int:
         "--assume-yes-for-downloads",
         # macOS-specific options
         f"--macos-target-arch={arch}",
-        "--macos-app-mode=console",
         # Include all lintro packages
     ]
 
