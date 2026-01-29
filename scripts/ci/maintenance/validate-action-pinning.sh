@@ -36,9 +36,9 @@ while IFS= read -r line; do
 	if echo "$ref" | grep -Eq '^[A-Fa-f0-9]{40}$|^\$\{\{'; then
 		continue
 	fi
-	# Accept semantic version tags for internal TurboCoder13/py-lintro actions
+	# Accept semantic version tags for internal lgtm-hq/py-lintro actions
 	# Internal actions use semantic versioning (@v1, @v1.0.0, @actions-v1) instead of SHA pinning
-	if echo "$uses_line" | grep -Eq 'TurboCoder13/py-lintro/.github/(actions|workflows)' &&
+	if echo "$uses_line" | grep -Eq 'lgtm-hq/py-lintro/.github/(actions|workflows)' &&
 		echo "$ref" | grep -Eq '^(actions-)?v[0-9]+(\.[0-9]+(\.[0-9]+)?)?$'; then
 		continue
 	fi

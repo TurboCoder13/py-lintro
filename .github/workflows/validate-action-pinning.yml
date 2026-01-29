@@ -3,7 +3,7 @@
 ---
 name: Quality Check - Action Pinning Validation
 # Validates that external GitHub Actions are pinned to specific SHA commits for
-# security compliance. Internal actions (TurboCoder13/py-lintro) use semantic
+# security compliance. Internal actions (lgtm-hq/py-lintro) use semantic
 # version tags instead for easier maintenance.
 
 'on':

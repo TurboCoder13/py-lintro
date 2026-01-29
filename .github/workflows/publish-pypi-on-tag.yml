@@ -168,7 +168,7 @@ jobs:
       - name: Checkout homebrew-tap
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
-          repository: TurboCoder13/homebrew-tap
+          repository: lgtm-hq/homebrew-tap
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           path: homebrew-tap
 

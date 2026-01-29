@@ -44,20 +44,20 @@ security:
 
 1. **Via GitHub Actions UI**:
    - Navigate to
-     [SBOM workflow runs](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml)
+     [SBOM workflow runs](https://github.com/lgtm-hq/py-lintro/actions/workflows/sbom-on-main.yml)
    - Select the latest successful run
    - Download "sbom-artifacts" from the Artifacts section
 
 2. **Via GitHub CLI**:
 
    ```bash
-   gh run download -R TurboCoder13/py-lintro --name sbom-artifacts
+   gh run download -R lgtm-hq/py-lintro --name sbom-artifacts
    ```
 
 3. **Via API**:
 
    ```bash
-   gh api repos/TurboCoder13/py-lintro/actions/artifacts \
+   gh api repos/lgtm-hq/py-lintro/actions/artifacts \
      --jq '.artifacts[] | select(.name=="sbom-artifacts") | .archive_download_url'
    ```
 

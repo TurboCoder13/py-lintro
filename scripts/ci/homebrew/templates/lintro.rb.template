@@ -8,7 +8,7 @@ class Lintro < Formula
   include Language::Python::Virtualenv
 
   desc "Unified CLI tool for code formatting, linting, and quality assurance"
-  homepage "https://github.com/TurboCoder13/py-lintro"
+  homepage "https://github.com/lgtm-hq/py-lintro"
   url "{{TARBALL_URL}}"
   sha256 "{{TARBALL_SHA}}"
   license "MIT"
@@ -100,7 +100,7 @@ class Lintro < Formula
         lintro format         # Auto-fix issues
         lintro list-tools     # View available tools
 
-      Documentation: https://github.com/TurboCoder13/py-lintro/tree/main/docs
+      Documentation: https://github.com/lgtm-hq/py-lintro/tree/main/docs
     EOS
   end
 

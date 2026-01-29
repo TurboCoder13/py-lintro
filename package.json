@@ -11,15 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TurboCoder13/py-lintro.git"
+    "url": "git+https://github.com/lgtm-hq/py-lintro.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/TurboCoder13/py-lintro/issues"
+    "url": "https://github.com/lgtm-hq/py-lintro/issues"
   },
-  "homepage": "https://github.com/TurboCoder13/py-lintro#readme",
+  "homepage": "https://github.com/lgtm-hq/py-lintro#readme",
   "devDependencies": {
     "@biomejs/biome": "^2.3.9",
     "markdownlint-cli2": "^0.17.2",

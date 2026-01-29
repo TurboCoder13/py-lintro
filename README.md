@@ -1,7 +1,7 @@
 # Lintro
 
 <!-- markdownlint-disable MD033 MD013 -->
-<img src="https://raw.githubusercontent.com/TurboCoder13/py-lintro/main/assets/images/lintro.png" alt="Lintro Logo" style="width:100%;max-width:800px;height:auto;display:block;margin:0 auto 24px auto;">
+<img src="https://raw.githubusercontent.com/lgtm-hq/py-lintro/main/assets/images/lintro.png" alt="Lintro Logo" style="width:100%;max-width:800px;height:auto;display:block;margin:0 auto 24px auto;">
 <!-- markdownlint-enable MD033 MD013 -->
 
 A comprehensive CLI tool that unifies various code formatting, linting, and quality
@@ -9,25 +9,25 @@ assurance tools under a single command-line interface.
 
 <!-- Badges: Build & Quality -->
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/test-and-coverage.yml?label=tests&branch=main&logo=githubactions&logoColor=white)](https://github.com/TurboCoder13/py-lintro/actions/workflows/test-and-coverage.yml?query=branch%3Amain)
-[![CI](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/ci-lintro-analysis.yml?label=ci&branch=main&logo=githubactions&logoColor=white)](https://github.com/TurboCoder13/py-lintro/actions/workflows/ci-lintro-analysis.yml?query=branch%3Amain)
-[![Docker](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/docker-build-publish.yml?label=docker&logo=docker&branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/docker-build-publish.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/TurboCoder13/py-lintro/branch/main/graph/badge.svg)](https://codecov.io/gh/TurboCoder13/py-lintro)
+[![Tests](https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/test-and-coverage.yml?label=tests&branch=main&logo=githubactions&logoColor=white)](https://github.com/lgtm-hq/py-lintro/actions/workflows/test-and-coverage.yml?query=branch%3Amain)
+[![CI](https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/ci-lintro-analysis.yml?label=ci&branch=main&logo=githubactions&logoColor=white)](https://github.com/lgtm-hq/py-lintro/actions/workflows/ci-lintro-analysis.yml?query=branch%3Amain)
+[![Docker](https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/docker-build-publish.yml?label=docker&logo=docker&branch=main)](https://github.com/lgtm-hq/py-lintro/actions/workflows/docker-build-publish.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/lgtm-hq/py-lintro/branch/main/graph/badge.svg)](https://codecov.io/gh/lgtm-hq/py-lintro)
 
 <!-- Badges: Releases -->
 
-[![Release](https://img.shields.io/github/v/release/TurboCoder13/py-lintro?label=release)](https://github.com/TurboCoder13/py-lintro/releases/latest)
+[![Release](https://img.shields.io/github/v/release/lgtm-hq/py-lintro?label=release)](https://github.com/lgtm-hq/py-lintro/releases/latest)
 [![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 <!-- Badges: Security & Supply Chain -->
 
-[![CodeQL](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/TurboCoder13/py-lintro)
+[![CodeQL](https://github.com/lgtm-hq/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/lgtm-hq/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/lgtm-hq/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/lgtm-hq/py-lintro)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11142/badge)](https://www.bestpractices.dev/projects/11142)
 [![SBOM](https://img.shields.io/badge/SBOM-CycloneDX-brightgreen)](docs/security/assurance.md)
-[![SBOM Status](https://img.shields.io/github/actions/workflow/status/TurboCoder13/py-lintro/sbom-on-main.yml?label=sbom&branch=main)](https://github.com/TurboCoder13/py-lintro/actions/workflows/sbom-on-main.yml?query=branch%3Amain)
+[![SBOM Status](https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/sbom-on-main.yml?label=sbom&branch=main)](https://github.com/lgtm-hq/py-lintro/actions/workflows/sbom-on-main.yml?query=branch%3Amain)
 
 ## 🚀 Quick Start
 
@@ -137,10 +137,10 @@ Check all tool versions with: `lintro list-tools`
 pip install lintro
 
 # Homebrew (macOS binary)
-brew tap TurboCoder13/tap && brew install lintro-bin
+brew tap lgtm-hq/tap && brew install lintro-bin
 
 # Docker (includes all tools)
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check
 ```
 
 See [Getting Started](docs/getting-started.md) for detailed installation options.
@@ -171,10 +171,10 @@ lintro list-tools
 
 ```bash
 # Run from GHCR
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check
 
 # With formatting
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check --output-format grid
 ```
 
 ## 📚 Documentation
@@ -195,7 +195,7 @@ docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check --ou
 
 ```bash
 # Clone and install
-git clone https://github.com/TurboCoder13/py-lintro.git
+git clone https://github.com/lgtm-hq/py-lintro.git
 cd py-lintro
 uv sync --dev
 
@@ -209,11 +209,10 @@ uv sync --dev
 ## 🤝 Community
 
 - 🐛
-  [Bug Reports](https://github.com/TurboCoder13/py-lintro/issues/new?template=bug_report.md)
+  [Bug Reports](https://github.com/lgtm-hq/py-lintro/issues/new?template=bug_report.md)
 - 💡
-  [Feature Requests](https://github.com/TurboCoder13/py-lintro/issues/new?template=feature_request.md)
-- ❓
-  [Questions](https://github.com/TurboCoder13/py-lintro/issues/new?template=question.md)
+  [Feature Requests](https://github.com/lgtm-hq/py-lintro/issues/new?template=feature_request.md)
+- ❓ [Questions](https://github.com/lgtm-hq/py-lintro/issues/new?template=question.md)
 - 📖 [Contributing Guide](docs/contributing.md)
 
 ## 📄 License

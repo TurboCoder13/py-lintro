@@ -12,23 +12,23 @@ Registry:
 
 ```bash
 # Basic usage
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check
 
 # With grid formatting
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check --output-format grid
 
 # Run specific tools
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check --tools ruff,prettier
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check --tools ruff,prettier
 
 # Format code
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest format
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest format
 ```
 
 ### Development Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/TurboCoder13/py-lintro.git
+git clone https://github.com/lgtm-hq/py-lintro.git
 cd py-lintro
 
 # Make the Docker script executable
@@ -60,7 +60,7 @@ Lintro provides a pre-built Docker image available on GitHub Container Registry 
 
 ### Image Details
 
-- **Registry**: `ghcr.io/turbocoder13/py-lintro`
+- **Registry**: `ghcr.io/lgtm-hq/py-lintro`
 - **Tags**:
   - `latest` - Latest development version
   - `main` - Main branch version
@@ -70,13 +70,13 @@ Lintro provides a pre-built Docker image available on GitHub Container Registry 
 
 ```bash
 # Pull the latest image
-docker pull ghcr.io/turbocoder13/py-lintro:latest
+docker pull ghcr.io/lgtm-hq/py-lintro:latest
 
 # Run with the published image
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check
 
 # Use a specific version
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:main check
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:main check
 ```
 
 ### CI/CD Integration
@@ -88,11 +88,11 @@ Use the published image in your CI/CD pipelines:
 - name: Run Lintro
   run: |
     docker run --rm -v ${{ github.workspace }}:/code \
-      ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
+      ghcr.io/lgtm-hq/py-lintro:latest check --output-format grid
 
 # GitLab CI example
 lintro:
-  image: ghcr.io/turbocoder13/py-lintro:latest
+  image: ghcr.io/lgtm-hq/py-lintro:latest
   script:
     - lintro check --output-format grid
 ```

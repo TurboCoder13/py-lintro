@@ -18,7 +18,7 @@ The script runs tool version checks inside the specified Docker image
 to ensure all linting/formatting tools are properly installed.
 
 Example:
-  IMAGE=ghcr.io/turbocoder13/lintro-tools:latest ./scripts/ci/tools-image-verify.sh
+  IMAGE=ghcr.io/lgtm-hq/lintro-tools:latest ./scripts/ci/tools-image-verify.sh
 EOF
 	exit 0
 fi

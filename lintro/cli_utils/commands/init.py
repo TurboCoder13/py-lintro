@@ -16,7 +16,7 @@ from rich.panel import Panel
 # Default Lintro config template (project-recommended defaults)
 DEFAULT_CONFIG_TEMPLATE = """\
 # Lintro Configuration
-# https://github.com/TurboCoder13/py-lintro
+# https://github.com/lgtm-hq/py-lintro
 #
 # Lintro acts as the master configuration source for all tools.
 # Native tool configs (e.g., .prettierrc) are ignored by default unless
@@ -71,7 +71,7 @@ tools:
 
 MINIMAL_CONFIG_TEMPLATE = """\
 # Lintro Configuration (Minimal)
-# https://github.com/TurboCoder13/py-lintro
+# https://github.com/lgtm-hq/py-lintro
 
 enforce:
   line_length: 88

@@ -4,7 +4,7 @@
 -include .env
 
 # Pre-built tools image for faster Docker builds
-TOOLS_IMAGE ?= ghcr.io/turbocoder13/lintro-tools:latest
+TOOLS_IMAGE ?= ghcr.io/lgtm-hq/lintro-tools:latest
 
 # Default target
 all: setup test

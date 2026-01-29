@@ -17,7 +17,7 @@ inputs:
   image-name:
     description: Full image name without tag
     required: false
-    default: ghcr.io/turbocoder13/lintro-tools
+    default: ghcr.io/lgtm-hq/lintro-tools
   stable-tag:
     description: Tag for the stable/latest tools image
     required: false

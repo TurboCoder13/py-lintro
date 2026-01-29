@@ -38,7 +38,7 @@ def get_repo_owner_repo() -> tuple[str, str]:
     Returns:
         tuple[str, str]: owner and repo.
     """
-    repo = os.environ.get("GITHUB_REPOSITORY", "TurboCoder13/py-lintro")
+    repo = os.environ.get("GITHUB_REPOSITORY", "lgtm-hq/py-lintro")
     owner, name = repo.split("/", 1)
     return owner, name
 

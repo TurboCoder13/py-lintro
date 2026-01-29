@@ -5,11 +5,11 @@
 # This installs a pre-compiled binary that doesn't require Python
 class LintroBin < Formula
   desc "Unified CLI for code quality (binary)"
-  homepage "https://github.com/TurboCoder13/py-lintro"
+  homepage "https://github.com/lgtm-hq/py-lintro"
   version "0.22.0"
   license "MIT"
 
-  RELEASE_BASE = "https://github.com/TurboCoder13/py-lintro/releases"
+  RELEASE_BASE = "https://github.com/lgtm-hq/py-lintro/releases"
 
   on_macos do
     on_arm do
@@ -50,7 +50,7 @@ class LintroBin < Formula
         pipx install ruff black mypy bandit pydoclint yamllint sqlfluff semgrep
 
       For the Python-based version with bundled tools, use:
-        brew install TurboCoder13/tap/lintro
+        brew install lgtm-hq/tap/lintro
     EOS
   end
 

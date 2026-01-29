@@ -52,7 +52,7 @@ individual is officially representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to
-the community leaders responsible for enforcement at <conduct@turbocoder13.com>.
+the community leaders responsible for enforcement at <conduct@lgtm-hq.com>.
 
 All complaints will be reviewed and investigated promptly and fairly.
 
