@@ -42,11 +42,12 @@ runs:
         PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
-        # Define tool-related file patterns
+        # Define tool-related file patterns that affect image CONTENT
+        # Note: scripts/ci/tools-image-*.sh are CI helpers (tags, verify, summary)
+        # and don't affect image content, so they're not included here
         TOOL_PATTERNS=(
           "Dockerfile.tools"
           "scripts/utils/install-tools.sh"
-          "scripts/ci/tools-image-"
           "package.json"
           "lintro/_tool_versions.py"
         )
