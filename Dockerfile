@@ -3,7 +3,8 @@
 # =============================================================================
 # Use the pre-built tools image to avoid rebuilding tools on every CI run.
 # TOOLS_IMAGE can be overridden at build time (e.g., for PR testing with new tools)
-ARG TOOLS_IMAGE=ghcr.io/lgtm-hq/lintro-tools:latest@sha256:8d0e9c9630dce2907a395f415886bd95c33a22011ba6ff6f3f5acb00f87ceeae
+# Note: Still using turbocoder13 until tools-image is published to lgtm-hq org
+ARG TOOLS_IMAGE=ghcr.io/turbocoder13/lintro-tools:latest@sha256:8d0e9c9630dce2907a395f415886bd95c33a22011ba6ff6f3f5acb00f87ceeae
 # hadolint ignore=DL3006
 FROM ${TOOLS_IMAGE} AS tools
 

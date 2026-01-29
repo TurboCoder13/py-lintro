@@ -48,7 +48,8 @@ if ! command -v docker &>/dev/null; then
 fi
 
 # Pre-built tools image for faster builds
-TOOLS_IMAGE="${TOOLS_IMAGE:-ghcr.io/lgtm-hq/lintro-tools:latest}"
+# Note: Still using turbocoder13 until tools-image is published to lgtm-hq org
+TOOLS_IMAGE="${TOOLS_IMAGE:-ghcr.io/turbocoder13/lintro-tools:latest}"
 
 # Build the Docker image if it doesn't exist
 IMAGE_NAME="py-lintro:latest"
