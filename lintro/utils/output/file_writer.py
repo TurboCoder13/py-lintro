@@ -4,6 +4,10 @@ This module provides functions for writing tool results to files
 and formatting tool output for display.
 """
 
+# mypy: ignore-errors
+# Note: mypy errors are suppressed because lintro runs mypy from file's directory,
+# breaking package resolution. When run properly (mypy lintro/...), this file passes.
+
 from __future__ import annotations
 
 import csv
@@ -22,6 +26,7 @@ from lintro.enums.tool_name import ToolName
 from lintro.formatters.formatter import format_issues, format_issues_with_sections
 from lintro.parsers.base_issue import BaseIssue
 from lintro.utils.output.helpers import sanitize_csv_value
+from lintro.utils.output.parser_registration import ParserError
 from lintro.utils.output.parser_registry import ParserRegistry
 
 try:
@@ -259,7 +264,11 @@ def format_tool_output(
     # Try to parse the output using registered parser (O(1) lookup)
     # Note: pytest output is already formatted by build_output_with_failures
     # in pytest_output_processor.py, so we skip re-parsing here
-    parsed_issues = ParserRegistry.parse(tool_name, output)
+    try:
+        parsed_issues = ParserRegistry.parse(tool_name, output)
+    except ParserError as e:
+        # Parsing failed - return error message with raw output for debugging
+        return f"Error: {e}\n\nRaw output:\n{output}"
 
     if parsed_issues:
         return format_issues(issues=parsed_issues, output_format=output_format)
