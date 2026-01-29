@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from lintro.config.config_loader import get_config
 from lintro.enums.action import Action, normalize_action
 from lintro.enums.tool_name import ToolName
 from lintro.enums.tools_value import ToolsValue
@@ -142,6 +143,9 @@ def get_tools_to_run(
             raise ValueError("pytest tool is not available")
         return ["pytest"]
 
+    # Get lintro config for enabled/disabled tool checking
+    lintro_config = get_config()
+
     if (
         tools is None
         or tools == ToolsValue.ALL
@@ -152,8 +156,12 @@ def get_tools_to_run(
             available_tools = tool_manager.get_fix_tools()
         else:  # check
             available_tools = tool_manager.get_check_tools()
-        # Filter out pytest for check/fmt actions
-        return [name for name in available_tools if name.lower() != "pytest"]
+        # Filter out pytest for check/fmt actions and disabled tools
+        return [
+            name
+            for name in available_tools
+            if name.lower() != "pytest" and lintro_config.is_tool_enabled(name)
+        ]
 
     # Parse specific tools
     tool_names: list[str] = [name.strip().lower() for name in tools.split(",")]
@@ -174,6 +182,9 @@ def get_tools_to_run(
             raise ValueError(
                 f"Unknown tool '{name}'. Available tools: {available_names}",
             )
+        # Skip disabled tools (check enabled flag in lintro config)
+        if not lintro_config.is_tool_enabled(name):
+            continue
         # Verify the tool supports the requested action
         if action == Action.FIX:
             tool_instance = tool_manager.get_tool(name)
