@@ -199,7 +199,9 @@ def test_set_options_validates_use_project_files_type(
         tsc_plugin: Plugin instance fixture.
     """
     with pytest.raises(ValueError, match="use_project_files must be a boolean"):
-        tsc_plugin.set_options(use_project_files="true")
+        tsc_plugin.set_options(
+            use_project_files="true",  # type: ignore[arg-type]  # Intentional wrong type
+        )
 
 
 def test_set_options_accepts_valid_use_project_files(

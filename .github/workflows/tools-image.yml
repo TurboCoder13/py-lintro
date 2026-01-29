@@ -84,9 +84,10 @@ jobs:
     name: Build Tools Image
     runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: [check-changes]
-    # Run if: not workflow_call, OR changes detected, OR skip_if_unchanged=false
+    # Run if: check-changes was skipped (non-workflow_call), OR changes detected,
+    # OR skip_if_unchanged=false
     if: >-
-      (github.event_name != 'workflow_call') ||
+      (needs.check-changes.result == 'skipped') ||
       (needs.check-changes.outputs.tools-changed == 'true') ||
       (inputs.skip_if_unchanged == false)
     permissions:

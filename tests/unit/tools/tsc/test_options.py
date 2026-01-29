@@ -85,12 +85,14 @@ def test_definition_native_configs(tsc_plugin: TscPlugin) -> None:
         ("project", None),
         ("strict", None),
         ("skip_lib_check", True),
+        ("use_project_files", False),
     ],
     ids=[
         "timeout_equals_default",
         "project_is_none",
         "strict_is_none",
         "skip_lib_check_is_true",
+        "use_project_files_is_false",
     ],
 )
 def test_default_options_values(
@@ -134,6 +136,8 @@ def test_definition_priority(tsc_plugin: TscPlugin) -> None:
         ("strict", False),
         ("skip_lib_check", True),
         ("skip_lib_check", False),
+        ("use_project_files", True),
+        ("use_project_files", False),
     ],
     ids=[
         "project_default",
@@ -142,6 +146,8 @@ def test_definition_priority(tsc_plugin: TscPlugin) -> None:
         "strict_false",
         "skip_lib_check_true",
         "skip_lib_check_false",
+        "use_project_files_true",
+        "use_project_files_false",
     ],
 )
 def test_set_options_valid(
@@ -156,7 +162,9 @@ def test_set_options_valid(
         option_name: The name of the option to set.
         option_value: The value to set for the option.
     """
-    tsc_plugin.set_options(**{option_name: option_value})
+    tsc_plugin.set_options(
+        **{option_name: option_value},  # type: ignore[arg-type]  # Dynamic kwargs
+    )
     assert_that(tsc_plugin.options.get(option_name)).is_equal_to(option_value)
 
 
@@ -166,11 +174,13 @@ def test_set_options_valid(
         ("project", 123, "project must be a string"),
         ("strict", "yes", "strict must be a boolean"),
         ("skip_lib_check", "yes", "skip_lib_check must be a boolean"),
+        ("use_project_files", "yes", "use_project_files must be a boolean"),
     ],
     ids=[
         "invalid_project_type",
         "invalid_strict_type",
         "invalid_skip_lib_check_type",
+        "invalid_use_project_files_type",
     ],
 )
 def test_set_options_invalid_type(
@@ -188,7 +198,9 @@ def test_set_options_invalid_type(
         error_match: Pattern expected in the error message.
     """
     with pytest.raises(ValueError, match=error_match):
-        tsc_plugin.set_options(**{option_name: invalid_value})
+        tsc_plugin.set_options(
+            **{option_name: invalid_value},  # type: ignore[arg-type]  # Intentional wrong type
+        )
 
 
 # =============================================================================

@@ -230,16 +230,21 @@ class TscPlugin(BaseToolPlugin):
         self,
         files: list[str],
         project_path: str | Path | None = None,
+        options: dict[str, object] | None = None,
     ) -> list[str]:
         """Build the tsc invocation command.
 
         Args:
             files: Relative file paths (used only when no project config).
             project_path: Path to tsconfig.json to use (temp or user-specified).
+            options: Options dict to use for flags. Defaults to self.options.
 
         Returns:
             A list of command arguments ready to be executed.
         """
+        if options is None:
+            options = self.options
+
         cmd: list[str] = self._get_tsc_command()
 
         # Core flags for linting (no output, machine-readable format)
@@ -250,11 +255,11 @@ class TscPlugin(BaseToolPlugin):
             cmd.extend(["--project", str(project_path)])
 
         # Strict mode override (--strict is off by default, no flag needed for False)
-        if self.options.get("strict") is True:
+        if options.get("strict") is True:
             cmd.append("--strict")
 
         # Skip lib check (faster, avoids issues with node_modules types)
-        if self.options.get("skip_lib_check", True):
+        if options.get("skip_lib_check", True):
             cmd.append("--skipLibCheck")
 
         # Only pass files directly if no project config is being used
@@ -348,6 +353,7 @@ class TscPlugin(BaseToolPlugin):
             cmd = self._build_command(
                 files=ctx.rel_files if not project_path else [],
                 project_path=project_path,
+                options=merged_options,
             )
             logger.debug("[tsc] Running with cwd={} and cmd={}", ctx.cwd, cmd)
 
