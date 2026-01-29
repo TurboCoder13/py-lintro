@@ -37,9 +37,26 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          set -o pipefail
+
           # Extract usernames from CODEOWNERS, filter out team entries (@org/team)
-          owners=$(grep -oE '@[a-zA-Z0-9_/-]+' .github/CODEOWNERS \
-            | sort -u | tr -d '@' | grep -E '^[A-Za-z0-9_-]+$')
+          # Pipeline: extract @mentions -> dedupe -> remove @ -> filter individuals
+          owners=""
+          pipeline_output=$(grep -oE '@[a-zA-Z0-9_/-]+' .github/CODEOWNERS \
+            | sort -u | tr -d '@' | grep -E '^[A-Za-z0-9_-]+$') \
+            && exit_code=0 || exit_code=$?
+
+          if [[ $exit_code -eq 0 ]]; then
+            owners="$pipeline_output"
+          elif [[ $exit_code -eq 1 ]]; then
+            # grep exit code 1 means no matches - expected when no individual owners
+            echo "No matches found in pipeline, treating as empty result"
+            owners=""
+          else
+            # Any other exit code indicates an actual error
+            echo "Error: Pipeline failed with exit code $exit_code"
+            exit "$exit_code"
+          fi
 
           if [[ -z "$owners" ]]; then
             echo "No valid individual CODEOWNERS found, skipping assignment"
