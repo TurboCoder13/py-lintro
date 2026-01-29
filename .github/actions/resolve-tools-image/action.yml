@@ -23,8 +23,7 @@ inputs:
     description: Full stable image reference (may differ during migrations)
     required: false
     # yamllint disable-line rule:line-length
-    # Note: Using turbocoder13 stable image until lgtm-hq image is published
-    default: ghcr.io/turbocoder13/lintro-tools:latest@sha256:8d0e9c9630dce2907a395f415886bd95c33a22011ba6ff6f3f5acb00f87ceeae
+    default: ghcr.io/lgtm-hq/lintro-tools:latest@sha256:b3940578b3fa10215d2ba4accba89250753360ec6f34cebe2dc588694084dad4
 outputs:
   image:
     description: Full tools image reference to use (either fresh pr-N or stable)
