@@ -85,11 +85,13 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: [check-changes]
     # Run if: check-changes was skipped (non-workflow_call), OR changes detected,
-    # OR skip_if_unchanged=false
+    # OR skip_if_unchanged=false. Use always() to force evaluation when dependency
+    # is skipped.
     if: >-
-      (needs.check-changes.result == 'skipped') ||
+      always() &&
+      ((needs.check-changes.result == 'skipped') ||
       (needs.check-changes.outputs.tools-changed == 'true') ||
-      (inputs.skip_if_unchanged == false)
+      (inputs.skip_if_unchanged == false))
     permissions:
       contents: read
       packages: write
