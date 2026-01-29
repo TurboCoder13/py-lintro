@@ -15,15 +15,15 @@ inputs:
     required: false
     default: ghcr.io
   image-name:
-    description: Full image name without tag
+    description: Full image name without tag (for pushing new PR images)
     required: false
-    # Note: Still using turbocoder13 until tools-image is published to lgtm-hq org
-    default: ghcr.io/turbocoder13/lintro-tools
-  stable-tag:
-    description: Tag for the stable/latest tools image
+    default: ghcr.io/lgtm-hq/lintro-tools
+  stable-image:
+    description: Full stable image reference (may differ from image-name during migrations)
     required: false
     # yamllint disable-line rule:line-length
-    default: latest@sha256:8d0e9c9630dce2907a395f415886bd95c33a22011ba6ff6f3f5acb00f87ceeae
+    # Note: Using turbocoder13 stable image until lgtm-hq image is published
+    default: ghcr.io/turbocoder13/lintro-tools:latest@sha256:8d0e9c9630dce2907a395f415886bd95c33a22011ba6ff6f3f5acb00f87ceeae
 outputs:
   image:
     description: Full tools image reference to use (either fresh pr-N or stable)
@@ -120,7 +120,7 @@ runs:
         TOOLS_CHANGED: ${{ steps.filter.outputs.tools_changed }}
         GITHUB_EVENT_NAME: ${{ github.event_name }}
         IMAGE_NAME: ${{ inputs.image-name }}
-        STABLE_TAG: ${{ inputs.stable-tag }}
+        STABLE_IMAGE: ${{ inputs.stable-image }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
         if [[ "$TOOLS_CHANGED" == "true" ]] \
@@ -129,7 +129,8 @@ runs:
           IMAGE="${IMAGE_NAME}:pr-${PR_NUMBER}"
           echo "Using fresh tools image: ${IMAGE}"
         else
-          IMAGE="${IMAGE_NAME}:${STABLE_TAG}"
+          # Use stable image (may be from different registry during migrations)
+          IMAGE="${STABLE_IMAGE}"
           echo "Using stable tools image: ${IMAGE}"
         fi
         echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
