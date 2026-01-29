@@ -214,13 +214,16 @@ def test_format_tool_output_parses_bandit_json() -> None:
 
 
 def test_format_tool_output_handles_invalid_bandit_json() -> None:
-    """Verify invalid bandit JSON gracefully falls back to raw output."""
+    """Verify invalid bandit JSON returns error with raw output for debugging."""
     bandit_output = "not valid json { broken"
 
     result = format_tool_output("bandit", bandit_output, output_format="plain")
 
-    # Should return raw output on parse failure
-    assert_that(result).is_equal_to(bandit_output)
+    # Should return error message with raw output for debugging
+    assert_that(result).contains("Error:")
+    assert_that(result).contains("Failed to parse Bandit output")
+    assert_that(result).contains("Raw output:")
+    assert_that(result).contains(bandit_output)
 
 
 @pytest.mark.parametrize(
