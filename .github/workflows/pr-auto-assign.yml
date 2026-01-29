@@ -67,11 +67,6 @@ jobs:
           mapfile -t owner_array <<< "$owners"
           count=${#owner_array[@]}
 
-          if [[ $count -eq 0 ]]; then
-            echo "No valid individual CODEOWNERS found, skipping assignment"
-            exit 0
-          fi
-
           random_index=$((RANDOM % count))
           selected="${owner_array[$random_index]}"
 
