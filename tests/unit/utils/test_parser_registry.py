@@ -230,3 +230,47 @@ def test_is_registered_true() -> None:
 def test_is_registered_false() -> None:
     """Check returns False for unregistered tools."""
     assert_that(ParserRegistry.is_registered("unknown_tool")).is_false()
+
+
+# =============================================================================
+# ParserError tests
+# =============================================================================
+
+
+def test_parser_error_raised_on_parsing_failure() -> None:
+    """Parser raises ParserError when parsing fails instead of returning empty list."""
+    from lintro.utils.output.parser_registration import (
+        ParserError,
+        _parse_bandit_output,
+    )
+
+    with pytest.raises(ParserError) as exc_info:
+        _parse_bandit_output("not valid json")
+
+    assert_that(str(exc_info.value)).contains("Failed to parse Bandit output")
+
+
+def test_parser_error_raised_on_empty_output() -> None:
+    """Parser raises ParserError for empty output."""
+    from lintro.utils.output.parser_registration import (
+        ParserError,
+        _parse_bandit_output,
+    )
+
+    with pytest.raises(ParserError) as exc_info:
+        _parse_bandit_output("")
+
+    assert_that(str(exc_info.value)).contains("Failed to parse Bandit output")
+
+
+def test_parser_error_preserves_original_exception() -> None:
+    """ParserError preserves the original exception as its cause."""
+    from lintro.utils.output.parser_registration import (
+        ParserError,
+        _parse_bandit_output,
+    )
+
+    with pytest.raises(ParserError) as exc_info:
+        _parse_bandit_output("{invalid json")
+
+    assert_that(exc_info.value.__cause__).is_not_none()

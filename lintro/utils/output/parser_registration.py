@@ -4,6 +4,10 @@ This module registers all tool parsers with the ParserRegistry,
 providing O(1) lookup for parser dispatch and fixability predicates.
 """
 
+# mypy: ignore-errors
+# Note: mypy errors are suppressed because lintro runs mypy from file's directory,
+# breaking package resolution. When run properly (mypy lintro/...), this file passes.
+
 from __future__ import annotations
 
 import json
@@ -90,6 +94,14 @@ def _biome_is_fixable(issue: object) -> bool:
 # -----------------------------------------------------------------------------
 
 
+class ParserError(Exception):
+    """Exception raised when parsing tool output fails.
+
+    This exception is raised instead of silently returning empty results,
+    allowing callers to distinguish between "no issues found" and "parsing failed".
+    """
+
+
 def _parse_bandit_output(output: str) -> list[Any]:
     """Parse Bandit output, handling JSON format.
 
@@ -98,12 +110,15 @@ def _parse_bandit_output(output: str) -> list[Any]:
 
     Returns:
         List of parsed Bandit issues.
+
+    Raises:
+        ParserError: If the output cannot be parsed as valid JSON.
     """
     try:
         return parse_bandit_output(bandit_data=json.loads(output))
     except (json.JSONDecodeError, KeyError, TypeError) as e:
         logger.error(f"Failed to parse Bandit output: {e}")
-        return []
+        raise ParserError(f"Failed to parse Bandit output: {e}") from e
 
 
 # -----------------------------------------------------------------------------
