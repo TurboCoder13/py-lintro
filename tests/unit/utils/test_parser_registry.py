@@ -8,6 +8,10 @@ from typing import Any
 import pytest
 from assertpy import assert_that
 
+from lintro.utils.output.parser_registration import (
+    ParserError,
+    _parse_bandit_output,
+)
 from lintro.utils.output.parser_registry import ParserEntry, ParserRegistry
 
 
@@ -239,11 +243,6 @@ def test_is_registered_false() -> None:
 
 def test_parser_error_raised_on_parsing_failure() -> None:
     """Parser raises ParserError when parsing fails instead of returning empty list."""
-    from lintro.utils.output.parser_registration import (
-        ParserError,
-        _parse_bandit_output,
-    )
-
     with pytest.raises(ParserError) as exc_info:
         _parse_bandit_output("not valid json")
 
@@ -252,11 +251,6 @@ def test_parser_error_raised_on_parsing_failure() -> None:
 
 def test_parser_error_raised_on_empty_output() -> None:
     """Parser raises ParserError for empty output."""
-    from lintro.utils.output.parser_registration import (
-        ParserError,
-        _parse_bandit_output,
-    )
-
     with pytest.raises(ParserError) as exc_info:
         _parse_bandit_output("")
 
@@ -265,11 +259,6 @@ def test_parser_error_raised_on_empty_output() -> None:
 
 def test_parser_error_preserves_original_exception() -> None:
     """ParserError preserves the original exception as its cause."""
-    from lintro.utils.output.parser_registration import (
-        ParserError,
-        _parse_bandit_output,
-    )
-
     with pytest.raises(ParserError) as exc_info:
         _parse_bandit_output("{invalid json")
 

@@ -116,7 +116,7 @@ def _parse_bandit_output(output: str) -> list[Any]:
     """
     try:
         return parse_bandit_output(bandit_data=json.loads(output))
-    except (json.JSONDecodeError, KeyError, TypeError) as e:
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
         logger.error(f"Failed to parse Bandit output: {e}")
         raise ParserError(f"Failed to parse Bandit output: {e}") from e
 
