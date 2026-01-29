@@ -156,7 +156,7 @@ def test_set_options_valid(
         option_name: The name of the option to set.
         option_value: The value to set for the option.
     """
-    tsc_plugin.set_options(**{option_name: option_value})  # type: ignore[arg-type]
+    tsc_plugin.set_options(**{option_name: option_value})
     assert_that(tsc_plugin.options.get(option_name)).is_equal_to(option_value)
 
 
@@ -188,7 +188,7 @@ def test_set_options_invalid_type(
         error_match: Pattern expected in the error message.
     """
     with pytest.raises(ValueError, match=error_match):
-        tsc_plugin.set_options(**{option_name: invalid_value})  # type: ignore[arg-type]
+        tsc_plugin.set_options(**{option_name: invalid_value})
 
 
 # =============================================================================
