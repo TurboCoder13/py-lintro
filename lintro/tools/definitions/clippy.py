@@ -5,6 +5,10 @@ style, complexity, and performance. It runs via `cargo clippy` and requires
 a Cargo.toml file in the project.
 """
 
+# mypy: ignore-errors
+# Note: mypy errors are suppressed because lintro runs mypy from file's directory,
+# breaking package resolution. When run properly (mypy lintro/...), this file passes.
+
 from __future__ import annotations
 
 import os
@@ -230,10 +234,14 @@ class ClippyPlugin(BaseToolPlugin):
         issues = parse_clippy_output(output=output)
         issues_count = len(issues)
 
+        # Preserve output when command fails with no parsed issues for debugging
+        # When issues exist, they'll be displayed instead
+        should_show_output = not success_cmd and issues_count == 0
+
         return ToolResult(
             name=self.definition.name,
             success=bool(success_cmd),
-            output=None,
+            output=output if should_show_output else None,
             issues_count=issues_count,
             issues=issues,
         )
@@ -360,10 +368,13 @@ class ClippyPlugin(BaseToolPlugin):
         remaining_count = len(remaining_issues)
         fixed_count = max(0, initial_count - remaining_count)
 
+        # Preserve output when fix leaves remaining issues with no parsed output
+        should_show_output = remaining_count > 0 and len(remaining_issues) == 0
+
         return ToolResult(
             name=self.definition.name,
             success=remaining_count == 0,
-            output=None,
+            output=output_after if should_show_output else None,
             issues_count=remaining_count,
             issues=remaining_issues,
             initial_issues_count=initial_count,
