@@ -169,4 +169,4 @@ If debug logs don't help diagnose the issue:
    - Relevant debug log excerpts
    - Steps to reproduce
 
-[issues]: https://github.com/TurboCoder13/py-lintro/issues
+[issues]: https://github.com/lgtm-hq/py-lintro/issues

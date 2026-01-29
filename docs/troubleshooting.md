@@ -35,7 +35,7 @@ npm install -g prettier
 pip install yamllint
 
 # Or use Docker (recommended - includes all tools)
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check
 ```
 
 See [Getting Started](getting-started.md) for complete installation instructions.
@@ -139,7 +139,7 @@ lintro check
 lintro list-tools --verbose
 
 # Use Docker for consistent versions
-docker run --rm -v $(pwd):/code ghcr.io/turbocoder13/py-lintro:latest check
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check
 ```
 
 ---
@@ -150,11 +150,11 @@ If your issue isn't covered here:
 
 - **Documentation**: Check the [documentation directory](./) for detailed guides
 - **Bug Reports**: Use the
-  [bug report template](https://github.com/TurboCoder13/py-lintro/issues/new?template=bug_report.md)
+  [bug report template](https://github.com/lgtm-hq/py-lintro/issues/new?template=bug_report.md)
 - **Questions**: Use the
-  [question template](https://github.com/TurboCoder13/py-lintro/issues/new?template=question.md)
+  [question template](https://github.com/lgtm-hq/py-lintro/issues/new?template=question.md)
 - **Feature Requests**: Use the
-  [feature request template](https://github.com/TurboCoder13/py-lintro/issues/new?template=feature_request.md)
+  [feature request template](https://github.com/lgtm-hq/py-lintro/issues/new?template=feature_request.md)
 
 ## Reporting Bugs
 

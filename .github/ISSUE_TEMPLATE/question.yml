@@ -37,7 +37,7 @@ body:
       options:
         - PyPI (pip install lintro)
         - Dev install (pip install -e .)
-        - Docker (ghcr.io/turbocoder13/py-lintro:latest)
+        - Docker (ghcr.io/lgtm-hq/py-lintro:latest)
         - Other
   - type: textarea
     id: examples

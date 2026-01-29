@@ -16,7 +16,7 @@ set -euo pipefail
 #
 # Examples:
 #   DRY_RUN=1 ./deployments-prune.sh --keep-n github-pages 0 --keep-ref pypi 0.3.2
-#   ./deployments-prune.sh --repo TurboCoder13/py-lintro --keep-n production 0
+#   ./deployments-prune.sh --repo lgtm-hq/py-lintro --keep-n production 0
 
 usage() {
 	cat <<USAGE

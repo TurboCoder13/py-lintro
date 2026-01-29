@@ -91,7 +91,7 @@ If you want to publish the weekly report to Pages, prefer using the dedicated
 - 🐳 **Automated Docker image building** and publishing to GHCR
 - 🏷️ **Smart tagging** - Latest, main branch, and semantic versions
 - 🔄 **Release integration** - Images published on releases
-- 📦 **GHCR integration** - Images available at `ghcr.io/turbocoder13/py-lintro`
+- 📦 **GHCR integration** - Images available at `ghcr.io/lgtm-hq/py-lintro`
 
 ### 7. OpenSSF Allstar (Repository Security Enforcement)
 
@@ -123,11 +123,11 @@ You can use the published Docker image in your own CI/CD pipelines:
 - name: Run Lintro with Docker
   run: |
     docker run --rm -v ${{ github.workspace }}:/code \
-      ghcr.io/turbocoder13/py-lintro:latest check --output-format grid
+      ghcr.io/lgtm-hq/py-lintro:latest check --output-format grid
 
 # GitLab CI example
 lintro:
-  image: ghcr.io/turbocoder13/py-lintro:latest
+  image: ghcr.io/lgtm-hq/py-lintro:latest
   script:
     - lintro check --output-format grid
 ```
@@ -164,7 +164,7 @@ Edit the workflow files to match your project structure:
 1. Go to repository **Settings** → **Pages**
 2. Select **Source:** "GitHub Actions"
 3. Your coverage badge will be available at:
-   `https://TurboCoder13.github.io/py-lintro/badges/coverage.svg`
+   `https://lgtm-hq.github.io/py-lintro/badges/coverage.svg`
 
 ## Release Automation (Single Release Train)
 
@@ -371,13 +371,13 @@ jobs:
 Add to your README.md:
 
 ```markdown
-![Coverage](https://TurboCoder13.github.io/py-lintro/badges/coverage.svg)
+![Coverage](https://lgtm-hq.github.io/py-lintro/badges/coverage.svg)
 ```
 
 ### Quality Badge
 
 ```markdown
-![Code Quality](https://github.com/TurboCoder13/py-lintro/workflows/Code%20Quality/badge.svg)
+![Code Quality](https://github.com/lgtm-hq/py-lintro/workflows/Code%20Quality/badge.svg)
 ```
 
 ### Custom Lintro Badge
@@ -391,7 +391,7 @@ Add to your README.md:
 Add to your README.md:
 
 ```markdown
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TurboCoder13/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/TurboCoder13/py-lintro)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/lgtm-hq/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/lgtm-hq/py-lintro)
 ```
 
 Reference installation docs:

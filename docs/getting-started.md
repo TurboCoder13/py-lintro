@@ -22,7 +22,7 @@ formatting tools, Lintro provides:
 
 ```bash
 # Development installation (package not yet published)
-git clone https://github.com/TurboCoder13/py-lintro.git
+git clone https://github.com/lgtm-hq/py-lintro.git
 cd py-lintro
 pip install -e .
 ```
@@ -33,7 +33,7 @@ If you want to contribute or use the latest features:
 
 ```bash
 # Clone the repository
-git clone https://github.com/TurboCoder13/py-lintro.git
+git clone https://github.com/lgtm-hq/py-lintro.git
 cd py-lintro
 
 # Install with UV (recommended)
@@ -101,7 +101,7 @@ For containerized environments or if you prefer not to install dependencies loca
 
 ```bash
 # Clone and setup
-git clone https://github.com/TurboCoder13/py-lintro.git
+git clone https://github.com/lgtm-hq/py-lintro.git
 cd py-lintro
 chmod +x scripts/**/*.sh
 

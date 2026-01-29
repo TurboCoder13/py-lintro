@@ -212,7 +212,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
-          images: ghcr.io/turbocoder13/py-lintro
+          images: ghcr.io/lgtm-hq/py-lintro
           tags: |
             type=ref,event=branch
             type=ref,event=pr

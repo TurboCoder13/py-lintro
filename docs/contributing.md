@@ -75,7 +75,7 @@ commits before merge.
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/TurboCoder13/py-lintro.git
+   git clone https://github.com/lgtm-hq/py-lintro.git
    cd py-lintro
    ```
 

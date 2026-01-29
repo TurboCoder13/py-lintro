@@ -31,7 +31,7 @@ What is the bug?
 
 - [ ] PyPI (`pip install lintro`)
 - [ ] Development install (`pip install -e .`)
-- [ ] Docker (`docker run ghcr.io/turbocoder13/py-lintro:latest`)
+- [ ] Docker (`docker run ghcr.io/lgtm-hq/py-lintro:latest`)
 - [ ] Other: \***\*\_\*\***
 
 ### Tools Involved

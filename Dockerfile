@@ -3,6 +3,7 @@
 # =============================================================================
 # Use the pre-built tools image to avoid rebuilding tools on every CI run.
 # TOOLS_IMAGE can be overridden at build time (e.g., for PR testing with new tools)
+# Note: Still using turbocoder13 until tools-image is published to lgtm-hq org
 ARG TOOLS_IMAGE=ghcr.io/turbocoder13/lintro-tools:latest@sha256:8d0e9c9630dce2907a395f415886bd95c33a22011ba6ff6f3f5acb00f87ceeae
 # hadolint ignore=DL3006
 FROM ${TOOLS_IMAGE} AS tools
@@ -46,8 +47,8 @@ RUN if [ ! -f /usr/local/bin/clippy-driver ]; then \
 FROM python:3.13-slim@sha256:51e1a0a317fdb6e170dc791bbeae63fac5272c82f43958ef74a34e170c6f8b18 AS runtime
 
 # Add Docker labels
-LABEL maintainer="turbocoder13"
-LABEL org.opencontainers.image.source="https://github.com/turbocoder13/py-lintro"
+LABEL maintainer="lgtm-hq"
+LABEL org.opencontainers.image.source="https://github.com/lgtm-hq/py-lintro"
 LABEL org.opencontainers.image.description="Making Linters Play Nice... Mostly."
 LABEL org.opencontainers.image.licenses="MIT"
 

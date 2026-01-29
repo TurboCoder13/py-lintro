@@ -18,7 +18,7 @@ Environment Variables (required):
   GIT_REF        Git ref (e.g., refs/heads/main)
 
 Environment Variables (optional):
-  IMAGE_BASE     Base image name (default: ghcr.io/turbocoder13/lintro-tools)
+  IMAGE_BASE     Base image name (default: ghcr.io/lgtm-hq/lintro-tools)
   FORCE_LATEST   Force :latest tag on workflow_dispatch (default: false)
   PR_NUMBER      PR number for PR-specific tags
 
@@ -38,7 +38,7 @@ fi
 : "${EVENT_NAME:?EVENT_NAME must be set}"
 : "${GIT_REF:?GIT_REF must be set}"
 
-IMAGE_BASE="${IMAGE_BASE:-ghcr.io/turbocoder13/lintro-tools}"
+IMAGE_BASE="${IMAGE_BASE:-ghcr.io/lgtm-hq/lintro-tools}"
 FORCE_LATEST="${FORCE_LATEST:-false}"
 PR_NUMBER="${PR_NUMBER:-}"
 

@@ -47,7 +47,7 @@ dependencies = [
   "mypy>=1.14.1",
   "pydoclint>=0.5.0",
 ]
-authors = [{ name = "TurboCoder13", email = "turbocoder13@gmail.com" }]
+authors = [{ name = "lgtm-hq", email = "turbocoder13@gmail.com" }]
 
 [project.license]
 file = "LICENSE"
@@ -86,9 +86,9 @@ tools = ["semgrep>=1.50.0", "sqlfluff>=3.0.0"]
 lintro = "lintro.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/TurboCoder13/py-lintro"
-Documentation = "https://github.com/TurboCoder13/py-lintro/docs"
-Source = "https://github.com/TurboCoder13/py-lintro"
+Homepage = "https://github.com/lgtm-hq/py-lintro"
+Documentation = "https://github.com/lgtm-hq/py-lintro/docs"
+Source = "https://github.com/lgtm-hq/py-lintro"
 
 [project.entry-points."lintro.plugins"]
 

@@ -4,6 +4,7 @@
 -include .env
 
 # Pre-built tools image for faster Docker builds
+# Note: Still using turbocoder13 until tools-image is published to lgtm-hq org
 TOOLS_IMAGE ?= ghcr.io/turbocoder13/lintro-tools:latest
 
 # Default target

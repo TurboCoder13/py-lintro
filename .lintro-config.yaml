@@ -1,6 +1,6 @@
 ---
 # Lintro Configuration
-# https://github.com/TurboCoder13/py-lintro
+# https://github.com/lgtm-hq/py-lintro
 #
 # Lintro is the master configuration source for all tools.
 # Native tool configs (.prettierrc, .yamllint, etc.) are used when available.
