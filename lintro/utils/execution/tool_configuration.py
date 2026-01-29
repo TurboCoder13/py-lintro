@@ -141,6 +141,10 @@ def get_tools_to_run(
         # Use tool_manager to trigger discovery before checking registration
         if not tool_manager.is_tool_registered("pytest"):
             raise ValueError("pytest tool is not available")
+        # Respect enabled/disabled config for pytest
+        lintro_config = get_config()
+        if not lintro_config.is_tool_enabled("pytest"):
+            return []
         return ["pytest"]
 
     # Get lintro config for enabled/disabled tool checking
