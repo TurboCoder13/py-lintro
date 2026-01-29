@@ -19,7 +19,8 @@ inputs:
     required: false
     default: ghcr.io/lgtm-hq/lintro-tools
   stable-image:
-    description: Full stable image reference (may differ from image-name during migrations)
+    # yamllint disable-line rule:line-length
+    description: Full stable image reference (may differ during migrations)
     required: false
     # yamllint disable-line rule:line-length
     # Note: Using turbocoder13 stable image until lgtm-hq image is published
