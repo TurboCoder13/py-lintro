@@ -171,7 +171,7 @@ def test_set_options_valid(
 @pytest.mark.parametrize(
     ("option_name", "invalid_value", "error_match"),
     [
-        ("project", 123, "project must be a string"),
+        ("project", 123, "project must be a string path"),
         ("strict", "yes", "strict must be a boolean"),
         ("skip_lib_check", "yes", "skip_lib_check must be a boolean"),
         ("use_project_files", "yes", "use_project_files must be a boolean"),
