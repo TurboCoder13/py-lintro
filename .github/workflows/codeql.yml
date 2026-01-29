@@ -25,7 +25,7 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 30
     concurrency:
       group: codeql-${{ github.ref }}

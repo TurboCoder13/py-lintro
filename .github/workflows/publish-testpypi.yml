@@ -22,7 +22,7 @@ jobs:
   publish:
     name: Upload to TestPyPI
     needs: [build, quality]
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 20
     permissions:
       contents: read

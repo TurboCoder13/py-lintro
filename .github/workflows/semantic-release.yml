@@ -19,7 +19,7 @@ jobs:
       contents: write
       pull-requests: write
     name: Compute next version and open Release PR
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 20
     concurrency:
       group: release-pr-${{ github.ref }}
