@@ -394,7 +394,7 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                     if "mypy" in parser:
                         result = dict(parser["mypy"])
                     return result
-                except (configparser.Error, OSError) as e:
+                except (configparser.Error, OSError, UnicodeDecodeError) as e:
                     logger.debug(f"Could not read mypy config {config_file}: {e}")
         return {}
 

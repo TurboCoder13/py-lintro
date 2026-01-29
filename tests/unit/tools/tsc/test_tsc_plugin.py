@@ -11,16 +11,6 @@ from assertpy import assert_that
 from lintro.tools.definitions.tsc import TscPlugin
 
 
-@pytest.fixture
-def tsc_plugin() -> TscPlugin:
-    """Create a fresh TscPlugin instance.
-
-    Returns:
-        A new TscPlugin instance for testing.
-    """
-    return TscPlugin()
-
-
 class TestFindTsconfig:
     """Tests for TscPlugin._find_tsconfig method."""
 

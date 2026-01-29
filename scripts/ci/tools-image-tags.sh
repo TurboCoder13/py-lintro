@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT
 # Generate Docker image tags for the tools image build.
-# Outputs: tags, push_latest, pr_tag (via GITHUB_OUTPUT)
+# Outputs: tags, push_latest, pr_tag, primary_tag (via GITHUB_OUTPUT)
 
 set -euo pipefail
 
@@ -26,6 +26,7 @@ Outputs (to GITHUB_OUTPUT):
   tags           Comma-separated list of image tags
   push_latest    Whether :latest tag should be pushed
   pr_tag         PR-specific tag if applicable
+  primary_tag    Primary tag for downstream workflows (PR tag or SHA tag)
 
 Example:
   GITHUB_OUTPUT=/tmp/output EVENT_NAME=push GIT_REF=refs/heads/main \
