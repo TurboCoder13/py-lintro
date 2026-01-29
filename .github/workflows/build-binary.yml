@@ -23,7 +23,7 @@ permissions:
 jobs:
   get-release-info:
     name: Get Release Info
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     # Only run on workflow_dispatch or successful workflow_run (skip actions-v* tags)
     if: >-
       github.event_name == 'workflow_dispatch' ||
@@ -215,7 +215,7 @@ jobs:
   update-homebrew:
     name: Update Homebrew Formula
     needs: [get-release-info, build-macos]
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: >-
       github.event_name == 'workflow_run' &&
       needs.get-release-info.outputs.release_tag != ''
