@@ -91,8 +91,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-        # yamllint disable-line rule:line-length
       - name: Setup Blacksmith Builder
+        # yamllint disable-line rule:line-length
         uses: useblacksmith/setup-docker-builder@33fed32c1ba8775f20366ec9e8d0cd9fe8fc1dd3 # v1
 
       - name: Log in to GitHub Container Registry
@@ -127,6 +127,7 @@ jobs:
       - name: Push tools image
         # yamllint disable-line rule:line-length
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        # yamllint disable-line rule:line-length
         uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
         with:
           context: .

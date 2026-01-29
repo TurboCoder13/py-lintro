@@ -99,8 +99,8 @@ jobs:
             echo "Using resolved tools image: $RESOLVED_IMAGE"
             echo "image=${RESOLVED_IMAGE}" >> "$GITHUB_OUTPUT"
           fi
-        # yamllint disable-line rule:line-length
       - name: Setup Blacksmith Builder
+        # yamllint disable-line rule:line-length
         uses: useblacksmith/setup-docker-builder@33fed32c1ba8775f20366ec9e8d0cd9fe8fc1dd3 # v1
       - name: Build Docker image
         # yamllint disable-line rule:line-length

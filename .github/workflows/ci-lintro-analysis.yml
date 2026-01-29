@@ -82,8 +82,8 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-        # yamllint disable-line rule:line-length
       - name: Setup Blacksmith Builder
+        # yamllint disable-line rule:line-length
         uses: useblacksmith/setup-docker-builder@33fed32c1ba8775f20366ec9e8d0cd9fe8fc1dd3 # v1
 
       - name: Environment setup
@@ -96,6 +96,7 @@ jobs:
       # Removed no-op dependency listing step
 
       - name: Build Docker image
+        # yamllint disable-line rule:line-length
         uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
         with:
           context: .
