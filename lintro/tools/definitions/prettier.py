@@ -82,7 +82,7 @@ class PrettierPlugin(BaseToolPlugin):
                 "prettier.config.js",
             ],
             version_command=["prettier", "--version"],
-            min_version="2.0.0",
+            min_version="3.4.2",
             default_options={
                 "timeout": PRETTIER_DEFAULT_TIMEOUT,
                 "verbose_fix_output": False,

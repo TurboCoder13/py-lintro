@@ -234,21 +234,6 @@ Example `.oxfmtrc.json`:
 | `trailingComma`  | `trailingComma`  |
 | `bracketSpacing` | `bracketSpacing` |
 
-### From Biome to Oxc
-
-1. Install both oxlint and oxfmt
-2. Replace `biome lint` with `oxlint`
-3. Replace `biome format` with `oxfmt --write`
-4. Replace `biome check` with `oxfmt --check`
-5. Update configuration files
-
-| Biome Command          | Oxc Equivalent                   |
-| ---------------------- | -------------------------------- |
-| `biome lint`           | `oxlint`                         |
-| `biome format`         | `oxfmt --write`                  |
-| `biome format --check` | `oxfmt --check --list-different` |
-| `biome ci`             | `oxlint && oxfmt --check`        |
-
 ---
 
 ## Out of Scope for Lintro

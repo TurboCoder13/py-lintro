@@ -25,63 +25,6 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture
-def temp_js_file_unformatted(tmp_path: Path) -> str:
-    """Create a temporary JavaScript file with formatting issues.
-
-    Creates a file containing JavaScript code with formatting issues
-    that Prettier should fix, including:
-    - Missing spaces around operators
-    - Missing semicolons
-    - Compact object and array formatting
-
-    Args:
-        tmp_path: Pytest fixture providing a temporary directory.
-
-    Returns:
-        Path to the created file as a string.
-    """
-    file_path = tmp_path / "unformatted.js"
-    file_path.write_text(
-        """\
-function foo(x,y,z){return x+y+z}
-const obj={a:1,b:2,c:3}
-const arr=[1,2,3,4,5]
-if(true){console.log("hello")}
-""",
-    )
-    return str(file_path)
-
-
-@pytest.fixture
-def temp_js_file_formatted(tmp_path: Path) -> str:
-    """Create a temporary JavaScript file that is already formatted.
-
-    Creates a file containing properly formatted JavaScript code that
-    Prettier should leave unchanged.
-
-    Args:
-        tmp_path: Pytest fixture providing a temporary directory.
-
-    Returns:
-        Path to the created file as a string.
-    """
-    file_path = tmp_path / "formatted.js"
-    file_path.write_text(
-        """\
-function foo(x, y, z) {
-  return x + y + z;
-}
-const obj = { a: 1, b: 2, c: 3 };
-const arr = [1, 2, 3, 4, 5];
-if (true) {
-  console.log("hello");
-}
-""",
-    )
-    return str(file_path)
-
-
-@pytest.fixture
 def temp_json_file_unformatted(tmp_path: Path) -> str:
     """Create a temporary JSON file with formatting issues.
 
@@ -130,40 +73,69 @@ def test_definition_attributes(
 
 
 def test_definition_file_patterns(get_plugin: Callable[[str], BaseToolPlugin]) -> None:
-    """Verify PrettierPlugin definition includes JavaScript/TypeScript file patterns.
+    """Verify PrettierPlugin definition includes non-JS/TS file patterns.
 
-    Tests that the plugin is configured to handle JavaScript or TypeScript files.
+    Tests that the plugin is configured to handle CSS, HTML, JSON, YAML, Markdown,
+    and GraphQL files. JS/TS files are handled by oxfmt for better performance.
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
     """
     prettier_plugin = get_plugin("prettier")
     patterns = prettier_plugin.definition.file_patterns
-    has_js_or_ts = "*.js" in patterns or "*.ts" in patterns
-    assert_that(has_js_or_ts).is_true()
+    # Prettier handles non-JS/TS files (JS/TS delegated to oxfmt)
+    has_expected_patterns = "*.css" in patterns and "*.json" in patterns
+    assert_that(has_expected_patterns).is_true()
 
 
 # --- Integration tests for prettier check command ---
 
 
+@pytest.fixture
+def temp_json_file_formatted(tmp_path: Path) -> str:
+    """Create a temporary JSON file that is already formatted.
+
+    Creates a file containing properly formatted JSON that
+    Prettier should leave unchanged.
+
+    Args:
+        tmp_path: Pytest fixture providing a temporary directory.
+
+    Returns:
+        Path to the created file as a string.
+    """
+    file_path = tmp_path / "formatted.json"
+    file_path.write_text(
+        """\
+{
+  "name": "test",
+  "version": "1.0.0",
+  "dependencies": {}
+}
+""",
+    )
+    return str(file_path)
+
+
 @pytest.mark.parametrize(
     ("file_fixture", "expect_issues"),
     [
-        ("temp_js_file_unformatted", True),
-        ("temp_js_file_formatted", False),
+        ("temp_json_file_unformatted", True),
+        ("temp_json_file_formatted", False),
     ],
-    ids=["unformatted_js", "formatted_js"],
+    ids=["unformatted_json", "formatted_json"],
 )
-def test_check_js_file_formatting_state(
+def test_check_json_file_formatting_state(
     get_plugin: Callable[[str], BaseToolPlugin],
     file_fixture: str,
     expect_issues: bool,
     request: pytest.FixtureRequest,
 ) -> None:
-    """Verify Prettier check correctly detects JS file formatting state.
+    """Verify Prettier check correctly detects JSON file formatting state.
 
     Runs Prettier in check mode on files with different formatting states
-    and verifies the expected issue count.
+    and verifies the expected issue count. Note: JS/TS files are handled
+    by oxfmt, so we test with JSON files here.
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
@@ -183,52 +155,7 @@ def test_check_js_file_formatting_state(
         assert_that(result.issues_count).is_equal_to(0)
 
 
-def test_check_json_file(
-    get_plugin: Callable[[str], BaseToolPlugin],
-    temp_json_file_unformatted: str,
-) -> None:
-    """Verify Prettier check handles JSON files.
-
-    Runs Prettier on a JSON file and verifies a result is returned
-    without errors.
-
-    Args:
-        get_plugin: Fixture factory to get plugin instances.
-        temp_json_file_unformatted: Path to JSON file with formatting issues.
-    """
-    prettier_plugin = get_plugin("prettier")
-    result = prettier_plugin.check([temp_json_file_unformatted], {})
-
-    assert_that(result).is_not_none()
-
-
 # --- Integration tests for prettier fix command ---
-
-
-def test_fix_formats_js_file(
-    get_plugin: Callable[[str], BaseToolPlugin],
-    temp_js_file_unformatted: str,
-) -> None:
-    """Verify Prettier fix reformats unformatted JS files.
-
-    Runs Prettier fix on a file with formatting issues and verifies
-    the file content changes.
-
-    Args:
-        get_plugin: Fixture factory to get plugin instances.
-        temp_js_file_unformatted: Path to file with formatting issues.
-    """
-    prettier_plugin = get_plugin("prettier")
-    original = Path(temp_js_file_unformatted).read_text()
-
-    result = prettier_plugin.fix([temp_js_file_unformatted], {})
-
-    assert_that(result).is_not_none()
-    assert_that(result.name).is_equal_to("prettier")
-    assert_that(result.success).is_true()
-
-    new_content = Path(temp_js_file_unformatted).read_text()
-    assert_that(new_content).is_not_equal_to(original)
 
 
 def test_fix_formats_json_file(
@@ -262,11 +189,10 @@ def test_fix_formats_json_file(
 @pytest.mark.parametrize(
     ("option_name", "option_value", "expected"),
     [
-        ("tab_width", 4, 4),
-        ("use_tabs", True, True),
-        ("single_quote", True, True),
+        ("verbose_fix_output", True, True),
+        ("line_length", 120, 120),
     ],
-    ids=["tab_width", "use_tabs", "single_quote"],
+    ids=["verbose_fix_output", "line_length"],
 )
 def test_set_options(
     get_plugin: Callable[[str], BaseToolPlugin],
@@ -277,6 +203,8 @@ def test_set_options(
     """Verify PrettierPlugin.set_options correctly sets various options.
 
     Tests that plugin options can be set and retrieved correctly.
+    Note: Formatting options like tab_width, use_tabs, single_quote are
+    configured via .prettierrc config file, not via set_options.
 
     Args:
         get_plugin: Fixture factory to get plugin instances.
