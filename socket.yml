@@ -1,0 +1,30 @@
+---
+# Socket Security configuration
+# https://docs.socket.dev/docs/socket-yml
+#
+# This file configures Socket's security analysis for this repository.
+
+version: 2
+
+# Package-specific overrides for false positives
+packageRules:
+  # oxlint is a Rust-based JavaScript/TypeScript linter from the Oxc project.
+  # The npm package contains compiled native binaries (Rust -> machine code),
+  # which static analysis tools incorrectly flag as "obfuscated code".
+  # This is a false positive - the code is compiled, not obfuscated.
+  # Source: https://github.com/oxc-project/oxc (MIT licensed)
+  - name: oxlint
+    action: ignore
+    reason: >-
+      False positive: oxlint contains compiled Rust binaries distributed via npm.
+      Compiled machine code appears obfuscated to static analysis but is legitimate.
+      See https://github.com/oxc-project/oxc
+
+  # oxfmt is a Rust-based JavaScript/TypeScript formatter from the Oxc project.
+  # Same rationale as oxlint - contains compiled native binaries.
+  - name: oxfmt
+    action: ignore
+    reason: >-
+      False positive: oxfmt contains compiled Rust binaries distributed via npm.
+      Compiled machine code appears obfuscated to static analysis but is legitimate.
+      See https://github.com/oxc-project/oxc

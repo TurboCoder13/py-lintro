@@ -93,7 +93,13 @@ jobs:
           BOOTSTRAP_SKIP_SYNC: '1'
           BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
-      # Removed no-op dependency listing step
+      # Resolve tools image - builds fresh PR image if tool files changed
+      - name: Resolve tools image
+        id: tools
+        uses: ./.github/actions/resolve-tools-image
+        with:
+          # yamllint disable-line rule:line-length
+          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
 
       - name: Build Docker image
         # yamllint disable-line rule:line-length
@@ -103,6 +109,8 @@ jobs:
           push: false
           load: true
           tags: py-lintro:latest
+          build-args: |
+            TOOLS_IMAGE=${{ steps.tools.outputs.image }}
           # Cache disabled for docker driver - not supported
           # cache-from: type=gha
           # cache-to: type=gha,mode=max
