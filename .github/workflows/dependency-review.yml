@@ -5,7 +5,7 @@ name: Security - Dependency Review
 # Reviews dependency changes in PRs for known security vulnerabilities.
 # Blocks merges if high-severity vulnerabilities are introduced.
 
-"on":
+'on':
   pull_request:
 
 permissions:
@@ -23,7 +23,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: "block"
+          egress-policy: 'block'
           allowed-endpoints: >
             github.com:443
             api.github.com:443

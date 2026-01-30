@@ -5,10 +5,10 @@ name: Maintenance - Renovate Dependencies
 # Automated dependency updates using Renovate bot. Runs daily to check for
 # outdated dependencies and creates PRs with updates.
 
-"on":
+'on':
   schedule:
     # Run daily at 22:00 UTC
-    - cron: "0 22 * * *"
+    - cron: '0 22 * * *'
   workflow_dispatch: # Allow manual triggering
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: "block"
+          egress-policy: 'block'
           allowed-endpoints: >
             github.com:443
             api.github.com:443

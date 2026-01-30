@@ -5,27 +5,27 @@ name: Quality Check - CI Pipeline
 # Runs lintro quality analysis on PRs and pushes using Docker.
 # Builds Docker image, executes lintro checks, and posts PR comments with results.
 
-"on":
+'on':
   push:
     branches: [main]
     paths:
-      - "lintro/**"
-      - "tests/**"
-      - "scripts/**"
-      - "pyproject.toml"
-      - "Dockerfile"
-      - ".github/workflows/ci-lintro-analysis.yml"
-      - ".github/actions/**"
+      - 'lintro/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
+      - 'Dockerfile'
+      - '.github/workflows/ci-lintro-analysis.yml'
+      - '.github/actions/**'
   pull_request:
     branches: [main]
     paths:
-      - "lintro/**"
-      - "tests/**"
-      - "scripts/**"
-      - "pyproject.toml"
-      - "Dockerfile"
-      - ".github/workflows/ci-lintro-analysis.yml"
-      - ".github/actions/**"
+      - 'lintro/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
+      - 'Dockerfile'
+      - '.github/workflows/ci-lintro-analysis.yml'
+      - '.github/actions/**'
 
 permissions:
   contents: read
@@ -52,7 +52,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: "block"
+          egress-policy: 'block'
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -90,8 +90,8 @@ jobs:
         uses: ./.github/actions/setup-env
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BOOTSTRAP_SKIP_SYNC: "1"
-          BOOTSTRAP_SKIP_INSTALL_TOOLS: "1"
+          BOOTSTRAP_SKIP_SYNC: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
       # Removed no-op dependency listing step
 
@@ -135,8 +135,8 @@ jobs:
         uses: ./.github/actions/post-pr-comment
         with:
           file: pr-comment.txt
-          marker: "<!-- lintro-report -->"
-          merge-update: "true"
+          marker: '<!-- lintro-report -->'
+          merge-update: 'true'
 
       - name: Fail on Linting Issues
         if: ${{ env.CHK_EXIT_CODE != '0' }}

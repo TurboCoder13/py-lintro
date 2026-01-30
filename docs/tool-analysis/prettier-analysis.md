@@ -8,15 +8,15 @@ while **oxfmt handles JavaScript/TypeScript/Vue formatting** for better performa
 
 ## File Type Responsibilities
 
-| File Types | Formatter | Why |
-|------------|-----------|-----|
-| JS, TS, JSX, TSX, Vue | **oxfmt** | 30x faster than Prettier |
-| CSS, SCSS, Less | **Prettier** | Not supported by oxfmt |
-| HTML | **Prettier** | Not supported by oxfmt |
-| JSON | **Prettier** | Not supported by oxfmt |
-| YAML | **Prettier** | Not supported by oxfmt |
-| Markdown | **Prettier** | Not supported by oxfmt |
-| GraphQL | **Prettier** | Not supported by oxfmt |
+| File Types            | Formatter    | Why                      |
+| --------------------- | ------------ | ------------------------ |
+| JS, TS, JSX, TSX, Vue | **oxfmt**    | 30x faster than Prettier |
+| CSS, SCSS, Less       | **Prettier** | Not supported by oxfmt   |
+| HTML                  | **Prettier** | Not supported by oxfmt   |
+| JSON                  | **Prettier** | Not supported by oxfmt   |
+| YAML                  | **Prettier** | Not supported by oxfmt   |
+| Markdown              | **Prettier** | Not supported by oxfmt   |
+| GraphQL               | **Prettier** | Not supported by oxfmt   |
 
 ## Core Tool Capabilities
 

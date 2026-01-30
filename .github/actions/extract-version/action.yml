@@ -10,7 +10,7 @@ inputs:
   strip-prefix:
     description: Strip the 'v' prefix from version (default true)
     required: false
-    default: "true"
+    default: 'true'
 
 outputs:
   version:

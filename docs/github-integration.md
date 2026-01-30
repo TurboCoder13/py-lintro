@@ -251,7 +251,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.13"
+          python-version: '3.13'
 
       - name: Install UV
         run: pip install uv
@@ -293,7 +293,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.13"
+          python-version: '3.13'
 
       - name: Install UV and dependencies
         run: |
@@ -339,7 +339,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.13"
+          python-version: '3.13'
 
       - name: Install UV and dependencies
         run: |
@@ -420,8 +420,8 @@ Reference installation docs:
 ```yaml
 strategy:
   matrix:
-    python-version: ["3.11", "3.12", "3.13"]
-    tool: ["ruff", "pydoclint", "oxfmt"]
+    python-version: ['3.11', '3.12', '3.13']
+    tool: ['ruff', 'pydoclint', 'oxfmt']
 ```
 
 ### Conditional Execution

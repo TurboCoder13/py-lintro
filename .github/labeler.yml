@@ -4,50 +4,50 @@
 enhancement:
   - changed-files:
       - any-glob-to-any-file:
-          - "lintro/**"
-          - "tests/**"
+          - 'lintro/**'
+          - 'tests/**'
 
 ci:
   - changed-files:
       - any-glob-to-any-file:
-          - ".github/workflows/**"
-          - ".github/actions/**"
-          - "scripts/ci/**"
-          - "scripts/docker/**"
-          - "Dockerfile"
-          - "docker-compose.yml"
-          - ".dockerignore"
+          - '.github/workflows/**'
+          - '.github/actions/**'
+          - 'scripts/ci/**'
+          - 'scripts/docker/**'
+          - 'Dockerfile'
+          - 'docker-compose.yml'
+          - '.dockerignore'
 
 documentation:
   - changed-files:
       - any-glob-to-any-file:
-          - "docs/**"
-          - "README.md"
-          - "CHANGELOG.md"
-          - "**/*.md"
-          - "!.github/**/*.md"
+          - 'docs/**'
+          - 'README.md'
+          - 'CHANGELOG.md'
+          - '**/*.md'
+          - '!.github/**/*.md'
 
 dependencies:
   - changed-files:
       - any-glob-to-any-file:
-          - "pyproject.toml"
-          - "uv.lock"
-          - "requirements*.txt"
+          - 'pyproject.toml'
+          - 'uv.lock'
+          - 'requirements*.txt'
 
 maintenance:
   - changed-files:
       - any-glob-to-any-file:
-          - "scripts/utils/**"
-          - "scripts/local/**"
-          - ".github/CODEOWNERS"
-          - ".github/labeler.yml"
-          - "renovate.json"
+          - 'scripts/utils/**'
+          - 'scripts/local/**'
+          - '.github/CODEOWNERS'
+          - '.github/labeler.yml'
+          - 'renovate.json'
 
 security:
   - changed-files:
       - any-glob-to-any-file:
-          - ".github/workflows/*security*.yml"
-          - ".github/workflows/*codeql*.yml"
-          - "lintro/tools/bandit.py"
-          - "lintro/tools/gitleaks.py"
-          - "lintro/tools/semgrep.py"
+          - '.github/workflows/*security*.yml'
+          - '.github/workflows/*codeql*.yml'
+          - 'lintro/tools/bandit.py'
+          - 'lintro/tools/gitleaks.py'
+          - 'lintro/tools/semgrep.py'

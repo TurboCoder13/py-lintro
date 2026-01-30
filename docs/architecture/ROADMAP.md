@@ -152,10 +152,10 @@ name: ruff
 description: Fast Python linter and formatter
 type: linter
 languages: [python]
-file_patterns: ["*.py", "*.pyi"]
+file_patterns: ['*.py', '*.pyi']
 commands:
-  check: ["ruff", "check", "--output-format=json"]
-  fix: ["ruff", "check", "--fix", "--output-format=json"]
+  check: ['ruff', 'check', '--output-format=json']
+  fix: ['ruff', 'check', '--fix', '--output-format=json']
 parser:
   format: json_lines
   field_mapping:
@@ -164,9 +164,9 @@ parser:
     file: filename
     line: location.row
 version:
-  command: ["ruff", "--version"]
+  command: ['ruff', '--version']
   pattern: "ruff (\\d+\\.\\d+\\.\\d+)"
-  minimum: "0.14.0"
+  minimum: '0.14.0'
 ```
 
 **Tasks:**

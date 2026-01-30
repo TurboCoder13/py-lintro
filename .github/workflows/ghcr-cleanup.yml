@@ -5,10 +5,10 @@ name: Maintenance - GHCR Registry Cleanup
 # Weekly cleanup of untagged container images from GitHub Container Registry.
 # Reduces storage costs and maintains clean registry state.
 
-"on":
+'on':
   schedule:
     # Run weekly on Monday at 03:00 UTC
-    - cron: "0 3 * * 1"
+    - cron: '0 3 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: "block"
+          egress-policy: 'block'
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -41,10 +41,10 @@ jobs:
         uses: ./.github/actions/setup-env
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BOOTSTRAP_SKIP_SYNC: "1"
-          BOOTSTRAP_SKIP_INSTALL_TOOLS: "1"
+          BOOTSTRAP_SKIP_SYNC: '1'
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
         with:
-          python-version: "3.13"
+          python-version: '3.13'
 
       - name: Prune untagged GHCR versions
         env:

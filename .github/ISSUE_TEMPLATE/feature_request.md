@@ -1,9 +1,9 @@
 ---
 name: Feature request
 about: Suggest an idea for Lintro
-title: "[feature] "
-labels: ["enhancement", "needs-triage"]
-assignees: ""
+title: '[feature] '
+labels: ['enhancement', 'needs-triage']
+assignees: ''
 ---
 
 ## Feature

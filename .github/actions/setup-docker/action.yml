@@ -5,7 +5,7 @@ inputs:
   login:
     description: Whether to log in to a container registry
     required: false
-    default: "false"
+    default: 'false'
   registry:
     description: Registry hostname (for login)
     required: false

@@ -6,7 +6,7 @@ name: Quality Check - Action Pinning Validation
 # security compliance. Internal actions (lgtm-hq/py-lintro) use semantic
 # version tags instead for easier maintenance.
 
-"on":
+'on':
   pull_request:
   workflow_dispatch:
 
@@ -24,7 +24,7 @@ jobs:
       - name: Harden Runner
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: "block"
+          egress-policy: 'block'
           allowed-endpoints: >
             github.com:443
             api.github.com:443

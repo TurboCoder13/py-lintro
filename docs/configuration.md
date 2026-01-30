@@ -107,7 +107,7 @@ tools:
     enabled: true
   prettier:
     enabled: true
-    config_source: ".prettierrc" # Optional: explicit native config path
+    config_source: '.prettierrc' # Optional: explicit native config path
 ```
 
 ### Configuration Report Command
@@ -511,7 +511,7 @@ quality enforcement across 30+ languages.
 rules:
   - id: custom-security-rule
     pattern: eval(...)
-    message: "Avoid using eval() - potential code injection"
+    message: 'Avoid using eval() - potential code injection'
     languages: [python]
     severity: ERROR
 ```
@@ -644,24 +644,24 @@ module.exports = {
   tabWidth: 2,
   semi: true,
   singleQuote: true,
-  trailingComma: "es5",
+  trailingComma: 'es5',
   bracketSpacing: true,
-  arrowParens: "avoid",
+  arrowParens: 'avoid',
   printWidth: 80,
 
   // Override for specific file types
   overrides: [
     {
-      files: "*.json",
+      files: '*.json',
       options: {
         tabWidth: 4,
       },
     },
     {
-      files: "*.md",
+      files: '*.md',
       options: {
         printWidth: 120,
-        proseWrap: "always",
+        proseWrap: 'always',
       },
     },
   ],
@@ -833,8 +833,8 @@ lintro check --tools oxlint --tool-options "oxlint:tsconfig=tsconfig.app.json"
 
 #### Oxfmt Configuration
 
-Oxfmt is a fast JavaScript/TypeScript formatter (30x faster than Prettier) that
-provides Prettier-compatible formatting with minimal configuration.
+Oxfmt is a fast JavaScript/TypeScript formatter (30x faster than Prettier) that provides
+Prettier-compatible formatting with minimal configuration.
 
 **Native Config Detection:**
 
@@ -877,8 +877,8 @@ brew install oxfmt
 | `ignore_path` | string  | Path to ignore file (--ignore-path)        |
 | `timeout`     | integer | Execution timeout in seconds (default: 30) |
 
-> **Note:** Formatting options (`printWidth`, `tabWidth`, `useTabs`, `semi`, `singleQuote`)
-> are only supported via config file (`.oxfmtrc.json`), not CLI flags.
+> **Note:** Formatting options (`printWidth`, `tabWidth`, `useTabs`, `semi`,
+> `singleQuote`) are only supported via config file (`.oxfmtrc.json`), not CLI flags.
 
 **Usage Examples:**
 
@@ -1023,7 +1023,7 @@ rules:
 
   # Truthy values
   truthy:
-    allowed-values: ["true", "false"]
+    allowed-values: ['true', 'false']
     check-keys: true
 ```
 

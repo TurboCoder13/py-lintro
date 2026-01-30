@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "A comprehensive CLI tool that unifies various code formatting, linting, and quality assurance tools under a single command-line interface.",
   "keywords": [],
-  "homepage": "https://github.com/TurboCoder13/py-lintro#readme",
+  "homepage": "https://github.com/lgtm-hq/py-lintro#readme",
   "bugs": {
-    "url": "https://github.com/TurboCoder13/py-lintro/issues"
+    "url": "https://github.com/lgtm-hq/py-lintro/issues"
   },
   "license": "ISC",
   "author": "",
@@ -13,13 +13,6 @@
     "type": "git",
     "url": "git+https://github.com/lgtm-hq/py-lintro.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/lgtm-hq/py-lintro/issues"
-  },
-  "homepage": "https://github.com/lgtm-hq/py-lintro#readme",
   "devDependencies": {
     "markdownlint-cli2": "^0.17.2",
     "oxfmt": "^0.27.0",
