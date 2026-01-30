@@ -286,14 +286,13 @@ name = "lintro"
 
 ### P1: JavaScript/TypeScript Ecosystem
 
-**Current:** Prettier, Biome
+**Current:** Prettier, Oxlint, Oxfmt
 
 **Add:**
 
 - [ ] `eslint` - comprehensive linter
 - [ ] `tsc` - TypeScript type checking
 - [ ] `vitest` / `jest` - test runners
-- [ ] `oxlint` - fast Rust-based linter
 
 ### P2: Go Ecosystem
 

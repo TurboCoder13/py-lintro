@@ -72,7 +72,6 @@ system.
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | -------- |
 | [![Actionlint](https://img.shields.io/badge/Actionlint-lint-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)                         | ⚙️ GitHub Actions      | -        |
 | [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)                                 | 🐍 Python              | -        |
-| [![Biome](https://img.shields.io/badge/Biome-lint-60A5FA?logo=biome&logoColor=white)](https://biomejs.dev/)                                                   | 🟨 JS/TS · 🧾 JSON/CSS | ✅       |
 | [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                                        | 🐍 Python              | ✅       |
 | [![Clippy](https://img.shields.io/badge/Clippy-lint-000000?logo=rust&logoColor=white)](https://github.com/rust-lang/rust-clippy)                              | 🦀 Rust                | ✅       |
 | [![Gitleaks](https://img.shields.io/badge/Gitleaks-secrets-dc2626?logo=git&logoColor=white)](https://gitleaks.io/)                                            | 🔐 Secret Detection    | -        |

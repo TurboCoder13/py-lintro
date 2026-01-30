@@ -198,19 +198,20 @@ lintro check src/ --tool-options "black:line_length=100,black:target_version=py3
 ### JavaScript/TypeScript Projects
 
 ```bash
-# Check JS/TS files with Biome
-lintro check src/ --tools biome
+# Check JS/TS files with Oxlint
+lintro check src/ --tools oxlint
 
-# Format JS/TS/JSON/CSS/HTML with Prettier
-lintro format src/ --tools prettier
+# Format JS/TS files with Oxfmt
+lintro format src/ --tools oxfmt
 
 # Combined lint + format
-lintro check src/ --tools biome,prettier
+lintro check src/ --tools oxlint,oxfmt
 ```
 
 **Tools:**
 
-- **Biome** - Linter for JS/TS/JSON/CSS
+- **Oxlint** - Fast Rust-based linter for JS/TS
+- **Oxfmt** - Fast Rust-based formatter for JS/TS
 - **Prettier** - Code formatter for JS, TS, JSON, CSS, HTML
 
 ### TypeScript Type Checking

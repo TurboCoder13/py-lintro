@@ -285,6 +285,111 @@ invocation in a linting/formatting workflow.
 
 ---
 
+## Complete Feature Comparison Matrix
+
+### Oxlint: Native CLI vs Lintro Support
+
+| Native CLI Flag           | Lintro Support | Rationale                                             |
+| ------------------------- | -------------- | ----------------------------------------------------- |
+| `--format json`           | ✅ Used        | Required for parsing structured output                |
+| `--config <path>`         | ✅ Supported   | Essential for project configuration                   |
+| `--tsconfig <path>`       | ✅ Supported   | Required for TypeScript projects                      |
+| `--allow <rule>`          | ✅ Supported   | Essential for rule customization                      |
+| `--deny <rule>`           | ✅ Supported   | Essential for rule customization                      |
+| `--warn <rule>`           | ✅ Supported   | Essential for rule customization                      |
+| `--fix`                   | ✅ Supported   | Core auto-fix functionality                           |
+| `--quiet`                 | ✅ Supported   | Useful for CI/CD pipelines                            |
+| `--init`                  | ❌ Not exposed | One-time setup tool, use `oxlint --init` directly     |
+| `--react-plugin`          | ❌ Not exposed | Configure in `.oxlintrc.json` plugins array           |
+| `--jest-plugin`           | ❌ Not exposed | Configure in `.oxlintrc.json` plugins array           |
+| `--nextjs-plugin`         | ❌ Not exposed | Configure in `.oxlintrc.json` plugins array           |
+| `--jsx-a11y-plugin`       | ❌ Not exposed | Configure in `.oxlintrc.json` plugins array           |
+| `--fix-suggestions`       | ❌ Not exposed | Safety: only standard fixes via `--fix`               |
+| `--fix-dangerously`       | ❌ Not exposed | Safety: dangerous fixes not recommended in automation |
+| `--ignore-pattern`        | ❌ Not exposed | Use `.oxlintrc.json` ignorePatterns instead           |
+| `--no-ignore`             | ❌ Not exposed | Rarely needed in automated workflows                  |
+| `--max-warnings`          | ❌ Not exposed | Use CI exit codes instead                             |
+| `--print-config`          | ❌ Not exposed | Debugging tool, use `oxlint --print-config` directly  |
+| `--threads`               | ❌ Not exposed | Auto-tuned, rarely needs manual control               |
+| `--type-aware`            | ❌ Not exposed | Advanced feature, may add in future                   |
+| `--lsp`                   | ❌ Not exposed | LSP mode not applicable to CLI wrapper                |
+| `--watch`                 | ❌ Not exposed | Development workflow, not batch processing            |
+| Non-JSON formats          | ❌ Not exposed | Lintro normalizes all output to structured format     |
+
+### Oxfmt: Native CLI vs Lintro Support
+
+| Native CLI Flag                    | Lintro Support | Rationale                                            |
+| ---------------------------------- | -------------- | ---------------------------------------------------- |
+| `--check`                          | ✅ Used        | Core check functionality (via --list-different)      |
+| `--list-different`                 | ✅ Used        | Required to identify files needing formatting        |
+| `--write`                          | ✅ Used        | Core fix functionality                               |
+| `--config <path>`                  | ✅ Supported   | Essential for project configuration                  |
+| `--ignore-path <path>`             | ✅ Supported   | Essential for ignore patterns                        |
+| `--init`                           | ❌ Not exposed | One-time setup tool, use `oxfmt --init` directly     |
+| `--migrate=<source>`               | ❌ Not exposed | One-time migration, use `oxfmt --migrate` directly   |
+| `--stdin-filepath`                 | ❌ Not exposed | Breaks file-based abstraction                        |
+| `--with-node-modules`              | ❌ Not exposed | Rarely needed, security risk                         |
+| `--no-error-on-unmatched-pattern`  | ❌ Not exposed | Lintro handles pattern matching internally           |
+| `--threads`                        | ❌ Not exposed | Auto-tuned, rarely needs manual control              |
+| `--lsp`                            | ❌ Not exposed | LSP mode not applicable to CLI wrapper               |
+| Formatting options (CLI)           | ❌ N/A         | Intentional: oxfmt only supports config file options |
+
+> **Design Note:** Oxfmt intentionally does not support formatting options via CLI flags.
+> This ensures consistent settings across CLI and editor integrations. Lintro follows
+> this design philosophy and requires `.oxfmtrc.json` for formatting configuration.
+
+---
+
+## Feature Exclusion Rationale
+
+### Plugin Control (Oxlint)
+
+**Why excluded:** Plugin enabling/disabling is best done via configuration files to ensure
+reproducible builds. Runtime plugin control adds complexity and can lead to inconsistent
+results between local and CI environments.
+
+**Workaround:** Configure plugins in `.oxlintrc.json`:
+
+```json
+{
+  "plugins": ["react", "jsx-a11y", "nextjs"]
+}
+```
+
+### Dangerous/Suggestion Fixes (Oxlint)
+
+**Why excluded:** Automated tooling should be conservative. Dangerous fixes may alter code
+semantics, and suggestion fixes may not always be appropriate. Manual review is recommended
+for these fix types.
+
+**Workaround:** Run `oxlint --fix-dangerously` or `oxlint --fix-suggestions` directly when
+you need these capabilities and can review the changes.
+
+### Stdin/Stdout Piping (Oxfmt)
+
+**Why excluded:** Lintro uses a file-based abstraction that discovers files, filters by
+patterns, and processes results. Stdin piping doesn't fit this model and would require
+a different API.
+
+**Workaround:** Use `oxfmt` directly for piping:
+
+```bash
+echo 'const x=1' | oxfmt --stdin-filepath test.js
+```
+
+### Watch Mode (Both Tools)
+
+**Why excluded:** Watch mode is a development workflow feature. Lintro is designed for
+batch processing in CI/CD and pre-commit hooks, not continuous development monitoring.
+
+**Workaround:** Run the native tools with watch mode:
+
+```bash
+oxlint --watch src/
+```
+
+---
+
 ## Future Enhancement Opportunities
 
 ### Oxlint Enhancements
@@ -292,6 +397,7 @@ invocation in a linting/formatting workflow.
 1. Plugin enable/disable flags at runtime (`--react-perf-plugin`, etc.)
 2. Watch mode integration
 3. Cache control options
+4. Type-aware linting support (`--type-aware`)
 
 ### Oxfmt Enhancements
 

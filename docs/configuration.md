@@ -691,40 +691,6 @@ coverage/
 *.min.css
 ```
 
-#### Biome Configuration
-
-**File:** `biome.json`
-
-```json
-{
-  "$schema": "https://biomejs.dev/schemas/2.3.9/schema.json",
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "suspicious": {
-        "noConsole": "warn"
-      }
-    }
-  },
-  "formatter": {
-    "enabled": false
-  }
-}
-```
-
-**Ignore Files:** `.biomeignore`
-
-```text
-node_modules/
-dist/
-build/
-coverage/
-```
-
-**Lintro options:** use `--tool-options "biome:timeout=60"` or set `exclude_patterns`
-via CLI to adjust discovery; native configs remain primary.
-
 ### TypeScript Tools
 
 #### TypeScript Compiler (tsc) Configuration

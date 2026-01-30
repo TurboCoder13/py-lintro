@@ -16,7 +16,7 @@ language, with the highest standards of code quality, usability, and performance
 Modern software development requires numerous code quality tools:
 
 - Python developers need Ruff, Black, Mypy, Bandit, pytest
-- JavaScript developers need ESLint, Prettier, Biome
+- JavaScript developers need ESLint, Prettier, Oxlint, Oxfmt
 - DevOps engineers need Hadolint, Actionlint, Yamllint
 - And the list grows with every language and framework
 
@@ -74,7 +74,7 @@ Every piece of knowledge must have a single, authoritative representation.
 class RuffTool:
     def parse_json_output(self, output): ...
 
-class BiomeTool:
+class OxlintTool:
     def parse_json_output(self, output): ...  # Same logic!
 
 # GOOD: Single generic parser
