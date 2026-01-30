@@ -29,6 +29,7 @@ TOOL_VERSIONS: dict[str, str] = {
     "markdownlint": "0.17.2",
     "oxfmt": "0.27.0",
     "oxlint": "1.42.0",
+    "prettier": "3.4.2",
     "pytest": "8.0.0",
     "rustfmt": "1.8.0",
     "semgrep": "1.50.0",

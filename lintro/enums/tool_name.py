@@ -22,6 +22,7 @@ class ToolName(StrEnum):
     MYPY = auto()
     OXFMT = auto()
     OXLINT = auto()
+    PRETTIER = auto()
     PYDOCLINT = auto()
     PYTEST = auto()
     RUFF = auto()

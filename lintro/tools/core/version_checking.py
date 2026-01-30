@@ -122,6 +122,7 @@ def get_install_hints() -> dict[str, str]:
         "markdownlint": "Install via: bun add -d markdownlint-cli2@>={version}",
         "oxfmt": "Install via: bun add -d oxfmt@>={version}",
         "oxlint": "Install via: bun add -d oxlint@>={version}",
+        "prettier": "Install via: bun add -d prettier@>={version}",
         "hadolint": (
             "Install via: https://github.com/hadolint/hadolint/releases (v{version}+)"
         ),
