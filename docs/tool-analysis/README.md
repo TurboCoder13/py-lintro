@@ -38,7 +38,7 @@ implementations with the core tools themselves.
 
 - ✅ **Preserved**: Linting, formatting, auto-fix, native config discovery, JSON output
 - ⚠️ **Limited**: Plugin control, stdin piping, type-aware linting
-- 🚀 **Enhanced**: Normalized issues, unified API, significantly faster than traditional tools
+- 🚀 **Enhanced**: Normalized issues, unified API, much faster than traditional tools
 
 ### [Yamllint Analysis](./yamllint-analysis.md)
 
