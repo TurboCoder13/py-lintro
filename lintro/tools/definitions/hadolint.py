@@ -11,6 +11,7 @@ import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
 from typing import Any
 
+from lintro._tool_versions import TOOL_VERSIONS
 from lintro.enums.hadolint_enums import (
     HadolintFailureThreshold,
     HadolintFormat,
@@ -67,7 +68,7 @@ class HadolintPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".hadolint.yaml", ".hadolint.yml"],
             version_command=["hadolint", "--version"],
-            min_version="2.12.0",
+            min_version=TOOL_VERSIONS.get("hadolint", "2.12.0"),
             default_options={
                 "timeout": HADOLINT_DEFAULT_TIMEOUT,
                 "format": HADOLINT_DEFAULT_FORMAT,

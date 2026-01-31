@@ -15,6 +15,7 @@ from typing import Any
 
 from loguru import logger
 
+from lintro._tool_versions import TOOL_VERSIONS
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.rustfmt.rustfmt_parser import parse_rustfmt_output
@@ -131,7 +132,7 @@ class RustfmtPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=["rustfmt.toml", ".rustfmt.toml"],
             version_command=["rustfmt", "--version"],
-            min_version="1.8.0",
+            min_version=TOOL_VERSIONS.get("rustfmt", "1.8.0"),
             default_options={
                 "timeout": RUSTFMT_DEFAULT_TIMEOUT,
             },

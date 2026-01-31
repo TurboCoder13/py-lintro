@@ -13,6 +13,7 @@ from typing import Any
 
 from loguru import logger
 
+from lintro._tool_versions import TOOL_VERSIONS
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.plugins.base import BaseToolPlugin
@@ -120,7 +121,7 @@ class PytestPlugin(BaseToolPlugin):
                 "conftest.py",
             ],
             version_command=["pytest", "--version"],
-            min_version="7.0.0",
+            min_version=TOOL_VERSIONS.get("pytest", "7.0.0"),
             default_options={
                 "timeout": PYTEST_DEFAULT_TIMEOUT,
                 "verbose": False,

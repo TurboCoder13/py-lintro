@@ -14,6 +14,7 @@ from typing import Any
 
 from loguru import logger
 
+from lintro._tool_versions import TOOL_VERSIONS
 from lintro.enums.semgrep_enums import SemgrepSeverity, normalize_semgrep_severity
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
@@ -114,7 +115,7 @@ class SemgrepPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".semgrep.yaml", ".semgrep.yml", ".semgrep/"],
             version_command=["semgrep", "--version"],
-            min_version="1.50.0",
+            min_version=TOOL_VERSIONS.get("semgrep", "1.50.0"),
             default_options={
                 "timeout": SEMGREP_DEFAULT_TIMEOUT,
                 "config": SEMGREP_DEFAULT_CONFIG,
