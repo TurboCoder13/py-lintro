@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.clippy.clippy_parser import parse_clippy_output
@@ -125,7 +126,7 @@ class ClippyPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=["clippy.toml", ".clippy.toml"],
             version_command=["rustc", "--version"],
-            min_version=get_min_version("clippy"),
+            min_version=get_min_version(ToolName.CLIPPY),
             default_options={
                 "timeout": CLIPPY_DEFAULT_TIMEOUT,
             },

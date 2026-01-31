@@ -18,6 +18,7 @@ from lintro.enums.hadolint_enums import (
     normalize_hadolint_format,
     normalize_hadolint_threshold,
 )
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
@@ -68,7 +69,7 @@ class HadolintPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".hadolint.yaml", ".hadolint.yml"],
             version_command=["hadolint", "--version"],
-            min_version=get_min_version("hadolint"),
+            min_version=get_min_version(ToolName.HADOLINT),
             default_options={
                 "timeout": HADOLINT_DEFAULT_TIMEOUT,
                 "format": HADOLINT_DEFAULT_FORMAT,

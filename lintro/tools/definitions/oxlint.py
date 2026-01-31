@@ -13,6 +13,7 @@ from typing import Any
 from loguru import logger
 
 from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.oxlint.oxlint_issue import OxlintIssue
@@ -73,7 +74,7 @@ class OxlintPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".oxlintrc.json"],
             version_command=["oxlint", "--version"],
-            min_version=get_min_version("oxlint"),
+            min_version=get_min_version(ToolName.OXLINT),
             default_options={
                 "timeout": OXLINT_DEFAULT_TIMEOUT,
                 "quiet": False,

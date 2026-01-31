@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.cargo_audit.cargo_audit_parser import parse_cargo_audit_output
@@ -75,7 +76,7 @@ class CargoAuditPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".cargo/audit.toml"],
             version_command=["cargo", "audit", "--version"],
-            min_version=get_min_version("cargo_audit"),
+            min_version=get_min_version(ToolName.CARGO_AUDIT),
             default_options={
                 "timeout": CARGO_AUDIT_DEFAULT_TIMEOUT,
             },

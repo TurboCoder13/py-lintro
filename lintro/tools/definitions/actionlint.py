@@ -14,6 +14,7 @@ from typing import Any
 import click
 
 from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output
@@ -53,7 +54,7 @@ class ActionlintPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[],
             version_command=["actionlint", "--version"],
-            min_version=get_min_version("actionlint"),
+            min_version=get_min_version(ToolName.ACTIONLINT),
             default_options={
                 "timeout": ACTIONLINT_DEFAULT_TIMEOUT,
             },

@@ -14,6 +14,7 @@ from typing import Any
 from loguru import logger
 
 from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.plugins.base import BaseToolPlugin
@@ -121,7 +122,7 @@ class PytestPlugin(BaseToolPlugin):
                 "conftest.py",
             ],
             version_command=["pytest", "--version"],
-            min_version=get_min_version("pytest"),
+            min_version=get_min_version(ToolName.PYTEST),
             default_options={
                 "timeout": PYTEST_DEFAULT_TIMEOUT,
                 "verbose": False,

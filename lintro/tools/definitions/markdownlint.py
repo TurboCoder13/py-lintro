@@ -18,6 +18,7 @@ from typing import Any
 from loguru import logger
 
 from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
@@ -67,7 +68,7 @@ class MarkdownlintPlugin(BaseToolPlugin):
                 ".markdownlint-cli2.yaml",
             ],
             version_command=["markdownlint-cli2", "--help"],
-            min_version=get_min_version("markdownlint"),
+            min_version=get_min_version(ToolName.MARKDOWNLINT),
             default_options={
                 "timeout": MARKDOWNLINT_DEFAULT_TIMEOUT,
                 "line_length": None,

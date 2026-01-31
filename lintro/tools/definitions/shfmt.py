@@ -14,6 +14,7 @@ from typing import Any
 from loguru import logger
 
 from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.shfmt.shfmt_parser import parse_shfmt_output
@@ -62,7 +63,7 @@ class ShfmtPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".editorconfig"],
             version_command=["shfmt", "--version"],
-            min_version=get_min_version("shfmt"),
+            min_version=get_min_version(ToolName.SHFMT),
             default_options={
                 "timeout": SHFMT_DEFAULT_TIMEOUT,
                 "indent": None,
