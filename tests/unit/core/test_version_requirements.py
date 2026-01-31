@@ -12,7 +12,7 @@ from packaging.version import Version
 if TYPE_CHECKING:
     pass
 
-from lintro._tool_versions import TOOL_VERSIONS, get_min_version
+from lintro._tool_versions import TOOL_VERSIONS, get_min_version, get_tool_version
 from lintro.enums.tool_name import ToolName
 from lintro.tools.core.version_parsing import (
     ToolVersionInfo,
@@ -121,65 +121,90 @@ def test_get_minimum_versions_from_tool_versions() -> None:
     assert_that(versions["actionlint"]).is_instance_of(str)
 
 
-class TestGetMinVersion:
-    """Tests for get_min_version() function."""
+@pytest.mark.parametrize(
+    "tool_name",
+    [
+        ToolName.ACTIONLINT,
+        ToolName.HADOLINT,
+        ToolName.OXLINT,
+        ToolName.PRETTIER,
+        ToolName.SEMGREP,
+        ToolName.SHELLCHECK,
+        ToolName.TSC,
+    ],
+)
+def test_get_min_version_returns_version_for_registered_tools(
+    tool_name: ToolName,
+) -> None:
+    """Test that get_min_version returns version for registered tools.
 
-    @pytest.mark.parametrize(
-        "tool_name",
-        [
-            ToolName.ACTIONLINT,
-            ToolName.HADOLINT,
-            ToolName.OXLINT,
-            ToolName.PRETTIER,
-            ToolName.SEMGREP,
-            ToolName.SHELLCHECK,
-            ToolName.TSC,
-        ],
-    )
-    def test_returns_version_for_registered_tools(self, tool_name: ToolName) -> None:
-        """Test that get_min_version returns version for registered tools.
+    Args:
+        tool_name: ToolName enum member to test.
+    """
+    version = get_min_version(tool_name)
+    assert_that(version).is_instance_of(str)
+    assert_that(version).matches(r"^\d+\.\d+")  # Starts with X.Y
 
-        Args:
-            tool_name: ToolName enum member to test.
-        """
-        version = get_min_version(tool_name)
-        assert_that(version).is_instance_of(str)
-        assert_that(version).matches(r"^\d+\.\d+")  # Starts with X.Y
 
-    def test_raises_keyerror_for_unknown_tool(self) -> None:
-        """Test that get_min_version raises KeyError for unknown tools."""
-        # Use a string that's definitely not in TOOL_VERSIONS
-        with pytest.raises(KeyError, match="not found in TOOL_VERSIONS"):
-            get_min_version("nonexistent_tool")  # type: ignore[arg-type]
+def test_get_min_version_raises_keyerror_for_unknown_tool() -> None:
+    """Test that get_min_version raises KeyError for unknown tools."""
+    with pytest.raises(KeyError, match="not found in TOOL_VERSIONS"):
+        get_min_version("nonexistent_tool")  # type: ignore[arg-type]
 
-    def test_tool_versions_uses_toolname_enum_keys(self) -> None:
-        """Test that TOOL_VERSIONS uses ToolName enum as keys."""
-        # All keys should be ToolName enum members
-        for key in TOOL_VERSIONS:
-            assert_that(key).is_instance_of(ToolName)
 
-    def test_all_external_tools_registered(self) -> None:
-        """Test that all expected external tools are in TOOL_VERSIONS."""
-        expected_tools = {
-            ToolName.ACTIONLINT,
-            ToolName.CARGO_AUDIT,
-            ToolName.CLIPPY,
-            ToolName.GITLEAKS,
-            ToolName.HADOLINT,
-            ToolName.MARKDOWNLINT,
-            ToolName.OXFMT,
-            ToolName.OXLINT,
-            ToolName.PRETTIER,
-            ToolName.PYTEST,
-            ToolName.RUSTFMT,
-            ToolName.SEMGREP,
-            ToolName.SHELLCHECK,
-            ToolName.SHFMT,
-            ToolName.SQLFLUFF,
-            ToolName.TAPLO,
-            ToolName.TSC,
-        }
-        assert_that(set(TOOL_VERSIONS.keys())).is_equal_to(expected_tools)
+def test_tool_versions_uses_toolname_enum_keys() -> None:
+    """Test that TOOL_VERSIONS uses ToolName enum as keys."""
+    for key in TOOL_VERSIONS:
+        assert_that(key).is_instance_of(ToolName)
+
+
+def test_all_external_tools_registered_in_tool_versions() -> None:
+    """Test that all expected external tools are in TOOL_VERSIONS."""
+    expected_tools = {
+        ToolName.ACTIONLINT,
+        ToolName.CARGO_AUDIT,
+        ToolName.CLIPPY,
+        ToolName.GITLEAKS,
+        ToolName.HADOLINT,
+        ToolName.MARKDOWNLINT,
+        ToolName.OXFMT,
+        ToolName.OXLINT,
+        ToolName.PRETTIER,
+        ToolName.PYTEST,
+        ToolName.RUSTFMT,
+        ToolName.SEMGREP,
+        ToolName.SHELLCHECK,
+        ToolName.SHFMT,
+        ToolName.SQLFLUFF,
+        ToolName.TAPLO,
+        ToolName.TSC,
+    }
+    assert_that(set(TOOL_VERSIONS.keys())).is_equal_to(expected_tools)
+
+
+def test_get_tool_version_returns_version_for_toolname_enum() -> None:
+    """Test that get_tool_version works with ToolName enum."""
+    version = get_tool_version(ToolName.TSC)
+    assert_that(version).is_not_none()
+    assert_that(version).is_instance_of(str)
+
+
+def test_get_tool_version_typescript_alias_resolves_to_tsc() -> None:
+    """Test that 'typescript' alias resolves to TSC version.
+
+    This is important for shell script compatibility where the npm
+    package name 'typescript' needs to resolve to the tsc version.
+    """
+    typescript_version = get_tool_version("typescript")
+    tsc_version = get_tool_version(ToolName.TSC)
+    assert_that(typescript_version).is_equal_to(tsc_version)
+    assert_that(typescript_version).is_not_none()
+
+
+def test_get_tool_version_returns_none_for_unknown_tool() -> None:
+    """Test that get_tool_version returns None for unknown tools."""
+    version = get_tool_version("nonexistent_tool")
+    assert_that(version).is_none()
 
 
 def test_get_install_hints() -> None:

@@ -60,6 +60,7 @@ import os
 from loguru import logger
 
 from lintro._tool_versions import TOOL_VERSIONS
+from lintro.enums.tool_name import ToolName
 
 
 def _get_version_timeout() -> int:
@@ -96,16 +97,17 @@ def _get_version_timeout() -> int:
 VERSION_CHECK_TIMEOUT: int = _get_version_timeout()
 
 
-def get_minimum_versions() -> dict[str, str]:
+def get_minimum_versions() -> dict[ToolName | str, str]:
     """Get minimum version requirements for external tools.
 
     Returns versions from the _tool_versions module for tools that users
     must install separately.
 
     Returns:
-        dict[str, str]: Dictionary mapping tool names to minimum version strings.
+        dict[ToolName | str, str]: Dictionary mapping tool names to minimum
+            version strings.
     """
-    return TOOL_VERSIONS.copy()
+    return dict(TOOL_VERSIONS)
 
 
 def get_install_hints() -> dict[str, str]:

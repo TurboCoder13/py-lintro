@@ -18,6 +18,7 @@ source "$SCRIPT_DIR/utils.sh"
 # Get tool version from lintro/_tool_versions.py
 # This module is the single source of truth for all tool versions
 # Uses runpy.run_path() to execute the file directly without package installation
+# Note: TOOL_VERSIONS uses ToolName enum keys; get_tool_version handles aliases
 get_tool_version() {
 	local tool_name="$1"
 	local version
@@ -25,8 +26,9 @@ get_tool_version() {
 import runpy
 import sys
 
-versions = runpy.run_path('$PROJECT_ROOT/lintro/_tool_versions.py')
-version = versions['TOOL_VERSIONS'].get('$tool_name')
+mod = runpy.run_path('$PROJECT_ROOT/lintro/_tool_versions.py')
+# Use get_tool_version which handles ToolName keys and package aliases
+version = mod['get_tool_version']('$tool_name')
 if version:
     print(version)
 else:

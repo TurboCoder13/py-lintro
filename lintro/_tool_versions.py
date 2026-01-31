@@ -40,8 +40,13 @@ TOOL_VERSIONS: dict[ToolName | str, str] = {
     ToolName.SHFMT: "3.10.0",
     ToolName.SQLFLUFF: "3.0.0",
     ToolName.TAPLO: "0.10.0",
-    # TSC uses the "typescript" npm package for version tracking
     ToolName.TSC: "5.7.3",
+}
+
+# Aliases for shell script compatibility (maps package names to tool names)
+# Some npm packages have different names than the lintro tool name
+_PACKAGE_ALIASES: dict[str, ToolName] = {
+    "typescript": ToolName.TSC,  # npm package "typescript" -> tool "tsc"
 }
 
 
@@ -50,11 +55,18 @@ def get_tool_version(tool_name: ToolName | str) -> str | None:
 
     Args:
         tool_name: Name of the tool (ToolName enum or string).
+            Also accepts package aliases like "typescript" for "tsc".
 
     Returns:
         Version string if found, None otherwise.
     """
-    return TOOL_VERSIONS.get(tool_name)
+    # Check direct lookup first
+    if tool_name in TOOL_VERSIONS:
+        return TOOL_VERSIONS[tool_name]
+    # Check package aliases (e.g., "typescript" -> ToolName.TSC)
+    if isinstance(tool_name, str) and tool_name in _PACKAGE_ALIASES:
+        return TOOL_VERSIONS.get(_PACKAGE_ALIASES[tool_name])
+    return None
 
 
 def get_min_version(tool_name: ToolName) -> str:
@@ -81,10 +93,10 @@ def get_min_version(tool_name: ToolName) -> str:
     return TOOL_VERSIONS[tool_name]
 
 
-def get_all_expected_versions() -> dict[str, str]:
+def get_all_expected_versions() -> dict[ToolName | str, str]:
     """Get all expected external tool versions.
 
     Returns:
         Dictionary mapping tool names to version strings.
     """
-    return TOOL_VERSIONS.copy()
+    return dict(TOOL_VERSIONS)
