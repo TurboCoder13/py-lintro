@@ -21,7 +21,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Copy dependency files first for better layer caching
-COPY pyproject.toml uv.lock /app/
+COPY pyproject.toml uv.lock package.json /app/
 
 # Copy full source
 COPY lintro/ /app/lintro/
@@ -116,7 +116,8 @@ RUN printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/prettier/bi
 # Copy Python virtual environment and application from builder
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/lintro /app/lintro
-COPY --from=builder /app/pyproject.toml /app/
+COPY --from=builder /app/pyproject.toml /app/pyproject.toml
+COPY --from=builder /app/package.json /app/package.json
 
 # Copy entrypoint scripts
 COPY scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
