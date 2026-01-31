@@ -97,25 +97,27 @@ def _get_version_timeout() -> int:
 VERSION_CHECK_TIMEOUT: int = _get_version_timeout()
 
 
-def get_minimum_versions() -> dict[ToolName | str, str]:
+def get_minimum_versions() -> dict[str, str]:
     """Get minimum version requirements for external tools.
 
     Returns versions from the _tool_versions module for tools that users
-    must install separately. Includes both ToolName enum keys and string
-    aliases for compatibility with install hints.
+    must install separately. Returns only string keys for compatibility
+    with install hint templates.
 
     Returns:
-        dict[ToolName | str, str]: Dictionary mapping tool names to minimum
-            version strings. Includes ToolName keys, string equivalents
-            (e.g., "pytest"), and package aliases (e.g., "typescript" for TSC).
+        dict[str, str]: Dictionary mapping tool names (as strings) to minimum
+            version strings. Includes string equivalents of ToolName enums
+            (e.g., "pytest") and package aliases (e.g., "typescript" for TSC).
     """
-    result: dict[ToolName | str, str] = dict(TOOL_VERSIONS)
+    result: dict[str, str] = {}
 
-    # Add string keys for each ToolName (e.g., ToolName.PYTEST -> "pytest")
-    # This enables get_install_hints() to match templates using string keys
+    # Convert ToolName keys to their string values
+    # This ensures get_install_hints() can match templates using string keys
     for tool_name, version in TOOL_VERSIONS.items():
         if isinstance(tool_name, ToolName):
             result[tool_name.value] = version
+        else:
+            result[tool_name] = version
 
     # Add package aliases (e.g., "typescript" -> TSC version)
     for alias, tool_name in _PACKAGE_ALIASES.items():
