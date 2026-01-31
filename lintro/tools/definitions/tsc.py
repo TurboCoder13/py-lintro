@@ -188,17 +188,18 @@ class TscPlugin(BaseToolPlugin):
         Raises:
             OSError: If the temporary file cannot be created or written.
         """
-        # Calculate relative path from temp dir to base tsconfig
-        # We'll create temp file in cwd to keep paths simple
-        relative_base = (
-            base_tsconfig.relative_to(cwd)
-            if base_tsconfig.is_relative_to(cwd)
-            else base_tsconfig
-        )
+        # Use absolute path for extends since temp file is in system temp dir.
+        # This avoids permission issues in Docker containers where cwd may be
+        # a read-only volume mount.
+        abs_base = base_tsconfig.resolve()
+
+        # Convert relative file paths to absolute paths since the temp tsconfig
+        # will be in a different directory
+        abs_files = [str((cwd / f).resolve()) for f in files]
 
         temp_config = {
-            "extends": f"./{relative_base}",
-            "include": files,
+            "extends": str(abs_base),
+            "include": abs_files,
             "exclude": [],
             "compilerOptions": {
                 # Ensure noEmit is set (type checking only)
@@ -206,11 +207,11 @@ class TscPlugin(BaseToolPlugin):
             },
         }
 
-        # Create temp file in cwd so relative paths in extends work correctly
+        # Create temp file in system temp directory to avoid permission issues
+        # in Docker containers with mounted volumes
         fd, temp_path = tempfile.mkstemp(
             suffix=".json",
-            prefix=".lintro-tsc-",
-            dir=str(cwd),
+            prefix="lintro-tsc-",
         )
         try:
             with open(fd, "w", encoding="utf-8") as f:
@@ -223,7 +224,7 @@ class TscPlugin(BaseToolPlugin):
         logger.debug(
             "[tsc] Created temp tsconfig at {} extending {} with {} files",
             temp_path,
-            relative_base,
+            abs_base,
             len(files),
         )
         return Path(temp_path)
