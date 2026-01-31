@@ -188,16 +188,33 @@ def test_validate_subprocess_command_non_string_argument(
         fake_tool_plugin._validate_subprocess_command(["ls", 123])  # type: ignore[list-item]
 
 
-def test_validate_subprocess_command_unsafe_characters(
+def test_validate_subprocess_command_unsafe_characters_in_command_name(
     fake_tool_plugin: FakeToolPlugin,
 ) -> None:
-    """Verify command with shell injection characters raises ValueError.
+    """Verify command with shell injection characters in name raises ValueError.
+
+    Only the command name (first element) is validated for unsafe characters.
+    Arguments can contain special characters since shell=False passes them
+    literally to the subprocess.
 
     Args:
         fake_tool_plugin: Fixture providing a FakeToolPlugin instance.
     """
     with pytest.raises(ValueError, match="Unsafe character"):
-        fake_tool_plugin._validate_subprocess_command(["ls", "-la; rm -rf /"])
+        fake_tool_plugin._validate_subprocess_command(["ls;rm", "-la"])
+
+
+def test_validate_subprocess_command_special_chars_allowed_in_args(
+    fake_tool_plugin: FakeToolPlugin,
+) -> None:
+    """Verify special characters in arguments are allowed with shell=False.
+
+    Args:
+        fake_tool_plugin: Fixture providing a FakeToolPlugin instance.
+    """
+    # Should NOT raise - shell=False makes these safe
+    fake_tool_plugin._validate_subprocess_command(["ls", "-la; rm -rf /"])
+    fake_tool_plugin._validate_subprocess_command(["semgrep", "--include", "*.py"])
 
 
 # =============================================================================

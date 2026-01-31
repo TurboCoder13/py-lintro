@@ -101,11 +101,21 @@ UNSAFE_SHELL_CHARS: frozenset[str] = frozenset(
 def validate_subprocess_command(cmd: list[str]) -> None:
     """Validate a subprocess command for safety.
 
+    Since lintro uses shell=False for all subprocess calls, command arguments
+    are passed directly to the executable without shell interpretation. This
+    means characters like $, *, {, } in arguments are safe - they won't be
+    expanded by the shell.
+
+    We only validate the command name (first element) to ensure it doesn't
+    contain shell metacharacters that could indicate a path traversal or
+    injection attempt.
+
     Args:
         cmd: Command and arguments to validate.
 
     Raises:
-        ValueError: If command is invalid or contains unsafe characters.
+        ValueError: If command is invalid or the command name contains
+            unsafe characters.
     """
     if not cmd or not isinstance(cmd, list):
         raise ValueError("Command must be a non-empty list of strings")
@@ -113,8 +123,11 @@ def validate_subprocess_command(cmd: list[str]) -> None:
     for arg in cmd:
         if not isinstance(arg, str):
             raise ValueError("All command arguments must be strings")
-        if any(ch in arg for ch in UNSAFE_SHELL_CHARS):
-            raise ValueError("Unsafe character detected in command argument")
+
+    # Only validate the command name (first element) for shell metacharacters.
+    # Arguments are safe with shell=False as they're passed literally.
+    if any(ch in cmd[0] for ch in UNSAFE_SHELL_CHARS):
+        raise ValueError("Unsafe character detected in command name")
 
 
 def run_subprocess(

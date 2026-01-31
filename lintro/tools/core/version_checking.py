@@ -56,16 +56,14 @@ def _get_version_timeout() -> int:
         timeout = int(env_value)
     except (TypeError, ValueError):
         logger.warning(
-            "Invalid LINTRO_VERSION_TIMEOUT '%s'; using default %s",
-            env_value,
-            default_timeout,
+            f"Invalid LINTRO_VERSION_TIMEOUT '{env_value}'; "
+            f"using default {default_timeout}",
         )
         return default_timeout
 
     if timeout < 1:
         logger.warning(
-            "LINTRO_VERSION_TIMEOUT must be >= 1; using default %s",
-            default_timeout,
+            f"LINTRO_VERSION_TIMEOUT must be >= 1; using default {default_timeout}",
         )
         return default_timeout
 
@@ -168,8 +166,7 @@ def get_install_hints() -> dict[str, str]:
     missing = set(versions) - set(templates)
     if missing:
         logger.warning(
-            "Missing install hints for tools: %s",
-            ", ".join(sorted(missing)),
+            f"Missing install hints for tools: {', '.join(sorted(missing))}",
         )
 
     return hints
