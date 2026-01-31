@@ -322,6 +322,6 @@ class MarkdownlintPlugin(BaseToolPlugin):
             NotImplementedError: Markdownlint is a linter only and cannot fix issues.
         """
         raise NotImplementedError(
-            "Markdownlint cannot fix issues; use a Markdown formatter like Prettier "
-            "for formatting.",
+            "Markdownlint cannot fix issues; use a Markdown formatter"
+            " for formatting.",
         )

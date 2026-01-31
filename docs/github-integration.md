@@ -421,7 +421,7 @@ Reference installation docs:
 strategy:
   matrix:
     python-version: ['3.11', '3.12', '3.13']
-    tool: ['ruff', 'pydoclint', 'prettier']
+    tool: ['ruff', 'pydoclint', 'oxfmt']
 ```
 
 ### Conditional Execution

@@ -144,7 +144,7 @@ lintro check src/ --tools tsc --tool-options "tsc:project=tsconfig.build.json"
 - **Priority:** 82 (runs after formatters/linters, before tests)
 - **Tool Type:** LINTER | TYPE_CHECKER
 - **Conflicts:** None
-- **Complements:** biome, prettier (formatting), eslint (linting)
+- **Complements:** oxlint, oxfmt, prettier (formatting/linting)
 
 ## Recommendations
 

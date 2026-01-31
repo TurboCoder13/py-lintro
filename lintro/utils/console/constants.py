@@ -15,8 +15,7 @@ from typing import Any
 
 TOOL_EMOJIS: dict[str, str] = {
     "ruff": "🦀",
-    "prettier": "💅",
-    "biome": "🌿",
+    "pydoclint": "📝",
     "hadolint": "🐳",
     "yamllint": "📄",
     "black": "🖤",
@@ -24,6 +23,9 @@ TOOL_EMOJIS: dict[str, str] = {
     "markdownlint": "🔧",
     "actionlint": "🔧",
     "bandit": "🔧",
+    "oxlint": "⚡",
+    "oxfmt": "✨",
+    "prettier": "💅",
 }
 DEFAULT_EMOJI: str = "🔧"
 BORDER_LENGTH: int = 70

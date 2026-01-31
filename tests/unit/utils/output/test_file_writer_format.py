@@ -111,11 +111,6 @@ def test_format_tool_output_falls_back_to_raw_for_unknown_tool() -> None:
             "src/main.py",
         ),
         (
-            "prettier",
-            "[warn] src/main.js",
-            "src/main.js",
-        ),
-        (
             "hadolint",
             "Dockerfile:10 DL3006 warning: Always tag the version",
             "Dockerfile",
@@ -126,9 +121,9 @@ def test_format_tool_output_falls_back_to_raw_for_unknown_tool() -> None:
             ".github/workflows/ci.yml",
         ),
         (
-            "biome",
-            "src/main.js:10:5 error: Test error",
-            "src/main.js",
+            "pydoclint",
+            "src/main.py:10:1: DOC101 Missing docstring",
+            "src/main.py",
         ),
         (
             "markdownlint",
@@ -155,10 +150,9 @@ def test_format_tool_output_falls_back_to_raw_for_unknown_tool() -> None:
         "ruff",
         "mypy",
         "black",
-        "prettier",
         "hadolint",
         "actionlint",
-        "biome",
+        "pydoclint",
         "markdownlint",
         "clippy",
         "pytest",

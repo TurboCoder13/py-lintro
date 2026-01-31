@@ -1,8 +1,9 @@
 """Prettier tool definition.
 
-Prettier is an opinionated code formatter that supports many languages
-including JavaScript, TypeScript, CSS, HTML, JSON, YAML, Markdown, and more.
-It enforces a consistent code style by parsing and re-printing code.
+Prettier is an opinionated code formatter for CSS, HTML, JSON, YAML, Markdown,
+and GraphQL. JavaScript/TypeScript files are handled by oxfmt for better
+performance. Prettier enforces a consistent code style by parsing and
+re-printing code.
 """
 
 from __future__ import annotations
@@ -31,11 +32,9 @@ from lintro.tools.core.option_validators import (
 # Constants for Prettier configuration
 PRETTIER_DEFAULT_TIMEOUT: int = 30
 PRETTIER_DEFAULT_PRIORITY: int = 80
+# Note: JS/TS/Vue files are handled by oxfmt (faster).
+# Prettier handles file types that oxfmt doesn't support.
 PRETTIER_FILE_PATTERNS: list[str] = [
-    "*.js",
-    "*.jsx",
-    "*.ts",
-    "*.tsx",
     "*.css",
     "*.scss",
     "*.less",
@@ -45,7 +44,6 @@ PRETTIER_FILE_PATTERNS: list[str] = [
     "*.yml",
     "*.md",
     "*.graphql",
-    "*.vue",
 ]
 
 
@@ -54,8 +52,8 @@ PRETTIER_FILE_PATTERNS: list[str] = [
 class PrettierPlugin(BaseToolPlugin):
     """Prettier code formatter plugin.
 
-    This plugin integrates Prettier with Lintro for formatting
-    JavaScript, TypeScript, CSS, HTML, JSON, YAML, and more.
+    This plugin integrates Prettier with Lintro for formatting CSS, HTML,
+    JSON, YAML, Markdown, and GraphQL files. JS/TS files are handled by oxfmt.
     """
 
     @property
@@ -68,8 +66,8 @@ class PrettierPlugin(BaseToolPlugin):
         return ToolDefinition(
             name="prettier",
             description=(
-                "Code formatter that supports multiple languages (JavaScript, "
-                "TypeScript, CSS, HTML, JSON, YAML, Markdown, etc.)"
+                "Code formatter for CSS, HTML, JSON, YAML, Markdown, and GraphQL "
+                "(JS/TS handled by oxfmt for better performance)"
             ),
             can_fix=True,
             tool_type=ToolType.FORMATTER,
@@ -85,7 +83,7 @@ class PrettierPlugin(BaseToolPlugin):
                 "prettier.config.js",
             ],
             version_command=["prettier", "--version"],
-            min_version="2.0.0",
+            min_version="3.8.1",
             default_options={
                 "timeout": PRETTIER_DEFAULT_TIMEOUT,
                 "verbose_fix_output": False,

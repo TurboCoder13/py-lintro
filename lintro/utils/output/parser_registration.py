@@ -18,16 +18,12 @@ from loguru import logger
 from lintro.enums.tool_name import ToolName
 from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
-from lintro.parsers.biome.biome_issue import BiomeIssue
-from lintro.parsers.biome.biome_parser import parse_biome_output
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
 from lintro.parsers.clippy.clippy_parser import parse_clippy_output
 from lintro.parsers.hadolint.hadolint_parser import parse_hadolint_output
 from lintro.parsers.markdownlint.markdownlint_parser import parse_markdownlint_output
 from lintro.parsers.mypy.mypy_parser import parse_mypy_output
-from lintro.parsers.prettier.prettier_issue import PrettierIssue
-from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.parsers.ruff.ruff_format_issue import RuffFormatIssue
 from lintro.parsers.ruff.ruff_issue import RuffIssue
 from lintro.parsers.ruff.ruff_parser import parse_ruff_output
@@ -63,30 +59,6 @@ def _black_is_fixable(issue: object) -> bool:
         True if the issue is a BlackIssue (all Black issues are fixable).
     """
     return isinstance(issue, BlackIssue) and getattr(issue, "fixable", True)
-
-
-def _prettier_is_fixable(issue: object) -> bool:
-    """Check if a Prettier issue is fixable.
-
-    Args:
-        issue: The issue object to check.
-
-    Returns:
-        True if the issue is a PrettierIssue (all Prettier issues are fixable).
-    """
-    return isinstance(issue, PrettierIssue)
-
-
-def _biome_is_fixable(issue: object) -> bool:
-    """Check if a Biome issue is fixable.
-
-    Args:
-        issue: The issue object to check.
-
-    Returns:
-        True if the issue is a BiomeIssue with fixable=True.
-    """
-    return isinstance(issue, BiomeIssue) and getattr(issue, "fixable", False)
 
 
 # -----------------------------------------------------------------------------
@@ -144,20 +116,6 @@ def register_all_parsers() -> None:
         ToolName.BLACK.value,
         parse_black_output,
         is_fixable=_black_is_fixable,
-    )
-
-    # Prettier - Multi-language formatter
-    ParserRegistry.register(
-        ToolName.PRETTIER.value,
-        parse_prettier_output,
-        is_fixable=_prettier_is_fixable,
-    )
-
-    # Biome - JavaScript/TypeScript linter/formatter
-    ParserRegistry.register(
-        ToolName.BIOME.value,
-        parse_biome_output,
-        is_fixable=_biome_is_fixable,
     )
 
     # Mypy - Python type checker

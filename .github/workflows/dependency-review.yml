@@ -35,9 +35,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       # Run dependency review; disable PR comment on forks (token is read-only)
+      # continue-on-error only for forks where Dependency Graph may not be enabled
       - name: Dependency review
         # yamllint disable-line rule:line-length
         uses: actions/dependency-review-action@3c4e3dcb1aa7874d2c16be7d79418e9b7efd6261 # v4.8.2
+        continue-on-error: ${{ github.event.pull_request.head.repo.fork == true }}
         with:
           fail-on-severity: high
           # Disable PR comments on forks where token is read-only

@@ -253,13 +253,11 @@ def _convert_pyproject_to_config(data: dict[str, Any]) -> dict[str, Any]:
     known_tools = {
         "actionlint",
         "bandit",
-        "biome",
         "black",
         "clippy",
         "hadolint",
         "markdownlint",
         "mypy",
-        "prettier",
         "pytest",
         "ruff",
         "yamllint",

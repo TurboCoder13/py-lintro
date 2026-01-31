@@ -18,12 +18,6 @@ except ImportError:
 
 # Configuration file patterns for different tools
 YAMLLINT_CONFIG_FILES = [".yamllint", ".yamllint.yaml", ".yamllint.yml"]
-# Note: prettier.config.js is listed but not yet parsed (requires JS parser)
-PRETTIER_CONFIG_FILES = [
-    ".prettierrc",
-    ".prettierrc.json",
-]  # prettier.config.js not supported
-BIOME_CONFIG_FILES = ["biome.json", "biome.jsonc"]
 MARKDOWNLINT_CONFIG_FILES = [
     ".markdownlint.json",
     ".markdownlint.yaml",
@@ -32,6 +26,8 @@ MARKDOWNLINT_CONFIG_FILES = [
 ]
 TSC_CONFIG_FILES = ["tsconfig.json"]
 MYPY_CONFIG_FILES = ["mypy.ini", ".mypy.ini"]
+OXLINT_CONFIG_FILES = [".oxlintrc.json", "oxlint.json"]
+OXFMT_CONFIG_FILES = [".oxfmtrc.json", ".oxfmtrc.jsonc"]
 
 
 def _load_json_config(config_path: Path) -> dict[str, Any]:
@@ -230,60 +226,6 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                     logger.debug(f"Could not read yamllint config {config_file}: {e}")
         return {}
 
-    # Prettier: check multiple config file formats
-    if tool_enum == ToolName.PRETTIER:
-        for config_file in PRETTIER_CONFIG_FILES:
-            config_path = Path(config_file)
-            if config_path.exists():
-                # Try parsing as JSON (works for both .json files and .prettierrc)
-                loaded = _load_json_config(config_path)
-                if loaded:
-                    return loaded
-        # Check package.json prettier field
-        pkg_path = Path("package.json")
-        if pkg_path.exists():
-            try:
-                with pkg_path.open(encoding="utf-8") as f:
-                    pkg = json.load(f)
-                    if isinstance(pkg, dict) and "prettier" in pkg:
-                        prettier_cfg = pkg.get("prettier", {})
-                        return prettier_cfg if isinstance(prettier_cfg, dict) else {}
-            except json.JSONDecodeError as e:
-                logger.warning(
-                    f"Failed to parse prettier config from package.json: {e.msg} "
-                    f"(line {e.lineno}, col {e.colno})",
-                )
-            except FileNotFoundError:
-                logger.debug("package.json not found")
-            except OSError as e:
-                logger.debug(f"Could not read package.json: {e}")
-        return {}
-
-    # Biome: check config files
-    if tool_enum == ToolName.BIOME:
-        # Check Biome config files
-        for config_file in BIOME_CONFIG_FILES:
-            config_path = Path(config_file)
-            if not config_path.exists():
-                continue
-            # Handle JSON files
-            try:
-                content = config_path.read_text(encoding="utf-8")
-                if config_file.endswith(".jsonc"):
-                    content = _strip_jsonc_comments(content)
-                loaded = json.loads(content)
-                return loaded if isinstance(loaded, dict) else {}
-            except json.JSONDecodeError as e:
-                logger.warning(
-                    f"Failed to parse Biome config {config_file}: {e.msg} "
-                    f"(line {e.lineno}, col {e.colno})",
-                )
-            except FileNotFoundError:
-                logger.debug(f"Biome config not found: {config_file}")
-            except OSError as e:
-                logger.debug(f"Could not read Biome config {config_file}: {e}")
-        return {}
-
     # Markdownlint: check config files
     if tool_enum == ToolName.MARKDOWNLINT:
         for config_file in MARKDOWNLINT_CONFIG_FILES:
@@ -396,6 +338,40 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                     return result
                 except (configparser.Error, OSError, UnicodeDecodeError) as e:
                     logger.debug(f"Could not read mypy config {config_file}: {e}")
+        return {}
+
+    # Oxlint: check native config files
+    if tool_enum == ToolName.OXLINT:
+        for config_file in OXLINT_CONFIG_FILES:
+            config_path = Path(config_file)
+            if config_path.exists():
+                return _load_json_config(config_path)
+        return {}
+
+    # Oxfmt: check native config files (supports JSONC comments)
+    if tool_enum == ToolName.OXFMT:
+        for config_file in OXFMT_CONFIG_FILES:
+            config_path = Path(config_file)
+            if not config_path.exists():
+                continue
+            try:
+                with config_path.open(encoding="utf-8") as f:
+                    content = f.read()
+                    # Strip JSONC comments and trailing commas safely
+                    if config_file.endswith(".jsonc"):
+                        content = _strip_jsonc_comments(content)
+                        content = _strip_trailing_commas(content)
+                    loaded = json.loads(content)
+                    return loaded if isinstance(loaded, dict) else {}
+            except json.JSONDecodeError as e:
+                logger.warning(
+                    f"Failed to parse oxfmt config {config_file}: {e.msg} "
+                    f"(line {e.lineno}, col {e.colno})",
+                )
+            except FileNotFoundError:
+                logger.debug(f"Oxfmt config not found: {config_file}")
+            except OSError as e:
+                logger.debug(f"Could not read oxfmt config {config_file}: {e}")
         return {}
 
     return {}

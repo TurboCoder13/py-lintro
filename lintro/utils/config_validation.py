@@ -77,7 +77,6 @@ def get_tool_config_summary() -> dict[str, ToolConfigInfo]:
     tools = [
         ToolName.RUFF,
         ToolName.BLACK,
-        ToolName.PRETTIER,
         ToolName.YAMLLINT,
         ToolName.MARKDOWNLINT,
         ToolName.BANDIT,

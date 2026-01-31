@@ -144,7 +144,7 @@ if [ "$DRY_RUN" -eq 0 ] && [ -n "${GITHUB_PATH:-}" ]; then
 		echo "$HOME/.local/bin" >>"$GITHUB_PATH"
 		log_info "Added $HOME/.local/bin to GitHub Actions PATH"
 	fi
-	# Add bun global bin directory (used by prettier, markdownlint-cli2, biome)
+	# Add bun global bin directory (used by prettier, markdownlint-cli2, oxlint, oxfmt)
 	if [ -d "$HOME/.bun/bin" ]; then
 		echo "$HOME/.bun/bin" >>"$GITHUB_PATH"
 		log_info "Added $HOME/.bun/bin to GitHub Actions PATH"

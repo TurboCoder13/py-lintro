@@ -1,0 +1,1 @@
+"""Oxfmt plugin tests."""

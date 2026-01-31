@@ -8,7 +8,9 @@ This document outlines the coding standards and best practices for the Lintro pr
 
 - Follow [PEP 8](https://peps.python.org/pep-0008/) for code style
 - Use [pydoclint](https://github.com/jsh9/pydoclint) for docstring argument checking
-- Use [Prettier](https://prettier.io/) for frontend code formatting
+- Use [Oxfmt](https://github.com/oxc-project/oxc) for JavaScript/TypeScript formatting
+- Use [Prettier](https://prettier.io/) for CSS, HTML, JSON, YAML, and Markdown
+  formatting
 
 ### Type Hints
 
@@ -191,36 +193,38 @@ lintro/
 ├── parsers/
 │   ├── actionlint/
 │   ├── bandit/
-│   ├── biome/
 │   ├── black/
 │   ├── clippy/
 │   ├── pydoclint/
 │   ├── hadolint/
 │   ├── markdownlint/
 │   ├── mypy/
+│   ├── oxfmt/
+│   ├── oxlint/
 │   ├── prettier/
 │   ├── pytest/
 │   ├── ruff/
 │   └── yamllint/
 ├── tools/
 │   ├── core/
+│   ├── definitions/
+│   │   ├── actionlint.py
+│   │   ├── bandit.py
+│   │   ├── black.py
+│   │   ├── clippy.py
+│   │   ├── pydoclint.py
+│   │   ├── hadolint.py
+│   │   ├── markdownlint.py
+│   │   ├── mypy.py
+│   │   ├── oxfmt.py
+│   │   ├── oxlint.py
+│   │   ├── prettier.py
+│   │   ├── pytest.py
+│   │   ├── ruff.py
+│   │   └── yamllint.py
 │   └── implementations/
 │       ├── pytest/
-│       ├── ruff/
-│       ├── tool_actionlint.py
-│       ├── tool_bandit.py
-│       ├── tool_biome.py
-│       ├── tool_black.py
-│       ├── tool_clippy.py
-│       ├── tool_pydoclint.py
-│       ├── tool_hadolint.py
-│       ├── tool_markdownlint.py
-│       ├── tool_mypy.py
-│       ├── tool_prettier.py
-│       ├── tool_pytest.py
-│       ├── tool_ruff.py
-│       ├── yamllint_config.py
-│       └── yamllint_runner.py
+│       └── ruff/
 └── utils/
     ├── console_logger.py
     ├── logger_setup.py

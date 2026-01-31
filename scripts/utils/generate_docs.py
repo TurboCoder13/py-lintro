@@ -39,6 +39,14 @@ def generate_version_table() -> str:
             "JavaScript/TypeScript formatter",
             "npm install --save-dev prettier>={version}",
         ),
+        "oxlint": (
+            "Fast JavaScript/TypeScript linter",
+            "npm install --save-dev oxlint>={version}",
+        ),
+        "oxfmt": (
+            "Fast JavaScript/TypeScript formatter",
+            "npm install --save-dev oxfmt>={version}",
+        ),
         "hadolint": (
             "Dockerfile linter",
             ("https://github.com/hadolint/hadolint/releases (v{version}+)"),
@@ -84,7 +92,7 @@ def main() -> None:
     print()
     print("External Tools:")
     print("---------------")
-    external_tools = ["pytest", "prettier", "hadolint", "actionlint"]
+    external_tools = ["pytest", "prettier", "oxlint", "oxfmt", "hadolint", "actionlint"]
     for tool in external_tools:
         version = versions.get(tool, "unknown")
         hint = hints.get(tool, "").replace("Install via: ", "")

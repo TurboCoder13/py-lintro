@@ -13,7 +13,6 @@ class ToolName(StrEnum):
 
     ACTIONLINT = auto()
     BANDIT = auto()
-    BIOME = auto()
     BLACK = auto()
     CARGO_AUDIT = auto()
     CLIPPY = auto()
@@ -21,6 +20,8 @@ class ToolName(StrEnum):
     HADOLINT = auto()
     MARKDOWNLINT = auto()
     MYPY = auto()
+    OXFMT = auto()
+    OXLINT = auto()
     PRETTIER = auto()
     PYDOCLINT = auto()
     PYTEST = auto()

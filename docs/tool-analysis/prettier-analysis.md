@@ -2,9 +2,21 @@
 
 ## Overview
 
-Prettier is a code formatter that supports JavaScript, TypeScript, CSS, HTML, and many
-other languages. This analysis compares Lintro's wrapper implementation with the core
-Prettier tool.
+Prettier is a code formatter that supports CSS, HTML, JSON, YAML, Markdown, GraphQL, and
+many other languages. In Lintro, Prettier handles file types that oxfmt doesn't support,
+while **oxfmt handles JavaScript/TypeScript/Vue formatting** for better performance.
+
+## File Type Responsibilities
+
+| File Types            | Formatter    | Why                      |
+| --------------------- | ------------ | ------------------------ |
+| JS, TS, JSX, TSX, Vue | **oxfmt**    | 30x faster than Prettier |
+| CSS, SCSS, Less       | **Prettier** | Not supported by oxfmt   |
+| HTML                  | **Prettier** | Not supported by oxfmt   |
+| JSON                  | **Prettier** | Not supported by oxfmt   |
+| YAML                  | **Prettier** | Not supported by oxfmt   |
+| Markdown              | **Prettier** | Not supported by oxfmt   |
+| GraphQL               | **Prettier** | Not supported by oxfmt   |
 
 ## Core Tool Capabilities
 
@@ -14,8 +26,7 @@ Prettier provides extensive CLI options including:
   `--quote-props`, `--trailing-comma`
 - **File handling**: `--write`, `--check`, `--config`, `--ignore-path`,
   `--stdin-filepath`
-- **Parser options**: `--parser` (auto-detect or specify: babel, typescript, css, html,
-  etc.)
+- **Parser options**: `--parser` (auto-detect or specify: css, html, json, yaml, etc.)
 - **Output control**: `--list-different`, `--require-pragma`, `--insert-pragma`
 - **Debug options**: `--debug-check`, `--debug-print-doc`
 
@@ -28,110 +39,67 @@ Prettier provides extensive CLI options including:
 - ✅ **Formatting capability**: Full preservation through `--write` flag
 - ✅ **Check mode**: Preserved through `--check` flag
 - ✅ **File targeting**: Supports file patterns and paths
-- ✅ **YAML formatting**: Formats `*.yml` / `*.yaml` files while yamllint handles
-  linting
+- ✅ **YAML formatting**: Formats `*.yml` / `*.yaml` files (yamllint handles linting)
 - ✅ **Configuration files**: Respects `.prettierrc` and `prettier.config.js`
 - ✅ **Error detection**: Captures formatting violations as issues
 - ✅ **Auto-fixing**: Can automatically format files when `fix()` is called
 
-**Command Execution:**
+**Supported File Patterns:**
 
 ```python
-# From tool_prettier.py
-cmd = ["prettier", "--check"] + self.files
-# For fixing:
-cmd = ["prettier", "--write"] + self.files
+PRETTIER_FILE_PATTERNS = [
+    "*.css", "*.scss", "*.less",  # Stylesheets
+    "*.html",                       # HTML
+    "*.json",                       # JSON
+    "*.yaml", "*.yml",              # YAML
+    "*.md",                         # Markdown
+    "*.graphql",                    # GraphQL
+]
 ```
 
 ### ⚠️ Limited/Missing Features
 
-**Granular Configuration:**
+**Intentionally Excluded:**
 
-- ⚠️ **Runtime formatting options**: Prefer config files; proposed pass-throughs include
-  `tab_width`, `single_quote`, `trailing_comma`, `end_of_line`, etc.
-- ⚠️ **Parser specification**: Proposed `prettier:parser=typescript` when needed.
-- ⚠️ **Discovery controls**: Proposed `prettier:config=...`, `prettier:no_config=True`,
-  `prettier:ignore_path=.prettierignore`.
-- ⚠️ **Debug capabilities**: Optional `prettier:debug_check=True`,
-  `prettier:debug_print_doc=True`.
-- ⚠️ **Pragma handling**: Optional `prettier:require_pragma=True`,
-  `prettier:insert_pragma=True`.
+- ❌ **JavaScript/TypeScript**: Use oxfmt instead (30x faster)
+- ❌ **Vue files**: Use oxfmt instead
 
-**Advanced Features:**
+**Not Implemented:**
 
-- ❌ **Stdin processing**: No `--stdin-filepath` support
-- ❌ **List different**: Cannot use `--list-different` mode
-- ❌ **Custom ignore paths**: No runtime `--ignore-path` specification
-
-**Error Handling:**
-
-- ⚠️ **Limited error context**: Basic error reporting without detailed formatting
-  suggestions
-- ⚠️ **No syntax validation**: Doesn't expose Prettier's syntax error detection
+- ⚠️ **Stdin processing**: No `--stdin-filepath` support
+- ⚠️ **List different**: Cannot use `--list-different` mode
+- ⚠️ **Custom ignore paths**: No runtime `--ignore-path` specification
+- ⚠️ **Runtime formatting options**: Prefer config files
 
 ### 🚀 Enhancements
 
 **Unified Interface:**
 
-- ✅ **Consistent API**: Same interface as other linting tools (`check()`, `fix()`,
-  `set_options()`)
+- ✅ **Consistent API**: Same interface as other linting tools
 - ✅ **Structured output**: Issues formatted as standardized `Issue` objects
-- ✅ **File filtering**: Built-in file extension filtering and ignore patterns
-- ✅ **Integration ready**: Seamless integration with other tools in linting pipeline
-
-**Error Processing:**
-
-- ✅ **Issue normalization**: Converts Prettier output to standard Issue format:
-
-  ```python
-  Issue(
-      file_path=file_path,
-      line_number=None,  # Prettier doesn't provide line-specific info
-      column_number=None,
-      error_code="formatting",
-      message=f"File is not formatted correctly: {file_path}",
-      severity="error"
-  )
-  ```
-
-**Workflow Integration:**
-
-### 🔧 Proposed runtime pass-throughs
-
-- `--tool-options prettier:config=.config/prettier.json,prettier:ignore_path=.prettierignore`
-- `--tool-options prettier:tab_width=88,prettier:single_quote=True,prettier:trailing_comma=all`
-- `--tool-options prettier:parser=typescript`
-- `--tool-options prettier:cache=True,prettier:cache_location=.cache/prettier,prettier:loglevel=warn`
-
-- ✅ **Batch processing**: Can process multiple files in single operation
-- ✅ **Conditional execution**: Only runs when relevant file types are present
-- ✅ **Status tracking**: Clear success/failure reporting
+- ✅ **File filtering**: Built-in file extension filtering
+- ✅ **Integration ready**: Seamless integration with other tools
 
 ## Usage Comparison
 
 ### Core Prettier
 
 ```bash
-# Check formatting
-prettier --check "src/**/*.{js,ts,css}"
+# Check formatting (CSS, HTML, JSON, YAML, MD)
+prettier --check "src/**/*.{css,html,json,yml,md}"
 
 # Format files
-prettier --write "src/**/*.{js,ts,css}" --tab-width 2 --single-quote
-
-# Custom config
-prettier --write --config custom-prettier.json src/
+prettier --write "src/**/*.{css,html,json,yml,md}"
 ```
 
-### Lintro Wrapper
+### Lintro (Combined oxfmt + Prettier)
 
-```python
+```bash
+# Format all supported files
+lintro format --tools oxfmt,prettier
+
 # Check formatting
-prettier_tool = PrettierTool()
-prettier_tool.set_files(["src/main.js", "src/style.css"])
-issues = prettier_tool.check()
-
-# Format files
-prettier_tool.fix()
+lintro check --tools oxfmt,prettier
 ```
 
 ## Recommendations
@@ -141,14 +109,14 @@ prettier_tool.fix()
 - Need specific formatting options at runtime
 - Require debug output or syntax validation
 - Working with non-standard file patterns
-- Need pragma-based formatting control
+- Need to format JS/TS (though oxfmt is faster)
 
 ### When to Use Lintro Wrapper
 
 - Part of multi-tool linting pipeline
 - Need consistent issue reporting across tools
 - Want simplified configuration management
-- Require programmatic integration with Python workflows
+- Prefer oxfmt handling JS/TS for performance
 
 ## Configuration Strategy
 
@@ -161,3 +129,11 @@ The Lintro wrapper relies entirely on Prettier's configuration files:
 
 For runtime customization, users should modify these config files rather than passing
 CLI options.
+
+## Migration Notes
+
+If you were previously using Prettier for JavaScript/TypeScript formatting through
+Lintro, those files are now handled by oxfmt. To maintain Prettier for JS/TS:
+
+1. Use `prettier` directly (not through Lintro)
+2. Or configure Lintro to skip oxfmt: `lintro format --tools prettier`

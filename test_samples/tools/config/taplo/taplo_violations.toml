@@ -2,15 +2,12 @@
 
 # Formatting issues - inconsistent indentation and alignment
 [package]
-name="example"
+name = "example"
 version = "0.1.0"
-description    =    "A sample project with TOML violations"
+description = "A sample project with TOML violations"
 
 # Missing trailing comma in multi-line array (formatting issue)
-authors = [
-    "Alice <alice@example.com>",
-    "Bob <bob@example.com>"
-]
+authors = ["Alice <alice@example.com>", "Bob <bob@example.com>"]
 
 # Inconsistent key ordering
 [dependencies]
@@ -24,8 +21,8 @@ test-lib = { version = "1.0", features = ["async"] }
 
 # Unaligned entries
 [build]
-target="x86_64-unknown-linux-gnu"
-rustflags       = ["-C", "target-feature=+crt-static"]
+target = "x86_64-unknown-linux-gnu"
+rustflags = ["-C", "target-feature=+crt-static"]
 
 # Extra blank lines and spacing issues (formatting)
 

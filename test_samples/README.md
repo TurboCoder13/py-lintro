@@ -18,7 +18,8 @@ test_samples/
     │   ├── mypy/                 # MyPy type checker samples
     │   └── pytest/               # Pytest test runner samples
     ├── javascript/               # JavaScript/TypeScript tool samples
-    │   ├── biome/                # Biome linter samples
+    │   ├── oxfmt/                # Oxfmt formatter samples
+    │   ├── oxlint/               # Oxlint linter samples
     │   └── prettier/             # Prettier formatter samples
     ├── rust/                     # Rust tool samples
     │   ├── clippy/               # Clippy linter samples

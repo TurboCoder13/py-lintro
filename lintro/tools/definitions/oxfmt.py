@@ -1,7 +1,7 @@
-"""Biome tool definition.
+"""Oxfmt tool definition.
 
-Biome is a fast linter and formatter for JavaScript, TypeScript, JSON, and CSS.
-It provides detailed diagnostics and safe fixes for code issues.
+Oxfmt is a fast JavaScript/TypeScript formatter (30x faster than Prettier).
+It formats code with minimal configuration, enforcing a consistent code style.
 """
 
 from __future__ import annotations
@@ -10,10 +10,12 @@ import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
 from typing import Any
 
+from loguru import logger
+
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
-from lintro.parsers.biome.biome_issue import BiomeIssue
-from lintro.parsers.biome.biome_parser import parse_biome_output
+from lintro.parsers.oxfmt.oxfmt_issue import OxfmtIssue
+from lintro.parsers.oxfmt.oxfmt_parser import parse_oxfmt_output
 from lintro.plugins.base import BaseToolPlugin
 from lintro.plugins.protocol import ToolDefinition
 from lintro.plugins.registry import register_tool
@@ -21,31 +23,34 @@ from lintro.tools.core.option_validators import (
     filter_none_options,
     validate_bool,
     validate_list,
-    validate_positive_int,
+    validate_str,
 )
 
-# Constants for Biome configuration
-BIOME_DEFAULT_TIMEOUT: int = 30
-BIOME_DEFAULT_PRIORITY: int = 50
-BIOME_FILE_PATTERNS: list[str] = [
+# Constants for oxfmt configuration
+OXFMT_DEFAULT_TIMEOUT: int = 30
+OXFMT_DEFAULT_PRIORITY: int = 80
+# Note: oxfmt (from oxc toolchain) supports JavaScript/TypeScript and Vue files.
+# Unlike Prettier, it does not support Svelte, Astro, JSON, CSS, HTML, Markdown, etc.
+OXFMT_FILE_PATTERNS: list[str] = [
     "*.js",
-    "*.jsx",
-    "*.ts",
-    "*.tsx",
     "*.mjs",
     "*.cjs",
-    "*.json",
-    "*.css",
+    "*.jsx",
+    "*.ts",
+    "*.mts",
+    "*.cts",
+    "*.tsx",
+    "*.vue",
 ]
 
 
 @register_tool
 @dataclass
-class BiomePlugin(BaseToolPlugin):
-    """Biome JavaScript/TypeScript linter and formatter plugin.
+class OxfmtPlugin(BaseToolPlugin):
+    """Oxfmt code formatter plugin.
 
-    This plugin integrates Biome with Lintro for linting and formatting
-    JavaScript, TypeScript, JSON, and CSS files.
+    This plugin integrates oxfmt with Lintro for formatting
+    JavaScript, TypeScript, and Vue files.
     """
 
     @property
@@ -56,78 +61,68 @@ class BiomePlugin(BaseToolPlugin):
             ToolDefinition containing tool metadata.
         """
         return ToolDefinition(
-            name="biome",
+            name="oxfmt",
             description=(
-                "Fast linter for JavaScript, TypeScript, JSON, and CSS that "
-                "provides detailed diagnostics and safe fixes"
+                "Fast JavaScript/TypeScript formatter (30x faster than Prettier)"
             ),
             can_fix=True,
-            tool_type=ToolType.LINTER | ToolType.FORMATTER,
-            file_patterns=BIOME_FILE_PATTERNS,
-            priority=BIOME_DEFAULT_PRIORITY,
+            tool_type=ToolType.FORMATTER,
+            file_patterns=OXFMT_FILE_PATTERNS,
+            priority=OXFMT_DEFAULT_PRIORITY,
             conflicts_with=[],
-            native_configs=["biome.json", "biome.jsonc"],
-            version_command=["biome", "--version"],
-            min_version="1.0.0",
+            native_configs=[".oxfmtrc.json", ".oxfmtrc.jsonc"],
+            version_command=["oxfmt", "--version"],
+            min_version="0.27.0",
             default_options={
-                "timeout": BIOME_DEFAULT_TIMEOUT,
-                # VCS ignore disabled by default: lintro handles file discovery
-                # and respects .gitignore. Biome's VCS integration causes issues
-                # in Docker due to path resolution with mounted volumes.
-                "use_vcs_ignore": False,
+                "timeout": OXFMT_DEFAULT_TIMEOUT,
                 "verbose_fix_output": False,
             },
-            default_timeout=BIOME_DEFAULT_TIMEOUT,
+            default_timeout=OXFMT_DEFAULT_TIMEOUT,
         )
-
-    def __post_init__(self) -> None:
-        """Initialize the tool with default options."""
-        super().__post_init__()
-        # VCS ignore disabled by default: lintro handles file discovery
-        # and respects .gitignore. Biome's VCS integration causes issues
-        # in Docker due to path resolution with mounted volumes.
-        self.options.setdefault("use_vcs_ignore", False)
 
     def set_options(  # type: ignore[override]
         self,
         exclude_patterns: list[str] | None = None,
         include_venv: bool = False,
-        timeout: int | None = None,
         verbose_fix_output: bool | None = None,
-        use_vcs_ignore: bool | None = None,
+        config: str | None = None,
+        ignore_path: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Set Biome-specific options.
+        """Set oxfmt-specific options.
 
         Args:
             exclude_patterns: List of patterns to exclude.
             include_venv: Whether to include virtual environment directories.
-            timeout: Timeout in seconds (default: 30).
-            verbose_fix_output: If True, include raw Biome output in fix().
-            use_vcs_ignore: If True, use VCS ignore file (.gitignore).
-            **kwargs: Additional options (ignored for compatibility).
+            verbose_fix_output: If True, include raw oxfmt output in fix().
+            config: Path to oxfmt config file (--config).
+            ignore_path: Path to ignore file (--ignore-path).
+            **kwargs: Other tool options.
+
+        Note:
+            Formatting options (print_width, tab_width, use_tabs, semi, single_quote)
+            are only supported via config file (.oxfmtrc.json), not CLI flags.
         """
         validate_list(exclude_patterns, "exclude_patterns")
-        validate_positive_int(timeout, "timeout")
         validate_bool(verbose_fix_output, "verbose_fix_output")
-        validate_bool(use_vcs_ignore, "use_vcs_ignore")
+        validate_str(config, "config")
+        validate_str(ignore_path, "ignore_path")
 
         if exclude_patterns is not None:
             self.exclude_patterns = exclude_patterns.copy()
         self.include_venv = include_venv
 
         options = filter_none_options(
-            timeout=timeout,
             verbose_fix_output=verbose_fix_output,
-            use_vcs_ignore=use_vcs_ignore,
+            config=config,
+            ignore_path=ignore_path,
         )
-        for key, value in options.items():
-            self.options[key] = value
+        super().set_options(**options, **kwargs)
 
     def _create_timeout_result(
         self,
         timeout_val: int,
-        initial_issues: list[Any] | None = None,
+        initial_issues: list[OxfmtIssue] | None = None,
         initial_count: int = 0,
     ) -> ToolResult:
         """Create a ToolResult for timeout scenarios.
@@ -141,38 +136,60 @@ class BiomePlugin(BaseToolPlugin):
             ToolResult: ToolResult instance representing timeout failure.
         """
         timeout_msg = (
-            f"Biome execution timed out ({timeout_val}s limit exceeded).\n\n"
+            f"Oxfmt execution timed out ({timeout_val}s limit exceeded).\n\n"
             "This may indicate:\n"
             "  - Large codebase taking too long to process\n"
-            "  - Need to increase timeout via --tool-options biome:timeout=N"
+            "  - Need to increase timeout via --tool-options oxfmt:timeout=N"
         )
-        timeout_issue = BiomeIssue(
+        timeout_issue = OxfmtIssue(
             file="execution",
             line=1,
-            column=1,
             code="TIMEOUT",
             message=timeout_msg,
-            severity="error",
-            fixable=False,
+            column=1,
         )
         combined_issues = (initial_issues or []) + [timeout_issue]
-        remaining_count = len(combined_issues)
-        # Ensure consistency: if initial was 0, set it to remaining_count
-        # so that initial = fixed + remaining holds (0 + remaining = remaining)
-        effective_initial = initial_count if initial_count > 0 else remaining_count
+        combined_count = len(combined_issues)
         return ToolResult(
             name=self.definition.name,
             success=False,
             output=timeout_msg,
-            issues_count=remaining_count,
+            issues_count=combined_count,
             issues=combined_issues,
-            initial_issues_count=effective_initial,
+            initial_issues_count=combined_count,
             fixed_issues_count=0,
-            remaining_issues_count=remaining_count,
+            remaining_issues_count=combined_count,
         )
 
+    def _build_oxfmt_args(self, options: dict[str, object]) -> list[str]:
+        """Build CLI arguments from options.
+
+        Args:
+            options: Options dict to build args from (use merged_options).
+
+        Returns:
+            List of CLI arguments to pass to oxfmt.
+
+        Note:
+            Formatting options (print_width, tab_width, use_tabs, semi, single_quote)
+            are only supported via config file (.oxfmtrc.json), not CLI flags.
+        """
+        args: list[str] = []
+
+        # Config file override
+        config = options.get("config")
+        if config:
+            args.extend(["--config", str(config)])
+
+        # Ignore file path
+        ignore_path = options.get("ignore_path")
+        if ignore_path:
+            args.extend(["--ignore-path", str(ignore_path)])
+
+        return args
+
     def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
-        """Check files with Biome without making changes.
+        """Check files with oxfmt without making changes.
 
         Args:
             paths: List of file or directory paths to check.
@@ -181,28 +198,53 @@ class BiomePlugin(BaseToolPlugin):
         Returns:
             ToolResult with check results.
         """
-        # Use shared preparation for version check, path validation, file discovery
-        ctx = self._prepare_execution(paths, options)
-        if ctx.should_skip:
-            return ctx.early_result  # type: ignore[return-value]
+        # Merge runtime options
+        merged_options = dict(self.options)
+        merged_options.update(options)
 
-        # Build Biome command with JSON reporter
-        cmd: list[str] = self._get_executable_command(tool_name="biome") + [
-            "lint",
-            "--reporter",
-            "json",
+        # Use shared preparation for version check, path validation, file discovery
+        ctx = self._prepare_execution(
+            paths,
+            merged_options,
+            no_files_message="No files to check.",
+        )
+        if ctx.should_skip:
+            assert ctx.early_result is not None
+            return ctx.early_result
+
+        logger.debug(
+            f"[OxfmtPlugin] Discovered {len(ctx.files)} files matching patterns: "
+            f"{self.definition.file_patterns}",
+        )
+        logger.debug(
+            f"[OxfmtPlugin] Exclude patterns applied: {self.exclude_patterns}",
+        )
+        if ctx.files:
+            logger.debug(
+                f"[OxfmtPlugin] Files to check (first 10): {ctx.files[:10]}",
+            )
+        logger.debug(f"[OxfmtPlugin] Working directory: {ctx.cwd}")
+
+        # Resolve executable in a manner consistent with other tools
+        # Use --list-different to get file paths that need formatting (one per line)
+        # Note: --check and --list-different are mutually exclusive in oxfmt
+        cmd: list[str] = self._get_executable_command(tool_name="oxfmt") + [
+            "--list-different",
         ]
 
         # Add Lintro config injection args if available
         config_args = self._build_config_args()
         if config_args:
             cmd.extend(config_args)
+            logger.debug("[OxfmtPlugin] Using Lintro config injection")
 
-        # Add VCS ignore option if enabled
-        if self.options.get("use_vcs_ignore", False):
-            cmd.extend(["--vcs-use-ignore-file", "true"])
+        # Add oxfmt-specific CLI arguments from options
+        oxfmt_args = self._build_oxfmt_args(merged_options)
+        if oxfmt_args:
+            cmd.extend(oxfmt_args)
 
         cmd.extend(ctx.rel_files)
+        logger.debug(f"[OxfmtPlugin] Running: {' '.join(cmd)} (cwd={ctx.cwd})")
 
         try:
             result = self._run_subprocess(
@@ -214,11 +256,11 @@ class BiomePlugin(BaseToolPlugin):
             return self._create_timeout_result(timeout_val=ctx.timeout)
 
         output: str = result[1]
-        issues: list[Any] = parse_biome_output(output=output)
+        issues: list[OxfmtIssue] = parse_oxfmt_output(output=output)
         issues_count: int = len(issues)
         success: bool = issues_count == 0
 
-        # Standardize: suppress Biome's informational output when no issues
+        # Standardize: suppress oxfmt's informational output when no issues
         final_output: str | None = output
         if success:
             final_output = None
@@ -232,40 +274,49 @@ class BiomePlugin(BaseToolPlugin):
         )
 
     def fix(self, paths: list[str], options: dict[str, object]) -> ToolResult:
-        """Fix auto-fixable issues in files with Biome.
+        """Format files with oxfmt.
 
         Args:
-            paths: List of file or directory paths to fix.
+            paths: List of file or directory paths to format.
             options: Runtime options that override defaults.
 
         Returns:
             ToolResult: Result object with counts and messages.
         """
+        # Merge runtime options
+        merged_options = dict(self.options)
+        merged_options.update(options)
+
         # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(
             paths,
-            options,
-            no_files_message="No files to fix.",
+            merged_options,
+            no_files_message="No files to format.",
         )
         if ctx.should_skip:
-            return ctx.early_result  # type: ignore[return-value]
+            assert ctx.early_result is not None
+            return ctx.early_result
 
-        # Get Lintro config injection args if available
+        # Get Lintro config injection args
         config_args = self._build_config_args()
 
-        # Build check command for counting issues
-        check_cmd: list[str] = self._get_executable_command(tool_name="biome") + [
-            "lint",
-            "--reporter",
-            "json",
+        # Add oxfmt-specific CLI arguments from options
+        oxfmt_args = self._build_oxfmt_args(merged_options)
+
+        # Check for issues first using --list-different
+        # Note: --check and --list-different are mutually exclusive in oxfmt
+        check_cmd: list[str] = self._get_executable_command(tool_name="oxfmt") + [
+            "--list-different",
         ]
         if config_args:
             check_cmd.extend(config_args)
-        if self.options.get("use_vcs_ignore", False):
-            check_cmd.extend(["--vcs-use-ignore-file", "true"])
+        if oxfmt_args:
+            check_cmd.extend(oxfmt_args)
         check_cmd.extend(ctx.rel_files)
+        logger.debug(
+            f"[OxfmtPlugin] Checking: {' '.join(check_cmd)} (cwd={ctx.cwd})",
+        )
 
-        # Check for initial issues
         try:
             check_result = self._run_subprocess(
                 cmd=check_cmd,
@@ -276,19 +327,21 @@ class BiomePlugin(BaseToolPlugin):
             return self._create_timeout_result(timeout_val=ctx.timeout)
 
         check_output: str = check_result[1]
-        initial_issues: list[Any] = parse_biome_output(output=check_output)
+
+        # Parse initial issues
+        initial_issues: list[OxfmtIssue] = parse_oxfmt_output(output=check_output)
         initial_count: int = len(initial_issues)
 
         # Now fix the issues
-        fix_cmd: list[str] = self._get_executable_command(tool_name="biome") + [
-            "lint",
+        fix_cmd: list[str] = self._get_executable_command(tool_name="oxfmt") + [
             "--write",
         ]
         if config_args:
             fix_cmd.extend(config_args)
-        if self.options.get("use_vcs_ignore", False):
-            fix_cmd.extend(["--vcs-use-ignore-file", "true"])
+        if oxfmt_args:
+            fix_cmd.extend(oxfmt_args)
         fix_cmd.extend(ctx.rel_files)
+        logger.debug(f"[OxfmtPlugin] Fixing: {' '.join(fix_cmd)} (cwd={ctx.cwd})")
 
         try:
             fix_result = self._run_subprocess(
@@ -302,6 +355,7 @@ class BiomePlugin(BaseToolPlugin):
                 initial_issues=initial_issues,
                 initial_count=initial_count,
             )
+
         fix_output: str = fix_result[1]
 
         # Check for remaining issues after fixing
@@ -319,7 +373,9 @@ class BiomePlugin(BaseToolPlugin):
             )
 
         final_check_output: str = final_check_result[1]
-        remaining_issues: list[Any] = parse_biome_output(output=final_check_output)
+        remaining_issues: list[OxfmtIssue] = parse_oxfmt_output(
+            output=final_check_output,
+        )
         remaining_count: int = len(remaining_issues)
 
         # Calculate fixed issues
@@ -328,7 +384,7 @@ class BiomePlugin(BaseToolPlugin):
         # Build output message
         output_lines: list[str] = []
         if fixed_count > 0:
-            output_lines.append(f"Fixed {fixed_count} issue(s)")
+            output_lines.append(f"Fixed {fixed_count} formatting issue(s)")
 
         if remaining_count > 0:
             output_lines.append(
@@ -338,16 +394,17 @@ class BiomePlugin(BaseToolPlugin):
                 output_lines.append(f"  {issue.file} - {issue.message}")
             if len(remaining_issues) > 5:
                 output_lines.append(f"  ... and {len(remaining_issues) - 5} more")
-        elif remaining_count == 0 and fixed_count > 0:
-            output_lines.append("All issues were successfully auto-fixed")
+        elif fixed_count > 0:
+            # remaining_count == 0 is implied by the elif
+            output_lines.append("All formatting issues were successfully auto-fixed")
 
-        # Add verbose raw fix output only when explicitly requested
+        # Add verbose raw formatting output only when explicitly requested
         if (
-            self.options.get("verbose_fix_output", False)
+            merged_options.get("verbose_fix_output", False)
             and fix_output
             and fix_output.strip()
         ):
-            output_lines.append(f"Fix output:\n{fix_output}")
+            output_lines.append(f"Formatting output:\n{fix_output}")
 
         final_output: str | None = "\n".join(output_lines) if output_lines else None
 

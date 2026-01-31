@@ -19,7 +19,7 @@ DEFAULT_CONFIG_TEMPLATE = """\
 # https://github.com/lgtm-hq/py-lintro
 #
 # Lintro acts as the master configuration source for all tools.
-# Native tool configs (e.g., .prettierrc) are ignored by default unless
+# Native tool configs are ignored by default unless
 # explicitly referenced via config_source.
 #
 # enforce: Cross-cutting settings injected via CLI flags
@@ -28,7 +28,7 @@ DEFAULT_CONFIG_TEMPLATE = """\
 # tools: Per-tool enable/disable and optional config source
 
 enforce:
-  # Applied to ruff/black/prettier and other tools that honor line length
+  # Applied to ruff/black and other tools that honor line length
   line_length: 88
   # Aligns with project requires-python (pyproject.toml)
   target_python: "py313"
@@ -42,11 +42,6 @@ defaults:
   mypy:
     strict: true
     ignore_missing_imports: true
-  prettier:
-    semi: true
-    singleQuote: true
-    tabWidth: 2
-    printWidth: 88
 
 tools:
   ruff:
@@ -54,8 +49,6 @@ tools:
   black:
     enabled: true
   mypy:
-    enabled: true
-  prettier:
     enabled: true
   markdownlint:
     enabled: true
@@ -92,38 +85,9 @@ tools:
     enabled: true
   mypy:
     enabled: true
-  prettier:
-    enabled: true
 """
 
 # Native config templates
-PRETTIERRC_TEMPLATE = {
-    "semi": True,
-    "singleQuote": True,
-    "tabWidth": 2,
-    "printWidth": 88,
-    "trailingComma": "es5",
-    "proseWrap": "always",
-    "overrides": [
-        {
-            "files": "*.md",
-            "options": {
-                "printWidth": 88,
-                "proseWrap": "always",
-            },
-        },
-    ],
-}
-
-PRETTIERIGNORE_TEMPLATE = """\
-# Ignore artifacts
-build
-dist
-node_modules
-.venv
-.lintro
-"""
-
 MARKDOWNLINT_TEMPLATE = {
     "config": {
         "MD013": {
@@ -160,7 +124,7 @@ def _write_file(
         path.write_text(content, encoding="utf-8")
         console.print(f"  [green]✅ Created {path}[/green]")
         return True
-    except (OSError, Exception) as e:
+    except OSError as e:
         console.print(f"  [red]❌ Failed to write {path}: {e}[/red]")
         return False
 
@@ -203,24 +167,6 @@ def _generate_native_configs(
 
     console.print("\n[bold cyan]Generating native tool configs:[/bold cyan]")
 
-    # Prettier config
-    if _write_json_file(
-        path=Path(".prettierrc.json"),
-        data=PRETTIERRC_TEMPLATE,
-        console=console,
-        force=force,
-    ):
-        created.append(".prettierrc.json")
-
-    # Prettier ignore
-    if _write_file(
-        path=Path(".prettierignore"),
-        content=PRETTIERIGNORE_TEMPLATE,
-        console=console,
-        force=force,
-    ):
-        created.append(".prettierignore")
-
     # Markdownlint config
     if _write_json_file(
         path=Path(".markdownlint-cli2.jsonc"),
@@ -256,7 +202,7 @@ def _generate_native_configs(
 @click.option(
     "--with-native-configs",
     is_flag=True,
-    help="Also generate native tool configs (.prettierrc.json, etc.).",
+    help="Also generate native tool configs (.markdownlint-cli2.jsonc, etc.).",
 )
 def init_command(
     minimal: bool,
@@ -271,7 +217,7 @@ def init_command(
     ignoring native tool configs unless explicitly referenced.
 
     Use --with-native-configs to also generate native tool configuration
-    files for IDE integration (e.g., Prettier extension, markdownlint extension).
+    files for IDE integration (e.g., markdownlint extension).
 
     Args:
         minimal: Use minimal template with fewer comments.
@@ -303,7 +249,7 @@ def init_command(
         created_files.append(str(output_path))
         logger.debug(f"Created config file: {output_path.resolve()}")
 
-    except (OSError, PermissionError) as e:
+    except OSError as e:
         console.print(f"[red]Error: Failed to write {output_path}: {e}[/red]")
         raise SystemExit(1) from e
 
@@ -342,5 +288,5 @@ def init_command(
     console.print("  [dim]3.[/dim] Run [cyan]lintro check .[/cyan] to lint")
     if with_native_configs:
         console.print(
-            "  [dim]3.[/dim] Commit the config files to your repository",
+            "  [dim]4.[/dim] Commit the config files to your repository",
         )

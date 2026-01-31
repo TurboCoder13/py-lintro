@@ -118,6 +118,8 @@ jobs:
         run: ./scripts/docker/docker-build-test.sh
 
       - name: Run pytest suite inside Docker (compose)
+        env:
+          TOOLS_IMAGE: ${{ steps.tools.outputs.image }}
         run: ./scripts/docker/docker-test.sh
 
   publish:

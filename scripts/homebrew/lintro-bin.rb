@@ -36,9 +36,12 @@ class LintroBin < Formula
 
       However, the external tools must be installed separately.
       Install them via Homebrew:
-        brew install ruff black mypy bandit biome rust \\
+        brew install ruff black mypy bandit rust \\
           hadolint actionlint gitleaks markdownlint-cli2 prettier \\
           yamllint semgrep shellcheck shfmt sqlfluff taplo
+
+      For JavaScript/TypeScript linting and formatting, install via bun/npm:
+        bun add -d oxlint oxfmt
 
       After installing rust, add clippy and rustfmt via rustup:
         rustup component add clippy rustfmt

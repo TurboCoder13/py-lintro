@@ -22,13 +22,14 @@ from __future__ import annotations
 # These are updated by Renovate via regex matching
 TOOL_VERSIONS: dict[str, str] = {
     "actionlint": "1.7.5",
-    "biome": "2.3.9",
     "cargo_audit": "0.17.0",
     "clippy": "1.92.0",
     "gitleaks": "8.21.2",
     "hadolint": "2.12.0",
     "markdownlint": "0.17.2",
-    "prettier": "3.7.3",
+    "oxfmt": "0.27.0",
+    "oxlint": "1.42.0",
+    "prettier": "3.8.1",
     "pytest": "8.0.0",
     "rustfmt": "1.8.0",
     "semgrep": "1.50.0",

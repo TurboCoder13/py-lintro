@@ -27,7 +27,7 @@ decisions, component relationships, and guidelines for future development.
 ┌──────────▼──────────────────────────────────────────────────────────────────┐
 │                           Tool Implementations                              │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
-│  │  Ruff   │ │  Black  │ │  Mypy   │ │ Bandit  │ │Prettier │ │  Biome  │   │
+│  │  Ruff   │ │  Black  │ │  Mypy   │ │ Bandit  │ │Prettier │ │ Oxlint  │   │
 │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
 │  │Yamllint │ │Hadolint │ │Actionlint│ │Markdown │ │ Clippy  │ │ Pytest  │   │
@@ -399,7 +399,7 @@ complexity
 
 #### Option 4: Full Rust Rewrite (Very Long-term)
 
-Complete rewrite in Rust, similar to Ruff or Biome.
+Complete rewrite in Rust, similar to Ruff or Oxc.
 
 **Pros:** Maximum performance, smallest binary **Cons:** Major undertaking, loses Python
 ecosystem benefits

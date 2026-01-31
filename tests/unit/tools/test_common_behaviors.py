@@ -58,20 +58,6 @@ TOOL_CHECK_SUCCESS_CONFIGS = [
         (True, "All done! 1 file left unchanged."),
         id="black",
     ),
-    pytest.param(
-        "lintro.tools.definitions.prettier.PrettierPlugin",
-        ToolName.PRETTIER,
-        "test.js",
-        (True, "All matched files use Prettier code style!"),
-        id="prettier",
-    ),
-    pytest.param(
-        "lintro.tools.definitions.biome.BiomePlugin",
-        ToolName.BIOME,
-        "test.js",
-        (True, '{"diagnostics": []}'),
-        id="biome",
-    ),
 ]
 
 # Tools with their check failure configurations
@@ -84,13 +70,6 @@ TOOL_CHECK_FAILURE_CONFIGS = [
         (False, "would reformat test.py\nOh no! 1 file would be reformatted."),
         id="black",
     ),
-    pytest.param(
-        "lintro.tools.definitions.prettier.PrettierPlugin",
-        ToolName.PRETTIER,
-        "test.js",
-        (False, "[warn] test.js\n[warn] Code style issues found."),
-        id="prettier",
-    ),
 ]
 
 # Tools with their timeout configurations
@@ -101,18 +80,6 @@ TOOL_TIMEOUT_CONFIGS = [
         ToolName.BLACK,
         ["black"],
         id="black",
-    ),
-    pytest.param(
-        "lintro.tools.definitions.prettier.PrettierPlugin",
-        ToolName.PRETTIER,
-        ["npx", "prettier"],
-        id="prettier",
-    ),
-    pytest.param(
-        "lintro.tools.definitions.biome.BiomePlugin",
-        ToolName.BIOME,
-        ["biome"],
-        id="biome",
     ),
 ]
 
@@ -153,16 +120,6 @@ TOOL_EARLY_SKIP_CONFIGS = [
         "lintro.tools.definitions.black.BlackPlugin",
         ToolName.BLACK,
         id="black",
-    ),
-    pytest.param(
-        "lintro.tools.definitions.prettier.PrettierPlugin",
-        ToolName.PRETTIER,
-        id="prettier",
-    ),
-    pytest.param(
-        "lintro.tools.definitions.biome.BiomePlugin",
-        ToolName.BIOME,
-        id="biome",
     ),
     pytest.param(
         "lintro.tools.definitions.hadolint.HadolintPlugin",

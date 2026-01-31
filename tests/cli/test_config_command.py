@@ -47,7 +47,7 @@ def mock_config() -> LintroConfig:
         ),
         tools={
             "ruff": LintroToolConfig(enabled=True),
-            "prettier": LintroToolConfig(enabled=True),
+            "black": LintroToolConfig(enabled=True),
         },
         config_path="/path/to/.lintro-config.yaml",
     )
@@ -145,13 +145,13 @@ def test_json_output_includes_tool_order(
     result = cli_runner.invoke(cli, ["config", "--json"])
 
     data = json.loads(result.output)
-    # Should have tools in priority order (prettier before ruff)
+    # Should have tools in priority order (black before ruff)
     assert_that(data).contains("tool_execution_order")
     tool_names = [t["tool"] for t in data["tool_execution_order"]]
-    assert_that(tool_names).contains("prettier")
-    # Verify prettier comes before ruff (lower priority = runs first)
+    assert_that(tool_names).contains("black")
+    # Verify black comes before ruff (lower priority = runs first)
     assert_that(tool_names).contains("ruff")
-    assert_that(tool_names.index("prettier")).is_less_than(tool_names.index("ruff"))
+    assert_that(tool_names.index("black")).is_less_than(tool_names.index("ruff"))
 
 
 @patch("lintro.cli_utils.commands.config.get_config")
@@ -174,7 +174,7 @@ def test_json_output_includes_warnings(
         cli_runner: Click test runner instance.
     """
     mock_get_config.return_value = mock_config
-    mock_validate.return_value = ["prettier: Native config differs"]
+    mock_validate.return_value = ["black: Native config differs"]
     mock_injectable.return_value = True
 
     result = cli_runner.invoke(cli, ["config", "--json"])
@@ -182,7 +182,7 @@ def test_json_output_includes_warnings(
     data = json.loads(result.output)
     assert_that(data).contains("warnings")
     assert_that(len(data["warnings"])).is_greater_than(0)
-    assert_that(data["warnings"][0]).contains("prettier")
+    assert_that(data["warnings"][0]).contains("black")
 
 
 @patch("lintro.cli_utils.commands.config.get_config")

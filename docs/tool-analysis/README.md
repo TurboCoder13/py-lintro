@@ -32,13 +32,13 @@ implementations with the core tools themselves.
 - ⚠️ **Limited**: Runtime options, parser specification, debug capabilities
 - 🚀 **Enhanced**: Unified API, structured output, pipeline integration
 
-### [Biome Analysis](./biome-analysis.md)
+### [Oxc Analysis](./oxc-analysis.md)
 
-**Fast JavaScript/TypeScript/JSON/CSS Linter**
+**Fast Rust-based JavaScript/TypeScript Linter and Formatter**
 
-- ✅ **Preserved**: Linting, auto-fix, native config discovery, JSON output
-- ⚠️ **Limited**: Runtime rule customization, unsafe fixes, VCS integration
-- 🚀 **Enhanced**: Normalized issues, unified API, faster performance than ESLint
+- ✅ **Preserved**: Linting, formatting, auto-fix, native config discovery, JSON output
+- ⚠️ **Limited**: Plugin control, stdin piping, type-aware linting
+- 🚀 **Enhanced**: Normalized issues, unified API, much faster than traditional tools
 
 ### [Yamllint Analysis](./yamllint-analysis.md)
 

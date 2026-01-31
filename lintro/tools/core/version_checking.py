@@ -119,9 +119,10 @@ def get_install_hints() -> dict[str, str]:
         "pytest": (
             "Install via: pip install pytest>={version} or uv add pytest>={version}"
         ),
-        "prettier": "Install via: bun add -d prettier@>={version}",
-        "biome": "Install via: bun add -d @biomejs/biome@>={version}",
         "markdownlint": "Install via: bun add -d markdownlint-cli2@>={version}",
+        "oxfmt": "Install via: bun add -d oxfmt@>={version}",
+        "oxlint": "Install via: bun add -d oxlint@>={version}",
+        "prettier": "Install via: bun add -d prettier@>={version}",
         "hadolint": (
             "Install via: https://github.com/hadolint/hadolint/releases (v{version}+)"
         ),

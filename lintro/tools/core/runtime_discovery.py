@@ -45,8 +45,6 @@ TOOL_VERSION_COMMANDS: dict[str, list[str]] = {
     "pydoclint": ["pydoclint", "--version"],
     "yamllint": ["yamllint", "--version"],
     "pytest": ["pytest", "--version"],
-    "biome": ["biome", "--version"],
-    "prettier": ["prettier", "--version"],
     "actionlint": ["actionlint", "--version"],
     "hadolint": ["hadolint", "--version"],
     "markdownlint": ["markdownlint", "--version"],

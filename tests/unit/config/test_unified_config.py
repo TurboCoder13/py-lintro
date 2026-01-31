@@ -65,7 +65,6 @@ def test_line_length_has_tools() -> None:
         tools,
     ).contains("black")
     assert_that(tools).contains("markdownlint")
-    assert_that(tools).contains("prettier")
     assert_that(tools).contains("yamllint")
 
 
@@ -77,14 +76,13 @@ def test_line_length_has_injectable_tools() -> None:
     assert_that(injectable).contains("ruff")
     assert_that(injectable).contains("black")
     assert_that(injectable).contains("markdownlint")
-    # Prettier and yamllint are now injectable via Lintro config generation
-    assert_that(injectable).contains("prettier")
+    # yamllint is injectable via Lintro config generation
     assert_that(injectable).contains("yamllint")
 
 
 def test_formatters_have_lower_priority_than_linters() -> None:
     """Formatters should run before linters (lower priority value)."""
-    assert_that(DEFAULT_TOOL_PRIORITIES["prettier"]).is_less_than(
+    assert_that(DEFAULT_TOOL_PRIORITIES["black"]).is_less_than(
         DEFAULT_TOOL_PRIORITIES["ruff"],
     )
     assert_that(DEFAULT_TOOL_PRIORITIES["black"]).is_less_than(
@@ -102,8 +100,8 @@ def test_pytest_runs_last() -> None:
 
 @pytest.mark.parametrize(
     "tool_name",
-    ["ruff", "markdownlint", "yamllint", "black", "prettier"],
-    ids=["ruff", "markdownlint", "yamllint", "black", "prettier"],
+    ["ruff", "markdownlint", "yamllint", "black"],
+    ids=["ruff", "markdownlint", "yamllint", "black"],
 )
 def test_tool_is_injectable(tool_name: str) -> None:
     """Verify tools that support config injection.

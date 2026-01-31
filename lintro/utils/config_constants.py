@@ -57,14 +57,12 @@ GLOBAL_SETTINGS: dict[str, dict[str, Any]] = {
             ToolName.RUFF: "line-length",
             ToolName.BLACK: "line-length",
             ToolName.MARKDOWNLINT: "config.MD013.line_length",
-            ToolName.PRETTIER: "printWidth",
             ToolName.YAMLLINT: "rules.line-length.max",
         },
         "injectable": {
             ToolName.RUFF,
             ToolName.BLACK,
             ToolName.MARKDOWNLINT,
-            ToolName.PRETTIER,
             ToolName.YAMLLINT,
         },
     },
@@ -77,31 +75,29 @@ GLOBAL_SETTINGS: dict[str, dict[str, Any]] = {
     },
     "indent_size": {
         "tools": {
-            ToolName.PRETTIER: "tabWidth",
             ToolName.RUFF: "indent-width",
         },
-        "injectable": {ToolName.PRETTIER, ToolName.RUFF},
+        "injectable": {ToolName.RUFF},
     },
     "quote_style": {
         "tools": {
             ToolName.RUFF: "quote-style",
-            ToolName.PRETTIER: "singleQuote",
         },
-        "injectable": {ToolName.RUFF, ToolName.PRETTIER},
+        "injectable": {ToolName.RUFF},
     },
 }
 
 # Default tool priorities (lower = runs first).
 # Formatters run before linters to avoid false positives.
 DEFAULT_TOOL_PRIORITIES: dict[str, int] = {
-    ToolName.PRETTIER: 10,
     ToolName.BLACK: 15,
     ToolName.RUFF: 20,
+    ToolName.OXFMT: 25,
     ToolName.MARKDOWNLINT: 30,
     ToolName.YAMLLINT: 35,
     ToolName.BANDIT: 45,
-    ToolName.BIOME: 50,
     ToolName.HADOLINT: 50,
+    ToolName.OXLINT: 50,
     ToolName.ACTIONLINT: 55,
     ToolName.MYPY: 82,
     ToolName.TSC: 82,
