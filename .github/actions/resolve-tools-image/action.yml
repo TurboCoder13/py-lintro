@@ -23,7 +23,7 @@ inputs:
     description: Full stable image reference (may differ during migrations)
     required: false
     # yamllint disable-line rule:line-length
-    default: ghcr.io/lgtm-hq/lintro-tools:latest@sha256:b3940578b3fa10215d2ba4accba89250753360ec6f34cebe2dc588694084dad4
+    default: ghcr.io/lgtm-hq/lintro-tools:latest@sha256:e145d4f4942fd3165c4406fabbe34d98edbe02aabb4d99cd71e8db79b0116c8f
 outputs:
   image:
     description: Full tools image reference to use (either fresh pr-N or stable)

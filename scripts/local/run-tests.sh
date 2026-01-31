@@ -26,7 +26,7 @@ setup_python_env() {
 		if [ ! -x "/app/.venv/bin/python" ]; then
 			echo -e "${YELLOW}Detected missing /app/.venv; rebuilding venv with uv...${NC}"
 			export UV_LINK_MODE=${UV_LINK_MODE:-copy}
-			uv sync --dev --no-progress
+			uv sync --dev --extra tools --no-progress
 		fi
 	else
 		echo -e "${YELLOW}Running in local environment${NC}"
