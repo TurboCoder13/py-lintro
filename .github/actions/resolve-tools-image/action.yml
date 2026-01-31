@@ -41,6 +41,7 @@ runs:
         GITHUB_EVENT_NAME: ${{ github.event_name }}
         PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        GITHUB_EVENT_BEFORE: ${{ github.event.before }}
       run: |
         # Define tool-related file patterns that affect image CONTENT
         # Note: scripts/ci/tools-image-*.sh are CI helpers (tags, verify, summary)
@@ -67,9 +68,23 @@ runs:
               break
             fi
           done
+        elif [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+          # For push events, check if tool files changed in the pushed commits
+          echo "Checking for tool file changes in push..."
+          # Get the before/after from the push event
+          BEFORE_SHA="${GITHUB_EVENT_BEFORE:-}"
+          if [[ -n "$BEFORE_SHA" ]] && [[ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            changed_files=$(git diff --name-only "$BEFORE_SHA" HEAD 2>/dev/null || echo "")
+            for pattern in "${TOOL_PATTERNS[@]}"; do
+              if echo "$changed_files" | grep -q "$pattern"; then
+                echo "Found tool file change matching: $pattern"
+                tools_changed="true"
+                break
+              fi
+            done
+          fi
         else
-          # For push/other events, no dynamic build needed
-          echo "Not a pull_request event, using stable image"
+          echo "Event type: $GITHUB_EVENT_NAME, using stable image"
         fi
 
         echo "tools_changed=${tools_changed}" >> "$GITHUB_OUTPUT"
@@ -114,6 +129,43 @@ runs:
         tags: ${{ inputs.image-name }}:pr-${{ github.event.pull_request.number }}
         # Note: GHA cache not supported with docker driver
 
+    - name: Wait for tools image (push with changes)
+      if: steps.filter.outputs.tools_changed == 'true' && github.event_name == 'push'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        COMMIT_SHA: ${{ github.sha }}
+      run: |
+        echo "Tool files changed on push, waiting for tools-image workflow..."
+        # Wait for the tools-image workflow to complete (max 10 minutes)
+        MAX_ATTEMPTS=60
+        ATTEMPT=0
+        while [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
+          # Check if tools-image workflow has completed for this commit
+          STATUS=$(gh run list \
+            --workflow "Build - Tools Image" \
+            --commit "$COMMIT_SHA" \
+            --json status,conclusion \
+            --jq '.[0] | "\(.status) \(.conclusion)"' 2>/dev/null || echo "not_found")
+
+          echo "Attempt $((ATTEMPT+1))/$MAX_ATTEMPTS: tools-image workflow status: $STATUS"
+
+          if [[ "$STATUS" == "completed success" ]]; then
+            echo "Tools image workflow completed successfully!"
+            break
+          elif [[ "$STATUS" == "completed failure" ]] || [[ "$STATUS" == "completed cancelled" ]]; then
+            echo "::warning::Tools image workflow failed or was cancelled"
+            break
+          fi
+
+          ATTEMPT=$((ATTEMPT+1))
+          sleep 10
+        done
+
+        if [[ $ATTEMPT -ge $MAX_ATTEMPTS ]]; then
+          echo "::warning::Timed out waiting for tools-image workflow"
+        fi
+
     - name: Resolve image tag
       id: resolve
       shell: bash
@@ -127,8 +179,15 @@ runs:
         if [[ "$TOOLS_CHANGED" == "true" ]] \
             && [[ "$GITHUB_EVENT_NAME" == "pull_request" ]] \
             && [[ -n "$PR_NUMBER" ]]; then
+          # For PRs with tool changes, use the freshly built pr-N image
           IMAGE="${IMAGE_NAME}:pr-${PR_NUMBER}"
-          echo "Using fresh tools image: ${IMAGE}"
+          echo "Using fresh tools image for PR: ${IMAGE}"
+        elif [[ "$TOOLS_CHANGED" == "true" ]] \
+            && [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+          # For push events with tool changes, use :latest tag (not pinned digest)
+          # The tools-image.yml workflow will have pushed a new :latest
+          IMAGE="${IMAGE_NAME}:latest"
+          echo "Using latest tools image (tool files changed on push): ${IMAGE}"
         else
           # Use stable image (may be from different registry during migrations)
           IMAGE="${STABLE_IMAGE}"

@@ -12,6 +12,7 @@ from typing import Any
 
 from loguru import logger
 
+from lintro._tool_versions import TOOL_VERSIONS
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.oxlint.oxlint_issue import OxlintIssue
@@ -19,7 +20,6 @@ from lintro.parsers.oxlint.oxlint_parser import parse_oxlint_output
 from lintro.plugins.base import BaseToolPlugin
 from lintro.plugins.protocol import ToolDefinition
 from lintro.plugins.registry import register_tool
-from lintro._tool_versions import TOOL_VERSIONS
 from lintro.tools.core.option_validators import (
     filter_none_options,
     normalize_str_or_list,
