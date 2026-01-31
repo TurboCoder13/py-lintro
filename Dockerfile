@@ -4,7 +4,7 @@
 # Use the pre-built tools image to avoid rebuilding tools on every CI run.
 # TOOLS_IMAGE can be overridden at build time (e.g., for PR testing with new tools)
 # yamllint disable-line rule:line-length
-ARG TOOLS_IMAGE=ghcr.io/lgtm-hq/lintro-tools:latest@sha256:e145d4f4942fd3165c4406fabbe34d98edbe02aabb4d99cd71e8db79b0116c8f
+ARG TOOLS_IMAGE=ghcr.io/lgtm-hq/lintro-tools:latest@sha256:1701ba10f28d112599cfd81b21e0dbb4cae3f5d064728d614ed35a262a2e9ef4
 # hadolint ignore=DL3006
 FROM ${TOOLS_IMAGE} AS tools
 
@@ -21,7 +21,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Copy dependency files first for better layer caching
-COPY pyproject.toml uv.lock /app/
+COPY pyproject.toml uv.lock package.json /app/
 
 # Copy full source
 COPY lintro/ /app/lintro/
@@ -116,7 +116,8 @@ RUN printf '#!/bin/sh\nexec bun /opt/bun/install/global/node_modules/prettier/bi
 # Copy Python virtual environment and application from builder
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/lintro /app/lintro
-COPY --from=builder /app/pyproject.toml /app/
+COPY --from=builder /app/pyproject.toml /app/pyproject.toml
+COPY --from=builder /app/package.json /app/package.json
 
 # Copy entrypoint scripts
 COPY scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
