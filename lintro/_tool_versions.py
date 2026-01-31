@@ -32,18 +32,18 @@ if TYPE_CHECKING:
 # Non-npm external tools - updated by Renovate via custom regex managers
 # Keys use ToolName enum values for type safety
 TOOL_VERSIONS: dict[ToolName | str, str] = {
-    ToolName.ACTIONLINT: "1.7.5",
+    ToolName.ACTIONLINT: "1.7.10",
     ToolName.CARGO_AUDIT: "0.17.0",
     ToolName.CLIPPY: "1.92.0",
-    ToolName.GITLEAKS: "8.21.2",
-    ToolName.HADOLINT: "2.12.0",
+    ToolName.GITLEAKS: "8.30.0",
+    ToolName.HADOLINT: "2.14.0",
     ToolName.PYTEST: "8.0.0",
     ToolName.RUSTFMT: "1.8.0",
     ToolName.SEMGREP: "1.50.0",
     ToolName.SHELLCHECK: "0.11.0",
-    ToolName.SHFMT: "3.10.0",
+    ToolName.SHFMT: "3.12.0",
     ToolName.SQLFLUFF: "3.0.0",
-    ToolName.TAPLO: "0.10.0",
+    ToolName.TAPLO: "0.13.0",
 }
 
 # Mapping from npm package names to ToolName for npm-managed tools
