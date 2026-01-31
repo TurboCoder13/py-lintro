@@ -125,6 +125,8 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `tools-image-tags.sh`               | Generate Docker image tags for tools image build         | `./scripts/ci/tools-image-tags.sh --help`                                             |
 | `tools-image-resolve-tag.sh`        | Resolve tools image tag for reusable workflow callers    | `./scripts/ci/tools-image-resolve-tag.sh --help`                                      |
 | `tools-image-verify.sh`             | Verify required tools are installed in tools image       | `./scripts/ci/tools-image-verify.sh --help`                                           |
+| `tools-image-update-digest.sh`      | Update pinned tools image digest in repo files           | `./scripts/ci/tools-image-update-digest.sh --help`                                    |
+| `verify-tool-version-sync.py`       | Verify tool versions match between package.json and py   | `python scripts/ci/verify-tool-version-sync.py`                                       |
 
 #### Homebrew Scripts (`ci/homebrew/`)
 
