@@ -19,6 +19,7 @@ from lintro.parsers.oxfmt.oxfmt_parser import parse_oxfmt_output
 from lintro.plugins.base import BaseToolPlugin
 from lintro.plugins.protocol import ToolDefinition
 from lintro.plugins.registry import register_tool
+from lintro._tool_versions import TOOL_VERSIONS
 from lintro.tools.core.option_validators import (
     filter_none_options,
     validate_bool,
@@ -72,7 +73,7 @@ class OxfmtPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".oxfmtrc.json", ".oxfmtrc.jsonc"],
             version_command=["oxfmt", "--version"],
-            min_version="0.27.0",
+            min_version=TOOL_VERSIONS.get("oxfmt", "0.27.0"),
             default_options={
                 "timeout": OXFMT_DEFAULT_TIMEOUT,
                 "verbose_fix_output": False,

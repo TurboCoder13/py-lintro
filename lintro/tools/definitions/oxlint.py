@@ -19,6 +19,7 @@ from lintro.parsers.oxlint.oxlint_parser import parse_oxlint_output
 from lintro.plugins.base import BaseToolPlugin
 from lintro.plugins.protocol import ToolDefinition
 from lintro.plugins.registry import register_tool
+from lintro._tool_versions import TOOL_VERSIONS
 from lintro.tools.core.option_validators import (
     filter_none_options,
     normalize_str_or_list,
@@ -72,7 +73,7 @@ class OxlintPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".oxlintrc.json"],
             version_command=["oxlint", "--version"],
-            min_version="1.42.0",
+            min_version=TOOL_VERSIONS.get("oxlint", "1.42.0"),
             default_options={
                 "timeout": OXLINT_DEFAULT_TIMEOUT,
                 "quiet": False,

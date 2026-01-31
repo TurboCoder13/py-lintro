@@ -23,6 +23,7 @@ from lintro.parsers.prettier.prettier_parser import parse_prettier_output
 from lintro.plugins.base import BaseToolPlugin
 from lintro.plugins.protocol import ToolDefinition
 from lintro.plugins.registry import register_tool
+from lintro._tool_versions import TOOL_VERSIONS
 from lintro.tools.core.option_validators import (
     filter_none_options,
     validate_bool,
@@ -83,7 +84,7 @@ class PrettierPlugin(BaseToolPlugin):
                 "prettier.config.js",
             ],
             version_command=["prettier", "--version"],
-            min_version="3.8.1",
+            min_version=TOOL_VERSIONS.get("prettier", "3.8.1"),
             default_options={
                 "timeout": PRETTIER_DEFAULT_TIMEOUT,
                 "verbose_fix_output": False,
