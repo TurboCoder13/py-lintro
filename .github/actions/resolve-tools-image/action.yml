@@ -73,8 +73,10 @@ runs:
           echo "Checking for tool file changes in push..."
           # Get the before/after from the push event
           BEFORE_SHA="${GITHUB_EVENT_BEFORE:-}"
-          if [[ -n "$BEFORE_SHA" ]] && [[ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
-            changed_files=$(git diff --name-only "$BEFORE_SHA" HEAD 2>/dev/null || echo "")
+          ZERO_SHA="0000000000000000000000000000000000000000"
+          if [[ -n "$BEFORE_SHA" ]] && [[ "$BEFORE_SHA" != "$ZERO_SHA" ]]; then
+            changed_files=$(git diff --name-only "$BEFORE_SHA" HEAD \
+              2>/dev/null || echo "")
             for pattern in "${TOOL_PATTERNS[@]}"; do
               if echo "$changed_files" | grep -q "$pattern"; then
                 echo "Found tool file change matching: $pattern"
@@ -148,12 +150,13 @@ runs:
             --json status,conclusion \
             --jq '.[0] | "\(.status) \(.conclusion)"' 2>/dev/null || echo "not_found")
 
-          echo "Attempt $((ATTEMPT+1))/$MAX_ATTEMPTS: tools-image workflow status: $STATUS"
+          echo "Attempt $((ATTEMPT+1))/$MAX_ATTEMPTS: status: $STATUS"
 
           if [[ "$STATUS" == "completed success" ]]; then
             echo "Tools image workflow completed successfully!"
             break
-          elif [[ "$STATUS" == "completed failure" ]] || [[ "$STATUS" == "completed cancelled" ]]; then
+          elif [[ "$STATUS" == "completed failure" ]] \
+              || [[ "$STATUS" == "completed cancelled" ]]; then
             echo "::warning::Tools image workflow failed or was cancelled"
             break
           fi
