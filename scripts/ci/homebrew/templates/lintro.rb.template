@@ -21,13 +21,14 @@ class Lintro < Formula
   # CLI tools installed via Homebrew
   depends_on "actionlint"
   depends_on "bandit"
-  depends_on "node"  # Required for oxlint and oxfmt via npm
   depends_on "black"
   depends_on "gitleaks"
   depends_on "hadolint"
   depends_on "libyaml"
   depends_on "markdownlint-cli2"
   depends_on "mypy"
+  depends_on "oxfmt"
+  depends_on "oxlint"
   depends_on "prettier"
   depends_on "python@3.13"
   depends_on "ruff"
@@ -62,11 +63,6 @@ class Lintro < Formula
 
     # Install lintro itself
     venv.pip_install_and_link buildpath
-
-    # Install oxlint and oxfmt via npm (node dependency provides npm)
-    system "npm", "install", "-g", "--prefix", libexec, "oxlint", "oxfmt"
-    bin.install_symlink Dir[libexec/"bin/oxlint"]
-    bin.install_symlink Dir[libexec/"bin/oxfmt"]
   end
 
   def caveats
@@ -84,6 +80,8 @@ class Lintro < Formula
         - actionlint - GitHub Actions workflow linter
         - gitleaks - Secret detection in git repos
         - markdownlint-cli2 - Markdown linter
+        - oxlint - JavaScript/TypeScript linter
+        - oxfmt - JavaScript/TypeScript formatter
         - prettier - Code formatter
         - yamllint - YAML linter
         - semgrep - Security scanner
@@ -91,10 +89,6 @@ class Lintro < Formula
         - shfmt - Shell script formatter
         - sqlfluff - SQL linter and formatter
         - taplo - TOML linter and formatter
-
-      Included tools (installed via npm):
-        - oxlint - JavaScript/TypeScript linter (Rust-based)
-        - oxfmt - JavaScript/TypeScript formatter
 
       Bundled tools:
         - pydoclint - Python docstring linter

@@ -99,7 +99,8 @@ def test_create_temp_tsconfig_creates_file_with_extends(
         assert_that(temp_path.exists()).is_true()
 
         content = json.loads(temp_path.read_text())
-        assert_that(content["extends"]).is_equal_to("./tsconfig.json")
+        # Temp file is in system temp dir, so extends uses absolute path
+        assert_that(content["extends"]).is_equal_to(str(base_tsconfig.resolve()))
     finally:
         temp_path.unlink(missing_ok=True)
 
@@ -126,7 +127,9 @@ def test_create_temp_tsconfig_includes_specified_files(
 
     try:
         content = json.loads(temp_path.read_text())
-        assert_that(content["include"]).is_equal_to(files)
+        # Files are converted to absolute paths since temp file is in system temp dir
+        expected_files = [str((tmp_path / f).resolve()) for f in files]
+        assert_that(content["include"]).is_equal_to(expected_files)
         assert_that(content["exclude"]).is_equal_to([])
     finally:
         temp_path.unlink(missing_ok=True)
@@ -158,16 +161,21 @@ def test_create_temp_tsconfig_sets_no_emit(
         temp_path.unlink(missing_ok=True)
 
 
-def test_create_temp_tsconfig_file_created_in_cwd(
+def test_create_temp_tsconfig_file_created_in_system_temp(
     tsc_plugin: TscPlugin,
     tmp_path: Path,
 ) -> None:
-    """Verify temp tsconfig is created in the working directory.
+    """Verify temp tsconfig is created in the system temp directory.
+
+    This avoids permission issues in Docker containers where the working
+    directory may be a read-only volume mount.
 
     Args:
         tsc_plugin: Plugin instance fixture.
         tmp_path: Pytest temporary directory.
     """
+    import tempfile
+
     base_tsconfig = tmp_path / "tsconfig.json"
     base_tsconfig.write_text("{}")
 
@@ -178,8 +186,10 @@ def test_create_temp_tsconfig_file_created_in_cwd(
     )
 
     try:
-        assert_that(temp_path.parent).is_equal_to(tmp_path)
-        assert_that(temp_path.name).starts_with(".lintro-tsc-")
+        # Temp file should be in system temp directory, not cwd
+        system_temp = Path(tempfile.gettempdir())
+        assert_that(temp_path.parent).is_equal_to(system_temp)
+        assert_that(temp_path.name).starts_with("lintro-tsc-")
         assert_that(temp_path.name).ends_with(".json")
     finally:
         temp_path.unlink(missing_ok=True)

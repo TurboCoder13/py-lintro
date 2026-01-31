@@ -308,14 +308,43 @@ class SemgrepPlugin(BaseToolPlugin):
             issues_count = len(issues)
 
             # Check for errors in the response
+            # Partial parsing errors (e.g., TypeScript 4.9+ 'satisfies' keyword)
+            # are warnings, not fatal errors. Only fail on actual errors.
             errors = semgrep_data.get("errors", [])
-            execution_success = len(errors) == 0 and not execution_failure
-            has_errors = execution_failure or len(errors) > 0
+            fatal_errors = [e for e in errors if e.get("level", "error") == "error"]
+
+            def _is_partial_parsing(err: dict[str, Any]) -> bool:
+                """Check if error is a PartialParsing warning.
+
+                Semgrep's error type can be either a string or a list where
+                the first element is the error type name.
+                """
+                if err.get("level") != "warn":
+                    return False
+                err_type = err.get("type")
+                if isinstance(err_type, str):
+                    return err_type == "PartialParsing"
+                if isinstance(err_type, list) and len(err_type) > 0:
+                    return str(err_type[0]) == "PartialParsing"
+                return False
+
+            parsing_warnings = [e for e in errors if _is_partial_parsing(e)]
+
+            # Log parsing warnings but don't fail
+            if parsing_warnings:
+                logger.warning(
+                    "[semgrep] {} file(s) partially parsed (may use unsupported "
+                    "syntax like TypeScript 4.9+ 'satisfies')",
+                    len(parsing_warnings),
+                )
+
+            execution_success = len(fatal_errors) == 0 and not execution_failure
+            has_fatal_errors = execution_failure or len(fatal_errors) > 0
 
             return ToolResult(
                 name=self.definition.name,
                 success=execution_success,
-                output=output if has_errors else None,
+                output=output if has_fatal_errors else None,
                 issues_count=issues_count,
                 issues=issues,
             )
