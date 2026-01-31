@@ -1,6 +1,6 @@
 """Oxlint tool definition.
 
-Oxlint is a fast JavaScript/TypeScript linter with 655+ built-in rules.
+Oxlint is a fast JavaScript/TypeScript linter with 661+ built-in rules.
 It provides fast linting with minimal configuration.
 """
 
@@ -64,7 +64,7 @@ class OxlintPlugin(BaseToolPlugin):
         """
         return ToolDefinition(
             name="oxlint",
-            description=("Fast JavaScript/TypeScript linter with 655+ built-in rules"),
+            description=("Fast JavaScript/TypeScript linter with 661+ built-in rules"),
             can_fix=True,
             tool_type=ToolType.LINTER,
             file_patterns=OXLINT_FILE_PATTERNS,

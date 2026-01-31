@@ -763,7 +763,7 @@ lintro check src/ --tools tsc,oxlint,oxfmt
 
 #### Oxlint Configuration
 
-Oxlint is a fast JavaScript/TypeScript linter (50-100x faster than ESLint) with 655+
+Oxlint is a fast JavaScript/TypeScript linter (50-100x faster than ESLint) with 661+
 built-in rules from ESLint, TypeScript, React, JSX-a11y, Unicorn, and more.
 
 **Native Config Detection:**

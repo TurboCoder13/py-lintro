@@ -5,7 +5,7 @@
 The Oxc (Oxidation Compiler) project provides extremely fast JavaScript/TypeScript
 tooling written in Rust. Lintro integrates two Oxc tools:
 
-- **oxlint**: Linter (50-100x faster than ESLint, 655+ built-in rules)
+- **oxlint**: Linter (50-100x faster than ESLint, 661+ built-in rules)
 - **oxfmt**: Formatter (30x faster than Prettier)
 
 This analysis compares Lintro's wrapper implementations with the core tools.
@@ -16,7 +16,7 @@ This analysis compares Lintro's wrapper implementations with the core tools.
 
 ### Core Capabilities
 
-- **Linting**: 655+ rules covering ESLint, TypeScript, React, JSX-a11y, Unicorn, and
+- **Linting**: 661+ rules covering ESLint, TypeScript, React, JSX-a11y, Unicorn, and
   more
 - **Performance**: Extremely fast execution (50-100x faster than ESLint)
 - **Auto-fixing**: Many rules support automatic fixes via `--fix`
