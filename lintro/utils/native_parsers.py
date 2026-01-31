@@ -357,9 +357,10 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
             try:
                 with config_path.open(encoding="utf-8") as f:
                     content = f.read()
-                    # Strip JSONC comments safely
+                    # Strip JSONC comments and trailing commas safely
                     if config_file.endswith(".jsonc"):
                         content = _strip_jsonc_comments(content)
+                        content = _strip_trailing_commas(content)
                     loaded = json.loads(content)
                     return loaded if isinstance(loaded, dict) else {}
             except json.JSONDecodeError as e:

@@ -200,10 +200,21 @@ def test_definition_file_patterns(
         get_plugin: Fixture factory to get plugin instances.
     """
     oxlint_plugin = get_plugin("oxlint")
-    assert_that(oxlint_plugin.definition.file_patterns).contains("*.js")
-    assert_that(oxlint_plugin.definition.file_patterns).contains("*.ts")
-    assert_that(oxlint_plugin.definition.file_patterns).contains("*.jsx")
-    assert_that(oxlint_plugin.definition.file_patterns).contains("*.tsx")
+    patterns = oxlint_plugin.definition.file_patterns
+    # Core JS/TS patterns
+    assert_that(patterns).contains("*.js")
+    assert_that(patterns).contains("*.ts")
+    assert_that(patterns).contains("*.jsx")
+    assert_that(patterns).contains("*.tsx")
+    # Module variants
+    assert_that(patterns).contains("*.mjs")
+    assert_that(patterns).contains("*.cjs")
+    assert_that(patterns).contains("*.mts")
+    assert_that(patterns).contains("*.cts")
+    # Framework support
+    assert_that(patterns).contains("*.vue")
+    assert_that(patterns).contains("*.svelte")
+    assert_that(patterns).contains("*.astro")
 
 
 def test_definition_has_version_command(

@@ -394,8 +394,8 @@ class OxfmtPlugin(BaseToolPlugin):
                 output_lines.append(f"  {issue.file} - {issue.message}")
             if len(remaining_issues) > 5:
                 output_lines.append(f"  ... and {len(remaining_issues) - 5} more")
-
-        elif remaining_count == 0 and fixed_count > 0:
+        elif fixed_count > 0:
+            # remaining_count == 0 is implied by the elif
             output_lines.append("All formatting issues were successfully auto-fixed")
 
         # Add verbose raw formatting output only when explicitly requested

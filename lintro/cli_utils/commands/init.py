@@ -249,7 +249,7 @@ def init_command(
         created_files.append(str(output_path))
         logger.debug(f"Created config file: {output_path.resolve()}")
 
-    except (OSError, PermissionError) as e:
+    except OSError as e:
         console.print(f"[red]Error: Failed to write {output_path}: {e}[/red]")
         raise SystemExit(1) from e
 
