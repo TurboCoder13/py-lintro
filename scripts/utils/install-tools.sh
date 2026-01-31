@@ -26,6 +26,7 @@ get_tool_version() {
 import runpy
 import sys
 
+sys.path.insert(0, '$PROJECT_ROOT')
 mod = runpy.run_path('$PROJECT_ROOT/lintro/_tool_versions.py')
 # Use get_tool_version which handles ToolName keys and package aliases
 version = mod['get_tool_version']('$tool_name')

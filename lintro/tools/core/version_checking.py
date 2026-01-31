@@ -59,7 +59,7 @@ import os
 
 from loguru import logger
 
-from lintro._tool_versions import TOOL_VERSIONS
+from lintro._tool_versions import _PACKAGE_ALIASES, TOOL_VERSIONS
 from lintro.enums.tool_name import ToolName
 
 
@@ -101,13 +101,28 @@ def get_minimum_versions() -> dict[ToolName | str, str]:
     """Get minimum version requirements for external tools.
 
     Returns versions from the _tool_versions module for tools that users
-    must install separately.
+    must install separately. Includes both ToolName enum keys and string
+    aliases for compatibility with install hints.
 
     Returns:
         dict[ToolName | str, str]: Dictionary mapping tool names to minimum
-            version strings.
+            version strings. Includes ToolName keys, string equivalents
+            (e.g., "pytest"), and package aliases (e.g., "typescript" for TSC).
     """
-    return dict(TOOL_VERSIONS)
+    result: dict[ToolName | str, str] = dict(TOOL_VERSIONS)
+
+    # Add string keys for each ToolName (e.g., ToolName.PYTEST -> "pytest")
+    # This enables get_install_hints() to match templates using string keys
+    for tool_name, version in TOOL_VERSIONS.items():
+        if isinstance(tool_name, ToolName):
+            result[tool_name.value] = version
+
+    # Add package aliases (e.g., "typescript" -> TSC version)
+    for alias, tool_name in _PACKAGE_ALIASES.items():
+        if tool_name in TOOL_VERSIONS:
+            result[alias] = TOOL_VERSIONS[tool_name]
+
+    return result
 
 
 def get_install_hints() -> dict[str, str]:
