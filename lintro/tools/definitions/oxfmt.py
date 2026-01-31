@@ -12,6 +12,8 @@ from typing import Any
 
 from loguru import logger
 
+from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.oxfmt.oxfmt_issue import OxfmtIssue
@@ -72,7 +74,7 @@ class OxfmtPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".oxfmtrc.json", ".oxfmtrc.jsonc"],
             version_command=["oxfmt", "--version"],
-            min_version="0.27.0",
+            min_version=get_min_version(ToolName.OXFMT),
             default_options={
                 "timeout": OXFMT_DEFAULT_TIMEOUT,
                 "verbose_fix_output": False,

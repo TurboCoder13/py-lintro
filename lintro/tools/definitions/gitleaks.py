@@ -16,6 +16,8 @@ from typing import Any
 
 from loguru import logger
 
+from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.gitleaks.gitleaks_parser import parse_gitleaks_output
@@ -65,7 +67,7 @@ class GitleaksPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".gitleaks.toml"],
             version_command=["gitleaks", "version"],
-            min_version="8.21.2",
+            min_version=get_min_version(ToolName.GITLEAKS),
             default_options={
                 "timeout": GITLEAKS_DEFAULT_TIMEOUT,
                 "no_git": True,  # Default to scanning files without git history

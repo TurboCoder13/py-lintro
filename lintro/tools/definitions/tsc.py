@@ -31,6 +31,8 @@ from typing import Any, NoReturn
 
 from loguru import logger
 
+from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.tsc.tsc_parser import parse_tsc_output
@@ -71,7 +73,7 @@ class TscPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=["tsconfig.json"],
             version_command=["tsc", "--version"],
-            min_version="4.0.0",
+            min_version=get_min_version(ToolName.TSC),
             default_options={
                 "timeout": TSC_DEFAULT_TIMEOUT,
                 "project": None,

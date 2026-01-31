@@ -10,6 +10,8 @@ import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
 from typing import Any
 
+from lintro._tool_versions import get_min_version
+from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.sqlfluff.sqlfluff_parser import parse_sqlfluff_output
@@ -56,7 +58,7 @@ class SqlfluffPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".sqlfluff", "pyproject.toml"],
             version_command=["sqlfluff", "--version"],
-            min_version="3.0.0",
+            min_version=get_min_version(ToolName.SQLFLUFF),
             default_options={
                 "timeout": SQLFLUFF_DEFAULT_TIMEOUT,
                 "dialect": None,
