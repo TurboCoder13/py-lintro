@@ -86,16 +86,17 @@ def _parse_diagnostic(diagnostic: dict[str, Any]) -> OxlintIssue | None:
 
     # Extract line and column from labels array
     # labels[0].span contains {offset, length, line, column}
-    line = 0
-    column = 0
+    # Default to 1 for 1-based line/column numbering
+    line = 1
+    column = 1
     labels = diagnostic.get("labels", [])
     if isinstance(labels, list) and len(labels) > 0:
         first_label = labels[0]
         if isinstance(first_label, dict):
             span = first_label.get("span", {})
             if isinstance(span, dict):
-                line = span.get("line", 0)
-                column = span.get("column", 0)
+                line = span.get("line", 1)
+                column = span.get("column", 1)
 
     # Oxlint does not currently indicate fixable issues in JSON output
     # Default to False

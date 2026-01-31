@@ -367,6 +367,8 @@ def _load_native_tool_config(tool_name: str) -> dict[str, Any]:
                     f"Failed to parse oxfmt config {config_file}: {e.msg} "
                     f"(line {e.lineno}, col {e.colno})",
                 )
+            except FileNotFoundError:
+                logger.debug(f"Oxfmt config not found: {config_file}")
             except OSError as e:
                 logger.debug(f"Could not read oxfmt config {config_file}: {e}")
         return {}

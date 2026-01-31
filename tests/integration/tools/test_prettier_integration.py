@@ -86,6 +86,8 @@ def test_definition_file_patterns(get_plugin: Callable[[str], BaseToolPlugin]) -
     # Prettier handles non-JS/TS files (JS/TS delegated to oxfmt)
     has_expected_patterns = "*.css" in patterns and "*.json" in patterns
     assert_that(has_expected_patterns).is_true()
+    # Verify JS/TS patterns are NOT in prettier (handled by oxfmt)
+    assert_that("*.js" in patterns or "*.ts" in patterns).is_false()
 
 
 # --- Integration tests for prettier check command ---

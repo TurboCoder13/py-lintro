@@ -950,7 +950,6 @@ main() {
 	echo "  - sqlfluff (SQL linting and formatting)"
 	echo "  - taplo (TOML linting and formatting)"
 	echo "  - tsc (TypeScript type checking)"
-	echo "  - mypy (Python type checking)"
 	echo "  - yamllint (YAML linting)"
 	echo ""
 

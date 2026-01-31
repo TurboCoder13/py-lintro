@@ -23,6 +23,9 @@ TOOL_EMOJIS: dict[str, str] = {
     "markdownlint": "🔧",
     "actionlint": "🔧",
     "bandit": "🔧",
+    "oxlint": "⚡",
+    "oxfmt": "✨",
+    "prettier": "💅",
 }
 DEFAULT_EMOJI: str = "🔧"
 BORDER_LENGTH: int = 70

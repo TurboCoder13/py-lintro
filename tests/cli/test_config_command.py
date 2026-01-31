@@ -174,7 +174,7 @@ def test_json_output_includes_warnings(
         cli_runner: Click test runner instance.
     """
     mock_get_config.return_value = mock_config
-    mock_validate.return_value = ["prettier: Native config differs"]
+    mock_validate.return_value = ["black: Native config differs"]
     mock_injectable.return_value = True
 
     result = cli_runner.invoke(cli, ["config", "--json"])
@@ -182,7 +182,7 @@ def test_json_output_includes_warnings(
     data = json.loads(result.output)
     assert_that(data).contains("warnings")
     assert_that(len(data["warnings"])).is_greater_than(0)
-    assert_that(data["warnings"][0]).contains("prettier")
+    assert_that(data["warnings"][0]).contains("black")
 
 
 @patch("lintro.cli_utils.commands.config.get_config")

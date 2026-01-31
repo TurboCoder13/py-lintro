@@ -1,8 +1,9 @@
 """Prettier tool definition.
 
-Prettier is an opinionated code formatter that supports many languages
-including JavaScript, TypeScript, CSS, HTML, JSON, YAML, Markdown, and more.
-It enforces a consistent code style by parsing and re-printing code.
+Prettier is an opinionated code formatter for CSS, HTML, JSON, YAML, Markdown,
+and GraphQL. JavaScript/TypeScript files are handled by oxfmt for better
+performance. Prettier enforces a consistent code style by parsing and
+re-printing code.
 """
 
 from __future__ import annotations
@@ -51,8 +52,8 @@ PRETTIER_FILE_PATTERNS: list[str] = [
 class PrettierPlugin(BaseToolPlugin):
     """Prettier code formatter plugin.
 
-    This plugin integrates Prettier with Lintro for formatting
-    JavaScript, TypeScript, CSS, HTML, JSON, YAML, and more.
+    This plugin integrates Prettier with Lintro for formatting CSS, HTML,
+    JSON, YAML, Markdown, and GraphQL files. JS/TS files are handled by oxfmt.
     """
 
     @property

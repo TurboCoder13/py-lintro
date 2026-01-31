@@ -101,8 +101,6 @@ def temp_js_file_formatted(tmp_path: Path) -> str:
     Returns:
         Path to the created file as a string.
     """
-    import subprocess
-
     file_path = tmp_path / "formatted_file.js"
     # Write unformatted code first
     file_path.write_text(

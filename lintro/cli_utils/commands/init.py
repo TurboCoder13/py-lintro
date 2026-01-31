@@ -124,7 +124,7 @@ def _write_file(
         path.write_text(content, encoding="utf-8")
         console.print(f"  [green]✅ Created {path}[/green]")
         return True
-    except (OSError, Exception) as e:
+    except OSError as e:
         console.print(f"  [red]❌ Failed to write {path}: {e}[/red]")
         return False
 

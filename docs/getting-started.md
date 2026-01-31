@@ -212,7 +212,7 @@ lintro check src/ --tools oxlint,oxfmt
 
 - **Oxlint** - Fast Rust-based linter for JS/TS
 - **Oxfmt** - Fast Rust-based formatter for JS/TS
-- **Prettier** - Code formatter for JS, TS, JSON, CSS, HTML
+- **Prettier** - Code formatter for JSON, CSS, HTML, YAML, Markdown
 
 ### TypeScript Type Checking
 
@@ -230,27 +230,6 @@ lintro check src/ --tools tsc --tool-options "tsc:project=tsconfig.app.json"
 **Tools:**
 
 - **TypeScript Compiler (tsc)** - Static type checking for TypeScript files
-
-### JavaScript/TypeScript Projects (Oxc Tools)
-
-```bash
-# Check JS/TS files with Oxlint (50-100x faster than ESLint)
-lintro check src/ --tools oxlint
-
-# Format JS/TS files with Oxfmt (30x faster than Prettier)
-lintro format src/ --tools oxfmt
-
-# Suppress warnings, only report errors
-lintro check src/ --tools oxlint --tool-options "oxlint:quiet=True"
-
-# Configure formatting options
-lintro format src/ --tools oxfmt --tool-options "oxfmt:print_width=120"
-```
-
-**Tools:**
-
-- **Oxlint** - Fast JavaScript/TypeScript linter with 655+ built-in rules
-- **Oxfmt** - Fast JavaScript/TypeScript formatter (Prettier-compatible)
 
 ### Markdown Files
 

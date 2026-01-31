@@ -112,7 +112,6 @@ NATIVE_CONFIG_PATTERNS: dict[str, list[str]] = {
     ],
     "oxlint": [
         ".oxlintrc.json",
-        "oxlint.json",
     ],
     "oxfmt": [
         ".oxfmtrc.json",

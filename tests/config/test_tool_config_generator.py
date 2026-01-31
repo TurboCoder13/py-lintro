@@ -248,20 +248,30 @@ def test_hadolint_config_file_has_correct_keys() -> None:
 # =============================================================================
 
 
-def test_get_defaults_injection_args_oxlint() -> None:
-    """Should return correct config args for oxlint."""
-    config_path = Path("/tmp/test.json")
+def test_get_defaults_injection_args_oxlint(tmp_path: Path) -> None:
+    """Should return correct config args for oxlint.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+    """
+    config_path = tmp_path / "test.json"
+    config_path.write_text("{}")
     args = get_defaults_injection_args("oxlint", config_path)
 
-    assert_that(args).is_equal_to(["--config", "/tmp/test.json"])
+    assert_that(args).is_equal_to(["--config", str(config_path)])
 
 
-def test_get_defaults_injection_args_oxfmt() -> None:
-    """Should return correct config args for oxfmt."""
-    config_path = Path("/tmp/test.json")
+def test_get_defaults_injection_args_oxfmt(tmp_path: Path) -> None:
+    """Should return correct config args for oxfmt.
+
+    Args:
+        tmp_path: Pytest temporary directory fixture.
+    """
+    config_path = tmp_path / "test.json"
+    config_path.write_text("{}")
     args = get_defaults_injection_args("oxfmt", config_path)
 
-    assert_that(args).is_equal_to(["--config", "/tmp/test.json"])
+    assert_that(args).is_equal_to(["--config", str(config_path)])
 
 
 def test_has_native_config_oxlint(

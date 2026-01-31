@@ -91,7 +91,6 @@ def parse_oxfmt_output(output: str | None) -> list[OxfmtIssue]:
                     line=1,
                     column=1,
                     message="File is not formatted",
-                    code="FORMAT",
                 ),
             )
         except (AttributeError, TypeError) as e:

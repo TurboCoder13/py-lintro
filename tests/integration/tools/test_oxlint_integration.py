@@ -333,6 +333,7 @@ function test() {
     )
 
     oxlint_plugin = get_plugin("oxlint")
+    original_content = file_path.read_text()
     result = oxlint_plugin.fix([str(file_path)], {})
 
     assert_that(result).is_not_none()
@@ -341,6 +342,11 @@ function test() {
     # File may or may not change depending on what oxlint considers fixable
     # Just verify the fix operation completed successfully
     assert_that(result.initial_issues_count).is_not_none()
+
+    # If issues were fixed, file content should have changed
+    if result.fixed_issues_count and result.fixed_issues_count > 0:
+        new_content = file_path.read_text()
+        assert_that(new_content).is_not_equal_to(original_content)
 
 
 def test_fix_clean_file_unchanged(

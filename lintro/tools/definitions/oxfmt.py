@@ -149,15 +149,16 @@ class OxfmtPlugin(BaseToolPlugin):
             column=1,
         )
         combined_issues = (initial_issues or []) + [timeout_issue]
+        combined_count = len(combined_issues)
         return ToolResult(
             name=self.definition.name,
             success=False,
             output=timeout_msg,
-            issues_count=len(combined_issues),
+            issues_count=combined_count,
             issues=combined_issues,
-            initial_issues_count=initial_count,
+            initial_issues_count=combined_count,
             fixed_issues_count=0,
-            remaining_issues_count=len(combined_issues),
+            remaining_issues_count=combined_count,
         )
 
     def _build_oxfmt_args(self, options: dict[str, object]) -> list[str]:

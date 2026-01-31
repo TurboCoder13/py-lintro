@@ -54,6 +54,7 @@ jobs:
     env:
       LINTRO_OUTPUT_DIR: /tmp/lintro
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Job-level fallback; step-level TOOLS_IMAGE (line 123) takes precedence
       TOOLS_IMAGE: ${{ needs.tools-image.outputs.image-tag }}
     outputs:
       coverage-percentage: ${{ steps.coverage.outputs.percentage }}

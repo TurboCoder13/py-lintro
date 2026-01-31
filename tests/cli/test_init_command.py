@@ -67,12 +67,10 @@ def test_markdownlint_config_has_correct_content() -> None:
         result = runner.invoke(init_command, ["--with-native-configs"])
         assert_that(result.exit_code).is_equal_to(0)
 
-        import json
-
+        # Use string assertions since JSONC files may contain comments
         content = Path(".markdownlint-cli2.jsonc").read_text()
-        data = json.loads(content)
-        assert_that(data).contains("config")
-        assert_that(data["config"]).contains("MD013")
+        assert_that(content).contains('"config"')
+        assert_that(content).contains("MD013")
 
 
 def test_native_configs_skips_existing_without_force() -> None:
