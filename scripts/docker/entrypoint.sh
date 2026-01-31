@@ -36,6 +36,12 @@ fi
 
 VENV_PYTHON="/app/.venv/bin/python"
 
+# Change to /code if it exists and has content (user's mounted project)
+# This ensures lintro scans the user's code, not /app (lintro's installation)
+if [ -d "/code" ] && [ "$(ls -A /code 2>/dev/null)" ]; then
+	cd /code
+fi
+
 if [ "$1" = "lintro" ]; then
 	shift
 	exec "$VENV_PYTHON" -m lintro "$@"
