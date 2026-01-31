@@ -1,38 +1,42 @@
 """Tool version requirements for lintro.
 
 This module is the single source of truth for external tool version requirements.
-Renovate is configured to update versions directly in this file.
 
 External tools are those that users must install separately (not bundled with lintro).
 Bundled Python tools (ruff, black, bandit, etc.) are managed via pyproject.toml
 dependencies and don't need tracking here.
 
-To update a version:
-1. Edit TOOL_VERSIONS below
-2. Renovate will automatically create PRs for updates
+Version sources:
+- npm tools (prettier, oxlint, etc.): Read from package.json
+  (Renovate updates it natively)
+- Non-npm tools (hadolint, shellcheck, etc.): Defined in TOOL_VERSIONS below
+  (Renovate updates via custom regex managers)
 
 For shell scripts that need these versions, use:
-    python3 -c "from lintro._tool_versions import TOOL_VERSIONS; \
-print(TOOL_VERSIONS['toolname'])"
+    python3 -c "from lintro._tool_versions import get_tool_version; \
+print(get_tool_version('toolname'))"
 """
 
 from __future__ import annotations
 
+import json
+from functools import lru_cache
+from pathlib import Path
+from typing import TYPE_CHECKING
+
 from lintro.enums.tool_name import ToolName
 
-# External tools that users must install separately
-# These are updated by Renovate via regex matching
-# Keys use ToolName enum values (lowercase strings) for type safety
+if TYPE_CHECKING:
+    pass
+
+# Non-npm external tools - updated by Renovate via custom regex managers
+# Keys use ToolName enum values for type safety
 TOOL_VERSIONS: dict[ToolName | str, str] = {
     ToolName.ACTIONLINT: "1.7.5",
     ToolName.CARGO_AUDIT: "0.17.0",
     ToolName.CLIPPY: "1.92.0",
     ToolName.GITLEAKS: "8.21.2",
     ToolName.HADOLINT: "2.12.0",
-    ToolName.MARKDOWNLINT: "0.17.2",
-    ToolName.OXFMT: "0.27.0",
-    ToolName.OXLINT: "1.42.0",
-    ToolName.PRETTIER: "3.8.1",
     ToolName.PYTEST: "8.0.0",
     ToolName.RUSTFMT: "1.8.0",
     ToolName.SEMGREP: "1.50.0",
@@ -40,15 +44,54 @@ TOOL_VERSIONS: dict[ToolName | str, str] = {
     ToolName.SHFMT: "3.10.0",
     ToolName.SQLFLUFF: "3.0.0",
     ToolName.TAPLO: "0.10.0",
-    ToolName.TSC: "5.7.3",
 }
 
-# Aliases for shell script compatibility (maps package names to tool names)
-# Some npm packages have different names than the lintro tool name
-_PACKAGE_ALIASES: dict[str, ToolName] = {
-    "typescript": ToolName.TSC,  # npm package "typescript" -> tool "tsc"
-    "markdownlint-cli2": ToolName.MARKDOWNLINT,  # npm package -> tool
+# Mapping from npm package names to ToolName for npm-managed tools
+# These versions are read from package.json at runtime
+_NPM_PACKAGE_TO_TOOL: dict[str, ToolName] = {
+    "typescript": ToolName.TSC,
+    "prettier": ToolName.PRETTIER,
+    "markdownlint-cli2": ToolName.MARKDOWNLINT,
+    "oxlint": ToolName.OXLINT,
+    "oxfmt": ToolName.OXFMT,
 }
+
+# Reverse mapping for lookups
+_TOOL_TO_NPM_PACKAGE: dict[ToolName, str] = {
+    v: k for k, v in _NPM_PACKAGE_TO_TOOL.items()
+}
+
+
+@lru_cache(maxsize=1)
+def _load_npm_versions() -> dict[ToolName, str]:
+    """Load npm tool versions from package.json.
+
+    This is cached to avoid repeated file reads.
+
+    Returns:
+        Dictionary mapping ToolName to version string for npm-managed tools.
+    """
+    # Find package.json relative to this file
+    package_json_path = Path(__file__).parent.parent / "package.json"
+
+    if not package_json_path.exists():
+        return {}
+
+    try:
+        data = json.loads(package_json_path.read_text())
+        dev_deps = data.get("devDependencies", {})
+        deps = data.get("dependencies", {})
+        all_deps = {**deps, **dev_deps}
+
+        versions: dict[ToolName, str] = {}
+        for npm_pkg, tool_name in _NPM_PACKAGE_TO_TOOL.items():
+            if npm_pkg in all_deps:
+                # Strip ^ or ~ prefix from version
+                versions[tool_name] = all_deps[npm_pkg].lstrip("^~")
+
+        return versions
+    except (json.JSONDecodeError, OSError):
+        return {}
 
 
 def get_tool_version(tool_name: ToolName | str) -> str | None:
@@ -56,18 +99,29 @@ def get_tool_version(tool_name: ToolName | str) -> str | None:
 
     Args:
         tool_name: Name of the tool (ToolName enum or string).
-            Also accepts package aliases like "typescript" for "tsc".
+            Also accepts npm package names like "typescript" for "tsc".
 
     Returns:
         Version string if found, None otherwise.
     """
-    # Check direct lookup first
-    if tool_name in TOOL_VERSIONS:
-        return TOOL_VERSIONS[tool_name]
-    # Check package aliases (e.g., "typescript" -> ToolName.TSC)
-    if isinstance(tool_name, str) and tool_name in _PACKAGE_ALIASES:
-        return TOOL_VERSIONS.get(_PACKAGE_ALIASES[tool_name])
-    return None
+    # Convert string to ToolName if it's an npm package alias
+    if isinstance(tool_name, str):
+        if tool_name in _NPM_PACKAGE_TO_TOOL:
+            tool_name = _NPM_PACKAGE_TO_TOOL[tool_name]
+        else:
+            # Try to convert string to ToolName enum
+            try:
+                tool_name = ToolName(tool_name)
+            except ValueError:
+                return None
+
+    # Check npm-managed tools first
+    npm_versions = _load_npm_versions()
+    if tool_name in npm_versions:
+        return npm_versions[tool_name]
+
+    # Check non-npm tools
+    return TOOL_VERSIONS.get(tool_name)
 
 
 def get_min_version(tool_name: ToolName) -> str:
@@ -75,23 +129,25 @@ def get_min_version(tool_name: ToolName) -> str:
 
     Use this in tool definitions for the min_version field. Unlike get_tool_version,
     this raises an error if the tool isn't registered, ensuring all external tools
-    are tracked in TOOL_VERSIONS.
+    are tracked.
 
     Args:
-        tool_name: ToolName enum member (must exist in TOOL_VERSIONS).
+        tool_name: ToolName enum member.
 
     Returns:
         Version string.
 
     Raises:
-        KeyError: If tool_name is not in TOOL_VERSIONS.
+        KeyError: If tool_name is not found in either TOOL_VERSIONS or package.json.
     """
-    if tool_name not in TOOL_VERSIONS:
+    version = get_tool_version(tool_name)
+    if version is None:
         raise KeyError(
-            f"Tool '{tool_name}' not found in TOOL_VERSIONS. "
-            f"Add it to lintro/_tool_versions.py to track its minimum version.",
+            f"Tool '{tool_name}' not found. "
+            f"Add it to TOOL_VERSIONS in lintro/_tool_versions.py "
+            f"or package.json (for npm tools).",
         )
-    return TOOL_VERSIONS[tool_name]
+    return version
 
 
 def get_all_expected_versions() -> dict[ToolName | str, str]:
@@ -99,5 +155,26 @@ def get_all_expected_versions() -> dict[ToolName | str, str]:
 
     Returns:
         Dictionary mapping tool names to version strings.
+        Includes both npm-managed and non-npm tools.
     """
-    return dict(TOOL_VERSIONS)
+    # Start with non-npm tools
+    all_versions: dict[ToolName | str, str] = dict(TOOL_VERSIONS)
+
+    # Add npm-managed tools
+    npm_versions = _load_npm_versions()
+    for tool_name, version in npm_versions.items():
+        all_versions[tool_name] = version
+
+    return all_versions
+
+
+def is_npm_managed(tool_name: ToolName) -> bool:
+    """Check if a tool's version is managed via npm/package.json.
+
+    Args:
+        tool_name: ToolName enum member.
+
+    Returns:
+        True if the tool version comes from package.json, False otherwise.
+    """
+    return tool_name in _TOOL_TO_NPM_PACKAGE

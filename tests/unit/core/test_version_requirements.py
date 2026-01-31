@@ -148,7 +148,7 @@ def test_get_min_version_returns_version_for_registered_tools(
 
 def test_get_min_version_raises_keyerror_for_unknown_tool() -> None:
     """Test that get_min_version raises KeyError for unknown tools."""
-    with pytest.raises(KeyError, match="not found in TOOL_VERSIONS"):
+    with pytest.raises(KeyError, match="not found"):
         get_min_version("nonexistent_tool")  # type: ignore[arg-type]
 
 
@@ -159,8 +159,33 @@ def test_tool_versions_uses_toolname_enum_keys() -> None:
 
 
 def test_all_external_tools_registered_in_tool_versions() -> None:
-    """Test that all expected external tools are in TOOL_VERSIONS."""
-    expected_tools = {
+    """Test that all expected external tools have versions available.
+
+    npm-managed tools (markdownlint, oxfmt, oxlint, prettier, tsc) are
+    read from package.json at runtime. Non-npm tools are in TOOL_VERSIONS.
+    """
+    from lintro._tool_versions import get_all_expected_versions
+
+    # Non-npm tools should be in TOOL_VERSIONS
+    expected_non_npm_tools = {
+        ToolName.ACTIONLINT,
+        ToolName.CARGO_AUDIT,
+        ToolName.CLIPPY,
+        ToolName.GITLEAKS,
+        ToolName.HADOLINT,
+        ToolName.PYTEST,
+        ToolName.RUSTFMT,
+        ToolName.SEMGREP,
+        ToolName.SHELLCHECK,
+        ToolName.SHFMT,
+        ToolName.SQLFLUFF,
+        ToolName.TAPLO,
+    }
+    assert_that(set(TOOL_VERSIONS.keys())).is_equal_to(expected_non_npm_tools)
+
+    # All tools (including npm-managed) should be available via get_all_expected_versions
+    all_versions = get_all_expected_versions()
+    expected_all_tools = {
         ToolName.ACTIONLINT,
         ToolName.CARGO_AUDIT,
         ToolName.CLIPPY,
@@ -179,7 +204,7 @@ def test_all_external_tools_registered_in_tool_versions() -> None:
         ToolName.TAPLO,
         ToolName.TSC,
     }
-    assert_that(set(TOOL_VERSIONS.keys())).is_equal_to(expected_tools)
+    assert_that(set(all_versions.keys())).is_equal_to(expected_all_tools)
 
 
 def test_get_tool_version_returns_version_for_toolname_enum() -> None:

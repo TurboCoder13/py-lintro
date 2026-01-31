@@ -1,65 +1,43 @@
 """Tool version requirements and checking utilities.
 
-This module centralizes version management for external lintro tools. Version
-requirements are defined in lintro/_tool_versions.py, which is the single source
-of truth for tools that users must install separately.
+This module centralizes version management for external lintro tools.
 
-## Single Source of Truth
+## Version Sources
 
-External tool versions are defined directly in lintro/_tool_versions.py. This ensures:
+External tool versions come from two sources:
+1. npm tools (prettier, oxlint, etc.): Read from package.json at runtime
+2. Non-npm tools (hadolint, shellcheck, etc.): Defined in _tool_versions.py
 
-1. One place to update versions (_tool_versions.py)
-2. Renovate can track and update versions automatically via regex matching
-3. Installed packages have access to version requirements (no build-time generation)
-4. Shell scripts can read versions via:
-   python3 -c "from lintro._tool_versions import ..."
+Both are accessed via the get_tool_version() and get_all_expected_versions()
+functions in lintro/_tool_versions.py.
 
 Bundled Python tools (ruff, black, bandit, mypy, yamllint) are managed
 via pyproject.toml dependencies and don't need tracking in _tool_versions.py.
 
 ## Adding a New Tool
 
-When adding a new tool to lintro, follow these steps:
+### For npm Tools:
+1. Add to package.json devDependencies
+2. Add mapping in _NPM_PACKAGE_TO_TOOL in _tool_versions.py
+3. Renovate updates package.json automatically
 
-### For Bundled Python Tools (installed with lintro):
-1. Add the tool as a dependency in pyproject.toml:
-   ```toml
-   dependencies = [
-       # ... existing deps ...
-       "newtool>=1.0.0",
-   ]
-   ```
+### For Non-npm External Tools:
+1. Add to TOOL_VERSIONS in _tool_versions.py
+2. Add Renovate regex manager in renovate.json
 
-2. Renovate will automatically track and update the version in pyproject.toml.
-
-3. Add version extraction logic in _extract_version_from_output() if needed.
-
-### For External Tools (user must install separately):
-1. Add the version to TOOL_VERSIONS in lintro/_tool_versions.py:
-   ```python
-   TOOL_VERSIONS = {
-       # ... existing tools ...
-       "newtool": "1.0.0",
-   }
-   ```
-
-2. Add a Renovate regex pattern in renovate.json to track updates.
-
-3. Add version extraction logic in _extract_version_from_output() if needed.
-
-### Implementation Steps:
-1. Create tool plugin class in lintro/tools/definitions/
-2. Use @register_tool decorator from lintro.plugins.registry
-3. Inherit from BaseToolPlugin in lintro.plugins.base
-4. Set version_command in the ToolDefinition (e.g., ["newtool", "--version"])
-5. Test with `lintro versions` command
+### For Bundled Python Tools:
+1. Add as dependency in pyproject.toml
+2. Renovate tracks it automatically
 """
 
 import os
 
 from loguru import logger
 
-from lintro._tool_versions import _PACKAGE_ALIASES, TOOL_VERSIONS
+from lintro._tool_versions import (
+    _NPM_PACKAGE_TO_TOOL,
+    get_all_expected_versions,
+)
 from lintro.enums.tool_name import ToolName
 
 
@@ -100,9 +78,9 @@ VERSION_CHECK_TIMEOUT: int = _get_version_timeout()
 def get_minimum_versions() -> dict[str, str]:
     """Get minimum version requirements for external tools.
 
-    Returns versions from the _tool_versions module for tools that users
-    must install separately. Returns only string keys for compatibility
-    with install hint templates.
+    Returns versions from _tool_versions module for tools that users
+    must install separately. Includes both npm-managed tools (from package.json)
+    and non-npm tools (from TOOL_VERSIONS).
 
     Returns:
         dict[str, str]: Dictionary mapping tool names (as strings) to minimum
@@ -111,18 +89,21 @@ def get_minimum_versions() -> dict[str, str]:
     """
     result: dict[str, str] = {}
 
+    # Get all versions (both npm and non-npm tools)
+    all_versions = get_all_expected_versions()
+
     # Convert ToolName keys to their string values
-    # This ensures get_install_hints() can match templates using string keys
-    for tool_name, version in TOOL_VERSIONS.items():
+    for tool_name, version in all_versions.items():
         if isinstance(tool_name, ToolName):
             result[tool_name.value] = version
         else:
             result[tool_name] = version
 
-    # Add package aliases (e.g., "typescript" -> TSC version)
-    for alias, tool_name in _PACKAGE_ALIASES.items():
-        if tool_name in TOOL_VERSIONS:
-            result[alias] = TOOL_VERSIONS[tool_name]
+    # Add npm package aliases (e.g., "typescript" -> tsc version)
+    for npm_pkg, tool_name in _NPM_PACKAGE_TO_TOOL.items():
+        npm_version = all_versions.get(tool_name)
+        if npm_version is not None:
+            result[npm_pkg] = npm_version
 
     return result
 

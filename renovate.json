@@ -182,164 +182,156 @@
       "extractVersionTemplate": "^v(?<version>.*)$"
     },
     {
+      "description": "Update hadolint version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
         "lintro/_tool_versions\\.py"
       ],
       "matchStrings": [
-        "\"hadolint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "ToolName\\.HADOLINT:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "hadolint/hadolint",
       "extractVersionTemplate": "^v(?<version>.*)$"
     },
     {
+      "description": "Update actionlint version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
         "lintro/_tool_versions\\.py"
       ],
       "matchStrings": [
-        "\"actionlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "ToolName\\.ACTIONLINT:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "rhysd/actionlint",
       "extractVersionTemplate": "^v(?<version>.*)$"
     },
     {
+      "description": "Update gitleaks version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
         "lintro/_tool_versions\\.py"
       ],
       "matchStrings": [
-        "\"prettier\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
-      "datasourceTemplate": "npm",
-      "packageNameTemplate": "prettier"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "lintro/_tool_versions\\.py"
-      ],
-      "matchStrings": [
-        "\"oxlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
-      "datasourceTemplate": "npm",
-      "packageNameTemplate": "oxlint"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "lintro/_tool_versions\\.py"
-      ],
-      "matchStrings": [
-        "\"oxfmt\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
-      "datasourceTemplate": "npm",
-      "packageNameTemplate": "oxfmt"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "lintro/_tool_versions\\.py"
-      ],
-      "matchStrings": [
-        "\"markdownlint\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
-      ],
-      "datasourceTemplate": "npm",
-      "packageNameTemplate": "markdownlint-cli2"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "lintro/_tool_versions\\.py"
-      ],
-      "matchStrings": [
-        "\"gitleaks\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "ToolName\\.GITLEAKS:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "gitleaks/gitleaks",
       "extractVersionTemplate": "^v(?<version>.*)$"
     },
     {
+      "description": "Update shellcheck version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
         "lintro/_tool_versions\\.py"
       ],
       "matchStrings": [
-        "\"shellcheck\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "ToolName\\.SHELLCHECK:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "koalaman/shellcheck",
       "extractVersionTemplate": "^v(?<version>.*)$"
     },
     {
+      "description": "Update shfmt version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
         "lintro/_tool_versions\\.py"
       ],
       "matchStrings": [
-        "\"shfmt\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "ToolName\\.SHFMT:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "mvdan/sh",
       "extractVersionTemplate": "^v(?<version>.*)$"
     },
     {
+      "description": "Update taplo version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
         "lintro/_tool_versions\\.py"
       ],
       "matchStrings": [
-        "\"taplo\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "ToolName\\.TAPLO:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "tamasfe/taplo",
       "extractVersionTemplate": "^release-taplo-(?<version>.*)$"
     },
     {
+      "description": "Update semgrep version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
         "lintro/_tool_versions\\.py"
       ],
       "matchStrings": [
-        "\"semgrep\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "ToolName\\.SEMGREP:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "pypi",
       "packageNameTemplate": "semgrep"
     },
     {
+      "description": "Update sqlfluff version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
         "lintro/_tool_versions\\.py"
       ],
       "matchStrings": [
-        "\"sqlfluff\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "ToolName\\.SQLFLUFF:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "pypi",
       "packageNameTemplate": "sqlfluff"
     },
     {
+      "description": "Update pytest version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
         "lintro/_tool_versions\\.py"
       ],
       "matchStrings": [
-        "\"pytest\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "ToolName\\.PYTEST:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "pypi",
       "packageNameTemplate": "pytest"
     },
     {
+      "description": "Update cargo-audit version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
         "lintro/_tool_versions\\.py"
       ],
       "matchStrings": [
-        "\"cargo_audit\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+        "ToolName\\.CARGO_AUDIT:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
       ],
       "datasourceTemplate": "crate",
       "packageNameTemplate": "cargo-audit"
+    },
+    {
+      "description": "Update clippy version in _tool_versions.py",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "lintro/_tool_versions\\.py"
+      ],
+      "matchStrings": [
+        "ToolName\\.CLIPPY:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "rust-lang/rust-clippy",
+      "extractVersionTemplate": "^rust-(?<version>.*)$"
+    },
+    {
+      "description": "Update rustfmt version in _tool_versions.py",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "lintro/_tool_versions\\.py"
+      ],
+      "matchStrings": [
+        "ToolName\\.RUSTFMT:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "rust-lang/rustfmt",
+      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
   "schedule": ["after 22:00", "before 23:00"],
