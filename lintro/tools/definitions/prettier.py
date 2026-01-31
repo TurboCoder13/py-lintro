@@ -16,7 +16,7 @@ from typing import Any
 
 from loguru import logger
 
-from lintro._tool_versions import TOOL_VERSIONS
+from lintro._tool_versions import get_min_version
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.prettier.prettier_issue import PrettierIssue
@@ -84,7 +84,7 @@ class PrettierPlugin(BaseToolPlugin):
                 "prettier.config.js",
             ],
             version_command=["prettier", "--version"],
-            min_version=TOOL_VERSIONS.get("prettier", "3.8.1"),
+            min_version=get_min_version("prettier"),
             default_options={
                 "timeout": PRETTIER_DEFAULT_TIMEOUT,
                 "verbose_fix_output": False,

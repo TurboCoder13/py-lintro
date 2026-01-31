@@ -10,7 +10,7 @@ import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
 from typing import Any
 
-from lintro._tool_versions import TOOL_VERSIONS
+from lintro._tool_versions import get_min_version
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.shellcheck.shellcheck_parser import parse_shellcheck_output
@@ -105,7 +105,7 @@ class ShellcheckPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=[".shellcheckrc"],
             version_command=["shellcheck", "--version"],
-            min_version=TOOL_VERSIONS.get("shellcheck", "0.9.0"),
+            min_version=get_min_version("shellcheck"),
             default_options={
                 "timeout": SHELLCHECK_DEFAULT_TIMEOUT,
                 "severity": SHELLCHECK_DEFAULT_SEVERITY,

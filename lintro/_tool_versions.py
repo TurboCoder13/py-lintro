@@ -53,6 +53,30 @@ def get_tool_version(tool_name: str) -> str | None:
     return TOOL_VERSIONS.get(tool_name)
 
 
+def get_min_version(tool_name: str) -> str:
+    """Get the minimum required version for an external tool.
+
+    Use this in tool definitions for the min_version field. Unlike get_tool_version,
+    this raises an error if the tool isn't registered, ensuring all external tools
+    are tracked in TOOL_VERSIONS.
+
+    Args:
+        tool_name: Name of the tool (must exist in TOOL_VERSIONS).
+
+    Returns:
+        Version string.
+
+    Raises:
+        KeyError: If tool_name is not in TOOL_VERSIONS.
+    """
+    if tool_name not in TOOL_VERSIONS:
+        raise KeyError(
+            f"Tool '{tool_name}' not found in TOOL_VERSIONS. "
+            f"Add it to lintro/_tool_versions.py to track its minimum version."
+        )
+    return TOOL_VERSIONS[tool_name]
+
+
 def get_all_expected_versions() -> dict[str, str]:
     """Get all expected external tool versions.
 

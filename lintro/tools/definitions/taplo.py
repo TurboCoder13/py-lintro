@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from loguru import logger
 
-from lintro._tool_versions import TOOL_VERSIONS
+from lintro._tool_versions import get_min_version
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.taplo.taplo_issue import TaploIssue
@@ -57,7 +57,7 @@ class TaploPlugin(BaseToolPlugin):
             conflicts_with=[],
             native_configs=["taplo.toml", ".taplo.toml"],
             version_command=["taplo", "--version"],
-            min_version=TOOL_VERSIONS.get("taplo", "0.9.0"),
+            min_version=get_min_version("taplo"),
             default_options={
                 "timeout": TAPLO_DEFAULT_TIMEOUT,
                 "schema": None,
