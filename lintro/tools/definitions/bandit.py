@@ -324,6 +324,7 @@ class BanditPlugin(BaseToolPlugin):
         logger.debug(f"[bandit] Running: {' '.join(cmd[:10])}...")
 
         output: str
+        stderr_output: str = ""
         execution_failure: bool = False
         try:
             # Run subprocess directly to capture stdout and stderr separately.
@@ -339,9 +340,10 @@ class BanditPlugin(BaseToolPlugin):
             )
             # Use only stdout for JSON parsing
             output = (result.stdout or "").strip()
+            stderr_output = (result.stderr or "").strip()
             # Log stderr for debugging if present
-            if result.stderr:
-                logger.debug(f"[bandit] stderr: {result.stderr[:500]}")
+            if stderr_output:
+                logger.debug(f"[bandit] stderr: {stderr_output[:500]}")
         except subprocess.TimeoutExpired:
             timeout_msg = (
                 f"Bandit execution timed out ({ctx.timeout}s limit exceeded).\n\n"
@@ -362,6 +364,19 @@ class BanditPlugin(BaseToolPlugin):
 
         # Parse the JSON output
         try:
+            # Handle "no files found" case - bandit outputs this to stderr, not stdout
+            if (
+                "No .py/.pyi files found" in output
+                or "No .py/.pyi files found" in stderr_output
+            ):
+                logger.debug("[bandit] No Python files found to check")
+                return ToolResult(
+                    name=self.definition.name,
+                    success=True,
+                    output="No .py/.pyi files found to check.",
+                    issues_count=0,
+                )
+
             if ("{" not in output or "}" not in output) and execution_failure:
                 return ToolResult(
                     name=self.definition.name,
