@@ -47,6 +47,7 @@ TOOL_VERSIONS: dict[ToolName | str, str] = {
 # Some npm packages have different names than the lintro tool name
 _PACKAGE_ALIASES: dict[str, ToolName] = {
     "typescript": ToolName.TSC,  # npm package "typescript" -> tool "tsc"
+    "markdownlint-cli2": ToolName.MARKDOWNLINT,  # npm package -> tool
 }
 
 

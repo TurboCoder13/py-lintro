@@ -638,15 +638,8 @@ main() {
 		exit 1
 	fi
 
-	# Read prettier version from package.json if it exists
-	# Check devDependencies first, then dependencies, then fall back to latest
-	if [ -f "package.json" ]; then
-		PRETTIER_VERSION=$(jq -r '.devDependencies.prettier // .dependencies.prettier // "latest"' package.json 2>/dev/null || echo "latest")
-		# Strip caret prefix if present (e.g., "^3.7.3" -> "3.7.3")
-		PRETTIER_VERSION="${PRETTIER_VERSION#^}"
-	else
-		PRETTIER_VERSION="latest"
-	fi
+	# Read prettier version from _tool_versions.py (single source of truth)
+	PRETTIER_VERSION=$(get_tool_version "prettier") || exit 1
 
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install prettier@${PRETTIER_VERSION} globally via bun"
@@ -665,15 +658,9 @@ main() {
 		exit 1
 	fi
 
-	# Read markdownlint-cli2 version from package.json if it exists
-	# Check devDependencies first, then dependencies, then fall back to latest
-	if [ -f "package.json" ]; then
-		MARKDOWNLINT_VERSION=$(jq -r '.devDependencies."markdownlint-cli2" // .dependencies."markdownlint-cli2" // "latest"' package.json 2>/dev/null || echo "latest")
-		# Strip caret prefix if present (e.g., "^0.17.2" -> "0.17.2")
-		MARKDOWNLINT_VERSION="${MARKDOWNLINT_VERSION#^}"
-	else
-		MARKDOWNLINT_VERSION="latest"
-	fi
+	# Read markdownlint-cli2 version from _tool_versions.py (single source of truth)
+	# Uses package alias: "markdownlint-cli2" -> ToolName.MARKDOWNLINT
+	MARKDOWNLINT_VERSION=$(get_tool_version "markdownlint-cli2") || exit 1
 
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install markdownlint-cli2@${MARKDOWNLINT_VERSION} globally via bun"
