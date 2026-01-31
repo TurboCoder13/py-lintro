@@ -102,7 +102,10 @@ if grep -qE "$DIGEST_PATTERN" "$DOCKERFILE"; then
 	fi
 	echo "    ✓ Updated Dockerfile"
 else
-	echo "    ⚠ Pattern not found in Dockerfile (may already be updated or format changed)"
+	echo "ERROR: Pattern not found in Dockerfile" >&2
+	echo "       Expected: ${IMAGE_PATTERN}@sha256:<digest>" >&2
+	echo "       File: $DOCKERFILE" >&2
+	exit 1
 fi
 
 # Update action.yml
@@ -115,7 +118,10 @@ if grep -qE "$DIGEST_PATTERN" "$ACTION_YML"; then
 	fi
 	echo "    ✓ Updated action.yml"
 else
-	echo "    ⚠ Pattern not found in action.yml (may already be updated or format changed)"
+	echo "ERROR: Pattern not found in action.yml" >&2
+	echo "       Expected: ${IMAGE_PATTERN}@sha256:<digest>" >&2
+	echo "       File: $ACTION_YML" >&2
+	exit 1
 fi
 
 # Verify updates

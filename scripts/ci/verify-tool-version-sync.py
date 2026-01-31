@@ -90,13 +90,14 @@ def main() -> int:
 
     mismatches: list[tuple[str, str, str, str]] = []
     missing_in_tools: list[str] = []
+    missing_in_package_json: list[str] = []
 
     for npm_pkg, tool_name in NPM_TOOL_MAPPING.items():
         pkg_version = package_versions.get(npm_pkg)
         tool_version = tool_versions.get(npm_pkg)
 
         if pkg_version is None:
-            # Package not in package.json, skip
+            missing_in_package_json.append(npm_pkg)
             continue
 
         if tool_version is None:
@@ -107,7 +108,7 @@ def main() -> int:
             mismatches.append((npm_pkg, tool_name, pkg_version, tool_version))
 
     # Report results
-    if not mismatches and not missing_in_tools:
+    if not mismatches and not missing_in_tools and not missing_in_package_json:
         print("✓ All tool versions are synchronized")
         print()
         print("Checked packages:")
@@ -136,9 +137,17 @@ def main() -> int:
             print(f"  {pkg}: {pkg_version}")
         print()
 
+    if missing_in_package_json:
+        print("Missing from package.json (but in NPM_TOOL_MAPPING):")
+        for pkg in missing_in_package_json:
+            tool_version = tool_versions.get(pkg, "unknown")
+            print(f"  {pkg}: {tool_version} (in _tool_versions.py)")
+        print()
+
     print("To fix:")
     print("  1. Update lintro/_tool_versions.py to match package.json versions")
     print("  2. Or update package.json to match _tool_versions.py versions")
+    print("  3. If a package was intentionally removed, update NPM_TOOL_MAPPING")
     print()
     print("Renovate should keep these in sync, but manual updates may cause drift.")
 
