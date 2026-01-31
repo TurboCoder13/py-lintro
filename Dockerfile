@@ -4,7 +4,7 @@
 # Use the pre-built tools image to avoid rebuilding tools on every CI run.
 # TOOLS_IMAGE can be overridden at build time (e.g., for PR testing with new tools)
 # yamllint disable-line rule:line-length
-ARG TOOLS_IMAGE=ghcr.io/lgtm-hq/lintro-tools:latest@sha256:e145d4f4942fd3165c4406fabbe34d98edbe02aabb4d99cd71e8db79b0116c8f
+ARG TOOLS_IMAGE=ghcr.io/lgtm-hq/lintro-tools:latest@sha256:1701ba10f28d112599cfd81b21e0dbb4cae3f5d064728d614ed35a262a2e9ef4
 # hadolint ignore=DL3006
 FROM ${TOOLS_IMAGE} AS tools
 
