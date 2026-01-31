@@ -120,7 +120,11 @@ def test_parse_oxlint_output_missing_filename() -> None:
 
 
 def test_parse_oxlint_output_missing_labels() -> None:
-    """Test parsing Oxlint output with missing labels."""
+    """Test parsing Oxlint output with missing labels.
+
+    When labels are missing, parser defaults to line=1, column=1
+    (1-based numbering, defaults to start of file).
+    """
     json_output = """{
         "diagnostics": [{
             "message": "Test error",
@@ -133,12 +137,16 @@ def test_parse_oxlint_output_missing_labels() -> None:
     issues = parse_oxlint_output(json_output)
     assert_that(issues).is_length(1)
     issue = issues[0]
-    assert_that(issue.line).is_equal_to(0)
-    assert_that(issue.column).is_equal_to(0)
+    assert_that(issue.line).is_equal_to(1)
+    assert_that(issue.column).is_equal_to(1)
 
 
 def test_parse_oxlint_output_empty_labels() -> None:
-    """Test parsing Oxlint output with empty labels array."""
+    """Test parsing Oxlint output with empty labels array.
+
+    When labels array is empty, parser defaults to line=1, column=1
+    (1-based numbering, defaults to start of file).
+    """
     json_output = """{
         "diagnostics": [{
             "message": "Test error",
@@ -152,12 +160,16 @@ def test_parse_oxlint_output_empty_labels() -> None:
     issues = parse_oxlint_output(json_output)
     assert_that(issues).is_length(1)
     issue = issues[0]
-    assert_that(issue.line).is_equal_to(0)
-    assert_that(issue.column).is_equal_to(0)
+    assert_that(issue.line).is_equal_to(1)
+    assert_that(issue.column).is_equal_to(1)
 
 
 def test_parse_oxlint_output_missing_span() -> None:
-    """Test parsing Oxlint output with labels but missing span."""
+    """Test parsing Oxlint output with labels but missing span.
+
+    When span is missing from label, parser defaults to line=1, column=1
+    (1-based numbering, defaults to start of file).
+    """
     json_output = """{
         "diagnostics": [{
             "message": "Test error",
@@ -171,8 +183,8 @@ def test_parse_oxlint_output_missing_span() -> None:
     issues = parse_oxlint_output(json_output)
     assert_that(issues).is_length(1)
     issue = issues[0]
-    assert_that(issue.line).is_equal_to(0)
-    assert_that(issue.column).is_equal_to(0)
+    assert_that(issue.line).is_equal_to(1)
+    assert_that(issue.column).is_equal_to(1)
 
 
 def test_parse_oxlint_output_with_extra_text() -> None:

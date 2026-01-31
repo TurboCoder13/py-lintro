@@ -620,6 +620,12 @@ skip-checking-short-docstrings = true
 
 #### Prettier Configuration
 
+Prettier handles formatting for CSS, HTML, JSON, YAML, Markdown, and GraphQL files.
+
+> **Note:** JavaScript and TypeScript files are handled by **oxfmt** for better
+> performance (30x faster). See [Oxfmt Configuration](#oxfmt-configuration) for JS/TS
+> formatting options.
+
 **File:** `.prettierrc`
 
 ```json

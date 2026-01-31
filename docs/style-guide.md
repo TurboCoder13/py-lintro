@@ -9,7 +9,8 @@ This document outlines the coding standards and best practices for the Lintro pr
 - Follow [PEP 8](https://peps.python.org/pep-0008/) for code style
 - Use [pydoclint](https://github.com/jsh9/pydoclint) for docstring argument checking
 - Use [Oxfmt](https://github.com/oxc-project/oxc) for JavaScript/TypeScript formatting
-- Use [Prettier](https://prettier.io/) for CSS, HTML, JSON, YAML, and Markdown formatting
+- Use [Prettier](https://prettier.io/) for CSS, HTML, JSON, YAML, and Markdown
+  formatting
 
 ### Type Hints
 
