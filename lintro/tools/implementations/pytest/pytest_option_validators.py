@@ -117,8 +117,11 @@ def validate_pytest_options(
     ):
         raise ValueError("total_time_warning must be a non-negative number")
 
-    if workers is not None and not isinstance(workers, str):
-        raise ValueError("workers must be a string (e.g., 'auto', '2', '4')")
+    if workers is not None and not isinstance(workers, (str, int)):
+        raise ValueError(
+            f"workers must be a string or integer (e.g., 'auto', '2', 4), "
+            f"got {type(workers).__name__}: {workers!r}",
+        )
 
     if coverage_threshold is not None and not isinstance(
         coverage_threshold,

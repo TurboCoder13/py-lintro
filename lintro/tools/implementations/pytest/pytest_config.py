@@ -112,6 +112,11 @@ class PytestConfiguration:
         # Extract only the options that belong to this configuration
         config_fields = {field.name for field in self.__dataclass_fields__.values()}
 
+        # Coerce workers to string when passed as int via CLI parsing
+        if "workers" in kwargs and isinstance(kwargs.get("workers"), int):
+            kwargs = kwargs.copy()
+            kwargs["workers"] = str(kwargs["workers"])
+
         # Validate all options using extracted validator
         validate_pytest_options(
             **{k: v for k, v in kwargs.items() if k in config_fields},
