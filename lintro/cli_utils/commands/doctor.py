@@ -11,6 +11,7 @@ import json
 import shutil
 import subprocess
 import sys
+from dataclasses import asdict, dataclass
 
 import click
 from rich.console import Console
@@ -18,6 +19,30 @@ from rich.table import Table
 
 from lintro._tool_versions import TOOL_VERSIONS
 from lintro.tools.core.version_parsing import extract_version_from_output
+from lintro.utils.environment import (
+    EnvironmentReport,
+    collect_full_environment,
+    render_environment_report,
+)
+
+
+@dataclass
+class VersionCheckResult:
+    """Result of a version check for a tool.
+
+    Attributes:
+        version: The parsed version string if successful.
+        error: Error type if version check failed (not_in_path, command_failed,
+               no_version, timeout, os_error, no_command).
+        details: Additional details about the error (raw output or error message).
+        path: The filesystem path where the tool is installed.
+    """
+
+    version: str | None = None
+    error: str | None = None
+    details: str | None = None
+    path: str | None = None
+
 
 # Map tool names to commands (external tools only)
 TOOL_COMMANDS: dict[str, list[str]] = {
@@ -48,23 +73,24 @@ def _check_tool_commands_coverage() -> list[str]:
     return [tool for tool in TOOL_VERSIONS if tool not in TOOL_COMMANDS]
 
 
-def _get_installed_version(tool_name: str) -> str | None:
+def _get_installed_version(tool_name: str) -> VersionCheckResult:
     """Get the installed version of an external tool.
 
     Args:
         tool_name: Name of the tool to check.
 
     Returns:
-        Version string if installed, None otherwise.
+        VersionCheckResult with version if successful, or error details if not.
     """
     command = TOOL_COMMANDS.get(tool_name)
     if not command:
-        return None
+        return VersionCheckResult(error="no_command")
 
-    # Check if the main executable exists
+    # Check if the main executable exists and capture its path
     main_cmd = command[0]
-    if not shutil.which(main_cmd):
-        return None
+    tool_path = shutil.which(main_cmd)
+    if not tool_path:
+        return VersionCheckResult(error="not_in_path", details=main_cmd)
 
     try:
         result = subprocess.run(
@@ -74,9 +100,27 @@ def _get_installed_version(tool_name: str) -> str | None:
             timeout=10,
         )
         output = result.stdout + result.stderr
-        return extract_version_from_output(output, tool_name)
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-        return None
+
+        if result.returncode != 0:
+            return VersionCheckResult(
+                error="command_failed",
+                details=f"Exit {result.returncode}: {output[:100]}",
+                path=tool_path,
+            )
+
+        version = extract_version_from_output(output, tool_name)
+        if not version:
+            return VersionCheckResult(
+                error="no_version",
+                details=f"Output: {output[:100]}",
+                path=tool_path,
+            )
+
+        return VersionCheckResult(version=version, path=tool_path)
+    except subprocess.TimeoutExpired:
+        return VersionCheckResult(error="timeout", path=tool_path)
+    except (FileNotFoundError, OSError) as e:
+        return VersionCheckResult(error="os_error", details=str(e))
 
 
 def _compare_versions(installed: str, expected: str) -> str:
@@ -107,6 +151,93 @@ def _compare_versions(installed: str, expected: str) -> str:
         return "unknown"
 
 
+def _format_failure_reason(
+    error: str | None,
+    details: str | None,
+    *,
+    verbose: bool = False,
+) -> str:
+    """Format a failure reason for display.
+
+    Args:
+        error: Error type from VersionCheckResult.
+        details: Additional details from VersionCheckResult.
+        verbose: If True, include full details.
+
+    Returns:
+        Formatted reason string for display.
+    """
+    if not error:
+        return ""
+
+    reason_map = {
+        "not_in_path": "Not in PATH",
+        "command_failed": "Cmd failed",
+        "no_version": "No version parsed",
+        "timeout": "Timeout",
+        "os_error": "OS error",
+        "no_command": "No cmd defined",
+    }
+    reason = reason_map.get(error, error)
+
+    if verbose and details:
+        return f"{reason}: {details}"
+    return reason
+
+
+def _generate_markdown_report(
+    env: EnvironmentReport,
+    tool_results: dict[str, dict[str, str | None]],
+) -> str:
+    """Generate markdown report suitable for GitHub issues.
+
+    Args:
+        env: Environment report data.
+        tool_results: Tool check results.
+
+    Returns:
+        Markdown-formatted report string.
+    """
+    lines = ["### Environment", "", "```"]
+    lines.append(f"Lintro: {env.lintro.version}")
+    lines.append(f"OS: {env.system.platform_name} ({env.system.architecture})")
+    lines.append(f"Python: {env.python.version}")
+    if env.node:
+        lines.append(f"Node: {env.node.version or 'installed'}")
+    if env.rust:
+        lines.append(f"Rust: {env.rust.rustc_version or 'installed'}")
+    if env.ci:
+        lines.append(f"CI: {env.ci.name}")
+    lines.append("```")
+    lines.append("")
+
+    # Tool versions table
+    lines.append("### Tool Versions")
+    lines.append("")
+    lines.append("| Tool | Version | Status |")
+    lines.append("|------|---------|--------|")
+
+    for tool_name, info in sorted(tool_results.items()):
+        version = info.get("installed") or "-"
+        status = info.get("status") or "unknown"
+        status_icon = {"ok": "✓", "missing": "✗", "outdated": "⚠", "unknown": "?"}.get(
+            status,
+            "?",
+        )
+        lines.append(f"| {tool_name} | {version} | {status_icon} {status} |")
+
+    lines.append("")
+
+    # Config info
+    if env.lintro.config_file:
+        lines.append("### Config")
+        lines.append("")
+        lines.append(f"Config file: `{env.lintro.config_file}`")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 @click.command()
 @click.option(
     "--json",
@@ -119,7 +250,24 @@ def _compare_versions(installed: str, expected: str) -> str:
     type=str,
     help="Comma-separated list of tools to check (default: all).",
 )
-def doctor_command(json_output: bool, tools: str | None) -> None:
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show comprehensive environment information.",
+)
+@click.option(
+    "--report",
+    is_flag=True,
+    help="Generate markdown report for GitHub issues.",
+)
+def doctor_command(
+    json_output: bool,
+    tools: str | None,
+    *,
+    verbose: bool,
+    report: bool,
+) -> None:
     """Check external tool installation status and version compatibility.
 
     Checks tools that must be installed separately (hadolint, actionlint,
@@ -128,6 +276,8 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
     Args:
         json_output: If True, output results as JSON.
         tools: Comma-separated list of tools to check, or None for all.
+        verbose: If True, show comprehensive environment information.
+        report: If True, generate markdown report for GitHub issues.
 
     Raises:
         SystemExit: If there are missing or outdated tools.
@@ -136,12 +286,20 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
         lintro doctor
         lintro doctor --tools hadolint,actionlint
         lintro doctor --json
+        lintro doctor --verbose
+        lintro doctor --report
     """
     console = Console(stderr=True)
+    display_console = Console()
+
+    # Collect environment info (needed for verbose, report, and json modes)
+    env_report = None
+    if verbose or report or json_output:
+        env_report = collect_full_environment()
 
     # Warn about tools without command definitions
     uncovered_tools = _check_tool_commands_coverage()
-    if uncovered_tools and not json_output:
+    if uncovered_tools and not json_output and not report:
         console.print(
             f"[yellow]Warning: No version command defined for: "
             f"{', '.join(uncovered_tools)}[/yellow]",
@@ -161,13 +319,13 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
     unknown_count = 0
 
     for tool_name, expected_version in sorted(versions_to_check.items()):
-        installed_version = _get_installed_version(tool_name)
+        check_result = _get_installed_version(tool_name)
 
-        if installed_version is None:
+        if check_result.version is None:
             status = "missing"
             missing_count += 1
         else:
-            status = _compare_versions(installed_version, expected_version)
+            status = _compare_versions(check_result.version, expected_version)
             if status == "ok":
                 ok_count += 1
             elif status == "outdated":
@@ -177,14 +335,49 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
 
         results[tool_name] = {
             "expected": expected_version,
-            "installed": installed_version,
+            "installed": check_result.version,
             "status": status,
+            "error": check_result.error,
+            "details": check_result.details,
+            "path": check_result.path,
         }
+
+    # Markdown report mode
+    if report:
+        if env_report is None:
+            env_report = collect_full_environment()
+        markdown = _generate_markdown_report(env_report, results)
+        click.echo(markdown)
+        return
 
     # JSON output mode
     if json_output:
-        output = {
+        # Build issues array for easier parsing
+        issues: list[dict[str, str]] = []
+        for tool_name, info in results.items():
+            if info["status"] == "missing":
+                error_detail = info.get("error") or "unknown reason"
+                issues.append(
+                    {
+                        "tool": tool_name,
+                        "severity": "error",
+                        "message": f"not installed ({error_detail})",
+                    },
+                )
+            elif info["status"] == "outdated":
+                installed = info["installed"]
+                expected = info["expected"]
+                issues.append(
+                    {
+                        "tool": tool_name,
+                        "severity": "warning",
+                        "message": f"outdated ({installed} < {expected})",
+                    },
+                )
+
+        output: dict[str, object] = {
             "tools": results,
+            "issues": issues,
             "summary": {
                 "total": len(results),
                 "ok": ok_count,
@@ -197,20 +390,38 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
             output["warnings"] = {
                 "uncovered_tools": uncovered_tools,
             }
+        # Include environment info in JSON output
+        if env_report:
+            output["environment"] = {
+                "lintro": asdict(env_report.lintro),
+                "system": asdict(env_report.system),
+                "python": asdict(env_report.python),
+                "node": asdict(env_report.node) if env_report.node else None,
+                "rust": asdict(env_report.rust) if env_report.rust else None,
+                "go": asdict(env_report.go) if env_report.go else None,
+                "ruby": asdict(env_report.ruby) if env_report.ruby else None,
+                "ci": asdict(env_report.ci) if env_report.ci else None,
+                "project": asdict(env_report.project) if env_report.project else None,
+            }
         click.echo(json.dumps(output, indent=2))
         # Exit non-zero if any tools are missing or outdated
         if missing_count > 0 or outdated_count > 0:
             sys.exit(1)
         return
 
-    # Rich table output
-    display_console = Console()
+    # Verbose mode: show environment report first
+    if verbose and env_report:
+        render_environment_report(display_console, env_report)
 
+    # Rich table output
     table = Table(title="Tool Health Check")
     table.add_column("Tool", style="cyan", no_wrap=True)
     table.add_column("Expected", style="dim")
     table.add_column("Installed", style="yellow")
     table.add_column("Status", justify="center")
+    table.add_column("Reason", style="dim")
+    if verbose:
+        table.add_column("Path", style="dim", no_wrap=True)
 
     for tool_name, info in results.items():
         expected = info["expected"] or "-"
@@ -225,7 +436,20 @@ def doctor_command(json_output: bool, tools: str | None) -> None:
         else:  # unknown
             status = "[dim]? Unknown[/dim]"
 
-        table.add_row(tool_name, expected, installed, status)
+        # Show reason for missing or failed tools
+        reason = ""
+        if info["status"] == "missing":
+            reason = _format_failure_reason(
+                info.get("error"),
+                info.get("details"),
+                verbose=verbose,
+            )
+
+        path_display = info.get("path") or "-"
+        if verbose:
+            table.add_row(tool_name, expected, installed, status, reason, path_display)
+        else:
+            table.add_row(tool_name, expected, installed, status, reason)
 
     display_console.print(table)
     display_console.print()
