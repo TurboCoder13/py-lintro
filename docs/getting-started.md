@@ -225,11 +225,18 @@ lintro check src/ --tools tsc --tool-options "tsc:strict=True"
 
 # Use specific tsconfig
 lintro check src/ --tools tsc --tool-options "tsc:project=tsconfig.app.json"
+
+# Auto-install dependencies if node_modules is missing
+lintro check src/ --tools tsc --auto-install
 ```
 
 **Tools:**
 
 - **TypeScript Compiler (tsc)** - Static type checking for TypeScript files
+
+**Note:** If you see errors about missing modules (TS2307, TS2688, TS7016), your
+`node_modules` may not be installed. Use the `--auto-install` flag to automatically run
+`bun install` or `npm install` before checking, or install dependencies manually first.
 
 ### Markdown Files
 
