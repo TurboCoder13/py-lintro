@@ -344,21 +344,77 @@ def test_get_executable_command_python_bundled_tools_fallback(
         pytest.param("pytest", id="python_bundled_pytest"),
     ],
 )
-def test_get_executable_command_python_bundled_tools_path_binary(
+def test_get_executable_command_python_bundled_tools_path_binary_outside_venv(
     fake_tool_plugin: FakeToolPlugin,
     tool_name: str,
 ) -> None:
-    """Verify Python bundled tools prefer PATH binary when available.
+    """Verify Python bundled tools prefer PATH binary when outside venv.
 
     Args:
         fake_tool_plugin: Fixture providing a FakeToolPlugin instance.
         tool_name: Name of the tool being tested.
     """
     expected_path = f"/usr/local/bin/{tool_name}"
-    with patch("shutil.which", return_value=expected_path):
+    # Simulate running outside a venv (prefix == base_prefix)
+    with (
+        patch("shutil.which", return_value=expected_path),
+        patch(
+            "lintro.tools.core.command_builders.sys.prefix",
+            "/usr/local",
+        ),
+        patch(
+            "lintro.tools.core.command_builders.sys.base_prefix",
+            "/usr/local",
+        ),
+        patch(
+            "lintro.tools.core.command_builders._is_compiled_binary",
+            return_value=False,
+        ),
+    ):
         result = fake_tool_plugin._get_executable_command(tool_name)
 
     assert_that(result).is_equal_to([expected_path])
+
+
+@pytest.mark.parametrize(
+    "tool_name",
+    [
+        pytest.param("ruff", id="python_bundled_ruff"),
+        pytest.param("pytest", id="python_bundled_pytest"),
+    ],
+)
+def test_get_executable_command_python_bundled_tools_python_module_in_venv(
+    fake_tool_plugin: FakeToolPlugin,
+    tool_name: str,
+) -> None:
+    """Verify Python bundled tools prefer python -m when inside venv.
+
+    Args:
+        fake_tool_plugin: Fixture providing a FakeToolPlugin instance.
+        tool_name: Name of the tool being tested.
+    """
+    # Simulate running inside a venv (prefix != base_prefix)
+    with (
+        patch("shutil.which", return_value=f"/usr/local/bin/{tool_name}"),
+        patch(
+            "lintro.tools.core.command_builders.sys.prefix",
+            "/app/.venv",
+        ),
+        patch(
+            "lintro.tools.core.command_builders.sys.base_prefix",
+            "/usr/local",
+        ),
+        patch(
+            "lintro.tools.core.command_builders._is_compiled_binary",
+            return_value=False,
+        ),
+    ):
+        result = fake_tool_plugin._get_executable_command(tool_name)
+
+    # Should return [python_exe, "-m", tool_name] even when PATH has tool
+    assert_that(result).is_length(3)
+    assert_that(result[1]).is_equal_to("-m")
+    assert_that(result[2]).is_equal_to(tool_name)
 
 
 def test_get_executable_command_nodejs_tool_with_bunx(

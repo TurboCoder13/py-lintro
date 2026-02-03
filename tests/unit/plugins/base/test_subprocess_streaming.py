@@ -160,4 +160,6 @@ def test_streaming_with_cwd_and_env() -> None:
         mock_popen.assert_called_once()
         call_kwargs = mock_popen.call_args[1]
         assert_that(call_kwargs["cwd"]).is_equal_to("/custom/path")
-        assert_that(call_kwargs["env"]).is_equal_to(custom_env)
+        # Custom env is merged with os.environ to preserve PATH
+        assert_that(call_kwargs["env"]["MY_VAR"]).is_equal_to("value")
+        assert_that(call_kwargs["env"]).contains_key("PATH")
