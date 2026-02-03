@@ -16,6 +16,9 @@ from lintro.utils.logger_setup import setup_cli_logging
 # Only WARNING and above will show. DEBUG logs go to file when tool_executor runs.
 setup_cli_logging()
 
+# E402: Module level imports below setup_cli_logging() are intentional.
+# Logging must be configured BEFORE importing modules that use loguru,
+# otherwise log messages during import get silently dropped or misconfigured.
 from lintro.cli_utils.commands.check import check_command  # noqa: E402
 from lintro.cli_utils.commands.config import config_command  # noqa: E402
 from lintro.cli_utils.commands.doctor import doctor_command  # noqa: E402
@@ -24,6 +27,7 @@ from lintro.cli_utils.commands.init import init_command  # noqa: E402
 from lintro.cli_utils.commands.list_tools import list_tools_command  # noqa: E402
 from lintro.cli_utils.commands.test import test_command  # noqa: E402
 from lintro.cli_utils.commands.versions import versions_command  # noqa: E402
+from lintro.tools.core.runtime_discovery import clear_discovery_cache  # noqa: E402
 
 
 class LintroGroup(click.Group):
@@ -143,6 +147,10 @@ class LintroGroup(click.Group):
         Raises:
             SystemExit: If a command exits with a non-zero exit code.
         """
+        # Clear tool discovery cache at start of each invocation to ensure
+        # fresh tool detection (tools may have been installed/uninstalled)
+        clear_discovery_cache()
+
         all_args = ctx.protected_args + ctx.args
 
         if all_args:

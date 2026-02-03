@@ -166,6 +166,7 @@ def _parse_execution_config(data: dict[str, Any]) -> ExecutionConfig:
         tool_order=tool_order,
         fail_fast=data.get("fail_fast", False),
         parallel=data.get("parallel", True),
+        auto_install_deps=data.get("auto_install_deps", False),
     )
 
 
@@ -267,7 +268,13 @@ def _convert_pyproject_to_config(data: dict[str, Any]) -> dict[str, Any]:
     known_tools.update(tool_aliases.keys())
 
     # Known execution settings
-    execution_keys = {"enabled_tools", "tool_order", "fail_fast", "parallel"}
+    execution_keys = {
+        "enabled_tools",
+        "tool_order",
+        "fail_fast",
+        "parallel",
+        "auto_install_deps",
+    }
 
     # Known enforce settings (formerly global)
     enforce_keys = {"line_length", "target_python"}
