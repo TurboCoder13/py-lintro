@@ -135,11 +135,11 @@ ensure_bun_installed() {
 	# Justification: Official bun installer from trusted source (bun.sh)
 	# nosemgrep: curl-pipe-bash
 	if curl -fsSL https://bun.sh/install | bash; then
-		# Source bun environment
-		if [ -f "$HOME/.bun/bin/bun" ]; then
+		# Source bun environment (respect existing BUN_INSTALL if set)
+		if [ -z "${BUN_INSTALL:-}" ] && [ -f "$HOME/.bun/bin/bun" ]; then
 			export BUN_INSTALL="$HOME/.bun"
-			export PATH="$BUN_INSTALL/bin:$PATH"
 		fi
+		export PATH="${BUN_INSTALL:-$HOME/.bun}/bin:$PATH"
 		return 0
 	fi
 
@@ -376,6 +376,49 @@ install_system_deps() {
 	fi
 }
 
+# Ensure cargo-audit build deps are available in local Linux environments
+ensure_cargo_audit_deps() {
+	if [ "$INSTALL_MODE" = "--docker" ] || [ "$INSTALL_MODE" = "docker" ]; then
+		return
+	fi
+	if ! command -v apt-get &>/dev/null; then
+		return
+	fi
+
+	# Check which packages are missing
+	local missing_pkgs=()
+	if ! dpkg-query -W -f='${Status}' libssl-dev 2>/dev/null | grep -q "install ok installed"; then
+		missing_pkgs+=("libssl-dev")
+	fi
+	if ! command -v pkg-config &>/dev/null && ! dpkg-query -W -f='${Status}' pkg-config 2>/dev/null | grep -q "install ok installed"; then
+		missing_pkgs+=("pkg-config")
+	fi
+
+	if [ ${#missing_pkgs[@]} -eq 0 ]; then
+		log_verbose "cargo-audit deps (libssl-dev, pkg-config) already installed"
+		return
+	fi
+
+	local apt_cmd="apt-get"
+	if [ "$(id -u)" -ne 0 ]; then
+		if command -v sudo &>/dev/null; then
+			apt_cmd="sudo apt-get"
+		else
+			echo -e "${YELLOW}⚠ cargo-audit deps need apt-get but sudo is unavailable${NC}"
+			return
+		fi
+	fi
+
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install ${missing_pkgs[*]} for cargo-audit"
+		return
+	fi
+
+	echo -e "${BLUE}Installing missing cargo-audit deps: ${missing_pkgs[*]}${NC}"
+	$apt_cmd update
+	$apt_cmd install -y --no-install-recommends "${missing_pkgs[@]}"
+}
+
 # Main installation process
 main() {
 	echo -e "${YELLOW}Starting tool installation...${NC}"
@@ -526,45 +569,88 @@ main() {
 
 	# Install Rust toolchain, clippy, and rustfmt
 	echo -e "${BLUE}Installing Rust toolchain, clippy, and rustfmt...${NC}"
-	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install Rust toolchain, clippy, and rustfmt"
-	elif command -v rustc &>/dev/null && cargo clippy --version &>/dev/null && rustfmt --version &>/dev/null; then
-		echo -e "${GREEN}✓ Rust toolchain, clippy, and rustfmt already installed${NC}"
+	if RUST_TOOLCHAIN_VERSION=$(get_tool_version "rustc" 2>/dev/null); then
+		log_verbose "Pinned Rust toolchain version: ${RUST_TOOLCHAIN_VERSION}"
 	else
-		# Install rustup if not present
-		if ! command -v rustup &>/dev/null; then
-			echo -e "${YELLOW}Installing rustup...${NC}"
-			curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --component clippy --component rustfmt
-			# Source cargo environment
-			if [ -f "$HOME/.cargo/env" ]; then
-				# SC1091: cargo env is created by rustup installer at runtime
-				# shellcheck disable=SC1091
-				source "$HOME/.cargo/env"
+		RUST_TOOLCHAIN_VERSION="stable"
+		echo -e "${YELLOW}⚠ Rust toolchain version not found in manifest; using stable${NC}"
+	fi
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install Rust toolchain (${RUST_TOOLCHAIN_VERSION}), clippy, and rustfmt"
+	else
+		rust_ready=false
+		if command -v rustc &>/dev/null && cargo clippy --version &>/dev/null && rustfmt --version &>/dev/null; then
+			if [ "$RUST_TOOLCHAIN_VERSION" = "stable" ]; then
+				rust_ready=true
+			else
+				installed_version=$(rustc --version 2>/dev/null | awk '{print $2}')
+				if [ -n "$installed_version" ] && [ "$installed_version" = "$RUST_TOOLCHAIN_VERSION" ]; then
+					rust_ready=true
+				else
+					echo -e "${YELLOW}⚠ rustc version ${installed_version:-unknown} != ${RUST_TOOLCHAIN_VERSION}, reinstalling...${NC}"
+				fi
 			fi
-		else
-			echo -e "${YELLOW}rustup already installed, updating toolchain...${NC}"
-			rustup update stable
-			rustup component add clippy
-			rustup component add rustfmt
 		fi
 
-		# Verify installation
-		if command -v rustc &>/dev/null && cargo clippy --version &>/dev/null && rustfmt --version &>/dev/null; then
-			echo -e "${GREEN}✓ Rust toolchain, clippy, and rustfmt installed successfully${NC}"
+		if [ "$rust_ready" = true ]; then
+			echo -e "${GREEN}✓ Rust toolchain, clippy, and rustfmt already installed${NC}"
 		else
-			echo -e "${RED}✗ Failed to install Rust toolchain, clippy, and rustfmt${NC}"
-			exit 1
+			# Install rustup if not present
+			if ! command -v rustup &>/dev/null; then
+				echo -e "${YELLOW}Installing rustup...${NC}"
+				curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+					--default-toolchain "$RUST_TOOLCHAIN_VERSION" --component clippy --component rustfmt
+				# Source cargo environment (respect CARGO_HOME if set)
+				cargo_env="${CARGO_HOME:-$HOME/.cargo}/env"
+				if [ -f "$cargo_env" ]; then
+					# SC1090: cargo env is created by rustup installer at runtime
+					# shellcheck disable=SC1090
+					source "$cargo_env"
+				fi
+			else
+				echo -e "${YELLOW}rustup already installed, updating toolchain...${NC}"
+				if [ "$RUST_TOOLCHAIN_VERSION" = "stable" ]; then
+					rustup update stable
+				else
+					rustup toolchain install "$RUST_TOOLCHAIN_VERSION"
+					rustup default "$RUST_TOOLCHAIN_VERSION"
+				fi
+				if [ "$RUST_TOOLCHAIN_VERSION" = "stable" ]; then
+					rustup component add clippy
+					rustup component add rustfmt
+				else
+					rustup component add clippy --toolchain "$RUST_TOOLCHAIN_VERSION"
+					rustup component add rustfmt --toolchain "$RUST_TOOLCHAIN_VERSION"
+				fi
+			fi
+
+			# Verify installation
+			if command -v rustc &>/dev/null && cargo clippy --version &>/dev/null && rustfmt --version &>/dev/null; then
+				if [ "$RUST_TOOLCHAIN_VERSION" != "stable" ]; then
+					installed_version=$(rustc --version 2>/dev/null | awk '{print $2}')
+					if [ -z "$installed_version" ] || [ "$installed_version" != "$RUST_TOOLCHAIN_VERSION" ]; then
+						echo -e "${RED}✗ rustc version mismatch (expected ${RUST_TOOLCHAIN_VERSION}, got ${installed_version:-unknown})${NC}"
+						exit 1
+					fi
+				fi
+				echo -e "${GREEN}✓ Rust toolchain, clippy, and rustfmt installed successfully${NC}"
+			else
+				echo -e "${RED}✗ Failed to install Rust toolchain, clippy, and rustfmt${NC}"
+				exit 1
+			fi
 		fi
 	fi
 
 	# Install cargo-audit (Rust dependency vulnerability scanner)
 	echo -e "${BLUE}Installing cargo-audit...${NC}"
+	CARGO_AUDIT_VERSION=$(get_tool_version "cargo_audit") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install cargo-audit"
+		log_info "[DRY-RUN] Would install cargo-audit==${CARGO_AUDIT_VERSION}"
 	elif command -v cargo-audit &>/dev/null; then
 		echo -e "${GREEN}✓ cargo-audit already installed${NC}"
 	elif command -v cargo &>/dev/null; then
-		if cargo install cargo-audit --locked; then
+		ensure_cargo_audit_deps
+		if cargo install cargo-audit --locked --version "$CARGO_AUDIT_VERSION"; then
 			echo -e "${GREEN}✓ cargo-audit installed successfully${NC}"
 		else
 			echo -e "${YELLOW}⚠ Failed to install cargo-audit (optional tool)${NC}"
@@ -575,9 +661,10 @@ main() {
 
 	# Install ruff (Python linting and formatting)
 	echo -e "${BLUE}Installing ruff...${NC}"
+	RUFF_VERSION=$(get_tool_version "ruff") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install ruff"
-	elif install_python_package "ruff"; then
+		log_info "[DRY-RUN] Would install ruff==${RUFF_VERSION}"
+	elif install_python_package "ruff" "$RUFF_VERSION"; then
 		echo -e "${GREEN}✓ ruff installed successfully${NC}"
 	else
 		if command -v brew &>/dev/null; then
@@ -599,9 +686,10 @@ main() {
 
 	# Install black (Python code formatter)
 	echo -e "${BLUE}Installing black...${NC}"
+	BLACK_VERSION=$(get_tool_version "black") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install black"
-	elif install_python_package "black"; then
+		log_info "[DRY-RUN] Would install black==${BLACK_VERSION}"
+	elif install_python_package "black" "$BLACK_VERSION"; then
 		echo -e "${GREEN}✓ black installed successfully${NC}"
 	else
 		echo -e "${RED}✗ Failed to install black${NC}"
@@ -610,9 +698,10 @@ main() {
 
 	# Install bandit (Python security linter)
 	echo -e "${BLUE}Installing bandit...${NC}"
+	BANDIT_VERSION=$(get_tool_version "bandit") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install bandit==1.8.6"
-	elif install_python_package "bandit" "1.8.6"; then
+		log_info "[DRY-RUN] Would install bandit==${BANDIT_VERSION}"
+	elif install_python_package "bandit" "$BANDIT_VERSION"; then
 		echo -e "${GREEN}✓ bandit installed successfully${NC}"
 	else
 		echo -e "${RED}✗ Failed to install bandit${NC}"
@@ -621,9 +710,10 @@ main() {
 
 	# Install mypy (Python type checker)
 	echo -e "${BLUE}Installing mypy...${NC}"
+	MYPY_VERSION=$(get_tool_version "mypy") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install mypy"
-	elif install_python_package "mypy"; then
+		log_info "[DRY-RUN] Would install mypy==${MYPY_VERSION}"
+	elif install_python_package "mypy" "$MYPY_VERSION"; then
 		echo -e "${GREEN}✓ mypy installed successfully${NC}"
 	else
 		echo -e "${RED}✗ Failed to install mypy${NC}"
@@ -781,9 +871,10 @@ main() {
 
 	# Install yamllint (Python package)
 	echo -e "${BLUE}Installing yamllint...${NC}"
+	YAMLLINT_VERSION=$(get_tool_version "yamllint") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install yamllint"
-	elif install_python_package "yamllint"; then
+		log_info "[DRY-RUN] Would install yamllint==${YAMLLINT_VERSION}"
+	elif install_python_package "yamllint" "$YAMLLINT_VERSION"; then
 		echo -e "${GREEN}✓ yamllint installed successfully${NC}"
 	else
 		echo -e "${RED}✗ Failed to install yamllint${NC}"
@@ -792,10 +883,11 @@ main() {
 
 	# Install pydoclint (Python docstring linter)
 	echo -e "${BLUE}Installing pydoclint...${NC}"
+	PYDOCLINT_VERSION=$(get_tool_version "pydoclint") || exit 1
 
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install pydoclint"
-	elif install_python_package "pydoclint"; then
+		log_info "[DRY-RUN] Would install pydoclint==${PYDOCLINT_VERSION}"
+	elif install_python_package "pydoclint" "$PYDOCLINT_VERSION"; then
 		echo -e "${GREEN}✓ pydoclint installed successfully${NC}"
 	else
 		echo -e "${RED}✗ Failed to install pydoclint${NC}"

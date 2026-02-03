@@ -51,6 +51,7 @@ runs:
           "scripts/utils/install-tools.sh"
           "package.json"
           "lintro/_tool_versions.py"
+          "lintro/tools/manifest.json"
         )
 
         tools_changed="false"

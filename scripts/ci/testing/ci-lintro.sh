@@ -52,7 +52,10 @@ trap 'echo "CHK_EXIT_CODE=${CHK_EXIT_CODE:-1}" >> "$GITHUB_ENV"' EXIT
 set +e # Don't exit on error
 # Use the image entrypoint to invoke lintro directly; avoid shell passthrough
 # Use tee to write output to both stdout (build logs) and chk-output.txt (step summary/PR comments)
-docker run --rm -v "$PWD:/code" -w /code py-lintro:latest lintro check . \
+# Run with matching UID/GID to allow writes to mounted volume (e.g., bun install for node_modules)
+# Enable auto-install for CI (uses --ignore-scripts for security)
+docker run --rm --user "$(id -u):$(id -g)" -e LINTRO_AUTO_INSTALL_DEPS=1 \
+	-v "$PWD:/code" -w /code py-lintro:latest lintro check . \
 	--tool-options pydoclint:timeout=120 2>&1 | tee chk-output.txt
 CHK_EXIT_CODE=${PIPESTATUS[0]}
 set -e # Exit on error again
