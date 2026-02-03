@@ -385,6 +385,19 @@ class BanditPlugin(BaseToolPlugin):
                     issues_count=0,
                 )
 
+            # Handle empty output (no JSON content to parse)
+            if not output or not output.strip():
+                logger.debug("[bandit] Empty output received")
+                return ToolResult(
+                    name=self.definition.name,
+                    success=True,
+                    output=(
+                        "No output from bandit "
+                        "(no Python files found or tool not available)"
+                    ),
+                    issues_count=0,
+                )
+
             bandit_data = _extract_bandit_json(raw_text=output)
             issues = parse_bandit_output(bandit_data)
             issues_count = len(issues)

@@ -165,11 +165,39 @@ class MypyPlugin(BaseToolPlugin):
         options = {k: v for k, v in options.items() if v is not None}
         super().set_options(**options, **kwargs)
 
-    def _build_command(self, files: list[str]) -> list[str]:
+    def _glob_to_regex(self, pattern: str) -> str:
+        """Convert a glob pattern to a mypy --exclude regex pattern.
+
+        Args:
+            pattern: Glob-style pattern (e.g., "test_samples/**", "*.pyc").
+
+        Returns:
+            Regex pattern suitable for mypy --exclude.
+        """
+        import fnmatch
+
+        # Convert glob to regex and escape special chars except glob wildcards
+        regex = fnmatch.translate(pattern)
+        # Remove anchors added by fnmatch.translate (\\Z at end, ^ at start if present)
+        regex = regex.rstrip("\\Z").rstrip("$")
+        if regex.startswith("(?s:"):
+            regex = regex[4:]
+        if regex.endswith(")"):
+            regex = regex[:-1]
+        # Ensure pattern can match anywhere in path
+        return regex
+
+    def _build_command(
+        self,
+        files: list[str],
+        *,
+        excludes: list[str] | None = None,
+    ) -> list[str]:
         """Build the mypy invocation command.
 
         Args:
             files: Relative file paths that should be checked by mypy.
+            excludes: Optional list of glob patterns to convert to --exclude args.
 
         Returns:
             A list of command arguments ready to be executed.
@@ -203,6 +231,13 @@ class MypyPlugin(BaseToolPlugin):
             cmd.extend(["--config-file", str(self.options["config_file"])])
         if self.options.get("cache_dir"):
             cmd.extend(["--cache-dir", str(self.options["cache_dir"])])
+
+        # Add exclude patterns when running on directories
+        if excludes:
+            for pattern in excludes:
+                regex = self._glob_to_regex(pattern)
+                if regex:
+                    cmd.extend(["--exclude", regex])
 
         cmd.extend(files)
         return cmd
@@ -313,14 +348,34 @@ class MypyPlugin(BaseToolPlugin):
                 self.options["config_file"],
             )
 
-        cmd = self._build_command(files=ctx.rel_files)
-        logger.debug("[mypy] Running with cwd={} and cmd={}", ctx.cwd, cmd)
+        # Mypy needs to run from the project root to properly resolve module
+        # structure. When checking a package directory, passing individual files
+        # causes "Duplicate module named __main__" and type resolution errors.
+        # Instead, we run from the original directory and pass the target paths.
+        use_project_root = any(Path(p).is_dir() for p in target_paths)
+
+        effective_cwd: str | None
+        mypy_excludes: list[str] | None = None
+        if use_project_root:
+            # Run mypy from where user invoked lintro, pass original paths
+            # Since we're passing directories, we need to pass excludes to mypy
+            # so it respects lintro's file filtering
+            effective_cwd = str(Path.cwd())
+            mypy_targets = target_paths
+            mypy_excludes = effective_excludes
+        else:
+            # For individual files, use the computed cwd and relative paths
+            effective_cwd = ctx.cwd
+            mypy_targets = ctx.rel_files if ctx.rel_files else target_paths
+
+        cmd = self._build_command(files=mypy_targets, excludes=mypy_excludes)
+        logger.debug("[mypy] Running with cwd={} and cmd={}", effective_cwd, cmd)
 
         try:
             success, output = self._run_subprocess(
                 cmd=cmd,
                 timeout=ctx.timeout,
-                cwd=ctx.cwd,
+                cwd=effective_cwd,
             )
         except subprocess.TimeoutExpired:
             timeout_result = create_timeout_result(
@@ -334,6 +389,23 @@ class MypyPlugin(BaseToolPlugin):
                 output=timeout_result.output,
                 issues_count=timeout_result.issues_count,
                 issues=timeout_result.issues,
+            )
+        except FileNotFoundError as e:
+            return ToolResult(
+                name=self.definition.name,
+                success=False,
+                output=f"mypy not found: {e}\n\n"
+                "Please ensure mypy is installed:\n"
+                "  - Run 'pip install mypy' or 'uv pip install mypy'",
+                issues_count=0,
+            )
+        except (OSError, ValueError, RuntimeError) as e:
+            logger.error(f"Failed to run mypy: {e}")
+            return ToolResult(
+                name=self.definition.name,
+                success=False,
+                output=f"mypy execution failed: {e}",
+                issues_count=0,
             )
 
         issues = parse_mypy_output(output=output)

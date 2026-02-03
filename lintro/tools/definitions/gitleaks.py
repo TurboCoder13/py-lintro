@@ -7,6 +7,7 @@ known secret formats and reports findings with detailed location information.
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess  # nosec B404 - used safely with shell disabled
 import tempfile
@@ -249,36 +250,39 @@ class GitleaksPlugin(BaseToolPlugin):
                 execution_failure = True
 
             # Parse the JSON output
-            try:
-                if execution_failure:
-                    return ToolResult(
-                        name=self.definition.name,
-                        success=False,
-                        output=output,
-                        issues_count=0,
-                    )
-
-                issues = parse_gitleaks_output(output=output)
-                issues_count = len(issues)
-
-                return ToolResult(
-                    name=self.definition.name,
-                    success=True,
-                    output=None,
-                    issues_count=issues_count,
-                    issues=issues,
-                )
-
-            # parse_gitleaks_output raises ValueError on malformed JSON or
-            # unexpected structure
-            except ValueError as e:
-                logger.error(f"Failed to parse gitleaks output: {e}")
+            if execution_failure:
                 return ToolResult(
                     name=self.definition.name,
                     success=False,
-                    output=(output or f"Failed to parse gitleaks output: {e!s}"),
+                    output=output,
                     issues_count=0,
                 )
+
+            issues = parse_gitleaks_output(output=output)
+            issues_count = len(issues)
+
+            # Check for parsing failures: if we have output that's not empty/[] but
+            # got no issues, verify the output is valid JSON. This catches cases
+            # where the report file contains invalid data.
+            if issues_count == 0 and output and output.strip() not in ("", "[]"):
+                try:
+                    json.loads(output)
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse gitleaks output: {e}")
+                    return ToolResult(
+                        name=self.definition.name,
+                        success=False,
+                        output=f"Failed to parse gitleaks output: {e}",
+                        issues_count=0,
+                    )
+
+            return ToolResult(
+                name=self.definition.name,
+                success=True,
+                output=None,
+                issues_count=issues_count,
+                issues=issues,
+            )
         finally:
             # Clean up the temporary report file
             Path(report_path).unlink(missing_ok=True)
