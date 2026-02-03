@@ -6,7 +6,18 @@ import re
 
 from loguru import logger
 
+from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.tsc.tsc_issue import TscIssue
+
+# Error codes that indicate missing dependencies rather than actual type errors
+# These occur when node_modules is missing or dependencies aren't installed
+DEPENDENCY_ERROR_CODES: frozenset[str] = frozenset(
+    {
+        "TS2307",  # Cannot find module 'X' or its corresponding type declarations
+        "TS2688",  # Cannot find type definition file for 'X'
+        "TS7016",  # Could not find a declaration file for module 'X'
+    },
+)
 
 # Pattern for tsc output with --pretty false:
 # file.ts(line,col): error TS1234: message
@@ -81,6 +92,9 @@ def parse_tsc_output(output: str) -> list[TscIssue]:
     if not output or not output.strip():
         return []
 
+    # Strip ANSI codes for consistent parsing across environments
+    output = strip_ansi_codes(output)
+
     issues: list[TscIssue] = []
     for line in output.splitlines():
         parsed = _parse_line(line)
@@ -88,3 +102,93 @@ def parse_tsc_output(output: str) -> list[TscIssue]:
             issues.append(parsed)
 
     return issues
+
+
+def categorize_tsc_issues(
+    issues: list[TscIssue],
+) -> tuple[list[TscIssue], list[TscIssue]]:
+    """Categorize tsc issues into type errors and dependency errors.
+
+    Separates actual type errors from errors caused by missing dependencies
+    (e.g., when node_modules is not installed).
+
+    Args:
+        issues: List of TscIssue objects to categorize.
+
+    Returns:
+        A tuple of (type_errors, dependency_errors) where:
+        - type_errors: Issues that are actual type errors in the code
+        - dependency_errors: Issues caused by missing modules/dependencies
+
+    Examples:
+        >>> issues = [
+        ...     TscIssue(
+        ...         file="a.ts", line=1, column=1,
+        ...         code="TS2322", message="Type error",
+        ...     ),
+        ...     TscIssue(
+        ...         file="b.ts", line=1, column=1,
+        ...         code="TS2307", message="Cannot find module",
+        ...     ),
+        ... ]
+        >>> type_errors, dep_errors = categorize_tsc_issues(issues)
+        >>> len(type_errors)
+        1
+        >>> len(dep_errors)
+        1
+    """
+    type_errors: list[TscIssue] = []
+    dependency_errors: list[TscIssue] = []
+
+    for issue in issues:
+        if issue.code and issue.code in DEPENDENCY_ERROR_CODES:
+            dependency_errors.append(issue)
+        else:
+            type_errors.append(issue)
+
+    return type_errors, dependency_errors
+
+
+def extract_missing_modules(dependency_errors: list[TscIssue]) -> list[str]:
+    """Extract module names from dependency error messages.
+
+    Parses the error messages to extract the names of missing modules
+    for clearer user feedback.
+
+    Args:
+        dependency_errors: List of TscIssue objects with dependency errors.
+
+    Returns:
+        List of unique module names that are missing.
+
+    Examples:
+        >>> from lintro.parsers.tsc.tsc_issue import TscIssue
+        >>> errors = [
+        ...     TscIssue(
+        ...         file="a.ts", line=1, column=1, code="TS2307",
+        ...         message="Cannot find module 'react'.",
+        ...     ),
+        ... ]
+        >>> extract_missing_modules(errors)
+        ['react']
+    """
+    modules: set[str] = set()
+
+    # Pattern to extract module name from common tsc error messages
+    # Matches: "Cannot find module 'X'" or "Cannot find module \"X\""
+    module_pattern = re.compile(r"Cannot find module ['\"]([^'\"]+)['\"]")
+    # Matches: "type definition file for 'X'"
+    typedef_pattern = re.compile(r"type definition file for ['\"]([^'\"]+)['\"]")
+    # Matches: "declaration file for module 'X'"
+    decl_pattern = re.compile(r"declaration file for module ['\"]([^'\"]+)['\"]")
+
+    for error in dependency_errors:
+        message = error.message or ""
+
+        for pattern in (module_pattern, typedef_pattern, decl_pattern):
+            match = pattern.search(message)
+            if match:
+                modules.add(match.group(1))
+                break
+
+    return sorted(modules)

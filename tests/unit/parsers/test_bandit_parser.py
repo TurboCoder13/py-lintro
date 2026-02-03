@@ -215,7 +215,7 @@ def test_bandit_check_handles_nonzero_rc_with_errors_array(
     ) -> NS:
         # Handle version check calls
         if "--version" in cmd:
-            return NS(stdout="bandit 1.8.0", stderr="", returncode=0)
+            return NS(stdout="bandit 1.9.2", stderr="", returncode=0)
         # Handle actual check calls
         return NS(stdout=json.dumps(sample), stderr="", returncode=1)
 
@@ -249,7 +249,7 @@ def test_bandit_check_handles_unparseable_output(
     ) -> SimpleNamespace:
         # Handle version check calls
         if "--version" in cmd:
-            return SimpleNamespace(stdout="bandit 1.8.0", stderr="", returncode=0)
+            return SimpleNamespace(stdout="bandit 1.9.2", stderr="", returncode=0)
         # Handle actual check calls
         return SimpleNamespace(stdout="nonsense", stderr="also nonsense", returncode=1)
 

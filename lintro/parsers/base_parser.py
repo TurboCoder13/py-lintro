@@ -128,6 +128,30 @@ def extract_dict_field(
     return default
 
 
+def is_empty_output(output: str | None) -> bool:
+    r"""Check if output is None, empty, or whitespace only.
+
+    A convenience function for consistent empty-checking across parsers.
+
+    Args:
+        output: Output string to check, may be None.
+
+    Returns:
+        True if output is None, empty string, or contains only whitespace.
+
+    Examples:
+        >>> is_empty_output(None)
+        True
+        >>> is_empty_output("")
+        True
+        >>> is_empty_output("   \n\t  ")
+        True
+        >>> is_empty_output("content")
+        False
+    """
+    return output is None or not output.strip()
+
+
 def strip_ansi_codes(text: str) -> str:
     r"""Strip ANSI escape sequences from text.
 

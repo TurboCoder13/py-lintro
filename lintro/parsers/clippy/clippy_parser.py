@@ -7,6 +7,7 @@ from typing import Any
 
 from loguru import logger
 
+from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.clippy.clippy_issue import ClippyIssue
 
 
@@ -117,6 +118,9 @@ def parse_clippy_output(output: str) -> list[ClippyIssue]:
     """
     if not output or not output.strip():
         return []
+
+    # Strip ANSI codes for consistent parsing across environments
+    output = strip_ansi_codes(output)
 
     issues: list[ClippyIssue] = []
 

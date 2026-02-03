@@ -173,3 +173,13 @@ def test_parse_hadolint_output_deeply_nested_path() -> None:
     result = parse_hadolint_output(output)
     assert_that(result).is_length(1)
     assert_that(result[0].file).is_equal_to(deep_path)
+
+
+def test_parse_hadolint_output_ansi_codes_stripped() -> None:
+    """Strip ANSI escape codes from output for consistent CI/local parsing."""
+    # Output with ANSI color codes (common in CI environments)
+    output = "\x1b[31mDockerfile:1 DL3006 error: Always tag the version\x1b[0m"
+    result = parse_hadolint_output(output)
+    assert_that(result).is_length(1)
+    assert_that(result[0].file).is_equal_to("Dockerfile")
+    assert_that(result[0].code).is_equal_to("DL3006")

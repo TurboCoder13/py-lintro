@@ -5,6 +5,7 @@ import re
 from loguru import logger
 
 from lintro.enums.severity_level import normalize_severity_level
+from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.yamllint.yamllint_issue import YamllintIssue
 
 
@@ -33,6 +34,9 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
     # Skip empty output
     if not output.strip():
         return issues
+
+    # Strip ANSI codes for consistent parsing across environments
+    output = strip_ansi_codes(output)
 
     lines: list[str] = output.splitlines()
 

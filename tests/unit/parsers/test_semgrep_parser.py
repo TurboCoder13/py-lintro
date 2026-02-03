@@ -192,15 +192,15 @@ def test_parse_semgrep_invalid_json() -> None:
 
 
 def test_parse_semgrep_non_object_json() -> None:
-    """Non-object JSON should raise ValueError."""
-    with pytest.raises(ValueError, match="must be a JSON object"):
-        parse_semgrep_output(output=json.dumps([1, 2, 3]))
+    """Non-object JSON should return empty list and log warning."""
+    issues = parse_semgrep_output(output=json.dumps([1, 2, 3]))
+    assert_that(issues).is_equal_to([])
 
 
 def test_parse_semgrep_non_list_results() -> None:
-    """Non-list results should raise ValueError."""
-    with pytest.raises(ValueError, match="must be a list"):
-        parse_semgrep_output(output=json.dumps({"results": "not a list"}))
+    """Non-list results should return empty list and log warning."""
+    issues = parse_semgrep_output(output=json.dumps({"results": "not a list"}))
+    assert_that(issues).is_equal_to([])
 
 
 def test_semgrep_check_parses_mixed_output_json(

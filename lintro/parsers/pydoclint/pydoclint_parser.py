@@ -11,6 +11,7 @@ import re
 
 from loguru import logger
 
+from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.pydoclint.pydoclint_issue import PydoclintIssue
 
 # Pydoclint output format:
@@ -59,6 +60,9 @@ def parse_pydoclint_output(output: str | None) -> list[PydoclintIssue]:
     # Handle None or empty output
     if output is None or not output.strip():
         return issues
+
+    # Strip ANSI codes for consistent parsing across environments
+    output = strip_ansi_codes(output)
 
     current_file: str | None = None
 

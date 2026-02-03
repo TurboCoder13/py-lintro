@@ -104,3 +104,13 @@ def test_parse_yamllint_output_blank_lines_between_issues() -> None:
 config.yml:10:1: [warning] warning one (rule2)"""
     result = parse_yamllint_output(output)
     assert_that(result).is_length(2)
+
+
+def test_parse_yamllint_output_ansi_codes_stripped() -> None:
+    """Strip ANSI escape codes from output for consistent CI/local parsing."""
+    # Output with ANSI color codes (common in CI environments)
+    output = "\x1b[31mconfig.yml:10:5: [error] trailing spaces (trailing-spaces)\x1b[0m"
+    result = parse_yamllint_output(output)
+    assert_that(result).is_length(1)
+    assert_that(result[0].file).is_equal_to("config.yml")
+    assert_that(result[0].rule).is_equal_to("trailing-spaces")

@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from assertpy import assert_that
 
-from lintro.parsers.tsc.tsc_parser import parse_tsc_output
+from lintro.parsers.tsc.tsc_issue import TscIssue
+from lintro.parsers.tsc.tsc_parser import (
+    DEPENDENCY_ERROR_CODES,
+    categorize_tsc_issues,
+    extract_missing_modules,
+    parse_tsc_output,
+)
 
 
 def test_parse_tsc_output_single_error() -> None:
@@ -152,3 +158,294 @@ def test_tsc_issue_to_display_row_minimal() -> None:
     assert_that(row["file"]).is_equal_to("main.ts")
     assert_that(row["code"]).is_equal_to("")
     assert_that(row["severity"]).is_equal_to("")
+
+
+def test_parse_tsc_output_ansi_codes_stripped() -> None:
+    """Strip ANSI escape codes from output for consistent CI/local parsing."""
+    # Output with ANSI color codes (common in CI environments)
+    output = "\x1b[31msrc/main.ts(10,5): error TS2322: Type 'string' is not assignable to type 'number'.\x1b[0m"
+    issues = parse_tsc_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].file).is_equal_to("src/main.ts")
+    assert_that(issues[0].code).is_equal_to("TS2322")
+
+
+# Tests for error categorization
+
+
+def test_dependency_error_codes_contains_expected_codes() -> None:
+    """DEPENDENCY_ERROR_CODES should contain expected TypeScript error codes."""
+    assert_that(DEPENDENCY_ERROR_CODES).contains("TS2307")
+    assert_that(DEPENDENCY_ERROR_CODES).contains("TS2688")
+    assert_that(DEPENDENCY_ERROR_CODES).contains("TS7016")
+
+
+def test_categorize_tsc_issues_separates_type_and_dep_errors() -> None:
+    """Categorize issues into type errors and dependency errors."""
+    issues = [
+        TscIssue(
+            file="src/main.ts",
+            line=10,
+            column=5,
+            code="TS2322",
+            message="Type 'string' is not assignable to type 'number'.",
+            severity="error",
+        ),
+        TscIssue(
+            file="src/app.ts",
+            line=1,
+            column=1,
+            code="TS2307",
+            message="Cannot find module 'react' or its corresponding type declarations.",
+            severity="error",
+        ),
+        TscIssue(
+            file="src/utils.ts",
+            line=5,
+            column=1,
+            code="TS2688",
+            message="Cannot find type definition file for 'node'.",
+            severity="error",
+        ),
+    ]
+
+    type_errors, dep_errors = categorize_tsc_issues(issues)
+
+    assert_that(type_errors).is_length(1)
+    assert_that(type_errors[0].code).is_equal_to("TS2322")
+    assert_that(dep_errors).is_length(2)
+    assert_that([e.code for e in dep_errors]).contains("TS2307", "TS2688")
+
+
+def test_categorize_tsc_issues_all_type_errors() -> None:
+    """All issues are type errors when no dependency codes present."""
+    issues = [
+        TscIssue(
+            file="src/main.ts",
+            line=10,
+            column=5,
+            code="TS2322",
+            message="Type error",
+            severity="error",
+        ),
+        TscIssue(
+            file="src/main.ts",
+            line=15,
+            column=10,
+            code="TS2339",
+            message="Property does not exist",
+            severity="error",
+        ),
+    ]
+
+    type_errors, dep_errors = categorize_tsc_issues(issues)
+
+    assert_that(type_errors).is_length(2)
+    assert_that(dep_errors).is_empty()
+
+
+def test_categorize_tsc_issues_all_dependency_errors() -> None:
+    """All issues are dependency errors when all have dependency codes."""
+    issues = [
+        TscIssue(
+            file="src/app.ts",
+            line=1,
+            column=1,
+            code="TS2307",
+            message="Cannot find module 'react'",
+            severity="error",
+        ),
+        TscIssue(
+            file="src/utils.ts",
+            line=2,
+            column=1,
+            code="TS7016",
+            message="Could not find declaration file for module 'lodash'.",
+            severity="error",
+        ),
+    ]
+
+    type_errors, dep_errors = categorize_tsc_issues(issues)
+
+    assert_that(type_errors).is_empty()
+    assert_that(dep_errors).is_length(2)
+
+
+def test_categorize_tsc_issues_empty_list() -> None:
+    """Handle empty issues list."""
+    type_errors, dep_errors = categorize_tsc_issues([])
+
+    assert_that(type_errors).is_empty()
+    assert_that(dep_errors).is_empty()
+
+
+def test_categorize_tsc_issues_no_code() -> None:
+    """Issues without code are treated as type errors."""
+    issues = [
+        TscIssue(
+            file="src/main.ts",
+            line=10,
+            column=5,
+            code=None,
+            message="Some error",
+            severity="error",
+        ),
+    ]
+
+    type_errors, dep_errors = categorize_tsc_issues(issues)
+
+    assert_that(type_errors).is_length(1)
+    assert_that(dep_errors).is_empty()
+
+
+# Tests for extract_missing_modules
+
+
+def test_extract_missing_modules_from_ts2307() -> None:
+    """Extract module names from TS2307 errors."""
+    errors = [
+        TscIssue(
+            file="src/app.ts",
+            line=1,
+            column=1,
+            code="TS2307",
+            message="Cannot find module 'react' or its corresponding type declarations.",
+            severity="error",
+        ),
+        TscIssue(
+            file="src/utils.ts",
+            line=2,
+            column=1,
+            code="TS2307",
+            message="Cannot find module '@types/node' or its corresponding type declarations.",
+            severity="error",
+        ),
+    ]
+
+    modules = extract_missing_modules(errors)
+
+    assert_that(modules).contains("react", "@types/node")
+    assert_that(modules).is_length(2)
+
+
+def test_extract_missing_modules_from_ts2688() -> None:
+    """Extract type definition names from TS2688 errors."""
+    errors = [
+        TscIssue(
+            file="src/app.ts",
+            line=1,
+            column=1,
+            code="TS2688",
+            message="Cannot find type definition file for 'node'.",
+            severity="error",
+        ),
+    ]
+
+    modules = extract_missing_modules(errors)
+
+    assert_that(modules).contains("node")
+
+
+def test_extract_missing_modules_from_ts7016() -> None:
+    """Extract module names from TS7016 errors."""
+    errors = [
+        TscIssue(
+            file="src/app.ts",
+            line=1,
+            column=1,
+            code="TS7016",
+            message="Could not find a declaration file for module 'lodash'.",
+            severity="error",
+        ),
+    ]
+
+    modules = extract_missing_modules(errors)
+
+    assert_that(modules).contains("lodash")
+
+
+def test_extract_missing_modules_deduplicates() -> None:
+    """Extract unique module names when same module appears multiple times."""
+    errors = [
+        TscIssue(
+            file="src/app.ts",
+            line=1,
+            column=1,
+            code="TS2307",
+            message="Cannot find module 'react'",
+            severity="error",
+        ),
+        TscIssue(
+            file="src/utils.ts",
+            line=2,
+            column=1,
+            code="TS2307",
+            message="Cannot find module 'react'",
+            severity="error",
+        ),
+    ]
+
+    modules = extract_missing_modules(errors)
+
+    assert_that(modules).is_length(1)
+    assert_that(modules).contains("react")
+
+
+def test_extract_missing_modules_sorted() -> None:
+    """Module names should be sorted alphabetically."""
+    errors = [
+        TscIssue(
+            file="a.ts",
+            line=1,
+            column=1,
+            code="TS2307",
+            message="Cannot find module 'zod'",
+            severity="error",
+        ),
+        TscIssue(
+            file="b.ts",
+            line=1,
+            column=1,
+            code="TS2307",
+            message="Cannot find module 'axios'",
+            severity="error",
+        ),
+        TscIssue(
+            file="c.ts",
+            line=1,
+            column=1,
+            code="TS2307",
+            message="Cannot find module 'lodash'",
+            severity="error",
+        ),
+    ]
+
+    modules = extract_missing_modules(errors)
+
+    assert_that(modules).is_equal_to(["axios", "lodash", "zod"])
+
+
+def test_extract_missing_modules_empty_list() -> None:
+    """Handle empty errors list."""
+    modules = extract_missing_modules([])
+
+    assert_that(modules).is_empty()
+
+
+def test_extract_missing_modules_no_match() -> None:
+    """Handle errors without recognizable module patterns."""
+    errors = [
+        TscIssue(
+            file="a.ts",
+            line=1,
+            column=1,
+            code="TS2307",
+            message="Some other error format",
+            severity="error",
+        ),
+    ]
+
+    modules = extract_missing_modules(errors)
+
+    assert_that(modules).is_empty()

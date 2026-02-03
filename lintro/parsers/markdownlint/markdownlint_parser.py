@@ -2,7 +2,7 @@
 
 import re
 
-from lintro.parsers.base_parser import collect_continuation_lines
+from lintro.parsers.base_parser import collect_continuation_lines, strip_ansi_codes
 from lintro.parsers.markdownlint.markdownlint_issue import MarkdownlintIssue
 
 
@@ -47,6 +47,9 @@ def parse_markdownlint_output(output: str) -> list[MarkdownlintIssue]:
     # Skip empty output
     if not output.strip():
         return issues
+
+    # Strip ANSI codes for consistent parsing across environments
+    output = strip_ansi_codes(output)
 
     lines: list[str] = output.splitlines()
 

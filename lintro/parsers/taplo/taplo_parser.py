@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 
+from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.taplo.taplo_issue import TaploIssue
 
 # Pre-compiled regex patterns for taplo output parsing
@@ -58,6 +59,9 @@ def parse_taplo_output(output: str | None) -> list[TaploIssue]:
     # Handle None or empty output
     if not output or not output.strip():
         return issues
+
+    # Strip ANSI codes for consistent parsing across environments
+    output = strip_ansi_codes(output)
 
     lines: list[str] = output.splitlines()
     i: int = 0
