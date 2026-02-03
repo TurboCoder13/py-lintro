@@ -335,3 +335,6 @@ dist
 .pnp.*
 .lintro/
 coverage.json
+
+# act secrets file (DO NOT COMMIT)
+.secrets

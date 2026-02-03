@@ -1,11 +1,18 @@
-# Default: minimal image for fast testing
-# For full CI (quality-ci-main, quality-e2e): use catthehacker/ubuntu:full-22.04
-# Run: docker pull catthehacker/ubuntu:full-22.04
-# Then uncomment the full-22.04 lines below and comment the act-22.04 lines
+# Full image for CI testing - has gh CLI, docker, and other tools pre-installed
 # Note: catthehacker/ubuntu doesn't have 24.04 images yet, using 22.04 as fallback
--P ubuntu-24.04=catthehacker/ubuntu:act-22.04
--P ubuntu-latest=catthehacker/ubuntu:act-22.04
-# -P ubuntu-24.04=catthehacker/ubuntu:full-22.04
-# -P ubuntu-latest=catthehacker/ubuntu:full-22.04
-# --container-architecture linux/amd64
+-P ubuntu-24.04=catthehacker/ubuntu:full-22.04
+-P ubuntu-latest=catthehacker/ubuntu:full-22.04
+# Blacksmith runners used in CI - map to full ubuntu image
+-P blacksmith-4vcpu-ubuntu-2404=catthehacker/ubuntu:full-22.04
+# For faster testing with minimal image, uncomment these and comment the full-22.04 lines:
+# -P ubuntu-24.04=catthehacker/ubuntu:act-22.04
+# -P ubuntu-latest=catthehacker/ubuntu:act-22.04
+# -P blacksmith-4vcpu-ubuntu-2404=catthehacker/ubuntu:act-22.04
+# Use linux/amd64 since the tools image is amd64-only
+--container-architecture linux/amd64
 --env ACT=true
+# Use bind mounts instead of copy for better performance
+--bind
+# Run containers with privileged mode and root user for Docker socket access
+# (uncomment if a workflow requires Docker-in-Docker)
+# --container-options --privileged --user=root

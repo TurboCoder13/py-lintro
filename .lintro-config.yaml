@@ -15,6 +15,7 @@ execution:
   fail_fast: false
   parallel: true
   max_workers: 10 # 1-32, defaults to CPU count if omitted
+  auto_install_deps: true # Auto-install Node.js deps if node_modules missing
 
 # Fallback configurations for tools without native config files.
 # These are used when no native config (e.g., .prettierrc, .yamllint) is found.
