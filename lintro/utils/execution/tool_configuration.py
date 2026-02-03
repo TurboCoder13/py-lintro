@@ -29,6 +29,7 @@ def configure_tool_for_execution(
     incremental: bool,
     action: Action,
     post_tools: set[str],
+    auto_install: bool = False,
 ) -> None:
     """Configure a tool for execution.
 
@@ -45,6 +46,7 @@ def configure_tool_for_execution(
         incremental: Whether to only check changed files.
         action: The action being performed (check/fix).
         post_tools: Set of post-check tool names.
+        auto_install: Whether to auto-install Node.js deps if missing.
     """
     # Build CLI overrides from --tool-options
     cli_overrides: dict[str, object] = {}
@@ -69,6 +71,10 @@ def configure_tool_for_execution(
     # Set incremental mode if enabled
     if incremental:
         tool.set_options(incremental=True)
+
+    # Set auto_install for tools that support it (e.g., tsc)
+    if auto_install:
+        tool.set_options(auto_install=True)
 
     # Handle Black post-check coordination with Ruff
     # If Black is configured as a post-check, avoid double formatting by

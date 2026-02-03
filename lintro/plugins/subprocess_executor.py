@@ -142,7 +142,8 @@ def run_subprocess(
         cmd: Command and arguments to run.
         timeout: Timeout in seconds.
         cwd: Working directory for command execution.
-        env: Environment variables for the subprocess.
+        env: Environment variables for the subprocess. These are merged with
+            os.environ to preserve PATH and other essential variables.
 
     Returns:
         Tuple of (success, output) where success indicates return code 0.
@@ -156,6 +157,12 @@ def run_subprocess(
     cmd_str = " ".join(cmd[:5]) + ("..." if len(cmd) > 5 else "")
     logger.debug(f"Running subprocess: {cmd_str} (timeout={timeout}s, cwd={cwd})")
 
+    # Merge custom env with os.environ to preserve PATH, HOME, etc.
+    # Custom env values override os.environ when there are conflicts.
+    effective_env: dict[str, str] | None = None
+    if env is not None:
+        effective_env = {**os.environ, **env}
+
     try:
         result = subprocess.run(  # nosec B603 - args list, shell=False
             cmd,
@@ -163,7 +170,7 @@ def run_subprocess(
             text=True,
             timeout=timeout,
             cwd=cwd,
-            env=env,
+            env=effective_env,
         )
 
         if result.returncode != 0:
@@ -226,7 +233,8 @@ def run_subprocess_streaming(
         cmd: Command and arguments to run.
         timeout: Timeout in seconds.
         cwd: Working directory for command execution.
-        env: Environment variables for the subprocess.
+        env: Environment variables for the subprocess. These are merged with
+            os.environ to preserve PATH and other essential variables.
         line_handler: Optional callback called for each line of output.
 
     Returns:
@@ -243,6 +251,12 @@ def run_subprocess_streaming(
         f"Running subprocess (streaming): {cmd_str} (timeout={timeout}s, cwd={cwd})",
     )
 
+    # Merge custom env with os.environ to preserve PATH, HOME, etc.
+    # Custom env values override os.environ when there are conflicts.
+    effective_env: dict[str, str] | None = None
+    if env is not None:
+        effective_env = {**os.environ, **env}
+
     try:
         # Use Popen for streaming output  # nosec B603
         process = subprocess.Popen(
@@ -251,7 +265,7 @@ def run_subprocess_streaming(
             stderr=subprocess.STDOUT,
             text=True,
             cwd=cwd,
-            env=env,
+            env=effective_env,
             bufsize=1,  # Line buffering
         )
 

@@ -81,6 +81,11 @@ DEFAULT_ACTION: str = "fmt"
     is_flag=True,
     help="Enable debug output on console",
 )
+@click.option(
+    "--auto-install",
+    is_flag=True,
+    help="Auto-install Node.js dependencies if node_modules is missing",
+)
 def format_command(
     ctx: click.Context,
     paths: tuple[str, ...],
@@ -96,6 +101,7 @@ def format_command(
     raw_output: bool,
     stream: bool,
     debug: bool,
+    auto_install: bool,
 ) -> None:
     """Format code using configured formatting tools.
 
@@ -118,6 +124,7 @@ def format_command(
         raw_output: bool: Show raw tool output instead of formatted output.
         stream: bool: Whether to stream tool output in real-time.
         debug: bool: Whether to enable debug output on console.
+        auto_install: bool: Whether to auto-install Node.js deps if missing.
     """
     # Default to current directory if no paths provided
     normalized_paths: list[str] = list(paths) if paths else list(DEFAULT_PATHS)
@@ -138,6 +145,7 @@ def format_command(
         debug=debug,
         stream=stream,
         no_log=no_log,
+        auto_install=auto_install,
     )
 
     # Exit with code from tool execution
@@ -155,6 +163,7 @@ def format_code(
     group_by: str = "auto",
     output_format: str = "grid",
     verbose: bool = False,
+    auto_install: bool = False,
 ) -> None:
     """Programmatic format function.
 
@@ -167,6 +176,7 @@ def format_code(
         group_by: str: How to group issues in output (tool, file, etc).
         output_format: str: Format for displaying results (table, json, etc).
         verbose: bool: Whether to show verbose output during execution.
+        auto_install: bool: Whether to auto-install Node.js deps if missing.
 
     Returns:
         None: This function does not return a value.
@@ -191,6 +201,8 @@ def format_code(
         args.extend(["--output-format", output_format])
     if verbose:
         args.append("--verbose")
+    if auto_install:
+        args.append("--auto-install")
 
     runner = CliRunner()
     result = runner.invoke(format_command, args)

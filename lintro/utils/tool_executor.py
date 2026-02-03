@@ -63,6 +63,7 @@ def run_lint_tools_simple(
     debug: bool = False,
     stream: bool = False,
     no_log: bool = False,
+    auto_install: bool = False,
 ) -> int:
     """Simplified runner using Loguru-based logging with rich formatting.
 
@@ -88,6 +89,7 @@ def run_lint_tools_simple(
         debug: Whether to show DEBUG messages on console.
         stream: Whether to stream output in real-time (not yet implemented).
         no_log: Whether to disable file logging (not yet implemented).
+        auto_install: Whether to auto-install Node.js deps if node_modules missing.
 
     Returns:
         Exit code (0 for success, 1 for failures).
@@ -189,6 +191,9 @@ def run_lint_tools_simple(
             text=f"Running {len(tools_to_run)} tools in parallel "
             f"(max {lintro_config.execution.max_workers} workers)",
         )
+        # Determine auto_install: CLI flag takes precedence, else use config
+        auto_install_cfg = lintro_config.execution.auto_install_deps
+        effective_auto_install = auto_install or auto_install_cfg
         all_results = run_tools_parallel(
             tools_to_run=tools_to_run,
             paths=paths,
@@ -200,6 +205,7 @@ def run_lint_tools_simple(
             post_tools=post_tools_early,
             max_workers=lintro_config.execution.max_workers,
             incremental=incremental,
+            auto_install=effective_auto_install,
         )
 
         # Calculate totals from parallel results using helper
@@ -253,6 +259,9 @@ def run_lint_tools_simple(
 
     else:
         # Sequential execution (original behavior)
+        # Determine auto_install: CLI flag takes precedence, else use config
+        auto_install_cfg = lintro_config.execution.auto_install_deps
+        effective_auto_install = auto_install or auto_install_cfg
         for tool_name in tools_to_run:
             try:
                 tool = tool_manager.get_tool(tool_name)
@@ -272,6 +281,7 @@ def run_lint_tools_simple(
                     incremental=incremental,
                     action=action,
                     post_tools=post_tools_early,
+                    auto_install=effective_auto_install,
                 )
 
                 # Execute the tool

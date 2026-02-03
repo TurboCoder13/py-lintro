@@ -71,6 +71,41 @@ sudo usermod -aG docker $USER
 
 ---
 
+### Node.js dependency errors (TS2307, TS2688, TS7016)
+
+**Cause**: TypeScript tools report "Cannot find module" errors when `node_modules` is
+missing.
+
+**Solution**: Install dependencies or use auto-install:
+
+```bash
+# Option 1: Install dependencies manually
+bun install
+# or
+npm install
+
+# Option 2: Use --auto-install flag
+lintro check src/ --tools tsc --auto-install
+
+# Option 3: Enable auto-install in configuration
+# .lintro-config.yaml
+execution:
+  auto_install_deps: true
+```
+
+Lintro categorizes tsc errors to help you distinguish between:
+
+- **Dependency errors**: Missing modules due to uninstalled packages
+- **Type errors**: Actual TypeScript issues in your code
+
+When dependency errors are detected, Lintro shows the missing module names and suggests
+running `bun install` or using `--auto-install`.
+
+**Note:** Docker automatically installs Node.js dependencies when the container starts,
+so this issue typically only affects local usage.
+
+---
+
 ### Slow performance
 
 **Cause**: Scanning large directories or running all tools unnecessarily.

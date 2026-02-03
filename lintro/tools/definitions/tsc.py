@@ -35,7 +35,12 @@ from lintro._tool_versions import get_min_version
 from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
-from lintro.parsers.tsc.tsc_parser import parse_tsc_output
+from lintro.parsers.base_parser import strip_ansi_codes
+from lintro.parsers.tsc.tsc_parser import (
+    categorize_tsc_issues,
+    extract_missing_modules,
+    parse_tsc_output,
+)
 from lintro.plugins.base import BaseToolPlugin
 from lintro.plugins.protocol import ToolDefinition
 from lintro.plugins.registry import register_tool
@@ -314,6 +319,26 @@ class TscPlugin(BaseToolPlugin):
 
         # Determine project configuration strategy
         cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
+
+        # Check if auto-install is enabled and dependencies need installing
+        auto_install = merged_options.get("auto_install", False)
+        if auto_install:
+            from lintro.utils.node_deps import install_node_deps, should_install_deps
+
+            if should_install_deps(cwd_path):
+                logger.info("[tsc] Auto-installing Node.js dependencies...")
+                success, install_output = install_node_deps(cwd_path)
+                if not success:
+                    return ToolResult(
+                        name=self.definition.name,
+                        success=False,
+                        output=(
+                            f"Failed to install Node.js dependencies:\n"
+                            f"{install_output}"
+                        ),
+                        issues_count=0,
+                    )
+                logger.info("[tsc] Dependencies installed successfully")
         use_project_files = merged_options.get("use_project_files", False)
         explicit_project_opt = merged_options.get("project")
         explicit_project = str(explicit_project_opt) if explicit_project_opt else None
@@ -379,17 +404,117 @@ class TscPlugin(BaseToolPlugin):
                     issues_count=timeout_result.issues_count,
                     issues=timeout_result.issues,
                 )
-
-            # Parse output
-            issues = parse_tsc_output(output=output)
-            issues_count = len(issues)
-
-            if not success and issues_count == 0:
-                # Execution failed but no structured issues were parsed
+            except FileNotFoundError as e:
                 return ToolResult(
                     name=self.definition.name,
                     success=False,
-                    output=output or "tsc execution failed.",
+                    output=f"TypeScript compiler not found: {e}\n\n"
+                    "Please ensure tsc is installed:\n"
+                    "  - Run 'npm install -g typescript' or 'bun add -g typescript'\n"
+                    "  - Or install locally: 'npm install typescript'",
+                    issues_count=0,
+                )
+            except OSError as e:
+                logger.error("[tsc] Failed to run tsc: {}", e)
+                return ToolResult(
+                    name=self.definition.name,
+                    success=False,
+                    output="tsc execution failed: " + str(e),
+                    issues_count=0,
+                )
+
+            # Parse output (parser handles ANSI stripping internally)
+            all_issues = parse_tsc_output(output=output or "")
+            issues_count = len(all_issues)
+
+            # Normalize output for fallback substring matching below
+            normalized_output = strip_ansi_codes(output) if output else ""
+
+            # Categorize issues into type errors vs dependency errors
+            type_errors, dependency_errors = categorize_tsc_issues(all_issues)
+
+            # If we have dependency errors, provide helpful guidance
+            if dependency_errors:
+                missing_modules = extract_missing_modules(dependency_errors)
+                dep_output_lines = [
+                    "Missing dependencies detected:",
+                    f"  {len(dependency_errors)} dependency error(s)",
+                ]
+                if missing_modules:
+                    modules_str = ", ".join(missing_modules[:10])
+                    if len(missing_modules) > 10:
+                        modules_str += f", ... (+{len(missing_modules) - 10} more)"
+                    dep_output_lines.append(f"  Missing: {modules_str}")
+
+                dep_output_lines.extend(
+                    [
+                        "",
+                        "Suggestions:",
+                        "  - Run 'bun install' or 'npm install' in your project",
+                        "  - Use '--auto-install' flag to auto-install dependencies",
+                        "  - If using Docker, ensure node_modules is available",
+                    ],
+                )
+
+                # If there are also type errors, show both
+                if type_errors:
+                    dep_output_lines.insert(
+                        0,
+                        f"Type errors: {len(type_errors)}",
+                    )
+                    dep_output_lines.insert(1, "")
+
+                # Return all issues but with helpful output
+                return ToolResult(
+                    name=self.definition.name,
+                    success=False,
+                    output="\n".join(dep_output_lines),
+                    issues_count=issues_count,
+                    issues=all_issues,
+                )
+
+            if not success and issues_count == 0 and normalized_output:
+                # Execution failed but no structured issues were parsed.
+                # This can happen with malformed output or non-standard error formats.
+                # Detect common dependency/configuration errors via substring matching
+                # as a fallback when the parser couldn't extract structured issues.
+
+                # Type definition errors (usually means node_modules not installed)
+                if (
+                    "Cannot find type definition file" in normalized_output
+                    or "Cannot find module" in normalized_output
+                ):
+                    helpful_output = (
+                        f"TypeScript configuration error:\n{normalized_output}\n\n"
+                        "This usually means dependencies aren't installed.\n"
+                        "Suggestions:\n"
+                        "  - Run 'bun install' or 'npm install' in your project\n"
+                        "  - Use '--auto-install' flag to auto-install dependencies\n"
+                        "  - If using Docker, ensure node_modules is available\n"
+                        "  - Use --tool-options 'tsc:skip_lib_check=true' to skip "
+                        "type checking of declaration files"
+                    )
+                    return ToolResult(
+                        name=self.definition.name,
+                        success=False,
+                        output=helpful_output,
+                        issues_count=0,
+                    )
+
+                # Generic failure
+                return ToolResult(
+                    name=self.definition.name,
+                    success=False,
+                    output=normalized_output or "tsc execution failed.",
+                    issues_count=0,
+                )
+
+            if not success and issues_count == 0:
+                # No output - generic failure
+                return ToolResult(
+                    name=self.definition.name,
+                    success=False,
+                    output="tsc execution failed.",
                     issues_count=0,
                 )
 
@@ -398,7 +523,7 @@ class TscPlugin(BaseToolPlugin):
                 success=issues_count == 0,
                 output=None,
                 issues_count=issues_count,
-                issues=issues,
+                issues=all_issues,
             )
         finally:
             # Clean up temp tsconfig
