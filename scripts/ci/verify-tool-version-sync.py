@@ -5,6 +5,7 @@ This script validates that:
 1. npm tool versions are correctly read from package.json
 2. Non-npm tool versions are defined in _tool_versions.py
 3. All expected tools have versions available
+4. Fallback npm versions match package.json to prevent drift
 
 Exit codes:
     0: All versions are correctly loaded
@@ -13,6 +14,7 @@ Exit codes:
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -30,6 +32,7 @@ def main() -> int:
     sys.path.insert(0, str(project_root))
 
     from lintro._tool_versions import (
+        _FALLBACK_NPM_VERSIONS,
         _NPM_PACKAGE_TO_TOOL,
         TOOL_VERSIONS,
         get_tool_version,
@@ -38,6 +41,17 @@ def main() -> int:
     from lintro.enums.tool_name import ToolName
 
     errors: list[str] = []
+
+    # Load package.json for fallback validation
+    package_json_path = project_root / "package.json"
+    package_json_versions: dict[str, str] = {}
+    if package_json_path.exists():
+        pkg_data = json.loads(package_json_path.read_text())
+        all_deps = {
+            **pkg_data.get("dependencies", {}),
+            **pkg_data.get("devDependencies", {}),
+        }
+        package_json_versions = {k: v.lstrip("^~") for k, v in all_deps.items()}
 
     # Check that all npm-managed tools have versions from package.json
     print("npm-managed tools (from package.json):")
@@ -48,6 +62,31 @@ def main() -> int:
         else:
             errors.append(f"npm tool '{tool_name.value}' ({npm_pkg}) has no version")
             print(f"  ✗ {tool_name.value} ({npm_pkg}): MISSING")
+
+    print()
+
+    # Validate fallback npm versions match package.json
+    print("Fallback npm version sync check:")
+    for fallback_tool, fallback_version in _FALLBACK_NPM_VERSIONS.items():
+        pkg_name: str | None = next(
+            (pkg for pkg, t in _NPM_PACKAGE_TO_TOOL.items() if t == fallback_tool),
+            None,
+        )
+        if pkg_name is not None and pkg_name in package_json_versions:
+            pkg_version = package_json_versions[pkg_name]
+            if fallback_version == pkg_version:
+                print(f"  ✓ {fallback_tool.value}: fallback matches package.json")
+            else:
+                errors.append(
+                    f"Fallback version for {fallback_tool.value} ({fallback_version}) "
+                    f"doesn't match package.json ({pkg_version})",
+                )
+                print(
+                    f"  ✗ {fallback_tool.value}: fallback {fallback_version} != "
+                    f"package.json {pkg_version}",
+                )
+        elif pkg_name:
+            print(f"  ? {fallback_tool.value}: not in package.json (skipped)")
 
     print()
 

@@ -114,8 +114,21 @@ jobs:
             TOOLS_IMAGE=${{ steps.tools.outputs.image }}
           # Note: GHA cache not supported with docker driver
           provenance: false
+      - name: Build Base Docker image
+        # yamllint disable-line rule:line-length
+        uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
+        with:
+          context: .
+          file: Dockerfile.base
+          push: false
+          load: true
+          tags: py-lintro:base
+          # Note: GHA cache not supported with docker driver
+          provenance: false
       - name: Test Docker Image
         run: ./scripts/docker/docker-build-test.sh
+      - name: Smoke Test Base Image
+        run: docker run --rm py-lintro:base lintro --version
 
       - name: Run pytest suite inside Docker (compose)
         env:
@@ -220,6 +233,16 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
+      - name: Extract metadata (base)
+        id: meta-base
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/lgtm-hq/py-lintro
+          tags: |
+            type=semver,pattern={{version}},suffix=-base
+            type=semver,pattern={{major}}.{{minor}},suffix=-base
+            type=semver,pattern={{major}},suffix=-base
+            type=raw,value=base,enable={{is_default_branch}}
       - name: Build and push Docker image (with provenance + SBOM)
         # yamllint disable-line rule:line-length
         uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
@@ -230,5 +253,16 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             TOOLS_IMAGE=${{ steps.tools.outputs.image }}
+          provenance: true
+          sbom: true
+      - name: Build and push Base Docker image (with provenance + SBOM)
+        # yamllint disable-line rule:line-length
+        uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
+        with:
+          context: .
+          file: Dockerfile.base
+          push: true
+          tags: ${{ steps.meta-base.outputs.tags }}
+          labels: ${{ steps.meta-base.outputs.labels }}
           provenance: true
           sbom: true

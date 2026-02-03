@@ -40,6 +40,7 @@ TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
     ToolName.OXFMT,
     ToolName.OXLINT,
     ToolName.PRETTIER,
+    ToolName.RUSTC,
     ToolName.RUSTFMT,
     ToolName.SEMGREP,
     ToolName.SHELLCHECK,

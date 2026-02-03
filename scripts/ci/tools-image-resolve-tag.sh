@@ -18,13 +18,13 @@ Environment Variables (required):
 Environment Variables (optional):
   BUILD_TAG      Tag from build-tools-image job (if build ran)
   BUILD_RESULT   Result of build-tools-image job (success, failure, skipped)
-  DEFAULT_IMAGE  Default image to use as fallback (default: ghcr.io/turbocoder13/lintro-tools:latest)
+  DEFAULT_IMAGE  Default image to use as fallback (default: pinned digest from Dockerfile)
 
 Outputs (to GITHUB_OUTPUT):
   tag            The resolved tools image tag
 
 Example:
-  GITHUB_OUTPUT=/tmp/output BUILD_RESULT=success BUILD_TAG=ghcr.io/turbocoder13/lintro-tools:pr-123 \
+  GITHUB_OUTPUT=/tmp/output BUILD_RESULT=success BUILD_TAG=ghcr.io/lgtm-hq/lintro-tools:pr-123 \
     ./scripts/ci/tools-image-resolve-tag.sh
 EOF
 	exit 0
@@ -32,9 +32,20 @@ fi
 
 : "${GITHUB_OUTPUT:?GITHUB_OUTPUT must be set}"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 BUILD_TAG="${BUILD_TAG:-}"
 BUILD_RESULT="${BUILD_RESULT:-}"
-DEFAULT_IMAGE="${DEFAULT_IMAGE:-ghcr.io/turbocoder13/lintro-tools:latest}"
+DEFAULT_IMAGE="${DEFAULT_IMAGE:-}"
+
+if [[ -z "$DEFAULT_IMAGE" ]]; then
+	DOCKERFILE="$PROJECT_ROOT/Dockerfile"
+	if [[ -f "$DOCKERFILE" ]]; then
+		DEFAULT_IMAGE=$(grep -E '^ARG TOOLS_IMAGE=' "$DOCKERFILE" | head -n1 | cut -d= -f2 || true)
+	fi
+fi
+DEFAULT_IMAGE="${DEFAULT_IMAGE:-ghcr.io/lgtm-hq/lintro-tools:latest}"
 
 # If build ran and succeeded, use its tag
 if [[ "$BUILD_RESULT" == "success" && -n "$BUILD_TAG" ]]; then
