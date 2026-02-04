@@ -48,13 +48,13 @@ TOOL_VERSIONS: dict[ToolName | str, str] = {
     ToolName.CLIPPY: "1.92.0",
     ToolName.GITLEAKS: "8.21.2",
     ToolName.HADOLINT: "2.12.0",
-    ToolName.PYTEST: "8.0.0",
+    ToolName.PYTEST: "9.0.2",
     ToolName.RUSTC: "1.92.0",
     ToolName.RUSTFMT: "1.8.0",
     ToolName.SEMGREP: "1.85.0",
     ToolName.SHELLCHECK: "0.11.0",
     ToolName.SHFMT: "3.10.0",
-    ToolName.SQLFLUFF: "3.0.0",
+    ToolName.SQLFLUFF: "4.0.0",
     ToolName.TAPLO: "0.10.0",
 }
 

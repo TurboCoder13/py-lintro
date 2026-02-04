@@ -42,9 +42,17 @@ def _extract_version(output: str | None) -> str | None:
     """Extract version number from command output."""
     if not output:
         return None
+    # Handle whitespace-only strings
+    stripped = output.strip()
+    if not stripped:
+        return None
     # Common patterns: "X.Y.Z", "vX.Y.Z", "version X.Y.Z"
-    match = re.search(r"(\d+\.\d+(?:\.\d+)?)", output)
-    return match.group(1) if match else output.split()[0] if output else None
+    match = re.search(r"(\d+\.\d+(?:\.\d+)?)", stripped)
+    if match:
+        return match.group(1)
+    # Fallback to first token if no version pattern found
+    tokens = stripped.split()
+    return tokens[0] if tokens else None
 
 
 def collect_system_info() -> SystemInfo:
@@ -213,11 +221,35 @@ def collect_project_info() -> ProjectInfo:
 
     # JavaScript/TypeScript
     if (cwd / "package.json").exists():
-        languages.extend(["JavaScript", "TypeScript"])
+        languages.append("JavaScript")
         if shutil.which("bun"):
             package_managers["bun"] = "package.json"
         else:
             package_managers["npm"] = "package.json"
+
+        # Detect TypeScript more accurately
+        has_typescript = False
+        if (
+            (cwd / "tsconfig.json").exists()
+            or list(cwd.glob("**/*.ts"))
+            or list(cwd.glob("**/*.tsx"))
+        ):
+            has_typescript = True
+        else:
+            # Check package.json for typescript dependency
+            try:
+                import json
+
+                pkg_data = json.loads((cwd / "package.json").read_text())
+                deps = pkg_data.get("dependencies", {})
+                dev_deps = pkg_data.get("devDependencies", {})
+                if "typescript" in deps or "typescript" in dev_deps:
+                    has_typescript = True
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        if has_typescript:
+            languages.append("TypeScript")
 
     # Rust
     if (cwd / "Cargo.toml").exists():
@@ -260,7 +292,7 @@ def collect_lintro_info() -> LintroInfo:
             try:
                 import yaml
 
-                with open(path) as f:
+                with open(path, encoding="utf-8") as f:
                     yaml.safe_load(f)
                 config_valid = True
             except Exception:

@@ -344,8 +344,9 @@ def doctor_command(
 
     # Markdown report mode
     if report:
-        if env_report is None:
-            env_report = collect_full_environment()
+        # env_report is guaranteed to be set since report=True implies
+        # the condition (verbose or report or json_output) was True above
+        assert env_report is not None
         markdown = _generate_markdown_report(env_report, results)
         click.echo(markdown)
         return

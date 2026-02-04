@@ -32,8 +32,13 @@ def _extract_skip_reason(output: str) -> str:
         Abbreviated reason string for display in the summary table.
     """
     if ":" in output and ". Minimum" in output:
-        start = output.index(":") + 1
-        end = output.index(". Minimum")
+        colon_idx = output.index(":")
+        minimum_idx = output.index(". Minimum")
+        # Ensure colon comes before ". Minimum" to get a valid slice
+        if colon_idx >= minimum_idx:
+            return "SKIPPED"
+        start = colon_idx + 1
+        end = minimum_idx
         reason = output[start:end].strip()
         # Abbreviate common error messages
         if "Command failed" in reason:

@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from lintro.parsers.base_parser import strip_ansi_codes
+
 if TYPE_CHECKING:
     from lintro.tools.definitions.pytest import PytestPlugin
 
@@ -161,7 +163,7 @@ def collect_tests_once(
         # Extract the total count from collection output
         # Formats: "collected XXXX items", "XXXX tests collected in Y.YYs"
         # Strip ANSI escape codes first to avoid color codes breaking regex
-        cleaned_output = re.sub(r"\x1b\[[0-9;]*[A-Za-z]", "", output or "")
+        cleaned_output = strip_ansi_codes(output or "")
         total_count = 0
         match = re.search(r"collected\s+(\d+)\s+items?", cleaned_output)
         if not match:
