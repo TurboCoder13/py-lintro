@@ -55,9 +55,9 @@ log_info "Starting security audit..."
 
 # Step 1: Export dependencies with uv (captures vulnerability output)
 log_info "Exporting dependencies with uv..."
-UV_EXIT_CODE=0
-if ! uv export --no-emit-project >"$REQUIREMENTS_FILE" 2>"$UV_OUTPUT_FILE"; then
-	UV_EXIT_CODE=$?
+uv export --no-emit-project >"$REQUIREMENTS_FILE" 2>"$UV_OUTPUT_FILE" || true
+UV_EXIT_CODE=$?
+if [[ "$UV_EXIT_CODE" -ne 0 ]]; then
 	log_warning "uv export exited with code $UV_EXIT_CODE"
 	AUDIT_FAILED=1
 else
@@ -89,10 +89,11 @@ UV_VULNS="$VULN_OUTPUT"
 
 # Step 2: Run pip-audit for additional checks
 log_info "Running pip-audit..."
-if uv run pip-audit --strict --progress-spinner=off -r "$REQUIREMENTS_FILE" >"$PIP_AUDIT_OUTPUT_FILE" 2>&1; then
+uv run pip-audit --strict --progress-spinner=off -r "$REQUIREMENTS_FILE" >"$PIP_AUDIT_OUTPUT_FILE" 2>&1 || true
+PIP_AUDIT_EXIT_CODE=$?
+if [[ "$PIP_AUDIT_EXIT_CODE" -eq 0 ]]; then
 	log_success "pip-audit completed - no vulnerabilities found"
 else
-	PIP_AUDIT_EXIT_CODE=$?
 	log_warning "pip-audit exited with code $PIP_AUDIT_EXIT_CODE"
 	PIP_AUDIT_VULNS=$(cat "$PIP_AUDIT_OUTPUT_FILE")
 	AUDIT_FAILED=1
