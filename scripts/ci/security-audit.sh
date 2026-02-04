@@ -82,6 +82,15 @@ scan_for_vulnerabilities() {
 	return 1
 }
 
+# Sanitize text for embedding in markdown code blocks
+# Escapes triple backticks to prevent breaking fenced code blocks
+sanitize_for_markdown() {
+	local text="$1"
+	# Replace ``` with escaped version to prevent markdown injection
+	# Using bash parameter expansion instead of sed (SC2001)
+	echo "${text//\`\`\`/\\\`\\\`\\\`}"
+}
+
 # Step 1: Export dependencies with uv (captures vulnerability output)
 log_info "Exporting dependencies with uv..."
 UV_EXIT_CODE=0
@@ -155,20 +164,22 @@ The security audit encountered errors during execution.
 $CHECKS_PERFORMED"
 
 	if [[ -n "$UV_ERROR" ]]; then
+		SANITIZED_UV_ERROR=$(sanitize_for_markdown "$UV_ERROR")
 		CONTENT="$CONTENT
 
 ### ❌ uv export Error:
 \`\`\`
-$UV_ERROR
+$SANITIZED_UV_ERROR
 \`\`\`"
 	fi
 
 	if [[ -n "$PIP_AUDIT_ERROR" ]]; then
+		SANITIZED_PIP_AUDIT_ERROR=$(sanitize_for_markdown "$PIP_AUDIT_ERROR")
 		CONTENT="$CONTENT
 
 ### ❌ pip-audit Error:
 \`\`\`
-$PIP_AUDIT_ERROR
+$SANITIZED_PIP_AUDIT_ERROR
 \`\`\`"
 	fi
 
@@ -189,20 +200,22 @@ Security vulnerabilities were detected in project dependencies.
 $CHECKS_PERFORMED"
 
 	if [[ -n "$UV_VULNS" ]]; then
+		SANITIZED_UV_VULNS=$(sanitize_for_markdown "$UV_VULNS")
 		CONTENT="$CONTENT
 
 ### 🚨 uv Vulnerability Report:
 \`\`\`
-$UV_VULNS
+$SANITIZED_UV_VULNS
 \`\`\`"
 	fi
 
 	if [[ -n "$PIP_AUDIT_VULNS" ]]; then
+		SANITIZED_PIP_AUDIT_VULNS=$(sanitize_for_markdown "$PIP_AUDIT_VULNS")
 		CONTENT="$CONTENT
 
 ### 🚨 pip-audit Report:
 \`\`\`
-$PIP_AUDIT_VULNS
+$SANITIZED_PIP_AUDIT_VULNS
 \`\`\`"
 	fi
 
