@@ -68,14 +68,22 @@ def _render_env_vars(console: Console, env_vars: dict[str, str | None]) -> None:
     for var_name, var_value in env_vars.items():
         display_value: str
         if var_name == "PATH" and var_value:
-            # Truncate PATH for readability
+            # Truncate PATH for readability, keeping whole path entries
             path_truncate_len = _get_path_truncate_len()
             path_entries = var_value.split(os.pathsep)
             if len(var_value) > path_truncate_len:
-                # Find how many entries fit within truncation length
-                truncated = var_value[:path_truncate_len]
-                shown_entries = len(truncated.split(os.pathsep))
-                remaining = len(path_entries) - shown_entries
+                # Build truncated string by adding whole entries
+                shown_parts: list[str] = []
+                current_len = 0
+                for entry in path_entries:
+                    # Account for separator length (except for first entry)
+                    entry_len = len(entry) + (1 if shown_parts else 0)
+                    if current_len + entry_len > path_truncate_len:
+                        break
+                    shown_parts.append(entry)
+                    current_len += entry_len
+                remaining = len(path_entries) - len(shown_parts)
+                truncated = os.pathsep.join(shown_parts)
                 if remaining > 0:
                     display_value = f"{truncated}... ({remaining} more entries)"
                 else:
