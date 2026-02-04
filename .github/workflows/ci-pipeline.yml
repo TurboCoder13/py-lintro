@@ -270,6 +270,70 @@ jobs:
         run: scripts/ci/fail-on-lint.sh
 
   # ============================================================================
+  # Stage 3b: Security Audit (runs in parallel with test after lint)
+  # ============================================================================
+  security-audit:
+    name: 🔐 Security Audit
+    needs: [docker-build, lint]
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      contents: read
+      pull-requests: write
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    concurrency:
+      group: security-audit-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            api.osv.dev:443
+            astral.sh:443
+
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Environment setup
+        uses: ./.github/actions/setup-env
+        with:
+          python-version: '3.13'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync dependencies
+        run: uv sync --dev --no-progress
+
+      - name: Run security audit
+        id: audit
+        continue-on-error: true
+        run: scripts/ci/security-audit.sh
+
+      - name: Comment PR with security audit results
+        if: github.event_name == 'pull_request'
+        uses: ./.github/actions/post-pr-comment
+        with:
+          file: security-audit-comment.txt
+          marker: '<!-- security-audit-report -->'
+
+      - name: Fail on vulnerabilities
+        if: steps.audit.outcome == 'failure'
+        run: |
+          echo "::error::Security vulnerabilities detected in dependencies"
+          exit 1
+
+  # ============================================================================
   # Stage 4: Test (GATED on lint)
   # ============================================================================
   test:

@@ -112,6 +112,10 @@ jobs:
           scripts/ci/github/semantic-release-helpers.sh update_version_files
           "${{ steps.semrel.outputs.next_version }}"
 
+      - name: Update tools image digest
+        if: steps.needs_bump.outputs.required == 'true'
+        run: scripts/ci/github/semantic-release-helpers.sh update_tools_digest
+
       - name: Install external tools for Lintro (formatting)
         if: steps.needs_bump.outputs.required == 'true'
         run: scripts/ci/github/semantic-release-helpers.sh install_external_tools
@@ -137,6 +141,7 @@ jobs:
             Automated version bump to `${{ steps.semrel.outputs.next_version }}`.
 
             - Updates `pyproject.toml` and `lintro/__init__.py`
+            - Updates tools image digest in pinned files
             - Respects branch protection (no direct push to `main`)
             - Upon merge, tag and publish workflows will run automatically
           branch: release/${{ steps.semrel.outputs.next_version }}
