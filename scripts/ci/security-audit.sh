@@ -40,11 +40,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=../utils/utils.sh disable=SC1091
 source "$SCRIPT_DIR/../utils/utils.sh"
 
-# Output files
-REQUIREMENTS_FILE="/tmp/requirements.txt"
-UV_OUTPUT_FILE="/tmp/uv-audit-output.txt"
-PIP_AUDIT_OUTPUT_FILE="/tmp/pip-audit-output.txt"
+# Output files - use mktemp for security and to avoid collisions
+REQUIREMENTS_FILE=$(mktemp --tmpdir requirements.XXXXXX.txt)
+UV_OUTPUT_FILE=$(mktemp --tmpdir uv-audit-output.XXXXXX.txt)
+PIP_AUDIT_OUTPUT_FILE=$(mktemp --tmpdir pip-audit-output.XXXXXX.txt)
 COMMENT_FILE="security-audit-comment.txt"
+
+# Cleanup temp files on exit
+# shellcheck disable=SC2329 # Function is invoked via trap, not directly
+cleanup_temp_files() {
+	rm -f "$REQUIREMENTS_FILE" "$UV_OUTPUT_FILE" "$PIP_AUDIT_OUTPUT_FILE"
+}
+trap cleanup_temp_files EXIT
 
 # Track status separately: execution errors vs vulnerability findings
 AUDIT_FAILED=0
@@ -56,9 +63,23 @@ PIP_AUDIT_ERROR=""
 log_info "Starting security audit..."
 
 # Scan file for vulnerability patterns
+# Avoids false positives on phrases like "no vulnerabilities found"
 scan_for_vulnerabilities() {
 	local file="$1"
-	[[ -f "$file" ]] && grep -qi "vulnerability\|GHSA-\|CVE-" "$file" 2>/dev/null
+	[[ -f "$file" ]] || return 1
+
+	# First check for explicit vulnerability IDs (GHSA-*, CVE-*)
+	if grep -qEi 'GHSA-|CVE-[0-9]{4}-[0-9]+' "$file" 2>/dev/null; then
+		return 0
+	fi
+
+	# Then check for "vulnerability" but exclude negated phrases
+	if grep -Ei '\bvulnerabilit' "$file" 2>/dev/null |
+		grep -qviE 'no .*vulnerabilit|none .*vulnerabilit|without .*vulnerabilit|0 .*vulnerabilit'; then
+		return 0
+	fi
+
+	return 1
 }
 
 # Step 1: Export dependencies with uv (captures vulnerability output)
