@@ -67,14 +67,20 @@ if [[ "$TOOLS_CHANGED" == "true" ]] &&
 	# Use the freshly built pr-N image
 	IMAGE="${IMAGE_NAME}:pr-${PR_NUMBER}"
 	echo "Using fresh tools image for PR: ${IMAGE}"
-elif [[ "$TOOLS_CHANGED" == "true" ]] &&
-	[[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-	# For push events with tool changes, use :latest tag (not pinned digest)
-	# The tools-image.yml workflow will have pushed a new :latest
+elif [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+	# For ALL push events on main, use :latest tag (not pinned digest)
+	# This ensures we always use the current tools image, avoiding race conditions
+	# where the pinned digest in STABLE_IMAGE hasn't been updated yet.
+	# The :latest tag is authoritative for main branch builds.
 	IMAGE="${IMAGE_NAME}:latest"
-	echo "Using latest tools image (tool files changed on push): ${IMAGE}"
+	if [[ "$TOOLS_CHANGED" == "true" ]]; then
+		echo "Using latest tools image (tool files changed on push): ${IMAGE}"
+	else
+		echo "Using latest tools image (main branch always uses latest): ${IMAGE}"
+	fi
 else
-	# Use stable image (may be from different registry during migrations)
+	# For PRs without tool changes, use stable image (pinned digest)
+	# This ensures PR builds are reproducible and don't break if :latest drifts
 	IMAGE="${STABLE_IMAGE}"
 	echo "Using stable tools image: ${IMAGE}"
 fi
