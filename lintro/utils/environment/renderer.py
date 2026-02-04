@@ -41,6 +41,23 @@ def render_section(console: Console, section: Renderable | None) -> None:
     console.print()
 
 
+import os
+import shutil
+
+# Default truncation length for PATH; override via terminal width if available
+_DEFAULT_PATH_TRUNCATE_LEN = 60
+
+
+def _get_path_truncate_len() -> int:
+    """Get the truncation length for PATH based on terminal width."""
+    try:
+        terminal_width = shutil.get_terminal_size().columns
+        # Use 70% of terminal width, with a minimum of 40 and maximum of 120
+        return max(40, min(120, int(terminal_width * 0.7)))
+    except (ValueError, OSError):
+        return _DEFAULT_PATH_TRUNCATE_LEN
+
+
 def _render_env_vars(console: Console, env_vars: dict[str, str | None]) -> None:
     """Render environment variables section.
 
@@ -53,7 +70,19 @@ def _render_env_vars(console: Console, env_vars: dict[str, str | None]) -> None:
         display_value: str
         if var_name == "PATH" and var_value:
             # Truncate PATH for readability
-            display_value = var_value[:60] + "..." if len(var_value) > 60 else var_value
+            path_truncate_len = _get_path_truncate_len()
+            path_entries = var_value.split(os.pathsep)
+            if len(var_value) > path_truncate_len:
+                # Find how many entries fit within truncation length
+                truncated = var_value[:path_truncate_len]
+                shown_entries = len(truncated.split(os.pathsep))
+                remaining = len(path_entries) - shown_entries
+                if remaining > 0:
+                    display_value = f"{truncated}... ({remaining} more entries)"
+                else:
+                    display_value = f"{truncated}..."
+            else:
+                display_value = var_value
         else:
             display_value = var_value or "(not set)"
         console.print(f"  {var_name}: {display_value}")

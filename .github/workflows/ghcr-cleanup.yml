@@ -65,6 +65,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Protect multi-arch manifest dependencies by requiring minimum age
-          GHCR_PRUNE_MIN_AGE_DAYS: ${{ inputs.min_age_days || '7' }}
+          GHCR_PRUNE_MIN_AGE_DAYS: ${{ format('{0}', inputs.min_age_days) || '7' }}
           GHCR_PRUNE_DRY_RUN: ${{ inputs.dry_run == true && '1' || '0' }}
         run: uv run python scripts/ci/maintenance/ghcr_prune_untagged.py

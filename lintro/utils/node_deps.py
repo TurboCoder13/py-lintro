@@ -128,8 +128,11 @@ def install_node_deps(
     manager_name = base_cmd[0]
     logger.info("[node_deps] Installing dependencies with {} in {}", manager_name, cwd)
 
+    import time
+
     # Try with frozen lockfile first (for CI reproducibility)
     frozen_cmd = _get_frozen_install_cmd(base_cmd)
+    start_time = time.monotonic()
 
     try:
         result = subprocess.run(  # nosec B603 - command is constructed safely
@@ -157,6 +160,13 @@ def install_node_deps(
     except OSError as e:
         logger.debug("[node_deps] Frozen install failed with OS error: {}", e)
 
+    # Calculate remaining timeout for fallback
+    elapsed = time.monotonic() - start_time
+    remaining_timeout = max(0, timeout - elapsed)
+
+    if remaining_timeout <= 0:
+        return False, f"Installation timed out after {timeout} seconds"
+
     # Fallback to regular install (without frozen lockfile)
     try:
         result = subprocess.run(  # nosec B603 - command is constructed safely
@@ -164,7 +174,7 @@ def install_node_deps(
             cwd=cwd,
             capture_output=True,
             text=True,
-            timeout=timeout,
+            timeout=remaining_timeout,
             shell=False,
         )
 

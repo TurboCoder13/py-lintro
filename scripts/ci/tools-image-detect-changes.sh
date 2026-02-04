@@ -70,7 +70,7 @@ if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
 		2>/dev/null || echo "")
 
 	for pattern in "${TOOL_PATTERNS[@]}"; do
-		if echo "$changed_files" | grep -q "$pattern"; then
+		if echo "$changed_files" | grep -qF "$pattern"; then
 			echo "Found tool file change matching: $pattern"
 			tools_changed="true"
 			break
@@ -86,7 +86,7 @@ elif [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
 		changed_files=$(git diff --name-only "$BEFORE_SHA" HEAD \
 			2>/dev/null || echo "")
 		for pattern in "${TOOL_PATTERNS[@]}"; do
-			if echo "$changed_files" | grep -q "$pattern"; then
+			if echo "$changed_files" | grep -qF "$pattern"; then
 				echo "Found tool file change matching: $pattern"
 				tools_changed="true"
 				break

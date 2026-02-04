@@ -129,7 +129,8 @@ def main() -> int:
         cmd = _tool_command(name, install if isinstance(install, dict) else {})
         code, output = _run(cmd)
         if code != 0:
-            failures.append(f"{name}: command failed ({' '.join(cmd)})")
+            cmd_str = " ".join(cmd)
+            failures.append(f"{name}: command failed with exit code {code} ({cmd_str})")
             continue
 
         actual = _parse_version(output, name)

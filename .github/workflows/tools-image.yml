@@ -222,10 +222,15 @@ jobs:
           IMAGE_NAME="${IMAGE_TAG%%:*}"
           docker pull "$IMAGE_TAG"
           FORMAT='{{range .RepoDigests}}{{println .}}{{end}}'
-          DIGEST=$(docker inspect --format="$FORMAT" "$IMAGE_TAG" \
+          REPO_DIGESTS=$(docker inspect --format="$FORMAT" "$IMAGE_TAG" || echo "")
+          DIGEST=$(echo "$REPO_DIGESTS" \
             | awk -v name="$IMAGE_NAME" -F@ '$1==name {print $2; exit}')
           if [[ -z "$DIGEST" ]]; then
             echo "::error::Unable to resolve digest for $IMAGE_TAG"
+            echo "Available repo digests:"
+            echo "$REPO_DIGESTS"
+            echo "Raw docker inspect output:"
+            docker inspect "$IMAGE_TAG" --format='{{json .RepoDigests}}' || true
             exit 1
           fi
           echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"

@@ -158,7 +158,7 @@ execution:
 2. `npm ci` (falls back to `npm install`)
 
 **Note:** In Docker, dependencies are auto-installed by default when the container
-starts
+starts.
 
 ## Usage Comparison
 

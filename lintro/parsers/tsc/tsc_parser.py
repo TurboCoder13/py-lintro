@@ -11,6 +11,8 @@ from lintro.parsers.tsc.tsc_issue import TscIssue
 
 # Error codes that indicate missing dependencies rather than actual type errors
 # These occur when node_modules is missing or dependencies aren't installed
+# Note: TS2792 is intentionally excluded from DEPENDENCY_ERROR_CODES because it
+# indicates module resolution/configuration problems rather than missing deps
 DEPENDENCY_ERROR_CODES: frozenset[str] = frozenset(
     {
         "TS2307",  # Cannot find module 'X' or its corresponding type declarations

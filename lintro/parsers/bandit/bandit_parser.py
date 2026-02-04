@@ -20,7 +20,7 @@ def parse_bandit_output(bandit_data: dict[str, Any]) -> list[BanditIssue]:
     """
     if not isinstance(bandit_data, dict):
         logger.warning(
-            "Bandit data must be a dictionary, got %s",
+            "Bandit data must be a dictionary, got {}",
             type(bandit_data).__name__,
         )
         return []
@@ -28,7 +28,7 @@ def parse_bandit_output(bandit_data: dict[str, Any]) -> list[BanditIssue]:
     results = bandit_data.get("results", [])
     if not isinstance(results, list):
         logger.warning(
-            "Bandit results must be a list, got %s",
+            "Bandit results must be a list, got {}",
             type(results).__name__,
         )
         return []

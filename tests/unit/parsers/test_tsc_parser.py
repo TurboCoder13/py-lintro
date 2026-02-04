@@ -128,8 +128,6 @@ error TS6053: File not found."""
 
 def test_tsc_issue_to_display_row() -> None:
     """Convert TscIssue to display row format."""
-    from lintro.parsers.tsc.tsc_issue import TscIssue
-
     issue = TscIssue(
         file="src/main.ts",
         line=10,
@@ -150,8 +148,6 @@ def test_tsc_issue_to_display_row() -> None:
 
 def test_tsc_issue_to_display_row_minimal() -> None:
     """Convert minimal TscIssue to display row format."""
-    from lintro.parsers.tsc.tsc_issue import TscIssue
-
     issue = TscIssue(file="main.ts", line=1, column=1, message="Error")
     row = issue.to_display_row()
 

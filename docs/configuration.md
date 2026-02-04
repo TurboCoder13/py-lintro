@@ -179,8 +179,10 @@ execution:
   auto_install_deps: true
 ```
 
-**Note:** In Docker, Node.js dependencies are auto-installed by default when the
-container starts with a mounted project containing `package.json`.
+**Note:** In Docker, automatic Node.js dependency installation is opt-in and controlled
+by the `LINTRO_AUTO_INSTALL_DEPS=1` environment variable. Set this in your Docker
+environment or docker-compose to enable auto-installation when the container starts with
+a mounted project containing `package.json`.
 
 #### Tool-Specific Options
 

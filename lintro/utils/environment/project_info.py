@@ -26,7 +26,7 @@ class ProjectInfo:
             ("Git Root", self.git_root or "(not a git repo)"),
             ("Languages", ", ".join(self.languages) or "(none detected)"),
         ]
-        for pm, manifest in self.package_managers.items():
+        for pm, manifest in sorted(self.package_managers.items()):
             rows.append((pm, manifest))
         return rows
 

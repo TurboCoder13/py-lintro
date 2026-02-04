@@ -387,6 +387,14 @@ class BanditPlugin(BaseToolPlugin):
 
             # Handle empty output (no JSON content to parse)
             if not output or not output.strip():
+                # If Bandit exited non-zero with no output, treat as failure
+                if result.returncode != 0:
+                    return ToolResult(
+                        name=self.definition.name,
+                        success=False,
+                        output=stderr_output or "Bandit failed with non-zero exit code",
+                        issues_count=0,
+                    )
                 logger.debug("[bandit] Empty output received")
                 return ToolResult(
                     name=self.definition.name,

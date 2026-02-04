@@ -24,13 +24,21 @@ class SystemInfo:
 
     def to_display_rows(self) -> list[tuple[str, str]]:
         """Return label-value pairs for rendering."""
-        return [
+        rows: list[tuple[str, str]] = [
             ("OS", f"{self.platform_name} ({self.os_version})"),
-            ("Architecture", self.architecture),
-            ("Shell", self.shell or "(unknown)"),
-            ("Terminal", self.terminal or "(unknown)"),
-            ("Locale", self.locale or "(not set)"),
         ]
+        # Include os_name if it differs from platform_name (provides additional detail)
+        if self.os_name and self.os_name != self.platform_name:
+            rows.append(("OS Name", self.os_name))
+        rows.extend(
+            [
+                ("Architecture", self.architecture),
+                ("Shell", self.shell or "(unknown)"),
+                ("Terminal", self.terminal or "(unknown)"),
+                ("Locale", self.locale or "(not set)"),
+            ],
+        )
+        return rows
 
     def is_available(self) -> bool:
         """Return whether this section has data to display."""

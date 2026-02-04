@@ -46,12 +46,16 @@ def main() -> int:
     package_json_path = project_root / "package.json"
     package_json_versions: dict[str, str] = {}
     if package_json_path.exists():
-        pkg_data = json.loads(package_json_path.read_text())
-        all_deps = {
-            **pkg_data.get("dependencies", {}),
-            **pkg_data.get("devDependencies", {}),
-        }
-        package_json_versions = {k: v.lstrip("^~") for k, v in all_deps.items()}
+        try:
+            pkg_data = json.loads(package_json_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"Failed to read package.json: {exc}")
+        else:
+            all_deps = {
+                **pkg_data.get("dependencies", {}),
+                **pkg_data.get("devDependencies", {}),
+            }
+            package_json_versions = {k: v.lstrip("^~") for k, v in all_deps.items()}
 
     # Check that all npm-managed tools have versions from package.json
     print("npm-managed tools (from package.json):")

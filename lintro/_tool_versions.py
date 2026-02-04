@@ -250,22 +250,19 @@ def get_all_expected_versions() -> dict[ToolName | str, str]:
         Dictionary mapping tool names to version strings.
         Includes both npm-managed and non-npm tools.
     """
-    manifest_versions, _ = _load_manifest_versions()
-
-    if manifest_versions:
-        # Copy to the broader return type (ToolName is compatible with str keys)
-        result: dict[ToolName | str, str] = {}
-        for k, v in manifest_versions.items():
-            result[k] = v
-        return result
-
-    # Start with non-npm tools (legacy)
+    # Start with non-npm tools (fallback)
     all_versions: dict[ToolName | str, str] = dict(TOOL_VERSIONS)
 
-    # Add npm-managed tools
+    # Add npm-managed tools (fallback)
     npm_versions = _load_npm_versions()
     for tool_name, version in npm_versions.items():
         all_versions[tool_name] = version
+
+    # Load manifest versions and override fallbacks (manifest is authoritative)
+    manifest_versions, _ = _load_manifest_versions()
+    if manifest_versions:
+        for k, v in manifest_versions.items():
+            all_versions[k] = v
 
     return all_versions
 

@@ -56,9 +56,15 @@ fi
 : "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
 
 if [[ "$TOOLS_CHANGED" == "true" ]] &&
-	[[ "$GITHUB_EVENT_NAME" == "pull_request" ]] &&
-	[[ -n "${PR_NUMBER:-}" ]]; then
-	# For PRs with tool changes, use the freshly built pr-N image
+	[[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+	# For PRs with tool changes, PR_NUMBER is required
+	if [[ -z "${PR_NUMBER:-}" ]]; then
+		echo "::error::PR_NUMBER is required when TOOLS_CHANGED=true and event is pull_request"
+		echo "  IMAGE_NAME=${IMAGE_NAME}"
+		echo "  PR_NUMBER=${PR_NUMBER:-<unset>}"
+		exit 1
+	fi
+	# Use the freshly built pr-N image
 	IMAGE="${IMAGE_NAME}:pr-${PR_NUMBER}"
 	echo "Using fresh tools image for PR: ${IMAGE}"
 elif [[ "$TOOLS_CHANGED" == "true" ]] &&

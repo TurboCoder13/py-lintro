@@ -184,7 +184,14 @@ class MypyPlugin(BaseToolPlugin):
             regex = regex[4:]
         if regex.endswith(")"):
             regex = regex[:-1]
-        # Ensure pattern can match anywhere in path
+
+        # Anchor directory segments to path boundaries to avoid matching substrings
+        # For patterns starting with a literal directory (e.g., "dist/**"), prefix
+        # with (?:^|/) so it matches only whole directory components
+        if pattern and not pattern.startswith("*"):
+            # Pattern starts with a literal - anchor to path boundary
+            regex = f"(?:^|/){regex}"
+
         return regex
 
     def _build_command(

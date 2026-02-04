@@ -227,12 +227,12 @@ def collect_project_info() -> ProjectInfo:
         else:
             package_managers["npm"] = "package.json"
 
-        # Detect TypeScript more accurately
+        # Detect TypeScript more accurately using short-circuit evaluation
         has_typescript = False
         if (
             (cwd / "tsconfig.json").exists()
-            or list(cwd.glob("**/*.ts"))
-            or list(cwd.glob("**/*.tsx"))
+            or any(cwd.glob("**/*.ts"))
+            or any(cwd.glob("**/*.tsx"))
         ):
             has_typescript = True
         else:
@@ -295,7 +295,9 @@ def collect_lintro_info() -> LintroInfo:
                 with open(path, encoding="utf-8") as f:
                     yaml.safe_load(f)
                 config_valid = True
-            except Exception:
+            except (FileNotFoundError, OSError, UnicodeDecodeError):
+                config_valid = False
+            except yaml.YAMLError:
                 config_valid = False
             break
 

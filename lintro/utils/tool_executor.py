@@ -181,6 +181,9 @@ def run_lint_tools_simple(
     lintro_config = get_config()
     use_parallel = lintro_config.execution.parallel and len(tools_to_run) > 1
 
+    # Determine auto_install: CLI flag takes precedence, else use config
+    effective_auto_install = auto_install or lintro_config.execution.auto_install_deps
+
     # Define success_func once before the loop
     def success_func(message: str) -> None:
         logger.console_output(text=message, color="green")
@@ -191,9 +194,6 @@ def run_lint_tools_simple(
             text=f"Running {len(tools_to_run)} tools in parallel "
             f"(max {lintro_config.execution.max_workers} workers)",
         )
-        # Determine auto_install: CLI flag takes precedence, else use config
-        auto_install_cfg = lintro_config.execution.auto_install_deps
-        effective_auto_install = auto_install or auto_install_cfg
         all_results = run_tools_parallel(
             tools_to_run=tools_to_run,
             paths=paths,
@@ -259,9 +259,6 @@ def run_lint_tools_simple(
 
     else:
         # Sequential execution (original behavior)
-        # Determine auto_install: CLI flag takes precedence, else use config
-        auto_install_cfg = lintro_config.execution.auto_install_deps
-        effective_auto_install = auto_install or auto_install_cfg
         for tool_name in tools_to_run:
             try:
                 tool = tool_manager.get_tool(tool_name)
