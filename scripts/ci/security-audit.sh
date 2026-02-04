@@ -116,7 +116,14 @@ fi
 
 # Also check requirements file for any vulnerability info (shouldn't happen, but be safe)
 if scan_for_vulnerabilities "$REQUIREMENTS_FILE"; then
-	REQ_VULNS=$(grep -i "vulnerability\|GHSA-\|CVE-" "$REQUIREMENTS_FILE" 2>/dev/null || true)
+	# Extract explicit vulnerability IDs (always real vulnerabilities)
+	REQ_VULNS=$(grep -Ei 'GHSA-|CVE-[0-9]{4}-[0-9]+' "$REQUIREMENTS_FILE" 2>/dev/null || true)
+	# Extract "vulnerability" mentions but exclude negated phrases
+	REQ_VULN_TEXT=$(grep -Ei '\bvulnerabilit' "$REQUIREMENTS_FILE" 2>/dev/null |
+		grep -viE 'no .*vulnerabilit|none .*vulnerabilit|without .*vulnerabilit|0 .*vulnerabilit' || true)
+	if [[ -n "$REQ_VULN_TEXT" ]]; then
+		REQ_VULNS="${REQ_VULNS}${REQ_VULNS:+$'\n'}${REQ_VULN_TEXT}"
+	fi
 	if [[ -n "$REQ_VULNS" ]]; then
 		UV_VULNS="${UV_VULNS}${UV_VULNS:+$'\n'}${REQ_VULNS}"
 	fi
