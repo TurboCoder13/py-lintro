@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        TOOLS_IMAGE: ${TOOLS_IMAGE:-ghcr.io/lgtm-hq/lintro-tools:latest@sha256:1701ba10f28d112599cfd81b21e0dbb4cae3f5d064728d614ed35a262a2e9ef4}
+        TOOLS_IMAGE: ${TOOLS_IMAGE:-ghcr.io/lgtm-hq/lintro-tools:latest@sha256:d91b74668ca6dc5894f1294fa9a79c5d965b0520462d38eb30ec077fc51451c7}
     logging:
       driver: local
       options:
@@ -26,7 +26,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        TOOLS_IMAGE: ${TOOLS_IMAGE:-ghcr.io/lgtm-hq/lintro-tools:latest@sha256:1701ba10f28d112599cfd81b21e0dbb4cae3f5d064728d614ed35a262a2e9ef4}
+        TOOLS_IMAGE: ${TOOLS_IMAGE:-ghcr.io/lgtm-hq/lintro-tools:latest@sha256:d91b74668ca6dc5894f1294fa9a79c5d965b0520462d38eb30ec077fc51451c7}
     image: py-lintro-test:latest
     logging:
       driver: local
