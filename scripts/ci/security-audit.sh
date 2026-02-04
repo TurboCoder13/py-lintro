@@ -46,80 +46,126 @@ UV_OUTPUT_FILE="/tmp/uv-audit-output.txt"
 PIP_AUDIT_OUTPUT_FILE="/tmp/pip-audit-output.txt"
 COMMENT_FILE="security-audit-comment.txt"
 
-# Track overall status
+# Track status separately: execution errors vs vulnerability findings
 AUDIT_FAILED=0
 UV_VULNS=""
 PIP_AUDIT_VULNS=""
+UV_ERROR=""
+PIP_AUDIT_ERROR=""
 
 log_info "Starting security audit..."
 
-# Step 1: Export dependencies with uv (captures vulnerability output)
-log_info "Exporting dependencies with uv..."
-uv export --no-emit-project >"$REQUIREMENTS_FILE" 2>"$UV_OUTPUT_FILE" || true
-UV_EXIT_CODE=$?
-if [[ "$UV_EXIT_CODE" -ne 0 ]]; then
-	log_warning "uv export exited with code $UV_EXIT_CODE"
-	AUDIT_FAILED=1
-else
-	log_success "uv export completed successfully"
-fi
-
-# Scan both stdout (requirements file) and stderr for vulnerability patterns
-# uv may print vulnerability info to either stream
+# Scan file for vulnerability patterns
 scan_for_vulnerabilities() {
 	local file="$1"
 	[[ -f "$file" ]] && grep -qi "vulnerability\|GHSA-\|CVE-" "$file" 2>/dev/null
 }
 
-# Collect vulnerability output from both files
-VULN_OUTPUT=""
-if scan_for_vulnerabilities "$UV_OUTPUT_FILE"; then
-	VULN_OUTPUT=$(cat "$UV_OUTPUT_FILE")
-	AUDIT_FAILED=1
-fi
-if scan_for_vulnerabilities "$REQUIREMENTS_FILE"; then
-	# Append any vulnerability lines from requirements file (shouldn't happen, but be safe)
-	REQ_VULNS=$(grep -i "vulnerability\|GHSA-\|CVE-" "$REQUIREMENTS_FILE" 2>/dev/null || true)
-	if [[ -n "$REQ_VULNS" ]]; then
-		VULN_OUTPUT="${VULN_OUTPUT}${VULN_OUTPUT:+$'\n'}${REQ_VULNS}"
+# Step 1: Export dependencies with uv (captures vulnerability output)
+log_info "Exporting dependencies with uv..."
+uv export --no-emit-project >"$REQUIREMENTS_FILE" 2>"$UV_OUTPUT_FILE" || true
+UV_EXIT_CODE=$?
+
+if [[ "$UV_EXIT_CODE" -ne 0 ]]; then
+	# Check if failure is due to vulnerabilities or an actual error
+	if scan_for_vulnerabilities "$UV_OUTPUT_FILE"; then
+		log_warning "uv export found vulnerabilities"
+		UV_VULNS=$(cat "$UV_OUTPUT_FILE")
+	else
+		log_error "uv export failed with code $UV_EXIT_CODE"
+		UV_ERROR=$(cat "$UV_OUTPUT_FILE")
 		AUDIT_FAILED=1
 	fi
+else
+	log_success "uv export completed successfully"
+	# Still check for vulnerability patterns even on success (uv may warn without failing)
+	if scan_for_vulnerabilities "$UV_OUTPUT_FILE"; then
+		UV_VULNS=$(cat "$UV_OUTPUT_FILE")
+	fi
 fi
-UV_VULNS="$VULN_OUTPUT"
+
+# Also check requirements file for any vulnerability info (shouldn't happen, but be safe)
+if scan_for_vulnerabilities "$REQUIREMENTS_FILE"; then
+	REQ_VULNS=$(grep -i "vulnerability\|GHSA-\|CVE-" "$REQUIREMENTS_FILE" 2>/dev/null || true)
+	if [[ -n "$REQ_VULNS" ]]; then
+		UV_VULNS="${UV_VULNS}${UV_VULNS:+$'\n'}${REQ_VULNS}"
+	fi
+fi
 
 # Step 2: Run pip-audit for additional checks
 log_info "Running pip-audit..."
 uv run pip-audit --strict --progress-spinner=off -r "$REQUIREMENTS_FILE" >"$PIP_AUDIT_OUTPUT_FILE" 2>&1 || true
 PIP_AUDIT_EXIT_CODE=$?
+
 if [[ "$PIP_AUDIT_EXIT_CODE" -eq 0 ]]; then
 	log_success "pip-audit completed - no vulnerabilities found"
 else
-	log_warning "pip-audit exited with code $PIP_AUDIT_EXIT_CODE"
-	PIP_AUDIT_VULNS=$(cat "$PIP_AUDIT_OUTPUT_FILE")
-	AUDIT_FAILED=1
+	# Check if failure is due to vulnerabilities or an actual error
+	if scan_for_vulnerabilities "$PIP_AUDIT_OUTPUT_FILE"; then
+		log_warning "pip-audit found vulnerabilities"
+		PIP_AUDIT_VULNS=$(cat "$PIP_AUDIT_OUTPUT_FILE")
+	else
+		log_error "pip-audit failed with code $PIP_AUDIT_EXIT_CODE"
+		PIP_AUDIT_ERROR=$(cat "$PIP_AUDIT_OUTPUT_FILE")
+		AUDIT_FAILED=1
+	fi
+fi
+
+# Determine if we have actual vulnerability findings
+HAS_VULNS=0
+if [[ -n "$UV_VULNS" ]] || [[ -n "$PIP_AUDIT_VULNS" ]]; then
+	HAS_VULNS=1
 fi
 
 # Step 3: Generate PR comment
 log_info "Generating PR comment..."
 
-if [[ "$AUDIT_FAILED" -eq 0 ]]; then
-	STATUS="✅ PASSED"
-	CONTENT="<!-- security-audit-report -->
-
-No security vulnerabilities found in dependencies.
-
-### 🔍 Checks Performed:
+CHECKS_PERFORMED="### 🔍 Checks Performed:
 - **uv audit**: Checked for known vulnerabilities in lockfile
 - **pip-audit**: Scanned dependencies against PyPI advisory database"
-else
+
+if [[ "$AUDIT_FAILED" -eq 1 ]]; then
+	# Audit execution failed
+	STATUS="❌ AUDIT FAILED"
+	CONTENT="<!-- security-audit-report -->
+
+The security audit encountered errors during execution.
+
+$CHECKS_PERFORMED"
+
+	if [[ -n "$UV_ERROR" ]]; then
+		CONTENT="$CONTENT
+
+### ❌ uv export Error:
+\`\`\`
+$UV_ERROR
+\`\`\`"
+	fi
+
+	if [[ -n "$PIP_AUDIT_ERROR" ]]; then
+		CONTENT="$CONTENT
+
+### ❌ pip-audit Error:
+\`\`\`
+$PIP_AUDIT_ERROR
+\`\`\`"
+	fi
+
+	CONTENT="$CONTENT
+
+### 🔧 Recommended Actions:
+1. Check the error messages above
+2. Verify dependencies can be resolved
+3. Re-run the audit after fixing any issues"
+
+elif [[ "$HAS_VULNS" -eq 1 ]]; then
+	# Vulnerabilities found
 	STATUS="⚠️ VULNERABILITIES FOUND"
 	CONTENT="<!-- security-audit-report -->
 
 Security vulnerabilities were detected in project dependencies.
 
-### 🔍 Checks Performed:
-- **uv audit**: Checked for known vulnerabilities in lockfile
-- **pip-audit**: Scanned dependencies against PyPI advisory database"
+$CHECKS_PERFORMED"
 
 	if [[ -n "$UV_VULNS" ]]; then
 		CONTENT="$CONTENT
@@ -145,6 +191,15 @@ $PIP_AUDIT_VULNS
 1. Review the vulnerabilities above
 2. Update affected packages if fixes are available
 3. If no fix is available, assess the risk and document exceptions"
+
+else
+	# All clear
+	STATUS="✅ PASSED"
+	CONTENT="<!-- security-audit-report -->
+
+No security vulnerabilities found in dependencies.
+
+$CHECKS_PERFORMED"
 fi
 
 # Generate the comment file using shared function
@@ -153,10 +208,14 @@ generate_pr_comment "🔐 Security Audit" "$STATUS" "$CONTENT" "$COMMENT_FILE" "
 # Set output for GitHub Actions
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
 	echo "audit_failed=$AUDIT_FAILED" >>"$GITHUB_OUTPUT"
+	echo "has_vulns=$HAS_VULNS" >>"$GITHUB_OUTPUT"
 fi
 
 # Exit with appropriate code
 if [[ "$AUDIT_FAILED" -eq 1 ]]; then
+	log_error "Security audit failed to execute"
+	exit 1
+elif [[ "$HAS_VULNS" -eq 1 ]]; then
 	log_error "Security audit found vulnerabilities"
 	exit 1
 else
