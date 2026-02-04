@@ -8,16 +8,6 @@ description: >-
   For PRs/pushes with tool changes, waits for the dedicated tools-image.yml
   workflow instead of building inline.
 inputs:
-  push:
-    # yamllint disable-line rule:line-length
-    description: '[DEPRECATED] No longer used - tools image is built by tools-image.yml workflow'
-    required: false
-    default: 'true'
-  registry:
-    # yamllint disable-line rule:line-length
-    description: '[DEPRECATED] No longer used - tools image is built by tools-image.yml workflow'
-    required: false
-    default: ghcr.io
   image-name:
     description: Full image name without tag (for pushing new PR images)
     required: false
@@ -46,61 +36,14 @@ runs:
         PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         GITHUB_EVENT_BEFORE: ${{ github.event.before }}
-      run: |
-        # Define tool-related file patterns that affect image CONTENT
-        # Note: scripts/ci/tools-image-*.sh are CI helpers (tags, verify, summary)
-        # and don't affect image content, so they're not included here
-        TOOL_PATTERNS=(
-          "Dockerfile.tools"
-          "scripts/utils/install-tools.sh"
-          "package.json"
-          "lintro/_tool_versions.py"
-          "lintro/tools/manifest.json"
-        )
-
-        tools_changed="false"
-
-        if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-          # For PRs, compare base to head
-          echo "Checking for tool file changes in PR..."
-          changed_files=$(git diff --name-only \
-            "$PR_BASE_SHA" "$PR_HEAD_SHA" 2>/dev/null || echo "")
-
-          for pattern in "${TOOL_PATTERNS[@]}"; do
-            if echo "$changed_files" | grep -q "$pattern"; then
-              echo "Found tool file change matching: $pattern"
-              tools_changed="true"
-              break
-            fi
-          done
-        elif [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-          # For push events, check if tool files changed in the pushed commits
-          echo "Checking for tool file changes in push..."
-          # Get the before/after from the push event
-          BEFORE_SHA="${GITHUB_EVENT_BEFORE:-}"
-          ZERO_SHA="0000000000000000000000000000000000000000"
-          if [[ -n "$BEFORE_SHA" ]] && [[ "$BEFORE_SHA" != "$ZERO_SHA" ]]; then
-            changed_files=$(git diff --name-only "$BEFORE_SHA" HEAD \
-              2>/dev/null || echo "")
-            for pattern in "${TOOL_PATTERNS[@]}"; do
-              if echo "$changed_files" | grep -q "$pattern"; then
-                echo "Found tool file change matching: $pattern"
-                tools_changed="true"
-                break
-              fi
-            done
-          fi
-        else
-          echo "Event type: $GITHUB_EVENT_NAME, using stable image"
-        fi
-
-        echo "tools_changed=${tools_changed}" >> "$GITHUB_OUTPUT"
-        echo "Tools changed: ${tools_changed}"
+      run: scripts/ci/tools-image-detect-changes.sh
 
     - name: Log detection result
       shell: bash
+      env:
+        TOOLS_CHANGED: ${{ steps.filter.outputs.tools_changed }}
       run: |
-        if [[ "${{ steps.filter.outputs.tools_changed }}" == "true" ]]; then
+        if [[ "$TOOLS_CHANGED" == "true" ]]; then
           echo "::notice::Tool files changed, waiting for tools-image workflow"
         else
           echo "::notice::No tool changes, using stable image"
@@ -112,54 +55,11 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
         PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
-      run: |
-        echo "Tool files changed in PR, waiting for tools-image workflow..."
-        # Wait for the tools-image workflow to complete (max 45 minutes)
-        # Tools image build can take up to 30 min, so allow plenty of time
-        MAX_ATTEMPTS=270
-        ATTEMPT=0
-        while [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
-          # Check if tools-image workflow has completed for this PR's head commit
-          # Use head SHA to find the correct workflow run
-          JQ_FILTER='.[] | select(.headSha == "'"$PR_HEAD_SHA"'")
-            | "\(.status) \(.conclusion)"'
-          STATUS=$(gh run list \
-            --workflow "Build - Tools Image" \
-            --branch "pull/$PR_NUMBER/head" \
-            --json status,conclusion,headSha \
-            --jq "$JQ_FILTER" \
-            2>/dev/null | head -1 || echo "not_found")
-
-          # If no run found by branch, try by commit SHA directly
-          if [[ -z "$STATUS" ]] || [[ "$STATUS" == "not_found" ]]; then
-            STATUS=$(gh run list \
-              --workflow "Build - Tools Image" \
-              --commit "$PR_HEAD_SHA" \
-              --json status,conclusion \
-              --jq '.[0] | "\(.status) \(.conclusion)"' 2>/dev/null || echo "not_found")
-          fi
-
-          echo "Attempt $((ATTEMPT+1))/$MAX_ATTEMPTS: status: $STATUS"
-
-          if [[ "$STATUS" == "completed success" ]]; then
-            echo "Tools image workflow completed successfully!"
-            break
-          elif [[ "$STATUS" == "completed failure" ]] \
-              || [[ "$STATUS" == "completed cancelled" ]]; then
-            echo "::error::Tools image workflow failed or was cancelled"
-            exit 1
-          fi
-
-          ATTEMPT=$((ATTEMPT+1))
-          sleep 10
-        done
-
-        if [[ $ATTEMPT -ge $MAX_ATTEMPTS ]]; then
-          echo "::error::Timed out waiting for tools-image workflow (45 min)"
-          exit 1
-        fi
+        EVENT_TYPE: pull_request
+      run: scripts/ci/tools-image-wait.sh
 
     - name: Wait for tools image (push with changes)
       if: steps.filter.outputs.tools_changed == 'true' && github.event_name == 'push'
@@ -167,38 +67,8 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
         COMMIT_SHA: ${{ github.sha }}
-      run: |
-        echo "Tool files changed on push, waiting for tools-image workflow..."
-        # Wait for the tools-image workflow to complete (max 45 minutes)
-        MAX_ATTEMPTS=270
-        ATTEMPT=0
-        while [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
-          # Check if tools-image workflow has completed for this commit
-          STATUS=$(gh run list \
-            --workflow "Build - Tools Image" \
-            --commit "$COMMIT_SHA" \
-            --json status,conclusion \
-            --jq '.[0] | "\(.status) \(.conclusion)"' 2>/dev/null || echo "not_found")
-
-          echo "Attempt $((ATTEMPT+1))/$MAX_ATTEMPTS: status: $STATUS"
-
-          if [[ "$STATUS" == "completed success" ]]; then
-            echo "Tools image workflow completed successfully!"
-            break
-          elif [[ "$STATUS" == "completed failure" ]] \
-              || [[ "$STATUS" == "completed cancelled" ]]; then
-            echo "::error::Tools image workflow failed or was cancelled"
-            exit 1
-          fi
-
-          ATTEMPT=$((ATTEMPT+1))
-          sleep 10
-        done
-
-        if [[ $ATTEMPT -ge $MAX_ATTEMPTS ]]; then
-          echo "::error::Timed out waiting for tools-image workflow (45 min)"
-          exit 1
-        fi
+        EVENT_TYPE: push
+      run: scripts/ci/tools-image-wait.sh
 
     - name: Resolve image tag
       id: resolve
@@ -209,22 +79,4 @@ runs:
         IMAGE_NAME: ${{ inputs.image-name }}
         STABLE_IMAGE: ${{ inputs.stable-image }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
-      run: |
-        if [[ "$TOOLS_CHANGED" == "true" ]] \
-            && [[ "$GITHUB_EVENT_NAME" == "pull_request" ]] \
-            && [[ -n "$PR_NUMBER" ]]; then
-          # For PRs with tool changes, use the freshly built pr-N image
-          IMAGE="${IMAGE_NAME}:pr-${PR_NUMBER}"
-          echo "Using fresh tools image for PR: ${IMAGE}"
-        elif [[ "$TOOLS_CHANGED" == "true" ]] \
-            && [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-          # For push events with tool changes, use :latest tag (not pinned digest)
-          # The tools-image.yml workflow will have pushed a new :latest
-          IMAGE="${IMAGE_NAME}:latest"
-          echo "Using latest tools image (tool files changed on push): ${IMAGE}"
-        else
-          # Use stable image (may be from different registry during migrations)
-          IMAGE="${STABLE_IMAGE}"
-          echo "Using stable tools image: ${IMAGE}"
-        fi
-        echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+      run: scripts/ci/tools-image-resolve.sh

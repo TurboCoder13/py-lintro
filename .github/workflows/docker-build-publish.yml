@@ -83,8 +83,6 @@ jobs:
         id: tools-resolve
         if: inputs.tools-image == ''
         uses: ./.github/actions/resolve-tools-image
-        with:
-          push: 'true'
       - name: Set tools image
         id: tools
         env:
@@ -192,8 +190,6 @@ jobs:
         id: tools-resolve
         if: inputs.tools-image == ''
         uses: ./.github/actions/resolve-tools-image
-        with:
-          push: 'true'
       - name: Set tools image
         id: tools
         env:

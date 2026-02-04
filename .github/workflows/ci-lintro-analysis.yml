@@ -94,13 +94,10 @@ jobs:
           BOOTSTRAP_SKIP_SYNC: '1'
           BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
-      # Resolve tools image - builds fresh PR image if tool files changed
+      # Resolve tools image - waits for tools-image workflow if files changed
       - name: Resolve tools image
         id: tools
         uses: ./.github/actions/resolve-tools-image
-        with:
-          # yamllint disable-line rule:line-length
-          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
 
       - name: Build Docker image
         # yamllint disable-line rule:line-length

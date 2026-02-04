@@ -92,9 +92,6 @@ jobs:
       - name: Resolve tools image
         id: tools
         uses: ./.github/actions/resolve-tools-image
-        with:
-          # yamllint disable-line rule:line-length
-          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
       - name: Summary
         env:
           TOOLS_IMAGE: ${{ steps.tools.outputs.image }}
