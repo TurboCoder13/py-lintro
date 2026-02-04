@@ -334,6 +334,13 @@
       "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on monday"],
+    "automerge": true,
+    "automergeType": "branch",
+    "commitMessageAction": "update lockfile"
+  },
   "schedule": ["after 22:00", "before 23:00"],
   "timezone": "UTC",
   "labels": ["dependencies"],
