@@ -63,8 +63,8 @@ scan_for_vulnerabilities() {
 
 # Step 1: Export dependencies with uv (captures vulnerability output)
 log_info "Exporting dependencies with uv..."
-uv export --no-emit-project >"$REQUIREMENTS_FILE" 2>"$UV_OUTPUT_FILE" || true
-UV_EXIT_CODE=$?
+UV_EXIT_CODE=0
+uv export --no-emit-project >"$REQUIREMENTS_FILE" 2>"$UV_OUTPUT_FILE" || UV_EXIT_CODE=$?
 
 if [[ "$UV_EXIT_CODE" -ne 0 ]]; then
 	# Check if failure is due to vulnerabilities or an actual error
@@ -94,8 +94,8 @@ fi
 
 # Step 2: Run pip-audit for additional checks
 log_info "Running pip-audit..."
-uv run pip-audit --strict --progress-spinner=off -r "$REQUIREMENTS_FILE" >"$PIP_AUDIT_OUTPUT_FILE" 2>&1 || true
-PIP_AUDIT_EXIT_CODE=$?
+PIP_AUDIT_EXIT_CODE=0
+uv run pip-audit --strict --progress-spinner=off -r "$REQUIREMENTS_FILE" >"$PIP_AUDIT_OUTPUT_FILE" 2>&1 || PIP_AUDIT_EXIT_CODE=$?
 
 if [[ "$PIP_AUDIT_EXIT_CODE" -eq 0 ]]; then
 	log_success "pip-audit completed - no vulnerabilities found"
