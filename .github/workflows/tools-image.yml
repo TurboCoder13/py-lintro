@@ -20,7 +20,14 @@ name: Build - Tools Image
       - lintro/_tool_versions.py
       - lintro/tools/manifest.json
       - .github/workflows/tools-image.yml
-  # Note: PRs are handled by build-test-pipeline.yml via resolve-tools-image action
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile.tools
+      - scripts/utils/install-tools.sh
+      - package.json
+      - lintro/_tool_versions.py
+      - lintro/tools/manifest.json
   workflow_dispatch:
     inputs:
       force_latest:

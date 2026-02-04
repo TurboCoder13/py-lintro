@@ -3,15 +3,19 @@
 ---
 name: Resolve Tools Image
 description: >-
-  Detect tool file changes and conditionally build a fresh tools image for PR
-  testing. Outputs the appropriate tools image tag to use for Docker builds.
+  Detect tool file changes and wait for the tools-image workflow to complete.
+  Outputs the appropriate tools image tag to use for Docker builds.
+  For PRs/pushes with tool changes, waits for the dedicated tools-image.yml
+  workflow instead of building inline.
 inputs:
   push:
-    description: Whether to push the built image to GHCR (false for fork PRs)
+    # yamllint disable-line rule:line-length
+    description: '[DEPRECATED] No longer used - tools image is built by tools-image.yml workflow'
     required: false
     default: 'true'
   registry:
-    description: Container registry for the tools image
+    # yamllint disable-line rule:line-length
+    description: '[DEPRECATED] No longer used - tools image is built by tools-image.yml workflow'
     required: false
     default: ghcr.io
   image-name:
@@ -97,40 +101,65 @@ runs:
       shell: bash
       run: |
         if [[ "${{ steps.filter.outputs.tools_changed }}" == "true" ]]; then
-          echo "::notice::Tool files changed, building fresh tools image"
+          echo "::notice::Tool files changed, waiting for tools-image workflow"
         else
           echo "::notice::No tool changes, using stable image"
         fi
 
-    - name: Set up Docker Buildx (if building)
+    - name: Wait for tools image (PR with changes)
       # yamllint disable-line rule:line-length
       if: steps.filter.outputs.tools_changed == 'true' && github.event_name == 'pull_request'
-      # yamllint disable-line rule:line-length
-      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
-      with:
-        driver: docker
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        echo "Tool files changed in PR, waiting for tools-image workflow..."
+        # Wait for the tools-image workflow to complete (max 45 minutes)
+        # Tools image build can take up to 30 min, so allow plenty of time
+        MAX_ATTEMPTS=270
+        ATTEMPT=0
+        while [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
+          # Check if tools-image workflow has completed for this PR's head commit
+          # Use head SHA to find the correct workflow run
+          JQ_FILTER='.[] | select(.headSha == "'"$PR_HEAD_SHA"'")
+            | "\(.status) \(.conclusion)"'
+          STATUS=$(gh run list \
+            --workflow "Build - Tools Image" \
+            --branch "pull/$PR_NUMBER/head" \
+            --json status,conclusion,headSha \
+            --jq "$JQ_FILTER" \
+            2>/dev/null | head -1 || echo "not_found")
 
-    - name: Log in to GHCR (if pushing)
-      # yamllint disable-line rule:line-length
-      if: steps.filter.outputs.tools_changed == 'true' && github.event_name == 'pull_request' && inputs.push == 'true'
-      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
-      with:
-        registry: ${{ inputs.registry }}
-        username: ${{ github.actor }}
-        password: ${{ github.token }}
+          # If no run found by branch, try by commit SHA directly
+          if [[ -z "$STATUS" ]] || [[ "$STATUS" == "not_found" ]]; then
+            STATUS=$(gh run list \
+              --workflow "Build - Tools Image" \
+              --commit "$PR_HEAD_SHA" \
+              --json status,conclusion \
+              --jq '.[0] | "\(.status) \(.conclusion)"' 2>/dev/null || echo "not_found")
+          fi
 
-    - name: Build and push tools image
-      id: build
-      # yamllint disable-line rule:line-length
-      if: steps.filter.outputs.tools_changed == 'true' && github.event_name == 'pull_request'
-      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
-      with:
-        context: .
-        file: Dockerfile.tools
-        push: ${{ inputs.push == 'true' }}
-        load: ${{ inputs.push != 'true' }}
-        tags: ${{ inputs.image-name }}:pr-${{ github.event.pull_request.number }}
-        # Note: GHA cache not supported with docker driver
+          echo "Attempt $((ATTEMPT+1))/$MAX_ATTEMPTS: status: $STATUS"
+
+          if [[ "$STATUS" == "completed success" ]]; then
+            echo "Tools image workflow completed successfully!"
+            break
+          elif [[ "$STATUS" == "completed failure" ]] \
+              || [[ "$STATUS" == "completed cancelled" ]]; then
+            echo "::error::Tools image workflow failed or was cancelled"
+            exit 1
+          fi
+
+          ATTEMPT=$((ATTEMPT+1))
+          sleep 10
+        done
+
+        if [[ $ATTEMPT -ge $MAX_ATTEMPTS ]]; then
+          echo "::error::Timed out waiting for tools-image workflow (45 min)"
+          exit 1
+        fi
 
     - name: Wait for tools image (push with changes)
       if: steps.filter.outputs.tools_changed == 'true' && github.event_name == 'push'
@@ -140,8 +169,8 @@ runs:
         COMMIT_SHA: ${{ github.sha }}
       run: |
         echo "Tool files changed on push, waiting for tools-image workflow..."
-        # Wait for the tools-image workflow to complete (max 10 minutes)
-        MAX_ATTEMPTS=60
+        # Wait for the tools-image workflow to complete (max 45 minutes)
+        MAX_ATTEMPTS=270
         ATTEMPT=0
         while [[ $ATTEMPT -lt $MAX_ATTEMPTS ]]; do
           # Check if tools-image workflow has completed for this commit
@@ -158,8 +187,8 @@ runs:
             break
           elif [[ "$STATUS" == "completed failure" ]] \
               || [[ "$STATUS" == "completed cancelled" ]]; then
-            echo "::warning::Tools image workflow failed or was cancelled"
-            break
+            echo "::error::Tools image workflow failed or was cancelled"
+            exit 1
           fi
 
           ATTEMPT=$((ATTEMPT+1))
@@ -167,7 +196,8 @@ runs:
         done
 
         if [[ $ATTEMPT -ge $MAX_ATTEMPTS ]]; then
-          echo "::warning::Timed out waiting for tools-image workflow"
+          echo "::error::Timed out waiting for tools-image workflow (45 min)"
+          exit 1
         fi
 
     - name: Resolve image tag
