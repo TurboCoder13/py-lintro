@@ -15,7 +15,8 @@ inputs:
       - codecov: Python + Codecov
       - sigstore: Python + Sigstore services
       - homebrew: Python + Homebrew tap
-      - full: All common endpoints
+      - tooling: Language tooling registries (Rust, npm, uv, semgrep)
+      - full: All endpoints (docker + codecov + sigstore + tooling + misc)
     required: true
   policy:
     description: Egress policy (block or audit)
@@ -63,17 +64,53 @@ runs:
             PRESET_ENDPOINTS+=" formulae.brew.sh:443 homebrew.bintray.com:443"
             PRESET_ENDPOINTS+=" ghcr.io:443"
             ;;
-          full)
+          tooling)
+            # Language tooling registries (Rust, npm, Python tooling, security)
             PRESET_ENDPOINTS="pypi.org:443 files.pythonhosted.org:443"
-            PRESET_ENDPOINTS+=" ghcr.io:443 docker.io:443"
-            PRESET_ENDPOINTS+=" registry-1.docker.io:443 auth.docker.io:443"
-            PRESET_ENDPOINTS+=" production.cloudflare.docker.com:443"
+            # Rust
+            PRESET_ENDPOINTS+=" static.rust-lang.org:443 sh.rustup.rs:443"
+            PRESET_ENDPOINTS+=" crates.io:443 static.crates.io:443 index.crates.io:443"
+            # JavaScript/Node
+            PRESET_ENDPOINTS+=" bun.sh:443 registry.npmjs.org:443"
+            # Python tooling (uv, ruff)
+            PRESET_ENDPOINTS+=" astral.sh:443"
+            # Security tools
+            PRESET_ENDPOINTS+=" semgrep.dev:443"
+            # System packages
+            PRESET_ENDPOINTS+=" deb.debian.org:80"
+            ;;
+          full)
+            # All endpoints: docker + codecov + sigstore + tooling + misc
+            PRESET_ENDPOINTS="pypi.org:443 files.pythonhosted.org:443"
+            # Container registries
+            PRESET_ENDPOINTS+=" ghcr.io:443 pkg-containers.githubusercontent.com:443"
+            PRESET_ENDPOINTS+=" docker.io:443 registry-1.docker.io:443"
+            PRESET_ENDPOINTS+=" auth.docker.io:443 production.cloudflare.docker.com:443"
+            # Codecov
             PRESET_ENDPOINTS+=" codecov.io:443 uploader.codecov.io:443"
-            PRESET_ENDPOINTS+=" storage.googleapis.com:443"
+            PRESET_ENDPOINTS+=" storage.googleapis.com:443 pings.codecov.com:443"
+            # Sigstore
             PRESET_ENDPOINTS+=" fulcio.sigstore.dev:443 rekor.sigstore.dev:443"
             PRESET_ENDPOINTS+=" tuf-repo-cdn.sigstore.dev:443"
+            # GitHub assets
             PRESET_ENDPOINTS+=" uploads.github.com:443 codeload.github.com:443"
             PRESET_ENDPOINTS+=" objects.githubusercontent.com:443"
+            PRESET_ENDPOINTS+=" release-assets.githubusercontent.com:443"
+            # Rust
+            PRESET_ENDPOINTS+=" static.rust-lang.org:443 sh.rustup.rs:443"
+            PRESET_ENDPOINTS+=" crates.io:443 static.crates.io:443 index.crates.io:443"
+            # JavaScript/Node
+            PRESET_ENDPOINTS+=" bun.sh:443 registry.npmjs.org:443"
+            # Python tooling (uv, ruff)
+            PRESET_ENDPOINTS+=" astral.sh:443"
+            # Security tools
+            PRESET_ENDPOINTS+=" semgrep.dev:443"
+            # System packages
+            PRESET_ENDPOINTS+=" deb.debian.org:80"
+            # Homebrew
+            PRESET_ENDPOINTS+=" formulae.brew.sh:443 homebrew.bintray.com:443"
+            # Badges
+            PRESET_ENDPOINTS+=" img.shields.io:443"
             ;;
           *)
             echo "::error::Unknown preset: ${{ inputs.preset }}"
