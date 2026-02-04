@@ -211,6 +211,24 @@ class PrettierPlugin(BaseToolPlugin):
 
         return None
 
+    def _create_not_found_result(self) -> ToolResult:
+        """Create a ToolResult for when Prettier is not found.
+
+        Returns:
+            ToolResult: ToolResult instance representing Prettier not found.
+        """
+        return ToolResult(
+            name=self.definition.name,
+            success=False,
+            output=(
+                "Prettier not found.\n\n"
+                "Please ensure prettier is installed:\n"
+                "  - Run 'npm install -g prettier' or 'bun add -g prettier'\n"
+                "  - Or install locally: 'npm install prettier'"
+            ),
+            issues_count=0,
+        )
+
     def _create_timeout_result(
         self,
         timeout_val: int,
@@ -336,6 +354,16 @@ class PrettierPlugin(BaseToolPlugin):
             )
         except subprocess.TimeoutExpired:
             return self._create_timeout_result(timeout_val=ctx.timeout)
+        except (OSError, ValueError, RuntimeError, FileNotFoundError) as e:
+            if isinstance(e, FileNotFoundError):
+                return self._create_not_found_result()
+            logger.error(f"Failed to run prettier: {e}")
+            return ToolResult(
+                name=self.definition.name,
+                success=False,
+                output=f"Prettier execution failed: {e}",
+                issues_count=0,
+            )
 
         output: str = result[1]
         issues: list[PrettierIssue] = parse_prettier_output(output=output)
@@ -428,6 +456,16 @@ class PrettierPlugin(BaseToolPlugin):
             )
         except subprocess.TimeoutExpired:
             return self._create_timeout_result(timeout_val=ctx.timeout)
+        except (OSError, ValueError, RuntimeError, FileNotFoundError) as e:
+            if isinstance(e, FileNotFoundError):
+                return self._create_not_found_result()
+            logger.error(f"Failed to run prettier: {e}")
+            return ToolResult(
+                name=self.definition.name,
+                success=False,
+                output=f"Prettier execution failed: {e}",
+                issues_count=0,
+            )
 
         check_output: str = check_result[1]
 
@@ -458,6 +496,16 @@ class PrettierPlugin(BaseToolPlugin):
                 initial_issues=initial_issues,
                 initial_count=initial_count,
             )
+        except (OSError, ValueError, RuntimeError, FileNotFoundError) as e:
+            if isinstance(e, FileNotFoundError):
+                return self._create_not_found_result()
+            logger.error(f"Failed to run prettier: {e}")
+            return ToolResult(
+                name=self.definition.name,
+                success=False,
+                output=f"Prettier execution failed: {e}",
+                issues_count=0,
+            )
 
         fix_output: str = fix_result[1]
 
@@ -473,6 +521,16 @@ class PrettierPlugin(BaseToolPlugin):
                 timeout_val=ctx.timeout,
                 initial_issues=initial_issues,
                 initial_count=initial_count,
+            )
+        except (OSError, ValueError, RuntimeError, FileNotFoundError) as e:
+            if isinstance(e, FileNotFoundError):
+                return self._create_not_found_result()
+            logger.error(f"Failed to run prettier: {e}")
+            return ToolResult(
+                name=self.definition.name,
+                success=False,
+                output=f"Prettier execution failed: {e}",
+                issues_count=0,
             )
 
         final_check_output: str = final_check_result[1]

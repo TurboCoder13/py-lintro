@@ -11,6 +11,7 @@ import re
 from collections.abc import Iterable
 
 from lintro.parsers.actionlint.actionlint_issue import ActionlintIssue
+from lintro.parsers.base_parser import strip_ansi_codes
 
 _LINE_RE: re.Pattern[str] = re.compile(
     r"^(?P<file>[^:]+):(?P<line>\d+):(?P<col>\d+):\s*(?:(?P<level>error|warning):\s*)?(?P<msg>.*?)(?:\s*\[(?P<code>[A-Za-z0-9_\-\.]+)\])?$",
@@ -28,6 +29,9 @@ def parse_actionlint_output(output: str | None) -> list[ActionlintIssue]:
     """
     if not output:
         return []
+
+    # Strip ANSI codes for consistent parsing across environments
+    output = strip_ansi_codes(output)
 
     issues: list[ActionlintIssue] = []
     for line in _iter_nonempty_lines(output):

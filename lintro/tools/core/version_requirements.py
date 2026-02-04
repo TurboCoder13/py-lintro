@@ -63,6 +63,7 @@ def get_all_tool_versions() -> dict[str, ToolVersionInfo]:
         "shfmt": ["shfmt"],
         # Security tools
         "semgrep": ["semgrep"],
+        "cargo_audit": ["cargo", "audit"],
     }
 
     results = {}

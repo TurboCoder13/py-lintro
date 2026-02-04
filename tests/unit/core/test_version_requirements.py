@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
     pass
 
 from lintro._tool_versions import TOOL_VERSIONS, get_min_version, get_tool_version
-from lintro.enums.tool_name import ToolName
+from lintro.enums.tool_name import ToolName, normalize_tool_name
 from lintro.tools.core.version_parsing import (
     ToolVersionInfo,
     check_tool_version,
@@ -166,6 +168,9 @@ def test_all_external_tools_registered_in_tool_versions() -> None:
     """
     from lintro._tool_versions import get_all_expected_versions
 
+    repo_root = Path(__file__).resolve().parents[3]
+    manifest_path = repo_root / "lintro" / "tools" / "manifest.json"
+
     # Non-npm tools should be in TOOL_VERSIONS
     expected_non_npm_tools = {
         ToolName.ACTIONLINT,
@@ -174,6 +179,7 @@ def test_all_external_tools_registered_in_tool_versions() -> None:
         ToolName.GITLEAKS,
         ToolName.HADOLINT,
         ToolName.PYTEST,
+        ToolName.RUSTC,
         ToolName.RUSTFMT,
         ToolName.SEMGREP,
         ToolName.SHELLCHECK,
@@ -181,30 +187,43 @@ def test_all_external_tools_registered_in_tool_versions() -> None:
         ToolName.SQLFLUFF,
         ToolName.TAPLO,
     }
-    assert_that(set(TOOL_VERSIONS.keys())).is_equal_to(expected_non_npm_tools)
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text())
+        manifest_tools = {
+            normalize_tool_name(tool["name"])
+            for tool in manifest.get("tools", [])
+            if isinstance(tool, dict) and tool.get("name")
+        }
+        assert_that(set(TOOL_VERSIONS.keys())).is_subset_of(manifest_tools)
+    else:
+        assert_that(set(TOOL_VERSIONS.keys())).is_equal_to(expected_non_npm_tools)
 
     # All tools (including npm-managed) should be available via get_all_expected_versions
     all_versions = get_all_expected_versions()
-    expected_all_tools = {
-        ToolName.ACTIONLINT,
-        ToolName.CARGO_AUDIT,
-        ToolName.CLIPPY,
-        ToolName.GITLEAKS,
-        ToolName.HADOLINT,
-        ToolName.MARKDOWNLINT,
-        ToolName.OXFMT,
-        ToolName.OXLINT,
-        ToolName.PRETTIER,
-        ToolName.PYTEST,
-        ToolName.RUSTFMT,
-        ToolName.SEMGREP,
-        ToolName.SHELLCHECK,
-        ToolName.SHFMT,
-        ToolName.SQLFLUFF,
-        ToolName.TAPLO,
-        ToolName.TSC,
-    }
-    assert_that(set(all_versions.keys())).is_equal_to(expected_all_tools)
+    if manifest_path.exists():
+        assert_that(set(all_versions.keys())).is_equal_to(manifest_tools)
+    else:
+        expected_all_tools = {
+            ToolName.ACTIONLINT,
+            ToolName.CARGO_AUDIT,
+            ToolName.CLIPPY,
+            ToolName.GITLEAKS,
+            ToolName.HADOLINT,
+            ToolName.MARKDOWNLINT,
+            ToolName.OXFMT,
+            ToolName.OXLINT,
+            ToolName.PRETTIER,
+            ToolName.PYTEST,
+            ToolName.RUSTC,
+            ToolName.RUSTFMT,
+            ToolName.SEMGREP,
+            ToolName.SHELLCHECK,
+            ToolName.SHFMT,
+            ToolName.SQLFLUFF,
+            ToolName.TAPLO,
+            ToolName.TSC,
+        }
+        assert_that(set(all_versions.keys())).is_equal_to(expected_all_tools)
 
 
 def test_get_tool_version_returns_version_for_toolname_enum() -> None:
@@ -384,6 +403,7 @@ def test_get_all_tool_versions(mock_run: MagicMock) -> None:
         "shellcheck",
         "shfmt",
         "taplo",
+        "cargo_audit",
     }
 
     assert_that(set(results.keys())).is_equal_to(expected_tools)

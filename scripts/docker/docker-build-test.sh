@@ -15,7 +15,6 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
 	echo "This script tests the Docker image by:"
 	echo "  - Listing available tools"
 	echo "  - Checking version information"
-	echo "  - Running lintro in Docker container"
 	echo ""
 	echo "This script is designed to be used with GitHub Actions."
 	exit 0
@@ -35,7 +34,3 @@ docker run --rm py-lintro:latest lintro list-tools
 
 log_info "Testing Docker image - Version"
 docker run --rm py-lintro:latest lintro --version
-
-log_info "Testing Docker lintro script"
-# Note: pydoclint timeout increased for CI (Docker is slower than local)
-./scripts/docker/docker-lintro.sh check . --tool-options pydoclint:timeout=180

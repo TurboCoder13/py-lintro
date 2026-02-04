@@ -98,6 +98,67 @@ This gives you the best of both worlds:
 - ✅ Priority 82, tool type `LINTER | TYPE_CHECKER`, same as mypy
 - ✅ Windows path normalization in parser output
 - ✅ Graceful handling when tsc is not installed with helpful install hints
+- ✅ **Dependency error categorization** - separates missing module errors from type
+  errors
+- ✅ **Auto-install support** - optionally install Node.js deps before running tsc
+
+## Dependency Error Handling
+
+Lintro intelligently categorizes tsc errors to distinguish between actual type errors
+and errors caused by missing dependencies (e.g., when `node_modules` is not installed).
+
+### Error Categories
+
+**Dependency errors** (TS2307, TS2688, TS7016):
+
+- `TS2307`: Cannot find module 'X' or its corresponding type declarations
+- `TS2688`: Cannot find type definition file for 'X'
+- `TS7016`: Could not find a declaration file for module 'X'
+
+**Type errors** (all other codes):
+
+- Actual TypeScript type checking issues in your code
+
+### Output Example
+
+When dependency errors are detected, Lintro shows them separately with actionable
+guidance:
+
+```text
+Results: tsc
+├── Type errors: 3
+│   └── src/utils.ts:15 - Type 'string' not assignable to 'number'
+│   └── ...
+└── Missing dependencies: 4
+    └── vite/client, react, @types/node, ...
+
+    Suggestions:
+    - Run 'bun install' or 'npm install'
+    - Use '--auto-install' flag
+```
+
+### Auto-Install Dependencies
+
+Use the `--auto-install` flag to automatically install Node.js dependencies before
+running tsc:
+
+```bash
+# Auto-install deps then run tsc
+lintro check src/ --tools tsc --auto-install
+
+# Enable globally in config
+# .lintro-config.yaml
+execution:
+  auto_install_deps: true
+```
+
+**Package manager preference:**
+
+1. `bun install --frozen-lockfile` (falls back to `bun install`)
+2. `npm ci` (falls back to `npm install`)
+
+**Note:** In Docker, dependencies are auto-installed by default when the container
+starts.
 
 ## Usage Comparison
 

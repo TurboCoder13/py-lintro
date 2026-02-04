@@ -29,3 +29,13 @@ def test_parse_actionlint_lines() -> None:
     assert_that(i0.level).is_equal_to("error")
     assert_that(i0.code).is_equal_to("AL100")
     assert_that(i0.message).contains("unexpected key")
+
+
+def test_parse_actionlint_ansi_codes_stripped() -> None:
+    """Strip ANSI escape codes from output for consistent CI/local parsing."""
+    # Output with ANSI color codes (common in CI environments)
+    output = "\x1b[31mworkflow.yml:10:5: error: unexpected key [AL100]\x1b[0m"
+    issues = parse_actionlint_output(output)
+    assert_that(len(issues)).is_equal_to(1)
+    assert_that(issues[0].file).is_equal_to("workflow.yml")
+    assert_that(issues[0].code).is_equal_to("AL100")

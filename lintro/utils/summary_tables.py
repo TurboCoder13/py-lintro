@@ -20,6 +20,40 @@ from lintro.utils.console import (
 DEFAULT_REMAINING_COUNT: str = "?"
 
 
+def _extract_skip_reason(output: str) -> str:
+    """Extract abbreviated skip reason from tool output.
+
+    Skip messages have format: "Skipping {tool}: {error}. Minimum required: ..."
+
+    Args:
+        output: The tool output containing the skip message.
+
+    Returns:
+        Abbreviated reason string for display in the summary table.
+    """
+    if ":" in output and ". Minimum" in output:
+        colon_idx = output.index(":")
+        minimum_idx = output.index(". Minimum")
+        # Ensure colon comes before ". Minimum" to get a valid slice
+        if colon_idx >= minimum_idx:
+            return "SKIPPED"
+        start = colon_idx + 1
+        end = minimum_idx
+        reason = output[start:end].strip()
+        # Abbreviate common error messages
+        if "Command failed" in reason:
+            return "Cmd failed"
+        if "Could not parse version" in reason:
+            return "No version"
+        if "below minimum" in reason:
+            return "Outdated"
+        if "Failed to run" in reason:
+            return "Not found"
+        # Truncate if too long
+        return reason[:20] if len(reason) > 20 else reason
+    return "SKIPPED"
+
+
 def _safe_cast(
     summary: dict[str, Any],
     key: str,
@@ -252,7 +286,8 @@ def print_summary_table(
                 # no files - this should be PASS, not SKIPPED
                 if is_skipped:
                     status_display = "\033[93m⏭️  SKIPPED\033[0m"  # yellow
-                    issues_display = "\033[93mSKIPPED\033[0m"  # yellow
+                    skip_reason = _extract_skip_reason(result_output)
+                    issues_display = f"\033[93m{skip_reason}\033[0m"  # yellow
                 # If there are execution failures but no parsed issues,
                 # show special status
                 elif has_execution_failure and issues_count == 0:

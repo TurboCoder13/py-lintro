@@ -4,12 +4,27 @@
 name: Maintenance - GHCR Registry Cleanup
 # Weekly cleanup of untagged container images from GitHub Container Registry.
 # Reduces storage costs and maintains clean registry state.
+#
+# IMPORTANT: Multi-arch images have architecture-specific manifests that appear
+# as "untagged" but are referenced by the main manifest index. To protect these,
+# we only delete untagged versions older than GHCR_PRUNE_MIN_AGE_DAYS (default: 7).
 
 'on':
   schedule:
-    # Run weekly on Monday at 03:00 UTC
+    # Run weekly on Monday at 03:00 UTC (after Sunday tools-image rebuild)
     - cron: '0 3 * * 1'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (log only, no deletions)'
+        required: false
+        default: false
+        type: boolean
+      min_age_days:
+        description: 'Minimum age in days before deletion (protects multi-arch deps)'
+        required: false
+        default: 7
+        type: number
 
 permissions:
   contents: read
@@ -49,4 +64,7 @@ jobs:
       - name: Prune untagged GHCR versions
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Protect multi-arch manifest dependencies by requiring minimum age
+          GHCR_PRUNE_MIN_AGE_DAYS: ${{ format('{0}', inputs.min_age_days) || '7' }}
+          GHCR_PRUNE_DRY_RUN: ${{ inputs.dry_run == true && '1' || '0' }}
         run: uv run python scripts/ci/maintenance/ghcr_prune_untagged.py

@@ -1,33 +1,40 @@
 # Lintro
 
 <!-- markdownlint-disable MD033 MD013 -->
-<img src="https://raw.githubusercontent.com/lgtm-hq/py-lintro/main/assets/images/lintro.png" alt="Lintro Logo" style="width:100%;max-width:800px;height:auto;display:block;margin:0 auto 24px auto;">
-<!-- markdownlint-enable MD033 MD013 -->
+<p align="center">
+<img src="https://raw.githubusercontent.com/lgtm-hq/py-lintro/main/assets/images/lintro.png" alt="Lintro Logo" style="width:100%;max-width:800px;height:auto;">
+</p>
 
+<p align="center">
 A comprehensive CLI tool that unifies various code formatting, linting, and quality
 assurance tools under a single command-line interface.
+</p>
 
 <!-- Badges: Build & Quality -->
-
-[![Tests](https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/test-and-coverage.yml?label=tests&branch=main&logo=githubactions&logoColor=white)](https://github.com/lgtm-hq/py-lintro/actions/workflows/test-and-coverage.yml?query=branch%3Amain)
-[![CI](https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/ci-lintro-analysis.yml?label=ci&branch=main&logo=githubactions&logoColor=white)](https://github.com/lgtm-hq/py-lintro/actions/workflows/ci-lintro-analysis.yml?query=branch%3Amain)
-[![Docker](https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/docker-build-publish.yml?label=docker&logo=docker&branch=main)](https://github.com/lgtm-hq/py-lintro/actions/workflows/docker-build-publish.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/lgtm-hq/py-lintro/branch/main/graph/badge.svg)](https://codecov.io/gh/lgtm-hq/py-lintro)
+<p align="center">
+<a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/test-and-coverage.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/test-and-coverage.yml?label=tests&branch=main&logo=githubactions&logoColor=white" alt="Tests"></a>
+<a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/ci-lintro-analysis.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/ci-lintro-analysis.yml?label=ci&branch=main&logo=githubactions&logoColor=white" alt="CI"></a>
+<a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/docker-build-publish.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/docker-build-publish.yml?label=docker&logo=docker&branch=main" alt="Docker"></a>
+<a href="https://codecov.io/gh/lgtm-hq/py-lintro"><img src="https://codecov.io/gh/lgtm-hq/py-lintro/branch/main/graph/badge.svg" alt="Coverage"></a>
+</p>
 
 <!-- Badges: Releases -->
-
-[![Release](https://img.shields.io/github/v/release/lgtm-hq/py-lintro?label=release)](https://github.com/lgtm-hq/py-lintro/releases/latest)
-[![PyPI](https://img.shields.io/pypi/v/lintro?label=pypi)](https://pypi.org/project/lintro/)
-[![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+<p align="center">
+<a href="https://github.com/lgtm-hq/py-lintro/releases/latest"><img src="https://img.shields.io/github/v/release/lgtm-hq/py-lintro?label=release" alt="Release"></a>
+<a href="https://pypi.org/project/lintro/"><img src="https://img.shields.io/pypi/v/lintro?label=pypi" alt="PyPI"></a>
+<a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue" alt="Python"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
+</p>
 
 <!-- Badges: Security & Supply Chain -->
-
-[![CodeQL](https://github.com/lgtm-hq/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/lgtm-hq/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/lgtm-hq/py-lintro/badge)](https://scorecard.dev/viewer/?uri=github.com/lgtm-hq/py-lintro)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11142/badge)](https://www.bestpractices.dev/projects/11142)
-[![SBOM](https://img.shields.io/badge/SBOM-CycloneDX-brightgreen)](docs/security/assurance.md)
-[![SBOM Status](https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/sbom-on-main.yml?label=sbom&branch=main)](https://github.com/lgtm-hq/py-lintro/actions/workflows/sbom-on-main.yml?query=branch%3Amain)
+<p align="center">
+<a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain"><img src="https://github.com/lgtm-hq/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main" alt="CodeQL"></a>
+<a href="https://scorecard.dev/viewer/?uri=github.com/lgtm-hq/py-lintro"><img src="https://img.shields.io/ossf-scorecard/github.com/lgtm-hq/py-lintro?label=openssf%20scorecard" alt="OpenSSF Scorecard"></a>
+<a href="https://www.bestpractices.dev/projects/11142"><img src="https://www.bestpractices.dev/projects/11142/badge" alt="OpenSSF Best Practices"></a>
+<a href="docs/security/assurance.md"><img src="https://img.shields.io/badge/SBOM-CycloneDX-brightgreen" alt="SBOM"></a>
+<a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/sbom-on-main.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/sbom-on-main.yml?label=sbom&branch=main" alt="SBOM Status"></a>
+</p>
+<!-- markdownlint-enable MD033 MD013 -->
 
 ## 🚀 Quick Start
 
@@ -145,8 +152,11 @@ pip install lintro
 # Homebrew (macOS binary)
 brew tap lgtm-hq/tap && brew install lintro-bin
 
-# Docker (includes all tools)
+# Docker (tools image - includes all external tools)
 docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check
+
+# Docker (base image - minimal, no external tools)
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:base check
 ```
 
 See [Getting Started](docs/getting-started.md) for detailed installation options.
@@ -166,6 +176,9 @@ lintro check --output-format grid --group-by file
 # Run specific tools
 lintro check --tools ruff,prettier,mypy
 
+# Auto-install Node.js dependencies (useful for TypeScript projects)
+lintro check --tools tsc --auto-install
+
 # Exclude directories
 lintro check --exclude "node_modules,dist,venv"
 
@@ -176,11 +189,14 @@ lintro list-tools
 ### 🐳 Docker
 
 ```bash
-# Run from GHCR
+# Run from GHCR (tools image - recommended)
 docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check
 
 # With formatting
 docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check --output-format grid
+
+# Base image (minimal, no external tools)
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:base check
 ```
 
 ## 📚 Documentation

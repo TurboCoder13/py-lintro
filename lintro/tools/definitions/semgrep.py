@@ -30,7 +30,7 @@ from lintro.tools.core.option_validators import (
 )
 
 # Constants for Semgrep configuration
-SEMGREP_DEFAULT_TIMEOUT: int = 120  # Semgrep can be slow on large codebases
+SEMGREP_DEFAULT_TIMEOUT: int = 300  # Semgrep needs more time on larger codebases
 SEMGREP_DEFAULT_PRIORITY: int = 85  # High priority for security tool
 SEMGREP_FILE_PATTERNS: list[str] = [
     "*.py",

@@ -18,8 +18,18 @@ name: Build - Tools Image
       - scripts/ci/tools-image-*.sh
       - package.json
       - lintro/_tool_versions.py
+      - lintro/tools/manifest.json
       - .github/workflows/tools-image.yml
-  # Note: PRs are handled by build-test-pipeline.yml via resolve-tools-image action
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile.tools
+      - scripts/utils/install-tools.sh
+      - scripts/ci/tools-image-*.sh
+      - package.json
+      - lintro/_tool_versions.py
+      - lintro/tools/manifest.json
+      - .github/workflows/tools-image.yml
   workflow_dispatch:
     inputs:
       force_latest:
@@ -90,6 +100,7 @@ jobs:
               - scripts/ci/tools-image-*.sh
               - package.json
               - lintro/_tool_versions.py
+              - lintro/tools/manifest.json
               - .github/workflows/tools-image.yml
 
   build-tools-image:
@@ -108,6 +119,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
     timeout-minutes: 45
     defaults:
       run:
@@ -182,22 +194,53 @@ jobs:
           file: Dockerfile.tools
           push: false
           load: true
-          tags: lintro-tools:test
+          tags: ${{ steps.tags.outputs.tags }}
 
       - name: Verify tools installation
+        env:
+          IMAGE: ${{ steps.tags.outputs.primary_tag }}
         run: scripts/ci/tools-image-verify.sh
 
       - name: Push tools image
         # yamllint disable-line rule:line-length
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        env:
+          TAGS: ${{ steps.tags.outputs.tags }}
+        run: scripts/ci/tools-image-push.sh
+
+      - name: Resolve image digest
         # yamllint disable-line rule:line-length
-        uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        id: digest
+        env:
+          IMAGE_TAG: ${{ steps.tags.outputs.primary_tag }}
+        run: |
+          IMAGE_NAME="${IMAGE_TAG%%:*}"
+          docker pull "$IMAGE_TAG"
+          FORMAT='{{range .RepoDigests}}{{println .}}{{end}}'
+          REPO_DIGESTS=$(docker inspect --format="$FORMAT" "$IMAGE_TAG" || echo "")
+          DIGEST=$(echo "$REPO_DIGESTS" \
+            | awk -v name="$IMAGE_NAME" -F@ '$1==name {print $2; exit}')
+          if [[ -z "$DIGEST" ]]; then
+            echo "::error::Unable to resolve digest for $IMAGE_TAG"
+            echo "Available repo digests:"
+            echo "$REPO_DIGESTS"
+            echo "Raw docker inspect output:"
+            docker inspect "$IMAGE_TAG" --format='{{json .RepoDigests}}' || true
+            exit 1
+          fi
+          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
+      - name: Attest tools image provenance
+        # yamllint disable-line rule:line-length
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        # actions/attest-build-provenance v3.1.0
+        uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8
         with:
-          context: .
-          file: Dockerfile.tools
-          push: true
-          tags: ${{ steps.tags.outputs.tags }}
-          provenance: true
+          subject-name: ${{ steps.digest.outputs.image_name }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          push-to-registry: true
 
       - name: Summary
         env:
@@ -313,6 +356,7 @@ jobs:
             This PR updates the pinned digest in:
             - `Dockerfile` (TOOLS_IMAGE ARG)
             - `.github/actions/resolve-tools-image/action.yml` (stable-image)
+            - `docker-compose.yml` (TOOLS_IMAGE default)
 
             New digest: `${{ steps.digest.outputs.digest }}`
 

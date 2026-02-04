@@ -34,3 +34,12 @@ def test_parse_black_output_no_issues() -> None:
     output = "All done! ✨ 🍰 ✨\n1 file left unchanged."
     issues = parse_black_output(output)
     assert_that(issues).is_equal_to([])
+
+
+def test_parse_black_output_ansi_codes_stripped() -> None:
+    """Strip ANSI escape codes from output for consistent CI/local parsing."""
+    # Output with ANSI color codes (common in CI environments)
+    output = "\x1b[1mwould reformat src/app.py\x1b[0m\n1 file would be reformatted."
+    issues = parse_black_output(output)
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].file).ends_with("src/app.py")

@@ -38,6 +38,7 @@ def run_tools_parallel(
     post_tools: set[str],
     max_workers: int,
     incremental: bool = False,
+    auto_install: bool = False,
 ) -> list[ToolResult]:
     """Run tools in parallel using async executor.
 
@@ -52,6 +53,7 @@ def run_tools_parallel(
         post_tools: Set of post-check tool names.
         max_workers: Maximum parallel workers.
         incremental: Whether to only check changed files.
+        auto_install: Whether to auto-install Node.js deps if missing.
 
     Returns:
         List of ToolResult objects.
@@ -107,6 +109,7 @@ def run_tools_parallel(
                         incremental=incremental,
                         action=action,
                         post_tools=post_tools,
+                        auto_install=auto_install,
                     )
 
                     tools_with_instances.append((tool_name, tool))

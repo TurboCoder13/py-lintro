@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from lintro.parsers.base_parser import strip_ansi_codes
+
 if TYPE_CHECKING:
     from lintro.tools.definitions.pytest import PytestPlugin
 
@@ -142,18 +144,38 @@ def collect_tests_once(
         # Use pytest --collect-only to list all tests
         collect_cmd = tool._get_executable_command(tool_name="pytest")
         collect_cmd.append("--collect-only")
+        collect_cmd.append("-q")  # Quiet mode for faster collection
         collect_cmd.extend(target_files)
+
+        logger.debug(f"Collecting tests with command: {' '.join(collect_cmd)}")
 
         success, output = tool._run_subprocess(collect_cmd)
         if not success:
+            # Log the failure with output to aid debugging
+            output_preview = output[:500] if output else "(no output)"
+            logger.warning(
+                f"Test collection failed (exit non-zero). "
+                f"Command: {' '.join(collect_cmd[:5])}... "
+                f"Output: {output_preview}",
+            )
             return 0
 
         # Extract the total count from collection output
-        # Format: "XXXX tests collected in Y.YYs" or "1 test collected"
+        # Formats: "collected XXXX items", "XXXX tests collected in Y.YYs"
+        # Strip ANSI escape codes first to avoid color codes breaking regex
+        cleaned_output = strip_ansi_codes(output or "")
         total_count = 0
-        match = re.search(r"(\d+)\s+tests?\s+collected", output)
+        match = re.search(r"collected\s+(\d+)\s+items?", cleaned_output)
+        if not match:
+            match = re.search(r"(\d+)\s+tests?\s+collected", cleaned_output)
         if match:
             total_count = int(match.group(1))
+        else:
+            # Log when we can't parse the output (use original for debugging)
+            output_preview = output[:300] if output else "(no output)"
+            logger.debug(
+                f"Could not parse test count from collection output: {output_preview}",
+            )
 
         return total_count
     except (OSError, ValueError, RuntimeError) as e:

@@ -7,6 +7,7 @@
 # This script updates the tools image digest in:
 #   - Dockerfile (TOOLS_IMAGE ARG)
 #   - .github/actions/resolve-tools-image/action.yml (stable-image default)
+#   - docker-compose.yml (TOOLS_IMAGE default, if present)
 #
 # Usage:
 #   ./scripts/ci/tools-image-update-digest.sh <new-digest>
@@ -22,6 +23,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Files to update
 DOCKERFILE="$PROJECT_ROOT/Dockerfile"
 ACTION_YML="$PROJECT_ROOT/.github/actions/resolve-tools-image/action.yml"
+DOCKER_COMPOSE="$PROJECT_ROOT/docker-compose.yml"
 
 # Image pattern to match (without digest)
 IMAGE_PATTERN="ghcr.io/lgtm-hq/lintro-tools:latest"
@@ -36,6 +38,7 @@ Update the pinned tools image digest in repository files.
 This script updates the tools image digest in:
   - Dockerfile (TOOLS_IMAGE ARG)
   - .github/actions/resolve-tools-image/action.yml (stable-image default)
+  - docker-compose.yml (TOOLS_IMAGE default, if present)
 
 Arguments:
   new-digest    The new digest to use (e.g., sha256:abc123...)
@@ -83,6 +86,11 @@ if [[ ! -f "$ACTION_YML" ]]; then
 	echo "ERROR: action.yml not found at $ACTION_YML" >&2
 	exit 1
 fi
+if [[ -f "$DOCKER_COMPOSE" ]]; then
+	COMPOSE_AVAILABLE="true"
+else
+	COMPOSE_AVAILABLE="false"
+fi
 
 # Regex pattern to match the image with any digest
 # Matches: ghcr.io/lgtm-hq/lintro-tools:latest@sha256:<64-hex-chars>
@@ -124,6 +132,21 @@ else
 	exit 1
 fi
 
+# Update docker-compose.yml if present
+if [[ "$COMPOSE_AVAILABLE" == "true" ]]; then
+	echo "  Updating $DOCKER_COMPOSE..."
+	if grep -qE "$DIGEST_PATTERN" "$DOCKER_COMPOSE"; then
+		if [[ "$OSTYPE" == "darwin"* ]]; then
+			sed -i '' -E "s|${DIGEST_PATTERN}|${REPLACEMENT}|g" "$DOCKER_COMPOSE"
+		else
+			sed -i -E "s|${DIGEST_PATTERN}|${REPLACEMENT}|g" "$DOCKER_COMPOSE"
+		fi
+		echo "    ✓ Updated docker-compose.yml"
+	else
+		echo "    (No digest reference found in docker-compose.yml)"
+	fi
+fi
+
 # Verify updates
 echo ""
 echo "Verification:"
@@ -131,6 +154,10 @@ echo "  Dockerfile:"
 grep -n "TOOLS_IMAGE=" "$DOCKERFILE" | head -1 || echo "    (TOOLS_IMAGE not found)"
 echo "  action.yml:"
 grep -n "stable-image" "$ACTION_YML" | grep -v description | head -1 || echo "    (stable-image not found)"
+if [[ "$COMPOSE_AVAILABLE" == "true" ]]; then
+	echo "  docker-compose.yml:"
+	grep -n "TOOLS_IMAGE" "$DOCKER_COMPOSE" | head -2 || echo "    (TOOLS_IMAGE not found)"
+fi
 
 echo ""
 echo "Done."

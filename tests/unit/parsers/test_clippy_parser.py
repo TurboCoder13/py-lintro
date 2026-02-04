@@ -113,3 +113,19 @@ def test_parse_clippy_output_multi_line_span() -> None:
     assert_that(issues).is_length(1)
     assert_that(issues[0].line).is_equal_to(10)
     assert_that(issues[0].end_line).is_equal_to(15)
+
+
+def test_parse_clippy_output_ansi_codes_stripped() -> None:
+    """Strip ANSI escape codes from output for consistent CI/local parsing."""
+    # Output with ANSI color codes (common in CI environments)
+    output = (
+        '\x1b[33m{"reason":"compiler-message","message":{"code":{"code":"clippy::needless_return"},'
+        '"level":"warning","message":"unneeded `return` statement",'
+        '"spans":[{"file_name":"src/lib.rs","line_start":42,"line_end":42,'
+        '"column_start":5,"column_end":15}],'
+        '"rendered":"warning: unneeded `return` statement..."}}\x1b[0m'
+    )
+    issues = parse_clippy_output(output)
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].file).is_equal_to("src/lib.rs")
+    assert_that(issues[0].code).is_equal_to("clippy::needless_return")

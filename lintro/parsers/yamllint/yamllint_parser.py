@@ -5,7 +5,13 @@ import re
 from loguru import logger
 
 from lintro.enums.severity_level import normalize_severity_level
+from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.yamllint.yamllint_issue import YamllintIssue
+
+# Pattern for yamllint parsable format: "filename:line:column: [level] message (rule)"
+_YAMLLINT_PATTERN: re.Pattern[str] = re.compile(
+    r"^([^:]+):(\d+):(\d+):\s*\[(error|warning)\]\s+(.+?)(?:\s+\(([^)]+)\))?$",
+)
 
 
 def parse_yamllint_output(output: str) -> list[YamllintIssue]:
@@ -34,6 +40,9 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
     if not output.strip():
         return issues
 
+    # Strip ANSI codes for consistent parsing across environments
+    output = strip_ansi_codes(output)
+
     lines: list[str] = output.splitlines()
 
     for line in lines:
@@ -41,13 +50,7 @@ def parse_yamllint_output(output: str) -> list[YamllintIssue]:
         if not line:
             continue
 
-        # Pattern for yamllint parsable format: "filename:line:column: [level]
-        # message (rule)"
-        pattern: re.Pattern[str] = re.compile(
-            r"^([^:]+):(\d+):(\d+):\s*\[(error|warning)\]\s+(.+?)(?:\s+\(([^)]+)\))?$",
-        )
-
-        match: re.Match[str] | None = pattern.match(line)
+        match: re.Match[str] | None = _YAMLLINT_PATTERN.match(line)
         if match:
             try:
                 filename: str

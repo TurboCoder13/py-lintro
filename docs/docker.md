@@ -11,7 +11,7 @@ The easiest way to use Lintro is with the pre-built image from GitHub Container
 Registry:
 
 ```bash
-# Basic usage
+# Basic usage (tools image - includes all external tools)
 docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check
 
 # With grid formatting
@@ -22,6 +22,9 @@ docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check --tools r
 
 # Format code
 docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest format
+
+# Base image (minimal, no external tools)
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:base check
 ```
 
 ### Development Setup
@@ -62,9 +65,11 @@ Lintro provides a pre-built Docker image available on GitHub Container Registry 
 
 - **Registry**: `ghcr.io/lgtm-hq/py-lintro`
 - **Tags**:
-  - `latest` - Latest development version
+  - `latest` - Tools image (recommended; includes external tools)
   - `main` - Main branch version
+  - `base` - Minimal image (no external tools)
   - `v1.0.0` - Specific release versions (when available)
+  - `v1.0.0-base` - Base image for that release
 
 ### Using the Published Image
 
@@ -72,11 +77,14 @@ Lintro provides a pre-built Docker image available on GitHub Container Registry 
 # Pull the latest image
 docker pull ghcr.io/lgtm-hq/py-lintro:latest
 
-# Run with the published image
+# Run with the published image (tools image)
 docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check
 
 # Use a specific version
 docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:main check
+
+# Use the base image (minimal)
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:base check
 ```
 
 ### CI/CD Integration
@@ -95,7 +103,41 @@ lintro:
   image: ghcr.io/lgtm-hq/py-lintro:latest
   script:
     - lintro check --output-format grid
+
+# Base image example (minimal, no external tools)
+lintro_base:
+  image: ghcr.io/lgtm-hq/py-lintro:base
+  script:
+    - lintro check --output-format grid
 ```
+
+## Node.js Dependency Auto-Install
+
+When using Docker, Lintro automatically installs Node.js dependencies when the container
+starts with a mounted project. This happens automatically if:
+
+1. A `package.json` file exists in the mounted `/code` directory
+2. The `node_modules` directory is missing or empty
+
+**How it works:**
+
+- Docker checks for `package.json` at container startup
+- If `node_modules` is missing, it runs `bun install --frozen-lockfile` (falls back to
+  regular `bun install` if lockfile fails)
+- If `bun` is unavailable, it uses `npm ci` (falls back to `npm install`)
+- This ensures tools like `tsc`, `oxlint`, `prettier`, and `markdownlint-cli2` work
+  immediately
+
+**Example:**
+
+```bash
+# Mount a TypeScript project - dependencies are auto-installed
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check --tools tsc
+```
+
+**Note:** For local usage (outside Docker), use the `--auto-install` flag or set
+`auto_install_deps: true` in your configuration file. See
+[Configuration](configuration.md) for details.
 
 ## Building the Image Locally
 

@@ -19,6 +19,7 @@ from collections.abc import Iterable
 
 from loguru import logger
 
+from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.black.black_issue import BlackIssue
 
 _WOULD_REFORMAT = re.compile(r"^would reformat\s+(?P<file>.+)$", re.IGNORECASE)
@@ -54,6 +55,9 @@ def parse_black_output(output: str) -> list[BlackIssue]:
     """
     if not output:
         return []
+
+    # Strip ANSI codes for consistent parsing across environments
+    output = strip_ansi_codes(output)
 
     issues: list[BlackIssue] = []
     try:
@@ -93,6 +97,11 @@ def parse_black_output(output: str) -> list[BlackIssue]:
                     logger.debug(f"Failed to parse black summary count: {e}")
                     count = 0
                 if count > 0:
+                    logger.info(
+                        f"Black reported {count} file(s) need formatting but "
+                        "didn't list them. Run 'black --check .' directly to "
+                        "see affected files.",
+                    )
                     for _ in range(count):
                         issues.append(
                             BlackIssue(

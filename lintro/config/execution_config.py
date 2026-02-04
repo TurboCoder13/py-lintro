@@ -28,6 +28,9 @@ class ExecutionConfig(BaseModel):
         fail_fast: Stop on first tool failure.
         parallel: Run tools in parallel where possible.
         max_workers: Maximum number of parallel workers (default: CPU count).
+        auto_install_deps: Auto-install Node.js dependencies if node_modules
+            is missing. Defaults to False for local usage, but can be enabled
+            via --auto-install flag or config.
     """
 
     model_config = ConfigDict(frozen=False, extra="forbid")
@@ -37,3 +40,4 @@ class ExecutionConfig(BaseModel):
     fail_fast: bool = False
     parallel: bool = True
     max_workers: int = Field(default_factory=_get_default_max_workers, ge=1, le=32)
+    auto_install_deps: bool = False

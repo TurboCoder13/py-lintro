@@ -192,15 +192,15 @@ def test_parse_semgrep_invalid_json() -> None:
 
 
 def test_parse_semgrep_non_object_json() -> None:
-    """Non-object JSON should raise ValueError."""
-    with pytest.raises(ValueError, match="must be a JSON object"):
-        parse_semgrep_output(output=json.dumps([1, 2, 3]))
+    """Non-object JSON should return empty list and log warning."""
+    issues = parse_semgrep_output(output=json.dumps([1, 2, 3]))
+    assert_that(issues).is_equal_to([])
 
 
 def test_parse_semgrep_non_list_results() -> None:
-    """Non-list results should raise ValueError."""
-    with pytest.raises(ValueError, match="must be a list"):
-        parse_semgrep_output(output=json.dumps({"results": "not a list"}))
+    """Non-list results should return empty list and log warning."""
+    issues = parse_semgrep_output(output=json.dumps({"results": "not a list"}))
+    assert_that(issues).is_equal_to([])
 
 
 def test_semgrep_check_parses_mixed_output_json(
@@ -243,7 +243,7 @@ def test_semgrep_check_parses_mixed_output_json(
     ) -> SimpleNamespace:
         # Handle version check calls
         if "--version" in cmd:
-            return SimpleNamespace(stdout="semgrep 1.50.0", stderr="", returncode=0)
+            return SimpleNamespace(stdout="semgrep 1.85.0", stderr="", returncode=0)
         # Handle actual check calls
         return SimpleNamespace(
             stdout=mixed_stdout,
@@ -301,7 +301,7 @@ def test_semgrep_check_handles_nonzero_rc_with_errors_array(
     ) -> SimpleNamespace:
         # Handle version check calls
         if "--version" in cmd:
-            return SimpleNamespace(stdout="semgrep 1.50.0", stderr="", returncode=0)
+            return SimpleNamespace(stdout="semgrep 1.85.0", stderr="", returncode=0)
         # Handle actual check calls
         return SimpleNamespace(stdout=json.dumps(sample), stderr="", returncode=1)
 
@@ -335,7 +335,7 @@ def test_semgrep_check_handles_unparseable_output(
     ) -> SimpleNamespace:
         # Handle version check calls
         if "--version" in cmd:
-            return SimpleNamespace(stdout="semgrep 1.50.0", stderr="", returncode=0)
+            return SimpleNamespace(stdout="semgrep 1.85.0", stderr="", returncode=0)
         # Handle actual check calls
         return SimpleNamespace(stdout="nonsense", stderr="also nonsense", returncode=1)
 
@@ -379,7 +379,7 @@ def test_semgrep_tool_definition() -> None:
     assert_that(defn.name).is_equal_to("semgrep")
     assert_that(defn.can_fix).is_false()
     assert_that(defn.tool_type).is_equal_to(ToolType.LINTER | ToolType.SECURITY)
-    assert_that(defn.min_version).is_equal_to("1.50.0")
+    assert_that(defn.min_version).is_equal_to("1.85.0")
     assert_that("*.py" in defn.file_patterns).is_true()
     assert_that("*.js" in defn.file_patterns).is_true()
     assert_that("*.go" in defn.file_patterns).is_true()

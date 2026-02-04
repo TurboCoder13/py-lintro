@@ -226,9 +226,9 @@ class PythonBundledBuilder(CommandBuilder):
     ) -> list[str]:
         """Get command for Python bundled tool.
 
-        Prefers PATH binary if available (works with Homebrew, system packages,
-        pipx, uv tool, etc.). Falls back to python -m for pip installs where
-        the tool binary isn't in PATH.
+        When running in a virtual environment, always uses python -m to ensure
+        the tool runs with the same packages as lintro. Otherwise, prefers
+        PATH binary (works with Homebrew, system packages, pipx, uv tool, etc.).
 
         Args:
             tool_name: String name of the tool.
@@ -237,19 +237,32 @@ class PythonBundledBuilder(CommandBuilder):
         Returns:
             Command list to execute the tool.
         """
-        # Prefer PATH binary if available - works with Homebrew, apt, pipx, etc.
-        tool_path = shutil.which(tool_name)
-        if tool_path:
-            logger.debug(f"Found {tool_name} in PATH: {tool_path}")
-            return [tool_path]
-
         # Skip python -m fallback when compiled (sys.executable is the lintro binary)
         if _is_compiled_binary():
+            tool_path = shutil.which(tool_name)
+            if tool_path:
+                logger.debug(f"Found {tool_name} in PATH: {tool_path}")
+                return [tool_path]
             logger.debug(
                 f"Tool {tool_name} not in PATH and running as compiled binary, "
                 "skipping python -m fallback",
             )
             return [tool_name]
+
+        # When running in a venv, always use python -m to ensure consistent env
+        if sys.prefix != sys.base_prefix:
+            python_exe = sys.executable
+            if python_exe:
+                logger.debug(
+                    f"Running in venv ({sys.prefix}), using python -m {tool_name}",
+                )
+                return [python_exe, "-m", tool_name]
+
+        # Outside venv: prefer PATH binary (Homebrew, apt, pipx, etc.)
+        tool_path = shutil.which(tool_name)
+        if tool_path:
+            logger.debug(f"Found {tool_name} in PATH: {tool_path}")
+            return [tool_path]
 
         # Fallback to python -m for pip installs where binary isn't in PATH
         python_exe = sys.executable
@@ -287,9 +300,9 @@ class PytestBuilder(CommandBuilder):
     ) -> list[str]:
         """Get command for pytest.
 
-        Prefers PATH binary if available (works with Homebrew, system packages,
-        pipx, uv tool, etc.). Falls back to python -m for pip installs where
-        the tool binary isn't in PATH.
+        When running in a virtual environment, always uses python -m pytest to
+        ensure pytest runs with the same packages as lintro. Otherwise, prefers
+        PATH binary (works with Homebrew, system packages, pipx, uv tool, etc.).
 
         Args:
             tool_name: String name of the tool.
@@ -298,19 +311,33 @@ class PytestBuilder(CommandBuilder):
         Returns:
             Command list to execute pytest.
         """
-        # Prefer PATH binary if available - works with Homebrew, apt, pipx, etc.
-        tool_path = shutil.which("pytest")
-        if tool_path:
-            logger.debug(f"Found pytest in PATH: {tool_path}")
-            return [tool_path]
-
         # Skip python -m fallback when compiled (sys.executable is the lintro binary)
         if _is_compiled_binary():
+            tool_path = shutil.which("pytest")
+            if tool_path:
+                logger.debug(f"Found pytest in PATH: {tool_path}")
+                return [tool_path]
             logger.debug(
                 "pytest not in PATH and running as compiled binary, "
                 "skipping python -m fallback",
             )
             return ["pytest"]
+
+        # When running in a venv, always use python -m pytest to ensure
+        # pytest has access to the same packages as lintro (e.g., loguru)
+        if sys.prefix != sys.base_prefix:
+            python_exe = sys.executable
+            if python_exe:
+                logger.debug(
+                    f"Running in venv ({sys.prefix}), using python -m pytest",
+                )
+                return [python_exe, "-m", "pytest"]
+
+        # Outside venv: prefer PATH binary (Homebrew, apt, pipx, etc.)
+        tool_path = shutil.which("pytest")
+        if tool_path:
+            logger.debug(f"Found pytest in PATH: {tool_path}")
+            return [tool_path]
 
         # Fallback to python -m for pip installs where binary isn't in PATH
         python_exe = sys.executable

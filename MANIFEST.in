@@ -5,6 +5,7 @@ include pyproject.toml
 # Include assets directory and its contents
 recursive-include assets *
 recursive-include lintro/ascii-art *
+recursive-include lintro/tools *.json
 
 # Include any additional documentation
 recursive-include docs *.md
@@ -14,4 +15,4 @@ recursive-include tests *.py
 recursive-include test_samples *.py
 recursive-include test_samples *.yml
 recursive-include test_samples *.js
-recursive-include test_samples Dockerfile.* 
+recursive-include test_samples Dockerfile.*

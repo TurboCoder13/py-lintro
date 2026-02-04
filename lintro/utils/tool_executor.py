@@ -63,6 +63,7 @@ def run_lint_tools_simple(
     debug: bool = False,
     stream: bool = False,
     no_log: bool = False,
+    auto_install: bool = False,
 ) -> int:
     """Simplified runner using Loguru-based logging with rich formatting.
 
@@ -88,6 +89,7 @@ def run_lint_tools_simple(
         debug: Whether to show DEBUG messages on console.
         stream: Whether to stream output in real-time (not yet implemented).
         no_log: Whether to disable file logging (not yet implemented).
+        auto_install: Whether to auto-install Node.js deps if node_modules missing.
 
     Returns:
         Exit code (0 for success, 1 for failures).
@@ -179,6 +181,9 @@ def run_lint_tools_simple(
     lintro_config = get_config()
     use_parallel = lintro_config.execution.parallel and len(tools_to_run) > 1
 
+    # Determine auto_install: CLI flag takes precedence, else use config
+    effective_auto_install = auto_install or lintro_config.execution.auto_install_deps
+
     # Define success_func once before the loop
     def success_func(message: str) -> None:
         logger.console_output(text=message, color="green")
@@ -200,6 +205,7 @@ def run_lint_tools_simple(
             post_tools=post_tools_early,
             max_workers=lintro_config.execution.max_workers,
             incremental=incremental,
+            auto_install=effective_auto_install,
         )
 
         # Calculate totals from parallel results using helper
@@ -272,6 +278,7 @@ def run_lint_tools_simple(
                     incremental=incremental,
                     action=action,
                     post_tools=post_tools_early,
+                    auto_install=effective_auto_install,
                 )
 
                 # Execute the tool

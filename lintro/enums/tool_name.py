@@ -26,6 +26,7 @@ class ToolName(StrEnum):
     PYDOCLINT = auto()
     PYTEST = auto()
     RUFF = auto()
+    RUSTC = auto()
     RUSTFMT = auto()
     SEMGREP = auto()
     SHELLCHECK = auto()

@@ -14,6 +14,38 @@ source "$SCRIPT_DIR/../utils/utils.sh"
 VERBOSE=0
 TEST_FILES=()
 
+# Function to check if venv is valid and functional
+check_venv_valid() {
+	local venv_python="$1"
+
+	# Check 1: Binary exists and is executable
+	if [ ! -x "$venv_python" ]; then
+		echo "missing"
+		return 1
+	fi
+
+	# Check 2: Python can actually execute (not broken symlink or incompatible binary)
+	if ! "$venv_python" -c "import sys" 2>/dev/null; then
+		echo "broken"
+		return 1
+	fi
+
+	# Check 3: Key packages are importable (pytest is essential for tests)
+	if ! "$venv_python" -c "import pytest" 2>/dev/null; then
+		echo "incomplete"
+		return 1
+	fi
+
+	# Check 4: lintro module is importable
+	if ! "$venv_python" -c "import lintro" 2>/dev/null; then
+		echo "stale"
+		return 1
+	fi
+
+	echo "valid"
+	return 0
+}
+
 # Function to setup Python environment
 setup_python_env() {
 	echo -e "${BLUE}Setting up Python environment...${NC}"
@@ -21,10 +53,14 @@ setup_python_env() {
 	# Check if we're running in Docker
 	if [ -n "$RUNNING_IN_DOCKER" ]; then
 		echo -e "${YELLOW}Running in Docker environment${NC}"
-		# The host bind mount can mask the image venv; rebuild it if missing.
+		# The host bind mount can mask the image venv; rebuild it if missing or invalid.
 		cd /app
-		if [ ! -x "/app/.venv/bin/python" ]; then
-			echo -e "${YELLOW}Detected missing /app/.venv; rebuilding venv with uv...${NC}"
+		local venv_status
+		venv_status=$(check_venv_valid "/app/.venv/bin/python" || true)
+		if [ "$venv_status" != "valid" ]; then
+			echo -e "${YELLOW}Detected ${venv_status} /app/.venv; rebuilding venv with uv...${NC}"
+			# Remove potentially corrupted venv to ensure clean rebuild
+			rm -rf /app/.venv 2>/dev/null || true
 			export UV_LINK_MODE=${UV_LINK_MODE:-copy}
 			uv sync --dev --extra tools --no-progress
 		fi
@@ -166,11 +202,6 @@ run_tests() {
 	# Build lintro tst arguments
 	local tst_args=("tests")
 
-	# Add parallel workers if not disabled
-	if [ "${workers}" != "0" ]; then
-		tst_args+=("--tool-options" "pytest:workers=${workers}")
-	fi
-
 	# Add verbose flag if requested
 	local tool_opts="pytest:coverage_report=True,pytest:coverage_html=htmlcov,pytest:coverage_xml=coverage.xml,pytest:timeout=600"
 	if [ "$VERBOSE" = "1" ] || [ "${1:-}" = "--verbose" ] || [ "${1:-}" = "-v" ]; then
@@ -178,6 +209,9 @@ run_tests() {
 		tst_args+=("--verbose")
 		tool_opts="${tool_opts},pytest:verbose=True"
 	fi
+
+	# Always pass workers to avoid defaulting to auto in Docker/CI
+	tool_opts="${tool_opts},pytest:workers=${workers}"
 
 	# Add pytest-sugar for enhanced CI output (if available)
 	if [ "${GITHUB_ACTIONS:-}" = "true" ]; then

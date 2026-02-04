@@ -75,6 +75,16 @@ def test_set_options_valid(
     )
 
 
+def test_set_options_workers_int_coerces_to_string(
+    sample_pytest_plugin: PytestPlugin,
+) -> None:
+    """Coerce integer workers to string for pytest-xdist."""
+    sample_pytest_plugin.set_options(workers=4)
+    assert_that(
+        sample_pytest_plugin.pytest_config.get_options_dict().get("workers"),
+    ).is_equal_to("4")
+
+
 # =============================================================================
 # Tests for PytestPlugin set_options with invalid values
 # =============================================================================
@@ -90,7 +100,7 @@ def test_set_options_valid(
         ("tb", "invalid", "tb must be one of"),
         ("junitxml", 123, "junitxml must be a string"),
         ("json_report", "yes", "json_report must be a boolean"),
-        ("workers", 4, "workers must be a string"),
+        ("workers", ["4"], "workers must be a string"),
         ("coverage_threshold", "80", "coverage_threshold must be a number"),
         ("coverage_threshold", -1, "coverage_threshold must be between 0 and 100"),
         ("coverage_threshold", 101, "coverage_threshold must be between 0 and 100"),

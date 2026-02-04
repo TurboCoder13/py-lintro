@@ -27,39 +27,9 @@ IMAGE="${IMAGE:-lintro-tools:test}"
 
 echo "Verifying installed tools in ${IMAGE}..."
 
-# Run all verifications in a single container for efficiency
-docker run --rm "$IMAGE" bash -c '
-    set -euo pipefail
-    echo "Core infrastructure tools:"
-    bun --version
-    uv --version
-    cargo --version
-    rustc --version
-
-    echo ""
-    echo "Linting and formatting tools:"
-    actionlint --version
-    bandit --version
-    black --version
-    cargo audit --version
-    cargo clippy --version
-    pydoclint --version
-    gitleaks version
-    hadolint --version
-    markdownlint-cli2 --version
-    mypy --version
-    oxfmt --version
-    oxlint --version
-    prettier --version
-    ruff --version
-    semgrep --version
-    shellcheck --version
-    shfmt --version
-    sqlfluff --version
-    taplo --version
-    tsc --version
-    rustfmt --version
-    yamllint --version
-'
+# Run manifest-driven verification inside the container
+docker run --rm "$IMAGE" python3 /app/scripts/ci/verify-manifest-tools.py \
+	--manifest /app/lintro/tools/manifest.json \
+	--tiers tools
 
 echo "All tools verified successfully!"

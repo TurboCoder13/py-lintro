@@ -31,6 +31,7 @@ via pyproject.toml dependencies and don't need tracking in _tool_versions.py.
 """
 
 import os
+import threading
 
 from loguru import logger
 
@@ -39,6 +40,11 @@ from lintro._tool_versions import (
     get_all_expected_versions,
 )
 from lintro.enums.tool_name import ToolName
+
+# Module-level set to track logged warnings and prevent duplicates
+# during parallel execution
+_logged_warnings: set[str] = set()
+_logged_warnings_lock: threading.Lock = threading.Lock()
 
 
 def _get_version_timeout() -> int:
@@ -114,13 +120,37 @@ def get_install_hints() -> dict[str, str]:
     """
     # Static templates mapping tool -> install hint template with {version} placeholder
     templates: dict[str, str] = {
+        "bandit": (
+            "Install via: pip install bandit>={version} or uv add bandit>={version}"
+        ),
+        "black": (
+            "Install via: pip install black>={version} or uv add black>={version}"
+        ),
+        "mypy": ("Install via: pip install mypy>={version} or uv add mypy>={version}"),
+        "pydoclint": (
+            "Install via: pip install pydoclint>={version} "
+            "or uv add pydoclint>={version}"
+        ),
+        "ruff": ("Install via: pip install ruff>={version} or uv add ruff>={version}"),
+        "yamllint": (
+            "Install via: pip install yamllint>={version} or uv add yamllint>={version}"
+        ),
         "pytest": (
             "Install via: pip install pytest>={version} or uv add pytest>={version}"
         ),
         "markdownlint": "Install via: bun add -d markdownlint-cli2@>={version}",
+        "markdownlint-cli2": "Install via: bun add -d markdownlint-cli2@>={version}",
         "oxfmt": "Install via: bun add -d oxfmt@>={version}",
         "oxlint": "Install via: bun add -d oxlint@>={version}",
         "prettier": "Install via: bun add -d prettier@>={version}",
+        "tsc": (
+            "Install via: bun add -g typescript@{version}, "
+            "npm install -g typescript@{version}, or brew install typescript"
+        ),
+        "typescript": (
+            "Install via: bun add -g typescript@{version}, "
+            "npm install -g typescript@{version}, or brew install typescript"
+        ),
         "hadolint": (
             "Install via: https://github.com/hadolint/hadolint/releases (v{version}+)"
         ),
@@ -128,6 +158,10 @@ def get_install_hints() -> dict[str, str]:
             "Install via: https://github.com/rhysd/actionlint/releases (v{version}+)"
         ),
         "clippy": "Install via: rustup component add clippy (requires Rust {version}+)",
+        "rustc": (
+            "Install via: rustup toolchain install {version} "
+            "&& rustup default {version}"
+        ),
         "rustfmt": "Install via: rustup component add rustfmt (v{version}+)",
         "cargo_audit": "Install via: cargo install cargo-audit (v{version}+)",
         "semgrep": (
@@ -147,10 +181,6 @@ def get_install_hints() -> dict[str, str]:
             "Install via: cargo install taplo-cli "
             "or download from https://github.com/tamasfe/taplo/releases (v{version}+)"
         ),
-        "typescript": (
-            "Install via: bun add -g typescript@{version}, "
-            "npm install -g typescript@{version}, or brew install typescript"
-        ),
     }
 
     versions = get_minimum_versions()
@@ -162,11 +192,15 @@ def get_install_hints() -> dict[str, str]:
         if version is not None:
             hints[tool] = template.format(version=version)
 
-    # Warn about tools in versions that don't have templates
+    # Warn about tools in versions that don't have templates (only once)
     missing = set(versions) - set(templates)
     if missing:
-        logger.warning(
-            f"Missing install hints for tools: {', '.join(sorted(missing))}",
-        )
+        warning_key = f"missing_hints:{','.join(sorted(missing))}"
+        with _logged_warnings_lock:
+            if warning_key not in _logged_warnings:
+                _logged_warnings.add(warning_key)
+                logger.warning(
+                    f"Missing install hints for tools: {', '.join(sorted(missing))}",
+                )
 
     return hints

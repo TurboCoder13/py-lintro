@@ -39,6 +39,8 @@ The configuration system works in a specific order:
    - `fail_fast`: Whether to stop on first tool failure
    - `parallel`: Whether to run tools in parallel (default: `true`)
    - `max_workers`: Maximum parallel workers, 1-32 (default: CPU count)
+   - `auto_install_deps`: Auto-install Node.js dependencies if missing (default:
+     `false`)
 
 2. **Enforce Tier** - Cross-cutting settings injected as CLI flags
    - These settings override native configs via CLI arguments
@@ -85,6 +87,7 @@ execution:
   fail_fast: false
   parallel: true # Run tools in parallel (default: true)
   max_workers: 10 # Max parallel workers, 1-32 (default: CPU count)
+  auto_install_deps: false # Auto-install Node.js deps if missing
 
 # Tier 2: ENFORCE - Cross-cutting settings injected via CLI flags
 # These OVERRIDE native configs for consistency
@@ -152,6 +155,34 @@ lintro check --exclude "*.pyc,venv"          # Exclude patterns
 lintro check --include-venv                  # Include virtual environments
 lintro check path/to/files                   # Check specific paths
 ```
+
+#### Node.js Dependency Options
+
+```bash
+# Auto-install Node.js dependencies if node_modules is missing
+lintro check --auto-install --tools tsc
+
+# Useful for TypeScript projects where dependencies aren't installed
+lintro check src/ --tools tsc,oxlint --auto-install
+```
+
+The `--auto-install` flag is available for both `check` and `format` commands. When
+enabled, Lintro will automatically run `bun install` (or `npm install` if bun is
+unavailable) before running Node.js-based tools like tsc, oxlint, oxfmt, prettier, or
+markdownlint-cli2.
+
+You can also enable this globally via configuration:
+
+```yaml
+# .lintro-config.yaml
+execution:
+  auto_install_deps: true
+```
+
+**Note:** In Docker, automatic Node.js dependency installation is opt-in and controlled
+by the `LINTRO_AUTO_INSTALL_DEPS=1` environment variable. Set this in your Docker
+environment or docker-compose to enable auto-installation when the container starts with
+a mounted project containing `package.json`.
 
 #### Tool-Specific Options
 

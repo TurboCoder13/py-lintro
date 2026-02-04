@@ -1,0 +1,672 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+name: CI Pipeline
+
+# Gated CI: resolve-tools → docker-build → lint → test → smoke-test → publish
+# Each stage depends on the previous passing. Docker image built ONCE and cached.
+
+'on':
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ============================================================================
+  # Stage 1: Resolve tools image
+  # ============================================================================
+  resolve-tools:
+    name: 🔧 Resolve Tools Image
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 30
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.draft == false
+    outputs:
+      image: ${{ steps.tools.outputs.image }}
+      changed: ${{ steps.tools.outputs.changed }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            static.rust-lang.org:443
+            bun.sh:443
+            astral.sh:443
+            sh.rustup.rs:443
+            deb.debian.org:80
+            registry.npmjs.org:443
+            crates.io:443
+            static.crates.io:443
+            index.crates.io:443
+            semgrep.dev:443
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+      - name: Resolve tools image
+        id: tools
+        uses: ./.github/actions/resolve-tools-image
+      - name: Summary
+        env:
+          TOOLS_IMAGE: ${{ steps.tools.outputs.image }}
+          TOOLS_CHANGED: ${{ steps.tools.outputs.changed }}
+        run: |
+          {
+            echo "## Tools Image Resolution"
+            echo ""
+            echo "- **Image:** \`${TOOLS_IMAGE}\`"
+            echo "- **Changed:** ${TOOLS_CHANGED}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ============================================================================
+  # Stage 2: Build Docker image ONCE (cached for all subsequent stages)
+  # ============================================================================
+  docker-build:
+    name: 🐳 Build Docker Images
+    needs: resolve-tools
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    concurrency:
+      group: docker-build-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            static.rust-lang.org:443
+            bun.sh:443
+            astral.sh:443
+            sh.rustup.rs:443
+            deb.debian.org:80
+            registry.npmjs.org:443
+            crates.io:443
+            static.crates.io:443
+            index.crates.io:443
+            semgrep.dev:443
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+      - name: Setup Blacksmith Builder
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: useblacksmith/setup-docker-builder@33fed32c1ba8775f20366ec9e8d0cd9fe8fc1dd3 # v1
+      - name: Build Docker image (py-lintro:latest)
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
+        with:
+          context: .
+          push: false
+          load: true
+          tags: py-lintro:latest
+          build-args: |
+            TOOLS_IMAGE=${{ needs.resolve-tools.outputs.image }}
+          provenance: false
+      - name: Build Base Docker image (py-lintro:base)
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
+        with:
+          context: .
+          file: Dockerfile.base
+          push: false
+          load: true
+          tags: py-lintro:base
+          provenance: false
+      - name: Save Docker images to tarball
+        run: |
+          docker save py-lintro:latest py-lintro:base -o /tmp/py-lintro-images.tar
+      - name: Upload Docker images artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: docker-images
+          path: /tmp/py-lintro-images.tar
+          retention-days: 1
+
+  # ============================================================================
+  # Stage 3: Lint (GATED on docker-build)
+  # ============================================================================
+  lint:
+    name: 🛠️ Lintro Code Quality
+    needs: [resolve-tools, docker-build]
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      contents: read
+      pull-requests: write
+      packages: write
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    concurrency:
+      group: lint-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            static.rust-lang.org:443
+            bun.sh:443
+            astral.sh:443
+            sh.rustup.rs:443
+            deb.debian.org:80
+            registry.npmjs.org:443
+            crates.io:443
+            static.crates.io:443
+            index.crates.io:443
+            semgrep.dev:443
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download Docker images artifact
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: docker-images
+          path: /tmp
+      - name: Load Docker images
+        run: docker load -i /tmp/py-lintro-images.tar
+      - name: Auto-fix with Lintro (same-repo PRs only)
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.draft == false &&
+          github.event.pull_request.head.repo.fork == false
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
+          RUFF_UNSAFE_FIXES: 'true'
+        run: scripts/ci/ci-auto-fix.sh
+      - name: Run Lintro Analysis in Docker
+        id: lintro
+        env:
+          RUFF_UNSAFE_FIXES: 'true'
+        run: ./scripts/ci/testing/ci-lintro.sh
+        continue-on-error: true
+      - name: Generate PR Comment
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: ./scripts/ci/ci-pr-comment.sh
+      - name: Comment PR with Lintro Results
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: ./.github/actions/post-pr-comment
+        with:
+          file: pr-comment.txt
+          marker: '<!-- lintro-report -->'
+          merge-update: 'true'
+      - name: Fail on Linting Issues
+        if: ${{ env.CHK_EXIT_CODE != '0' }}
+        env:
+          CHK_EXIT_CODE: ${{ env.CHK_EXIT_CODE }}
+        run: scripts/ci/fail-on-lint.sh
+
+  # ============================================================================
+  # Stage 4: Test (GATED on lint)
+  # ============================================================================
+  test:
+    name: 🧪 Test Suite & Coverage
+    needs: [resolve-tools, docker-build, lint]
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    concurrency:
+      group: test-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      LINTRO_OUTPUT_DIR: /tmp/lintro
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      coverage-percentage: ${{ steps.coverage.outputs.percentage }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            img.shields.io:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            codecov.io:443
+            uploader.codecov.io:443
+            storage.googleapis.com:443
+            pings.codecov.com:443
+            static.rust-lang.org:443
+            bun.sh:443
+            astral.sh:443
+            sh.rustup.rs:443
+            deb.debian.org:80
+            registry.npmjs.org:443
+            crates.io:443
+            static.crates.io:443
+            index.crates.io:443
+            semgrep.dev:443
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+      - name: Download Docker images artifact
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: docker-images
+          path: /tmp
+      - name: Load Docker images
+        run: docker load -i /tmp/py-lintro-images.tar
+      - name: Setup Blacksmith Builder
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: useblacksmith/setup-docker-builder@33fed32c1ba8775f20366ec9e8d0cd9fe8fc1dd3 # v1
+      - name: Run comprehensive test suite (with Docker tests)
+        env:
+          TOOLS_IMAGE: ${{ needs.resolve-tools.outputs.image }}
+        run: |
+          ./scripts/docker/docker-test.sh 2>&1 | tee test-output.log
+          # Preserve exit code from docker-test.sh
+          exit "${PIPESTATUS[0]}"
+      - name: Extract test summary
+        if: always()
+        run: |
+          chmod +x ./scripts/ci/testing/extract-test-summary.sh
+          ./scripts/ci/testing/extract-test-summary.sh \
+            test-output.log test-summary.json || true
+      - name: Upload test summary artifact
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: test-summary
+          path: test-summary.json
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: coverage-report-python-3.13
+          path: htmlcov/
+          retention-days: 30
+      - name: Upload coverage XML as artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 30
+      - name: Upload .coverage as artifact (if present)
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: ${{ hashFiles('.coverage') != '' }}
+        with:
+          name: coverage-dotfile
+          path: .coverage
+          retention-days: 30
+      - name: Extract coverage percentage
+        id: coverage
+        run: ./scripts/ci/testing/ci-extract-coverage.sh
+      - name: Enforce coverage threshold (80%)
+        if: github.ref == 'refs/heads/main' && success()
+        env:
+          COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
+        run: bash ./scripts/ci/testing/enforce-coverage-threshold.sh
+      - name: Upload coverage to Codecov (always)
+        if: always()
+        continue-on-error: true
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de
+        with:
+          files: coverage.xml
+          flags: python-3.13
+          fail_ci_if_error: false
+      - name: Generate coverage badge (no commit)
+        if: success()
+        env:
+          COVERAGE_PERCENTAGE: ${{ steps.coverage.outputs.percentage }}
+        run: ./scripts/ci/testing/coverage-badge-update.sh
+      - name: Upload coverage badge artifact
+        if: success()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: coverage-badge
+          path: assets/images/coverage-badge.svg
+
+  # ============================================================================
+  # Stage 4b: Coverage PR Comment (runs in parallel after test)
+  # ============================================================================
+  comment-pr-coverage:
+    name: 💬 Coverage PR Comment
+    needs: test
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    if: >
+      always() &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            img.shields.io:443
+            pings.codecov.com:443
+            codecov.io:443
+            uploader.codecov.io:443
+            storage.googleapis.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            static.rust-lang.org:443
+            bun.sh:443
+            astral.sh:443
+            sh.rustup.rs:443
+            registry.npmjs.org:443
+            crates.io:443
+            static.crates.io:443
+            index.crates.io:443
+            semgrep.dev:443
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Download coverage XML artifact (fallback for comment generation)
+        if: always()
+        continue-on-error: true
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: coverage-xml
+          path: .
+      - name: Download test summary artifact
+        if: always()
+        continue-on-error: true
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: test-summary
+          path: .
+      - name: Generate coverage PR comment (always)
+        if: always()
+        env:
+          COVERAGE_PERCENTAGE: ${{ needs.test.outputs.coverage-percentage }}
+          JOB_RESULT: ${{ needs.test.result }}
+        run: |
+          export COVERAGE_PERCENTAGE
+          export JOB_RESULT
+          ./scripts/ci/github/coverage-pr-comment.sh
+      - name: Comment PR with coverage info
+        uses: ./.github/actions/post-pr-comment
+        with:
+          file: coverage-pr-comment.txt
+          marker: '<!-- coverage-report -->'
+
+  # ============================================================================
+  # Stage 5: Smoke Test (GATED on test)
+  # ============================================================================
+  smoke-test:
+    name: 🔥 Docker Smoke Test
+    needs: [resolve-tools, docker-build, test]
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    concurrency:
+      group: smoke-test-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            static.rust-lang.org:443
+            bun.sh:443
+            astral.sh:443
+            sh.rustup.rs:443
+            deb.debian.org:80
+            registry.npmjs.org:443
+            crates.io:443
+            static.crates.io:443
+            index.crates.io:443
+            semgrep.dev:443
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+      - name: Download Docker images artifact
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: docker-images
+          path: /tmp
+      - name: Load Docker images
+        run: docker load -i /tmp/py-lintro-images.tar
+      - name: Test Docker Image (py-lintro:latest)
+        run: ./scripts/docker/docker-build-test.sh
+      - name: Smoke Test Base Image (py-lintro:base)
+        run: docker run --rm py-lintro:base lintro --version
+
+  # ============================================================================
+  # Stage 6: Publish (GATED on smoke-test, only main/release)
+  # ============================================================================
+  publish:
+    name: 📦 Publish to GHCR
+    needs: [resolve-tools, smoke-test]
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    concurrency:
+      group: publish-${{ github.ref }}
+      # Never cancel publish jobs mid-push to avoid incomplete registry state
+      cancel-in-progress: false
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            ghcr.io:443
+            pkg-containers.githubusercontent.com:443
+            docker.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            static.rust-lang.org:443
+            bun.sh:443
+            astral.sh:443
+            sh.rustup.rs:443
+            deb.debian.org:80
+            registry.npmjs.org:443
+            crates.io:443
+            static.crates.io:443
+            index.crates.io:443
+            semgrep.dev:443
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Docker (Buildx + login)
+        uses: ./.github/actions/setup-docker
+        with:
+          login: 'true'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker-container
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/lgtm-hq/py-lintro
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Extract metadata (base)
+        id: meta-base
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/lgtm-hq/py-lintro
+          tags: |
+            type=semver,pattern={{version}},suffix=-base
+            type=semver,pattern={{major}}.{{minor}},suffix=-base
+            type=semver,pattern={{major}},suffix=-base
+            type=raw,value=base,enable={{is_default_branch}}
+      - name: Build and push Docker image (with provenance + SBOM)
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            TOOLS_IMAGE=${{ needs.resolve-tools.outputs.image }}
+          provenance: true
+          sbom: true
+      - name: Build and push Base Docker image (with provenance + SBOM)
+        # Action SHA pin exceeds 88 chars
+        # yamllint disable-line rule:line-length
+        uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
+        with:
+          context: .
+          file: Dockerfile.base
+          push: true
+          tags: ${{ steps.meta-base.outputs.tags }}
+          labels: ${{ steps.meta-base.outputs.labels }}
+          provenance: true
+          sbom: true

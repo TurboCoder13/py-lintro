@@ -1,9 +1,9 @@
 # =============================================================================
-# Dockerfile.tools - Pre-built tools image for CI optimization
+# Dockerfile.tools - Pre-built tools image for lintro
 # =============================================================================
 # This image contains all external linting tools used by lintro.
 # It's built weekly and on changes to install-tools.sh or package.json.
-# The main Dockerfile uses this as a base to avoid rebuilding tools on every PR.
+# The main Dockerfile uses this as a base and adds the Python application.
 #
 # Build: docker build -f Dockerfile.tools -t lintro-tools:local .
 # =============================================================================
@@ -21,11 +21,14 @@ LABEL org.opencontainers.image.description="Pre-built tools image for lintro CI"
 LABEL org.opencontainers.image.licenses="MIT"
 
 # Set environment variables
+# Tools are installed to /opt for world accessibility (no /root permission issues)
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_SYSTEM_PYTHON=1 \
-    BUN_INSTALL="/root/.bun" \
-    PATH="/usr/local/bin:/root/.cargo/bin:/root/.bun/bin:${PATH}"
+    BUN_INSTALL="/opt/bun" \
+    CARGO_HOME="/opt/cargo" \
+    RUSTUP_HOME="/opt/rustup" \
+    PATH="/usr/local/bin:/opt/cargo/bin:/opt/bun/bin:${PATH}"
 
 # Set shell options for pipefail before using pipes
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -39,6 +42,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     build-essential \
     git \
+    libssl-dev \
+    pkg-config \
     unzip \
     jq && \
     apt-get clean && \
@@ -61,6 +66,7 @@ RUN ARCH=$(uname -m) && \
     unzip -q "${BUN_ZIP}" && \
     mv "bun-linux-${BUN_ARCH}/bun" /usr/local/bin/bun && \
     chmod +x /usr/local/bin/bun && \
+    ln -sf /usr/local/bin/bun /usr/local/bin/bunx && \
     ln -sf /usr/local/bin/bun /usr/local/bin/node && \
     rm -rf /tmp/bun* /tmp/SHASUMS256.txt
 
@@ -88,51 +94,52 @@ COPY lintro/ /app/lintro/
 COPY scripts/ /app/scripts/
 COPY package.json /app/package.json
 
-# Install external tools and copy Rust tool shims to system-wide location
-# Note: We copy the rustup proxy shims (not actual binaries) because the
-# actual binaries require shared libraries from the toolchain's lib directory.
-# The shims delegate to the toolchain binaries via rustup.
+# Create /opt directories for tools before installation
+RUN groupadd -r tools && \
+    mkdir -p /opt/bun /opt/cargo /opt/rustup
+
+# Install all external tools via install-tools.sh
+# This installs: Rust toolchain, Python tools, Node tools, standalone binaries
 RUN find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; && \
     /app/scripts/utils/install-tools.sh --docker && \
-    rustup component add clippy && \
-    if [ ! -d "/root/.cargo/bin" ]; then \
-        echo "ERROR: /root/.cargo/bin not found" >&2 && exit 1; \
-    fi && \
-    for bin in cargo rustc rustfmt clippy-driver cargo-clippy; do \
-        if [ ! -f "/root/.cargo/bin/$bin" ]; then \
-            echo "ERROR: Missing required shim: /root/.cargo/bin/$bin" >&2 && exit 1; \
-        fi && \
-        cp -p "/root/.cargo/bin/$bin" "/usr/local/bin/$bin" && \
-        chmod +x "/usr/local/bin/$bin"; \
-    done
+    rustup component add clippy
 
-# Verify all tools are installed
-RUN bun --version && \
-    uv --version && \
-    cargo --version && \
-    rustc --version && \
-    actionlint --version && \
-    bandit --version && \
-    black --version && \
-    cargo audit --version && \
-    cargo clippy --version && \
-    pydoclint --version && \
-    gitleaks version && \
-    hadolint --version && \
-    markdownlint-cli2 --version && \
-    mypy --version && \
-    oxfmt --version && \
-    oxlint --version && \
-    prettier --version && \
-    ruff --version && \
-    semgrep --version && \
-    shellcheck --version && \
-    shfmt --version && \
-    sqlfluff --version && \
-    taplo --version && \
-    tsc --version && \
-    rustfmt --version && \
-    yamllint --version
+# Make tools accessible and writable by tool group (avoid world-writable perms)
+# This allows non-root users in group "tools" to write caches at runtime
+RUN chgrp -R tools /opt/cargo /opt/rustup /opt/bun && \
+    chmod -R g+rwX /opt/cargo /opt/rustup /opt/bun && \
+    chmod -R a+rX /opt/cargo /opt/rustup /opt/bun
+
+# Verify all tools are installed and working
+# This ensures the image is complete before being used as a base
+RUN echo "=== Verifying all tools ===" && \
+    echo "bun: $(bun --version)" && \
+    echo "uv: $(uv --version)" && \
+    echo "cargo: $(cargo --version)" && \
+    echo "rustc: $(rustc --version)" && \
+    echo "rustfmt: $(rustfmt --version)" && \
+    echo "clippy: $(cargo clippy --version)" && \
+    echo "cargo-audit: $(cargo audit --version)" && \
+    echo "actionlint: $(actionlint --version)" && \
+    echo "bandit: $(bandit --version)" && \
+    echo "black: $(black --version)" && \
+    echo "gitleaks: $(gitleaks version)" && \
+    echo "hadolint: $(hadolint --version)" && \
+    echo "markdownlint-cli2: $(markdownlint-cli2 --version)" && \
+    echo "mypy: $(mypy --version)" && \
+    echo "oxfmt: $(oxfmt --version)" && \
+    echo "oxlint: $(oxlint --version)" && \
+    echo "prettier: $(prettier --version)" && \
+    echo "pydoclint: $(pydoclint --version)" && \
+    echo "ruff: $(ruff --version)" && \
+    echo "semgrep: $(semgrep --version)" && \
+    echo "shellcheck: $(shellcheck --version | head -2)" && \
+    echo "shfmt: $(shfmt --version)" && \
+    echo "sqlfluff: $(sqlfluff --version)" && \
+    echo "taplo: $(taplo --version)" && \
+    echo "tsc: $(tsc --version)" && \
+    echo "yamllint: $(yamllint --version)" && \
+    echo "=== All tools verified! ==="
 
 # The tools image doesn't need an entrypoint - it's used as a base for other images
 CMD ["bash"]

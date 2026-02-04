@@ -2,6 +2,7 @@
 
 import re
 
+from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.hadolint.hadolint_issue import HadolintIssue
 
 
@@ -29,6 +30,9 @@ def parse_hadolint_output(output: str) -> list[HadolintIssue]:
     # Skip empty output
     if not output.strip():
         return issues
+
+    # Strip ANSI codes for consistent parsing across environments
+    output = strip_ansi_codes(output)
 
     # Pattern for hadolint output: filename:line code level: message
     pattern: re.Pattern[str] = re.compile(

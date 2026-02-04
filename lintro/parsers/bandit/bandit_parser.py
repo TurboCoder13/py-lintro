@@ -15,17 +15,23 @@ def parse_bandit_output(bandit_data: dict[str, Any]) -> list[BanditIssue]:
         bandit_data: dict[str, Any]: JSON data from Bandit output.
 
     Returns:
-        list[BanditIssue]: List of parsed security issues.
-
-    Raises:
-        ValueError: If the bandit data structure is invalid.
+        list[BanditIssue]: List of parsed security issues. Returns empty list
+            if the data structure is invalid.
     """
     if not isinstance(bandit_data, dict):
-        raise ValueError("Bandit data must be a dictionary")
+        logger.warning(
+            "Bandit data must be a dictionary, got {}",
+            type(bandit_data).__name__,
+        )
+        return []
 
     results = bandit_data.get("results", [])
     if not isinstance(results, list):
-        raise ValueError("Bandit results must be a list")
+        logger.warning(
+            "Bandit results must be a list, got {}",
+            type(results).__name__,
+        )
+        return []
 
     issues: list[BanditIssue] = []
 
@@ -100,7 +106,7 @@ def parse_bandit_output(bandit_data: dict[str, Any]) -> list[BanditIssue]:
             issues.append(issue)
         except (KeyError, TypeError, ValueError) as e:
             # Log warning but continue processing other issues
-            logger.warning(f"Failed to parse bandit issue: {e}")
+            logger.warning("Failed to parse bandit issue: {}", e)
             continue
 
     return issues

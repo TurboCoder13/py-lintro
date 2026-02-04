@@ -42,6 +42,33 @@ if [ -d "/code" ] && [ "$(ls -A /code 2>/dev/null)" ]; then
 	cd /code
 fi
 
+# Auto-install Node.js dependencies if explicitly enabled via environment variable
+# This enables seamless tsc support in Docker without manual intervention
+# Security: Requires explicit opt-in via LINTRO_AUTO_INSTALL_DEPS=1
+# Security: Uses --ignore-scripts to prevent lifecycle script execution
+if [ "${LINTRO_AUTO_INSTALL_DEPS:-0}" = "1" ] && [ -f "package.json" ] && [ ! -d "node_modules" ]; then
+	echo "[lintro] Installing Node.js dependencies (LINTRO_AUTO_INSTALL_DEPS=1)..."
+	install_success=false
+	if command -v bun &>/dev/null; then
+		# Use --frozen-lockfile for reproducibility, --ignore-scripts for security
+		if bun install --frozen-lockfile --ignore-scripts 2>/dev/null || bun install --ignore-scripts 2>/dev/null; then
+			install_success=true
+		fi
+	elif command -v npm &>/dev/null; then
+		# Use npm ci for reproducibility (requires package-lock.json), --ignore-scripts for security
+		if npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts 2>/dev/null; then
+			install_success=true
+		fi
+	else
+		echo "[lintro] Warning: No package manager (bun/npm) found"
+	fi
+	if [ "$install_success" = true ]; then
+		echo "[lintro] Node.js dependencies installed."
+	else
+		echo "[lintro] Warning: Failed to install Node.js dependencies (may be read-only mount)"
+	fi
+fi
+
 if [ "$1" = "lintro" ]; then
 	shift
 	exec "$VENV_PYTHON" -m lintro "$@"

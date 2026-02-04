@@ -321,3 +321,14 @@ ERROR operation failed error=some files were not properly formatted"""
     assert_that(result[0].level).is_equal_to("error")
     assert_that(result[0].code).is_equal_to("format")
     assert_that(result[0].message).is_equal_to("the file is not properly formatted")
+
+
+def test_parse_taplo_output_ansi_codes_stripped() -> None:
+    """Strip ANSI escape codes from output for consistent CI/local parsing."""
+    # Output with ANSI color codes (common in CI environments)
+    output = """\x1b[31merror[invalid_value]: invalid value\x1b[0m
+  --> pyproject.toml:5:10"""
+    result = parse_taplo_output(output)
+    assert_that(result).is_length(1)
+    assert_that(result[0].file).is_equal_to("pyproject.toml")
+    assert_that(result[0].code).is_equal_to("invalid_value")
