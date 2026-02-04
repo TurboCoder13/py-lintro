@@ -3,7 +3,7 @@
 ---
 name: CI Pipeline
 
-# Unified gated CI pipeline: lint → test → build → publish
+# Gated CI: resolve-tools → docker-build → lint → test → smoke-test → publish
 # Each stage depends on the previous passing. Docker image built ONCE and cached.
 
 'on':
@@ -64,7 +64,7 @@ jobs:
             index.crates.io:443
             semgrep.dev:443
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -131,7 +131,7 @@ jobs:
             index.crates.io:443
             semgrep.dev:443
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -221,7 +221,7 @@ jobs:
             index.crates.io:443
             semgrep.dev:443
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -253,9 +253,11 @@ jobs:
         continue-on-error: true
       - name: Generate PR Comment
         if: github.event_name == 'pull_request'
+        continue-on-error: true
         run: ./scripts/ci/ci-pr-comment.sh
       - name: Comment PR with Lintro Results
         if: github.event_name == 'pull_request'
+        continue-on-error: true
         uses: ./.github/actions/post-pr-comment
         with:
           file: pr-comment.txt
@@ -272,7 +274,7 @@ jobs:
   # ============================================================================
   test:
     name: 🧪 Test Suite & Coverage
-    needs: [resolve-tools, lint]
+    needs: [resolve-tools, docker-build, lint]
     runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
@@ -325,7 +327,7 @@ jobs:
             index.crates.io:443
             semgrep.dev:443
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
       - name: Download Docker images artifact
@@ -457,7 +459,7 @@ jobs:
             index.crates.io:443
             semgrep.dev:443
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Download coverage XML artifact (fallback for comment generation)
         if: always()
         continue-on-error: true
@@ -496,7 +498,7 @@ jobs:
   # ============================================================================
   smoke-test:
     name: 🔥 Docker Smoke Test
-    needs: [resolve-tools, test]
+    needs: [resolve-tools, docker-build, test]
     runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
@@ -538,7 +540,7 @@ jobs:
             index.crates.io:443
             semgrep.dev:443
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -562,7 +564,7 @@ jobs:
   # ============================================================================
   publish:
     name: 📦 Publish to GHCR
-    needs: smoke-test
+    needs: [resolve-tools, smoke-test]
     runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
@@ -607,15 +609,12 @@ jobs:
             index.crates.io:443
             semgrep.dev:443
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Resolve tools image
-        id: tools
-        uses: ./.github/actions/resolve-tools-image
       - name: Setup Docker (Buildx + login)
         uses: ./.github/actions/setup-docker
         with:
@@ -656,7 +655,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            TOOLS_IMAGE=${{ steps.tools.outputs.image }}
+            TOOLS_IMAGE=${{ needs.resolve-tools.outputs.image }}
           provenance: true
           sbom: true
       - name: Build and push Base Docker image (with provenance + SBOM)

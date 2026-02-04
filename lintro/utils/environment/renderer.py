@@ -82,17 +82,22 @@ def _render_env_vars(console: Console, env_vars: dict[str, str | None]) -> None:
                         break
                     shown_parts.append(entry)
                     current_len += entry_len
+                # Always show at least one entry even if it exceeds truncate length
+                if not shown_parts and path_entries:
+                    shown_parts.append(path_entries[0])
                 remaining = len(path_entries) - len(shown_parts)
                 truncated = os.pathsep.join(shown_parts)
-                if remaining > 0:
-                    display_value = f"{truncated}... ({remaining} more entries)"
-                else:
-                    display_value = f"{truncated}..."
+                entry_word = "entry" if remaining == 1 else "entries"
+                display_value = (
+                    f"{truncated}... ({remaining} more {entry_word})"
+                    if remaining > 0
+                    else truncated
+                )
             else:
                 display_value = var_value
         else:
             display_value = var_value or "(not set)"
-        console.print(f"  {var_name}: {display_value}")
+        console.print(f"  {var_name}: {display_value}", markup=False)
     console.print()
 
 

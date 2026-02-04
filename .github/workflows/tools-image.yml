@@ -206,13 +206,7 @@ jobs:
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
         env:
           TAGS: ${{ steps.tags.outputs.tags }}
-        run: |
-          # shellcheck disable=SC2153  # TAGS is set via env, not a typo
-          IFS=',' read -r -a tags <<< "$TAGS"
-          for tag in "${tags[@]}"; do
-            echo "Pushing ${tag}..."
-            docker push "${tag}"
-          done
+        run: scripts/ci/tools-image-push.sh
 
       - name: Resolve image digest
         # yamllint disable-line rule:line-length

@@ -178,7 +178,13 @@ class MypyPlugin(BaseToolPlugin):
         # Convert glob to regex and escape special chars except glob wildcards
         regex = fnmatch.translate(pattern)
         # Remove anchors added by fnmatch.translate (\\Z at end, ^ at start if present)
-        regex = regex.rstrip("\\Z").rstrip("$")
+        # Use explicit suffix checks instead of rstrip to avoid corrupting patterns
+        if regex.endswith("\\Z"):
+            regex = regex[:-2]
+        if regex.endswith("$"):
+            regex = regex[:-1]
+        if regex.startswith("^"):
+            regex = regex[1:]
         if regex.startswith("(?s:"):
             regex = regex[4:]
         if regex.endswith(")"):
@@ -198,12 +204,15 @@ class MypyPlugin(BaseToolPlugin):
         files: list[str],
         *,
         excludes: list[str] | None = None,
+        exclude_regexes: list[str] | None = None,
     ) -> list[str]:
         """Build the mypy invocation command.
 
         Args:
             files: Relative file paths that should be checked by mypy.
             excludes: Optional list of glob patterns to convert to --exclude args.
+            exclude_regexes: Optional list of raw regex patterns to pass directly
+                to --exclude (preserves original config patterns without conversion).
 
         Returns:
             A list of command arguments ready to be executed.
@@ -238,7 +247,14 @@ class MypyPlugin(BaseToolPlugin):
         if self.options.get("cache_dir"):
             cmd.extend(["--cache-dir", str(self.options["cache_dir"])])
 
-        # Add exclude patterns when running on directories
+        # Add raw regex excludes first (from config, preserves fidelity)
+        if exclude_regexes:
+            for regex in exclude_regexes:
+                stripped = regex.strip()
+                if stripped:
+                    cmd.extend(["--exclude", stripped])
+
+        # Add glob-based excludes (converted to regex for lintro defaults)
         if excludes:
             for pattern in excludes:
                 regex = self._glob_to_regex(pattern)
@@ -315,8 +331,21 @@ class MypyPlugin(BaseToolPlugin):
                 ]
 
         # Build effective excludes from config
-        effective_excludes = self._build_effective_excludes(config_data.get("exclude"))
+        configured_excludes = config_data.get("exclude")
+        effective_excludes = self._build_effective_excludes(configured_excludes)
         logger.debug("Effective mypy exclude patterns: {}", effective_excludes)
+
+        # Preserve raw config regexes for direct passing to mypy CLI
+        configured_exclude_regexes: list[str] = []
+        if configured_excludes:
+            raw_excludes = (
+                [configured_excludes]
+                if isinstance(configured_excludes, str)
+                else list(configured_excludes)
+            )
+            configured_exclude_regexes = [
+                str(x).strip() for x in raw_excludes if str(x).strip()
+            ]
 
         # Temporarily update exclude patterns for file discovery
         original_excludes = self.exclude_patterns
@@ -362,19 +391,32 @@ class MypyPlugin(BaseToolPlugin):
 
         effective_cwd: str | None
         mypy_excludes: list[str] | None = None
+        mypy_exclude_regexes: list[str] | None = None
         if use_project_root:
             # Run mypy from where user invoked lintro, pass original paths
             # Since we're passing directories, we need to pass excludes to mypy
             # so it respects lintro's file filtering
             effective_cwd = str(Path.cwd())
             mypy_targets = target_paths
-            mypy_excludes = effective_excludes
+            # Pass raw config regexes directly (preserves fidelity)
+            # Only pass lintro defaults as globs (not config-derived ones)
+            mypy_exclude_regexes = configured_exclude_regexes or None
+            # Deduplicate excludes while preserving order
+            mypy_excludes = list(
+                dict.fromkeys(
+                    list(self.exclude_patterns) + list(MYPY_DEFAULT_EXCLUDE_PATTERNS),
+                ),
+            )
         else:
             # For individual files, use the computed cwd and relative paths
             effective_cwd = ctx.cwd
             mypy_targets = ctx.rel_files if ctx.rel_files else target_paths
 
-        cmd = self._build_command(files=mypy_targets, excludes=mypy_excludes)
+        cmd = self._build_command(
+            files=mypy_targets,
+            excludes=mypy_excludes,
+            exclude_regexes=mypy_exclude_regexes,
+        )
         logger.debug("[mypy] Running with cwd={} and cmd={}", effective_cwd, cmd)
 
         try:

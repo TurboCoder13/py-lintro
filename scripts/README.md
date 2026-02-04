@@ -121,6 +121,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `extract-test-summary.sh`           | Extract pytest test summary to JSON for PR comments                | `./scripts/ci/testing/extract-test-summary.sh <log> <out.json>`          |
 | `extract-version-from-tag.sh`       | Extract version from git tag (strips v prefix)                     | `./scripts/ci/extract-version-from-tag.sh`                               |
 | `git-commit-push.sh`                | Stage, commit, and push with github-actions[bot]                   | `./scripts/ci/git-commit-push.sh <pattern> <message>`                    |
+| `tools-image-push.sh`               | Push tools image tags with per-tag error handling                  | `./scripts/ci/tools-image-push.sh --help`                                |
 | `tools-image-summary.sh`            | Generate GitHub step summary for tools image build                 | `./scripts/ci/tools-image-summary.sh --help`                             |
 | `tools-image-tags.sh`               | Generate Docker image tags for tools image build                   | `./scripts/ci/tools-image-tags.sh --help`                                |
 | `tools-image-resolve-tag.sh`        | Resolve tools image tag for reusable workflow callers              | `./scripts/ci/tools-image-resolve-tag.sh --help`                         |

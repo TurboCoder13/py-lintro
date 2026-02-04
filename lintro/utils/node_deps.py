@@ -201,14 +201,21 @@ def _get_frozen_install_cmd(base_cmd: list[str]) -> list[str]:
 
     Returns:
         Command with frozen lockfile flag added.
+
+    Raises:
+        ValueError: If base_cmd is empty.
     """
+    if not base_cmd:
+        raise ValueError("base_cmd cannot be empty")
+
     manager = base_cmd[0]
 
     if manager == "bun":
         return [*base_cmd, "--frozen-lockfile"]
     if manager == "npm":
         # npm ci is the equivalent of frozen lockfile for npm
-        # --ignore-scripts prevents lifecycle script execution for security
-        return ["npm", "ci", "--ignore-scripts"]
+        # Preserve any flags from base_cmd (e.g., --ignore-scripts)
+        extra_flags = base_cmd[2:]  # Skip "npm" and "install"
+        return ["npm", "ci", *extra_flags]
 
     return base_cmd

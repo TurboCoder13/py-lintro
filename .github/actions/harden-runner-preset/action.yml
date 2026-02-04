@@ -15,7 +15,7 @@ inputs:
       - codecov: Python + Codecov
       - sigstore: Python + Sigstore services
       - homebrew: Python + Homebrew tap
-      - tooling: Language tooling registries (Rust, npm, uv, semgrep)
+      - tooling: Language tooling (Rust, npm, bun, uv/ruff, semgrep, deb)
       - full: All endpoints (docker + codecov + sigstore + tooling + misc)
     required: true
   policy:
@@ -61,7 +61,7 @@ runs:
             ;;
           homebrew)
             PRESET_ENDPOINTS="pypi.org:443 files.pythonhosted.org:443"
-            PRESET_ENDPOINTS+=" formulae.brew.sh:443 homebrew.bintray.com:443"
+            PRESET_ENDPOINTS+=" formulae.brew.sh:443"
             PRESET_ENDPOINTS+=" ghcr.io:443"
             ;;
           tooling)
@@ -77,7 +77,7 @@ runs:
             # Security tools
             PRESET_ENDPOINTS+=" semgrep.dev:443"
             # System packages
-            PRESET_ENDPOINTS+=" deb.debian.org:80"
+            PRESET_ENDPOINTS+=" deb.debian.org:443"
             ;;
           full)
             # All endpoints: docker + codecov + sigstore + tooling + misc
@@ -106,9 +106,9 @@ runs:
             # Security tools
             PRESET_ENDPOINTS+=" semgrep.dev:443"
             # System packages
-            PRESET_ENDPOINTS+=" deb.debian.org:80"
+            PRESET_ENDPOINTS+=" deb.debian.org:443"
             # Homebrew
-            PRESET_ENDPOINTS+=" formulae.brew.sh:443 homebrew.bintray.com:443"
+            PRESET_ENDPOINTS+=" formulae.brew.sh:443"
             # Badges
             PRESET_ENDPOINTS+=" img.shields.io:443"
             ;;
