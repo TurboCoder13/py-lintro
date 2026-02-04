@@ -53,8 +53,19 @@ update_tools_digest() {
 
 	local digest
 	digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$image" | sed 's/.*@//')
-	echo "Tools image digest: $digest"
 
+	# Validate digest is non-empty and looks like a proper sha256 digest
+	if [[ -z "$digest" ]]; then
+		echo "ERROR: Failed to extract digest for image '$image' - digest is empty" >&2
+		exit 1
+	fi
+	if [[ ! "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+		echo "ERROR: Invalid digest format for image '$image': '$digest'" >&2
+		echo "       Expected format: sha256:<64-hex-chars>" >&2
+		exit 1
+	fi
+
+	echo "Tools image digest: $digest"
 	"$script_dir/../tools-image-update-digest.sh" "$digest"
 }
 

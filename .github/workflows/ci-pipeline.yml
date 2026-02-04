@@ -322,6 +322,7 @@ jobs:
 
       - name: Comment PR with security audit results
         if: github.event_name == 'pull_request'
+        continue-on-error: true
         uses: ./.github/actions/post-pr-comment
         with:
           file: security-audit-comment.txt

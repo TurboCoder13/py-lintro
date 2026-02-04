@@ -55,28 +55,37 @@ log_info "Starting security audit..."
 
 # Step 1: Export dependencies with uv (captures vulnerability output)
 log_info "Exporting dependencies with uv..."
-if uv export --no-emit-project >"$REQUIREMENTS_FILE" 2>"$UV_OUTPUT_FILE"; then
-	log_success "uv export completed successfully"
-else
+UV_EXIT_CODE=0
+if ! uv export --no-emit-project >"$REQUIREMENTS_FILE" 2>"$UV_OUTPUT_FILE"; then
 	UV_EXIT_CODE=$?
 	log_warning "uv export exited with code $UV_EXIT_CODE"
+	AUDIT_FAILED=1
+else
+	log_success "uv export completed successfully"
+fi
 
-	# Check if the output contains vulnerability information
-	if grep -q "vulnerability" "$UV_OUTPUT_FILE" 2>/dev/null; then
-		UV_VULNS=$(cat "$UV_OUTPUT_FILE")
+# Scan both stdout (requirements file) and stderr for vulnerability patterns
+# uv may print vulnerability info to either stream
+scan_for_vulnerabilities() {
+	local file="$1"
+	[[ -f "$file" ]] && grep -qi "vulnerability\|GHSA-\|CVE-" "$file" 2>/dev/null
+}
+
+# Collect vulnerability output from both files
+VULN_OUTPUT=""
+if scan_for_vulnerabilities "$UV_OUTPUT_FILE"; then
+	VULN_OUTPUT=$(cat "$UV_OUTPUT_FILE")
+	AUDIT_FAILED=1
+fi
+if scan_for_vulnerabilities "$REQUIREMENTS_FILE"; then
+	# Append any vulnerability lines from requirements file (shouldn't happen, but be safe)
+	REQ_VULNS=$(grep -i "vulnerability\|GHSA-\|CVE-" "$REQUIREMENTS_FILE" 2>/dev/null || true)
+	if [[ -n "$REQ_VULNS" ]]; then
+		VULN_OUTPUT="${VULN_OUTPUT}${VULN_OUTPUT:+$'\n'}${REQ_VULNS}"
 		AUDIT_FAILED=1
 	fi
 fi
-
-# Also check stdout for vulnerabilities (uv may print to stdout)
-if [[ -f "$REQUIREMENTS_FILE" ]]; then
-	# uv might have printed vulnerability info before the requirements
-	# Check for vulnerability patterns in any captured output
-	if grep -qi "vulnerability\|GHSA-\|CVE-" "$UV_OUTPUT_FILE" 2>/dev/null; then
-		UV_VULNS=$(cat "$UV_OUTPUT_FILE")
-		AUDIT_FAILED=1
-	fi
-fi
+UV_VULNS="$VULN_OUTPUT"
 
 # Step 2: Run pip-audit for additional checks
 log_info "Running pip-audit..."
