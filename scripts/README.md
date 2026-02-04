@@ -126,6 +126,9 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `tools-image-resolve-tag.sh`        | Resolve tools image tag for reusable workflow callers     | `./scripts/ci/tools-image-resolve-tag.sh --help`                                      |
 | `tools-image-verify.sh`             | Verify required tools are installed in tools image        | `./scripts/ci/tools-image-verify.sh --help`                                           |
 | `tools-image-update-digest.sh`      | Update pinned tools image digest in repo files            | `./scripts/ci/tools-image-update-digest.sh --help`                                    |
+| `tools-image-detect-changes.sh`     | Detect tool file changes requiring fresh image build      | `./scripts/ci/tools-image-detect-changes.sh --help`                                   |
+| `tools-image-wait.sh`               | Wait for tools-image workflow to complete                 | `./scripts/ci/tools-image-wait.sh --help`                                             |
+| `tools-image-resolve.sh`            | Resolve tools image tag based on event context            | `./scripts/ci/tools-image-resolve.sh --help`                                          |
 | `verify-manifest-tools.py`          | Verify tools in image match manifest versions             | `python scripts/ci/verify-manifest-tools.py --help`                                   |
 | `verify-manifest-sync.py`           | Verify manifest versions match pyproject and package.json | `python scripts/ci/verify-manifest-sync.py --help`                                    |
 | `verify-tool-version-sync.py`       | Verify tool versions match between package.json and py    | `python scripts/ci/verify-tool-version-sync.py`                                       |

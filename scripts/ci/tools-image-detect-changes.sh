@@ -16,6 +16,34 @@
 
 set -euo pipefail
 
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+	cat <<'EOF'
+Detect tool file changes that require a fresh tools image build.
+
+Usage:
+  scripts/ci/tools-image-detect-changes.sh
+
+Environment Variables (required):
+  GITHUB_EVENT_NAME   GitHub event name (push or pull_request)
+  GITHUB_OUTPUT       Path to GitHub output file
+
+Environment Variables (for pull_request):
+  PR_BASE_SHA         Base commit SHA for PR
+  PR_HEAD_SHA         Head commit SHA for PR
+
+Environment Variables (for push):
+  GITHUB_EVENT_BEFORE Before SHA for push event
+
+Outputs (to GITHUB_OUTPUT):
+  tools_changed       "true" if tool files changed, "false" otherwise
+
+Example:
+  GITHUB_EVENT_NAME=push GITHUB_OUTPUT=/tmp/out GITHUB_EVENT_BEFORE=abc123 \
+    ./scripts/ci/tools-image-detect-changes.sh
+EOF
+	exit 0
+fi
+
 : "${GITHUB_EVENT_NAME:?GITHUB_EVENT_NAME is required}"
 : "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
 

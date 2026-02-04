@@ -15,6 +15,37 @@
 
 set -euo pipefail
 
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+	cat <<'EOF'
+Wait for the tools-image workflow to complete.
+
+Usage:
+  scripts/ci/tools-image-wait.sh
+
+Environment Variables (required):
+  GH_TOKEN      GitHub token for API access
+  COMMIT_SHA    Commit SHA to wait for
+  EVENT_TYPE    Event type: "push" or "pull_request"
+
+Environment Variables (for pull_request):
+  PR_HEAD_SHA   PR head commit SHA
+  PR_NUMBER     PR number
+
+Behavior:
+  Polls GitHub Actions API every 10 seconds for up to 45 minutes,
+  waiting for the "Build - Tools Image" workflow to complete.
+
+Exit Codes:
+  0  Workflow completed successfully
+  1  Workflow failed, was cancelled, or timed out
+
+Example:
+  GH_TOKEN=$GITHUB_TOKEN COMMIT_SHA=abc123 EVENT_TYPE=push \
+    ./scripts/ci/tools-image-wait.sh
+EOF
+	exit 0
+fi
+
 : "${GH_TOKEN:?GH_TOKEN is required}"
 : "${COMMIT_SHA:?COMMIT_SHA is required}"
 : "${EVENT_TYPE:?EVENT_TYPE is required (push or pull_request)}"

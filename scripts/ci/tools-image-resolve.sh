@@ -16,6 +16,39 @@
 
 set -euo pipefail
 
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+	cat <<'EOF'
+Resolve the tools image tag based on context.
+
+Usage:
+  scripts/ci/tools-image-resolve.sh
+
+Environment Variables (required):
+  TOOLS_CHANGED       "true" or "false" - whether tool files changed
+  GITHUB_EVENT_NAME   GitHub event name (push or pull_request)
+  IMAGE_NAME          Base image name (e.g., ghcr.io/lgtm-hq/lintro-tools)
+  STABLE_IMAGE        Full stable image reference with digest
+  GITHUB_OUTPUT       Path to GitHub output file
+
+Environment Variables (optional):
+  PR_NUMBER           PR number (required if pull_request + tools changed)
+
+Outputs (to GITHUB_OUTPUT):
+  image               Full image reference to use
+
+Logic:
+  - PR with tool changes:  IMAGE_NAME:pr-PR_NUMBER
+  - Push with tool changes: IMAGE_NAME:latest
+  - No tool changes:        STABLE_IMAGE (pinned digest)
+
+Example:
+  TOOLS_CHANGED=false GITHUB_EVENT_NAME=push IMAGE_NAME=ghcr.io/org/tools \
+    STABLE_IMAGE=ghcr.io/org/tools:latest@sha256:abc GITHUB_OUTPUT=/tmp/out \
+    ./scripts/ci/tools-image-resolve.sh
+EOF
+	exit 0
+fi
+
 : "${TOOLS_CHANGED:?TOOLS_CHANGED is required}"
 : "${GITHUB_EVENT_NAME:?GITHUB_EVENT_NAME is required}"
 : "${IMAGE_NAME:?IMAGE_NAME is required}"
