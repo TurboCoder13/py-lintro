@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess  # nosec B404 - used safely with shell disabled
+import time
 from pathlib import Path
 
 from loguru import logger
@@ -127,8 +128,6 @@ def install_node_deps(
 
     manager_name = base_cmd[0]
     logger.info("[node_deps] Installing dependencies with {} in {}", manager_name, cwd)
-
-    import time
 
     # Try with frozen lockfile first (for CI reproducibility)
     frozen_cmd = _get_frozen_install_cmd(base_cmd)

@@ -228,16 +228,8 @@ def main() -> int:
             if install_req:
                 pkg_name = install_req.name
             else:
-                # Extract package name by stripping version specifiers
-                # Try parsing again, or use regex to strip specifiers
-                stripped_req = _parse_requirement_safe(str(package_spec))
-                if stripped_req:
-                    pkg_name = stripped_req.name
-                else:
-                    # Fallback: strip common version specifier characters
-                    import re
-
-                    pkg_name = re.split(r"[<>=!~\[\];]", str(package_spec))[0].strip()
+                # Fallback: strip common version specifier characters
+                pkg_name = re.split(r"[<>=!~\[\];]", str(package_spec))[0].strip()
             normalized_pkg_name = _normalize_package_name(pkg_name)
             entries = py_deps.get(normalized_pkg_name, [])
             if not entries:

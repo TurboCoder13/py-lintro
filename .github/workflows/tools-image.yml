@@ -25,9 +25,11 @@ name: Build - Tools Image
     paths:
       - Dockerfile.tools
       - scripts/utils/install-tools.sh
+      - scripts/ci/tools-image-*.sh
       - package.json
       - lintro/_tool_versions.py
       - lintro/tools/manifest.json
+      - .github/workflows/tools-image.yml
   workflow_dispatch:
     inputs:
       force_latest:

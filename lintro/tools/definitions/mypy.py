@@ -7,6 +7,7 @@ your code is type-safe.
 
 from __future__ import annotations
 
+import fnmatch
 import subprocess  # nosec B404 - used safely with shell disabled
 from dataclasses import dataclass
 from pathlib import Path
@@ -174,8 +175,6 @@ class MypyPlugin(BaseToolPlugin):
         Returns:
             Regex pattern suitable for mypy --exclude.
         """
-        import fnmatch
-
         # Convert glob to regex and escape special chars except glob wildcards
         regex = fnmatch.translate(pattern)
         # Remove anchors added by fnmatch.translate (\\Z at end, ^ at start if present)
@@ -407,7 +406,7 @@ class MypyPlugin(BaseToolPlugin):
                 issues_count=0,
             )
         except (OSError, ValueError, RuntimeError) as e:
-            logger.error(f"Failed to run mypy: {e}")
+            logger.error("Failed to run mypy: {}", e)
             return ToolResult(
                 name=self.definition.name,
                 success=False,

@@ -386,7 +386,7 @@ class BanditPlugin(BaseToolPlugin):
                 )
 
             # Handle empty output (no JSON content to parse)
-            if not output or not output.strip():
+            if not output:
                 # If Bandit exited non-zero with no output, treat as failure
                 if result.returncode != 0:
                     return ToolResult(
@@ -399,10 +399,7 @@ class BanditPlugin(BaseToolPlugin):
                 return ToolResult(
                     name=self.definition.name,
                     success=True,
-                    output=(
-                        "No output from bandit "
-                        "(no Python files found or tool not available)"
-                    ),
+                    output="Bandit ran successfully and found no issues",
                     issues_count=0,
                 )
 

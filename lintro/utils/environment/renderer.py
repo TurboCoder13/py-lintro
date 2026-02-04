@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import shutil
 from typing import TYPE_CHECKING
 
 from rich.panel import Panel
@@ -40,9 +42,6 @@ def render_section(console: Console, section: Renderable | None) -> None:
         console.print(f"  {padded_label} {value}")
     console.print()
 
-
-import os
-import shutil
 
 # Default truncation length for PATH; override via terminal width if available
 _DEFAULT_PATH_TRUNCATE_LEN = 60

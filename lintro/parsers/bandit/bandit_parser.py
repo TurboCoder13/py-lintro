@@ -106,7 +106,7 @@ def parse_bandit_output(bandit_data: dict[str, Any]) -> list[BanditIssue]:
             issues.append(issue)
         except (KeyError, TypeError, ValueError) as e:
             # Log warning but continue processing other issues
-            logger.warning(f"Failed to parse bandit issue: {e}")
+            logger.warning("Failed to parse bandit issue: {}", e)
             continue
 
     return issues
