@@ -642,21 +642,53 @@ main() {
 	fi
 
 	# Install cargo-audit (Rust dependency vulnerability scanner)
+	# Prefer pre-built binary from cargo-quickinstall to avoid 20+ minute compile times
 	echo -e "${BLUE}Installing cargo-audit...${NC}"
 	CARGO_AUDIT_VERSION=$(get_tool_version "cargo_audit") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
 		log_info "[DRY-RUN] Would install cargo-audit==${CARGO_AUDIT_VERSION}"
 	elif command -v cargo-audit &>/dev/null; then
 		echo -e "${GREEN}✓ cargo-audit already installed${NC}"
-	elif command -v cargo &>/dev/null; then
-		ensure_cargo_audit_deps
-		if cargo install cargo-audit --locked --version "$CARGO_AUDIT_VERSION"; then
-			echo -e "${GREEN}✓ cargo-audit installed successfully${NC}"
-		else
+	else
+		cargo_audit_installed=false
+		# Try pre-built binary from cargo-quickinstall first (much faster than cargo install)
+		tmpdir=$(mktemp -d)
+		os=$(uname -s | tr '[:upper:]' '[:lower:]')
+		arch=$(uname -m)
+		case "$arch" in
+		x86_64 | amd64) target="x86_64-unknown-linux-gnu" ;;
+		aarch64 | arm64) target="aarch64-unknown-linux-gnu" ;;
+		*) target="" ;;
+		esac
+		# cargo-quickinstall only provides linux binaries
+		if [[ "$os" == "linux" ]] && [[ -n "$target" ]]; then
+			tgz_url="https://github.com/cargo-bins/cargo-quickinstall/releases/download/cargo-audit-${CARGO_AUDIT_VERSION}/cargo-audit-${CARGO_AUDIT_VERSION}-${target}.tar.gz"
+			echo -e "${YELLOW}Trying pre-built binary from cargo-quickinstall...${NC}"
+			if download_with_retries "$tgz_url" "$tmpdir/cargo-audit.tar.gz" 3; then
+				tar -xzf "$tmpdir/cargo-audit.tar.gz" -C "$tmpdir"
+				if [ -f "$tmpdir/cargo-audit" ]; then
+					cp "$tmpdir/cargo-audit" "$BIN_DIR/cargo-audit"
+					chmod +x "$BIN_DIR/cargo-audit"
+					echo -e "${GREEN}✓ cargo-audit installed from pre-built binary${NC}"
+					cargo_audit_installed=true
+				fi
+			fi
+		fi
+		rm -rf "$tmpdir"
+
+		# Fallback to cargo install if pre-built binary not available
+		if [ "$cargo_audit_installed" = false ] && command -v cargo &>/dev/null; then
+			echo -e "${YELLOW}Pre-built binary not available, falling back to cargo install...${NC}"
+			ensure_cargo_audit_deps
+			if cargo install cargo-audit --locked --version "$CARGO_AUDIT_VERSION"; then
+				echo -e "${GREEN}✓ cargo-audit installed via cargo${NC}"
+				cargo_audit_installed=true
+			fi
+		fi
+
+		if [ "$cargo_audit_installed" = false ]; then
 			echo -e "${YELLOW}⚠ Failed to install cargo-audit (optional tool)${NC}"
 		fi
-	else
-		echo -e "${YELLOW}⚠ cargo not available, skipping cargo-audit${NC}"
 	fi
 
 	# Install ruff (Python linting and formatting)
@@ -922,8 +954,8 @@ main() {
 		x86_64 | amd64) arch="x86_64" ;;
 		aarch64 | arm64) arch="aarch64" ;;
 		esac
-		# taplo releases use format: taplo-full-{os}-{arch}.gz
-		gz_url="https://github.com/tamasfe/taplo/releases/download/${TAPLO_VERSION}/taplo-full-${os}-${arch}.gz"
+		# taplo releases use format: taplo-{os}-{arch}.gz (changed from taplo-full- in v0.9+)
+		gz_url="https://github.com/tamasfe/taplo/releases/download/${TAPLO_VERSION}/taplo-${os}-${arch}.gz"
 		# Check if GitHub release exists before attempting download
 		if curl -sfIL "$gz_url" >/dev/null 2>&1; then
 			if download_with_retries "$gz_url" "$tmpdir/taplo.gz" 3; then
