@@ -118,7 +118,6 @@ jobs:
       packages: write
       id-token: write
       attestations: write
-      artifact-metadata: write
     timeout-minutes: 45
     defaults:
       run:
