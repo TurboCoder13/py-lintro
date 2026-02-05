@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   lintro-report:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     concurrency:
       group: report-${{ github.ref }}
@@ -85,7 +85,7 @@ jobs:
 
   notify:
     needs: lintro-report
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: success()
 

@@ -1,8 +1,5 @@
 # Ignore test_samples directory and build artifacts from all linting/formatting
 
-# Blacksmith CI creates this file during docker builds
-buildkitd.toml
-
 test_samples/
 build
 dist
