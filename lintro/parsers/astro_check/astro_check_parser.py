@@ -55,10 +55,22 @@ def _parse_line(line: str) -> AstroCheckIssue | None:
         try:
             file_path = match.group("file")
             # Handle both tsc-style and astro-style line/col
-            line_num = int(
-                match.group("line_paren") or match.group("line_colon") or "0",
-            )
-            column = int(match.group("col_paren") or match.group("col_colon") or "0")
+            line_paren = match.group("line_paren")
+            line_colon = match.group("line_colon")
+            col_paren = match.group("col_paren")
+            col_colon = match.group("col_colon")
+
+            # Warn if neither line format matched (unexpected regex state)
+            if line_paren is None and line_colon is None:
+                logger.warning(
+                    "[astro-check] Regex matched but no line number found: %s",
+                    line,
+                )
+                return None
+
+            line_num = int(line_paren or line_colon)
+            column = int(col_paren or col_colon or "1")  # Default col to 1 if missing
+
             severity = match.group("severity")
             code = match.group("code")
             message = match.group("message").strip()

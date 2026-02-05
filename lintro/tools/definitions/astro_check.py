@@ -63,7 +63,12 @@ class AstroCheckPlugin(BaseToolPlugin):
             file_patterns=ASTRO_CHECK_FILE_PATTERNS,
             priority=ASTRO_CHECK_DEFAULT_PRIORITY,
             conflicts_with=[],
-            native_configs=["astro.config.mjs", "astro.config.ts", "astro.config.js"],
+            native_configs=[
+                "astro.config.mjs",
+                "astro.config.ts",
+                "astro.config.js",
+                "astro.config.cjs",
+            ],
             version_command=["astro", "--version"],
             min_version=get_min_version(ToolName.ASTRO_CHECK),
             default_options={
@@ -197,7 +202,16 @@ class AstroCheckPlugin(BaseToolPlugin):
 
         logger.debug("[astro-check] Discovered {} Astro file(s)", len(ctx.files))
 
-        cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
+        # Honor the "root" option if provided, otherwise use ctx.cwd
+        root_opt = merged_options.get("root")
+        if root_opt and isinstance(root_opt, str):
+            cwd_path = Path(root_opt)
+            if not cwd_path.is_absolute():
+                # Resolve relative to ctx.cwd
+                base = Path(ctx.cwd) if ctx.cwd else Path.cwd()
+                cwd_path = (base / cwd_path).resolve()
+        else:
+            cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
 
         # Check if astro config exists
         astro_config = self._find_astro_config(cwd_path)
@@ -231,13 +245,13 @@ class AstroCheckPlugin(BaseToolPlugin):
 
         # Build command
         cmd = self._build_command(options=merged_options)
-        logger.debug("[astro-check] Running with cwd={} and cmd={}", ctx.cwd, cmd)
+        logger.debug("[astro-check] Running with cwd={} and cmd={}", cwd_path, cmd)
 
         try:
             success, output = self._run_subprocess(
                 cmd=cmd,
                 timeout=ctx.timeout,
-                cwd=ctx.cwd,
+                cwd=str(cwd_path),
             )
         except subprocess.TimeoutExpired:
             timeout_result = create_timeout_result(
