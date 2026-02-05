@@ -29,6 +29,7 @@ from lintro.parsers.ruff.ruff_format_issue import RuffFormatIssue
 from lintro.parsers.ruff.ruff_issue import RuffIssue
 from lintro.parsers.ruff.ruff_parser import parse_ruff_output
 from lintro.parsers.svelte_check.svelte_check_parser import parse_svelte_check_output
+from lintro.parsers.vue_tsc.vue_tsc_parser import parse_vue_tsc_output
 from lintro.parsers.yamllint.yamllint_parser import parse_yamllint_output
 from lintro.utils.output.parser_registry import ParserRegistry
 
@@ -172,6 +173,12 @@ def register_all_parsers() -> None:
     ParserRegistry.register(
         ToolName.SVELTE_CHECK.value,
         parse_svelte_check_output,
+    )
+
+    # Vue-tsc - Vue TypeScript type checker
+    ParserRegistry.register(
+        ToolName.VUE_TSC.value,
+        parse_vue_tsc_output,
     )
 
 
