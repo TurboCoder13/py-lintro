@@ -86,6 +86,8 @@ def test_compare_versions(version1: str, version2: str, expected: int) -> None:
         ("semgrep", "semgrep 1.148.0", "1.148.0"),
         ("ruff", "ruff 0.14.4", "0.14.4"),
         ("yamllint", "yamllint 1.37.1", "1.37.1"),
+        # Astro: actual output has "v" prefix and double space
+        ("astro-check", "astro  v5.5.3", "5.5.3"),
         # Clippy: rustc output should extract Rust version directly
         ("clippy", "rustc 1.92.0 (ded5c06cf 2025-12-08)", "1.92.0"),
         # Clippy: clippy output should convert 0.1.X to 1.X.0

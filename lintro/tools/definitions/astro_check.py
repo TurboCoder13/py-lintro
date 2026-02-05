@@ -164,6 +164,9 @@ class AstroCheckPlugin(BaseToolPlugin):
 
         return cmd
 
+    # Canonical message for "no Astro files" early returns
+    _NO_FILES_MESSAGE: str = "No Astro files to check."
+
     def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
         """Check files with astro check.
 
@@ -185,12 +188,16 @@ class AstroCheckPlugin(BaseToolPlugin):
         ctx = self._prepare_execution(
             paths,
             merged_options,
-            no_files_message="No Astro files to check.",
+            no_files_message=self._NO_FILES_MESSAGE,
         )
 
         if ctx.should_skip and ctx.early_result is not None:
-            if ctx.early_result.output == "No .astro files found to check.":
-                ctx.early_result.output = "No Astro files to check."
+            # Normalize "no files" messages to the canonical form.
+            # _prepare_execution may generate "No .astro files found to check."
+            # from file patterns; detect and normalize robustly.
+            output_lower = (ctx.early_result.output or "").lower()
+            if "no" in output_lower and "astro" in output_lower:
+                ctx.early_result.output = self._NO_FILES_MESSAGE
             return ctx.early_result
 
         # Safety check: if should_skip but no early_result, create one
@@ -198,7 +205,7 @@ class AstroCheckPlugin(BaseToolPlugin):
             return ToolResult(
                 name=self.definition.name,
                 success=True,
-                output="No Astro files to check.",
+                output=self._NO_FILES_MESSAGE,
                 issues_count=0,
             )
 

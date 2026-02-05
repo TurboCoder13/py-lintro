@@ -199,5 +199,7 @@ def test_check_with_root_option(
             {"root": str(project_dir)},
         )
 
-    # Verify --root was passed with the project directory
+    # Verify --root was passed with the correct project directory path
     assert_that(captured_cmd).contains("--root")
+    root_idx = captured_cmd.index("--root")
+    assert_that(captured_cmd[root_idx + 1]).is_equal_to(str(project_dir))

@@ -31,6 +31,7 @@ VERSION_NUMBER_PATTERN: str = r"(\d+(?:\.\d+)*)"
 
 # Tools that use the simple version number pattern
 TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
+    ToolName.ASTRO_CHECK,
     ToolName.BANDIT,
     ToolName.CARGO_AUDIT,
     ToolName.GITLEAKS,
