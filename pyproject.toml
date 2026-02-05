@@ -160,6 +160,7 @@ packages = [
   "lintro.tools.implementations.ruff",
   "lintro.utils",
   "lintro.utils.console",
+  "lintro.utils.environment",
   "lintro.utils.execution",
   "lintro.utils.output",
 ]
