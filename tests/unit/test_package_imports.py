@@ -9,7 +9,6 @@ missing from the packages list (like the 0.43.0 bug with lintro.utils.environmen
 """
 
 import importlib
-import sys
 from pathlib import Path
 
 import pytest
@@ -60,10 +59,11 @@ def _get_configured_packages() -> list[str]:
 @pytest.mark.parametrize("package", _get_configured_packages())
 def test_package_importable(package: str) -> None:
     """Verify each configured package can be imported successfully."""
-    # Clear from cache to ensure fresh import
-    if package in sys.modules:
-        del sys.modules[package]
-
+    # Note: We intentionally don't clear sys.modules here because doing so
+    # would reinitialize global singletons (like tool_manager in lintro.tools)
+    # which breaks other tests that depend on monkeypatching those singletons.
+    # The import test is still valid - if the package is missing from
+    # pyproject.toml, it won't be importable in a fresh install.
     try:
         # nosemgrep: python.lang.security.audit.non-literal-import.non-literal-import
         importlib.import_module(package)
