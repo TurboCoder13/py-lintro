@@ -14,23 +14,54 @@ def astro_check_is_available() -> bool:
 
     This checks both that the command exists AND that it executes successfully,
     which handles cases where a wrapper script exists but the underlying
-    tool isn't installed.
+    tool isn't installed. Also checks bunx/npx fallbacks.
 
     Returns:
         True if astro is installed and working, False otherwise.
     """
-    if shutil.which("astro") is None:
-        return False
-    try:
-        result = subprocess.run(
-            ["astro", "--version"],
-            capture_output=True,
-            timeout=10,
-            check=False,
-        )
-        return result.returncode == 0
-    except (subprocess.TimeoutExpired, OSError):
-        return False
+    # Try direct astro command first
+    if shutil.which("astro") is not None:
+        try:
+            result = subprocess.run(
+                ["astro", "--version"],
+                capture_output=True,
+                timeout=10,
+                check=False,
+            )
+            if result.returncode == 0:
+                return True
+        except (subprocess.TimeoutExpired, OSError):
+            pass
+
+    # Try bunx fallback
+    if shutil.which("bunx") is not None:
+        try:
+            result = subprocess.run(
+                ["bunx", "astro", "--version"],
+                capture_output=True,
+                timeout=30,
+                check=False,
+            )
+            if result.returncode == 0:
+                return True
+        except (subprocess.TimeoutExpired, OSError):
+            pass
+
+    # Try npx fallback
+    if shutil.which("npx") is not None:
+        try:
+            result = subprocess.run(
+                ["npx", "astro", "--version"],
+                capture_output=True,
+                timeout=30,
+                check=False,
+            )
+            if result.returncode == 0:
+                return True
+        except (subprocess.TimeoutExpired, OSError):
+            pass
+
+    return False
 
 
 def _find_project_root() -> Path:

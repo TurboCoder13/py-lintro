@@ -52,6 +52,8 @@ TSC_DEFAULT_PRIORITY: int = 82  # Same as mypy (type checkers)
 TSC_FILE_PATTERNS: list[str] = ["*.ts", "*.tsx", "*.mts", "*.cts"]
 
 # Framework config files that indicate tsc should defer to framework-specific checker
+# Note: vite.config.ts is NOT included for Vue because it's used by many
+# non-Vue projects (e.g., React, vanilla TS, Svelte without svelte.config)
 FRAMEWORK_CONFIGS: dict[str, tuple[str, list[str]]] = {
     "Astro": (
         "astro-check",
@@ -59,7 +61,7 @@ FRAMEWORK_CONFIGS: dict[str, tuple[str, list[str]]] = {
     ),
     "Vue": (
         "vue-tsc",
-        ["vue.config.js", "vue.config.ts", "vite.config.ts"],
+        ["vue.config.js", "vue.config.ts"],
     ),
     "Svelte": (
         "svelte-check",
@@ -342,9 +344,17 @@ class TscPlugin(BaseToolPlugin):
         merged_options.update(options)
 
         # Determine working directory for framework detection
-        cwd_for_detection = Path(paths[0]).resolve() if paths else Path.cwd()
-        if cwd_for_detection.is_file():
-            cwd_for_detection = cwd_for_detection.parent
+        # Verify the path exists before using it (paths[0] could be a glob or missing)
+        cwd_for_detection = Path.cwd()
+        if paths:
+            candidate = Path(paths[0]).resolve()
+            if candidate.exists():
+                if candidate.is_file():
+                    cwd_for_detection = candidate.parent
+                else:
+                    cwd_for_detection = candidate
+            elif candidate.parent.exists():
+                cwd_for_detection = candidate.parent
 
         # Check for framework-specific projects that have their own type checkers
         framework_info = self._detect_framework_project(cwd_for_detection)

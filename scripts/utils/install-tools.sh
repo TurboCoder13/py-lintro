@@ -1039,16 +1039,17 @@ main() {
 		exit 1
 	fi
 
-	# Install astro via bun (Astro type checking)
-	echo -e "${BLUE}Installing astro...${NC}"
+	# Install astro and @astrojs/check via bun (Astro type checking)
+	echo -e "${BLUE}Installing astro and @astrojs/check...${NC}"
 
 	ASTRO_VERSION=$(get_tool_version "astro") || exit 1
+	ASTRO_CHECK_VERSION=$(get_tool_version "@astrojs/check") || exit 1
 	if [ $DRY_RUN -eq 1 ]; then
-		log_info "[DRY-RUN] Would install astro@${ASTRO_VERSION} globally via bun"
-	elif bun add -g "astro@${ASTRO_VERSION}"; then
-		echo -e "${GREEN}✓ astro@${ASTRO_VERSION} installed successfully${NC}"
+		log_info "[DRY-RUN] Would install astro@${ASTRO_VERSION} and @astrojs/check@${ASTRO_CHECK_VERSION} globally via bun"
+	elif bun add -g "astro@${ASTRO_VERSION}" "@astrojs/check@${ASTRO_CHECK_VERSION}"; then
+		echo -e "${GREEN}✓ astro@${ASTRO_VERSION} and @astrojs/check@${ASTRO_CHECK_VERSION} installed successfully${NC}"
 	else
-		echo -e "${RED}✗ Failed to install astro${NC}"
+		echo -e "${RED}✗ Failed to install astro and @astrojs/check${NC}"
 		exit 1
 	fi
 

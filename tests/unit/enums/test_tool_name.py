@@ -60,6 +60,12 @@ def test_normalize_tool_name_passthrough() -> None:
     assert_that(normalize_tool_name(ToolName.RUFF)).is_equal_to(ToolName.RUFF)
 
 
+def test_normalize_tool_name_hyphenated() -> None:
+    """normalize_tool_name converts hyphenated names to underscored ToolName."""
+    assert_that(normalize_tool_name("astro-check")).is_equal_to(ToolName.ASTRO_CHECK)
+    assert_that(normalize_tool_name("cargo-audit")).is_equal_to(ToolName.CARGO_AUDIT)
+
+
 def test_normalize_tool_name_invalid_raises() -> None:
     """normalize_tool_name raises ValueError for unknown tool."""
     with pytest.raises(ValueError, match="Unknown tool name"):

@@ -210,6 +210,9 @@ class AstroCheckPlugin(BaseToolPlugin):
                 # Resolve relative to ctx.cwd
                 base = Path(ctx.cwd) if ctx.cwd else Path.cwd()
                 cwd_path = (base / cwd_path).resolve()
+            # Sync merged_options with the resolved absolute path
+            # so _build_command uses the same absolute root
+            merged_options["root"] = str(cwd_path)
         else:
             cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
 

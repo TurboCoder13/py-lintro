@@ -85,8 +85,9 @@ Some tools require separate installation. Their minimum versions are also manage
 - `taplo` - TOML linter and formatter (`brew install taplo` or GitHub releases)
 - `typescript` - TypeScript compiler for type checking (`brew install typescript`,
   `bun add -g typescript`, or `npm install -g typescript`)
-- `astro` - Astro type checker for `.astro` files (`bun add astro` or
-  `npm install astro`)
+- `astro` - Astro type checker for `.astro` files (install locally with
+  `bun add -d astro @astrojs/check` or `npm install --save-dev astro @astrojs/check`,
+  then invoke with `bunx astro check` or `npx astro check`)
 
 ### Checking Versions
 
