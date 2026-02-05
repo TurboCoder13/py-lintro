@@ -91,7 +91,10 @@ def _parse_line(line: str) -> AstroCheckIssue | None:
                 severity=severity.lower() if severity else "error",
             )
         except (ValueError, AttributeError) as e:
-            logger.debug(f"Failed to parse astro check line with main pattern: {e}")
+            logger.debug(
+                "[astro-check] Failed to parse line with main pattern: {}",
+                e,
+            )
 
     # Try simpler pattern as fallback
     match = ASTRO_SIMPLE_PATTERN.match(line)
@@ -105,7 +108,10 @@ def _parse_line(line: str) -> AstroCheckIssue | None:
                 severity="error",
             )
         except (ValueError, AttributeError) as e:
-            logger.debug(f"Failed to parse astro check line with simple pattern: {e}")
+            logger.debug(
+                "[astro-check] Failed to parse line with simple pattern: {}",
+                e,
+            )
 
     return None
 
