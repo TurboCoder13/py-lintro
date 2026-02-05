@@ -62,6 +62,7 @@ TOOL_VERSIONS: dict[ToolName | str, str] = {
 # These versions are read from package.json at runtime
 _NPM_PACKAGE_TO_TOOL: dict[str, ToolName] = {
     "astro": ToolName.ASTRO_CHECK,
+    "svelte-check": ToolName.SVELTE_CHECK,
     "typescript": ToolName.TSC,
     "vue-tsc": ToolName.VUE_TSC,
     "prettier": ToolName.PRETTIER,
@@ -80,6 +81,7 @@ _TOOL_TO_NPM_PACKAGE: dict[ToolName, str] = {
 # CI should verify these match package.json to prevent drift.
 _FALLBACK_NPM_VERSIONS: dict[ToolName, str] = {
     ToolName.ASTRO_CHECK: "5.5.3",
+    ToolName.SVELTE_CHECK: "4.1.4",
     ToolName.TSC: "5.9.3",
     ToolName.VUE_TSC: "3.2.4",
     ToolName.PRETTIER: "3.8.1",
