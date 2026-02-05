@@ -12,6 +12,7 @@ class ToolName(StrEnum):
     """Supported tool identifiers in lower-case values."""
 
     ACTIONLINT = auto()
+    ASTRO_CHECK = auto()
     BANDIT = auto()
     BLACK = auto()
     CARGO_AUDIT = auto()

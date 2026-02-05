@@ -129,6 +129,7 @@ packages = [
   "lintro.models.core",
   "lintro.parsers",
   "lintro.parsers.actionlint",
+  "lintro.parsers.astro_check",
   "lintro.parsers.bandit",
   "lintro.parsers.black",
   "lintro.parsers.cargo_audit",

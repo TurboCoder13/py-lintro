@@ -61,6 +61,7 @@ TOOL_VERSIONS: dict[ToolName | str, str] = {
 # Mapping from npm package names to ToolName for npm-managed tools
 # These versions are read from package.json at runtime
 _NPM_PACKAGE_TO_TOOL: dict[str, ToolName] = {
+    "astro": ToolName.ASTRO_CHECK,
     "typescript": ToolName.TSC,
     "prettier": ToolName.PRETTIER,
     "markdownlint-cli2": ToolName.MARKDOWNLINT,
@@ -77,6 +78,7 @@ _TOOL_TO_NPM_PACKAGE: dict[ToolName, str] = {
 # Fallback npm tool versions - used when package.json is not found.
 # CI should verify these match package.json to prevent drift.
 _FALLBACK_NPM_VERSIONS: dict[ToolName, str] = {
+    ToolName.ASTRO_CHECK: "5.5.3",
     ToolName.TSC: "5.9.3",
     ToolName.PRETTIER: "3.8.1",
     ToolName.MARKDOWNLINT: "0.17.2",

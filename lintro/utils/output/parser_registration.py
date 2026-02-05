@@ -17,6 +17,7 @@ from loguru import logger
 
 from lintro.enums.tool_name import ToolName
 from lintro.parsers.actionlint.actionlint_parser import parse_actionlint_output
+from lintro.parsers.astro_check.astro_check_parser import parse_astro_check_output
 from lintro.parsers.bandit.bandit_parser import parse_bandit_output
 from lintro.parsers.black.black_issue import BlackIssue
 from lintro.parsers.black.black_parser import parse_black_output
@@ -158,6 +159,12 @@ def register_all_parsers() -> None:
     ParserRegistry.register(
         ToolName.CLIPPY.value,
         parse_clippy_output,
+    )
+
+    # Astro check - Astro type checker
+    ParserRegistry.register(
+        ToolName.ASTRO_CHECK.value,
+        parse_astro_check_output,
     )
 
 
