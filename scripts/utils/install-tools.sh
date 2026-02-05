@@ -1039,11 +1039,25 @@ main() {
 		exit 1
 	fi
 
+	# Install astro via bun (Astro type checking)
+	echo -e "${BLUE}Installing astro...${NC}"
+
+	ASTRO_VERSION=$(get_tool_version "astro") || exit 1
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install astro@${ASTRO_VERSION} globally via bun"
+	elif bun add -g "astro@${ASTRO_VERSION}"; then
+		echo -e "${GREEN}✓ astro@${ASTRO_VERSION} installed successfully${NC}"
+	else
+		echo -e "${RED}✗ Failed to install astro${NC}"
+		exit 1
+	fi
+
 	echo ""
 	echo -e "${GREEN}=== Installation Complete! ===${NC}"
 	echo ""
 	echo -e "${YELLOW}Installed tools:${NC}"
 	echo "  - actionlint (GitHub Actions linting)"
+	echo "  - astro (Astro type checking)"
 	echo "  - bandit (Python security checks)"
 	echo "  - black (Python formatting)"
 	echo "  - cargo-audit (Rust dependency vulnerability scanning)"
@@ -1070,7 +1084,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "bandit" "black" "cargo-audit" "clippy" "rustfmt" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "prettier" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "tsc" "yamllint")
+	tools_to_verify=("actionlint" "astro" "bandit" "black" "cargo-audit" "clippy" "rustfmt" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "prettier" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "tsc" "yamllint")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo
