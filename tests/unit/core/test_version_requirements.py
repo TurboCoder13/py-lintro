@@ -154,6 +154,17 @@ def test_get_min_version_raises_keyerror_for_unknown_tool() -> None:
         get_min_version("nonexistent_tool")  # type: ignore[arg-type]
 
 
+def test_get_tool_version_supports_companion_packages() -> None:
+    """Companion npm packages should resolve via get_tool_version."""
+    repo_root = Path(__file__).resolve().parents[3]
+    package_json = json.loads((repo_root / "package.json").read_text())
+    expected = package_json["devDependencies"]["@astrojs/check"].lstrip("^~")
+
+    version = get_tool_version("@astrojs/check")
+
+    assert_that(version).is_equal_to(expected)
+
+
 def test_tool_versions_uses_toolname_enum_keys() -> None:
     """Test that TOOL_VERSIONS uses ToolName enum as keys."""
     for key in TOOL_VERSIONS:

@@ -184,6 +184,9 @@ def get_install_hints() -> dict[str, str]:
         "astro_check": (
             "Install via: bun add astro@>={version} or npm install astro@>={version}"
         ),
+        "astro": (
+            "Install via: bun add astro@>={version} or npm install astro@>={version}"
+        ),
     }
 
     versions = get_minimum_versions()

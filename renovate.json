@@ -99,7 +99,9 @@
         "shfmt",
         "mvdan/sh",
         "taplo",
-        "tamasfe/taplo"
+        "tamasfe/taplo",
+        "astro",
+        "@astrojs/check"
       ],
       "automerge": false
     }
