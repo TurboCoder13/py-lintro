@@ -30,7 +30,7 @@ permissions:
 jobs:
   sbom:
     name: Generate and verify SBOM
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
