@@ -90,7 +90,7 @@ _FALLBACK_NPM_VERSIONS: dict[ToolName, str] = {
 # These are NOT mapped to ToolName (they're companion packages, not tools themselves)
 # Used by install scripts to get the correct version for related packages
 _COMPANION_NPM_PACKAGES: dict[str, str] = {
-    "@astrojs/check": "0.9.4",  # Type checking companion for astro
+    "@astrojs/check": "0.9.6",  # Type checking companion for astro
 }
 
 

@@ -45,6 +45,15 @@ IMAGE_NAME="py-lintro-test:latest"
 TOOLS_IMAGE_TAG="${TOOLS_IMAGE:-lintro-tools:local}"
 BUILT_TOOLS_IMAGE="false"
 
+# Validate provided tools image (fail fast if missing)
+if [ -n "${TOOLS_IMAGE:-}" ]; then
+	if ! docker image inspect "$TOOLS_IMAGE" &>/dev/null; then
+		echo -e "${RED}Error: TOOLS_IMAGE '${TOOLS_IMAGE}' not found. Build or pull it first.${NC}"
+		exit 1
+	fi
+	export TOOLS_IMAGE
+fi
+
 # Build local tools image if not provided to ensure latest toolchain (e.g., astro)
 if [ -z "${TOOLS_IMAGE:-}" ]; then
 	if ! docker image inspect "$TOOLS_IMAGE_TAG" &>/dev/null; then

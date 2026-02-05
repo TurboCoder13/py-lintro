@@ -189,6 +189,8 @@ class AstroCheckPlugin(BaseToolPlugin):
         )
 
         if ctx.should_skip and ctx.early_result is not None:
+            if ctx.early_result.output == "No .astro files found to check.":
+                ctx.early_result.output = "No Astro files to check."
             return ctx.early_result
 
         # Safety check: if should_skip but no early_result, create one
