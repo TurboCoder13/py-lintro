@@ -34,7 +34,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     concurrency:
       group: tests-${{ github.ref }}
@@ -182,7 +182,7 @@ jobs:
 
   comment-pr-coverage:
     needs: run-test-suite
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     defaults:
       run:
