@@ -433,6 +433,16 @@ def test_get_executable_command_nodejs_tool_with_bunx(
         assert_that(result).contains("bunx", "markdownlint-cli2")
 
 
+def test_get_executable_command_astro_check_with_bunx(
+    fake_tool_plugin: FakeToolPlugin,
+) -> None:
+    """Verify astro-check resolves to bunx astro command."""
+    with patch("shutil.which", return_value="/usr/bin/bunx"):
+        result = fake_tool_plugin._get_executable_command("astro-check")
+
+        assert_that(result).is_equal_to(["bunx", "astro"])
+
+
 def test_get_executable_command_nodejs_tool_without_bunx(
     fake_tool_plugin: FakeToolPlugin,
 ) -> None:

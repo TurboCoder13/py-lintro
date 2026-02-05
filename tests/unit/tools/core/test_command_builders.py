@@ -251,6 +251,12 @@ def test_nodejs_builder_handles_markdownlint() -> None:
     assert_that(builder.can_handle(ToolName.MARKDOWNLINT)).is_true()
 
 
+def test_nodejs_builder_handles_astro_check() -> None:
+    """NodeJSBuilder can handle astro-check."""
+    builder = NodeJSBuilder()
+    assert_that(builder.can_handle(ToolName.ASTRO_CHECK)).is_true()
+
+
 def test_nodejs_builder_does_not_handle_ruff() -> None:
     """NodeJSBuilder does not handle Python tools."""
     builder = NodeJSBuilder()
@@ -271,6 +277,14 @@ def test_nodejs_builder_falls_back_to_package_name() -> None:
     with patch("shutil.which", return_value=None):
         cmd = builder.get_command("markdownlint", ToolName.MARKDOWNLINT)
         assert_that(cmd).is_equal_to(["markdownlint-cli2"])
+
+
+def test_nodejs_builder_astro_check_uses_astro_binary() -> None:
+    """NodeJSBuilder resolves astro-check to astro binary."""
+    builder = NodeJSBuilder()
+    with patch("shutil.which", return_value="/usr/local/bin/bunx"):
+        cmd = builder.get_command("astro-check", ToolName.ASTRO_CHECK)
+        assert_that(cmd).is_equal_to(["bunx", "astro"])
 
 
 # =============================================================================

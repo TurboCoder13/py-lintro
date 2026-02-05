@@ -349,7 +349,7 @@ class PytestBuilder(CommandBuilder):
 
 @register_command_builder
 class NodeJSBuilder(CommandBuilder):
-    """Builder for Node.js tools (Markdownlint).
+    """Builder for Node.js tools (Astro, Markdownlint, TypeScript).
 
     Uses bunx to run Node.js tools when available, falling back to
     direct tool invocation if bunx is not found.
@@ -369,6 +369,7 @@ class NodeJSBuilder(CommandBuilder):
             from lintro.enums.tool_name import ToolName
 
             self._package_names = {
+                ToolName.ASTRO_CHECK: "astro",
                 ToolName.MARKDOWNLINT: "markdownlint-cli2",
                 ToolName.TSC: "typescript",
             }

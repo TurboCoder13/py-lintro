@@ -53,7 +53,7 @@ def normalize_tool_name(value: str | ToolName) -> ToolName:
     if isinstance(value, ToolName):
         return value
     # Normalize hyphens to underscores (e.g., "astro-check" -> "astro_check")
-    normalized = value.replace("-", "_")
+    normalized = value.strip().replace("-", "_")
     try:
         return ToolName[normalized.upper()]
     except KeyError as err:

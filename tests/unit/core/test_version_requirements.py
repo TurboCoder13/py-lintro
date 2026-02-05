@@ -303,6 +303,31 @@ def test_check_tool_version_success(mock_run: MagicMock) -> None:
 
 
 @patch("subprocess.run")
+def test_check_tool_version_hyphenated_alias_uses_requirements(
+    mock_run: MagicMock,
+) -> None:
+    """Hyphenated tool names should resolve to canonical version requirements."""
+    min_astro = get_minimum_versions()["astro_check"]
+    mock_run.return_value = type(
+        "MockResult",
+        (),
+        {
+            "returncode": 0,
+            "stdout": f"astro {min_astro}",
+            "stderr": "",
+        },
+    )()
+
+    result = check_tool_version("astro-check", ["bunx", "astro"])
+
+    assert_that(result.name).is_equal_to("astro-check")
+    assert_that(result.current_version).is_equal_to(min_astro)
+    assert_that(result.min_version).is_equal_to(min_astro)
+    assert_that(result.install_hint).contains("astro")
+    assert_that(result.version_check_passed).is_true()
+
+
+@patch("subprocess.run")
 def test_check_tool_version_failure(mock_run: MagicMock) -> None:
     """Test version check that fails due to old version.
 

@@ -10,7 +10,7 @@
     {
       "name": "astro_check",
       "version": "5.5.3",
-      "install": { "type": "npm", "package": "astro" },
+      "install": { "type": "npm", "package": "astro", "bin": "astro" },
       "tier": "tools"
     },
     {
