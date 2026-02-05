@@ -311,6 +311,7 @@ jobs:
           python-version: '3.13'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
 
       - name: Sync dependencies
         run: uv sync --dev --no-progress
