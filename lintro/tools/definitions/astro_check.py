@@ -225,14 +225,11 @@ class AstroCheckPlugin(BaseToolPlugin):
         else:
             cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
 
-        # Check if astro config exists
+        # Warn if no astro config found, but still proceed with defaults
         astro_config = self._find_astro_config(cwd_path)
         if not astro_config:
-            return ToolResult(
-                name=self.definition.name,
-                success=True,
-                output="No Astro config found. Skipping astro check.",
-                issues_count=0,
+            logger.warning(
+                "[astro-check] No astro.config.* found — proceeding with defaults",
             )
 
         # Check if auto-install is enabled

@@ -244,3 +244,105 @@ def test_default_options_use_project_files_defaults_to_false(
     """
     default_options = tsc_plugin.definition.default_options
     assert_that(default_options.get("use_project_files")).is_false()
+
+
+# =============================================================================
+# Tests for TscPlugin._detect_framework_project method
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    ("config_file", "expected_framework", "expected_tool"),
+    [
+        pytest.param(
+            "astro.config.mjs",
+            "Astro",
+            "astro-check",
+            id="astro_mjs",
+        ),
+        pytest.param(
+            "astro.config.ts",
+            "Astro",
+            "astro-check",
+            id="astro_ts",
+        ),
+        pytest.param(
+            "astro.config.js",
+            "Astro",
+            "astro-check",
+            id="astro_js",
+        ),
+        pytest.param(
+            "svelte.config.js",
+            "Svelte",
+            "svelte-check",
+            id="svelte_js",
+        ),
+        pytest.param(
+            "svelte.config.ts",
+            "Svelte",
+            "svelte-check",
+            id="svelte_ts",
+        ),
+        pytest.param(
+            "svelte.config.mjs",
+            "Svelte",
+            "svelte-check",
+            id="svelte_mjs",
+        ),
+        pytest.param(
+            "vue.config.js",
+            "Vue",
+            "vue-tsc",
+            id="vue_js",
+        ),
+        pytest.param(
+            "vue.config.ts",
+            "Vue",
+            "vue-tsc",
+            id="vue_ts",
+        ),
+    ],
+)
+def test_detect_framework_project(
+    tsc_plugin: TscPlugin,
+    tmp_path: Path,
+    config_file: str,
+    expected_framework: str,
+    expected_tool: str,
+) -> None:
+    """Verify framework detection identifies projects by config file.
+
+    Args:
+        tsc_plugin: Plugin instance fixture.
+        tmp_path: Pytest temporary directory.
+        config_file: Name of the framework config file to create.
+        expected_framework: Expected framework name.
+        expected_tool: Expected recommended tool name.
+    """
+    (tmp_path / config_file).write_text("export default {};")
+
+    result = tsc_plugin._detect_framework_project(tmp_path)
+
+    assert_that(result).is_not_none()
+    assert result is not None
+    framework_name, tool_name = result
+    assert_that(framework_name).is_equal_to(expected_framework)
+    assert_that(tool_name).is_equal_to(expected_tool)
+
+
+def test_detect_framework_project_returns_none_for_plain_ts(
+    tsc_plugin: TscPlugin,
+    tmp_path: Path,
+) -> None:
+    """Verify framework detection returns None for plain TypeScript projects.
+
+    Args:
+        tsc_plugin: Plugin instance fixture.
+        tmp_path: Pytest temporary directory.
+    """
+    (tmp_path / "tsconfig.json").write_text("{}")
+
+    result = tsc_plugin._detect_framework_project(tmp_path)
+
+    assert_that(result).is_none()

@@ -117,9 +117,9 @@ def prepare_execution(
 
     This function consolidates repeated patterns:
     1. Merge options with defaults
-    2. Verify tool version requirements
-    3. Validate input paths
-    4. Discover files matching patterns
+    2. Validate input paths
+    3. Discover files matching patterns (returns early if none found)
+    4. Verify tool version requirements (skipped when no files match)
     5. Compute working directory and relative paths
 
     Args:
@@ -138,12 +138,7 @@ def prepare_execution(
     merged_options = dict(current_options)
     merged_options.update(options)
 
-    # Step 1: Check version requirements
-    version_result = verify_tool_version(definition)
-    if version_result is not None:
-        return {"early_result": version_result}
-
-    # Step 2: Validate paths
+    # Step 1: Validate paths
     validate_paths(paths)
     if not paths:
         return {
@@ -155,7 +150,7 @@ def prepare_execution(
             ),
         }
 
-    # Step 3: Discover files
+    # Step 2: Discover files matching tool patterns
     files = discover_files(
         paths=paths,
         definition=definition,
@@ -179,6 +174,11 @@ def prepare_execution(
                 issues_count=0,
             ),
         }
+
+    # Step 3: Check version requirements (only when files exist to check)
+    version_result = verify_tool_version(definition)
+    if version_result is not None:
+        return {"early_result": version_result}
 
     logger.debug(f"Files to process: {files}")
 

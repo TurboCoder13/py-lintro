@@ -359,9 +359,9 @@ class BaseToolPlugin(ABC):
 
         This method consolidates repeated patterns:
         1. Merge options with defaults
-        2. Verify tool version requirements
-        3. Validate input paths
-        4. Discover files matching patterns
+        2. Validate input paths
+        3. Discover files matching patterns (returns early if none found)
+        4. Verify tool version requirements (skipped when no files match)
         5. Compute working directory and relative paths
 
         Args:
