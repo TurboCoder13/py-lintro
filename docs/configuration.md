@@ -979,6 +979,51 @@ lintro check . --tools astro-check --tool-options "astro-check:root=./packages/w
 lintro check src/ --tools astro-check --auto-install
 ```
 
+#### Svelte Check Configuration
+
+Svelte Check is the official type checker and linter for Svelte components. It provides
+TypeScript type checking, unused CSS detection, and accessibility hints for `.svelte`
+files.
+
+**Installation:**
+
+```bash
+# bun (recommended)
+bun add -D svelte-check
+
+# npm
+npm install -D svelte-check
+```
+
+**Native Config:** `svelte.config.js`, `svelte.config.ts`, or `svelte.config.mjs`
+
+Svelte Check uses your project's `svelte.config` and `tsconfig.json` for configuration.
+No additional configuration is needed for Lintro.
+
+**Available Options via `--tool-options`:**
+
+| Option      | Type    | Description                                         |
+| ----------- | ------- | --------------------------------------------------- |
+| `threshold` | string  | Minimum severity to report: error, warning, or hint |
+| `tsconfig`  | string  | Path to tsconfig.json file                          |
+| `timeout`   | integer | Execution timeout in seconds (default: 120)         |
+
+**Usage Examples:**
+
+```bash
+# Check Svelte project
+lintro check src/ --tools svelte-check
+
+# Check with warning threshold
+lintro check src/ --tools svelte-check --tool-options "svelte-check:threshold=warning"
+
+# Check with specific tsconfig
+lintro check . --tools svelte-check --tool-options "svelte-check:tsconfig=./tsconfig.app.json"
+
+# Auto-install dependencies before checking
+lintro check src/ --tools svelte-check --auto-install
+```
+
 #### Vue-tsc Configuration
 
 Vue-tsc is the TypeScript type checker for Vue Single File Components (SFCs). It extends
