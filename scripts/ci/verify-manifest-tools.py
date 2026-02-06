@@ -53,7 +53,11 @@ def _parse_version(output: str, tool_name: str) -> str | None:
 
 
 def _tool_command(tool_name: str, install: dict[str, Any]) -> list[str]:
-    # TODO: support install["version_command"] to allow custom invocations.
+    # Use custom version_command from manifest when provided.
+    version_command = install.get("version_command")
+    if isinstance(version_command, list) and version_command:
+        return version_command
+
     bin_name = install.get("bin") if isinstance(install, dict) else None
 
     if tool_name == "cargo_audit":
