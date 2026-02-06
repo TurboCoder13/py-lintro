@@ -418,7 +418,6 @@ jobs:
         # yamllint disable-line rule:line-length
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
       - name: Pull tools image
-        if: needs.resolve-tools.outputs.changed == 'true'
         env:
           TOOLS_IMAGE: ${{ needs.resolve-tools.outputs.image }}
         run: docker pull "$TOOLS_IMAGE"
