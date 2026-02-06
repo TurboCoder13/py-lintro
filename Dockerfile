@@ -6,7 +6,7 @@
 #
 # The tools image is rebuilt weekly and contains:
 # - Rust toolchain (rustfmt, clippy, cargo-audit)
-# - Node.js tools via bun (prettier, markdownlint-cli2, tsc, oxlint, oxfmt)
+# - Node.js tools via bun (prettier, markdownlint-cli2, tsc, astro, vue-tsc, oxlint, oxfmt)
 # - Python tools (ruff, black, bandit, mypy, semgrep, etc.)
 # - Standalone binaries (hadolint, actionlint, shellcheck, shfmt, taplo, gitleaks)
 # =============================================================================
@@ -71,6 +71,8 @@ RUN echo "Verifying tools..." && \
     prettier --version && \
     markdownlint-cli2 --version && \
     tsc --version && \
+    astro --version && \
+    vue-tsc --version && \
     oxlint --version && \
     oxfmt --version && \
     bandit --version && \
@@ -92,6 +94,8 @@ RUN echo "Verifying tools as non-root user..." && \
     prettier --version && \
     markdownlint-cli2 --version && \
     tsc --version && \
+    astro --version && \
+    vue-tsc --version && \
     oxlint --version && \
     oxfmt --version && \
     rustfmt --version && \

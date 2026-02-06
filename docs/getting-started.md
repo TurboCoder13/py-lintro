@@ -88,6 +88,8 @@ Some tools require separate installation. Their minimum versions are also manage
 - `astro` - Astro type checker for `.astro` files (install locally with
   `bun add -d astro @astrojs/check` or `npm install --save-dev astro @astrojs/check`,
   then invoke with `bunx astro check` or `npx astro check`)
+- `vue-tsc` - Vue TypeScript type checker for `.vue` files (`bun add -D vue-tsc` or
+  `npm install -D vue-tsc`)
 
 ### Checking Versions
 

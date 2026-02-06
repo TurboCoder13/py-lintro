@@ -35,6 +35,7 @@ class ToolName(StrEnum):
     SQLFLUFF = auto()
     TAPLO = auto()
     TSC = auto()
+    VUE_TSC = auto()
     YAMLLINT = auto()
 
 

@@ -187,6 +187,14 @@ def get_install_hints() -> dict[str, str]:
         "astro": (
             "Install via: bun add astro@>={version} or npm install astro@>={version}"
         ),
+        "vue_tsc": (
+            "Install via: bun add -D vue-tsc@>={version} "
+            "or npm install -D vue-tsc@>={version}"
+        ),
+        "vue-tsc": (
+            "Install via: bun add -D vue-tsc@>={version} "
+            "or npm install -D vue-tsc@>={version}"
+        ),
     }
 
     versions = get_minimum_versions()

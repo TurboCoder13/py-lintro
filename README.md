@@ -97,6 +97,7 @@ system.
 | [![SQLFluff](https://img.shields.io/badge/SQLFluff-lint%2Bformat-4b5563?logo=database&logoColor=white)](https://sqlfluff.com/)                                | 🗃️ SQL              | ✅       |
 | [![Taplo](https://img.shields.io/badge/Taplo-lint%2Bformat-9b4dca?logo=toml&logoColor=white)](https://taplo.tamasfe.dev/)                                     | 🧾 TOML             | ✅       |
 | [![TypeScript](https://img.shields.io/badge/TypeScript-type%20check-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)                 | 🟨 JS/TS            | -        |
+| [![Vue-tsc](https://img.shields.io/badge/Vue--tsc-type%20check-42b883?logo=vuedotjs&logoColor=white)](https://github.com/vuejs/language-tools)                | 💚 Vue              | -        |
 | [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                           | 🧾 YAML             | -        |
 
 <!-- markdownlint-enable MD013 MD060 -->

@@ -146,6 +146,12 @@
       "tier": "tools"
     },
     {
+      "name": "vue_tsc",
+      "version": "3.2.4",
+      "install": { "type": "npm", "package": "vue-tsc" },
+      "tier": "tools"
+    },
+    {
       "name": "yamllint",
       "version": "1.37.1",
       "install": { "type": "pip", "package": "yamllint" },

@@ -152,6 +152,7 @@ packages = [
   "lintro.parsers.taplo",
   "lintro.parsers.pydoclint",
   "lintro.parsers.tsc",
+  "lintro.parsers.vue_tsc",
   "lintro.plugins",
   "lintro.tools",
   "lintro.tools.core",

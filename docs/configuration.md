@@ -979,6 +979,52 @@ lintro check . --tools astro-check --tool-options "astro-check:root=./packages/w
 lintro check src/ --tools astro-check --auto-install
 ```
 
+#### Vue-tsc Configuration
+
+Vue-tsc is the TypeScript type checker for Vue Single File Components (SFCs). It extends
+`tsc` with Vue-specific type checking capabilities for `.vue` files.
+
+**Installation:**
+
+```bash
+# bun (recommended)
+bun add -D vue-tsc
+
+# npm
+npm install -D vue-tsc
+```
+
+**Native Config:** `tsconfig.json` or `tsconfig.app.json`
+
+Vue-tsc uses your project's `tsconfig.json` for configuration. No additional
+configuration is needed for Lintro.
+
+**Available Options via `--tool-options`:**
+
+| Option              | Type    | Description                                      |
+| ------------------- | ------- | ------------------------------------------------ |
+| `project`           | string  | Path to tsconfig.json file                       |
+| `strict`            | boolean | Enable strict type checking mode                 |
+| `skip_lib_check`    | boolean | Skip checking declaration files (default: true)  |
+| `use_project_files` | boolean | Use tsconfig's include patterns (default: false) |
+| `timeout`           | integer | Execution timeout in seconds (default: 120)      |
+
+**Usage Examples:**
+
+```bash
+# Check Vue project
+lintro check src/ --tools vue-tsc
+
+# Check with specific tsconfig
+lintro check . --tools vue-tsc --tool-options "vue-tsc:project=tsconfig.app.json"
+
+# Enable strict mode
+lintro check src/ --tools vue-tsc --tool-options "vue-tsc:strict=true"
+
+# Auto-install dependencies before checking
+lintro check src/ --tools vue-tsc --auto-install
+```
+
 ### SQL Tools
 
 #### SQLFluff Configuration

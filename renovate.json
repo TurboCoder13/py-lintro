@@ -101,7 +101,8 @@
         "taplo",
         "tamasfe/taplo",
         "astro",
-        "@astrojs/check"
+        "@astrojs/check",
+        "vue-tsc"
       ],
       "automerge": false
     }

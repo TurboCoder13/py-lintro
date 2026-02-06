@@ -48,6 +48,7 @@ TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
     ToolName.SHFMT,
     ToolName.SQLFLUFF,
     ToolName.TAPLO,
+    ToolName.VUE_TSC,
 }
 
 

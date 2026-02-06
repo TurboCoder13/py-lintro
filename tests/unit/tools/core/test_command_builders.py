@@ -287,6 +287,20 @@ def test_nodejs_builder_astro_check_uses_astro_binary() -> None:
         assert_that(cmd).is_equal_to(["bunx", "astro"])
 
 
+def test_nodejs_builder_handles_vue_tsc() -> None:
+    """NodeJSBuilder can handle vue-tsc."""
+    builder = NodeJSBuilder()
+    assert_that(builder.can_handle(ToolName.VUE_TSC)).is_true()
+
+
+def test_nodejs_builder_vue_tsc_uses_vue_tsc_binary() -> None:
+    """NodeJSBuilder resolves vue-tsc to vue-tsc binary."""
+    builder = NodeJSBuilder()
+    with patch("shutil.which", return_value="/usr/local/bin/bunx"):
+        cmd = builder.get_command("vue-tsc", ToolName.VUE_TSC)
+        assert_that(cmd).is_equal_to(["bunx", "vue-tsc"])
+
+
 # =============================================================================
 # CargoBuilder tests
 # =============================================================================

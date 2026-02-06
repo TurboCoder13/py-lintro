@@ -63,6 +63,7 @@ TOOL_VERSIONS: dict[ToolName | str, str] = {
 _NPM_PACKAGE_TO_TOOL: dict[str, ToolName] = {
     "astro": ToolName.ASTRO_CHECK,
     "typescript": ToolName.TSC,
+    "vue-tsc": ToolName.VUE_TSC,
     "prettier": ToolName.PRETTIER,
     "markdownlint-cli2": ToolName.MARKDOWNLINT,
     "oxlint": ToolName.OXLINT,
@@ -80,6 +81,7 @@ _TOOL_TO_NPM_PACKAGE: dict[ToolName, str] = {
 _FALLBACK_NPM_VERSIONS: dict[ToolName, str] = {
     ToolName.ASTRO_CHECK: "5.5.3",
     ToolName.TSC: "5.9.3",
+    ToolName.VUE_TSC: "3.2.4",
     ToolName.PRETTIER: "3.8.1",
     ToolName.MARKDOWNLINT: "0.17.2",
     ToolName.OXLINT: "1.42.0",

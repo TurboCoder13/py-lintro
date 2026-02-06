@@ -1053,6 +1053,19 @@ main() {
 		exit 1
 	fi
 
+	# Install vue-tsc via bun (Vue TypeScript type checking)
+	echo -e "${BLUE}Installing vue-tsc...${NC}"
+
+	VUE_TSC_VERSION=$(get_tool_version "vue-tsc") || exit 1
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install vue-tsc@${VUE_TSC_VERSION} globally via bun"
+	elif bun add -g "vue-tsc@${VUE_TSC_VERSION}"; then
+		echo -e "${GREEN}✓ vue-tsc@${VUE_TSC_VERSION} installed successfully${NC}"
+	else
+		echo -e "${RED}✗ Failed to install vue-tsc${NC}"
+		exit 1
+	fi
+
 	echo ""
 	echo -e "${GREEN}=== Installation Complete! ===${NC}"
 	echo ""
@@ -1079,13 +1092,14 @@ main() {
 	echo "  - sqlfluff (SQL linting and formatting)"
 	echo "  - taplo (TOML linting and formatting)"
 	echo "  - tsc (TypeScript type checking)"
+	echo "  - vue-tsc (Vue TypeScript type checking)"
 	echo "  - yamllint (YAML linting)"
 	echo ""
 
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "astro" "bandit" "black" "cargo-audit" "clippy" "rustfmt" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "prettier" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "tsc" "yamllint")
+	tools_to_verify=("actionlint" "astro" "bandit" "black" "cargo-audit" "clippy" "rustfmt" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "prettier" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "tsc" "vue-tsc" "yamllint")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo

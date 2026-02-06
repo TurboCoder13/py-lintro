@@ -443,6 +443,16 @@ def test_get_executable_command_astro_check_with_bunx(
         assert_that(result).is_equal_to(["bunx", "astro"])
 
 
+def test_get_executable_command_vue_tsc_with_bunx(
+    fake_tool_plugin: FakeToolPlugin,
+) -> None:
+    """Verify vue-tsc resolves to bunx vue-tsc command."""
+    with patch("shutil.which", return_value="/usr/bin/bunx"):
+        result = fake_tool_plugin._get_executable_command("vue-tsc")
+
+        assert_that(result).is_equal_to(["bunx", "vue-tsc"])
+
+
 def test_get_executable_command_nodejs_tool_without_bunx(
     fake_tool_plugin: FakeToolPlugin,
 ) -> None:

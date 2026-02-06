@@ -88,6 +88,8 @@ def test_compare_versions(version1: str, version2: str, expected: int) -> None:
         ("yamllint", "yamllint 1.37.1", "1.37.1"),
         # Astro: actual output has "v" prefix and double space
         ("astro-check", "astro  v5.5.3", "5.5.3"),
+        # Vue-tsc: simple version output
+        ("vue-tsc", "2.2.4", "2.2.4"),
         # Clippy: rustc output should extract Rust version directly
         ("clippy", "rustc 1.92.0 (ded5c06cf 2025-12-08)", "1.92.0"),
         # Clippy: clippy output should convert 0.1.X to 1.X.0
