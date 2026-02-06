@@ -64,11 +64,11 @@ def test_check_no_svelte_files(
     assert_that(result.output).contains("No .svelte files found to check.")
 
 
-def test_check_no_svelte_config(
+def test_check_no_svelte_config_proceeds_with_defaults(
     svelte_check_plugin: SvelteCheckPlugin,
     tmp_path: Path,
 ) -> None:
-    """Check returns early when no Svelte config found.
+    """Check proceeds with defaults when no Svelte config found.
 
     Args:
         svelte_check_plugin: The SvelteCheckPlugin instance to test.
@@ -78,11 +78,15 @@ def test_check_no_svelte_config(
     svelte_file = tmp_path / "test.svelte"
     svelte_file.write_text("<script>\nlet count = 0;\n</script>\n<h1>{count}</h1>")
 
-    result = svelte_check_plugin.check([str(tmp_path)], {})
+    with patch.object(
+        svelte_check_plugin,
+        "_run_subprocess",
+        side_effect=_mock_subprocess_success,
+    ):
+        result = svelte_check_plugin.check([str(tmp_path)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.issues_count).is_equal_to(0)
-    assert_that(result.output).contains("No Svelte config found")
 
 
 def test_check_with_mocked_subprocess_success(

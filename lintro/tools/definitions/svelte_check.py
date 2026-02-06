@@ -64,7 +64,11 @@ class SvelteCheckPlugin(BaseToolPlugin):
             file_patterns=SVELTE_CHECK_FILE_PATTERNS,
             priority=SVELTE_CHECK_DEFAULT_PRIORITY,
             conflicts_with=[],
-            native_configs=["svelte.config.js", "svelte.config.ts", "svelte.config.mjs"],
+            native_configs=[
+                "svelte.config.js",
+                "svelte.config.ts",
+                "svelte.config.mjs",
+            ],
             version_command=self._get_svelte_check_command() + ["--version"],
             min_version=get_min_version(ToolName.SVELTE_CHECK),
             default_options={
@@ -214,14 +218,11 @@ class SvelteCheckPlugin(BaseToolPlugin):
 
         cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
 
-        # Check if svelte config exists
+        # Warn if no svelte config found, but still proceed with defaults
         svelte_config = self._find_svelte_config(cwd_path)
         if not svelte_config:
-            return ToolResult(
-                name=self.definition.name,
-                success=True,
-                output="No Svelte config found. Skipping svelte-check.",
-                issues_count=0,
+            logger.warning(
+                "[svelte-check] No svelte.config.* found — proceeding with defaults",
             )
 
         # Check if auto-install is enabled
