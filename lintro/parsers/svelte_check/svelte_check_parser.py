@@ -81,7 +81,7 @@ def _parse_machine_verbose_line(line: str) -> SvelteCheckIssue | None:
             line=start_line,
             column=start_col,
             end_line=end_line if end_line != start_line else None,
-            end_column=end_col if end_line != start_line else None,
+            end_column=end_col if (end_line != start_line or end_col != start_col) else None,
             severity=severity,
             message=message,
         )

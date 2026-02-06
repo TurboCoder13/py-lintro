@@ -81,7 +81,11 @@ def test_definition_has_version_command(
         get_plugin: Fixture factory to get plugin instances.
     """
     svelte_check_plugin = get_plugin("svelte-check")
-    assert_that(svelte_check_plugin.definition.version_command).is_not_none()
+    version_cmd = svelte_check_plugin.definition.version_command
+    assert_that(version_cmd).is_not_none()
+    assert version_cmd is not None
+    assert_that(version_cmd).contains("--version")
+    assert_that(version_cmd).contains("svelte-check")
 
 
 # --- Integration tests for svelte check command ---

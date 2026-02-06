@@ -65,7 +65,7 @@ class SvelteCheckPlugin(BaseToolPlugin):
             priority=SVELTE_CHECK_DEFAULT_PRIORITY,
             conflicts_with=[],
             native_configs=["svelte.config.js", "svelte.config.ts", "svelte.config.mjs"],
-            version_command=["svelte-check", "--version"],
+            version_command=self._get_svelte_check_command() + ["--version"],
             min_version=get_min_version(ToolName.SVELTE_CHECK),
             default_options={
                 "timeout": SVELTE_CHECK_DEFAULT_TIMEOUT,
