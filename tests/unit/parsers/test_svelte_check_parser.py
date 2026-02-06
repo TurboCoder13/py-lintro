@@ -123,6 +123,16 @@ def test_parse_svelte_check_output_same_line_same_column() -> None:
     assert_that(issues[0].end_column).is_none()
 
 
+def test_parse_svelte_check_output_same_line_different_column() -> None:
+    """Same-line span sets both end_line and end_column to None."""
+    output = "src/lib/Button.svelte:15:5:15:10 Error Inline span error."
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].end_line).is_none()
+    assert_that(issues[0].end_column).is_none()
+
+
 def test_parse_svelte_check_output_warn_machine_format() -> None:
     """Parse WARN severity in machine format."""
     output = "WARN src/lib/Card.svelte:8:1 Unused CSS selector."

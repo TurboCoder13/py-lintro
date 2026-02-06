@@ -33,10 +33,6 @@ MACHINE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# Pattern for human-readable format as fallback:
-# file.svelte:line:col
-#   severity: message
-HUMAN_FILE_PATTERN = re.compile(r"^(?P<file>.+?):(?P<line>\d+):(?P<col>\d+)$")
 
 
 def _normalize_severity(severity: str) -> str:
@@ -85,7 +81,7 @@ def _parse_machine_verbose_line(line: str) -> SvelteCheckIssue | None:
             line=start_line,
             column=start_col,
             end_line=end_line if end_line != start_line else None,
-            end_column=end_col if end_col != start_col else None,
+            end_column=end_col if end_line != start_line else None,
             severity=severity,
             message=message,
         )

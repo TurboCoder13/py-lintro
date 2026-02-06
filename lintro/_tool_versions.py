@@ -192,14 +192,14 @@ def _load_npm_versions() -> dict[ToolName, str]:
     all_deps = _load_package_json()
 
     if all_deps:
-        versions: dict[ToolName, str] = {}
+        # Start with fallback versions, then overlay package.json values
+        versions: dict[ToolName, str] = dict(_FALLBACK_NPM_VERSIONS)
         for npm_pkg, tool_name in _NPM_PACKAGE_TO_TOOL.items():
             if npm_pkg in all_deps:
                 versions[tool_name] = all_deps[npm_pkg]
 
-        if versions:
-            _logger.debug("Loaded %d npm versions from package.json", len(versions))
-            return versions
+        _logger.debug("Loaded npm versions (package.json + fallbacks)")
+        return versions
 
     # Fallback: use hardcoded minimum versions when package.json not found
     _logger.debug("package.json not found, using fallback npm versions")
