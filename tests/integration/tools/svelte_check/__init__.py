@@ -1,0 +1,1 @@
+"""Svelte-check integration tests."""
