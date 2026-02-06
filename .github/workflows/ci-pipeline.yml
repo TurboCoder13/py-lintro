@@ -85,6 +85,44 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ============================================================================
+  # Stage 1b: Verify manifest/pyproject version sync (lightweight, no Docker)
+  # ============================================================================
+  manifest-sync:
+    name: 📋 Manifest Sync
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.draft == false
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            release-assets.githubusercontent.com:443
+            objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            astral.sh:443
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Environment setup
+        uses: ./.github/actions/setup-env
+        with:
+          python-version: '3.13'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
+      - name: Verify manifest sync
+        run: python3 scripts/ci/verify-manifest-sync.py
+
+  # ============================================================================
   # Stage 2: Build Docker image ONCE (cached for all subsequent stages)
   # ============================================================================
   docker-build:
@@ -186,7 +224,7 @@ jobs:
   # ============================================================================
   lint:
     name: 🛠️ Lintro Code Quality
-    needs: [resolve-tools, docker-build]
+    needs: [resolve-tools, docker-build, manifest-sync]
     runs-on: ubuntu-24.04
     permissions:
       contents: read

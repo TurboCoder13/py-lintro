@@ -13,6 +13,7 @@ from assertpy import assert_that
 from lintro.models.core.tool_result import ToolResult
 from lintro.parsers.semgrep.semgrep_parser import parse_semgrep_output
 from lintro.plugins import ToolRegistry
+from lintro.tools.core.version_parsing import get_minimum_versions
 
 
 def test_parse_semgrep_valid_output() -> None:
@@ -379,7 +380,7 @@ def test_semgrep_tool_definition() -> None:
     assert_that(defn.name).is_equal_to("semgrep")
     assert_that(defn.can_fix).is_false()
     assert_that(defn.tool_type).is_equal_to(ToolType.LINTER | ToolType.SECURITY)
-    assert_that(defn.min_version).is_equal_to("1.85.0")
+    assert_that(defn.min_version).is_equal_to(get_minimum_versions()["semgrep"])
     assert_that("*.py" in defn.file_patterns).is_true()
     assert_that("*.js" in defn.file_patterns).is_true()
     assert_that("*.go" in defn.file_patterns).is_true()
