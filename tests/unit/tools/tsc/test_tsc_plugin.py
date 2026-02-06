@@ -285,12 +285,6 @@ def test_default_options_use_project_files_defaults_to_false(
             id="svelte_ts",
         ),
         pytest.param(
-            "svelte.config.mjs",
-            "Svelte",
-            "svelte-check",
-            id="svelte_mjs",
-        ),
-        pytest.param(
             "vue.config.js",
             "Vue",
             "vue-tsc",

@@ -66,8 +66,10 @@ def _parse_ndjson_line(line: str) -> SvelteCheckIssue | None:
     Returns:
         A SvelteCheckIssue instance or None if the line is not valid NDJSON.
     """
+    # Strip leading millisecond timestamp prefix (e.g. "1590680326283 {...}")
+    stripped = re.sub(r"^\d+\s+", "", line)
     try:
-        data = json.loads(line)
+        data = json.loads(stripped)
     except (json.JSONDecodeError, ValueError):
         return None
 
@@ -230,7 +232,8 @@ def parse_svelte_check_output(output: str) -> list[SvelteCheckIssue]:
         ...     "start": {"line": 15, "character": 5},
         ...     "end": {"line": 15, "character": 10},
         ...     "message": "Type error"}
-        >>> issues = parse_svelte_check_output(json.dumps(data))
+        >>> line = "1590680326283 " + json.dumps(data)
+        >>> issues = parse_svelte_check_output(line)
         >>> len(issues)
         1
     """

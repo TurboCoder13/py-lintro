@@ -995,18 +995,18 @@ bun add -D svelte-check
 npm install -D svelte-check
 ```
 
-**Native Config:** `svelte.config.js`, `svelte.config.ts`, or `svelte.config.mjs`
+**Native Config:** `svelte.config.js` or `svelte.config.ts`
 
 Svelte Check uses your project's `svelte.config` and `tsconfig.json` for configuration.
 No additional configuration is needed for Lintro.
 
 **Available Options via `--tool-options`:**
 
-| Option      | Type    | Description                                         |
-| ----------- | ------- | --------------------------------------------------- |
-| `threshold` | string  | Minimum severity to report: error, warning, or hint |
-| `tsconfig`  | string  | Path to tsconfig.json file                          |
-| `timeout`   | integer | Execution timeout in seconds (default: 120)         |
+| Option      | Type    | Description                                                     |
+| ----------- | ------- | --------------------------------------------------------------- |
+| `threshold` | string  | Minimum severity to report: error or warning (default: warning) |
+| `tsconfig`  | string  | Path to tsconfig.json file                                      |
+| `timeout`   | integer | Execution timeout in seconds (default: 120)                     |
 
 **Usage Examples:**
 

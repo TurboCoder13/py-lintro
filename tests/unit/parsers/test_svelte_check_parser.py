@@ -19,6 +19,28 @@ def test_parse_svelte_check_output_empty() -> None:
 # --- NDJSON format tests (modern svelte-check --output machine-verbose) ---
 
 
+def test_parse_ndjson_with_timestamp_prefix() -> None:
+    """Parse NDJSON line with leading millisecond timestamp prefix."""
+    payload = json.dumps(
+        {
+            "type": "ERROR",
+            "fn": "src/lib/Button.svelte",
+            "start": {"line": 15, "character": 5},
+            "end": {"line": 15, "character": 10},
+            "message": "Type 'string' is not assignable to type 'number'.",
+        },
+    )
+    output = f"1590680326283 {payload}"
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].file).is_equal_to("src/lib/Button.svelte")
+    assert_that(issues[0].line).is_equal_to(15)
+    assert_that(issues[0].column).is_equal_to(5)
+    assert_that(issues[0].severity).is_equal_to("error")
+    assert_that(issues[0].message).contains("not assignable")
+
+
 def test_parse_ndjson_single_error() -> None:
     """Parse a single NDJSON error line."""
     output = json.dumps(

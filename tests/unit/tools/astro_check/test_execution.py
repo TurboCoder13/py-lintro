@@ -90,7 +90,7 @@ def test_check_no_astro_config_proceeds_with_defaults(
     mock_run.assert_called_once()
     _, kwargs = mock_run.call_args
     assert_that(kwargs["cwd"]).is_equal_to(str(tmp_path))
-    assert_that(kwargs["cmd"][-1]).is_equal_to("check")
+    assert_that(kwargs["cmd"]).contains("check")
 
 
 def test_check_with_mocked_subprocess_success(

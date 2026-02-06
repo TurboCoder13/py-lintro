@@ -65,7 +65,7 @@ FRAMEWORK_CONFIGS: dict[str, tuple[str, list[str]]] = {
     ),
     "Svelte": (
         "svelte-check",
-        ["svelte.config.js", "svelte.config.ts", "svelte.config.mjs"],
+        ["svelte.config.js", "svelte.config.ts"],
     ),
 }
 
