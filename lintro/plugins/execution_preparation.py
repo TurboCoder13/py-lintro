@@ -116,11 +116,12 @@ def prepare_execution(
     """Prepare execution context with common boilerplate steps.
 
     This function consolidates repeated patterns:
-    1. Merge options with defaults
-    2. Verify tool version requirements
-    3. Validate input paths
-    4. Discover files matching patterns
-    5. Compute working directory and relative paths
+    - Merge options with defaults
+    - Validate input paths
+    - Discover files matching patterns (returns early if none found)
+    - Verify tool version requirements (skipped when no files match)
+    - Compute working directory and relative paths
+    - Compute timeout for execution
 
     Args:
         paths: Input paths to process.
@@ -138,12 +139,7 @@ def prepare_execution(
     merged_options = dict(current_options)
     merged_options.update(options)
 
-    # Step 1: Check version requirements
-    version_result = verify_tool_version(definition)
-    if version_result is not None:
-        return {"early_result": version_result}
-
-    # Step 2: Validate paths
+    # Validate paths
     validate_paths(paths)
     if not paths:
         return {
@@ -155,7 +151,7 @@ def prepare_execution(
             ),
         }
 
-    # Step 3: Discover files
+    # Discover files matching tool patterns
     files = discover_files(
         paths=paths,
         definition=definition,
@@ -180,13 +176,18 @@ def prepare_execution(
             ),
         }
 
+    # Check version requirements (only when files exist to check)
+    version_result = verify_tool_version(definition)
+    if version_result is not None:
+        return {"early_result": version_result}
+
     logger.debug(f"Files to process: {files}")
 
-    # Step 4: Compute cwd and relative paths
+    # Compute cwd and relative paths
     cwd = get_cwd(files)
     rel_files = [os.path.relpath(f, cwd) if cwd else f for f in files]
 
-    # Step 5: Get timeout (keep as float to preserve precision)
+    # Get timeout (keep as float to preserve precision)
     timeout_value = merged_options.get("timeout")
     timeout = get_effective_timeout(
         timeout_value if isinstance(timeout_value, (int, float)) else None,

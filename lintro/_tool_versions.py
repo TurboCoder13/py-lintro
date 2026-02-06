@@ -62,6 +62,7 @@ TOOL_VERSIONS: dict[ToolName | str, str] = {
 # These versions are read from package.json at runtime
 _NPM_PACKAGE_TO_TOOL: dict[str, ToolName] = {
     "astro": ToolName.ASTRO_CHECK,
+    "svelte-check": ToolName.SVELTE_CHECK,
     "typescript": ToolName.TSC,
     "vue-tsc": ToolName.VUE_TSC,
     "prettier": ToolName.PRETTIER,
@@ -80,6 +81,7 @@ _TOOL_TO_NPM_PACKAGE: dict[ToolName, str] = {
 # CI should verify these match package.json to prevent drift.
 _FALLBACK_NPM_VERSIONS: dict[ToolName, str] = {
     ToolName.ASTRO_CHECK: "5.5.3",
+    ToolName.SVELTE_CHECK: "4.1.4",
     ToolName.TSC: "5.9.3",
     ToolName.VUE_TSC: "3.2.4",
     ToolName.PRETTIER: "3.8.1",
@@ -190,14 +192,14 @@ def _load_npm_versions() -> dict[ToolName, str]:
     all_deps = _load_package_json()
 
     if all_deps:
-        versions: dict[ToolName, str] = {}
+        # Start with fallback versions, then overlay package.json values
+        versions: dict[ToolName, str] = dict(_FALLBACK_NPM_VERSIONS)
         for npm_pkg, tool_name in _NPM_PACKAGE_TO_TOOL.items():
             if npm_pkg in all_deps:
                 versions[tool_name] = all_deps[npm_pkg]
 
-        if versions:
-            _logger.debug("Loaded %d npm versions from package.json", len(versions))
-            return versions
+        _logger.debug("Loaded npm versions (package.json + fallbacks)")
+        return versions
 
     # Fallback: use hardcoded minimum versions when package.json not found
     _logger.debug("package.json not found, using fallback npm versions")

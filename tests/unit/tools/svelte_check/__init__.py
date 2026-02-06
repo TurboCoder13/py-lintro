@@ -1,0 +1,1 @@
+"""Svelte-check plugin tests."""

@@ -187,6 +187,14 @@ def get_install_hints() -> dict[str, str]:
         "astro": (
             "Install via: bun add astro@>={version} or npm install astro@>={version}"
         ),
+        "svelte_check": (
+            "Install via: bun add -D svelte-check@>={version} "
+            "or npm install -D svelte-check@>={version}"
+        ),
+        "svelte-check": (
+            "Install via: bun add -D svelte-check@>={version} "
+            "or npm install -D svelte-check@>={version}"
+        ),
         "vue_tsc": (
             "Install via: bun add -D vue-tsc@>={version} "
             "or npm install -D vue-tsc@>={version}"

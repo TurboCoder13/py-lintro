@@ -33,6 +33,7 @@ class ToolName(StrEnum):
     SHELLCHECK = auto()
     SHFMT = auto()
     SQLFLUFF = auto()
+    SVELTE_CHECK = auto()
     TAPLO = auto()
     TSC = auto()
     VUE_TSC = auto()

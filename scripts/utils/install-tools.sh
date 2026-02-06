@@ -79,6 +79,11 @@ This script installs:
   - SQLFluff (SQL linter and formatter)
   - Taplo (TOML linter and formatter)
   - TypeScript (TypeScript compiler and type checker)
+  - Astro Check (Astro component type checker)
+  - Gitleaks (Secret detection scanner)
+  - Svelte Check (Svelte component type checker)
+  - tsc (TypeScript type checker)
+  - Vue-tsc (Vue TypeScript type checker)
 
 Use this script to set up a complete development environment.
 EOF
@@ -1053,6 +1058,19 @@ main() {
 		exit 1
 	fi
 
+	# Install svelte-check via bun (Svelte type checking)
+	echo -e "${BLUE}Installing svelte-check...${NC}"
+
+	SVELTE_CHECK_VERSION=$(get_tool_version "svelte-check") || exit 1
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install svelte-check@${SVELTE_CHECK_VERSION} globally via bun"
+	elif bun add -g "svelte-check@${SVELTE_CHECK_VERSION}"; then
+		echo -e "${GREEN}✓ svelte-check@${SVELTE_CHECK_VERSION} installed successfully${NC}"
+	else
+		echo -e "${RED}✗ Failed to install svelte-check${NC}"
+		exit 1
+	fi
+
 	# Install vue-tsc via bun (Vue TypeScript type checking)
 	echo -e "${BLUE}Installing vue-tsc...${NC}"
 
@@ -1072,6 +1090,7 @@ main() {
 	echo -e "${YELLOW}Installed tools:${NC}"
 	echo "  - actionlint (GitHub Actions linting)"
 	echo "  - astro (Astro type checking)"
+	echo "  - svelte-check (Svelte type checking)"
 	echo "  - bandit (Python security checks)"
 	echo "  - black (Python formatting)"
 	echo "  - cargo-audit (Rust dependency vulnerability scanning)"
@@ -1099,7 +1118,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "astro" "bandit" "black" "cargo-audit" "clippy" "rustfmt" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "prettier" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "taplo" "tsc" "vue-tsc" "yamllint")
+	tools_to_verify=("actionlint" "astro" "bandit" "black" "cargo-audit" "clippy" "rustfmt" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "prettier" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "svelte-check" "taplo" "tsc" "vue-tsc" "yamllint")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo

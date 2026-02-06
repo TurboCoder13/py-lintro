@@ -134,6 +134,12 @@
       "tier": "tools"
     },
     {
+      "name": "svelte_check",
+      "version": "4.3.6",
+      "install": { "type": "npm", "package": "svelte-check", "bin": "svelte-check" },
+      "tier": "tools"
+    },
+    {
       "name": "taplo",
       "version": "0.10.0",
       "install": { "type": "binary" },

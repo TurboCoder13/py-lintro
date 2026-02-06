@@ -64,11 +64,11 @@ def test_check_no_astro_files(
     assert_that(result.output).contains("No Astro files to check.")
 
 
-def test_check_no_astro_config(
+def test_check_no_astro_config_proceeds_with_defaults(
     astro_check_plugin: AstroCheckPlugin,
     tmp_path: Path,
 ) -> None:
-    """Check returns early when no Astro config found.
+    """Check proceeds with defaults when no Astro config found.
 
     Args:
         astro_check_plugin: The AstroCheckPlugin instance to test.
@@ -78,11 +78,19 @@ def test_check_no_astro_config(
     astro_file = tmp_path / "test.astro"
     astro_file.write_text("---\nconst message = 'Hello';\n---\n<h1>{message}</h1>")
 
-    result = astro_check_plugin.check([str(tmp_path)], {})
+    with patch.object(
+        astro_check_plugin,
+        "_run_subprocess",
+        side_effect=_mock_subprocess_success,
+    ) as mock_run:
+        result = astro_check_plugin.check([str(tmp_path)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.issues_count).is_equal_to(0)
-    assert_that(result.output).contains("No Astro config found")
+    mock_run.assert_called_once()
+    _, kwargs = mock_run.call_args
+    assert_that(kwargs["cwd"]).is_equal_to(str(tmp_path))
+    assert_that(kwargs["cmd"]).contains("check")
 
 
 def test_check_with_mocked_subprocess_success(

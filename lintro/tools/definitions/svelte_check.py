@@ -1,15 +1,16 @@
-"""Astro check tool definition.
+"""Svelte-check tool definition.
 
-Astro check is Astro's built-in type checking command that provides TypeScript
-diagnostics for `.astro` files including frontmatter scripts, component props,
-and template expressions.
+Svelte-check is the official type checker and linter for Svelte components.
+It provides TypeScript type checking, unused CSS detection, and accessibility
+hints for `.svelte` files.
 
 Example:
-    # Check Astro project
-    lintro check src/ --tools astro-check
+    # Check Svelte project
+    lintro check src/ --tools svelte-check
 
-    # Check with specific root
-    lintro check . --tools astro-check --tool-options "astro-check:root=./packages/web"
+    # Check with specific threshold
+    lintro check src/ --tools svelte-check \
+        --tool-options "svelte-check:threshold=warning"
 """
 
 from __future__ import annotations
@@ -26,26 +27,26 @@ from lintro._tool_versions import get_min_version
 from lintro.enums.tool_name import ToolName
 from lintro.enums.tool_type import ToolType
 from lintro.models.core.tool_result import ToolResult
-from lintro.parsers.astro_check.astro_check_parser import parse_astro_check_output
 from lintro.parsers.base_parser import strip_ansi_codes
+from lintro.parsers.svelte_check.svelte_check_parser import parse_svelte_check_output
 from lintro.plugins.base import BaseToolPlugin
 from lintro.plugins.protocol import ToolDefinition
 from lintro.plugins.registry import register_tool
 from lintro.tools.core.timeout_utils import create_timeout_result
 
-# Constants for Astro check configuration
-ASTRO_CHECK_DEFAULT_TIMEOUT: int = 120
-ASTRO_CHECK_DEFAULT_PRIORITY: int = 83  # After tsc (82)
-ASTRO_CHECK_FILE_PATTERNS: list[str] = ["*.astro"]
+# Constants for Svelte-check configuration
+SVELTE_CHECK_DEFAULT_TIMEOUT: int = 120
+SVELTE_CHECK_DEFAULT_PRIORITY: int = 83  # After tsc (82)
+SVELTE_CHECK_FILE_PATTERNS: list[str] = ["*.svelte"]
 
 
 @register_tool
 @dataclass
-class AstroCheckPlugin(BaseToolPlugin):
-    """Astro check type checking plugin.
+class SvelteCheckPlugin(BaseToolPlugin):
+    """Svelte-check type checking plugin.
 
-    This plugin integrates the Astro check command with Lintro for static
-    type checking of Astro components.
+    This plugin integrates svelte-check with Lintro for static type checking
+    and linting of Svelte components.
     """
 
     @property
@@ -56,84 +57,89 @@ class AstroCheckPlugin(BaseToolPlugin):
             ToolDefinition containing tool metadata.
         """
         return ToolDefinition(
-            name="astro-check",
-            description="Astro type checker for Astro component diagnostics",
+            name="svelte-check",
+            description="Svelte type checker and linter for Svelte components",
             can_fix=False,
             tool_type=ToolType.LINTER | ToolType.TYPE_CHECKER,
-            file_patterns=ASTRO_CHECK_FILE_PATTERNS,
-            priority=ASTRO_CHECK_DEFAULT_PRIORITY,
+            file_patterns=SVELTE_CHECK_FILE_PATTERNS,
+            priority=SVELTE_CHECK_DEFAULT_PRIORITY,
             conflicts_with=[],
             native_configs=[
-                "astro.config.mjs",
-                "astro.config.ts",
-                "astro.config.js",
-                "astro.config.cjs",
+                "svelte.config.js",
+                "svelte.config.ts",
+                "svelte.config.mjs",
             ],
-            version_command=["astro", "--version"],
-            min_version=get_min_version(ToolName.ASTRO_CHECK),
+            version_command=self._get_svelte_check_command() + ["--version"],
+            min_version=get_min_version(ToolName.SVELTE_CHECK),
             default_options={
-                "timeout": ASTRO_CHECK_DEFAULT_TIMEOUT,
-                "root": None,
+                "timeout": SVELTE_CHECK_DEFAULT_TIMEOUT,
+                "threshold": "error",  # error, warning, or hint
+                "tsconfig": None,
             },
-            default_timeout=ASTRO_CHECK_DEFAULT_TIMEOUT,
+            default_timeout=SVELTE_CHECK_DEFAULT_TIMEOUT,
         )
 
     def set_options(  # type: ignore[override]
         self,
-        root: str | None = None,
+        threshold: str | None = None,
+        tsconfig: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Set astro-check-specific options.
+        """Set svelte-check-specific options.
 
         Args:
-            root: Root directory for the Astro project.
+            threshold: Minimum severity to report ("error", "warning", "hint").
+            tsconfig: Path to tsconfig.json file.
             **kwargs: Other tool options.
 
         Raises:
             ValueError: If any provided option is of an unexpected type.
         """
-        if root is not None and not isinstance(root, str):
-            raise ValueError("root must be a string path")
+        if threshold is not None:
+            if not isinstance(threshold, str):
+                raise ValueError("threshold must be a string")
+            if threshold not in ("error", "warning", "hint"):
+                raise ValueError("threshold must be 'error', 'warning', or 'hint'")
+        if tsconfig is not None and not isinstance(tsconfig, str):
+            raise ValueError("tsconfig must be a string path")
 
-        options: dict[str, object] = {"root": root}
+        options: dict[str, object] = {
+            "threshold": threshold,
+            "tsconfig": tsconfig,
+        }
         options = {k: v for k, v in options.items() if v is not None}
         super().set_options(**options, **kwargs)
 
-    def _get_astro_command(self) -> list[str]:
-        """Get the command to run astro check.
+    def _get_svelte_check_command(self) -> list[str]:
+        """Get the command to run svelte-check.
 
-        Prefers direct astro executable, falls back to bunx/npx.
+        Prefers direct svelte-check executable, falls back to bunx/npx.
 
         Returns:
-            Command arguments for astro check.
+            Command arguments for svelte-check.
         """
         # Prefer direct executable if available
-        if shutil.which("astro"):
-            return ["astro", "check"]
+        if shutil.which("svelte-check"):
+            return ["svelte-check"]
         # Try bunx (bun)
         if shutil.which("bunx"):
-            return ["bunx", "astro", "check"]
+            return ["bunx", "svelte-check"]
         # Try npx (npm)
         if shutil.which("npx"):
-            return ["npx", "astro", "check"]
+            return ["npx", "svelte-check"]
         # Last resort
-        return ["astro", "check"]
+        return ["svelte-check"]
 
-    def _find_astro_config(self, cwd: Path) -> Path | None:
-        """Find astro config file in the working directory.
+    def _find_svelte_config(self, cwd: Path) -> Path | None:
+        """Find svelte config file in the working directory.
 
         Args:
             cwd: Working directory to search for config.
 
         Returns:
-            Path to astro config if found, None otherwise.
+            Path to svelte config if found, None otherwise.
         """
-        config_names = [
-            "astro.config.mjs",
-            "astro.config.ts",
-            "astro.config.js",
-            "astro.config.cjs",
-        ]
+        config_names = ["svelte.config.js", "svelte.config.ts", "svelte.config.mjs"]
         for config_name in config_names:
             config_path = cwd / config_name
             if config_path.exists():
@@ -144,7 +150,7 @@ class AstroCheckPlugin(BaseToolPlugin):
         self,
         options: dict[str, object] | None = None,
     ) -> list[str]:
-        """Build the astro check invocation command.
+        """Build the svelte-check invocation command.
 
         Args:
             options: Options dict to use for flags. Defaults to self.options.
@@ -155,23 +161,28 @@ class AstroCheckPlugin(BaseToolPlugin):
         if options is None:
             options = self.options
 
-        cmd: list[str] = self._get_astro_command()
+        cmd: list[str] = self._get_svelte_check_command()
 
-        # Root directory option
-        root = options.get("root")
-        if root:
-            cmd.extend(["--root", str(root)])
+        # Use machine-verbose output for parseable format
+        cmd.extend(["--output", "machine-verbose"])
+
+        # Threshold option
+        threshold = options.get("threshold", "error")
+        if threshold:
+            cmd.extend(["--threshold", str(threshold)])
+
+        # Tsconfig option
+        tsconfig = options.get("tsconfig")
+        if tsconfig:
+            cmd.extend(["--tsconfig", str(tsconfig)])
 
         return cmd
 
-    # Canonical message for "no Astro files" early returns
-    _NO_FILES_MESSAGE: str = "No Astro files to check."
-
     def check(self, paths: list[str], options: dict[str, object]) -> ToolResult:
-        """Check files with astro check.
+        """Check files with svelte-check.
 
-        Astro check runs on the entire project and uses the project's
-        astro.config and tsconfig.json for configuration.
+        Svelte-check runs on the entire project and uses the project's
+        svelte.config and tsconfig.json for configuration.
 
         Args:
             paths: List of file or directory paths to check.
@@ -188,16 +199,10 @@ class AstroCheckPlugin(BaseToolPlugin):
         ctx = self._prepare_execution(
             paths,
             merged_options,
-            no_files_message=self._NO_FILES_MESSAGE,
+            no_files_message="No Svelte files to check.",
         )
 
         if ctx.should_skip and ctx.early_result is not None:
-            # Normalize "no files" messages to the canonical form.
-            # _prepare_execution may generate "No .astro files found to check."
-            # from file patterns; detect and normalize robustly.
-            output_lower = (ctx.early_result.output or "").lower()
-            if "no" in output_lower and "astro" in output_lower:
-                ctx.early_result.output = self._NO_FILES_MESSAGE
             return ctx.early_result
 
         # Safety check: if should_skip but no early_result, create one
@@ -205,31 +210,19 @@ class AstroCheckPlugin(BaseToolPlugin):
             return ToolResult(
                 name=self.definition.name,
                 success=True,
-                output=self._NO_FILES_MESSAGE,
+                output="No Svelte files to check.",
                 issues_count=0,
             )
 
-        logger.debug("[astro-check] Discovered {} Astro file(s)", len(ctx.files))
+        logger.debug("[svelte-check] Discovered {} Svelte file(s)", len(ctx.files))
 
-        # Honor the "root" option if provided, otherwise use ctx.cwd
-        root_opt = merged_options.get("root")
-        if root_opt and isinstance(root_opt, str):
-            cwd_path = Path(root_opt)
-            if not cwd_path.is_absolute():
-                # Resolve relative to ctx.cwd
-                base = Path(ctx.cwd) if ctx.cwd else Path.cwd()
-                cwd_path = (base / cwd_path).resolve()
-            # Sync merged_options with the resolved absolute path
-            # so _build_command uses the same absolute root
-            merged_options["root"] = str(cwd_path)
-        else:
-            cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
+        cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
 
-        # Warn if no astro config found, but still proceed with defaults
-        astro_config = self._find_astro_config(cwd_path)
-        if not astro_config:
+        # Warn if no svelte config found, but still proceed with defaults
+        svelte_config = self._find_svelte_config(cwd_path)
+        if not svelte_config:
             logger.warning(
-                "[astro-check] No astro.config.* found — proceeding with defaults",
+                "[svelte-check] No svelte.config.* found — proceeding with defaults",
             )
 
         # Check if auto-install is enabled
@@ -238,7 +231,7 @@ class AstroCheckPlugin(BaseToolPlugin):
             from lintro.utils.node_deps import install_node_deps, should_install_deps
 
             if should_install_deps(cwd_path):
-                logger.info("[astro-check] Auto-installing Node.js dependencies...")
+                logger.info("[svelte-check] Auto-installing Node.js dependencies...")
                 success, install_output = install_node_deps(cwd_path)
                 if not success:
                     return ToolResult(
@@ -250,17 +243,17 @@ class AstroCheckPlugin(BaseToolPlugin):
                         ),
                         issues_count=0,
                     )
-                logger.info("[astro-check] Dependencies installed successfully")
+                logger.info("[svelte-check] Dependencies installed successfully")
 
         # Build command
         cmd = self._build_command(options=merged_options)
-        logger.debug("[astro-check] Running with cwd={} and cmd={}", cwd_path, cmd)
+        logger.debug("[svelte-check] Running with cwd={} and cmd={}", ctx.cwd, cmd)
 
         try:
             success, output = self._run_subprocess(
                 cmd=cmd,
                 timeout=ctx.timeout,
-                cwd=str(cwd_path),
+                cwd=ctx.cwd,
             )
         except subprocess.TimeoutExpired:
             timeout_result = create_timeout_result(
@@ -279,23 +272,23 @@ class AstroCheckPlugin(BaseToolPlugin):
             return ToolResult(
                 name=self.definition.name,
                 success=False,
-                output=f"Astro not found: {e}\n\n"
-                "Please ensure astro is installed:\n"
-                "  - Run 'bun add astro' or 'npm install astro'\n"
-                "  - Or install globally: 'bun add -g astro'",
+                output=f"svelte-check not found: {e}\n\n"
+                "Please ensure svelte-check is installed:\n"
+                "  - Run 'bun add -D svelte-check' or 'npm install -D svelte-check'\n"
+                "  - Or install globally: 'bun add -g svelte-check'",
                 issues_count=0,
             )
         except OSError as e:
-            logger.error("[astro-check] Failed to run astro check: {}", e)
+            logger.error("[svelte-check] Failed to run svelte-check: {}", e)
             return ToolResult(
                 name=self.definition.name,
                 success=False,
-                output="astro check execution failed: " + str(e),
+                output="svelte-check execution failed: " + str(e),
                 issues_count=0,
             )
 
         # Parse output
-        all_issues = parse_astro_check_output(output=output or "")
+        all_issues = parse_svelte_check_output(output=output or "")
         issues_count = len(all_issues)
 
         # Normalize output for fallback analysis
@@ -308,7 +301,7 @@ class AstroCheckPlugin(BaseToolPlugin):
                 or "Cannot find type definition" in normalized_output
             ):
                 helpful_output = (
-                    f"Astro check configuration error:\n{normalized_output}\n\n"
+                    f"svelte-check configuration error:\n{normalized_output}\n\n"
                     "This usually means dependencies aren't installed.\n"
                     "Suggestions:\n"
                     "  - Run 'bun install' or 'npm install' in your project\n"
@@ -325,7 +318,7 @@ class AstroCheckPlugin(BaseToolPlugin):
             return ToolResult(
                 name=self.definition.name,
                 success=False,
-                output=normalized_output or "astro check execution failed.",
+                output=normalized_output or "svelte-check execution failed.",
                 issues_count=0,
             )
 
@@ -333,29 +326,29 @@ class AstroCheckPlugin(BaseToolPlugin):
             return ToolResult(
                 name=self.definition.name,
                 success=False,
-                output="astro check execution failed.",
+                output="svelte-check execution failed.",
                 issues_count=0,
             )
 
         return ToolResult(
             name=self.definition.name,
-            success=issues_count == 0,
+            success=success and issues_count == 0,
             output=None,
             issues_count=issues_count,
             issues=all_issues,
         )
 
     def fix(self, paths: list[str], options: dict[str, object]) -> NoReturn:
-        """Astro check does not support auto-fixing.
+        """Svelte-check does not support auto-fixing.
 
         Args:
             paths: Paths or files passed for completeness.
             options: Runtime options (unused).
 
         Raises:
-            NotImplementedError: Always, because astro check cannot fix issues.
+            NotImplementedError: Always, because svelte-check cannot fix issues.
         """
         raise NotImplementedError(
-            "Astro check cannot automatically fix issues. Type errors require "
-            "manual code changes.",
+            "svelte-check cannot automatically fix issues. Type errors and "
+            "linting issues require manual code changes.",
         )
