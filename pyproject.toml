@@ -79,7 +79,7 @@ test = [
   "assertpy>=1.1",
 ]
 typing = ["types-setuptools>=80.9.0.20251223", "types-tabulate>=0.9.0.20241207"]
-tools = ["semgrep>=1.85.0", "sqlfluff>=4.0.0"]
+tools = ["semgrep>=1.151.0", "sqlfluff>=4.0.0"]
 
 [project.scripts]
 lintro = "lintro.cli:main"
@@ -287,6 +287,12 @@ check_untyped_defs = true
 constraint-dependencies = [
   # Security fix: TOCTOU vulnerability in directory creation (dependabot alert #4)
   "virtualenv>=20.36.1",
+]
+override-dependencies = [
+  # semgrep 1.151.0 pins rich~=13.5.2 but lintro requires rich>=14.2.0.
+  # Safe: lintro invokes semgrep as a subprocess; rich version doesn't affect its behavior.
+  # TODO: Remove once semgrep drops the rich<14 pin (not tracked by Renovate).
+  "rich>=14.2.0",
 ]
 
 [tool.pydoclint]
