@@ -79,6 +79,11 @@ This script installs:
   - SQLFluff (SQL linter and formatter)
   - Taplo (TOML linter and formatter)
   - TypeScript (TypeScript compiler and type checker)
+  - Astro Check (Astro component type checker)
+  - Gitleaks (Secret detection scanner)
+  - Svelte Check (Svelte component type checker)
+  - tsc (TypeScript type checker)
+  - Vue-tsc (Vue TypeScript type checker)
 
 Use this script to set up a complete development environment.
 EOF

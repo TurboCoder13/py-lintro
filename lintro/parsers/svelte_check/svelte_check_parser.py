@@ -83,10 +83,13 @@ def _parse_ndjson_line(line: str) -> SvelteCheckIssue | None:
         start = data.get("start", {})
         end = data.get("end", {})
         start_line = int(start.get("line", 0))
-        start_col = int(start.get("column", 0))
+        start_col = int(start.get("character", 0))
         end_line = int(end.get("line", start_line))
-        end_col = int(end.get("column", start_col))
+        end_col = int(end.get("character", start_col))
         message = str(data.get("message", "")).strip()
+        code = data.get("code")
+        if code is not None:
+            code = str(code)
 
         return SvelteCheckIssue(
             file=file_path,
@@ -98,6 +101,7 @@ def _parse_ndjson_line(line: str) -> SvelteCheckIssue | None:
             ),
             severity=severity,
             message=message,
+            code=code,
         )
     except (ValueError, TypeError, AttributeError) as e:
         logger.debug(f"Failed to parse svelte-check NDJSON line: {e}")
@@ -223,8 +227,8 @@ def parse_svelte_check_output(output: str) -> list[SvelteCheckIssue]:
     Examples:
         >>> import json
         >>> data = {"type": "ERROR", "fn": "src/lib/B.svelte",
-        ...     "start": {"line": 15, "column": 5},
-        ...     "end": {"line": 15, "column": 10},
+        ...     "start": {"line": 15, "character": 5},
+        ...     "end": {"line": 15, "character": 10},
         ...     "message": "Type error"}
         >>> issues = parse_svelte_check_output(json.dumps(data))
         >>> len(issues)

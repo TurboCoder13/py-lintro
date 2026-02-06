@@ -25,8 +25,8 @@ def test_parse_ndjson_single_error() -> None:
         {
             "type": "ERROR",
             "fn": "src/lib/Button.svelte",
-            "start": {"line": 15, "column": 5},
-            "end": {"line": 15, "column": 10},
+            "start": {"line": 15, "character": 5},
+            "end": {"line": 15, "character": 10},
             "message": "Type 'string' is not assignable to type 'number'.",
         },
     )
@@ -47,8 +47,8 @@ def test_parse_ndjson_warning() -> None:
         {
             "type": "WARNING",
             "fn": "src/lib/Card.svelte",
-            "start": {"line": 8, "column": 1},
-            "end": {"line": 8, "column": 20},
+            "start": {"line": 8, "character": 1},
+            "end": {"line": 8, "character": 20},
             "message": "Unused CSS selector '.unused'.",
         },
     )
@@ -65,8 +65,8 @@ def test_parse_ndjson_multiple_lines() -> None:
             {
                 "type": "ERROR",
                 "fn": "src/lib/Button.svelte",
-                "start": {"line": 15, "column": 5},
-                "end": {"line": 15, "column": 10},
+                "start": {"line": 15, "character": 5},
+                "end": {"line": 15, "character": 10},
                 "message": "Type error.",
             },
         ),
@@ -74,8 +74,8 @@ def test_parse_ndjson_multiple_lines() -> None:
             {
                 "type": "WARNING",
                 "fn": "src/lib/Card.svelte",
-                "start": {"line": 8, "column": 1},
-                "end": {"line": 8, "column": 20},
+                "start": {"line": 8, "character": 1},
+                "end": {"line": 8, "character": 20},
                 "message": "Unused CSS selector.",
             },
         ),
@@ -94,8 +94,8 @@ def test_parse_ndjson_filename_field() -> None:
         {
             "type": "ERROR",
             "filename": "src/lib/Button.svelte",
-            "start": {"line": 10, "column": 3},
-            "end": {"line": 10, "column": 8},
+            "start": {"line": 10, "character": 3},
+            "end": {"line": 10, "character": 8},
             "message": "Type mismatch.",
         },
     )
@@ -111,8 +111,8 @@ def test_parse_ndjson_multiline_span() -> None:
         {
             "type": "ERROR",
             "fn": "src/lib/Button.svelte",
-            "start": {"line": 15, "column": 5},
-            "end": {"line": 18, "column": 10},
+            "start": {"line": 15, "character": 5},
+            "end": {"line": 18, "character": 10},
             "message": "Multi-line type error.",
         },
     )
@@ -129,8 +129,8 @@ def test_parse_ndjson_same_position() -> None:
         {
             "type": "ERROR",
             "fn": "src/lib/Button.svelte",
-            "start": {"line": 15, "column": 5},
-            "end": {"line": 15, "column": 5},
+            "start": {"line": 15, "character": 5},
+            "end": {"line": 15, "character": 5},
             "message": "Point error.",
         },
     )
@@ -147,8 +147,8 @@ def test_parse_ndjson_windows_paths() -> None:
         {
             "type": "ERROR",
             "fn": "src\\lib\\Button.svelte",
-            "start": {"line": 15, "column": 5},
-            "end": {"line": 15, "column": 10},
+            "start": {"line": 15, "character": 5},
+            "end": {"line": 15, "character": 10},
             "message": "Type mismatch.",
         },
     )
@@ -158,14 +158,67 @@ def test_parse_ndjson_windows_paths() -> None:
     assert_that(issues[0].file).is_equal_to("src/lib/Button.svelte")
 
 
+def test_parse_ndjson_code_field() -> None:
+    """Parse NDJSON with a code field."""
+    output = json.dumps(
+        {
+            "type": "ERROR",
+            "fn": "src/lib/Button.svelte",
+            "start": {"line": 15, "character": 5},
+            "end": {"line": 15, "character": 10},
+            "message": "Type 'string' is not assignable to type 'number'.",
+            "code": "ts-2322",
+        },
+    )
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].code).is_equal_to("ts-2322")
+
+
+def test_parse_ndjson_no_code_field() -> None:
+    """NDJSON without code field leaves code as None."""
+    output = json.dumps(
+        {
+            "type": "ERROR",
+            "fn": "src/lib/Button.svelte",
+            "start": {"line": 15, "character": 5},
+            "end": {"line": 15, "character": 10},
+            "message": "Type error.",
+        },
+    )
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].code).is_none()
+
+
+def test_parse_ndjson_numeric_code_field() -> None:
+    """NDJSON with numeric code is coerced to string."""
+    output = json.dumps(
+        {
+            "type": "ERROR",
+            "fn": "src/lib/Button.svelte",
+            "start": {"line": 15, "character": 5},
+            "end": {"line": 15, "character": 10},
+            "message": "Type error.",
+            "code": 2322,
+        },
+    )
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].code).is_equal_to("2322")
+
+
 def test_parse_ndjson_invalid_json_skipped() -> None:
     """Non-JSON lines are skipped by NDJSON parser."""
     output = "not valid json\n" + json.dumps(
         {
             "type": "ERROR",
             "fn": "src/lib/Button.svelte",
-            "start": {"line": 15, "column": 5},
-            "end": {"line": 15, "column": 10},
+            "start": {"line": 15, "character": 5},
+            "end": {"line": 15, "character": 10},
             "message": "Type error.",
         },
     )

@@ -121,6 +121,7 @@ def prepare_execution(
     - Discover files matching patterns (returns early if none found)
     - Verify tool version requirements (skipped when no files match)
     - Compute working directory and relative paths
+    - Compute timeout for execution
 
     Args:
         paths: Input paths to process.
