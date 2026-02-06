@@ -148,7 +148,12 @@
     {
       "name": "vue_tsc",
       "version": "3.2.4",
-      "install": { "type": "npm", "package": "vue-tsc" },
+      "install": {
+        "type": "npm",
+        "package": "vue-tsc",
+        "bin": "vue-tsc",
+        "version_command": ["bun", "-e", "console.log(require('vue-tsc/package.json').version)"]
+      },
       "tier": "tools"
     },
     {
