@@ -82,11 +82,12 @@ def test_check_no_astro_config_proceeds_with_defaults(
         astro_check_plugin,
         "_run_subprocess",
         side_effect=_mock_subprocess_success,
-    ):
+    ) as mock_run:
         result = astro_check_plugin.check([str(tmp_path)], {})
 
     assert_that(result.success).is_true()
     assert_that(result.issues_count).is_equal_to(0)
+    mock_run.assert_called_once()
 
 
 def test_check_with_mocked_subprocess_success(
