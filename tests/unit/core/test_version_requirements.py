@@ -86,6 +86,8 @@ def test_compare_versions(version1: str, version2: str, expected: int) -> None:
         ("semgrep", "semgrep 1.148.0", "1.148.0"),
         ("ruff", "ruff 0.14.4", "0.14.4"),
         ("yamllint", "yamllint 1.37.1", "1.37.1"),
+        # Astro: actual output has "v" prefix and double space
+        ("astro-check", "astro  v5.5.3", "5.5.3"),
         # Clippy: rustc output should extract Rust version directly
         ("clippy", "rustc 1.92.0 (ded5c06cf 2025-12-08)", "1.92.0"),
         # Clippy: clippy output should convert 0.1.X to 1.X.0
@@ -152,6 +154,17 @@ def test_get_min_version_raises_keyerror_for_unknown_tool() -> None:
     """Test that get_min_version raises KeyError for unknown tools."""
     with pytest.raises(KeyError, match="not found"):
         get_min_version("nonexistent_tool")  # type: ignore[arg-type]
+
+
+def test_get_tool_version_supports_companion_packages() -> None:
+    """Companion npm packages should resolve via get_tool_version."""
+    repo_root = Path(__file__).resolve().parents[3]
+    package_json = json.loads((repo_root / "package.json").read_text())
+    expected = package_json["devDependencies"]["@astrojs/check"].lstrip("^~")
+
+    version = get_tool_version("@astrojs/check")
+
+    assert_that(version).is_equal_to(expected)
 
 
 def test_tool_versions_uses_toolname_enum_keys() -> None:
@@ -300,6 +313,31 @@ def test_check_tool_version_success(mock_run: MagicMock) -> None:
     assert_that(result.min_version).is_equal_to(min_hadolint)
     assert_that(result.version_check_passed).is_true()
     assert_that(result.error_message).is_none()
+
+
+@patch("subprocess.run")
+def test_check_tool_version_hyphenated_alias_uses_requirements(
+    mock_run: MagicMock,
+) -> None:
+    """Hyphenated tool names should resolve to canonical version requirements."""
+    min_astro = get_minimum_versions()["astro_check"]
+    mock_run.return_value = type(
+        "MockResult",
+        (),
+        {
+            "returncode": 0,
+            "stdout": f"astro {min_astro}",
+            "stderr": "",
+        },
+    )()
+
+    result = check_tool_version("astro-check", ["bunx", "astro"])
+
+    assert_that(result.name).is_equal_to("astro-check")
+    assert_that(result.current_version).is_equal_to(min_astro)
+    assert_that(result.min_version).is_equal_to(min_astro)
+    assert_that(result.install_hint).contains("astro")
+    assert_that(result.version_check_passed).is_true()
 
 
 @patch("subprocess.run")

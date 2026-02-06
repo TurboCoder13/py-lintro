@@ -936,6 +936,49 @@ lintro format --tools oxfmt --tool-options "oxfmt:ignore_path=.oxfmtignore"
 lintro format --tools oxfmt --tool-options "oxfmt:timeout=60"
 ```
 
+### Web Framework Tools
+
+#### Astro Check Configuration
+
+Astro Check is Astro's built-in type checking command that provides TypeScript
+diagnostics for `.astro` files including frontmatter scripts, component props, and
+template expressions.
+
+**Installation:**
+
+```bash
+# bun (recommended)
+bun add astro
+
+# npm
+npm install astro
+```
+
+**Native Config:** `astro.config.mjs`, `astro.config.ts`, or `astro.config.js`
+
+Astro check uses your project's `astro.config` and `tsconfig.json` for configuration. No
+additional configuration is needed for Lintro.
+
+**Available Options via `--tool-options`:**
+
+| Option    | Type    | Description                                 |
+| --------- | ------- | ------------------------------------------- |
+| `root`    | string  | Root directory for the Astro project        |
+| `timeout` | integer | Execution timeout in seconds (default: 120) |
+
+**Usage Examples:**
+
+```bash
+# Check Astro project
+lintro check src/ --tools astro-check
+
+# Check with specific root directory
+lintro check . --tools astro-check --tool-options "astro-check:root=./packages/web"
+
+# Auto-install dependencies before checking
+lintro check src/ --tools astro-check --auto-install
+```
+
 ### SQL Tools
 
 #### SQLFluff Configuration

@@ -78,6 +78,7 @@ system.
 | Tool                                                                                                                                                          | Language            | Auto-fix |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | -------- |
 | [![Actionlint](https://img.shields.io/badge/Actionlint-lint-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)                         | ⚙️ GitHub Actions   | -        |
+| [![Astro](https://img.shields.io/badge/Astro-type%20check-ff5d01?logo=astro&logoColor=white)](https://astro.build/)                                           | 🚀 Astro            | -        |
 | [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)                                 | 🐍 Python           | -        |
 | [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                                        | 🐍 Python           | ✅       |
 | [![Clippy](https://img.shields.io/badge/Clippy-lint-000000?logo=rust&logoColor=white)](https://github.com/rust-lang/rust-clippy)                              | 🦀 Rust             | ✅       |
@@ -140,6 +141,7 @@ For full functionality, install these additional tools:
   [GitHub Releases](https://github.com/tamasfe/taplo/releases)
 - **TypeScript** - `brew install typescript`, `bun add -g typescript`, or
   `npm install -g typescript`
+- **Astro** - `bun add astro` or `npm install astro`
 
 Check all tool versions with: `lintro list-tools`
 

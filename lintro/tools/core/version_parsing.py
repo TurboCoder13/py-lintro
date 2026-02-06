@@ -31,6 +31,7 @@ VERSION_NUMBER_PATTERN: str = r"(\d+(?:\.\d+)*)"
 
 # Tools that use the simple version number pattern
 TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
+    ToolName.ASTRO_CHECK,
     ToolName.BANDIT,
     ToolName.CARGO_AUDIT,
     ToolName.GITLEAKS,
@@ -186,12 +187,27 @@ def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
     minimum_versions = get_minimum_versions()
     install_hints = get_install_hints()
 
-    min_version = minimum_versions.get(tool_name, VERSION_UNKNOWN)
-    install_hint = install_hints.get(
-        tool_name,
-        f"Install {tool_name} and ensure it's in PATH",
-    )
-    has_requirements = tool_name in minimum_versions
+    normalized_tool_name: ToolName | None = None
+    try:
+        normalized_tool_name = normalize_tool_name(tool_name)
+    except ValueError:
+        normalized_tool_name = None
+
+    lookup_names = [tool_name]
+    if normalized_tool_name is not None:
+        canonical_name = normalized_tool_name.value
+        if canonical_name not in lookup_names:
+            lookup_names.append(canonical_name)
+
+    min_version = VERSION_UNKNOWN
+    install_hint = f"Install {tool_name} and ensure it's in PATH"
+    has_requirements = False
+    for lookup_name in lookup_names:
+        if lookup_name in minimum_versions:
+            min_version = minimum_versions[lookup_name]
+            has_requirements = True
+            install_hint = install_hints.get(lookup_name, install_hint)
+            break
 
     info = ToolVersionInfo(
         name=tool_name,
@@ -221,7 +237,10 @@ def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
 
         # Extract version from output
         output = result.stdout + result.stderr
-        info.current_version = extract_version_from_output(output, tool_name)
+        parser_tool_name: str | ToolName = (
+            normalized_tool_name if normalized_tool_name is not None else tool_name
+        )
+        info.current_version = extract_version_from_output(output, parser_tool_name)
 
         if not info.current_version:
             info.error_message = (

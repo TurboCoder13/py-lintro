@@ -12,6 +12,7 @@ class ToolName(StrEnum):
     """Supported tool identifiers in lower-case values."""
 
     ACTIONLINT = auto()
+    ASTRO_CHECK = auto()
     BANDIT = auto()
     BLACK = auto()
     CARGO_AUDIT = auto()
@@ -51,8 +52,10 @@ def normalize_tool_name(value: str | ToolName) -> ToolName:
     """
     if isinstance(value, ToolName):
         return value
+    # Normalize hyphens to underscores (e.g., "astro-check" -> "astro_check")
+    normalized = value.strip().replace("-", "_")
     try:
-        return ToolName[value.upper()]
+        return ToolName[normalized.upper()]
     except KeyError as err:
         raise ValueError(
             f"Unknown tool name: {value!r}. Supported tools: {list(ToolName)}",

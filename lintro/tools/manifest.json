@@ -8,6 +8,12 @@
       "tier": "tools"
     },
     {
+      "name": "astro_check",
+      "version": "5.5.3",
+      "install": { "type": "npm", "package": "astro", "bin": "astro" },
+      "tier": "tools"
+    },
+    {
       "name": "bandit",
       "version": "1.9.2",
       "install": { "type": "pip", "package": "bandit" },

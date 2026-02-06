@@ -51,6 +51,24 @@ TSC_DEFAULT_TIMEOUT: int = 60
 TSC_DEFAULT_PRIORITY: int = 82  # Same as mypy (type checkers)
 TSC_FILE_PATTERNS: list[str] = ["*.ts", "*.tsx", "*.mts", "*.cts"]
 
+# Framework config files that indicate tsc should defer to framework-specific checker
+# Note: vite.config.ts is NOT included for Vue because it's used by many
+# non-Vue projects (e.g., React, vanilla TS, Svelte without svelte.config)
+FRAMEWORK_CONFIGS: dict[str, tuple[str, list[str]]] = {
+    "Astro": (
+        "astro-check",
+        ["astro.config.mjs", "astro.config.ts", "astro.config.js"],
+    ),
+    "Vue": (
+        "vue-tsc",
+        ["vue.config.js", "vue.config.ts"],
+    ),
+    "Svelte": (
+        "svelte-check",
+        ["svelte.config.js", "svelte.config.ts"],
+    ),
+}
+
 
 @register_tool
 @dataclass
@@ -171,6 +189,31 @@ class TscPlugin(BaseToolPlugin):
         tsconfig = cwd / "tsconfig.json"
         return tsconfig if tsconfig.exists() else None
 
+    def _detect_framework_project(self, cwd: Path) -> tuple[str, str] | None:
+        """Detect if the project uses a framework with its own type checker.
+
+        Frameworks like Astro, Vue, and Svelte have their own type checkers
+        that handle framework-specific syntax (e.g., .astro, .vue, .svelte files).
+        When these frameworks are detected, tsc should skip and defer to the
+        framework-specific tool.
+
+        Args:
+            cwd: Working directory to search for framework config files.
+
+        Returns:
+            Tuple of (framework_name, recommended_tool) if detected, None otherwise.
+        """
+        for framework_name, (tool_name, config_files) in FRAMEWORK_CONFIGS.items():
+            for config_file in config_files:
+                if (cwd / config_file).exists():
+                    logger.debug(
+                        "[tsc] Detected {} project (found {})",
+                        framework_name,
+                        config_file,
+                    )
+                    return (framework_name, tool_name)
+        return None
+
     def _create_temp_tsconfig(
         self,
         base_tsconfig: Path,
@@ -285,6 +328,10 @@ class TscPlugin(BaseToolPlugin):
 
         To use native tsconfig.json file selection instead, set use_project_files=True.
 
+        Note: For projects using Astro, Vue, or Svelte, tsc will skip and recommend
+        using the framework-specific type checker (astro-check, vue-tsc, svelte-check)
+        which handles framework-specific syntax.
+
         Args:
             paths: List of file or directory paths to check.
             options: Runtime options that override defaults.
@@ -295,6 +342,36 @@ class TscPlugin(BaseToolPlugin):
         # Merge runtime options
         merged_options = dict(self.options)
         merged_options.update(options)
+
+        # Determine working directory for framework detection
+        # Verify the path exists before using it (paths[0] could be a glob or missing)
+        cwd_for_detection = Path.cwd()
+        if paths:
+            candidate = Path(paths[0]).resolve()
+            if candidate.exists():
+                if candidate.is_file():
+                    cwd_for_detection = candidate.parent
+                else:
+                    cwd_for_detection = candidate
+            elif candidate.parent.exists():
+                cwd_for_detection = candidate.parent
+
+        # Check for framework-specific projects that have their own type checkers
+        framework_info = self._detect_framework_project(cwd_for_detection)
+        if framework_info:
+            framework_name, recommended_tool = framework_info
+            return ToolResult(
+                name=self.definition.name,
+                success=True,
+                output=(
+                    f"SKIPPED: {framework_name} project detected.\n"
+                    f"{framework_name} has its own type checker that handles "
+                    f"framework-specific syntax.\n"
+                    f"Use '{recommended_tool}' instead: "
+                    f"lintro check . --tools {recommended_tool}"
+                ),
+                issues_count=0,
+            )
 
         # Use shared preparation for version check, path validation, file discovery
         ctx = self._prepare_execution(

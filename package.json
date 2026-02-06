@@ -14,6 +14,8 @@
     "url": "git+https://github.com/lgtm-hq/py-lintro.git"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "astro": "^5.5.3",
     "markdownlint-cli2": "^0.17.2",
     "oxfmt": "^0.27.0",
     "oxlint": "^1.42.0",

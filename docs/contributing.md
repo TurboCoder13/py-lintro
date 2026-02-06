@@ -154,6 +154,20 @@ consistent UX and maintainable implementation.
   For OS/arch tarballs, encapsulate download/extract in a helper.
 - Verify checksums when possible.
 
+### Tool Version Sources (Including Companion Packages)
+
+- `lintro/tools/manifest.json` is the canonical source of external tool versions used by
+  Docker/CI. Add new tool binaries here.
+- npm-managed tool versions come from `package.json` via `_NPM_PACKAGE_TO_TOOL` in
+  `lintro/_tool_versions.py`.
+- If a tool requires companion npm packages (for example, a checker plugin that ships
+  alongside the main tool), add those packages to `package.json` and to
+  `_COMPANION_NPM_PACKAGES` in `lintro/_tool_versions.py`.
+- Use `get_tool_version("<npm-package-name>")` in `scripts/utils/install-tools.sh` to
+  resolve companion package versions.
+- Do not add companion packages to the manifest unless they provide a standalone binary
+  tool.
+
 4. Docs checklist
 
 - Update `README.md` Supported Tools table and CLI examples.

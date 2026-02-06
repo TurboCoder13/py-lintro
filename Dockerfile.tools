@@ -138,6 +138,7 @@ RUN echo "=== Verifying all tools ===" && \
     echo "sqlfluff: $(sqlfluff --version)" && \
     echo "taplo: $(taplo --version)" && \
     echo "tsc: $(tsc --version)" && \
+    echo "astro: $(astro --version)" && \
     echo "yamllint: $(yamllint --version)" && \
     echo "=== All tools verified! ==="
 

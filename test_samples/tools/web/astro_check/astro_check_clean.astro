@@ -1,0 +1,30 @@
+---
+// astro_check_clean.astro - Valid Astro code without type errors
+
+interface Props {
+    title: string;
+    count?: number;
+}
+
+const { title, count = 0 } = Astro.props;
+
+const message: string = "Welcome to Astro";
+
+function add(a: number, b: number): number {
+    return a + b;
+}
+
+const result: number = add(1, 2);
+---
+
+<html>
+  <head>
+    <title>{title}</title>
+  </head>
+  <body>
+    <h1>{title}</h1>
+    <p>{message}</p>
+    <span>Count: {count}</span>
+    <span>Result: {result}</span>
+  </body>
+</html>

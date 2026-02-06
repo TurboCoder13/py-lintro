@@ -1,0 +1,32 @@
+---
+// astro_check_violations.astro - Deliberate Astro type errors for testing
+
+// Type mismatch: string assigned to number
+const count: number = "hello";
+
+// Missing required prop type
+interface Props {
+    title: string;
+    required: boolean;
+}
+
+// Using undefined variable
+const message = undefinedVariable;
+
+// Wrong type in assignment
+function add(a: number, b: number): number {
+    return a + b;
+}
+const result: string = add(1, 2);
+---
+
+<html>
+  <head>
+    <title>{title}</title>
+  </head>
+  <body>
+    <h1>{count}</h1>
+    <p>{message}</p>
+    <span>{result}</span>
+  </body>
+</html>

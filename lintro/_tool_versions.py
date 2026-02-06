@@ -61,6 +61,7 @@ TOOL_VERSIONS: dict[ToolName | str, str] = {
 # Mapping from npm package names to ToolName for npm-managed tools
 # These versions are read from package.json at runtime
 _NPM_PACKAGE_TO_TOOL: dict[str, ToolName] = {
+    "astro": ToolName.ASTRO_CHECK,
     "typescript": ToolName.TSC,
     "prettier": ToolName.PRETTIER,
     "markdownlint-cli2": ToolName.MARKDOWNLINT,
@@ -77,11 +78,19 @@ _TOOL_TO_NPM_PACKAGE: dict[ToolName, str] = {
 # Fallback npm tool versions - used when package.json is not found.
 # CI should verify these match package.json to prevent drift.
 _FALLBACK_NPM_VERSIONS: dict[ToolName, str] = {
+    ToolName.ASTRO_CHECK: "5.5.3",
     ToolName.TSC: "5.9.3",
     ToolName.PRETTIER: "3.8.1",
     ToolName.MARKDOWNLINT: "0.17.2",
     ToolName.OXLINT: "1.42.0",
     ToolName.OXFMT: "0.27.0",
+}
+
+# Companion npm packages - packages that support a tool but have separate versions
+# These are NOT mapped to ToolName (they're companion packages, not tools themselves)
+# Used by install scripts to get the correct version for related packages
+_COMPANION_NPM_PACKAGES: dict[str, str] = {
+    "@astrojs/check": "0.9.6",  # Type checking companion for astro
 }
 
 
@@ -131,19 +140,15 @@ def _load_manifest_versions() -> tuple[dict[ToolName, str], dict[str, ToolName]]
 
 
 @lru_cache(maxsize=1)
-def _load_npm_versions() -> dict[ToolName, str]:
-    """Load npm tool versions from package.json with fallback.
+def _load_package_json() -> dict[str, str]:
+    """Load all npm package versions from package.json.
 
-    Tries multiple paths to find package.json, falling back to hardcoded
-    versions if not found. This handles both development environments and
-    pip-installed packages.
-
-    This is cached to avoid repeated file reads.
+    Tries multiple paths to find package.json. Returns all dependencies
+    with versions stripped of ^ or ~ prefixes.
 
     Returns:
-        Dictionary mapping ToolName to version string for npm-managed tools.
+        Dictionary mapping npm package names to version strings.
     """
-    # Try multiple paths relative to module location
     possible_paths = [
         # Development: py-lintro/package.json
         Path(__file__).parent.parent / "package.json",
@@ -159,21 +164,38 @@ def _load_npm_versions() -> dict[ToolName, str]:
                 deps = data.get("dependencies", {})
                 all_deps = {**deps, **dev_deps}
 
-                versions: dict[ToolName, str] = {}
-                for npm_pkg, tool_name in _NPM_PACKAGE_TO_TOOL.items():
-                    if npm_pkg in all_deps:
-                        # Strip ^ or ~ prefix from version
-                        versions[tool_name] = all_deps[npm_pkg].lstrip("^~")
-
-                if versions:
-                    _logger.debug(
-                        "Loaded %d npm versions from %s",
-                        len(versions),
-                        package_json_path,
-                    )
-                    return versions
+                # Strip ^ or ~ prefix from all versions
+                return {pkg: ver.lstrip("^~") for pkg, ver in all_deps.items()}
             except (json.JSONDecodeError, OSError):
                 continue
+
+    return {}
+
+
+@lru_cache(maxsize=1)
+def _load_npm_versions() -> dict[ToolName, str]:
+    """Load npm tool versions from package.json with fallback.
+
+    Tries multiple paths to find package.json, falling back to hardcoded
+    versions if not found. This handles both development environments and
+    pip-installed packages.
+
+    This is cached to avoid repeated file reads.
+
+    Returns:
+        Dictionary mapping ToolName to version string for npm-managed tools.
+    """
+    all_deps = _load_package_json()
+
+    if all_deps:
+        versions: dict[ToolName, str] = {}
+        for npm_pkg, tool_name in _NPM_PACKAGE_TO_TOOL.items():
+            if npm_pkg in all_deps:
+                versions[tool_name] = all_deps[npm_pkg]
+
+        if versions:
+            _logger.debug("Loaded %d npm versions from package.json", len(versions))
+            return versions
 
     # Fallback: use hardcoded minimum versions when package.json not found
     _logger.debug("package.json not found, using fallback npm versions")
@@ -185,12 +207,16 @@ def get_tool_version(tool_name: ToolName | str) -> str | None:
 
     Args:
         tool_name: Name of the tool (ToolName enum or string).
-            Also accepts npm package names like "typescript" for "tsc".
+            Also accepts npm package names like "typescript" for "tsc",
+            or companion npm packages like "@astrojs/check".
 
     Returns:
         Version string if found, None otherwise.
     """
     manifest_versions, manifest_npm_map = _load_manifest_versions()
+
+    # Store original string for fallback npm package lookup
+    original_name = tool_name if isinstance(tool_name, str) else None
 
     # Convert string to ToolName if it's an npm package alias
     if isinstance(tool_name, str):
@@ -202,6 +228,9 @@ def get_tool_version(tool_name: ToolName | str) -> str | None:
             try:
                 tool_name = normalize_tool_name(tool_name)
             except ValueError:
+                # Not a known tool - try looking up as raw npm package
+                if original_name:
+                    return _get_npm_package_version(original_name)
                 return None
 
     # Check manifest first (single source of truth when available)
@@ -215,6 +244,27 @@ def get_tool_version(tool_name: ToolName | str) -> str | None:
 
     # Check non-npm tools
     return TOOL_VERSIONS.get(tool_name)
+
+
+def _get_npm_package_version(package_name: str) -> str | None:
+    """Get version for a raw npm package from package.json.
+
+    This is used for companion packages (like @astrojs/check) that are needed
+    for installation but aren't mapped to a ToolName.
+
+    Args:
+        package_name: The npm package name (e.g., "@astrojs/check").
+
+    Returns:
+        Version string if found in package.json or fallback, None otherwise.
+    """
+    # Try package.json first
+    all_deps = _load_package_json()
+    if package_name in all_deps:
+        return all_deps[package_name]
+
+    # Fallback to companion packages dict
+    return _COMPANION_NPM_PACKAGES.get(package_name)
 
 
 def get_min_version(tool_name: ToolName) -> str:

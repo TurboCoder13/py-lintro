@@ -55,6 +55,12 @@ def test_normalize_tool_name_case_insensitive() -> None:
     assert_that(normalize_tool_name("Ruff")).is_equal_to(ToolName.RUFF)
 
 
+def test_normalize_tool_name_hyphenated() -> None:
+    """normalize_tool_name converts hyphenated names to underscored ToolName."""
+    assert_that(normalize_tool_name("astro-check")).is_equal_to(ToolName.ASTRO_CHECK)
+    assert_that(normalize_tool_name("cargo-audit")).is_equal_to(ToolName.CARGO_AUDIT)
+
+
 def test_normalize_tool_name_passthrough() -> None:
     """normalize_tool_name returns ToolName unchanged."""
     assert_that(normalize_tool_name(ToolName.RUFF)).is_equal_to(ToolName.RUFF)

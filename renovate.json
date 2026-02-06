@@ -99,7 +99,9 @@
         "shfmt",
         "mvdan/sh",
         "taplo",
-        "tamasfe/taplo"
+        "tamasfe/taplo",
+        "astro",
+        "@astrojs/check"
       ],
       "automerge": false
     }
@@ -206,6 +208,30 @@
       "datasourceTemplate": "github-releases",
       "packageNameTemplate": "rhysd/actionlint",
       "extractVersionTemplate": "^v(?<version>.*)$"
+    },
+    {
+      "description": "Update astro version in _tool_versions.py",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "lintro/_tool_versions\\.py"
+      ],
+      "matchStrings": [
+        "ToolName\\.ASTRO_CHECK:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "npm",
+      "packageNameTemplate": "astro"
+    },
+    {
+      "description": "Update @astrojs/check version in _tool_versions.py",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "lintro/_tool_versions\\.py"
+      ],
+      "matchStrings": [
+        "\"@astrojs/check\":\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "npm",
+      "packageNameTemplate": "@astrojs/check"
     },
     {
       "description": "Update gitleaks version in _tool_versions.py",
