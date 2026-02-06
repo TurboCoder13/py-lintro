@@ -239,6 +239,7 @@ def test_all_external_tools_registered_in_tool_versions() -> None:
             ToolName.SVELTE_CHECK,
             ToolName.TAPLO,
             ToolName.TSC,
+            ToolName.VUE_TSC,
         }
         assert_that(set(all_versions.keys())).is_equal_to(expected_all_tools)
 
