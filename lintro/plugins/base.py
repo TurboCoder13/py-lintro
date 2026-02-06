@@ -363,7 +363,7 @@ class BaseToolPlugin(ABC):
         3. Discover files matching patterns (returns early if none found)
         4. Verify tool version requirements (skipped when no files match)
         5. Compute working directory and relative paths
-        6. Calculate timeout (based on options/file count)
+        6. Calculate timeout based on provided options
 
         Args:
             paths: Input paths to process.

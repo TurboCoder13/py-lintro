@@ -31,23 +31,23 @@ VERSION_NUMBER_PATTERN: str = r"(\d+(?:\.\d+)*)"
 
 # Tools that use the simple version number pattern
 TOOLS_WITH_SIMPLE_VERSION_PATTERN: set[ToolName] = {
+    ToolName.ACTIONLINT,
     ToolName.ASTRO_CHECK,
     ToolName.BANDIT,
-    ToolName.SVELTE_CHECK,
     ToolName.CARGO_AUDIT,
     ToolName.GITLEAKS,
     ToolName.HADOLINT,
-    ToolName.PYDOCLINT,
-    ToolName.ACTIONLINT,
     ToolName.OXFMT,
     ToolName.OXLINT,
     ToolName.PRETTIER,
+    ToolName.PYDOCLINT,
     ToolName.RUSTC,
     ToolName.RUSTFMT,
     ToolName.SEMGREP,
     ToolName.SHELLCHECK,
     ToolName.SHFMT,
     ToolName.SQLFLUFF,
+    ToolName.SVELTE_CHECK,
     ToolName.TAPLO,
     ToolName.VUE_TSC,
 }
