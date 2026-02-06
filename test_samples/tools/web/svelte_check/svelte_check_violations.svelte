@@ -7,7 +7,7 @@
     // Using undefined variable
     const message = undefinedVariable;
 
-    // Wrong return type
+    // Type mismatch: assigning number (from add) to string-typed result
     function add(a: number, b: number): number {
         return a + b;
     }

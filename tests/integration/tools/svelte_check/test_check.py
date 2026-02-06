@@ -104,6 +104,8 @@ def test_check_empty_directory(
     result = svelte_check_plugin.check([str(tmp_path)], {})
 
     assert_that(result).is_not_none()
+    assert_that(result.success).is_true()
+    assert_that(result.issues_count).is_equal_to(0)
 
 
 # --- Tests for SvelteCheckPlugin.set_options method ---

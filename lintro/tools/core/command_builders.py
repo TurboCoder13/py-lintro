@@ -371,6 +371,7 @@ class NodeJSBuilder(CommandBuilder):
             self._package_names = {
                 ToolName.ASTRO_CHECK: "astro",
                 ToolName.MARKDOWNLINT: "markdownlint-cli2",
+                ToolName.SVELTE_CHECK: "svelte-check",
                 ToolName.TSC: "typescript",
                 ToolName.VUE_TSC: "vue-tsc",
             }

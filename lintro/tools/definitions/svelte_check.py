@@ -331,7 +331,7 @@ class SvelteCheckPlugin(BaseToolPlugin):
 
         return ToolResult(
             name=self.definition.name,
-            success=issues_count == 0,
+            success=success and issues_count == 0,
             output=None,
             issues_count=issues_count,
             issues=all_issues,
