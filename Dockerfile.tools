@@ -139,6 +139,7 @@ RUN echo "=== Verifying all tools ===" && \
     echo "taplo: $(taplo --version)" && \
     echo "tsc: $(tsc --version)" && \
     echo "astro: $(astro --version)" && \
+    echo "svelte-check: $(svelte-check --version)" && \
     echo "vue-tsc: $(vue-tsc --version)" && \
     echo "yamllint: $(yamllint --version)" && \
     echo "=== All tools verified! ==="
