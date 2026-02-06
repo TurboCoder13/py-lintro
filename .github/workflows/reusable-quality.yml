@@ -65,6 +65,9 @@ jobs:
       - name: Verify manifest sync
         run: python3 scripts/ci/verify-manifest-sync.py
 
+      - name: Verify tool version sync
+        run: python3 scripts/ci/verify-tool-version-sync.py
+
       - name: Sync dependencies
         run: uv sync --dev --no-progress
 
