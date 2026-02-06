@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 
 from loguru import logger
@@ -9,10 +10,9 @@ from loguru import logger
 from lintro.parsers.base_parser import strip_ansi_codes
 from lintro.parsers.svelte_check.svelte_check_issue import SvelteCheckIssue
 
-# Pattern for svelte-check machine-verbose output:
+# Legacy fallback pattern for plain-text machine-verbose output:
 # <file>:<startLine>:<startCol>:<endLine>:<endCol> <severity> <message>
-# Example: src/lib/Button.svelte:15:5:15:10 Error Type 'string' is not assignable
-MACHINE_VERBOSE_PATTERN = re.compile(
+_LEGACY_MACHINE_VERBOSE_PATTERN = re.compile(
     r"^(?P<file>.+?):"
     r"(?P<start_line>\d+):"
     r"(?P<start_col>\d+):"
@@ -53,8 +53,61 @@ def _normalize_severity(severity: str) -> str:
     return "error"  # Default to error for unknown
 
 
-def _parse_machine_verbose_line(line: str) -> SvelteCheckIssue | None:
-    """Parse a machine-verbose format line.
+def _parse_ndjson_line(line: str) -> SvelteCheckIssue | None:
+    """Parse a machine-verbose NDJSON line.
+
+    Modern svelte-check --output machine-verbose emits NDJSON (one JSON object
+    per line). Each object contains "type" (severity), "fn" or "filename",
+    "start"/"end" position objects, and "message".
+
+    Args:
+        line: A single line of svelte-check NDJSON output.
+
+    Returns:
+        A SvelteCheckIssue instance or None if the line is not valid NDJSON.
+    """
+    try:
+        data = json.loads(line)
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    try:
+        severity = _normalize_severity(data.get("type", "error"))
+        file_path = (data.get("fn") or data.get("filename", "")).replace("\\", "/")
+        if not file_path:
+            return None
+
+        start = data.get("start", {})
+        end = data.get("end", {})
+        start_line = int(start.get("line", 0))
+        start_col = int(start.get("column", 0))
+        end_line = int(end.get("line", start_line))
+        end_col = int(end.get("column", start_col))
+        message = str(data.get("message", "")).strip()
+
+        return SvelteCheckIssue(
+            file=file_path,
+            line=start_line,
+            column=start_col,
+            end_line=end_line if end_line != start_line else None,
+            end_column=(
+                end_col if (end_line != start_line or end_col != start_col) else None
+            ),
+            severity=severity,
+            message=message,
+        )
+    except (ValueError, TypeError, AttributeError) as e:
+        logger.debug(f"Failed to parse svelte-check NDJSON line: {e}")
+        return None
+
+
+def _parse_legacy_machine_verbose_line(line: str) -> SvelteCheckIssue | None:
+    """Parse a legacy plain-text machine-verbose format line.
+
+    Fallback for older svelte-check versions that emit plain-text instead of NDJSON.
 
     Args:
         line: A single line of svelte-check output.
@@ -62,7 +115,7 @@ def _parse_machine_verbose_line(line: str) -> SvelteCheckIssue | None:
     Returns:
         A SvelteCheckIssue instance or None if the line doesn't match.
     """
-    match = MACHINE_VERBOSE_PATTERN.match(line)
+    match = _LEGACY_MACHINE_VERBOSE_PATTERN.match(line)
     if not match:
         return None
 
@@ -87,7 +140,7 @@ def _parse_machine_verbose_line(line: str) -> SvelteCheckIssue | None:
             message=message,
         )
     except (ValueError, AttributeError) as e:
-        logger.debug(f"Failed to parse svelte-check machine-verbose line: {e}")
+        logger.debug(f"Failed to parse svelte-check legacy machine-verbose line: {e}")
         return None
 
 
@@ -140,8 +193,13 @@ def _parse_line(line: str) -> SvelteCheckIssue | None:
     if line.startswith(("=====", "svelte-check", "Loading", "Diagnostics")):
         return None
 
-    # Try machine-verbose format first
-    issue = _parse_machine_verbose_line(line)
+    # Try NDJSON format first (modern svelte-check --output machine-verbose)
+    issue = _parse_ndjson_line(line)
+    if issue:
+        return issue
+
+    # Try legacy plain-text machine-verbose format
+    issue = _parse_legacy_machine_verbose_line(line)
     if issue:
         return issue
 
@@ -163,8 +221,12 @@ def parse_svelte_check_output(output: str) -> list[SvelteCheckIssue]:
         A list of SvelteCheckIssue instances parsed from the output.
 
     Examples:
-        >>> output = "src/lib/Button.svelte:15:5:15:10 Error Type error"
-        >>> issues = parse_svelte_check_output(output)
+        >>> import json
+        >>> data = {"type": "ERROR", "fn": "src/lib/B.svelte",
+        ...     "start": {"line": 15, "column": 5},
+        ...     "end": {"line": 15, "column": 10},
+        ...     "message": "Type error"}
+        >>> issues = parse_svelte_check_output(json.dumps(data))
         >>> len(issues)
         1
     """

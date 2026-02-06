@@ -4,9 +4,32 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
+
+
+def _check_command_version(cmd: Sequence[str], timeout: int) -> bool:
+    """Run a version command and return whether it succeeded.
+
+    Args:
+        cmd: Command and arguments to execute.
+        timeout: Timeout in seconds for the subprocess.
+
+    Returns:
+        True if the command exits with returncode 0, False otherwise.
+    """
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, OSError):
+        return False
 
 
 def svelte_check_is_available() -> bool:
@@ -19,49 +42,22 @@ def svelte_check_is_available() -> bool:
     Returns:
         True if svelte-check is installed and working, False otherwise.
     """
-    # Try direct svelte-check command first
-    if shutil.which("svelte-check") is not None:
-        try:
-            result = subprocess.run(
-                ["svelte-check", "--version"],
-                capture_output=True,
-                timeout=10,
-                check=False,
-            )
-            if result.returncode == 0:
-                return True
-        except (subprocess.TimeoutExpired, OSError):
-            pass
+    if shutil.which("svelte-check") is not None and _check_command_version(
+        ["svelte-check", "--version"],
+        timeout=10,
+    ):
+        return True
 
-    # Try bunx fallback
-    if shutil.which("bunx") is not None:
-        try:
-            result = subprocess.run(
-                ["bunx", "svelte-check", "--version"],
-                capture_output=True,
-                timeout=30,
-                check=False,
-            )
-            if result.returncode == 0:
-                return True
-        except (subprocess.TimeoutExpired, OSError):
-            pass
+    if shutil.which("bunx") is not None and _check_command_version(
+        ["bunx", "svelte-check", "--version"],
+        timeout=30,
+    ):
+        return True
 
-    # Try npx fallback
-    if shutil.which("npx") is not None:
-        try:
-            result = subprocess.run(
-                ["npx", "svelte-check", "--version"],
-                capture_output=True,
-                timeout=30,
-                check=False,
-            )
-            if result.returncode == 0:
-                return True
-        except (subprocess.TimeoutExpired, OSError):
-            pass
-
-    return False
+    return shutil.which("npx") is not None and _check_command_version(
+        ["npx", "svelte-check", "--version"],
+        timeout=30,
+    )
 
 
 def _find_project_root() -> Path:

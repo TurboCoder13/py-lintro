@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from assertpy import assert_that
 
 from lintro.parsers.svelte_check.svelte_check_issue import SvelteCheckIssue
@@ -14,8 +16,169 @@ def test_parse_svelte_check_output_empty() -> None:
     assert_that(parse_svelte_check_output("   \n\n  ")).is_empty()
 
 
+# --- NDJSON format tests (modern svelte-check --output machine-verbose) ---
+
+
+def test_parse_ndjson_single_error() -> None:
+    """Parse a single NDJSON error line."""
+    output = json.dumps(
+        {
+            "type": "ERROR",
+            "fn": "src/lib/Button.svelte",
+            "start": {"line": 15, "column": 5},
+            "end": {"line": 15, "column": 10},
+            "message": "Type 'string' is not assignable to type 'number'.",
+        },
+    )
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0]).is_instance_of(SvelteCheckIssue)
+    assert_that(issues[0].file).is_equal_to("src/lib/Button.svelte")
+    assert_that(issues[0].line).is_equal_to(15)
+    assert_that(issues[0].column).is_equal_to(5)
+    assert_that(issues[0].severity).is_equal_to("error")
+    assert_that(issues[0].message).contains("not assignable")
+
+
+def test_parse_ndjson_warning() -> None:
+    """Parse an NDJSON warning line."""
+    output = json.dumps(
+        {
+            "type": "WARNING",
+            "fn": "src/lib/Card.svelte",
+            "start": {"line": 8, "column": 1},
+            "end": {"line": 8, "column": 20},
+            "message": "Unused CSS selector '.unused'.",
+        },
+    )
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].severity).is_equal_to("warning")
+
+
+def test_parse_ndjson_multiple_lines() -> None:
+    """Parse multiple NDJSON lines."""
+    lines = [
+        json.dumps(
+            {
+                "type": "ERROR",
+                "fn": "src/lib/Button.svelte",
+                "start": {"line": 15, "column": 5},
+                "end": {"line": 15, "column": 10},
+                "message": "Type error.",
+            },
+        ),
+        json.dumps(
+            {
+                "type": "WARNING",
+                "fn": "src/lib/Card.svelte",
+                "start": {"line": 8, "column": 1},
+                "end": {"line": 8, "column": 20},
+                "message": "Unused CSS selector.",
+            },
+        ),
+    ]
+    output = "\n".join(lines)
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(2)
+    assert_that(issues[0].severity).is_equal_to("error")
+    assert_that(issues[1].severity).is_equal_to("warning")
+
+
+def test_parse_ndjson_filename_field() -> None:
+    """Parse NDJSON using 'filename' field instead of 'fn'."""
+    output = json.dumps(
+        {
+            "type": "ERROR",
+            "filename": "src/lib/Button.svelte",
+            "start": {"line": 10, "column": 3},
+            "end": {"line": 10, "column": 8},
+            "message": "Type mismatch.",
+        },
+    )
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].file).is_equal_to("src/lib/Button.svelte")
+
+
+def test_parse_ndjson_multiline_span() -> None:
+    """Parse NDJSON issue spanning multiple lines."""
+    output = json.dumps(
+        {
+            "type": "ERROR",
+            "fn": "src/lib/Button.svelte",
+            "start": {"line": 15, "column": 5},
+            "end": {"line": 18, "column": 10},
+            "message": "Multi-line type error.",
+        },
+    )
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].end_line).is_equal_to(18)
+    assert_that(issues[0].end_column).is_equal_to(10)
+
+
+def test_parse_ndjson_same_position() -> None:
+    """NDJSON same start/end position sets end_line/end_column to None."""
+    output = json.dumps(
+        {
+            "type": "ERROR",
+            "fn": "src/lib/Button.svelte",
+            "start": {"line": 15, "column": 5},
+            "end": {"line": 15, "column": 5},
+            "message": "Point error.",
+        },
+    )
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].end_line).is_none()
+    assert_that(issues[0].end_column).is_none()
+
+
+def test_parse_ndjson_windows_paths() -> None:
+    """NDJSON backslash paths are normalized to forward slashes."""
+    output = json.dumps(
+        {
+            "type": "ERROR",
+            "fn": "src\\lib\\Button.svelte",
+            "start": {"line": 15, "column": 5},
+            "end": {"line": 15, "column": 10},
+            "message": "Type mismatch.",
+        },
+    )
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].file).is_equal_to("src/lib/Button.svelte")
+
+
+def test_parse_ndjson_invalid_json_skipped() -> None:
+    """Non-JSON lines are skipped by NDJSON parser."""
+    output = "not valid json\n" + json.dumps(
+        {
+            "type": "ERROR",
+            "fn": "src/lib/Button.svelte",
+            "start": {"line": 15, "column": 5},
+            "end": {"line": 15, "column": 10},
+            "message": "Type error.",
+        },
+    )
+    issues = parse_svelte_check_output(output)
+
+    assert_that(issues).is_length(1)
+
+
+# --- Legacy plain-text machine-verbose format tests ---
+
+
 def test_parse_svelte_check_output_machine_verbose_single_error() -> None:
-    """Parse a single machine-verbose error."""
+    """Parse a single legacy machine-verbose error."""
     output = "src/lib/Button.svelte:15:5:15:10 Error Type 'string' is not assignable to type 'number'."
     issues = parse_svelte_check_output(output)
 

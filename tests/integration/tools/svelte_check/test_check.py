@@ -83,7 +83,6 @@ def test_definition_has_version_command(
     svelte_check_plugin = get_plugin("svelte-check")
     version_cmd = svelte_check_plugin.definition.version_command
     assert_that(version_cmd).is_not_none()
-    assert version_cmd is not None
     assert_that(version_cmd).contains("--version")
     assert_that(version_cmd).contains("svelte-check")
 
