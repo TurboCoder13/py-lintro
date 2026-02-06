@@ -187,17 +187,13 @@ run_tests() {
 	# Avoid uv hardlink warnings/noise by defaulting to copy mode
 	export UV_LINK_MODE=${UV_LINK_MODE:-copy}
 
-	# Determine pytest worker count
+	# Determine pytest worker count.
+	# Default to "auto" (uses os.cpu_count(), respects cgroup CPU limits in Docker).
+	# Override with LINTRO_PYTEST_WORKERS=0 to force serial execution.
+	# Historical note: Docker parallel was previously disabled due to execnet /dev/shm
+	# exhaustion (fixed via shm_size in docker-compose.yml) and Docker build contention
+	# (mitigated by DOCKER_BUILDKIT=0 in conftest.py and docker-compose.yml).
 	local workers="${LINTRO_PYTEST_WORKERS:-auto}"
-	# In CI or Docker, default to serial to avoid xdist contention (docker/image builds,
-	# file system contention) unless explicitly overridden by LINTRO_PYTEST_WORKERS.
-	if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -z "${LINTRO_PYTEST_WORKERS:-}" ]; then
-		workers=0
-	fi
-	# Also disable parallel execution in Docker to avoid execnet issues
-	if [ -n "${RUNNING_IN_DOCKER:-}" ] && [ -z "${LINTRO_PYTEST_WORKERS:-}" ]; then
-		workers=0
-	fi
 
 	# Build lintro tst arguments
 	local tst_args=("tests")
@@ -210,7 +206,7 @@ run_tests() {
 		tool_opts="${tool_opts},pytest:verbose=True"
 	fi
 
-	# Always pass workers to avoid defaulting to auto in Docker/CI
+	# Always pass workers to ensure explicit control via LINTRO_PYTEST_WORKERS
 	tool_opts="${tool_opts},pytest:workers=${workers}"
 
 	# Add pytest-sugar for enhanced CI output (if available)

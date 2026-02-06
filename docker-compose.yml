@@ -49,4 +49,5 @@ services:
       - DOCKER_BUILDKIT=0
       - COVERAGE_OUTPUT_DIR=/app
     user: root
+    shm_size: 256m
     # Run as root to avoid permission issues with mounted volumes
