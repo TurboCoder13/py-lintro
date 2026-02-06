@@ -130,6 +130,14 @@ jobs:
             static.crates.io:443
             index.crates.io:443
             semgrep.dev:443
+      # The tools image is large enough that docker save runs out of disk on
+      # GitHub-hosted runners. Remove pre-installed software and pre-cached
+      # Docker images (runner-local only, does not affect GHCR) to free ~15GB.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/share/boost
+          sudo docker image prune -af
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
