@@ -9,7 +9,8 @@ Example:
     lintro check src/ --tools svelte-check
 
     # Check with specific threshold
-    lintro check src/ --tools svelte-check --tool-options "svelte-check:threshold=warning"
+    lintro check src/ --tools svelte-check \
+        --tool-options "svelte-check:threshold=warning"
 """
 
 from __future__ import annotations
@@ -63,7 +64,7 @@ class SvelteCheckPlugin(BaseToolPlugin):
             file_patterns=SVELTE_CHECK_FILE_PATTERNS,
             priority=SVELTE_CHECK_DEFAULT_PRIORITY,
             conflicts_with=[],
-            native_configs=["svelte.config.js", "svelte.config.ts"],
+            native_configs=["svelte.config.js", "svelte.config.ts", "svelte.config.mjs"],
             version_command=["svelte-check", "--version"],
             min_version=get_min_version(ToolName.SVELTE_CHECK),
             default_options={

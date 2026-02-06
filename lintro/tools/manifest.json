@@ -140,6 +140,12 @@
       "tier": "tools"
     },
     {
+      "name": "svelte_check",
+      "version": "4.1.4",
+      "install": { "type": "npm", "package": "svelte-check", "bin": "svelte-check" },
+      "tier": "tools"
+    },
+    {
       "name": "tsc",
       "version": "5.9.3",
       "install": { "type": "npm", "package": "typescript", "bin": "tsc" },

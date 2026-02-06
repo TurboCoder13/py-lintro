@@ -220,6 +220,7 @@ def test_all_external_tools_registered_in_tool_versions() -> None:
     else:
         expected_all_tools = {
             ToolName.ACTIONLINT,
+            ToolName.ASTRO_CHECK,
             ToolName.CARGO_AUDIT,
             ToolName.CLIPPY,
             ToolName.GITLEAKS,
@@ -235,6 +236,7 @@ def test_all_external_tools_registered_in_tool_versions() -> None:
             ToolName.SHELLCHECK,
             ToolName.SHFMT,
             ToolName.SQLFLUFF,
+            ToolName.SVELTE_CHECK,
             ToolName.TAPLO,
             ToolName.TSC,
         }
