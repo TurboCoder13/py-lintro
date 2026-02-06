@@ -70,7 +70,7 @@ class VueTscPlugin(BaseToolPlugin):
             priority=VUE_TSC_DEFAULT_PRIORITY,
             conflicts_with=[],
             native_configs=["tsconfig.json", "tsconfig.app.json"],
-            version_command=["vue-tsc", "--version"],
+            version_command=self._get_vue_tsc_command() + ["--version"],
             min_version=get_min_version(ToolName.VUE_TSC),
             default_options={
                 "timeout": VUE_TSC_DEFAULT_TIMEOUT,
@@ -480,7 +480,7 @@ class VueTscPlugin(BaseToolPlugin):
 
             return ToolResult(
                 name=self.definition.name,
-                success=issues_count == 0,
+                success=success and issues_count == 0,
                 output=None,
                 issues_count=issues_count,
                 issues=all_issues,

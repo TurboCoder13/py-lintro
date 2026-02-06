@@ -248,6 +248,18 @@
       "packageNameTemplate": "svelte-check"
     },
     {
+      "description": "Update vue-tsc version in _tool_versions.py",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "lintro/_tool_versions\\.py"
+      ],
+      "matchStrings": [
+        "ToolName\\.VUE_TSC:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "npm",
+      "packageNameTemplate": "vue-tsc"
+    },
+    {
       "description": "Update gitleaks version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [

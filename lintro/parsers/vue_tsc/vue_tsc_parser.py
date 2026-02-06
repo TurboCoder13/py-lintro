@@ -32,6 +32,11 @@ VUE_TSC_ISSUE_PATTERN = re.compile(
     r"(?P<message>.+)$",
 )
 
+# Patterns for extracting module names from dependency error messages
+_MODULE_PATTERN = re.compile(r"Cannot find module ['\"]([^'\"]+)['\"]")
+_TYPEDEF_PATTERN = re.compile(r"type definition file for ['\"]([^'\"]+)['\"]")
+_DECL_PATTERN = re.compile(r"declaration file for module ['\"]([^'\"]+)['\"]")
+
 
 def _parse_line(line: str) -> VueTscIssue | None:
     """Parse a single vue-tsc output line into a VueTscIssue.
@@ -143,14 +148,10 @@ def extract_missing_modules(dependency_errors: list[VueTscIssue]) -> list[str]:
     """
     modules: set[str] = set()
 
-    module_pattern = re.compile(r"Cannot find module ['\"]([^'\"]+)['\"]")
-    typedef_pattern = re.compile(r"type definition file for ['\"]([^'\"]+)['\"]")
-    decl_pattern = re.compile(r"declaration file for module ['\"]([^'\"]+)['\"]")
-
     for error in dependency_errors:
         message = error.message or ""
 
-        for pattern in (module_pattern, typedef_pattern, decl_pattern):
+        for pattern in (_MODULE_PATTERN, _TYPEDEF_PATTERN, _DECL_PATTERN):
             match = pattern.search(message)
             if match:
                 modules.add(match.group(1))

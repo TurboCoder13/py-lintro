@@ -145,6 +145,7 @@ For full functionality, install these additional tools:
   `npm install -g typescript`
 - **Astro** - `bun add astro` or `npm install astro`
 - **Svelte Check** - `bun add -D svelte-check` or `npm install -D svelte-check`
+- **Vue-tsc** - `bun add -D vue-tsc` or `npm install -D vue-tsc`
 
 Check all tool versions with: `lintro list-tools`
 
