@@ -428,6 +428,25 @@ class TscPlugin(BaseToolPlugin):
                         issues_count=0,
                     )
                 logger.info("[tsc] Dependencies installed successfully")
+        else:
+            from lintro.utils.node_deps import should_install_deps
+
+            if should_install_deps(cwd_path):
+                logger.info(
+                    "[tsc] Skipping: node_modules not found in {}",
+                    cwd_path,
+                )
+                return ToolResult(
+                    name=self.definition.name,
+                    success=True,
+                    output=(
+                        "Skipping tsc: node_modules not found. "
+                        "Install dependencies first "
+                        "(bun install / npm install) or set "
+                        "auto_install: true in tool options."
+                    ),
+                    issues_count=0,
+                )
         use_project_files = merged_options.get("use_project_files", False)
         explicit_project_opt = merged_options.get("project")
         explicit_project = str(explicit_project_opt) if explicit_project_opt else None
