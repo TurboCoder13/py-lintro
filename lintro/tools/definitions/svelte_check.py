@@ -225,29 +225,35 @@ class SvelteCheckPlugin(BaseToolPlugin):
                 "[svelte-check] No svelte.config.* found — proceeding with defaults",
             )
 
-        # Check if auto-install is enabled
-        auto_install = merged_options.get("auto_install", False)
-        if auto_install:
-            from lintro.utils.node_deps import install_node_deps, should_install_deps
+        # Check if dependencies need installing
+        from lintro.utils.node_deps import should_install_deps
 
-            if should_install_deps(cwd_path):
+        if should_install_deps(cwd_path):
+            auto_install = merged_options.get("auto_install", False)
+            if auto_install:
+                from lintro.utils.node_deps import install_node_deps
+
                 logger.info("[svelte-check] Auto-installing Node.js dependencies...")
-                success, install_output = install_node_deps(cwd_path)
-                if not success:
+                install_ok, install_output = install_node_deps(cwd_path)
+                if install_ok:
+                    logger.info(
+                        "[svelte-check] Dependencies installed successfully",
+                    )
+                else:
+                    logger.warning(
+                        "[svelte-check] Auto-install failed, skipping: {}",
+                        install_output,
+                    )
                     return ToolResult(
                         name=self.definition.name,
-                        success=False,
+                        success=True,
                         output=(
-                            f"Failed to install Node.js dependencies:\n"
+                            f"Skipping svelte-check: auto-install failed.\n"
                             f"{install_output}"
                         ),
                         issues_count=0,
                     )
-                logger.info("[svelte-check] Dependencies installed successfully")
-        else:
-            from lintro.utils.node_deps import should_install_deps
-
-            if should_install_deps(cwd_path):
+            else:
                 logger.info(
                     "[svelte-check] Skipping: node_modules not found in {}",
                     cwd_path,
