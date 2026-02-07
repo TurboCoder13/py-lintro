@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
-# Lintro Report Generation Script
-# Generates comprehensive lintro reports for the codebase
+# Lintro Report Generation Script (Docker)
+# Generates comprehensive lintro reports by running lintro inside a Docker container.
+# Expects py-lintro:latest to be available locally (pulled from GHCR by the workflow).
 
 # Show help if requested
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 	echo "Usage: $0 [--help]"
 	echo ""
-	echo "Lintro Report Generation Script"
+	echo "Lintro Report Generation Script (Docker)"
 	echo "Generates comprehensive Lintro reports for GitHub Actions."
 	echo ""
 	echo "Features:"
@@ -17,6 +18,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 	echo "  - Generates markdown report"
 	echo "  - Creates timestamped report directory"
 	echo ""
+	echo "Requires: py-lintro:latest Docker image (pull from GHCR first)"
 	echo "This script is designed to be run in GitHub Actions CI environment."
 	exit 0
 fi
@@ -26,23 +28,29 @@ fi
 # shellcheck disable=SC1091
 source "$(dirname "$0")/../../utils/utils.sh"
 
+# Common docker run flags matching ci-lintro.sh pattern:
+# --user: match host UID/GID for volume writes
+# HOME=/tmp: tools like semgrep need a writable home for cache files
+# Use a bash array to preserve argument boundaries (handles paths with spaces)
+DOCKER_RUN=(docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/code" -w /code py-lintro:latest)
+
 {
 	echo "## 🔧 Lintro Full Codebase Report"
 	echo ""
 	echo "**Generated on:** $(date)"
-	echo "**Note:** Includes all available tools."
-	echo "Missing tools are skipped gracefully."
+	echo "**Container:** py-lintro:latest"
 	echo ""
 	echo "### 📋 Available Tools"
 	echo '```'
-	./scripts/local/local-lintro.sh list-tools
+	"${DOCKER_RUN[@]}" lintro list-tools
 	echo '```'
 	echo ""
 	echo "### 🔍 Analysis Results"
 	echo '```'
 	# Use shared exclude directories
-	./scripts/local/local-lintro.sh check . \
-		--exclude "$EXCLUDE_DIRS" || true
+	"${DOCKER_RUN[@]}" lintro check . \
+		--exclude "$EXCLUDE_DIRS" \
+		--tool-options pydoclint:timeout=120 || true
 	echo '```'
 } >>"$GITHUB_STEP_SUMMARY"
 
@@ -51,18 +59,11 @@ mkdir -p lintro-report
 {
 	echo "# Lintro Report - $(date)"
 	echo ""
-	echo "**Note:** Includes available tools."
-	echo "Missing tools skipped gracefully."
-	echo ""
-	FORMAT="markdown"
-	./scripts/local/local-lintro.sh check . --output-format "$FORMAT" \
-		--exclude "$EXCLUDE_DIRS" || true
+	"${DOCKER_RUN[@]}" lintro check . --output-format markdown \
+		--exclude "$EXCLUDE_DIRS" \
+		--tool-options pydoclint:timeout=120 || true
 } >lintro-report/report.md
 
 log_success "Lintro report generated successfully"
 log_info "The report is available as a workflow artifact"
 log_info "Download it from the Actions tab in the GitHub repository"
-log_info ""
-log_info "💡 For full tool coverage, run with all system tools installed"
-log_info "🔧 Use './scripts/utils/install.sh && ./scripts/local/local-lintro.sh'"
-log_info "   locally for complete analysis"
