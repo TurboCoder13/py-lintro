@@ -32,16 +32,12 @@ def _parse_issue(item: dict[str, Any]) -> MypyIssue | None:
         end_column_int = extract_int_field(item, ["endColumn", "end_column"])
 
         raw_code = item.get("code")
-        code: str | None
+        code: str
         if isinstance(raw_code, dict):
-            code = (
-                raw_code.get("code")
-                or raw_code.get("id")
-                or raw_code.get("text")
-                or None
-            )
+            raw_val = raw_code.get("code") or raw_code.get("id") or raw_code.get("text")
+            code = str(raw_val) if raw_val is not None else ""
         else:
-            code = str(raw_code) if raw_code is not None else None
+            code = str(raw_code) if raw_code is not None else ""
 
         message = str(item.get("message") or "").strip()
         severity = item.get("severity")

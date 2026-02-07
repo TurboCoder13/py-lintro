@@ -50,7 +50,7 @@ def parse_actionlint_output(output: str | None) -> list[ActionlintIssue]:
                 line=line_no,
                 column=col_no,
                 level=level,
-                code=code,
+                code=code or "",
                 message=msg,
             ),
         )
