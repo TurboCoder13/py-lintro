@@ -121,6 +121,8 @@ jobs:
           BOOTSTRAP_SKIP_INSTALL_TOOLS: '1'
       - name: Verify manifest sync
         run: python3 scripts/ci/verify-manifest-sync.py
+      - name: Verify tool version sync
+        run: python3 scripts/ci/verify-tool-version-sync.py
 
   # ============================================================================
   # Stage 2: Build Docker image ONCE (cached for all subsequent stages)
