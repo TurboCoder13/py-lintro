@@ -85,10 +85,10 @@ def write_output_file(
             if hasattr(result, "issues") and result.issues:
                 result_data["issues"] = [
                     {
-                        "file": getattr(issue, "file", ""),
-                        "line": getattr(issue, "line", ""),
-                        "code": getattr(issue, "code", ""),
-                        "message": getattr(issue, "message", ""),
+                        "file": getattr(issue, "file", "") or "",
+                        "line": getattr(issue, "line", None) or 0,
+                        "code": getattr(issue, "code", "") or "",
+                        "message": getattr(issue, "message", "") or "",
                     }
                     for issue in result.issues
                 ]
@@ -111,10 +111,14 @@ def write_output_file(
                             sanitize_csv_value(
                                 str(getattr(result, "issues_count", 0)),
                             ),
-                            sanitize_csv_value(str(getattr(issue, "file", ""))),
-                            sanitize_csv_value(str(getattr(issue, "line", ""))),
-                            sanitize_csv_value(str(getattr(issue, "code", ""))),
-                            sanitize_csv_value(str(getattr(issue, "message", ""))),
+                            sanitize_csv_value(str(getattr(issue, "file", "") or "")),
+                            sanitize_csv_value(
+                                str(getattr(issue, "line", None) or 0),
+                            ),
+                            sanitize_csv_value(str(getattr(issue, "code", "") or "")),
+                            sanitize_csv_value(
+                                str(getattr(issue, "message", "") or ""),
+                            ),
                         ],
                     )
             else:
@@ -149,10 +153,13 @@ def write_output_file(
                 lines.append("| File | Line | Code | Message |")
                 lines.append("|------|------|------|---------|")
                 for issue in result.issues:
-                    file_val = str(getattr(issue, "file", "")).replace("|", r"\|")
-                    line_val = getattr(issue, "line", "")
-                    code_val = str(getattr(issue, "code", "")).replace("|", r"\|")
-                    msg_val = str(getattr(issue, "message", "")).replace("|", r"\|")
+                    file_val = str(getattr(issue, "file", "") or "").replace("|", r"\|")
+                    line_val = getattr(issue, "line", None) or 0
+                    code_val = str(getattr(issue, "code", "") or "").replace("|", r"\|")
+                    msg_val = str(getattr(issue, "message", "") or "").replace(
+                        "|",
+                        r"\|",
+                    )
                     lines.append(
                         f"| {file_val} | {line_val} | {code_val} | {msg_val} |",
                     )
@@ -187,10 +194,10 @@ def write_output_file(
                     "<th>Code</th><th>Message</th></tr>",
                 )
                 for issue in result.issues:
-                    f_val = html.escape(str(getattr(issue, "file", "")))
-                    l_val = html.escape(str(getattr(issue, "line", "")))
-                    c_val = html.escape(str(getattr(issue, "code", "")))
-                    m_val = html.escape(str(getattr(issue, "message", "")))
+                    f_val = html.escape(str(getattr(issue, "file", "") or ""))
+                    l_val = html.escape(str(getattr(issue, "line", None) or 0))
+                    c_val = html.escape(str(getattr(issue, "code", "") or ""))
+                    m_val = html.escape(str(getattr(issue, "message", "") or ""))
                     html_lines.append(
                         f"<tr><td>{f_val}</td><td>{l_val}</td>"
                         f"<td>{c_val}</td><td>{m_val}</td></tr>",

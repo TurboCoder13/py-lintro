@@ -183,10 +183,10 @@ class OutputManager:
                 lines.append("| File | Line | Code | Message |")
                 lines.append("|------|------|------|---------|")
                 for issue in r.issues:
-                    file: str = markdown_escape(getattr(issue, "file", ""))
-                    line = getattr(issue, "line", "")
-                    code: str = markdown_escape(getattr(issue, "code", ""))
-                    msg: str = markdown_escape(getattr(issue, "message", ""))
+                    file: str = markdown_escape(getattr(issue, "file", "") or "")
+                    line = getattr(issue, "line", None) or 0
+                    code: str = markdown_escape(getattr(issue, "code", "") or "")
+                    msg: str = markdown_escape(getattr(issue, "message", "") or "")
                     lines.append(f"| {file} | {line} | {code} | {msg} |")
                 lines.append("")
             else:
@@ -224,10 +224,10 @@ class OutputManager:
                     "<th>Message</th></tr>",
                 )
                 for issue in r.issues:
-                    file: str = html_escape(getattr(issue, "file", ""))
-                    line = getattr(issue, "line", "")
-                    code: str = html_escape(getattr(issue, "code", ""))
-                    msg: str = html_escape(getattr(issue, "message", ""))
+                    file: str = html_escape(getattr(issue, "file", "") or "")
+                    line = getattr(issue, "line", None) or 0
+                    code: str = html_escape(getattr(issue, "code", "") or "")
+                    msg: str = html_escape(getattr(issue, "message", "") or "")
                     html_content.append(
                         f"<tr><td>{file}</td><td>{line}</td><td>{code}</td>"
                         f"<td>{msg}</td></tr>",
@@ -257,10 +257,10 @@ class OutputManager:
                         [
                             r.name,
                             str(r.issues_count),
-                            getattr(issue, "file", ""),
-                            getattr(issue, "line", ""),
-                            getattr(issue, "code", ""),
-                            getattr(issue, "message", ""),
+                            getattr(issue, "file", "") or "",
+                            str(getattr(issue, "line", None) or 0),
+                            getattr(issue, "code", "") or "",
+                            getattr(issue, "message", "") or "",
                         ],
                     )
             else:
