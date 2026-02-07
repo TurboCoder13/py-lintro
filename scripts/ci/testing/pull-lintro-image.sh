@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # Pull the pre-built lintro Docker image from GHCR and tag it for local use.
 # Logs the resolved digest for traceability.
