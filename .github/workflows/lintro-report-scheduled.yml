@@ -3,6 +3,7 @@
 ---
 name: Reporting - Scheduled Lintro Analysis
 # Runs comprehensive lintro analysis weekly on schedule or manual dispatch.
+# Uses pre-built Docker image from GHCR (no local tool installation).
 # Generates detailed markdown report and uploads as workflow artifact.
 
 'on':
@@ -18,7 +19,6 @@ name: Reporting - Scheduled Lintro Analysis
       - Dockerfile
       - pyproject.toml
       - .github/workflows/lintro-report-scheduled.yml
-      - scripts/local/local-lintro.sh
   schedule:
     # Run weekly on Sunday at 00:00 UTC
     - cron: '0 0 * * 0'
@@ -46,7 +46,6 @@ jobs:
             github.com:443
             api.github.com:443
             codeload.github.com:443
-            release-assets.githubusercontent.com:443
             objects.githubusercontent.com:443
             ghcr.io:443
             pkg-containers.githubusercontent.com:443
@@ -54,24 +53,15 @@ jobs:
             registry-1.docker.io:443
             auth.docker.io:443
             production.cloudflare.docker.com:443
-            pypi.org:443
-            files.pythonhosted.org:443
-            static.rust-lang.org:443
-            bun.sh:443
-            astral.sh:443
-            sh.rustup.rs:443
-            registry.npmjs.org:443
-            crates.io:443
-            static.crates.io:443
-            index.crates.io:443
-            semgrep.dev:443
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Environment setup
-        uses: ./.github/actions/setup-env
+      - name: Pull lintro Docker image
+        run: |
+          docker pull ghcr.io/lgtm-hq/py-lintro:latest
+          docker tag ghcr.io/lgtm-hq/py-lintro:latest py-lintro:latest
 
       - name: Run Lintro on codebase
         run: ./scripts/ci/testing/lintro-report-generate.sh
