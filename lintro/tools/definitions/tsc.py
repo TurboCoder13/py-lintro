@@ -267,11 +267,28 @@ class TscPlugin(BaseToolPlugin):
                 suffix=".json",
                 prefix="lintro-tsc-",
             )
+            # Preserve existing typeRoots from the base tsconfig and add
+            # the default node_modules/@types path so TypeScript can still
+            # resolve type packages from the system temp dir.
             compiler_options = temp_config["compilerOptions"]
             assert isinstance(compiler_options, dict)
-            compiler_options["typeRoots"] = [
-                str(cwd / "node_modules" / "@types"),
-            ]
+            existing_type_roots: list[str] = []
+            try:
+                base_content = json.loads(base_tsconfig.read_text())
+                base_roots = base_content.get("compilerOptions", {}).get(
+                    "typeRoots",
+                    [],
+                )
+                for root in base_roots:
+                    existing_type_roots.append(
+                        str((abs_base.parent / root).resolve()),
+                    )
+            except (json.JSONDecodeError, OSError):
+                pass
+            default_root = str(cwd / "node_modules" / "@types")
+            if default_root not in existing_type_roots:
+                existing_type_roots.append(default_root)
+            compiler_options["typeRoots"] = existing_type_roots
 
         try:
             with open(fd, "w", encoding="utf-8") as f:
