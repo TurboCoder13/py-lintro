@@ -183,10 +183,15 @@ def _parse_tool_config(data: dict[str, Any]) -> LintroToolConfig:
     """
     enabled = data.get("enabled", True)
     config_source = data.get("config_source")
+    auto_install_raw = data.get("auto_install")
+    auto_install: bool | None = None
+    if auto_install_raw is not None:
+        auto_install = bool(auto_install_raw)
 
     return LintroToolConfig(
         enabled=enabled,
         config_source=config_source,
+        auto_install=auto_install,
     )
 
 
