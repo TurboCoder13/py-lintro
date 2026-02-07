@@ -39,10 +39,10 @@ assurance tools under a single command-line interface.
 ## 🚀 Quick Start
 
 ```bash
-pip install lintro          # Install
-lintro check .              # Find issues
-lintro format .             # Fix issues
-lintro check --output-format grid   # Beautiful output
+uv pip install lintro              # Install (or: pip install lintro)
+lintro check .                     # Find issues (alias: chk)
+lintro format .                    # Fix issues (alias: fmt)
+lintro check --output-format grid  # Beautiful output
 ```
 
 <!-- TODO: Add screenshot of grid output -->
@@ -62,8 +62,8 @@ Lintro respects your native tool configurations. If you have a `.prettierrc`,
 `pyproject.toml [tool.ruff]`, or `.yamllint`, Lintro uses them automatically - no
 migration required.
 
-- **Native configs are detected** - Your existing `.prettierrc`, `.eslintrc`, etc. work
-  as-is
+- **Native configs are detected** - Your existing `.prettierrc`, `.oxlintrc.json`, etc.
+  work as-is
 - **Enforce settings override consistently** - Set `line_length: 88` once, applied
   everywhere
 - **Fallback defaults when needed** - Tools without native configs use sensible defaults
@@ -244,22 +244,18 @@ system.
 </tbody>
 </table>
 
-> 📦 = bundled with lintro — no separate install needed
+> 📦 = bundled with lintro — no separate install needed\
+> ⚡ Node.js tools support `--auto-install` to install dependencies automatically
 
 <!-- markdownlint-enable MD013 MD033 MD060 -->
 
-## 📋 Requirements
-
-**Python 3.11+** is required. Lintro uses modern Python features not available in older
-versions.
-
-Check all tool versions with: `lintro list-tools`
-
 ## 📦 Installation
+
+**Python 3.11+** is required. Check tool versions with `lintro list-tools`.
 
 ```bash
 # PyPI (recommended)
-pip install lintro
+uv pip install lintro        # or: pip install lintro
 
 # Homebrew (macOS binary)
 brew tap lgtm-hq/tap && brew install lintro-bin
@@ -276,10 +272,10 @@ See [Getting Started](docs/getting-started.md) for detailed installation options
 ## 💻 Usage
 
 ```bash
-# Check all files
+# Check all files (alias: chk)
 lintro check .
 
-# Auto-fix issues
+# Auto-fix issues (alias: fmt)
 lintro format .
 
 # Grid output with grouping
@@ -288,7 +284,7 @@ lintro check --output-format grid --group-by file
 # Run specific tools
 lintro check --tools ruff,prettier,mypy
 
-# Auto-install Node.js dependencies (useful for TypeScript projects)
+# Auto-install Node.js dependencies
 lintro check --tools tsc --auto-install
 
 # Exclude directories
@@ -322,8 +318,8 @@ docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:base check
 | [Contributing](docs/contributing.md)             | Development guide, adding tools         |
 | [Troubleshooting](docs/troubleshooting.md)       | Common issues and solutions             |
 
-**Advanced:** [Tool Analysis](docs/tool-analysis/) | [Architecture](docs/architecture/)
-| [Security](docs/security/)
+**Advanced:** [Tool Analysis](docs/tool-analysis/) · [Architecture](docs/architecture/)
+· [Security](docs/security/)
 
 ## 🔨 Development
 
