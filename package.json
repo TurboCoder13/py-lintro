@@ -14,14 +14,14 @@
     "url": "git+https://github.com/lgtm-hq/py-lintro.git"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.4",
-    "astro": "^5.5.3",
-    "markdownlint-cli2": "^0.17.2",
-    "oxfmt": "^0.27.0",
-    "oxlint": "^1.42.0",
-    "prettier": "^3.8.1",
-    "svelte-check": "^4.3.6",
+    "@astrojs/check": "0.9.6",
+    "astro": "5.17.1",
+    "markdownlint-cli2": "0.17.2",
+    "oxfmt": "0.27.0",
+    "oxlint": "1.42.0",
+    "prettier": "3.8.1",
+    "svelte-check": "4.3.6",
     "typescript": "^5.9.3",
-    "vue-tsc": "^3.2.4"
+    "vue-tsc": "3.2.4"
   }
 }
