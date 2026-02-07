@@ -171,7 +171,7 @@ class CargoDenyPlugin(BaseToolPlugin):
         cmd = _build_cargo_deny_command()
 
         try:
-            success_cmd, output = run_subprocess_with_timeout(
+            _, output = run_subprocess_with_timeout(
                 tool=self,
                 cmd=cmd,
                 timeout=ctx.timeout,

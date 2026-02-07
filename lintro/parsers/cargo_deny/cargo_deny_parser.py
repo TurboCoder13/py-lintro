@@ -23,11 +23,13 @@ def _extract_crate_info(labels: list[dict[str, Any]]) -> tuple[str | None, str |
         message = label.get("message", "")
         if isinstance(message, str) and message.startswith("crate "):
             # Format: "crate foo" or "crate foo@1.0.0"
-            crate_info = message[6:]  # Remove "crate " prefix
+            crate_info = message[6:].strip()  # Remove "crate " prefix
+            if not crate_info:
+                return None, None
             if "@" in crate_info:
                 name, version = crate_info.split("@", 1)
-                return name.strip(), version.strip()
-            return crate_info.strip(), None
+                return name.strip() or None, version.strip() or None
+            return crate_info, None
     return None, None
 
 
@@ -172,7 +174,8 @@ def parse_cargo_deny_output(output: str) -> list[CargoDenyIssue]:
                     issues.append(parsed)
             # Ignore other types like "summary", "build", etc.
 
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as exc:
+            logger.debug(f"Failed to decode cargo-deny JSON line: {exc}: {line}")
             continue
 
     return issues
