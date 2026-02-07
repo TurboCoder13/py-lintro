@@ -14,6 +14,7 @@ Example:
 
 from __future__ import annotations
 
+import functools
 import json
 import shutil
 import subprocess  # nosec B404 - used safely with shell disabled
@@ -70,7 +71,7 @@ class VueTscPlugin(BaseToolPlugin):
             priority=VUE_TSC_DEFAULT_PRIORITY,
             conflicts_with=[],
             native_configs=["tsconfig.json", "tsconfig.app.json"],
-            version_command=self._get_vue_tsc_command() + ["--version"],
+            version_command=self._vue_tsc_cmd + ["--version"],
             min_version=get_min_version(ToolName.VUE_TSC),
             default_options={
                 "timeout": VUE_TSC_DEFAULT_TIMEOUT,
@@ -121,10 +122,14 @@ class VueTscPlugin(BaseToolPlugin):
         options = {k: v for k, v in options.items() if v is not None}
         super().set_options(**options, **kwargs)
 
-    def _get_vue_tsc_command(self) -> list[str]:
+    @functools.cached_property
+    def _vue_tsc_cmd(self) -> list[str]:
         """Get the command to run vue-tsc.
 
         Prefers direct vue-tsc executable, falls back to bunx/npx.
+        The result is cached so that repeated accesses (e.g. from the
+        ``definition`` property and ``_build_command``) reuse the stored
+        command without repeated ``shutil.which()`` lookups.
 
         Returns:
             Command arguments for vue-tsc.
@@ -239,7 +244,7 @@ class VueTscPlugin(BaseToolPlugin):
         if options is None:
             options = self.options
 
-        cmd: list[str] = self._get_vue_tsc_command()
+        cmd: list[str] = list(self._vue_tsc_cmd)
 
         # Core flags for type checking only
         cmd.extend(["--noEmit", "--pretty", "false"])

@@ -187,3 +187,4 @@ def test_vue_tsc_issue_to_display_row_minimal() -> None:
     assert_that(row["file"]).is_equal_to("main.vue")
     assert_that(row["code"]).is_equal_to("")
     assert_that(row["severity"]).is_equal_to("")
+    assert_that(row["fixable"]).is_equal_to("")
