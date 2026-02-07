@@ -283,7 +283,7 @@ def test_categorize_tsc_issues_no_code() -> None:
             file="src/main.ts",
             line=10,
             column=5,
-            code=None,
+            code="",
             message="Some error",
             severity="error",
         ),
