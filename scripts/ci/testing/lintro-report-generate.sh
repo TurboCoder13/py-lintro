@@ -31,7 +31,8 @@ source "$(dirname "$0")/../../utils/utils.sh"
 # Common docker run flags matching ci-lintro.sh pattern:
 # --user: match host UID/GID for volume writes
 # HOME=/tmp: tools like semgrep need a writable home for cache files
-DOCKER_RUN="docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v $PWD:/code -w /code py-lintro:latest"
+# Use a bash array to preserve argument boundaries (handles paths with spaces)
+DOCKER_RUN=(docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/code" -w /code py-lintro:latest)
 
 {
 	echo "## 🔧 Lintro Full Codebase Report"
@@ -41,13 +42,13 @@ DOCKER_RUN="docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v $PWD:/code 
 	echo ""
 	echo "### 📋 Available Tools"
 	echo '```'
-	$DOCKER_RUN lintro list-tools
+	"${DOCKER_RUN[@]}" lintro list-tools
 	echo '```'
 	echo ""
 	echo "### 🔍 Analysis Results"
 	echo '```'
 	# Use shared exclude directories
-	$DOCKER_RUN lintro check . \
+	"${DOCKER_RUN[@]}" lintro check . \
 		--exclude "$EXCLUDE_DIRS" \
 		--tool-options pydoclint:timeout=120 || true
 	echo '```'
@@ -58,7 +59,7 @@ mkdir -p lintro-report
 {
 	echo "# Lintro Report - $(date)"
 	echo ""
-	$DOCKER_RUN lintro check . --output-format markdown \
+	"${DOCKER_RUN[@]}" lintro check . --output-format markdown \
 		--exclude "$EXCLUDE_DIRS" \
 		--tool-options pydoclint:timeout=120 || true
 } >lintro-report/report.md

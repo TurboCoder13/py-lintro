@@ -49,19 +49,13 @@ jobs:
             objects.githubusercontent.com:443
             ghcr.io:443
             pkg-containers.githubusercontent.com:443
-            docker.io:443
-            registry-1.docker.io:443
-            auth.docker.io:443
-            production.cloudflare.docker.com:443
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull lintro Docker image
-        run: |
-          docker pull ghcr.io/lgtm-hq/py-lintro:latest
-          docker tag ghcr.io/lgtm-hq/py-lintro:latest py-lintro:latest
+        run: scripts/ci/testing/pull-lintro-image.sh
 
       - name: Run Lintro on codebase
         run: ./scripts/ci/testing/lintro-report-generate.sh
@@ -80,6 +74,16 @@ jobs:
     if: success()
 
     steps:
+      - name: Harden Runner
+        # yamllint disable-line rule:line-length
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
+        with:
+          egress-policy: 'block'
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Report status
