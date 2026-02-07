@@ -130,6 +130,12 @@ def run_lint_tools_simple(
         logger.console_output("No tools to run.")
         return 0
 
+    if not tools_to_run and skipped_tools:
+        skipped_names = ", ".join(st.name for st in skipped_tools)
+        logger.console_output(
+            f"All tools were skipped ({len(skipped_tools)}): {skipped_names}",
+        )
+
     # Load post-checks config early to exclude those tools from main phase
     post_cfg_early = load_post_checks_config()
     post_enabled_early = bool(post_cfg_early.get("enabled", False))
@@ -230,7 +236,7 @@ def run_lint_tools_simple(
                 answer = "n"
             if answer in ("n", "no"):
                 logger.console_output(text="Aborted.", color="yellow")
-                return DEFAULT_EXIT_CODE_SUCCESS
+                return int(DEFAULT_EXIT_CODE_SUCCESS)
 
     # Define success_func once before the loop
     def success_func(message: str) -> None:
@@ -473,10 +479,12 @@ def run_lint_tools_simple(
             # Continue execution - report writing failures should not stop the tool
 
     # Determine final exit code using helper
-    return determine_exit_code(
-        action=action,
-        all_results=all_results,
-        total_issues=total_issues,
-        total_remaining=total_remaining,
-        main_phase_empty_due_to_filter=main_phase_empty_due_to_filter,
+    return int(
+        determine_exit_code(
+            action=action,
+            all_results=all_results,
+            total_issues=total_issues,
+            total_remaining=total_remaining,
+            main_phase_empty_due_to_filter=main_phase_empty_due_to_filter,
+        ),
     )

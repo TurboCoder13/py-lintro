@@ -70,7 +70,8 @@ def get_executable_command(tool_name: str) -> list[str]:
     except ValueError:
         tool_name_enum = None
 
-    return CommandBuilderRegistry.get_command(tool_name, tool_name_enum)
+    result: list[str] = CommandBuilderRegistry.get_command(tool_name, tool_name_enum)
+    return result
 
 
 def verify_tool_version(definition: ToolDefinition) -> ToolResult | None:
@@ -221,7 +222,8 @@ def get_lintro_config() -> LintroConfig:
     """
     from lintro.tools.core.config_injection import _get_lintro_config
 
-    return _get_lintro_config()
+    result: LintroConfig = _get_lintro_config()
+    return result
 
 
 def get_enforced_settings(
@@ -238,7 +240,8 @@ def get_enforced_settings(
     from lintro.tools.core.config_injection import _get_enforced_settings
 
     config = lintro_config or get_lintro_config()
-    return _get_enforced_settings(lintro_config=config)
+    result: dict[str, object] = _get_enforced_settings(lintro_config=config)
+    return result
 
 
 def get_enforce_cli_args(
@@ -257,7 +260,8 @@ def get_enforce_cli_args(
     from lintro.tools.core.config_injection import _get_enforce_cli_args
 
     config = lintro_config or get_lintro_config()
-    return _get_enforce_cli_args(tool_name=tool_name, lintro_config=config)
+    result: list[str] = _get_enforce_cli_args(tool_name=tool_name, lintro_config=config)
+    return result
 
 
 def get_defaults_config_args(
@@ -276,7 +280,11 @@ def get_defaults_config_args(
     from lintro.tools.core.config_injection import _get_defaults_config_args
 
     config = lintro_config or get_lintro_config()
-    return _get_defaults_config_args(tool_name=tool_name, lintro_config=config)
+    result: list[str] = _get_defaults_config_args(
+        tool_name=tool_name,
+        lintro_config=config,
+    )
+    return result
 
 
 def should_use_lintro_config(tool_name: str) -> bool:
@@ -290,7 +298,8 @@ def should_use_lintro_config(tool_name: str) -> bool:
     """
     from lintro.tools.core.config_injection import _should_use_lintro_config
 
-    return _should_use_lintro_config(tool_name=tool_name)
+    result: bool = _should_use_lintro_config(tool_name=tool_name)
+    return result
 
 
 def build_config_args(
@@ -309,4 +318,5 @@ def build_config_args(
     from lintro.tools.core.config_injection import _build_config_args
 
     config = lintro_config or get_lintro_config()
-    return _build_config_args(tool_name=tool_name, lintro_config=config)
+    result: list[str] = _build_config_args(tool_name=tool_name, lintro_config=config)
+    return result
