@@ -43,19 +43,19 @@ _MANIFEST_PATH = Path(__file__).parent / "tools" / "manifest.json"
 # Non-npm external tools - updated by Renovate via custom regex managers
 # Keys use ToolName enum values for type safety
 TOOL_VERSIONS: dict[ToolName | str, str] = {
-    ToolName.ACTIONLINT: "1.7.5",
+    ToolName.ACTIONLINT: "1.7.10",
     ToolName.CARGO_AUDIT: "0.21.0",
     ToolName.CLIPPY: "1.92.0",
-    ToolName.GITLEAKS: "8.21.2",
-    ToolName.HADOLINT: "2.12.0",
+    ToolName.GITLEAKS: "8.30.0",
+    ToolName.HADOLINT: "2.14.0",
     ToolName.PYTEST: "9.0.2",
     ToolName.RUSTC: "1.92.0",
     ToolName.RUSTFMT: "1.8.0",
     ToolName.SEMGREP: "1.85.0",
     ToolName.SHELLCHECK: "0.11.0",
-    ToolName.SHFMT: "3.10.0",
+    ToolName.SHFMT: "3.12.0",
     ToolName.SQLFLUFF: "4.0.0",
-    ToolName.TAPLO: "0.10.0",
+    ToolName.TAPLO: "0.13.0",
 }
 
 # Mapping from npm package names to ToolName for npm-managed tools
@@ -80,7 +80,7 @@ _TOOL_TO_NPM_PACKAGE: dict[ToolName, str] = {
 # Fallback npm tool versions - used when package.json is not found.
 # CI should verify these match package.json to prevent drift.
 _FALLBACK_NPM_VERSIONS: dict[ToolName, str] = {
-    ToolName.ASTRO_CHECK: "5.5.3",
+    ToolName.ASTRO_CHECK: "5.17.1",
     ToolName.SVELTE_CHECK: "4.3.6",
     ToolName.TSC: "5.9.3",
     ToolName.VUE_TSC: "3.2.4",
