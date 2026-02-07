@@ -81,7 +81,7 @@ _TOOL_TO_NPM_PACKAGE: dict[ToolName, str] = {
 # CI should verify these match package.json to prevent drift.
 _FALLBACK_NPM_VERSIONS: dict[ToolName, str] = {
     ToolName.ASTRO_CHECK: "5.5.3",
-    ToolName.SVELTE_CHECK: "4.1.4",
+    ToolName.SVELTE_CHECK: "4.3.6",
     ToolName.TSC: "5.9.3",
     ToolName.VUE_TSC: "3.2.4",
     ToolName.PRETTIER: "3.8.1",
