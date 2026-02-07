@@ -13,6 +13,7 @@ from assertpy import assert_that
 import lintro.utils.tool_executor as te
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools import tool_manager
+from lintro.utils.execution.tool_configuration import ToolsToRunResult
 from lintro.utils.output import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
 
@@ -118,8 +119,8 @@ def _setup_tool_manager(
     def fake_get_tools(
         tools: str | None,
         action: str,
-    ) -> list[str]:
-        return list(tools_dict.keys())
+    ) -> ToolsToRunResult:
+        return ToolsToRunResult(to_run=list(tools_dict.keys()))
 
     monkeypatch.setattr(te, "get_tools_to_run", fake_get_tools, raising=True)
 

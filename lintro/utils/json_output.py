@@ -46,6 +46,8 @@ def create_json_output(
             "tool": result.name,
             "success": getattr(result, "success", True),
             "issues_count": getattr(result, "issues_count", 0),
+            "skipped": getattr(result, "skipped", False),
+            "skip_reason": getattr(result, "skip_reason", None),
         }
         if action_enum == Action.FIX:
             result_data["fixed"] = getattr(result, "fixed_issues_count", 0)

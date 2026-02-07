@@ -400,6 +400,8 @@ class TscPlugin(BaseToolPlugin):
                     f"lintro check . --tools {recommended_tool}"
                 ),
                 issues_count=0,
+                skipped=True,
+                skip_reason=f"deferred to {recommended_tool}",
             )
 
         # Use shared preparation for version check, path validation, file discovery
@@ -427,13 +429,11 @@ class TscPlugin(BaseToolPlugin):
         cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
 
         # Check if dependencies need installing
-        from lintro.utils.node_deps import should_install_deps
+        from lintro.utils.node_deps import install_node_deps, should_install_deps
 
         if should_install_deps(cwd_path):
             auto_install = merged_options.get("auto_install", False)
             if auto_install:
-                from lintro.utils.node_deps import install_node_deps
-
                 logger.info("[tsc] Auto-installing Node.js dependencies...")
                 install_ok, install_output = install_node_deps(cwd_path)
                 if install_ok:
@@ -450,23 +450,22 @@ class TscPlugin(BaseToolPlugin):
                             f"Skipping tsc: auto-install failed.\n" f"{install_output}"
                         ),
                         issues_count=0,
+                        skipped=True,
+                        skip_reason="auto-install failed",
                     )
             else:
-                logger.info(
-                    "[tsc] Skipping: node_modules not found in {}",
-                    cwd_path,
-                )
                 return ToolResult(
                     name=self.definition.name,
                     success=True,
                     output=(
-                        "Skipping tsc: node_modules not found. "
-                        "Install dependencies first "
-                        "(bun install / npm install) or set "
-                        "auto_install: true in tool options."
+                        "node_modules not found. "
+                        "Use --auto-install to install dependencies."
                     ),
                     issues_count=0,
+                    skipped=True,
+                    skip_reason="node_modules not found",
                 )
+
         use_project_files = merged_options.get("use_project_files", False)
         explicit_project_opt = merged_options.get("project")
         explicit_project = str(explicit_project_opt) if explicit_project_opt else None

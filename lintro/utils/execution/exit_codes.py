@@ -37,7 +37,12 @@ def determine_exit_code(
     exit_code = DEFAULT_EXIT_CODE_SUCCESS
 
     # Check for tool failures first (applies to all actions)
-    if any(not getattr(r, "success", True) for r in all_results):
+    # Exclude skipped tools — they didn't fail, they just didn't run
+    if any(
+        not getattr(r, "success", True)
+        for r in all_results
+        if not getattr(r, "skipped", False)
+    ):
         exit_code = DEFAULT_EXIT_CODE_FAILURE
 
     # Then check for issues based on action
@@ -73,6 +78,9 @@ def aggregate_tool_results(
     total_remaining = 0
 
     for result in results:
+        # Exclude skipped tools from totals
+        if getattr(result, "skipped", False):
+            continue
         total_issues += getattr(result, "issues_count", 0)
 
         if action == Action.FIX:

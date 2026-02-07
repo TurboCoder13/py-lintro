@@ -86,6 +86,12 @@ DEFAULT_ACTION: str = "fmt"
     is_flag=True,
     help="Auto-install Node.js dependencies if node_modules is missing",
 )
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip confirmation prompt and proceed immediately",
+)
 def format_command(
     ctx: click.Context,
     paths: tuple[str, ...],
@@ -102,6 +108,7 @@ def format_command(
     stream: bool,
     debug: bool,
     auto_install: bool,
+    yes: bool,
 ) -> None:
     """Format code using configured formatting tools.
 
@@ -125,6 +132,7 @@ def format_command(
         stream: bool: Whether to stream tool output in real-time.
         debug: bool: Whether to enable debug output on console.
         auto_install: bool: Whether to auto-install Node.js deps if missing.
+        yes: bool: Skip confirmation prompt and proceed immediately.
     """
     # Default to current directory if no paths provided
     normalized_paths: list[str] = list(paths) if paths else list(DEFAULT_PATHS)
@@ -146,6 +154,7 @@ def format_command(
         stream=stream,
         no_log=no_log,
         auto_install=auto_install,
+        yes=yes,
     )
 
     # Exit with code from tool execution
@@ -164,6 +173,7 @@ def format_code(
     output_format: str = "grid",
     verbose: bool = False,
     auto_install: bool = False,
+    yes: bool = False,
 ) -> None:
     """Programmatic format function.
 
@@ -177,6 +187,7 @@ def format_code(
         output_format: str: Format for displaying results (table, json, etc).
         verbose: bool: Whether to show verbose output during execution.
         auto_install: bool: Whether to auto-install Node.js deps if missing.
+        yes: bool: Skip confirmation prompt and proceed immediately.
 
     Returns:
         None: This function does not return a value.
@@ -203,6 +214,8 @@ def format_code(
         args.append("--verbose")
     if auto_install:
         args.append("--auto-install")
+    if yes:
+        args.append("--yes")
 
     runner = CliRunner()
     result = runner.invoke(format_command, args)

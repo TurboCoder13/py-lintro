@@ -76,8 +76,12 @@ def test_disabled_tool_skipped_in_all_tools_check(
     ):
         result = get_tools_to_run(tools=None, action="check")
 
-    assert_that(result).contains("ruff", "bandit")
-    assert_that(result).does_not_contain("mypy")
+    assert_that(result.to_run).contains("ruff", "bandit")
+    assert_that(result.to_run).does_not_contain("mypy")
+    # Verify mypy appears in skipped list with reason
+    skipped_by_name = {s.name: s for s in result.skipped}
+    assert_that(skipped_by_name).contains_key("mypy")
+    assert_that(skipped_by_name["mypy"].reason).is_equal_to("disabled in config")
 
 
 def test_disabled_tool_skipped_in_all_tools_fix(
@@ -102,8 +106,10 @@ def test_disabled_tool_skipped_in_all_tools_fix(
     ):
         result = get_tools_to_run(tools="all", action="fmt")
 
-    assert_that(result).contains("ruff", "prettier")
-    assert_that(result).does_not_contain("black")
+    assert_that(result.to_run).contains("ruff", "prettier")
+    assert_that(result.to_run).does_not_contain("black")
+    skipped_names = [s.name for s in result.skipped]
+    assert_that(skipped_names).contains("black")
 
 
 # =============================================================================
@@ -138,14 +144,16 @@ def test_disabled_tool_skipped_when_explicitly_requested(
     ):
         result = get_tools_to_run(tools="ruff,mypy", action="check")
 
-    assert_that(result).is_equal_to(["ruff"])
-    assert_that(result).does_not_contain("mypy")
+    assert_that(result.to_run).is_equal_to(["ruff"])
+    assert_that(result.to_run).does_not_contain("mypy")
+    skipped_names = [s.name for s in result.skipped]
+    assert_that(skipped_names).contains("mypy")
 
 
 def test_all_tools_disabled_returns_empty_list(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """When all available tools are disabled, return empty list."""
+    """When all available tools are disabled, return empty to_run list."""
     from lintro.tools import tool_manager
 
     monkeypatch.setattr(
@@ -167,7 +175,8 @@ def test_all_tools_disabled_returns_empty_list(
     ):
         result = get_tools_to_run(tools=None, action="check")
 
-    assert_that(result).is_empty()
+    assert_that(result.to_run).is_empty()
+    assert_that(result.skipped).is_length(2)
 
 
 # =============================================================================
@@ -200,7 +209,7 @@ def test_enabled_tool_runs_normally(
     ):
         result = get_tools_to_run(tools=None, action="check")
 
-    assert_that(result).is_equal_to(["ruff"])
+    assert_that(result.to_run).is_equal_to(["ruff"])
 
 
 def test_tool_not_in_config_defaults_to_enabled(
@@ -225,8 +234,8 @@ def test_tool_not_in_config_defaults_to_enabled(
     ):
         result = get_tools_to_run(tools=None, action="check")
 
-    assert_that(result).contains("ruff", "bandit")
-    assert_that(result).does_not_contain("mypy")
+    assert_that(result.to_run).contains("ruff", "bandit")
+    assert_that(result.to_run).does_not_contain("mypy")
 
 
 def test_empty_config_all_tools_enabled(
@@ -249,7 +258,8 @@ def test_empty_config_all_tools_enabled(
     ):
         result = get_tools_to_run(tools=None, action="check")
 
-    assert_that(result).contains("ruff", "mypy", "bandit")
+    assert_that(result.to_run).contains("ruff", "mypy", "bandit")
+    assert_that(result.skipped).is_empty()
 
 
 # =============================================================================
@@ -279,7 +289,12 @@ def test_execution_enabled_tools_filter(
     ):
         result = get_tools_to_run(tools=None, action="check")
 
-    assert_that(result).is_equal_to(["ruff"])
+    assert_that(result.to_run).is_equal_to(["ruff"])
+    # mypy and bandit should be in skipped with "not in enabled_tools" reason
+    skipped_names = [s.name for s in result.skipped]
+    assert_that(skipped_names).contains("mypy", "bandit")
+    for s in result.skipped:
+        assert_that(s.reason).is_equal_to("not in enabled_tools")
 
 
 def test_execution_enabled_tools_combined_with_tool_disabled(
@@ -305,7 +320,7 @@ def test_execution_enabled_tools_combined_with_tool_disabled(
     ):
         result = get_tools_to_run(tools=None, action="check")
 
-    assert_that(result).is_equal_to(["ruff"])
+    assert_that(result.to_run).is_equal_to(["ruff"])
 
 
 # =============================================================================
@@ -351,8 +366,10 @@ def test_disabled_tool_skipped_in_fix_action(
     ):
         result = get_tools_to_run(tools="ruff,black", action="fmt")
 
-    assert_that(result).is_equal_to(["ruff"])
-    assert_that(result).does_not_contain("black")
+    assert_that(result.to_run).is_equal_to(["ruff"])
+    assert_that(result.to_run).does_not_contain("black")
+    skipped_names = [s.name for s in result.skipped]
+    assert_that(skipped_names).contains("black")
 
 
 # =============================================================================
@@ -382,6 +399,6 @@ def test_disabled_tool_case_insensitive(
     ):
         result = get_tools_to_run(tools=None, action="check")
 
-    assert_that(result).is_equal_to(["ruff"])
-    assert_that(result).does_not_contain("MyPy")
-    assert_that(result).does_not_contain("mypy")
+    assert_that(result.to_run).is_equal_to(["ruff"])
+    assert_that(result.to_run).does_not_contain("MyPy")
+    assert_that(result.to_run).does_not_contain("mypy")
