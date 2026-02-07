@@ -21,7 +21,7 @@ class CargoDenyIssue(BaseIssue):
 
     Attributes:
         DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
-        code: Issue code (e.g., L001, A001, B001).
+        code: Issue code (e.g., L001, A001, B001), empty string if not present.
         severity: Severity level (error, warning).
         crate_name: Name of the affected crate.
         crate_version: Version of the affected crate.
@@ -36,7 +36,7 @@ class CargoDenyIssue(BaseIssue):
         "code": "code",
     }
 
-    code: str | None = field(default=None)
+    code: str = field(default="")
     severity: str | None = field(default=None)
     crate_name: str | None = field(default=None)
     crate_version: str | None = field(default=None)

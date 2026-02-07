@@ -17,7 +17,7 @@ class MypyIssue(BaseIssue):
 
     Attributes:
         code: Mypy error code (e.g., "attr-defined", "name-defined", "type-arg").
-            None if mypy doesn't provide an error code.
+            Empty string if mypy doesn't provide an error code.
         severity: Severity level reported by mypy (e.g., "error", "warning", "note").
             None if severity is not specified.
         end_line: Optional end line number for multi-line issues.
@@ -26,9 +26,9 @@ class MypyIssue(BaseIssue):
             None if the issue is at a single column or end position is unknown.
 
     Note:
-        All fields are optional to handle cases where mypy doesn't provide
-        complete location information. This is a breaking change from previous
-        versions where some fields were required.
+        Most fields are optional to handle cases where mypy doesn't provide
+        complete location information. ``code`` defaults to an empty string
+        to avoid None handling in downstream output.
 
     Examples:
         >>> issue = MypyIssue(
@@ -41,7 +41,7 @@ class MypyIssue(BaseIssue):
         ... )
     """
 
-    code: str | None = field(default=None)
+    code: str = field(default="")
     severity: str | None = field(default=None)
     end_line: int | None = field(default=None)
     end_column: int | None = field(default=None)

@@ -16,7 +16,7 @@ class SvelteCheckIssue(BaseIssue):
 
     Attributes:
         code: Error code (e.g., "ts-2322", "css-unused-selector").
-            None if svelte-check doesn't provide an error code.
+            Empty string if svelte-check doesn't provide an error code.
         severity: Severity level ("error", "warning", "hint").
             None if severity is not specified.
         end_line: Optional end line number for multi-line issues.
@@ -35,7 +35,7 @@ class SvelteCheckIssue(BaseIssue):
         ... )
     """
 
-    code: str | None = field(default=None)
+    code: str = field(default="")
     severity: str | None = field(default=None)
     end_line: int | None = field(default=None)
     end_column: int | None = field(default=None)

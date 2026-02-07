@@ -17,7 +17,7 @@ class TscIssue(BaseIssue):
 
     Attributes:
         code: TypeScript error code (e.g., "TS2322", "TS1234").
-            None if tsc doesn't provide an error code.
+            Empty string if tsc doesn't provide an error code.
         severity: Severity level reported by tsc (e.g., "error", "warning").
             None if severity is not specified.
         end_line: Optional end line number for multi-line issues.
@@ -36,7 +36,7 @@ class TscIssue(BaseIssue):
         ... )
     """
 
-    code: str | None = field(default=None)
+    code: str = field(default="")
     severity: str | None = field(default=None)
     end_line: int | None = field(default=None)
     end_column: int | None = field(default=None)

@@ -17,7 +17,7 @@ class VueTscIssue(BaseIssue):
 
     Attributes:
         code: TypeScript error code (e.g., "TS2322", "TS1234").
-            None if vue-tsc doesn't provide an error code.
+            Empty string if vue-tsc doesn't provide an error code.
         severity: Severity level reported by vue-tsc (e.g., "error", "warning").
             None if severity is not specified.
 
@@ -32,5 +32,5 @@ class VueTscIssue(BaseIssue):
         ... )
     """
 
-    code: str | None = field(default=None)
+    code: str = field(default="")
     severity: str | None = field(default=None)
