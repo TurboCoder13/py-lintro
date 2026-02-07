@@ -172,6 +172,37 @@ def test_write_reports_from_results(temp_output_dir: str) -> None:
     assert_that(any("foo.py" in row for row in reader)).is_true()
 
 
+def test_write_reports_from_results_with_none_code(temp_output_dir: str) -> None:
+    """write_reports_from_results handles issues where code is None.
+
+    Ensures the consumer safety net (or "") prevents crashes when a tool
+    parser produces issues with code=None.
+
+    Args:
+        temp_output_dir: Temporary directory fixture for test output.
+    """
+    om = OutputManager(base_dir=temp_output_dir)
+    issues = [SimpleNamespace(file="bar.py", line=5, code=None, message="Some warning")]
+    results = [make_tool_result("tool1", 1, issues)]
+    om.write_reports_from_results(results)  # type: ignore[arg-type]
+    md = (om.get_run_dir() / "report.md").read_text()
+    assert_that(md).contains("bar.py")
+    assert_that(md).contains("Some warning")
+    assert_that(md).does_not_contain("None")
+    html_content = (om.get_run_dir() / "report.html").read_text()
+    assert_that(html_content).contains("bar.py")
+    assert_that(html_content).contains("Some warning")
+    assert_that(html_content).does_not_contain("None")
+    csv_path = om.get_run_dir() / "summary.csv"
+    with open(csv_path) as f:
+        reader = list(csv.reader(f))
+    assert_that(any("bar.py" in row for row in reader)).is_true()
+    # Ensure "None" string doesn't appear in CSV rows
+    for row in reader:
+        for cell in row:
+            assert_that(cell).is_not_equal_to("None")
+
+
 def test_permission_fallback_uses_temp_dir(temp_output_dir: str) -> None:
     """Verify PermissionError falls back to temp directory with warning.
 

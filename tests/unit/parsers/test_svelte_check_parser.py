@@ -199,7 +199,7 @@ def test_parse_ndjson_code_field() -> None:
 
 
 def test_parse_ndjson_no_code_field() -> None:
-    """NDJSON without code field leaves code as None."""
+    """NDJSON without code field leaves code as empty string."""
     output = json.dumps(
         {
             "type": "ERROR",
@@ -212,7 +212,7 @@ def test_parse_ndjson_no_code_field() -> None:
     issues = parse_svelte_check_output(output)
 
     assert_that(issues).is_length(1)
-    assert_that(issues[0].code).is_none()
+    assert_that(issues[0].code).is_equal_to("")
 
 
 def test_parse_ndjson_numeric_code_field() -> None:

@@ -13,7 +13,7 @@ class ActionlintIssue(BaseIssue):
     Attributes:
         DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         level: Severity level (e.g., "error", "warning").
-        code: Optional rule/code identifier, when present.
+        code: Rule/code identifier, empty string if not present.
     """
 
     DISPLAY_FIELD_MAP: ClassVar[dict[str, str]] = {
@@ -22,4 +22,4 @@ class ActionlintIssue(BaseIssue):
     }
 
     level: str = field(default="error")
-    code: str | None = field(default=None)
+    code: str = field(default="")

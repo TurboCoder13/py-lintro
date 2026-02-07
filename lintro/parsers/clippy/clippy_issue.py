@@ -25,7 +25,7 @@ class ClippyIssue(BaseIssue):
         "severity": "level",
     }
 
-    code: str | None = field(default=None)
+    code: str = field(default="")
     level: str | None = field(default=None)
     end_line: int | None = field(default=None)
     end_column: int | None = field(default=None)

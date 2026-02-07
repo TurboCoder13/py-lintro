@@ -86,7 +86,7 @@ def _parse_line(line: str) -> AstroCheckIssue | None:
                 file=file_path,
                 line=line_num,
                 column=column,
-                code=code,
+                code=code or "",
                 message=message,
                 severity=severity.lower() if severity else "error",
             )

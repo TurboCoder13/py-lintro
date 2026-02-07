@@ -16,7 +16,7 @@ class AstroCheckIssue(BaseIssue):
 
     Attributes:
         code: TypeScript error code (e.g., "TS2322", "TS1234").
-            None if astro check doesn't provide an error code.
+            Empty string if astro check doesn't provide an error code.
         severity: Severity level reported by astro check (e.g., "error", "warning").
             None if severity is not specified.
         hint: Optional hint text providing additional context.
@@ -33,6 +33,6 @@ class AstroCheckIssue(BaseIssue):
         ... )
     """
 
-    code: str | None = field(default=None)
+    code: str = field(default="")
     severity: str | None = field(default=None)
     hint: str | None = field(default=None)

@@ -67,7 +67,7 @@ def _parse_diagnostic(item: dict[str, Any]) -> CargoDenyIssue | None:
             file="Cargo.toml",  # cargo-deny operates at project level
             line=0,  # No line information available
             column=0,
-            code=str(code) if code else None,
+            code=str(code) if code else "",
             severity=severity,
             message=str(message) if message else "",
             crate_name=crate_name,

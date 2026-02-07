@@ -89,9 +89,8 @@ def _parse_ndjson_line(line: str) -> SvelteCheckIssue | None:
         end_line = int(end.get("line", start_line))
         end_col = int(end.get("character", start_col))
         message = str(data.get("message", "")).strip()
-        code = data.get("code")
-        if code is not None:
-            code = str(code)
+        raw_code = data.get("code")
+        code = str(raw_code) if raw_code is not None else ""
 
         return SvelteCheckIssue(
             file=file_path,
