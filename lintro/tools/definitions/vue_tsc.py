@@ -197,7 +197,7 @@ class VueTscPlugin(BaseToolPlugin):
         abs_base = base_tsconfig.resolve()
         abs_files = [str((cwd / f).resolve()) for f in files]
 
-        temp_config = {
+        temp_config: dict[str, object] = {
             "extends": str(abs_base),
             "include": abs_files,
             "exclude": [],
@@ -206,10 +206,27 @@ class VueTscPlugin(BaseToolPlugin):
             },
         }
 
-        fd, temp_path = tempfile.mkstemp(
-            suffix=".json",
-            prefix="lintro-vue-tsc-",
-        )
+        # Create temp file next to the base tsconfig so TypeScript can resolve
+        # types/typeRoots by walking up from the temp file to node_modules.
+        # Falls back to system temp dir with explicit typeRoots for read-only
+        # filesystems (e.g. Docker volume mounts).
+        try:
+            fd, temp_path = tempfile.mkstemp(
+                suffix=".json",
+                prefix=".lintro-vue-tsc-",
+                dir=abs_base.parent,
+            )
+        except OSError:
+            fd, temp_path = tempfile.mkstemp(
+                suffix=".json",
+                prefix="lintro-vue-tsc-",
+            )
+            compiler_options = temp_config["compilerOptions"]
+            assert isinstance(compiler_options, dict)
+            compiler_options["typeRoots"] = [
+                str(cwd / "node_modules" / "@types"),
+            ]
+
         try:
             with open(fd, "w", encoding="utf-8") as f:
                 json.dump(temp_config, f, indent=2)

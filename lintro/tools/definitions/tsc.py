@@ -236,16 +236,13 @@ class TscPlugin(BaseToolPlugin):
         Raises:
             OSError: If the temporary file cannot be created or written.
         """
-        # Use absolute path for extends since temp file is in system temp dir.
-        # This avoids permission issues in Docker containers where cwd may be
-        # a read-only volume mount.
         abs_base = base_tsconfig.resolve()
 
         # Convert relative file paths to absolute paths since the temp tsconfig
-        # will be in a different directory
+        # may be in a different directory than cwd
         abs_files = [str((cwd / f).resolve()) for f in files]
 
-        temp_config = {
+        temp_config: dict[str, object] = {
             "extends": str(abs_base),
             "include": abs_files,
             "exclude": [],
@@ -255,12 +252,27 @@ class TscPlugin(BaseToolPlugin):
             },
         }
 
-        # Create temp file in system temp directory to avoid permission issues
-        # in Docker containers with mounted volumes
-        fd, temp_path = tempfile.mkstemp(
-            suffix=".json",
-            prefix="lintro-tsc-",
-        )
+        # Create temp file next to the base tsconfig so TypeScript can resolve
+        # types/typeRoots by walking up from the temp file to node_modules.
+        # Falls back to system temp dir with explicit typeRoots for read-only
+        # filesystems (e.g. Docker volume mounts).
+        try:
+            fd, temp_path = tempfile.mkstemp(
+                suffix=".json",
+                prefix=".lintro-tsc-",
+                dir=abs_base.parent,
+            )
+        except OSError:
+            fd, temp_path = tempfile.mkstemp(
+                suffix=".json",
+                prefix="lintro-tsc-",
+            )
+            compiler_options = temp_config["compilerOptions"]
+            assert isinstance(compiler_options, dict)
+            compiler_options["typeRoots"] = [
+                str(cwd / "node_modules" / "@types"),
+            ]
+
         try:
             with open(fd, "w", encoding="utf-8") as f:
                 json.dump(temp_config, f, indent=2)
