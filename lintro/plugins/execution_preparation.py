@@ -101,6 +101,8 @@ def verify_tool_version(definition: ToolDefinition) -> ToolResult | None:
         success=True,
         output=skip_message,
         issues_count=0,
+        skipped=True,
+        skip_reason=version_info.error_message,
     )
 
 

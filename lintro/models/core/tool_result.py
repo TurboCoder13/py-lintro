@@ -48,12 +48,25 @@ class ToolResult:
     # Optional pytest-specific summary data for display
     pytest_summary: dict[str, Any] | None = field(default=None)
 
+    # Skip tracking for tools that didn't execute
+    skipped: bool = field(default=False)
+    skip_reason: str | None = field(default=None)
+
     def __post_init__(self) -> None:
-        """Validate that the issue counts are consistent.
+        """Validate that the issue counts and skip state are consistent.
 
         Raises:
-            ValueError: If issue counts are inconsistent.
+            ValueError: If issue counts are inconsistent or skip state is invalid.
         """
+        # Skipped tools are not failures — they just didn't run
+        if self.skipped:
+            self.success = True
+
+        if self.skip_reason and not self.skipped:
+            raise ValueError(
+                "skip_reason can only be set when skipped=True",
+            )
+
         if (
             self.initial_issues_count is not None
             and self.fixed_issues_count is not None

@@ -400,6 +400,8 @@ class TscPlugin(BaseToolPlugin):
                     f"lintro check . --tools {recommended_tool}"
                 ),
                 issues_count=0,
+                skipped=True,
+                skip_reason=f"deferred to {recommended_tool}",
             )
 
         # Use shared preparation for version check, path validation, file discovery
@@ -452,21 +454,17 @@ class TscPlugin(BaseToolPlugin):
                         issues_count=0,
                     )
             else:
-                logger.info(
-                    "[tsc] Skipping: node_modules not found in {}",
-                    cwd_path,
-                )
                 return ToolResult(
                     name=self.definition.name,
-                    success=True,
                     output=(
-                        "Skipping tsc: node_modules not found. "
-                        "Install dependencies first "
-                        "(bun install / npm install) or set "
-                        "auto_install: true in tool options."
+                        "node_modules not found. "
+                        "Use --auto-install to install dependencies."
                     ),
                     issues_count=0,
+                    skipped=True,
+                    skip_reason="node_modules not found",
                 )
+
         use_project_files = merged_options.get("use_project_files", False)
         explicit_project_opt = merged_options.get("project")
         explicit_project = str(explicit_project_opt) if explicit_project_opt else None

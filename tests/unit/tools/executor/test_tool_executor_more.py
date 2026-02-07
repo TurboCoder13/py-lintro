@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 import lintro.utils.tool_executor as te
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools import tool_manager
+from lintro.utils.execution.tool_configuration import ToolsToRunResult
 from lintro.utils.output import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
 
@@ -143,8 +144,8 @@ def test_main_loop_get_tool_raises_appends_failure(
 
     ok = ToolResult(name="black", success=True, output="", issues_count=0)
 
-    def fake_get_tools(tools: str | None, action: str) -> list[str]:
-        return ["ruff", "black"]
+    def fake_get_tools(tools: str | None, action: str) -> ToolsToRunResult:
+        return ToolsToRunResult(to_run=["ruff", "black"])
 
     def fake_get_tool(name: str) -> object:
         if name == "ruff":
@@ -202,8 +203,8 @@ def test_write_reports_errors_are_swallowed(monkeypatch: pytest.MonkeyPatch) -> 
 
     ok = ToolResult(name="ruff", success=True, output="", issues_count=0)
 
-    def fake_get_tools(tools: str | None, action: str) -> list[str]:
-        return ["ruff"]
+    def fake_get_tools(tools: str | None, action: str) -> ToolsToRunResult:
+        return ToolsToRunResult(to_run=["ruff"])
 
     ruff_tool = type(
         "_T",
@@ -275,7 +276,7 @@ def test_unknown_post_check_tool_is_skipped(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setattr(
         te,
         "get_tools_to_run",
-        lambda tools, action: ["ruff"],
+        lambda tools, action: ToolsToRunResult(to_run=["ruff"]),
         raising=True,
     )
     monkeypatch.setattr(tool_manager, "get_tool", lambda name: ruff_tool)
@@ -348,7 +349,7 @@ def test_post_checks_early_filter_removes_black_from_main(
     monkeypatch.setattr(
         te,
         "get_tools_to_run",
-        lambda tools, action: ["ruff", "black"],
+        lambda tools, action: ToolsToRunResult(to_run=["ruff", "black"]),
         raising=True,
     )
 
@@ -445,7 +446,7 @@ def test_all_filtered_results_in_no_tools_warning(
     monkeypatch.setattr(
         te,
         "get_tools_to_run",
-        lambda tools, action: ["black"],
+        lambda tools, action: ToolsToRunResult(to_run=["black"]),
         raising=True,
     )
     # Early config filters out black

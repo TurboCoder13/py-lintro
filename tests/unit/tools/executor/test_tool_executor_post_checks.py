@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools import tool_manager
+from lintro.utils.execution.tool_configuration import ToolsToRunResult
 from lintro.utils.output import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
 
@@ -132,8 +133,8 @@ def _setup_main_tool(monkeypatch: pytest.MonkeyPatch) -> FakeTool:
     ok = ToolResult(name="ruff", success=True, output="", issues_count=0)
     ruff = FakeTool("ruff", can_fix=True, result=ok)
 
-    def fake_get_tools(tools: str | None, action: str) -> list[str]:
-        return ["ruff"]
+    def fake_get_tools(tools: str | None, action: str) -> ToolsToRunResult:
+        return ToolsToRunResult(to_run=["ruff"])
 
     monkeypatch.setattr(te, "get_tools_to_run", fake_get_tools, raising=True)
     monkeypatch.setattr(tool_manager, "get_tool", lambda name: ruff, raising=True)

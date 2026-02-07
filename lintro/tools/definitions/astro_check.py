@@ -261,20 +261,15 @@ class AstroCheckPlugin(BaseToolPlugin):
                         issues_count=0,
                     )
             else:
-                logger.info(
-                    "[astro-check] Skipping: node_modules not found in {}",
-                    cwd_path,
-                )
                 return ToolResult(
                     name=self.definition.name,
-                    success=True,
                     output=(
-                        "Skipping astro-check: node_modules not found. "
-                        "Install dependencies first "
-                        "(bun install / npm install) or set "
-                        "auto_install: true in tool options."
+                        "node_modules not found. "
+                        "Use --auto-install to install dependencies."
                     ),
                     issues_count=0,
+                    skipped=True,
+                    skip_reason="node_modules not found",
                 )
 
         # Build command

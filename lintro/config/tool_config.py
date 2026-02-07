@@ -15,9 +15,12 @@ class LintroToolConfig(BaseModel):
         enabled: Whether the tool is enabled.
         config_source: Optional explicit path to native config file.
             If not set, tool uses its own config discovery.
+        auto_install: Per-tool auto-install override.
+            None means inherit from global setting.
     """
 
     model_config = ConfigDict(frozen=False, extra="forbid")
 
     enabled: bool = True
     config_source: str | None = None
+    auto_install: bool | None = None

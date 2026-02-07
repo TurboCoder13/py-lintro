@@ -6,6 +6,7 @@ and determining which tools to run.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from lintro.config.config_loader import get_config
@@ -16,7 +17,50 @@ from lintro.tools import tool_manager
 from lintro.utils.unified_config import UnifiedConfigManager
 
 if TYPE_CHECKING:
+    from lintro.config.lintro_config import LintroConfig
     from lintro.plugins.base import BaseToolPlugin
+
+
+@dataclass(frozen=True)
+class SkippedTool:
+    """A tool that was skipped during tool selection."""
+
+    name: str
+    reason: str
+
+
+@dataclass
+class ToolsToRunResult:
+    """Result of get_tools_to_run() with both active and skipped tools."""
+
+    to_run: list[str] = field(default_factory=list)
+    skipped: list[SkippedTool] = field(default_factory=list)
+
+
+def _get_disabled_reason(config: LintroConfig, tool_name: str) -> str:
+    """Determine why a tool is disabled.
+
+    Args:
+        config: Lintro configuration.
+        tool_name: Name of the tool.
+
+    Returns:
+        Human-readable reason string.
+    """
+    tool_lower = tool_name.lower()
+
+    # Check if excluded by enabled_tools allowlist
+    if config.execution.enabled_tools:
+        enabled_lower = [t.lower() for t in config.execution.enabled_tools]
+        if tool_lower not in enabled_lower:
+            return "not in enabled_tools"
+
+    # Check tool-level enabled flag
+    tool_config = config.get_tool_config(tool_lower)
+    if not tool_config.enabled:
+        return "disabled in config"
+
+    return "disabled"
 
 
 def configure_tool_for_execution(
@@ -46,7 +90,7 @@ def configure_tool_for_execution(
         incremental: Whether to only check changed files.
         action: The action being performed (check/fix).
         post_tools: Set of post-check tool names.
-        auto_install: Whether to auto-install Node.js deps if missing.
+        auto_install: Whether to auto-install Node.js deps if missing (global default).
     """
     # Build CLI overrides from --tool-options
     cli_overrides: dict[str, object] = {}
@@ -72,8 +116,15 @@ def configure_tool_for_execution(
     if incremental:
         tool.set_options(incremental=True)
 
-    # Set auto_install for tools that support it (e.g., tsc)
-    if auto_install:
+    # Resolve per-tool auto_install: per-tool config > global effective > False
+    lintro_config = get_config()
+    tool_cfg = lintro_config.get_tool_config(tool_name)
+    if tool_cfg.auto_install is not None:
+        effective_tool_auto_install = tool_cfg.auto_install
+    else:
+        effective_tool_auto_install = auto_install
+
+    if effective_tool_auto_install:
         tool.set_options(auto_install=True)
 
     # Handle Black post-check coordination with Ruff
@@ -120,7 +171,7 @@ def get_tool_lookup_keys(tool_name: str) -> set[str]:
 def get_tools_to_run(
     tools: str | ToolsValue | None,
     action: str | Action,
-) -> list[str]:
+) -> ToolsToRunResult:
     """Get the list of tools to run based on the tools string and action.
 
     Args:
@@ -128,7 +179,7 @@ def get_tools_to_run(
         action: "check", "fmt", or "test".
 
     Returns:
-        List of tool names to run.
+        ToolsToRunResult with tools to run and skipped tools with reasons.
 
     Raises:
         ValueError: If unknown tool names are provided.
@@ -150,8 +201,11 @@ def get_tools_to_run(
         # Respect enabled/disabled config for pytest
         lintro_config = get_config()
         if not lintro_config.is_tool_enabled("pytest"):
-            return []
-        return ["pytest"]
+            reason = _get_disabled_reason(lintro_config, "pytest")
+            return ToolsToRunResult(
+                skipped=[SkippedTool(name="pytest", reason=reason)],
+            )
+        return ToolsToRunResult(to_run=["pytest"])
 
     # Get lintro config for enabled/disabled tool checking
     lintro_config = get_config()
@@ -166,16 +220,23 @@ def get_tools_to_run(
             available_tools = tool_manager.get_fix_tools()
         else:  # check
             available_tools = tool_manager.get_check_tools()
-        # Filter out pytest for check/fmt actions and disabled tools
-        return [
-            name
-            for name in available_tools
-            if name.lower() != "pytest" and lintro_config.is_tool_enabled(name)
-        ]
+
+        to_run: list[str] = []
+        skipped: list[SkippedTool] = []
+        for name in available_tools:
+            if name.lower() == "pytest":
+                continue
+            if not lintro_config.is_tool_enabled(name):
+                reason = _get_disabled_reason(lintro_config, name)
+                skipped.append(SkippedTool(name=name, reason=reason))
+            else:
+                to_run.append(name)
+        return ToolsToRunResult(to_run=to_run, skipped=skipped)
 
     # Parse specific tools
     tool_names: list[str] = [name.strip().lower() for name in tools.split(",")]
-    tools_to_run: list[str] = []
+    to_run = []
+    skipped = []
 
     for name in tool_names:
         # Reject pytest for check/fmt actions
@@ -192,8 +253,10 @@ def get_tools_to_run(
             raise ValueError(
                 f"Unknown tool '{name}'. Available tools: {available_names}",
             )
-        # Skip disabled tools (check enabled flag in lintro config)
+        # Track disabled tools with reason
         if not lintro_config.is_tool_enabled(name):
+            reason = _get_disabled_reason(lintro_config, name)
+            skipped.append(SkippedTool(name=name, reason=reason))
             continue
         # Verify the tool supports the requested action
         if action == Action.FIX:
@@ -202,6 +265,6 @@ def get_tools_to_run(
                 raise ValueError(
                     f"Tool '{name}' does not support formatting",
                 )
-        tools_to_run.append(name)
+        to_run.append(name)
 
-    return tools_to_run
+    return ToolsToRunResult(to_run=to_run, skipped=skipped)

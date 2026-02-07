@@ -19,6 +19,12 @@ from lintro.utils.console import (
 # Constants
 DEFAULT_REMAINING_COUNT: str = "?"
 
+# ANSI color codes
+_GREEN = "\033[92m"
+_RED = "\033[91m"
+_YELLOW = "\033[93m"
+_RESET = "\033[0m"
+
 
 def _extract_skip_reason(output: str) -> str:
     """Extract abbreviated skip reason from tool output.
@@ -89,6 +95,37 @@ def _format_tool_display_name(tool_name: str) -> str:
     return tool_name.replace("_", "-")
 
 
+def _is_result_skipped(result: object) -> tuple[bool, str]:
+    """Check if a tool result represents a skipped tool.
+
+    Uses the first-class ``skipped`` field if available, falling back to
+    legacy output string matching for backward compatibility.
+
+    Args:
+        result: Tool result object.
+
+    Returns:
+        Tuple of (is_skipped, skip_reason).
+    """
+    # First-class field (preferred)
+    skipped = getattr(result, "skipped", False)
+    if skipped:
+        skip_reason = getattr(result, "skip_reason", None) or ""
+        return True, skip_reason
+
+    # Legacy fallback: match "Skipping {tool}: ..." pattern in output
+    tool_name = getattr(result, "name", "unknown")
+    result_output = getattr(result, "output", "") or ""
+    if (
+        result_output
+        and isinstance(result_output, str)
+        and result_output.lower().startswith(f"skipping {tool_name.lower()}:")
+    ):
+        return True, _extract_skip_reason(result_output)
+
+    return False, ""
+
+
 def print_summary_table(
     console_output_func: Callable[..., None],
     action: Action,
@@ -120,6 +157,9 @@ def print_summary_table(
             display_name: str = _format_tool_display_name(tool_name)
             tool_display: str = f"{emoji} {display_name}"
 
+            # Check skip status (first-class field or legacy fallback)
+            is_skipped, skip_reason = _is_result_skipped(result)
+
             # Special handling for pytest/test action
             # Safely check if this is pytest by normalizing the tool name
             is_pytest = False
@@ -127,20 +167,35 @@ def print_summary_table(
                 is_pytest = normalize_tool_name(tool_name) == ToolName.PYTEST
 
             if action == Action.TEST and is_pytest:
+                if is_skipped:
+                    summary_data.append(
+                        [
+                            tool_display,
+                            f"{_YELLOW}⏭️  SKIP{_RESET}",
+                            "-",
+                            "-",
+                            "-",
+                            "-",
+                            "-",
+                            f"{_YELLOW}{skip_reason}{_RESET}" if skip_reason else "",
+                        ],
+                    )
+                    continue
+
                 pytest_summary = getattr(result, "pytest_summary", None)
                 if pytest_summary:
                     # Use pytest summary data for more detailed display
                     passed = _safe_cast(pytest_summary, "passed", 0, int)
                     failed = _safe_cast(pytest_summary, "failed", 0, int)
-                    skipped = _safe_cast(pytest_summary, "skipped", 0, int)
+                    skipped_count = _safe_cast(pytest_summary, "skipped", 0, int)
                     duration = _safe_cast(pytest_summary, "duration", 0.0, float)
                     total = _safe_cast(pytest_summary, "total", 0, int)
 
                     # Create detailed status display
                     status_display = (
-                        "\033[92m✅ PASS\033[0m"  # green
+                        f"{_GREEN}✅ PASS{_RESET}"
                         if failed == 0
-                        else "\033[91m❌ FAIL\033[0m"  # red
+                        else f"{_RED}❌ FAIL{_RESET}"
                     )
 
                     # Format duration with proper units
@@ -153,30 +208,47 @@ def print_summary_table(
                             status_display,
                             str(passed),
                             str(failed),
-                            str(skipped),
+                            str(skipped_count),
                             str(total),
                             duration_str,
+                            "",  # Notes
                         ],
                     )
                     continue
 
             # Handle TEST action for non-pytest tools
             if action == Action.TEST:
+                if is_skipped:
+                    summary_data.append(
+                        [
+                            tool_display,
+                            f"{_YELLOW}⏭️  SKIP{_RESET}",
+                            "-",
+                            "-",
+                            "-",
+                            "-",
+                            "-",
+                            f"{_YELLOW}{skip_reason}{_RESET}" if skip_reason else "",
+                        ],
+                    )
+                    continue
+
                 # Non-pytest tool in test mode - show basic pass/fail
                 status_display = (
-                    "\033[92m✅ PASS\033[0m"
+                    f"{_GREEN}✅ PASS{_RESET}"
                     if (success and issues_count == 0)
-                    else "\033[91m❌ FAIL\033[0m"
+                    else f"{_RED}❌ FAIL{_RESET}"
                 )
                 summary_data.append(
                     [
                         tool_display,
                         status_display,
-                        "-",  # Passed
-                        "-",  # Failed
-                        "-",  # Skipped
-                        "-",  # Total
-                        "-",  # Duration
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "-",
+                        "",  # Notes
                     ],
                 )
                 continue
@@ -185,16 +257,25 @@ def print_summary_table(
             # (regardless of fixes made)
             # For check operations, success means no issues found
             if action == Action.FIX:
+                if is_skipped:
+                    summary_data.append(
+                        [
+                            tool_display,
+                            f"{_YELLOW}⏭️  SKIP{_RESET}",
+                            "-",  # Fixed
+                            "-",  # Remaining
+                            f"{_YELLOW}{skip_reason}{_RESET}" if skip_reason else "",
+                        ],
+                    )
+                    continue
+
                 # Format operations: show fixed count and remaining status
                 if success:
-                    status_display = "\033[92m✅ PASS\033[0m"  # green
+                    status_display = f"{_GREEN}✅ PASS{_RESET}"
                 else:
-                    status_display = "\033[91m❌ FAIL\033[0m"  # red
+                    status_display = f"{_RED}❌ FAIL{_RESET}"
 
                 # Get result output for parsing
-                # Note: "No files to fix" means the tool ran successfully but
-                # found no files - this is PASS with 0 fixed/remaining, not SKIPPED
-                # (consistent with check mode behavior)
                 result_output: str = getattr(result, "output", "")
 
                 # Prefer standardized counts from ToolResult
@@ -213,8 +294,6 @@ def print_summary_table(
                         "remaining" in result_output.lower()
                         or "cannot be auto-fixed" in result_output.lower()
                     ):
-                        # Try multiple patterns to match different
-                        # output formats
                         remaining_match = RE_CANNOT_AUTOFIX.search(
                             result_output,
                         )
@@ -236,44 +315,47 @@ def print_summary_table(
                     except (ValueError, TypeError):
                         fixed_display_value = 0
                 else:
-                    # Fall back to issues_count when fixed is unknown
                     try:
                         fixed_display_value = int(issues_count)
                     except (ValueError, TypeError):
                         fixed_display_value = 0
 
                 # Fixed issues display
-                fixed_display: str = f"\033[92m{fixed_display_value}\033[0m"  # green
+                fixed_display: str = f"{_GREEN}{fixed_display_value}{_RESET}"
 
                 # Remaining issues display
                 if isinstance(remaining_count, str):
-                    # Display sentinel value verbatim
-                    remaining_display: str = (
-                        f"\033[93m{remaining_count}\033[0m"  # yellow
-                    )
+                    remaining_display: str = f"{_YELLOW}{remaining_count}{_RESET}"
                 else:
                     remaining_display = (
-                        f"\033[91m{remaining_count}\033[0m"  # red
+                        f"{_RED}{remaining_count}{_RESET}"
                         if remaining_count > 0
-                        else f"\033[92m{remaining_count}\033[0m"  # green
+                        else f"{_GREEN}{remaining_count}{_RESET}"
                     )
-            else:  # check
-                # Check if this is an execution failure (timeout/error)
-                # vs linting issues
-                result_output = getattr(result, "output", "") or ""
 
-                # Check if tool was skipped (version check failure, etc.)
-                # Only mark as skipped if the output matches the version check
-                # failure pattern: "Skipping {tool_name}: ..." (case-insensitive)
-                # This prevents false positives when tools output "skipping"
-                # in their own messages
-                is_skipped = (
-                    result_output
-                    and isinstance(result_output, str)
-                    and result_output.lower().startswith(
-                        f"skipping {tool_name.lower()}:",
-                    )
+                summary_data.append(
+                    [
+                        tool_display,
+                        status_display,
+                        fixed_display,
+                        remaining_display,
+                        "",  # Notes
+                    ],
                 )
+            else:  # check
+                if is_skipped:
+                    summary_data.append(
+                        [
+                            tool_display,
+                            f"{_YELLOW}⏭️  SKIP{_RESET}",
+                            "-",  # Issues
+                            f"{_YELLOW}{skip_reason}{_RESET}" if skip_reason else "",
+                        ],
+                    )
+                    continue
+
+                # Check if this is an execution failure (timeout/error)
+                result_output = getattr(result, "output", "") or ""
 
                 has_execution_failure = result_output and (
                     "timeout" in result_output.lower()
@@ -281,54 +363,49 @@ def print_summary_table(
                     or "tool execution failed" in result_output.lower()
                 )
 
-                # If tool was skipped (version check failure, etc.), show SKIPPED status
-                # Note: "No files to check" means the tool ran successfully but found
-                # no files - this should be PASS, not SKIPPED
-                if is_skipped:
-                    status_display = "\033[93m⏭️  SKIPPED\033[0m"  # yellow
-                    skip_reason = _extract_skip_reason(result_output)
-                    issues_display = f"\033[93m{skip_reason}\033[0m"  # yellow
-                # If there are execution failures but no parsed issues,
-                # show special status
-                elif has_execution_failure and issues_count == 0:
-                    # This shouldn't happen with our fix, but handle gracefully
-                    status_display = "\033[91m❌ FAIL\033[0m"  # red
-                    issues_display = "\033[91mERROR\033[0m"  # red
-                elif not success and issues_count == 0:
-                    # Execution failure with no issues parsed - show as failure
-                    status_display = "\033[91m❌ FAIL\033[0m"  # red
-                    issues_display = "\033[91mERROR\033[0m"  # red
+                notes_display = ""
+
+                # Check for framework deferral pattern in output
+                if (
+                    result_output
+                    and result_output.startswith("SKIPPED:")
+                    and "detected" in result_output
+                ):
+                    notes_display = f"{_YELLOW}deferred to framework checker{_RESET}"
+
+                if (
+                    has_execution_failure
+                    and issues_count == 0
+                    or not success
+                    and issues_count == 0
+                ):
+                    status_display = f"{_RED}❌ FAIL{_RESET}"
+                    issues_display = f"{_RED}ERROR{_RESET}"
                 else:
                     status_display = (
-                        "\033[92m✅ PASS\033[0m"  # green
+                        f"{_GREEN}✅ PASS{_RESET}"
                         if (success and issues_count == 0)
-                        else "\033[91m❌ FAIL\033[0m"  # red
+                        else f"{_RED}❌ FAIL{_RESET}"
                     )
-                    # Display issues count (0 means PASS, >0 means FAIL)
-                    # Note: "No files to check" means the tool ran successfully
-                    # but found no files - this is PASS with 0 issues, not SKIPPED
                     issues_display = (
-                        f"\033[92m{issues_count}\033[0m"  # green
+                        f"{_GREEN}{issues_count}{_RESET}"
                         if issues_count == 0
-                        else f"\033[91m{issues_count}\033[0m"  # red
+                        else f"{_RED}{issues_count}{_RESET}"
                     )
-            if action == Action.FIX:
+
                 summary_data.append(
                     [
                         tool_display,
                         status_display,
-                        fixed_display,
-                        remaining_display,
+                        issues_display,
+                        notes_display,
                     ],
                 )
-            else:
-                summary_data.append([tool_display, status_display, issues_display])
 
         # Set headers based on action
         # Use plain headers to avoid ANSI/emojis width misalignment
         headers: list[str]
         if action == Action.TEST:
-            # Special table for test action with separate columns for test metrics
             headers = [
                 "Tool",
                 "Status",
@@ -337,11 +414,12 @@ def print_summary_table(
                 "Skipped",
                 "Total",
                 "Duration",
+                "Notes",
             ]
         elif action == Action.FIX:
-            headers = ["Tool", "Status", "Fixed", "Remaining"]
+            headers = ["Tool", "Status", "Fixed", "Remaining", "Notes"]
         else:
-            headers = ["Tool", "Status", "Issues"]
+            headers = ["Tool", "Status", "Issues", "Notes"]
 
         # Render with plain values to ensure proper alignment across terminals
         table: str = tabulate(

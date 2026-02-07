@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 from lintro.enums.tool_name import ToolName
 from lintro.models.core.tool_result import ToolResult
 from lintro.tools import tool_manager
+from lintro.utils.execution.tool_configuration import ToolsToRunResult
 from lintro.utils.output import OutputManager
 from lintro.utils.tool_executor import run_lint_tools_simple
 
@@ -136,7 +137,7 @@ def _setup_tools(monkeypatch: pytest.MonkeyPatch) -> tuple[FakeTool, FakeTool]:
     black = FakeTool(ToolName.BLACK, can_fix=True)
     tool_map = {ToolName.RUFF: ruff, ToolName.BLACK: black}
 
-    def fake_get_tools(tools: str | None, action: str) -> list[str]:
+    def fake_get_tools(tools: str | None, action: str) -> ToolsToRunResult:
         """Return tool names for ruff and black in order.
 
         Args:
@@ -144,9 +145,9 @@ def _setup_tools(monkeypatch: pytest.MonkeyPatch) -> tuple[FakeTool, FakeTool]:
             action: Runner action being executed (e.g., "fmt" or "check").
 
         Returns:
-            list[str]: Tool names representing Ruff then Black.
+            ToolsToRunResult with ruff and black tools.
         """
-        return [ToolName.RUFF, ToolName.BLACK]
+        return ToolsToRunResult(to_run=[ToolName.RUFF, ToolName.BLACK])
 
     # Patch get_tools_to_run in the tool_executor module where it's imported
     monkeypatch.setattr(te, "get_tools_to_run", fake_get_tools)

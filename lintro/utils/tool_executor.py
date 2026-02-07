@@ -64,6 +64,7 @@ def run_lint_tools_simple(
     stream: bool = False,
     no_log: bool = False,
     auto_install: bool = False,
+    yes: bool = False,
 ) -> int:
     """Simplified runner using Loguru-based logging with rich formatting.
 
@@ -90,6 +91,7 @@ def run_lint_tools_simple(
         stream: Whether to stream output in real-time (not yet implemented).
         no_log: Whether to disable file logging (not yet implemented).
         auto_install: Whether to auto-install Node.js deps if node_modules missing.
+        yes: Skip confirmation prompt and proceed immediately.
 
     Returns:
         Exit code (0 for success, 1 for failures).
@@ -114,14 +116,17 @@ def run_lint_tools_simple(
 
     logger = create_logger(run_dir=output_manager.run_dir)
 
-    # Get tools to run
+    # Get tools to run (now returns ToolsToRunResult with skip info)
     try:
-        tools_to_run = get_tools_to_run(tools, action)
+        tools_result = get_tools_to_run(tools, action)
     except ValueError as e:
         logger.console_output(f"Error: {e}")
         return 1
 
-    if not tools_to_run:
+    tools_to_run = tools_result.to_run
+    skipped_tools = tools_result.skipped
+
+    if not tools_to_run and not skipped_tools:
         logger.console_output("No tools to run.")
         return 0
 
@@ -181,8 +186,52 @@ def run_lint_tools_simple(
     lintro_config = get_config()
     use_parallel = lintro_config.execution.parallel and len(tools_to_run) > 1
 
-    # Determine auto_install: CLI flag takes precedence, else use config
-    effective_auto_install = auto_install or lintro_config.execution.auto_install_deps
+    # Determine auto_install: CLI flag > config > container default
+    from lintro.utils.environment.container_detection import is_container_environment
+
+    effective_auto_install = (
+        auto_install
+        or lintro_config.execution.auto_install_deps
+        or is_container_environment()
+    )
+
+    # Pre-execution config summary (suppress in JSON mode)
+    if output_format.lower() != "json" and (tools_to_run or skipped_tools):
+        from lintro.utils.console.pre_execution_summary import (
+            print_pre_execution_summary,
+        )
+        from lintro.utils.environment import detect_ci_environment
+
+        # Collect per-tool auto_install settings
+        per_tool_auto: dict[str, bool | None] = {}
+        for name in tools_to_run:
+            tool_cfg = lintro_config.get_tool_config(name)
+            if tool_cfg.auto_install is not None:
+                per_tool_auto[name] = tool_cfg.auto_install
+
+        ci_env = detect_ci_environment()
+        is_ci = ci_env is not None and ci_env.is_ci
+        print_pre_execution_summary(
+            tools_to_run=tools_to_run,
+            skipped_tools=skipped_tools,
+            effective_auto_install=effective_auto_install,
+            is_container=is_container_environment(),
+            is_ci=is_ci,
+            per_tool_auto_install=per_tool_auto if per_tool_auto else None,
+        )
+
+        # Confirmation prompt — skip when non-interactive
+        import sys
+
+        auto_continue = yes or is_ci or not sys.stdin.isatty()
+        if not auto_continue:
+            try:
+                answer = input("Proceed? [Y/n] ").strip().lower()
+            except (EOFError, KeyboardInterrupt):
+                answer = "n"
+            if answer in ("n", "no"):
+                logger.console_output(text="Aborted.", color="yellow")
+                return DEFAULT_EXIT_CODE_SUCCESS
 
     # Define success_func once before the loop
     def success_func(message: str) -> None:
@@ -367,6 +416,17 @@ def run_lint_tools_simple(
                 )
                 all_results.append(failed_result)
                 exit_code = 1
+
+    # Add skipped tool results for display in summary table
+    for st in skipped_tools:
+        all_results.append(
+            ToolResult(
+                name=st.name,
+                skipped=True,
+                skip_reason=st.reason,
+                issues_count=0,
+            ),
+        )
 
     # Execute post-checks if configured
     total_issues, total_fixed, total_remaining = execute_post_checks(

@@ -12,9 +12,9 @@ from lintro.utils.execution.tool_configuration import get_tools_to_run
 
 def test_fmt_excludes_bandit_by_default() -> None:
     """Fmt should include only tools that can_fix (Bandit excluded)."""
-    tools = get_tools_to_run(tools=None, action="fmt")
-    # tools is now a list of string names
-    assert_that(tools).does_not_contain("bandit")
+    result = get_tools_to_run(tools=None, action="fmt")
+    # result.to_run is a list of string names
+    assert_that(result.to_run).does_not_contain("bandit")
 
 
 def test_fmt_explicit_bandit_raises_error() -> None:

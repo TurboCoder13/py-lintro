@@ -105,6 +105,12 @@ DEFAULT_ACTION: str = "check"
     is_flag=True,
     help="Auto-install Node.js dependencies if node_modules is missing",
 )
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip confirmation prompt and proceed immediately",
+)
 def check_command(
     paths: tuple[str, ...],
     tools: str | None,
@@ -123,6 +129,7 @@ def check_command(
     stream: bool,
     debug: bool,
     auto_install: bool,
+    yes: bool,
 ) -> None:
     """Check files for issues using the specified tools.
 
@@ -144,6 +151,7 @@ def check_command(
         stream: bool: Whether to stream tool output in real-time.
         debug: bool: Whether to enable debug output on console.
         auto_install: bool: Whether to auto-install Node.js deps if missing.
+        yes: bool: Skip confirmation prompt and proceed immediately.
 
     Raises:
         SystemExit: Process exit with the aggregated exit code from tools.
@@ -184,6 +192,7 @@ def check_command(
         stream=stream,
         no_log=no_log,
         auto_install=auto_install,
+        yes=yes,
     )
 
     # Exit with code only; CLI uses this as process exit code and avoids any
@@ -204,6 +213,7 @@ def check(
     verbose: bool,
     no_log: bool,
     auto_install: bool = False,
+    yes: bool = False,
 ) -> None:
     """Programmatic check function for backward compatibility.
 
@@ -220,6 +230,7 @@ def check(
         verbose: bool: Whether to show verbose output during execution.
         no_log: bool: Whether to disable logging to file.
         auto_install: bool: Whether to auto-install Node.js deps if missing.
+        yes: bool: Skip confirmation prompt and proceed immediately.
 
     Returns:
         None: This function does not return a value.
@@ -250,6 +261,8 @@ def check(
         args.append("--no-log")
     if auto_install:
         args.append("--auto-install")
+    if yes:
+        args.append("--yes")
 
     runner = CliRunner()
     result = runner.invoke(check_command, args)

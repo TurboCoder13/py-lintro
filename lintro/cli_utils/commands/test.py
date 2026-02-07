@@ -134,6 +134,12 @@ def _ensure_pytest_prefix(option_fragment: str) -> str:
     is_flag=True,
     help="Enable debug output on console",
 )
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip confirmation prompt and proceed immediately",
+)
 def test_command(
     paths: tuple[str, ...],
     exclude: str | None,
@@ -153,6 +159,7 @@ def test_command(
     parametrize_help: bool,
     coverage: bool,
     debug: bool,
+    yes: bool,
 ) -> None:
     """Run tests using pytest.
 
@@ -177,6 +184,7 @@ def test_command(
         parametrize_help: Show help for parametrized tests.
         coverage: Generate test coverage report with missing lines.
         debug: Enable debug output on console.
+        yes: Skip confirmation prompt and proceed immediately.
 
     Raises:
         SystemExit: Process exit with the aggregated exit code.
@@ -257,6 +265,7 @@ def test_command(
         raw_output=raw_output,
         output_file=output,
         debug=debug,
+        yes=yes,
     )
 
     # Exit with code only

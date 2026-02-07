@@ -19,6 +19,7 @@ from lintro.utils.environment.collectors import (
     collect_system_info,
     detect_ci_environment,
 )
+from lintro.utils.environment.container_detection import is_container_environment
 from lintro.utils.environment.environment_report import EnvironmentReport
 from lintro.utils.environment.go_info import GoInfo
 from lintro.utils.environment.lintro_info import LintroInfo
@@ -56,6 +57,7 @@ __all__ = [
     "collect_rust_info",
     "collect_system_info",
     "detect_ci_environment",
+    "is_container_environment",
     # Rendering functions
     "render_environment_report",
     "render_section",
