@@ -13,7 +13,7 @@ assurance tools under a single command-line interface.
 <!-- Badges: Build & Quality -->
 <p align="center">
 <a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/test-and-coverage.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/test-and-coverage.yml?label=tests&branch=main&logo=githubactions&logoColor=white" alt="Tests"></a>
-<a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/ci-lintro-analysis.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/ci-lintro-analysis.yml?label=ci&branch=main&logo=githubactions&logoColor=white" alt="CI"></a>
+<a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/ci-pipeline.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/ci-pipeline.yml?label=ci&branch=main&logo=githubactions&logoColor=white" alt="CI"></a>
 <a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/docker-build-publish.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/docker-build-publish.yml?label=docker&logo=docker&branch=main" alt="Docker"></a>
 <a href="https://codecov.io/gh/lgtm-hq/py-lintro"><img src="https://codecov.io/gh/lgtm-hq/py-lintro/branch/main/graph/badge.svg" alt="Coverage"></a>
 </p>
@@ -29,7 +29,7 @@ assurance tools under a single command-line interface.
 <!-- Badges: Security & Supply Chain -->
 <p align="center">
 <a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/codeql.yml?query=branch%3Amain"><img src="https://github.com/lgtm-hq/py-lintro/actions/workflows/codeql.yml/badge.svg?branch=main" alt="CodeQL"></a>
-<a href="https://scorecard.dev/viewer/?uri=github.com/lgtm-hq/py-lintro"><img src="https://img.shields.io/ossf-scorecard/github.com/lgtm-hq/py-lintro?label=openssf%20scorecard" alt="OpenSSF Scorecard"></a>
+<a href="https://scorecard.dev/viewer/?uri=github.com/lgtm-hq/py-lintro"><img src="https://api.securityscorecards.dev/projects/github.com/lgtm-hq/py-lintro/badge" alt="OpenSSF Scorecard"></a>
 <a href="https://www.bestpractices.dev/projects/11142"><img src="https://www.bestpractices.dev/projects/11142/badge" alt="OpenSSF Best Practices"></a>
 <a href="docs/security/assurance.md"><img src="https://img.shields.io/badge/SBOM-CycloneDX-brightgreen" alt="SBOM"></a>
 <a href="https://github.com/lgtm-hq/py-lintro/actions/workflows/sbom-on-main.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/lgtm-hq/py-lintro/sbom-on-main.yml?label=sbom&branch=main" alt="SBOM Status"></a>
@@ -73,83 +73,185 @@ system.
 
 ## 🛠️ Supported Tools
 
-<!-- markdownlint-disable MD013 MD060 -->
+<!-- markdownlint-disable MD013 MD033 MD060 -->
 
-| Tool                                                                                                                                                          | Language            | Auto-fix |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | -------- |
-| [![Actionlint](https://img.shields.io/badge/Actionlint-lint-24292e?logo=github&logoColor=white)](https://github.com/rhysd/actionlint)                         | ⚙️ GitHub Actions   | -        |
-| [![Astro](https://img.shields.io/badge/Astro-type%20check-ff5d01?logo=astro&logoColor=white)](https://astro.build/)                                           | 🚀 Astro            | -        |
-| [![Svelte](https://img.shields.io/badge/Svelte-type%20check-ff3e00?logo=svelte&logoColor=white)](https://svelte.dev/)                                         | 🔥 Svelte           | -        |
-| [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)                                 | 🐍 Python           | -        |
-| [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                                        | 🐍 Python           | ✅       |
-| [![Cargo-audit](https://img.shields.io/badge/Cargo--audit-security-000000?logo=rust&logoColor=white)](https://github.com/rustsec/rustsec)                     | 🦀 Rust             | -        |
-| [![Cargo-deny](https://img.shields.io/badge/Cargo--deny-security-000000?logo=rust&logoColor=white)](https://github.com/EmbarkStudios/cargo-deny)              | 🦀 Rust             | -        |
-| [![Clippy](https://img.shields.io/badge/Clippy-lint-000000?logo=rust&logoColor=white)](https://github.com/rust-lang/rust-clippy)                              | 🦀 Rust             | ✅       |
-| [![Gitleaks](https://img.shields.io/badge/Gitleaks-secrets-dc2626?logo=git&logoColor=white)](https://gitleaks.io/)                                            | 🔐 Secret Detection | -        |
-| [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)                            | 🐳 Dockerfile       | -        |
-| [![Markdownlint](https://img.shields.io/badge/Markdownlint--cli2-lint-000000?logo=markdown&logoColor=white)](https://github.com/DavidAnson/markdownlint-cli2) | 📝 Markdown         | -        |
-| [![Mypy](https://img.shields.io/badge/Mypy-type%20checking-2d50a5?logo=python&logoColor=white)](https://mypy-lang.org/)                                       | 🐍 Python           | -        |
-| [![Oxfmt](https://img.shields.io/badge/Oxfmt-format-e05d44?logo=javascript&logoColor=white)](https://oxc.rs/)                                                 | 🟨 JS/TS            | ✅       |
-| [![Oxlint](https://img.shields.io/badge/Oxlint-lint-e05d44?logo=javascript&logoColor=white)](https://oxc.rs/)                                                 | 🟨 JS/TS            | ✅       |
-| [![Prettier](https://img.shields.io/badge/Prettier-format-1a2b34?logo=prettier&logoColor=white)](https://prettier.io/)                                        | 🟨 JS/TS · 🧾 JSON  | ✅       |
-| [![pydoclint](https://img.shields.io/badge/pydoclint-docstrings-3776AB?logo=python&logoColor=white)](https://github.com/jsh9/pydoclint)                       | 🐍 Python           | -        |
-| [![Ruff](https://img.shields.io/badge/Ruff-lint%2Bformat-000?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)                                   | 🐍 Python           | ✅       |
-| [![Semgrep](https://img.shields.io/badge/Semgrep-security-5b21b6?logo=semgrep&logoColor=white)](https://semgrep.dev/)                                         | 🔒 Multi-language   | -        |
-| [![ShellCheck](https://img.shields.io/badge/ShellCheck-lint-4EAA25?logo=gnubash&logoColor=white)](https://www.shellcheck.net/)                                | 🐚 Shell Scripts    | -        |
-| [![shfmt](https://img.shields.io/badge/shfmt-format-4EAA25?logo=gnubash&logoColor=white)](https://github.com/mvdan/sh)                                        | 🐚 Shell Scripts    | ✅       |
-| [![SQLFluff](https://img.shields.io/badge/SQLFluff-lint%2Bformat-4b5563?logo=database&logoColor=white)](https://sqlfluff.com/)                                | 🗃️ SQL              | ✅       |
-| [![Taplo](https://img.shields.io/badge/Taplo-lint%2Bformat-9b4dca?logo=toml&logoColor=white)](https://taplo.tamasfe.dev/)                                     | 🧾 TOML             | ✅       |
-| [![TypeScript](https://img.shields.io/badge/TypeScript-type%20check-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)                 | 🟨 JS/TS            | -        |
-| [![Vue-tsc](https://img.shields.io/badge/Vue--tsc-type%20check-42b883?logo=vuedotjs&logoColor=white)](https://github.com/vuejs/language-tools)                | 💚 Vue              | -        |
-| [![Yamllint](https://img.shields.io/badge/Yamllint-lint-cb171e?logo=yaml&logoColor=white)](https://github.com/adrienverge/yamllint)                           | 🧾 YAML             | -        |
+<table>
+<thead>
+<tr><th>Tool</th><th>Language</th><th>Auto-fix</th><th>Install</th></tr>
+</thead>
+<tbody>
+<tr><th colspan="4">Linters</th></tr>
+<tr>
+<td><a href="https://github.com/rhysd/actionlint"><img src="https://img.shields.io/badge/Actionlint-24292e?logo=github&logoColor=white" alt="Actionlint"></a></td>
+<td>⚙️ GitHub Actions</td>
+<td>-</td>
+<td><a href="https://github.com/rhysd/actionlint/releases">GitHub Releases</a></td>
+</tr>
+<tr>
+<td><a href="https://github.com/rust-lang/rust-clippy"><img src="https://img.shields.io/badge/Clippy-000000?logo=rust&logoColor=white" alt="Clippy"></a></td>
+<td>🦀 Rust</td>
+<td>✅</td>
+<td><code>rustup component add clippy</code></td>
+</tr>
+<tr>
+<td><a href="https://github.com/hadolint/hadolint"><img src="https://img.shields.io/badge/Hadolint-2496ED?logo=docker&logoColor=white" alt="Hadolint"></a></td>
+<td>🐳 Dockerfile</td>
+<td>-</td>
+<td><a href="https://github.com/hadolint/hadolint/releases">GitHub Releases</a></td>
+</tr>
+<tr>
+<td><a href="https://github.com/DavidAnson/markdownlint-cli2"><img src="https://img.shields.io/badge/Markdownlint--cli2-000000?logo=markdown&logoColor=white" alt="Markdownlint"></a></td>
+<td>📝 Markdown</td>
+<td>-</td>
+<td><code>bun add -g markdownlint-cli2</code><br><code>npm install -g markdownlint-cli2</code></td>
+</tr>
+<tr>
+<td><a href="https://oxc.rs/"><img src="https://img.shields.io/badge/Oxlint-e05d44?logo=javascript&logoColor=white" alt="Oxlint"></a></td>
+<td>🟨 JS/TS</td>
+<td>✅</td>
+<td><code>bun add -g oxlint</code><br><code>npm install -g oxlint</code></td>
+</tr>
+<tr>
+<td><a href="https://github.com/jsh9/pydoclint"><img src="https://img.shields.io/badge/pydoclint-3776AB?logo=python&logoColor=white" alt="pydoclint"></a></td>
+<td>🐍 Python</td>
+<td>-</td>
+<td>📦</td>
+</tr>
+<tr>
+<td><a href="https://www.shellcheck.net/"><img src="https://img.shields.io/badge/ShellCheck-4EAA25?logo=gnubash&logoColor=white" alt="ShellCheck"></a></td>
+<td>🐚 Shell Scripts</td>
+<td>-</td>
+<td><code>brew install shellcheck</code><br><a href="https://github.com/koalaman/shellcheck/releases">GitHub Releases</a></td>
+</tr>
+<tr>
+<td><a href="https://github.com/adrienverge/yamllint"><img src="https://img.shields.io/badge/Yamllint-cb171e?logo=yaml&logoColor=white" alt="Yamllint"></a></td>
+<td>🧾 YAML</td>
+<td>-</td>
+<td>📦</td>
+</tr>
+<tr><th colspan="4">Formatters</th></tr>
+<tr>
+<td><a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/Black-000000?logo=python&logoColor=white" alt="Black"></a></td>
+<td>🐍 Python</td>
+<td>✅</td>
+<td>📦</td>
+</tr>
+<tr>
+<td><a href="https://oxc.rs/"><img src="https://img.shields.io/badge/Oxfmt-e05d44?logo=javascript&logoColor=white" alt="Oxfmt"></a></td>
+<td>🟨 JS/TS</td>
+<td>✅</td>
+<td><code>bun add -g oxfmt</code><br><code>npm install -g oxfmt</code></td>
+</tr>
+<tr>
+<td><a href="https://prettier.io/"><img src="https://img.shields.io/badge/Prettier-1a2b34?logo=prettier&logoColor=white" alt="Prettier"></a></td>
+<td>🟨 JS/TS · 🧾 JSON</td>
+<td>✅</td>
+<td><code>bun add -g prettier</code><br><code>npm install -g prettier</code></td>
+</tr>
+<tr>
+<td><a href="https://github.com/mvdan/sh"><img src="https://img.shields.io/badge/shfmt-4EAA25?logo=gnubash&logoColor=white" alt="shfmt"></a></td>
+<td>🐚 Shell Scripts</td>
+<td>✅</td>
+<td><code>brew install shfmt</code><br><a href="https://github.com/mvdan/sh/releases">GitHub Releases</a></td>
+</tr>
+<tr>
+<td><a href="https://github.com/rust-lang/rustfmt"><img src="https://img.shields.io/badge/rustfmt-000000?logo=rust&logoColor=white" alt="rustfmt"></a></td>
+<td>🦀 Rust</td>
+<td>✅</td>
+<td><code>rustup component add rustfmt</code></td>
+</tr>
+<tr><th colspan="4">Lint + Format</th></tr>
+<tr>
+<td><a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/badge/Ruff-000?logo=ruff&logoColor=white" alt="Ruff"></a></td>
+<td>🐍 Python</td>
+<td>✅</td>
+<td>📦</td>
+</tr>
+<tr>
+<td><a href="https://sqlfluff.com/"><img src="https://img.shields.io/badge/SQLFluff-4b5563?logo=database&logoColor=white" alt="SQLFluff"></a></td>
+<td>🗃️ SQL</td>
+<td>✅</td>
+<td><code>pipx install sqlfluff</code></td>
+</tr>
+<tr>
+<td><a href="https://taplo.tamasfe.dev/"><img src="https://img.shields.io/badge/Taplo-9b4dca?logo=toml&logoColor=white" alt="Taplo"></a></td>
+<td>🧾 TOML</td>
+<td>✅</td>
+<td><code>brew install taplo</code><br><a href="https://github.com/tamasfe/taplo/releases">GitHub Releases</a></td>
+</tr>
+<tr><th colspan="4">Type Checkers</th></tr>
+<tr>
+<td><a href="https://astro.build/"><img src="https://img.shields.io/badge/Astro-ff5d01?logo=astro&logoColor=white" alt="Astro"></a></td>
+<td>🚀 Astro</td>
+<td>-</td>
+<td><code>bun add astro</code><br><code>npm install astro</code></td>
+</tr>
+<tr>
+<td><a href="https://mypy-lang.org/"><img src="https://img.shields.io/badge/Mypy-2d50a5?logo=python&logoColor=white" alt="Mypy"></a></td>
+<td>🐍 Python</td>
+<td>-</td>
+<td>📦</td>
+</tr>
+<tr>
+<td><a href="https://svelte.dev/"><img src="https://img.shields.io/badge/svelte--check-ff3e00?logo=svelte&logoColor=white" alt="svelte-check"></a></td>
+<td>🔥 Svelte</td>
+<td>-</td>
+<td><code>bun add -D svelte-check</code><br><code>npm install -D svelte-check</code></td>
+</tr>
+<tr>
+<td><a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white" alt="TypeScript"></a></td>
+<td>🟨 JS/TS</td>
+<td>-</td>
+<td><code>bun add -g typescript</code><br><code>npm install -g typescript</code><br><code>brew install typescript</code></td>
+</tr>
+<tr>
+<td><a href="https://github.com/vuejs/language-tools"><img src="https://img.shields.io/badge/vue--tsc-42b883?logo=vuedotjs&logoColor=white" alt="vue-tsc"></a></td>
+<td>💚 Vue</td>
+<td>-</td>
+<td><code>bun add -D vue-tsc</code><br><code>npm install -D vue-tsc</code></td>
+</tr>
+<tr><th colspan="4">Security</th></tr>
+<tr>
+<td><a href="https://github.com/PyCQA/bandit"><img src="https://img.shields.io/badge/Bandit-yellow?logo=python&logoColor=white" alt="Bandit"></a></td>
+<td>🐍 Python</td>
+<td>-</td>
+<td>📦</td>
+</tr>
+<tr>
+<td><a href="https://gitleaks.io/"><img src="https://img.shields.io/badge/Gitleaks-dc2626?logo=git&logoColor=white" alt="Gitleaks"></a></td>
+<td>🔐 Secret Detection</td>
+<td>-</td>
+<td><code>brew install gitleaks</code><br><a href="https://github.com/gitleaks/gitleaks/releases">GitHub Releases</a></td>
+</tr>
+<tr>
+<td><a href="https://github.com/rustsec/rustsec/tree/main/cargo-audit"><img src="https://img.shields.io/badge/cargo--audit-000000?logo=rust&logoColor=white" alt="cargo-audit"></a></td>
+<td>🦀 Rust</td>
+<td>-</td>
+<td><code>cargo install cargo-audit</code></td>
+</tr>
+<tr>
+<td><a href="https://github.com/EmbarkStudios/cargo-deny"><img src="https://img.shields.io/badge/cargo--deny-000000?logo=rust&logoColor=white" alt="cargo-deny"></a></td>
+<td>🦀 Rust</td>
+<td>-</td>
+<td><code>cargo install cargo-deny</code></td>
+</tr>
+<tr>
+<td><a href="https://semgrep.dev/"><img src="https://img.shields.io/badge/Semgrep-5b21b6?logo=semgrep&logoColor=white" alt="Semgrep"></a></td>
+<td>🔒 Multi-language</td>
+<td>-</td>
+<td><code>pipx install semgrep</code><br><code>pip install semgrep</code><br><code>brew install semgrep</code></td>
+</tr>
+</tbody>
+</table>
 
-<!-- markdownlint-enable MD013 MD060 -->
+> 📦 = bundled with lintro — no separate install needed
+
+<!-- markdownlint-enable MD013 MD033 MD060 -->
 
 ## 📋 Requirements
 
-### Python Version
-
 **Python 3.11+** is required. Lintro uses modern Python features not available in older
 versions.
-
-### Bundled Tools
-
-These Python tools are automatically installed with Lintro:
-
-- **Ruff** - Fast Python linter and formatter
-- **Black** - Python code formatter
-- **Bandit** - Python security linter
-- **Mypy** - Python static type checker
-- **Yamllint** - YAML linter
-- **pydoclint** - Python docstring linter
-
-### Optional External Tools
-
-For full functionality, install these additional tools:
-
-- **Prettier** - `npm install -g prettier`
-- **Markdownlint-cli2** - `npm install -g markdownlint-cli2`
-- **Oxlint** - `bun add -g oxlint` or `npm install -g oxlint`
-- **Oxfmt** - `bun add -g oxfmt` or `npm install -g oxfmt`
-- **Hadolint** - [GitHub Releases](https://github.com/hadolint/hadolint/releases)
-- **Actionlint** - [GitHub Releases](https://github.com/rhysd/actionlint/releases)
-- **Semgrep** - `pipx install semgrep`, `pip install semgrep`, or `brew install semgrep`
-- **Gitleaks** - `brew install gitleaks` or
-  [GitHub Releases](https://github.com/gitleaks/gitleaks/releases)
-- **ShellCheck** - `brew install shellcheck` or
-  [GitHub Releases](https://github.com/koalaman/shellcheck/releases)
-- **shfmt** - `brew install shfmt` or
-  [GitHub Releases](https://github.com/mvdan/sh/releases)
-- **Cargo-audit** - `cargo install cargo-audit`
-- **Cargo-deny** - `cargo install cargo-deny`
-- **SQLFluff** - `pip install sqlfluff`
-- **Taplo** - `brew install taplo` or
-  [GitHub Releases](https://github.com/tamasfe/taplo/releases)
-- **TypeScript** - `brew install typescript`, `bun add -g typescript`, or
-  `npm install -g typescript`
-- **Astro** - `bun add astro` or `npm install astro`
-- **Svelte Check** - `bun add -D svelte-check` or `npm install -D svelte-check`
-- **Vue-tsc** - `bun add -D vue-tsc` or `npm install -D vue-tsc`
 
 Check all tool versions with: `lintro list-tools`
 
