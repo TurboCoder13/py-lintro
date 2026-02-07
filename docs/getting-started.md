@@ -83,6 +83,8 @@ Some tools require separate installation. Their minimum versions are also manage
 - `shfmt` - Shell script formatter (`brew install shfmt` or GitHub releases)
 - `sqlfluff` - SQL linter and formatter (`pip install sqlfluff`)
 - `taplo` - TOML linter and formatter (`brew install taplo` or GitHub releases)
+- `cargo-audit` - Rust dependency vulnerability scanner (`cargo install cargo-audit`)
+- `cargo-deny` - Rust dependency license/advisory checker (`cargo install cargo-deny`)
 - `typescript` - TypeScript compiler for type checking (`brew install typescript`,
   `bun add -g typescript`, or `npm install -g typescript`)
 - `astro` - Astro type checker for `.astro` files (install locally with

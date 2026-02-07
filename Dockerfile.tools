@@ -120,6 +120,7 @@ RUN echo "=== Verifying all tools ===" && \
     echo "rustfmt: $(rustfmt --version)" && \
     echo "clippy: $(cargo clippy --version)" && \
     echo "cargo-audit: $(cargo audit --version)" && \
+    echo "cargo-deny: $(cargo deny --version)" && \
     echo "actionlint: $(actionlint --version)" && \
     echo "bandit: $(bandit --version)" && \
     echo "black: $(black --version)" && \

@@ -71,6 +71,7 @@ This script installs:
   - Clippy (Rust linter; requires Rust toolchain)
   - Rustfmt (Rust formatter; requires Rust toolchain)
   - Cargo-audit (Rust dependency vulnerability scanner; requires Rust toolchain)
+  - Cargo-deny (Rust dependency license/advisory checker; requires Rust toolchain)
   - Oxlint (JavaScript/TypeScript linter)
   - Oxfmt (JavaScript/TypeScript formatter)
   - Semgrep (Security scanner)
@@ -696,6 +697,55 @@ main() {
 		fi
 	fi
 
+	# Install cargo-deny (Rust dependency license/advisory checker)
+	# Prefer pre-built binary from cargo-quickinstall to avoid long compile times
+	echo -e "${BLUE}Installing cargo-deny...${NC}"
+	CARGO_DENY_VERSION=$(get_tool_version "cargo_deny") || exit 1
+	if [ $DRY_RUN -eq 1 ]; then
+		log_info "[DRY-RUN] Would install cargo-deny==${CARGO_DENY_VERSION}"
+	elif command -v cargo-deny &>/dev/null; then
+		echo -e "${GREEN}✓ cargo-deny already installed${NC}"
+	else
+		cargo_deny_installed=false
+		# Try pre-built binary from cargo-quickinstall first (much faster than cargo install)
+		tmpdir=$(mktemp -d)
+		os=$(uname -s | tr '[:upper:]' '[:lower:]')
+		arch=$(uname -m)
+		case "$arch" in
+		x86_64 | amd64) target="x86_64-unknown-linux-gnu" ;;
+		aarch64 | arm64) target="aarch64-unknown-linux-gnu" ;;
+		*) target="" ;;
+		esac
+		# cargo-quickinstall only provides linux binaries
+		if [[ "$os" == "linux" ]] && [[ -n "$target" ]]; then
+			tgz_url="https://github.com/cargo-bins/cargo-quickinstall/releases/download/cargo-deny-${CARGO_DENY_VERSION}/cargo-deny-${CARGO_DENY_VERSION}-${target}.tar.gz"
+			echo -e "${YELLOW}Trying pre-built binary from cargo-quickinstall...${NC}"
+			if download_with_retries "$tgz_url" "$tmpdir/cargo-deny.tar.gz" 3; then
+				tar -xzf "$tmpdir/cargo-deny.tar.gz" -C "$tmpdir"
+				if [ -f "$tmpdir/cargo-deny" ]; then
+					cp "$tmpdir/cargo-deny" "$BIN_DIR/cargo-deny"
+					chmod +x "$BIN_DIR/cargo-deny"
+					echo -e "${GREEN}✓ cargo-deny installed from pre-built binary${NC}"
+					cargo_deny_installed=true
+				fi
+			fi
+		fi
+		rm -rf "$tmpdir"
+
+		# Fallback to cargo install if pre-built binary not available
+		if [ "$cargo_deny_installed" = false ] && command -v cargo &>/dev/null; then
+			echo -e "${YELLOW}Pre-built binary not available, falling back to cargo install...${NC}"
+			if cargo install cargo-deny --locked --version "$CARGO_DENY_VERSION"; then
+				echo -e "${GREEN}✓ cargo-deny installed via cargo${NC}"
+				cargo_deny_installed=true
+			fi
+		fi
+
+		if [ "$cargo_deny_installed" = false ]; then
+			echo -e "${YELLOW}⚠ Failed to install cargo-deny (optional tool)${NC}"
+		fi
+	fi
+
 	# Install ruff (Python linting and formatting)
 	echo -e "${BLUE}Installing ruff...${NC}"
 	RUFF_VERSION=$(get_tool_version "ruff") || exit 1
@@ -1094,6 +1144,7 @@ main() {
 	echo "  - bandit (Python security checks)"
 	echo "  - black (Python formatting)"
 	echo "  - cargo-audit (Rust dependency vulnerability scanning)"
+	echo "  - cargo-deny (Rust dependency license/advisory checking)"
 	echo "  - clippy (Rust linting)"
 	echo "  - rustfmt (Rust formatting)"
 	echo "  - pydoclint (Python docstring validation)"
@@ -1118,7 +1169,7 @@ main() {
 	# Verify installations
 	echo -e "${YELLOW}Verifying installations...${NC}"
 
-	tools_to_verify=("actionlint" "astro" "bandit" "black" "cargo-audit" "clippy" "rustfmt" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "prettier" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "svelte-check" "taplo" "tsc" "vue-tsc" "yamllint")
+	tools_to_verify=("actionlint" "astro" "bandit" "black" "cargo-audit" "cargo-deny" "clippy" "rustfmt" "gitleaks" "hadolint" "markdownlint-cli2" "mypy" "oxfmt" "oxlint" "prettier" "pydoclint" "ruff" "semgrep" "shellcheck" "shfmt" "sqlfluff" "svelte-check" "taplo" "tsc" "vue-tsc" "yamllint")
 	for tool in "${tools_to_verify[@]}"; do
 		if [ "$tool" = "clippy" ]; then
 			# Clippy is invoked through cargo

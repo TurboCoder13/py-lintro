@@ -32,6 +32,12 @@
       "tier": "tools"
     },
     {
+      "name": "cargo_deny",
+      "version": "0.19.0",
+      "install": { "type": "cargo", "package": "cargo-deny" },
+      "tier": "tools"
+    },
+    {
       "name": "clippy",
       "version": "1.92.0",
       "install": { "type": "rustup", "component": "clippy" },

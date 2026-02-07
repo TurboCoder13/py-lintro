@@ -213,6 +213,9 @@ class CargoDenyPlugin(BaseToolPlugin):
             paths: List of file or directory paths to fix.
             options: Tool-specific options.
 
+        Returns:
+            Never returns; always raises.
+
         Raises:
             NotImplementedError: cargo-deny does not support fixing issues.
         """

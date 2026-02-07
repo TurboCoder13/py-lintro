@@ -20,6 +20,7 @@ class CargoDenyIssue(BaseIssue):
     - Source violations (S codes)
 
     Attributes:
+        DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
         code: Issue code (e.g., L001, A001, B001).
         severity: Severity level (error, warning).
         crate_name: Name of the affected crate.
