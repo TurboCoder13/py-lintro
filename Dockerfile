@@ -5,7 +5,7 @@
 # This image adds the Python application layer.
 #
 # The tools image is rebuilt weekly and contains:
-# - Rust toolchain (rustfmt, clippy, cargo-audit)
+# - Rust toolchain (rustfmt, clippy, cargo-audit, cargo-deny)
 # - Node.js tools via bun (prettier, markdownlint-cli2, tsc, astro, vue-tsc, oxlint, oxfmt)
 # - Python tools (ruff, black, bandit, mypy, semgrep, etc.)
 # - Standalone binaries (hadolint, actionlint, shellcheck, shfmt, taplo, gitleaks)
@@ -59,6 +59,7 @@ RUN echo "Verifying tools..." && \
     rustfmt --version && \
     cargo clippy --version && \
     cargo audit --version && \
+    cargo deny --version && \
     semgrep --version && \
     ruff --version && \
     black --version && \
@@ -101,6 +102,7 @@ RUN echo "Verifying tools as non-root user..." && \
     rustfmt --version && \
     cargo clippy --version && \
     cargo audit --version && \
+    cargo deny --version && \
     semgrep --version && \
     echo "All tools verified for non-root user!"
 

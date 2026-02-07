@@ -62,6 +62,8 @@ def _tool_command(tool_name: str, install: dict[str, Any]) -> list[str]:
 
     if tool_name == "cargo_audit":
         return ["cargo", "audit", "--version"]
+    if tool_name == "cargo_deny":
+        return ["cargo", "deny", "--version"]
     if tool_name == "clippy":
         return ["cargo", "clippy", "--version"]
     if tool_name == "markdownlint":

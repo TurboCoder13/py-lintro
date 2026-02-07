@@ -1322,6 +1322,60 @@ lintro format --tools clippy
 lintro check src/ --tools clippy
 ```
 
+#### Cargo-deny Configuration
+
+Cargo-deny checks Rust dependencies for license compliance, security advisories, banned
+crates, and duplicate dependencies. It uses `deny.toml` for configuration and runs via
+`cargo deny check`.
+
+**Installation:**
+
+```bash
+# cargo install
+cargo install cargo-deny
+
+# Or via cargo-binstall for faster installation
+cargo binstall cargo-deny
+```
+
+**File:** `deny.toml`
+
+```toml
+[advisories]
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+
+[licenses]
+allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "allow"
+
+[sources]
+unknown-registry = "warn"
+unknown-git = "warn"
+```
+
+**Available Options via `--tool-options`:**
+
+| Option    | Type    | Description                                |
+| --------- | ------- | ------------------------------------------ |
+| `timeout` | integer | Execution timeout in seconds (default: 60) |
+
+**Lintro usage:**
+
+```bash
+# Check Rust project with cargo-deny
+lintro check --tools cargo_deny
+
+# Check specific Rust directory
+lintro check my-crate/ --tools cargo_deny
+
+# Set a longer timeout for large workspaces
+lintro check . --tools cargo_deny --tool-options "cargo_deny:timeout=120"
+```
+
 ### Shell Tools
 
 #### ShellCheck Configuration

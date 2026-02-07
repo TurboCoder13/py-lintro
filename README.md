@@ -82,6 +82,8 @@ system.
 | [![Svelte](https://img.shields.io/badge/Svelte-type%20check-ff3e00?logo=svelte&logoColor=white)](https://svelte.dev/)                                         | 🔥 Svelte           | -        |
 | [![Bandit](https://img.shields.io/badge/Bandit-security-yellow?logo=python&logoColor=white)](https://github.com/PyCQA/bandit)                                 | 🐍 Python           | -        |
 | [![Black](https://img.shields.io/badge/Black-format-000000?logo=python&logoColor=white)](https://github.com/psf/black)                                        | 🐍 Python           | ✅       |
+| [![Cargo-audit](https://img.shields.io/badge/Cargo--audit-security-000000?logo=rust&logoColor=white)](https://github.com/rustsec/rustsec)                     | 🦀 Rust             | -        |
+| [![Cargo-deny](https://img.shields.io/badge/Cargo--deny-security-000000?logo=rust&logoColor=white)](https://github.com/EmbarkStudios/cargo-deny)              | 🦀 Rust             | -        |
 | [![Clippy](https://img.shields.io/badge/Clippy-lint-000000?logo=rust&logoColor=white)](https://github.com/rust-lang/rust-clippy)                              | 🦀 Rust             | ✅       |
 | [![Gitleaks](https://img.shields.io/badge/Gitleaks-secrets-dc2626?logo=git&logoColor=white)](https://gitleaks.io/)                                            | 🔐 Secret Detection | -        |
 | [![Hadolint](https://img.shields.io/badge/Hadolint-lint-2496ED?logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)                            | 🐳 Dockerfile       | -        |
@@ -138,6 +140,8 @@ For full functionality, install these additional tools:
   [GitHub Releases](https://github.com/koalaman/shellcheck/releases)
 - **shfmt** - `brew install shfmt` or
   [GitHub Releases](https://github.com/mvdan/sh/releases)
+- **Cargo-audit** - `cargo install cargo-audit`
+- **Cargo-deny** - `cargo install cargo-deny`
 - **SQLFluff** - `pip install sqlfluff`
 - **Taplo** - `brew install taplo` or
   [GitHub Releases](https://github.com/tamasfe/taplo/releases)

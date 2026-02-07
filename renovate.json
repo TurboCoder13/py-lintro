@@ -360,6 +360,18 @@
       "packageNameTemplate": "cargo-audit"
     },
     {
+      "description": "Update cargo-deny version in _tool_versions.py",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "lintro/_tool_versions\\.py"
+      ],
+      "matchStrings": [
+        "ToolName\\.CARGO_DENY:\\s*\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "datasourceTemplate": "crate",
+      "packageNameTemplate": "cargo-deny"
+    },
+    {
       "description": "Update clippy version in _tool_versions.py",
       "customType": "regex",
       "managerFilePatterns": [
