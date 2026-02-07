@@ -111,17 +111,40 @@ lintro_base:
     - lintro check --output-format grid
 ```
 
+## Container Auto-Detection
+
+Lintro automatically detects when it is running inside a container (Docker, Podman, LXC,
+Kubernetes, etc.) and adjusts its behavior accordingly:
+
+- **Auto-install defaults to enabled** in container environments, so Node.js
+  dependencies are installed automatically without requiring `--auto-install` or
+  configuration changes.
+- **Non-interactive mode** is assumed — confirmation prompts are skipped automatically.
+- A **pre-execution summary** is displayed before tools run, showing the detected
+  environment ("Container"), which tools will run, and any tools that were skipped (with
+  reasons).
+
+Detection checks (in order):
+
+1. `/.dockerenv` file exists (Docker)
+2. `/run/.containerenv` file exists (Podman)
+3. `CONTAINER` environment variable is set
+4. `/proc/1/cgroup` contains `docker`, `lxc`, `containerd`, or `kubepods`
+
+This means **no extra configuration is needed** when running the Docker image — it works
+out of the box.
+
 ## Node.js Dependency Auto-Install
 
-When using Docker, Lintro automatically installs Node.js dependencies when the container
-starts with a mounted project. This happens automatically if:
+When using Docker, Lintro automatically installs Node.js dependencies because container
+environments enable auto-install by default. This happens when:
 
 1. A `package.json` file exists in the mounted `/code` directory
 2. The `node_modules` directory is missing or empty
 
 **How it works:**
 
-- Docker checks for `package.json` at container startup
+- Lintro detects the container environment and enables auto-install
 - If `node_modules` is missing, it runs `bun install --frozen-lockfile` (falls back to
   regular `bun install` if lockfile fails)
 - If `bun` is unavailable, it uses `npm ci` (falls back to `npm install`)
@@ -131,13 +154,36 @@ starts with a mounted project. This happens automatically if:
 **Example:**
 
 ```bash
-# Mount a TypeScript project - dependencies are auto-installed
+# Mount a TypeScript project - dependencies are auto-installed in Docker
 docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check --tools tsc
 ```
 
-**Note:** For local usage (outside Docker), use the `--auto-install` flag or set
-`auto_install_deps: true` in your configuration file. See
-[Configuration](configuration.md) for details.
+**Controlling auto-install:**
+
+You can explicitly control auto-install behavior using environment variables:
+
+```bash
+# Disable auto-install even in Docker (override container detection)
+docker run --rm -e LINTRO_AUTO_INSTALL_DEPS=0 -v $(pwd):/code \
+  ghcr.io/lgtm-hq/py-lintro:latest check --tools tsc
+
+# Or use the --yes flag to skip confirmation prompts for auto-install
+docker run --rm -v $(pwd):/code ghcr.io/lgtm-hq/py-lintro:latest check --tools tsc --yes
+```
+
+**Per-tool auto-install** can also be configured in `.lintro-config.yaml`:
+
+```yaml
+tools:
+  tsc:
+    auto_install: true # Enable auto-install for tsc specifically
+  prettier:
+    auto_install: false # Disable auto-install for prettier
+```
+
+**Note:** For local usage (outside Docker), use the `--auto-install` flag, set
+`auto_install_deps: true` in your configuration file, or use per-tool `auto_install`
+settings. See [Configuration](configuration.md) for details.
 
 ## Building the Image Locally
 
@@ -420,6 +466,41 @@ lint-ci:
     ./scripts/docker/docker-lintro.sh check --output-format grid --output lintro-results.txt
 ```
 
+## Skipped Tools and Pre-Execution Summary
+
+When running in Docker, Lintro displays a **pre-execution configuration summary** before
+tools run. This table shows:
+
+- **Environment**: Container (auto-detected) or Local
+- **Auto-install**: Whether auto-install is enabled and why
+- **Tools**: Which tools will run
+- **Skipped tools**: Tools that were skipped with reasons
+
+Tools can be skipped for several reasons:
+
+| Reason                   | Description                                              |
+| ------------------------ | -------------------------------------------------------- |
+| `node_modules not found` | Node.js deps missing and auto-install is disabled        |
+| `disabled in config`     | Tool explicitly disabled via `tools.<name>.enabled`      |
+| `not in enabled_tools`   | Tool not listed in `execution.enabled_tools`             |
+| `deferred to <tool>`     | Framework-specific tool preferred (e.g., tsc to vue-tsc) |
+| `version check failed`   | Tool version below minimum required                      |
+
+Skipped tools appear in the summary table with a `SKIP` status and a note explaining
+why, so you always know what happened.
+
+**Example output:**
+
+```text
+┌─────────────┬────────┬────────┬─────────────────────────┐
+│ Tool        │ Status │ Issues │ Notes                   │
+├─────────────┼────────┼────────┼─────────────────────────┤
+│ ruff        │ PASS   │ 0      │                         │
+│ tsc         │ SKIP   │ -      │ deferred to astro-check │
+│ astro-check │ PASS   │ 0      │                         │
+└─────────────┴────────┴────────┴─────────────────────────┘
+```
+
 ## Best Practices
 
 1. **Use grid formatting** for better readability: `--output-format grid`
@@ -427,3 +508,4 @@ lint-ci:
 3. **Save results to files** for CI integration: `--output results.txt`
 4. **Use specific tools** for faster checks: `--tools ruff,prettier`
 5. **Exclude irrelevant files** to reduce noise: `--exclude "venv,node_modules"`
+6. **Use `--yes`** to skip confirmation prompts in scripts: `lintro check --yes`

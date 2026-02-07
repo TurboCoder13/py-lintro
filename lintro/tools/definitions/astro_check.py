@@ -257,6 +257,8 @@ class AstroCheckPlugin(BaseToolPlugin):
                             f"{install_output}"
                         ),
                         issues_count=0,
+                        skipped=True,
+                        skip_reason="auto-install failed",
                     )
             else:
                 return ToolResult(

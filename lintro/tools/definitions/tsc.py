@@ -450,10 +450,13 @@ class TscPlugin(BaseToolPlugin):
                             f"Skipping tsc: auto-install failed.\n" f"{install_output}"
                         ),
                         issues_count=0,
+                        skipped=True,
+                        skip_reason="auto-install failed",
                     )
             else:
                 return ToolResult(
                     name=self.definition.name,
+                    success=True,
                     output=(
                         "node_modules not found. "
                         "Use --auto-install to install dependencies."

@@ -267,8 +267,12 @@ def run_lint_tools_simple(
             all_results,
             action,
         )
-        # Check for failures in parallel results
-        if any(not result.success for result in all_results):
+        # Check for failures in parallel results (exclude skipped tools)
+        if any(
+            not result.success
+            for result in all_results
+            if not getattr(result, "skipped", False)
+        ):
             exit_code = 1
 
         # Display results for parallel execution

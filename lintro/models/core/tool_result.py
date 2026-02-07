@@ -61,6 +61,10 @@ class ToolResult:
         # Skipped tools are not failures — they just didn't run
         if self.skipped:
             self.success = True
+            if not self.skip_reason:
+                raise ValueError(
+                    "skip_reason is required when skipped=True",
+                )
 
         if self.skip_reason and not self.skipped:
             raise ValueError(

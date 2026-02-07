@@ -52,9 +52,11 @@ The configuration system works in a specific order:
    - Example: If `.prettierrc` doesn't exist, use `defaults.prettier`
    - Generated as temporary config files when needed
 
-4. **Tools Tier** - Per-tool enable/disable and config source tracking
+4. **Tools Tier** - Per-tool enable/disable, config source, and auto-install
    - `enabled`: Whether the tool is enabled
    - `config_source`: Optional explicit path to native config file
+   - `auto_install`: Per-tool auto-install override (`true`/`false`/omit to inherit
+     global)
 
 ### Configuration Resolution Example
 
@@ -104,13 +106,15 @@ defaults:
   yamllint:
     extends: default
 
-# Tier 4: TOOLS - Per-tool enable/disable and config source
+# Tier 4: TOOLS - Per-tool enable/disable, config source, and auto-install
 tools:
   ruff:
     enabled: true
   prettier:
     enabled: true
     config_source: '.prettierrc' # Optional: explicit native config path
+  tsc:
+    auto_install: true # Override global auto_install for this tool only
 ```
 
 ### Configuration Report Command
@@ -156,6 +160,24 @@ lintro check --include-venv                  # Include virtual environments
 lintro check path/to/files                   # Check specific paths
 ```
 
+#### Confirmation Prompt Options
+
+```bash
+# Skip confirmation prompts (auto-accept)
+lintro check --yes
+lintro check -y
+
+# Useful in scripts and CI where no interactive input is available
+lintro format --yes --tools ruff,prettier
+```
+
+The `--yes`/`-y` flag is available for `check`, `format`, and `test` commands. It skips
+any confirmation prompts that would otherwise pause execution.
+
+**Note:** Confirmation prompts are automatically skipped in non-TTY environments (CI
+pipelines, Docker containers, scripts with redirected output), so `--yes` is typically
+only needed when running interactively and you want to avoid prompts.
+
 #### Node.js Dependency Options
 
 ```bash
@@ -179,10 +201,36 @@ execution:
   auto_install_deps: true
 ```
 
-**Note:** In Docker, automatic Node.js dependency installation is opt-in and controlled
-by the `LINTRO_AUTO_INSTALL_DEPS=1` environment variable. Set this in your Docker
-environment or docker-compose to enable auto-installation when the container starts with
-a mounted project containing `package.json`.
+**Per-tool auto-install** lets you override the global setting for individual tools:
+
+```yaml
+# .lintro-config.yaml
+tools:
+  tsc:
+    auto_install: true # Always auto-install deps for tsc
+  prettier:
+    auto_install: false # Never auto-install deps for prettier
+  oxlint:
+    # Omit auto_install to inherit the global setting
+```
+
+Resolution order: **per-tool `auto_install`** > **global `auto_install_deps`** > `false`
+
+#### Container Auto-Detection
+
+Lintro automatically detects container environments (Docker, Podman, LXC, Kubernetes)
+and enables auto-install by default when running in a container. This means Node.js
+tools work out of the box in Docker without any configuration.
+
+You can override this behavior:
+
+```bash
+# Disable auto-install even in a container
+docker run --rm -e LINTRO_AUTO_INSTALL_DEPS=0 -v $(pwd):/code \
+  ghcr.io/lgtm-hq/py-lintro:latest check --tools tsc
+```
+
+See the [Docker Usage Guide](docker.md) for more details on container behavior.
 
 #### Tool-Specific Options
 
@@ -209,7 +257,51 @@ export LINTRO_EXCLUDE="*.pyc,venv,node_modules"
 
 # Default output format
 export LINTRO_DEFAULT_FORMAT="grid"
+
+# Auto-install Node.js dependencies (useful in Docker/CI)
+# Set to 1 to enable, 0 to disable (overrides container auto-detection)
+export LINTRO_AUTO_INSTALL_DEPS=1
 ```
+
+| Variable                   | Description                                  | Default |
+| -------------------------- | -------------------------------------------- | ------- |
+| `LINTRO_DEFAULT_TIMEOUT`   | Default timeout for tool execution (seconds) | `30`    |
+| `LINTRO_VERBOSE`           | Enable verbose logging (`1` to enable)       | `0`     |
+| `LINTRO_EXCLUDE`           | Comma-separated exclude patterns             | -       |
+| `LINTRO_DEFAULT_FORMAT`    | Default output format                        | -       |
+| `LINTRO_AUTO_INSTALL_DEPS` | Auto-install Node.js deps (`1`/`0`)          | `0`\*   |
+
+\* In container environments, `LINTRO_AUTO_INSTALL_DEPS` effectively defaults to `1` via
+container auto-detection. Set to `0` to explicitly disable.
+
+### Pre-Execution Summary
+
+Before running tools, Lintro displays a configuration summary table showing the
+effective settings for the current run:
+
+- **Environment**: Local, Container, or CI
+- **Auto-install**: Whether auto-install is enabled (and the source — CLI flag, config,
+  or container detection)
+- **Tools**: Which tools will run
+- **Skipped tools**: Which tools were skipped and why
+
+This summary is shown for all output formats except JSON (`--output-format json`).
+
+### Skipped Tools
+
+When tools are skipped, Lintro reports them in the summary table with a `SKIP` status
+and a note explaining the reason. Common skip reasons:
+
+| Reason                   | Description                                       |
+| ------------------------ | ------------------------------------------------- |
+| `node_modules not found` | Node.js deps missing and auto-install is disabled |
+| `disabled in config`     | Tool disabled via `tools.<name>.enabled: false`   |
+| `not in enabled_tools`   | Tool not in `execution.enabled_tools` allowlist   |
+| `deferred to <tool>`     | Framework tool preferred (e.g., tsc to vue-tsc)   |
+| Version check messages   | Tool version below minimum required               |
+
+Skipped tools do not affect exit codes — only tools that run and find issues contribute
+to a non-zero exit.
 
 ## Tool Configuration
 
