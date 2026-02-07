@@ -157,3 +157,34 @@ def test_extract_missing_modules() -> None:
     assert_that(modules).is_length(2)
     assert_that(modules).contains("@vueuse/core")
     assert_that(modules).contains("vue")
+
+
+def test_vue_tsc_issue_to_display_row() -> None:
+    """Convert VueTscIssue to display row format."""
+    issue = VueTscIssue(
+        file="src/App.vue",
+        line=10,
+        column=5,
+        code="TS2322",
+        message="Type error",
+        severity="error",
+    )
+    row = issue.to_display_row()
+
+    assert_that(row["file"]).is_equal_to("src/App.vue")
+    assert_that(row["line"]).is_equal_to("10")
+    assert_that(row["column"]).is_equal_to("5")
+    assert_that(row["code"]).is_equal_to("TS2322")
+    assert_that(row["message"]).is_equal_to("Type error")
+    assert_that(row["severity"]).is_equal_to("error")
+
+
+def test_vue_tsc_issue_to_display_row_minimal() -> None:
+    """Convert minimal VueTscIssue to display row format."""
+    issue = VueTscIssue(file="main.vue", line=1, column=1, message="Error")
+    row = issue.to_display_row()
+
+    assert_that(row["file"]).is_equal_to("main.vue")
+    assert_that(row["code"]).is_equal_to("")
+    assert_that(row["severity"]).is_equal_to("")
+    assert_that(row["fixable"]).is_equal_to("")
