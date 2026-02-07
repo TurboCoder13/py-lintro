@@ -10,4 +10,8 @@ docker pull "$IMAGE"
 docker tag "$IMAGE" py-lintro:latest
 
 DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")
+if [ -z "$DIGEST" ]; then
+	echo "::error::Failed to resolve image digest for $IMAGE" >&2
+	exit 1
+fi
 echo "::notice::Resolved digest: $DIGEST"
