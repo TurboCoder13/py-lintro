@@ -180,13 +180,21 @@ def _parse_tool_config(data: dict[str, Any]) -> LintroToolConfig:
 
     Returns:
         LintroToolConfig: Parsed tool configuration.
+
+    Raises:
+        ValueError: If auto_install is not a boolean.
     """
     enabled = data.get("enabled", True)
     config_source = data.get("config_source")
     auto_install_raw = data.get("auto_install")
     auto_install: bool | None = None
-    if auto_install_raw is not None:
-        auto_install = bool(auto_install_raw)
+    if isinstance(auto_install_raw, bool):
+        auto_install = auto_install_raw
+    elif auto_install_raw is not None:
+        type_name = type(auto_install_raw).__name__
+        raise ValueError(
+            f"tools.<name>.auto_install must be a boolean, got {type_name}",
+        )
 
     return LintroToolConfig(
         enabled=enabled,
