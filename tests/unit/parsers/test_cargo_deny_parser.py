@@ -72,15 +72,14 @@ def test_parse_cargo_deny_output_ignores_non_issues() -> None:
     [
         pytest.param("", 0, id="empty_string"),
         pytest.param("\n\n", 0, id="only_newlines"),
-        pytest.param(None, 0, id="none_input"),
     ],
 )
 def test_parse_cargo_deny_output_empty_cases(
-    output: str | None,
+    output: str,
     expected_count: int,
 ) -> None:
     """Handle empty output."""
-    result = parse_cargo_deny_output(output or "")
+    result = parse_cargo_deny_output(output)
     assert_that(result).is_length(expected_count)
 
 

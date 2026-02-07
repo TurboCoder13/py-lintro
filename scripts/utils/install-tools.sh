@@ -735,6 +735,7 @@ main() {
 		# Fallback to cargo install if pre-built binary not available
 		if [ "$cargo_deny_installed" = false ] && command -v cargo &>/dev/null; then
 			echo -e "${YELLOW}Pre-built binary not available, falling back to cargo install...${NC}"
+			ensure_cargo_audit_deps
 			if cargo install cargo-deny --locked --version "$CARGO_DENY_VERSION"; then
 				echo -e "${GREEN}✓ cargo-deny installed via cargo${NC}"
 				cargo_deny_installed=true
