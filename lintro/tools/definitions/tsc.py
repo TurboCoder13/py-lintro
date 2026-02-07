@@ -429,13 +429,11 @@ class TscPlugin(BaseToolPlugin):
         cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
 
         # Check if dependencies need installing
-        from lintro.utils.node_deps import should_install_deps
+        from lintro.utils.node_deps import install_node_deps, should_install_deps
 
         if should_install_deps(cwd_path):
             auto_install = merged_options.get("auto_install", False)
             if auto_install:
-                from lintro.utils.node_deps import install_node_deps
-
                 logger.info("[tsc] Auto-installing Node.js dependencies...")
                 install_ok, install_output = install_node_deps(cwd_path)
                 if install_ok:

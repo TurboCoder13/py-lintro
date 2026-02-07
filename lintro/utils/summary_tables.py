@@ -4,6 +4,7 @@ Handles formatting and display of execution summary tables with tabulate.
 """
 
 import contextlib
+import sys
 from collections.abc import Callable, Sequence
 from typing import Any
 
@@ -19,11 +20,12 @@ from lintro.utils.console import (
 # Constants
 DEFAULT_REMAINING_COUNT: str = "?"
 
-# ANSI color codes
-_GREEN = "\033[92m"
-_RED = "\033[91m"
-_YELLOW = "\033[93m"
-_RESET = "\033[0m"
+# ANSI color codes — only emit when stdout is a terminal
+_USE_COLOR = sys.stdout.isatty()
+_GREEN = "\033[92m" if _USE_COLOR else ""
+_RED = "\033[91m" if _USE_COLOR else ""
+_YELLOW = "\033[93m" if _USE_COLOR else ""
+_RESET = "\033[0m" if _USE_COLOR else ""
 
 
 def _extract_skip_reason(output: str) -> str:
@@ -373,11 +375,8 @@ def print_summary_table(
                 ):
                     notes_display = f"{_YELLOW}deferred to framework checker{_RESET}"
 
-                if (
-                    has_execution_failure
-                    and issues_count == 0
-                    or not success
-                    and issues_count == 0
+                if (has_execution_failure and issues_count == 0) or (
+                    not success and issues_count == 0
                 ):
                     status_display = f"{_RED}❌ FAIL{_RESET}"
                     issues_display = f"{_RED}ERROR{_RESET}"

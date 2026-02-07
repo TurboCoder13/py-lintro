@@ -286,6 +286,7 @@ def test(
     verbose: bool,
     raw_output: bool = False,
     tool_options: str | None = None,
+    yes: bool = False,
 ) -> None:
     """Programmatic test function for backward compatibility.
 
@@ -299,6 +300,7 @@ def test(
         verbose: bool: Whether to show verbose output during execution.
         raw_output: bool: Whether to show raw tool output instead of formatted output.
         tool_options: str | None: Tool-specific options.
+        yes: bool: Skip confirmation prompt and proceed immediately.
 
     Returns:
         None: This function does not return a value.
@@ -323,6 +325,8 @@ def test(
         args.append("--raw-output")
     if tool_options:
         args.extend(["--tool-options", tool_options])
+    if yes:
+        args.append("--yes")
 
     runner = CliRunner()
     result = runner.invoke(test_command, args)

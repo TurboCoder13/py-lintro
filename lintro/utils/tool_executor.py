@@ -189,10 +189,9 @@ def run_lint_tools_simple(
     # Determine auto_install: CLI flag > config > container default
     from lintro.utils.environment.container_detection import is_container_environment
 
+    is_container = is_container_environment()
     effective_auto_install = (
-        auto_install
-        or lintro_config.execution.auto_install_deps
-        or is_container_environment()
+        auto_install or lintro_config.execution.auto_install_deps or is_container
     )
 
     # Pre-execution config summary (suppress in JSON mode)
@@ -215,7 +214,7 @@ def run_lint_tools_simple(
             tools_to_run=tools_to_run,
             skipped_tools=skipped_tools,
             effective_auto_install=effective_auto_install,
-            is_container=is_container_environment(),
+            is_container=is_container,
             is_ci=is_ci,
             per_tool_auto_install=per_tool_auto if per_tool_auto else None,
         )
@@ -328,6 +327,7 @@ def run_lint_tools_simple(
                     action=action,
                     post_tools=post_tools_early,
                     auto_install=effective_auto_install,
+                    lintro_config=lintro_config,
                 )
 
                 # Execute the tool

@@ -86,6 +86,8 @@ def print_pre_execution_summary(
             else:
                 tool_lines.append(f"  • {name}")
         table.add_row("Tools", "\n".join(tool_lines))
+    else:
+        table.add_row("Tools", "[dim]None (all tools skipped)[/dim]")
 
     # Skipped tools
     if skipped_tools:

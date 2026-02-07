@@ -74,6 +74,7 @@ def configure_tool_for_execution(
     action: Action,
     post_tools: set[str],
     auto_install: bool = False,
+    lintro_config: LintroConfig | None = None,
 ) -> None:
     """Configure a tool for execution.
 
@@ -91,6 +92,7 @@ def configure_tool_for_execution(
         action: The action being performed (check/fix).
         post_tools: Set of post-check tool names.
         auto_install: Whether to auto-install Node.js deps if missing (global default).
+        lintro_config: Optional LintroConfig to reuse; fetched via get_config() if None.
     """
     # Build CLI overrides from --tool-options
     cli_overrides: dict[str, object] = {}
@@ -117,7 +119,7 @@ def configure_tool_for_execution(
         tool.set_options(incremental=True)
 
     # Resolve per-tool auto_install: per-tool config > global effective > False
-    lintro_config = get_config()
+    lintro_config = lintro_config or get_config()
     tool_cfg = lintro_config.get_tool_config(tool_name)
     if tool_cfg.auto_install is not None:
         effective_tool_auto_install = tool_cfg.auto_install

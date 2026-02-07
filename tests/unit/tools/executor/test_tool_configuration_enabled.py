@@ -79,9 +79,9 @@ def test_disabled_tool_skipped_in_all_tools_check(
     assert_that(result.to_run).contains("ruff", "bandit")
     assert_that(result.to_run).does_not_contain("mypy")
     # Verify mypy appears in skipped list with reason
-    skipped_names = [s.name for s in result.skipped]
-    assert_that(skipped_names).contains("mypy")
-    assert_that(result.skipped[0].reason).is_equal_to("disabled in config")
+    skipped_by_name = {s.name: s for s in result.skipped}
+    assert_that(skipped_by_name).contains_key("mypy")
+    assert_that(skipped_by_name["mypy"].reason).is_equal_to("disabled in config")
 
 
 def test_disabled_tool_skipped_in_all_tools_fix(

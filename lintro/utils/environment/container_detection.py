@@ -40,7 +40,7 @@ def is_container_environment() -> bool:
             for indicator in ("docker", "lxc", "containerd", "kubepods"):
                 if indicator in content.lower():
                     return True
-    except (OSError, PermissionError):
+    except OSError:
         pass
 
     return False
