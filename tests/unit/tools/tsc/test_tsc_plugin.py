@@ -99,7 +99,6 @@ def test_create_temp_tsconfig_creates_file_with_extends(
         assert_that(temp_path.exists()).is_true()
 
         content = json.loads(temp_path.read_text())
-        # Temp file is in system temp dir, so extends uses absolute path
         assert_that(content["extends"]).is_equal_to(str(base_tsconfig.resolve()))
     finally:
         temp_path.unlink(missing_ok=True)
@@ -127,7 +126,6 @@ def test_create_temp_tsconfig_includes_specified_files(
 
     try:
         content = json.loads(temp_path.read_text())
-        # Files are converted to absolute paths since temp file is in system temp dir
         expected_files = [str((tmp_path / f).resolve()) for f in files]
         assert_that(content["include"]).is_equal_to(expected_files)
         assert_that(content["exclude"]).is_equal_to([])
@@ -161,21 +159,19 @@ def test_create_temp_tsconfig_sets_no_emit(
         temp_path.unlink(missing_ok=True)
 
 
-def test_create_temp_tsconfig_file_created_in_system_temp(
+def test_create_temp_tsconfig_file_created_next_to_base(
     tsc_plugin: TscPlugin,
     tmp_path: Path,
 ) -> None:
-    """Verify temp tsconfig is created in the system temp directory.
+    """Verify temp tsconfig is created next to the base tsconfig.
 
-    This avoids permission issues in Docker containers where the working
-    directory may be a read-only volume mount.
+    Placing the temp file in the project tree allows TypeScript to resolve
+    types entries by walking up from the tsconfig location to node_modules.
 
     Args:
         tsc_plugin: Plugin instance fixture.
         tmp_path: Pytest temporary directory.
     """
-    import tempfile
-
     base_tsconfig = tmp_path / "tsconfig.json"
     base_tsconfig.write_text("{}")
 
@@ -186,11 +182,126 @@ def test_create_temp_tsconfig_file_created_in_system_temp(
     )
 
     try:
-        # Temp file should be in system temp directory, not cwd
+        assert_that(temp_path.parent).is_equal_to(tmp_path)
+        assert_that(temp_path.name).starts_with(".lintro-tsc-")
+        assert_that(temp_path.name).ends_with(".json")
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+
+def test_create_temp_tsconfig_falls_back_to_system_temp_with_typeroots(
+    tsc_plugin: TscPlugin,
+    tmp_path: Path,
+) -> None:
+    """Verify fallback to system temp dir injects typeRoots.
+
+    When the project directory is read-only (e.g. Docker volume mount),
+    the temp file falls back to the system temp dir and injects explicit
+    typeRoots so TypeScript can still resolve type packages.
+
+    Args:
+        tsc_plugin: Plugin instance fixture.
+        tmp_path: Pytest temporary directory.
+    """
+    import tempfile
+    from typing import Any
+    from unittest.mock import patch
+
+    base_tsconfig = tmp_path / "tsconfig.json"
+    base_tsconfig.write_text("{}")
+
+    original_mkstemp = tempfile.mkstemp
+    call_count = 0
+
+    def mock_mkstemp(**kwargs: Any) -> tuple[int, str]:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            # First call (project dir) fails
+            raise OSError("Read-only filesystem")
+        # Second call (system temp dir) succeeds
+        return original_mkstemp(**kwargs)
+
+    with patch("tempfile.mkstemp", side_effect=mock_mkstemp):
+        temp_path = tsc_plugin._create_temp_tsconfig(
+            base_tsconfig=base_tsconfig,
+            files=["file.ts"],
+            cwd=tmp_path,
+        )
+
+    try:
         system_temp = Path(tempfile.gettempdir())
         assert_that(temp_path.parent).is_equal_to(system_temp)
-        assert_that(temp_path.name).starts_with("lintro-tsc-")
-        assert_that(temp_path.name).ends_with(".json")
+
+        content = json.loads(temp_path.read_text())
+        expected_type_roots = [str(tmp_path / "node_modules" / "@types")]
+        assert_that(content["compilerOptions"]["typeRoots"]).is_equal_to(
+            expected_type_roots,
+        )
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+
+def test_create_temp_tsconfig_fallback_preserves_custom_typeroots(
+    tsc_plugin: TscPlugin,
+    tmp_path: Path,
+) -> None:
+    """Verify fallback merges existing typeRoots from base tsconfig.
+
+    When the base tsconfig has custom typeRoots, the fallback should
+    resolve them relative to the base tsconfig directory and include
+    the default node_modules/@types path.
+
+    Args:
+        tsc_plugin: Plugin instance fixture.
+        tmp_path: Pytest temporary directory.
+    """
+    import tempfile
+    from typing import Any
+    from unittest.mock import patch
+
+    base_tsconfig = tmp_path / "tsconfig.json"
+    base_tsconfig.write_text(
+        json.dumps(
+            {
+                "compilerOptions": {
+                    "typeRoots": ["./custom-types", "./other-types"],
+                },
+            },
+        ),
+    )
+
+    original_mkstemp = tempfile.mkstemp
+    call_count = 0
+
+    def mock_mkstemp(**kwargs: Any) -> tuple[int, str]:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise OSError("Read-only filesystem")
+        return original_mkstemp(**kwargs)
+
+    with patch("tempfile.mkstemp", side_effect=mock_mkstemp):
+        temp_path = tsc_plugin._create_temp_tsconfig(
+            base_tsconfig=base_tsconfig,
+            files=["file.ts"],
+            cwd=tmp_path,
+        )
+
+    try:
+        content = json.loads(temp_path.read_text())
+        type_roots = content["compilerOptions"]["typeRoots"]
+        # Custom roots resolved to absolute paths
+        assert_that(type_roots).contains(
+            str((tmp_path / "custom-types").resolve()),
+        )
+        assert_that(type_roots).contains(
+            str((tmp_path / "other-types").resolve()),
+        )
+        # Default root also included
+        assert_that(type_roots).contains(
+            str(tmp_path / "node_modules" / "@types"),
+        )
     finally:
         temp_path.unlink(missing_ok=True)
 

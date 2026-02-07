@@ -232,25 +232,50 @@ class AstroCheckPlugin(BaseToolPlugin):
                 "[astro-check] No astro.config.* found — proceeding with defaults",
             )
 
-        # Check if auto-install is enabled
-        auto_install = merged_options.get("auto_install", False)
-        if auto_install:
-            from lintro.utils.node_deps import install_node_deps, should_install_deps
+        # Check if dependencies need installing
+        from lintro.utils.node_deps import should_install_deps
 
-            if should_install_deps(cwd_path):
+        if should_install_deps(cwd_path):
+            auto_install = merged_options.get("auto_install", False)
+            if auto_install:
+                from lintro.utils.node_deps import install_node_deps
+
                 logger.info("[astro-check] Auto-installing Node.js dependencies...")
-                success, install_output = install_node_deps(cwd_path)
-                if not success:
+                install_ok, install_output = install_node_deps(cwd_path)
+                if install_ok:
+                    logger.info(
+                        "[astro-check] Dependencies installed successfully",
+                    )
+                else:
+                    logger.warning(
+                        "[astro-check] Auto-install failed, skipping: {}",
+                        install_output,
+                    )
                     return ToolResult(
                         name=self.definition.name,
-                        success=False,
+                        success=True,
                         output=(
-                            f"Failed to install Node.js dependencies:\n"
+                            f"Skipping astro-check: auto-install failed.\n"
                             f"{install_output}"
                         ),
                         issues_count=0,
                     )
-                logger.info("[astro-check] Dependencies installed successfully")
+            else:
+                logger.info(
+                    "[astro-check] Skipping: node_modules not found in {}",
+                    cwd_path,
+                )
+                return ToolResult(
+                    name=self.definition.name,
+                    success=True,
+                    output=(
+                        "Skipping astro-check: node_modules not found. "
+                        "Install dependencies first "
+                        "(bun install / npm install) or set "
+                        "auto_install: true in tool options."
+                    ),
+                    issues_count=0,
+                )
 
         # Build command
         cmd = self._build_command(options=merged_options)
