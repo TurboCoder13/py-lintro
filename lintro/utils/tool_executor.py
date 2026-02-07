@@ -173,7 +173,6 @@ def run_lint_tools_simple(
 
     # Execute tools and collect results
     all_results: list[ToolResult] = []
-    exit_code = 0
     total_issues = 0
     total_fixed = 0
     total_remaining = 0
@@ -196,9 +195,12 @@ def run_lint_tools_simple(
     from lintro.utils.environment.container_detection import is_container_environment
 
     is_container = is_container_environment()
-    effective_auto_install = (
-        auto_install or lintro_config.execution.auto_install_deps or is_container
-    )
+    if auto_install:
+        effective_auto_install = True
+    elif lintro_config.execution.auto_install_deps is not None:
+        effective_auto_install = lintro_config.execution.auto_install_deps
+    else:
+        effective_auto_install = is_container
 
     # Pre-execution config summary (suppress in JSON mode)
     if output_format.lower() != "json" and (tools_to_run or skipped_tools):
@@ -267,14 +269,6 @@ def run_lint_tools_simple(
             all_results,
             action,
         )
-        # Check for failures in parallel results (exclude skipped tools)
-        if any(
-            not result.success
-            for result in all_results
-            if not getattr(result, "skipped", False)
-        ):
-            exit_code = 1
-
         # Display results for parallel execution
         for result in all_results:
             # Print tool header like sequential mode does
@@ -399,10 +393,6 @@ def run_lint_tools_simple(
                     logger.console_output(text="✓ No issues found.", color="green")
                     logger.console_output(text="")
 
-                # Set exit code based on success
-                if not result.success:
-                    exit_code = 1
-
             except (TypeError, AttributeError):
                 # Programming errors should be re-raised for debugging
                 from loguru import logger as loguru_logger
@@ -425,7 +415,6 @@ def run_lint_tools_simple(
                     issues_count=0,
                 )
                 all_results.append(failed_result)
-                exit_code = 1
 
     # Add skipped tool results for display in summary table
     for st in skipped_tools:
@@ -455,6 +444,17 @@ def run_lint_tools_simple(
         total_remaining=total_remaining,
     )
 
+    # Determine final exit code once — used for both JSON output and return
+    final_exit_code = int(
+        determine_exit_code(
+            action=action,
+            all_results=all_results,
+            total_issues=total_issues,
+            total_remaining=total_remaining,
+            main_phase_empty_due_to_filter=main_phase_empty_due_to_filter,
+        ),
+    )
+
     # Display results
     if all_results:
         if output_format.lower() == "json":
@@ -469,7 +469,7 @@ def run_lint_tools_simple(
                 total_issues=total_issues,
                 total_fixed=total_fixed,
                 total_remaining=total_remaining,
-                exit_code=exit_code,
+                exit_code=final_exit_code,
             )
             print(json.dumps(json_data, indent=2))
         else:
@@ -482,13 +482,4 @@ def run_lint_tools_simple(
             logger.console_output(f"Warning: Failed to write reports: {e}")
             # Continue execution - report writing failures should not stop the tool
 
-    # Determine final exit code using helper
-    return int(
-        determine_exit_code(
-            action=action,
-            all_results=all_results,
-            total_issues=total_issues,
-            total_remaining=total_remaining,
-            main_phase_empty_due_to_filter=main_phase_empty_due_to_filter,
-        ),
-    )
+    return final_exit_code

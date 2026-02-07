@@ -166,7 +166,7 @@ def _parse_execution_config(data: dict[str, Any]) -> ExecutionConfig:
         tool_order=tool_order,
         fail_fast=data.get("fail_fast", False),
         parallel=data.get("parallel", True),
-        auto_install_deps=data.get("auto_install_deps", False),
+        auto_install_deps=data.get("auto_install_deps"),
     )
 
 
