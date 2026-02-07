@@ -83,6 +83,7 @@ Scripts for GitHub Actions workflows and continuous integration.
 | `fail-on-lint.sh`                   | Fail CI job when lint checks fail                                  | `CHK_EXIT_CODE=1 ./scripts/ci/fail-on-lint.sh`                           |
 | `post-pr-delete-previous.sh`        | Delete previous PR comments by marker                              | `./scripts/ci/post-pr-delete-previous.sh --help`                         |
 | `lintro-report-generate.sh`         | Generate comprehensive Lintro reports                              | `./scripts/ci/lintro-report-generate.sh`                                 |
+| `pull-lintro-image.sh`              | Pull lintro Docker image from GHCR and log digest                  | `./scripts/ci/testing/pull-lintro-image.sh`                              |
 | `pages-deploy.sh`                   | Deploy coverage reports to GitHub Pages                            | `./scripts/ci/pages-deploy.sh`                                           |
 | `ghcr_prune_untagged.py`            | Prune untagged GHCR package versions                               | `uv run python scripts/ci/ghcr_prune_untagged.py`                        |
 | `deployments-prune.sh`              | Prune GitHub deployments via gh (keep-n/ref)                       | `./scripts/ci/deployments-prune.sh --help`                               |
