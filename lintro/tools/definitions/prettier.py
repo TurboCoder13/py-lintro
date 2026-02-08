@@ -1,7 +1,7 @@
 """Prettier tool definition.
 
 Prettier is an opinionated code formatter for CSS, HTML, JSON, YAML, Markdown,
-and GraphQL. JavaScript/TypeScript files are handled by oxfmt for better
+GraphQL, and Astro. JavaScript/TypeScript files are handled by oxfmt for better
 performance. Prettier enforces a consistent code style by parsing and
 re-printing code.
 """
@@ -46,6 +46,7 @@ PRETTIER_FILE_PATTERNS: list[str] = [
     "*.yml",
     "*.md",
     "*.graphql",
+    "*.astro",
 ]
 
 
@@ -55,7 +56,7 @@ class PrettierPlugin(BaseToolPlugin):
     """Prettier code formatter plugin.
 
     This plugin integrates Prettier with Lintro for formatting CSS, HTML,
-    JSON, YAML, Markdown, and GraphQL files. JS/TS files are handled by oxfmt.
+    JSON, YAML, Markdown, GraphQL, and Astro files. JS/TS files are handled by oxfmt.
     """
 
     @property
@@ -68,8 +69,8 @@ class PrettierPlugin(BaseToolPlugin):
         return ToolDefinition(
             name="prettier",
             description=(
-                "Code formatter for CSS, HTML, JSON, YAML, Markdown, and GraphQL "
-                "(JS/TS handled by oxfmt for better performance)"
+                "Code formatter for CSS, HTML, JSON, YAML, Markdown, GraphQL, "
+                "and Astro (JS/TS handled by oxfmt for better performance)"
             ),
             can_fix=True,
             tool_type=ToolType.FORMATTER,
