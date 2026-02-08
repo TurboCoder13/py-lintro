@@ -103,6 +103,86 @@ def test_print_summary_table_action_normalization(
 
 
 # =============================================================================
+# Totals Table Delegation Tests
+# =============================================================================
+
+
+def test_print_totals_table_delegates_to_module_function() -> None:
+    """Verify _print_totals_table delegates to print_totals_table function.
+
+    The method should pass through all parameters to the module-level
+    print_totals_table function.
+    """
+    logger = ThreadSafeConsoleLogger()
+
+    with patch("lintro.utils.summary_tables.print_totals_table") as mock_print:
+        logger._print_totals_table(
+            action=Action.CHECK,
+            total_issues=5,
+            affected_files=2,
+        )
+        mock_print.assert_called_once_with(
+            console_output_func=logger.console_output,
+            action=Action.CHECK,
+            total_issues=5,
+            total_fixed=0,
+            total_remaining=0,
+            affected_files=2,
+        )
+
+
+def test_print_totals_table_delegates_fix_mode() -> None:
+    """Verify _print_totals_table delegates FIX mode parameters correctly.
+
+    FIX mode should pass total_fixed and total_remaining to the
+    underlying function.
+    """
+    logger = ThreadSafeConsoleLogger()
+
+    with patch("lintro.utils.summary_tables.print_totals_table") as mock_print:
+        logger._print_totals_table(
+            action=Action.FIX,
+            total_fixed=10,
+            total_remaining=3,
+            affected_files=5,
+        )
+        mock_print.assert_called_once_with(
+            console_output_func=logger.console_output,
+            action=Action.FIX,
+            total_issues=0,
+            total_fixed=10,
+            total_remaining=3,
+            affected_files=5,
+        )
+
+
+@pytest.mark.parametrize(
+    ("action", "kwargs"),
+    [
+        (Action.CHECK, {"total_issues": 0, "affected_files": 0}),
+        (Action.CHECK, {"total_issues": 10, "affected_files": 5}),
+        (Action.FIX, {"total_fixed": 5, "total_remaining": 2, "affected_files": 3}),
+        (Action.TEST, {"total_issues": 4, "affected_files": 1}),
+    ],
+)
+def test_print_totals_table_various_inputs(
+    action: Action,
+    kwargs: dict[str, int],
+) -> None:
+    """Verify _print_totals_table handles various action and parameter combos.
+
+    Args:
+        action: Action type to test.
+        kwargs: Keyword arguments to pass to the method.
+    """
+    logger = ThreadSafeConsoleLogger()
+
+    with patch("lintro.utils.summary_tables.print_totals_table") as mock_print:
+        logger._print_totals_table(action=action, **kwargs)
+        mock_print.assert_called_once()
+
+
+# =============================================================================
 # Final Status Delegation Tests
 # =============================================================================
 

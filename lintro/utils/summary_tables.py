@@ -128,6 +128,26 @@ def _is_result_skipped(result: object) -> tuple[bool, str]:
     return False, ""
 
 
+def _count_affected_files(tool_results: Sequence[object]) -> int:
+    """Count unique file paths with issues across all tool results.
+
+    Args:
+        tool_results: Sequence of tool results to inspect.
+
+    Returns:
+        Number of unique files that have at least one issue.
+    """
+    files: set[str] = set()
+    for result in tool_results:
+        issues = getattr(result, "issues", None)
+        if issues:
+            for issue in issues:
+                file_path = getattr(issue, "file", "")
+                if file_path:
+                    files.add(file_path)
+    return len(files)
+
+
 def print_summary_table(
     console_output_func: Callable[..., None],
     action: Action,
@@ -434,3 +454,56 @@ def print_summary_table(
     except ImportError:
         # Fallback if tabulate not available
         console_output_func(text="Summary table requires tabulate package")
+
+
+def print_totals_table(
+    console_output_func: Callable[..., None],
+    action: Action,
+    total_issues: int = 0,
+    total_fixed: int = 0,
+    total_remaining: int = 0,
+    affected_files: int = 0,
+) -> None:
+    """Print a totals summary table for the run.
+
+    Args:
+        console_output_func: Function to output text to console.
+        action: The action being performed.
+        total_issues: Total number of issues found (CHECK/TEST mode).
+        total_fixed: Total number of issues fixed (FIX mode).
+        total_remaining: Total number of remaining issues (FIX mode).
+        affected_files: Number of unique files with issues.
+    """
+    try:
+        import click
+        from tabulate import tabulate
+
+        header: str = click.style("\U0001f4ca TOTALS", fg="cyan", bold=True)
+        console_output_func(text=header)
+
+        if action == Action.FIX:
+            rows: list[list[str | int]] = [
+                ["Fixed Issues", total_fixed],
+                ["Remaining Issues", total_remaining],
+                ["Affected Files", affected_files],
+            ]
+        else:
+            rows = [
+                ["Total Issues", total_issues],
+                ["Affected Files", affected_files],
+            ]
+
+        headers: list[str] = ["Metric", "Count"]
+        table: str = tabulate(
+            tabular_data=rows,
+            headers=headers,
+            tablefmt="grid",
+            stralign="left",
+            disable_numparse=True,
+        )
+        console_output_func(text=table)
+        console_output_func(text="")
+
+    except ImportError:
+        # Fallback if tabulate not available
+        console_output_func(text="Totals table requires tabulate package")

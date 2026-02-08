@@ -66,15 +66,17 @@ def test_execution_summary_check_with_issues(
         fake_tool_result_factory(success=True, issues_count=3),
     ]
 
-    with patch.object(logger, "console_output") as mock_output:
+    with patch.object(logger, "console_output"):
         with patch.object(logger, "_print_summary_table"):
-            with patch.object(logger, "_print_ascii_art") as mock_art:
-                logger.print_execution_summary(Action.CHECK, results)
-                # Should show total of 8 issues
-                mock_art.assert_called_once_with(total_issues=8)
-                # Verify totals line was output
-                output_calls = [str(c) for c in mock_output.call_args_list]
-                assert_that(any("8" in c for c in output_calls)).is_true()
+            with patch.object(logger, "_print_totals_table") as mock_totals:
+                with patch.object(logger, "_print_ascii_art") as mock_art:
+                    logger.print_execution_summary(Action.CHECK, results)
+                    # Should show total of 8 issues
+                    mock_art.assert_called_once_with(total_issues=8)
+                    # Verify totals table was called with correct total
+                    mock_totals.assert_called_once()
+                    call_kwargs = mock_totals.call_args.kwargs
+                    assert_that(call_kwargs["total_issues"]).is_equal_to(8)
 
 
 def test_execution_summary_check_failed_tool_shows_minimum_issues(
