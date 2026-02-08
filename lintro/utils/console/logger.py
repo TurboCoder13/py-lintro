@@ -175,6 +175,8 @@ class ThreadSafeConsoleLogger:
         # Build summary table
         self._print_summary_table(action=action, tool_results=tool_results)
 
+        from lintro.utils.summary_tables import _count_affected_files
+
         # Totals line and ASCII art
         if action == Action.FIX:
             # For format commands, track both fixed and remaining issues
@@ -209,8 +211,6 @@ class ThreadSafeConsoleLogger:
                         if remaining_match:
                             total_remaining += int(remaining_match.group(1))
 
-            from lintro.utils.summary_tables import _count_affected_files
-
             affected_files = _count_affected_files(tool_results)
             self._print_totals_table(
                 action=action,
@@ -233,8 +233,6 @@ class ThreadSafeConsoleLogger:
             total_for_art: int = (
                 total_issues if not any_failed else max(1, total_issues)
             )
-            from lintro.utils.summary_tables import _count_affected_files
-
             affected_files_chk = _count_affected_files(tool_results)
             self._print_totals_table(
                 action=action,
