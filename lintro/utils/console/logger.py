@@ -175,6 +175,8 @@ class ThreadSafeConsoleLogger:
         # Build summary table
         self._print_summary_table(action=action, tool_results=tool_results)
 
+        from lintro.utils.summary_tables import _count_affected_files
+
         # Totals line and ASCII art
         if action == Action.FIX:
             # For format commands, track both fixed and remaining issues
@@ -209,10 +211,13 @@ class ThreadSafeConsoleLogger:
                         if remaining_match:
                             total_remaining += int(remaining_match.group(1))
 
-            totals_line: str = (
-                f"Totals: fixed={total_fixed}, remaining={total_remaining}"
+            affected_files = _count_affected_files(tool_results)
+            self._print_totals_table(
+                action=action,
+                total_fixed=total_fixed,
+                total_remaining=total_remaining,
+                affected_files=affected_files,
             )
-            self.console_output(text=click.style(totals_line, fg="cyan"))
             self._print_ascii_art(total_issues=total_remaining)
             logger.debug(
                 f"{action} completed with {total_fixed} fixed, "
@@ -228,8 +233,12 @@ class ThreadSafeConsoleLogger:
             total_for_art: int = (
                 total_issues if not any_failed else max(1, total_issues)
             )
-            totals_line_chk: str = f"Total issues: {total_issues}"
-            self.console_output(text=click.style(totals_line_chk, fg="cyan"))
+            affected_files_chk = _count_affected_files(tool_results)
+            self._print_totals_table(
+                action=action,
+                total_issues=total_issues,
+                affected_files=affected_files_chk,
+            )
             self._print_ascii_art(total_issues=total_for_art)
             logger.debug(
                 f"{action} completed with {total_issues} total issues"
@@ -254,6 +263,34 @@ class ThreadSafeConsoleLogger:
             console_output_func=self.console_output,
             action=action_enum,
             tool_results=tool_results,
+        )
+
+    def _print_totals_table(
+        self,
+        action: Action,
+        total_issues: int = 0,
+        total_fixed: int = 0,
+        total_remaining: int = 0,
+        affected_files: int = 0,
+    ) -> None:
+        """Print the totals summary table for the run.
+
+        Args:
+            action: The action being performed.
+            total_issues: Total number of issues found (CHECK/TEST mode).
+            total_fixed: Total number of issues fixed (FIX mode).
+            total_remaining: Total number of remaining issues (FIX mode).
+            affected_files: Number of unique files with issues.
+        """
+        from lintro.utils.summary_tables import print_totals_table
+
+        print_totals_table(
+            console_output_func=self.console_output,
+            action=action,
+            total_issues=total_issues,
+            total_fixed=total_fixed,
+            total_remaining=total_remaining,
+            affected_files=affected_files,
         )
 
     def _print_final_status(
