@@ -1,9 +1,12 @@
 """Version parsing utilities for tool version checking and validation."""
 
+import os
 import re
 import subprocess  # nosec B404 - used safely with shell disabled
+import tempfile
 from dataclasses import dataclass, field
 from functools import lru_cache
+from pathlib import Path
 
 from loguru import logger
 from packaging.version import InvalidVersion, Version
@@ -223,11 +226,20 @@ def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
     try:
         # Run the tool with --version flag
         version_cmd = command + ["--version"]
+
+        # Ensure HOME is writable for tools that need cache/config dirs
+        # (e.g., semgrep in Docker with mapped --user)
+        run_env = os.environ.copy()
+        home = run_env.get("HOME", "")
+        if not home or not Path(home).is_dir():
+            run_env["HOME"] = tempfile.gettempdir()
+
         result = subprocess.run(  # nosec B603 - args list, shell=False
             version_cmd,
             capture_output=True,
             text=True,
             timeout=VERSION_CHECK_TIMEOUT,  # Configurable version check timeout
+            env=run_env,
         )
 
         if result.returncode != 0:

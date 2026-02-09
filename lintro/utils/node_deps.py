@@ -6,8 +6,10 @@ primarily used by tools that depend on node_modules (like tsc).
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess  # nosec B404 - used safely with shell disabled
+import tempfile
 import time
 from pathlib import Path
 
@@ -129,6 +131,13 @@ def install_node_deps(
     manager_name = base_cmd[0]
     logger.info("[node_deps] Installing dependencies with {} in {}", manager_name, cwd)
 
+    # Ensure HOME is writable for package managers that need cache dirs
+    # (e.g., bun in Docker with mapped --user)
+    run_env = os.environ.copy()
+    home = run_env.get("HOME", "")
+    if not home or not Path(home).is_dir():
+        run_env["HOME"] = tempfile.gettempdir()
+
     # Try with frozen lockfile first (for CI reproducibility)
     frozen_cmd = _get_frozen_install_cmd(base_cmd)
     start_time = time.monotonic()
@@ -141,6 +150,7 @@ def install_node_deps(
             text=True,
             timeout=timeout,
             shell=False,
+            env=run_env,
         )
 
         if result.returncode == 0:
@@ -175,6 +185,7 @@ def install_node_deps(
             text=True,
             timeout=remaining_timeout,
             shell=False,
+            env=run_env,
         )
 
         output = result.stdout + result.stderr

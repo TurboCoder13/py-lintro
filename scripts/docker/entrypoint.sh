@@ -10,6 +10,12 @@
 
 set -e
 
+# Ensure HOME is writable for mapped users (e.g., --user "$(id -u):$(id -g)")
+# Tools like semgrep and bun need a writable HOME for cache/config directories
+if [ ! -d "$HOME" ] || [ ! -w "$HOME" ]; then
+	export HOME="/tmp"
+fi
+
 # Handle --help
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 	cat <<'EOF'
