@@ -37,6 +37,12 @@ from lintro.tools.core.timeout_utils import create_timeout_result
 ASTRO_CHECK_DEFAULT_TIMEOUT: int = 120
 ASTRO_CHECK_DEFAULT_PRIORITY: int = 83  # After tsc (82)
 ASTRO_CHECK_FILE_PATTERNS: list[str] = ["*.astro"]
+_ASTRO_CONFIG_NAMES: tuple[str, ...] = (
+    "astro.config.mjs",
+    "astro.config.ts",
+    "astro.config.js",
+    "astro.config.cjs",
+)
 
 
 @register_tool
@@ -63,12 +69,7 @@ class AstroCheckPlugin(BaseToolPlugin):
             file_patterns=ASTRO_CHECK_FILE_PATTERNS,
             priority=ASTRO_CHECK_DEFAULT_PRIORITY,
             conflicts_with=[],
-            native_configs=[
-                "astro.config.mjs",
-                "astro.config.ts",
-                "astro.config.js",
-                "astro.config.cjs",
-            ],
+            native_configs=list(_ASTRO_CONFIG_NAMES),
             version_command=["astro", "--version"],
             min_version=get_min_version(ToolName.ASTRO_CHECK),
             default_options={
@@ -120,24 +121,29 @@ class AstroCheckPlugin(BaseToolPlugin):
         return ["astro", "check"]
 
     def _find_astro_config(self, cwd: Path) -> Path | None:
-        """Find astro config file in the working directory.
+        """Find astro config file by walking up from *cwd*.
+
+        The computed ``cwd`` is typically the common parent of all discovered
+        ``.astro`` files (e.g. ``src/``), but ``astro.config.*`` usually
+        lives at the project root.  Walking up ensures we find the config
+        even when the tool starts in a subdirectory.
 
         Args:
-            cwd: Working directory to search for config.
+            cwd: Starting directory for the upward search.
 
         Returns:
-            Path to astro config if found, None otherwise.
+            Path to the first astro config found, or ``None``.
         """
-        config_names = [
-            "astro.config.mjs",
-            "astro.config.ts",
-            "astro.config.js",
-            "astro.config.cjs",
-        ]
-        for config_name in config_names:
-            config_path = cwd / config_name
-            if config_path.exists():
-                return config_path
+        current = cwd.resolve()
+        root = Path(current.anchor)
+        while True:
+            for config_name in _ASTRO_CONFIG_NAMES:
+                config_path = current / config_name
+                if config_path.exists():
+                    return config_path
+            if current == root:
+                break
+            current = current.parent
         return None
 
     def _build_command(
@@ -225,9 +231,22 @@ class AstroCheckPlugin(BaseToolPlugin):
         else:
             cwd_path = Path(ctx.cwd) if ctx.cwd else Path.cwd()
 
-        # Warn if no astro config found, but still proceed with defaults
+        # Warn if no astro config found, but still proceed with defaults.
+        # When the config lives in a parent directory (common when ctx.cwd
+        # is e.g. src/), re-root to the config's directory so that
+        # astro-check can resolve project paths correctly.
         astro_config = self._find_astro_config(cwd_path)
-        if not astro_config:
+        if astro_config:
+            config_dir = astro_config.parent.resolve()
+            if config_dir != cwd_path.resolve():
+                logger.debug(
+                    "[astro-check] Re-rooting cwd from {} to {} (config found at {})",
+                    cwd_path,
+                    config_dir,
+                    astro_config,
+                )
+                cwd_path = config_dir
+        else:
             logger.warning(
                 "[astro-check] No astro.config.* found — proceeding with defaults",
             )
