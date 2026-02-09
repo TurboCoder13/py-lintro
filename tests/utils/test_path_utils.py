@@ -9,6 +9,11 @@ from assertpy import assert_that
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 
+def _to_posix(path: str) -> str:
+    """Normalize path separators to forward slashes for cross-platform assertions."""
+    return path.replace("\\", "/")
+
+
 @pytest.mark.utils
 def test_normalize_file_path_for_display_absolute(
     tmp_path: Path,
@@ -21,7 +26,7 @@ def test_normalize_file_path_for_display_absolute(
     monkeypatch.chdir(tmp_path)
     abs_path = str(tmp_path / "src" / "file.py")
     result = normalize_file_path_for_display(abs_path)
-    assert_that(result).is_equal_to("./src/file.py")
+    assert_that(_to_posix(result)).is_equal_to("./src/file.py")
 
 
 @pytest.mark.utils
@@ -35,7 +40,7 @@ def test_normalize_file_path_for_display_relative(
 
     monkeypatch.chdir(tmp_path)
     result = normalize_file_path_for_display("src/file.py")
-    assert_that(result).is_equal_to("./src/file.py")
+    assert_that(_to_posix(result)).is_equal_to("./src/file.py")
 
 
 @pytest.mark.utils
@@ -48,7 +53,7 @@ def test_normalize_file_path_for_display_current_dir(
 
     monkeypatch.chdir(tmp_path)
     result = normalize_file_path_for_display("file.py")
-    assert_that(result).is_equal_to("./file.py")
+    assert_that(_to_posix(result)).is_equal_to("./file.py")
 
 
 @pytest.mark.utils
@@ -63,7 +68,7 @@ def test_normalize_file_path_for_display_parent_dir(
 
     monkeypatch.chdir(project_dir)
     result = normalize_file_path_for_display(str(tmp_path / "file.py"))
-    assert_that(result).is_equal_to("../file.py")
+    assert_that(_to_posix(result)).is_equal_to("../file.py")
 
 
 @pytest.mark.utils
@@ -77,7 +82,7 @@ def test_normalize_file_path_for_display_already_relative(
 
     monkeypatch.chdir(tmp_path)
     result = normalize_file_path_for_display("./src/file.py")
-    assert_that(result).is_equal_to("./src/file.py")
+    assert_that(_to_posix(result)).is_equal_to("./src/file.py")
 
 
 @pytest.mark.utils

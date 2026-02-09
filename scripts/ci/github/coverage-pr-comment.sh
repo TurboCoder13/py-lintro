@@ -215,7 +215,7 @@ $COVERAGE_DETAILS
 Or download manually:
 1. Go to the [Actions tab](https://github.com/$GITHUB_REPOSITORY/actions)
 2. Find this workflow run
-3. Download the \"coverage-report-python-3.13\" artifact
+3. Download the \"coverage-report-python-3.14\" artifact
 4. Extract and open \`index.html\` in your browser"
 
 # Generate PR comment using shared function (always produce the file before posting)

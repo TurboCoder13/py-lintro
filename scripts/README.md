@@ -635,7 +635,7 @@ When adding new scripts:
     uses: codecov/codecov-action@v5
     with:
       files: coverage.xml
-      flags: python-3.13
+      flags: python-3.14
       fail_ci_if_error: true
       # token: ${{ secrets.CODECOV_TOKEN }} # for private repos only
   ```
