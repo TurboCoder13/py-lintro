@@ -135,7 +135,7 @@ def install_node_deps(
     # (e.g., bun in Docker with mapped --user)
     run_env = os.environ.copy()
     home = run_env.get("HOME", "")
-    if not home or not Path(home).is_dir():
+    if not home or not Path(home).is_dir() or not os.access(home, os.W_OK):
         run_env["HOME"] = tempfile.gettempdir()
 
     # Try with frozen lockfile first (for CI reproducibility)

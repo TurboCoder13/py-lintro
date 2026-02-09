@@ -231,7 +231,7 @@ def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
         # (e.g., semgrep in Docker with mapped --user)
         run_env = os.environ.copy()
         home = run_env.get("HOME", "")
-        if not home or not Path(home).is_dir():
+        if not home or not Path(home).is_dir() or not os.access(home, os.W_OK):
             run_env["HOME"] = tempfile.gettempdir()
 
         result = subprocess.run(  # nosec B603 - args list, shell=False
