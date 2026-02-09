@@ -68,18 +68,80 @@ def test_set_options_timeout_invalid_raises_value_error(
         fake_tool_plugin.set_options(timeout="invalid")
 
 
-def test_set_options_exclude_patterns_valid(
+def test_set_options_exclude_patterns_merges_with_existing(
     fake_tool_plugin: FakeToolPlugin,
 ) -> None:
-    """Verify valid exclude patterns list is accepted and stored.
+    """Verify CLI exclude patterns are merged with existing defaults.
 
     Args:
         fake_tool_plugin: The fake tool plugin instance to test.
     """
-    patterns = ["*.log", "*.tmp"]
-    fake_tool_plugin.set_options(exclude_patterns=patterns)
+    original_patterns = list(fake_tool_plugin.exclude_patterns)
+    cli_patterns = ["*.log", "*.tmp"]
+    fake_tool_plugin.set_options(exclude_patterns=cli_patterns)
 
-    assert_that(fake_tool_plugin.exclude_patterns).is_equal_to(patterns)
+    # CLI patterns are added
+    for p in cli_patterns:
+        assert_that(fake_tool_plugin.exclude_patterns).contains(p)
+
+    # Existing default patterns are preserved
+    for p in original_patterns:
+        assert_that(fake_tool_plugin.exclude_patterns).contains(p)
+
+
+def test_set_options_exclude_patterns_does_not_duplicate(
+    fake_tool_plugin: FakeToolPlugin,
+) -> None:
+    """Verify duplicate patterns are not added when merging.
+
+    Args:
+        fake_tool_plugin: The fake tool plugin instance to test.
+    """
+    pattern = DEFAULT_EXCLUDE_PATTERNS[0]
+    original_count = len(fake_tool_plugin.exclude_patterns)
+    fake_tool_plugin.set_options(exclude_patterns=[pattern])
+
+    assert_that(fake_tool_plugin.exclude_patterns).is_length(original_count)
+
+
+def test_set_options_exclude_patterns_preserves_lintro_ignore(
+    tmp_path: Path,
+) -> None:
+    """Verify CLI --exclude merges with .lintro-ignore instead of replacing.
+
+    This is the exact scenario from issue #580: .lintro-ignore lists
+    test_samples/ but CLI --exclude passes a different set of patterns.
+    Both must be present in the final exclude list.
+
+    Args:
+        tmp_path: Temporary directory path for testing.
+    """
+    from tests.unit.plugins.conftest import FakeToolPlugin
+
+    ignore_file = tmp_path / ".lintro-ignore"
+    ignore_file.write_text("test_samples/\ncustom_dir\n")
+
+    with patch(
+        "lintro.plugins.file_discovery.find_lintro_ignore",
+        return_value=ignore_file,
+    ):
+        plugin = FakeToolPlugin()
+
+    # Simulate CLI --exclude (same flow as tool_configuration.py)
+    cli_excludes = [".pytest_cache", ".mypy_cache", "htmlcov"]
+    plugin.set_options(exclude_patterns=cli_excludes)
+
+    # CLI patterns are present
+    for p in cli_excludes:
+        assert_that(plugin.exclude_patterns).contains(p)
+
+    # .lintro-ignore patterns are preserved
+    assert_that(plugin.exclude_patterns).contains("test_samples/")
+    assert_that(plugin.exclude_patterns).contains("custom_dir")
+
+    # Default patterns are preserved
+    for p in DEFAULT_EXCLUDE_PATTERNS:
+        assert_that(plugin.exclude_patterns).contains(p)
 
 
 def test_set_options_exclude_patterns_invalid_raises_value_error(

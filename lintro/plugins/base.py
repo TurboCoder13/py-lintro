@@ -182,11 +182,16 @@ class BaseToolPlugin(ABC):
 
         self.options.update(kwargs)
 
-        # Update specific attributes
+        # Update specific attributes — merge CLI patterns with existing
+        # defaults and .lintro-ignore patterns instead of replacing them
         if ToolOptionKey.EXCLUDE_PATTERNS.value in kwargs:
             patterns = kwargs[ToolOptionKey.EXCLUDE_PATTERNS.value]
             if isinstance(patterns, list):
-                self.exclude_patterns = list(patterns)
+                seen = set(self.exclude_patterns)
+                for p in patterns:
+                    if p not in seen:
+                        self.exclude_patterns.append(p)
+                        seen.add(p)
         if ToolOptionKey.INCLUDE_VENV.value in kwargs:
             self.include_venv = bool(kwargs[ToolOptionKey.INCLUDE_VENV.value])
 
