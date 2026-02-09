@@ -191,12 +191,19 @@ def test_normalize_file_path_edge_cases(input_path: str, expected: str) -> None:
     assert_that(result).is_equal_to(expected)
 
 
-def test_normalize_file_path_preserves_parent_path_prefix() -> None:
+def test_normalize_file_path_preserves_parent_path_prefix(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Preserve ../ prefix for parent paths."""
-    with patch("os.getcwd", return_value="/home/user/project"):
-        with patch("os.path.abspath", return_value="/home/user/other/file.py"):
-            with patch("os.path.relpath", return_value="../other/file.py"):
-                result = normalize_file_path_for_display("../other/file.py")
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+    other_dir = tmp_path / "other"
+    other_dir.mkdir()
+    (other_dir / "file.py").touch()
+
+    monkeypatch.chdir(project_dir)
+    result = normalize_file_path_for_display("../other/file.py")
 
     assert_that(result).starts_with("../")
 
@@ -222,11 +229,15 @@ def test_normalize_file_path_handles_os_error() -> None:
     assert_that(result).is_equal_to("some/path.py")
 
 
-def test_normalize_file_path_adds_dot_slash_prefix() -> None:
+def test_normalize_file_path_adds_dot_slash_prefix(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Add ./ prefix to paths that don't have it."""
-    with patch("os.getcwd", return_value="/project"):
-        with patch("os.path.abspath", return_value="/project/src/file.py"):
-            with patch("os.path.relpath", return_value="src/file.py"):
-                result = normalize_file_path_for_display("src/file.py")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "file.py").touch()
+
+    monkeypatch.chdir(tmp_path)
+    result = normalize_file_path_for_display("src/file.py")
 
     assert_that(result).is_equal_to("./src/file.py")

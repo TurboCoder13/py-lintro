@@ -8,7 +8,7 @@ set -euo pipefail
 #   CODECOV_SHA256   - expected SHA256 checksum (optional, recommended)
 # Optional env vars:
 #   CODECOV_FILES    - coverage file path(s). Default: ./coverage.xml
-#   CODECOV_FLAGS    - flags to tag this upload (e.g., python-3.13)
+#   CODECOV_FLAGS    - flags to tag this upload (e.g., python-3.14)
 #   CODECOV_TOKEN    - repository token, if required
 #   CODECOV_ASSET    - uploader asset name. Default: codecov-linux
 #   CODECOV_CHECKSUM_ASSET - checksum asset name. Default: codecov-linux.sha256
@@ -28,7 +28,7 @@ Environment variables:
                            the script will attempt to download
                            CODECOV_CHECKSUM_ASSET and verify against it.
   CODECOV_FILES            Coverage file(s). Default: ./coverage.xml
-  CODECOV_FLAGS            Flags to tag this upload (e.g., python-3.13)
+  CODECOV_FLAGS            Flags to tag this upload (e.g., python-3.14)
   CODECOV_TOKEN            Repository token, if required by your setup
   CODECOV_ASSET            Uploader asset name. Default: codecov-linux
   CODECOV_CHECKSUM_ASSET   Checksum asset name. Default: codecov-linux.sha256

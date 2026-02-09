@@ -9,64 +9,80 @@ from assertpy import assert_that
 from lintro.utils.path_utils import normalize_file_path_for_display
 
 
+def _to_posix(path: str) -> str:
+    """Normalize path separators to forward slashes for cross-platform assertions."""
+    return path.replace("\\", "/")
+
+
 @pytest.mark.utils
-def test_normalize_file_path_for_display_absolute() -> None:
+def test_normalize_file_path_for_display_absolute(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test normalizing an absolute path."""
-    with (
-        patch("os.getcwd", return_value="/project/root"),
-        patch("os.path.abspath", return_value="/project/root/src/file.py"),
-        patch("os.path.relpath", return_value="src/file.py"),
-    ):
-        result = normalize_file_path_for_display("/project/root/src/file.py")
-    assert_that(result).is_equal_to("./src/file.py")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "file.py").touch()
+
+    monkeypatch.chdir(tmp_path)
+    abs_path = str(tmp_path / "src" / "file.py")
+    result = normalize_file_path_for_display(abs_path)
+    assert_that(_to_posix(result)).is_equal_to("./src/file.py")
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_relative() -> None:
+def test_normalize_file_path_for_display_relative(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test normalizing a relative path."""
-    with (
-        patch("os.getcwd", return_value="/project/root"),
-        patch("os.path.abspath", return_value="/project/root/src/file.py"),
-        patch("os.path.relpath", return_value="src/file.py"),
-    ):
-        result = normalize_file_path_for_display("src/file.py")
-    assert_that(result).is_equal_to("./src/file.py")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "file.py").touch()
+
+    monkeypatch.chdir(tmp_path)
+    result = normalize_file_path_for_display("src/file.py")
+    assert_that(_to_posix(result)).is_equal_to("./src/file.py")
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_current_dir() -> None:
+def test_normalize_file_path_for_display_current_dir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test normalizing a file in current directory."""
-    with (
-        patch("os.getcwd", return_value="/project/root"),
-        patch("os.path.abspath", return_value="/project/root/file.py"),
-        patch("os.path.relpath", return_value="file.py"),
-    ):
-        result = normalize_file_path_for_display("file.py")
-    assert_that(result).is_equal_to("./file.py")
+    (tmp_path / "file.py").touch()
+
+    monkeypatch.chdir(tmp_path)
+    result = normalize_file_path_for_display("file.py")
+    assert_that(_to_posix(result)).is_equal_to("./file.py")
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_parent_dir() -> None:
+def test_normalize_file_path_for_display_parent_dir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test normalizing a path that goes up directories."""
-    with (
-        patch("os.getcwd", return_value="/project/root"),
-        patch("os.path.abspath", return_value="/project/file.py"),
-        patch("os.path.relpath", return_value="../file.py"),
-    ):
-        result = normalize_file_path_for_display("/project/file.py")
-    assert_that(result).is_equal_to("../file.py")
+    project_dir = tmp_path / "root"
+    project_dir.mkdir()
+    (tmp_path / "file.py").touch()
+
+    monkeypatch.chdir(project_dir)
+    result = normalize_file_path_for_display(str(tmp_path / "file.py"))
+    assert_that(_to_posix(result)).is_equal_to("../file.py")
 
 
 @pytest.mark.utils
-def test_normalize_file_path_for_display_already_relative() -> None:
+def test_normalize_file_path_for_display_already_relative(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test normalizing a path that already starts with './'."""
-    with (
-        patch("os.getcwd", return_value="/project/root"),
-        patch("os.path.abspath", return_value="/project/root/src/file.py"),
-        patch("os.path.relpath", return_value="./src/file.py"),
-    ):
-        result = normalize_file_path_for_display("./src/file.py")
-    assert_that(result).is_equal_to("./src/file.py")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "file.py").touch()
+
+    monkeypatch.chdir(tmp_path)
+    result = normalize_file_path_for_display("./src/file.py")
+    assert_that(_to_posix(result)).is_equal_to("./src/file.py")
 
 
 @pytest.mark.utils
