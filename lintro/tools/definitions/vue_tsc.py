@@ -244,7 +244,6 @@ class VueTscPlugin(BaseToolPlugin):
             # the default node_modules/@types path so TypeScript can still
             # resolve type packages from the system temp dir.
             existing_type_roots: list[str] = []
-            type_roots_present = False
             try:
                 base_content = load_jsonc(
                     base_tsconfig.read_text(encoding="utf-8"),
@@ -252,11 +251,10 @@ class VueTscPlugin(BaseToolPlugin):
                 extracted = extract_type_roots(base_content, abs_base.parent)
                 if extracted is not None:
                     existing_type_roots = extracted
-                    type_roots_present = True
             except (json.JSONDecodeError, OSError):
                 pass
             default_root = str(cwd / "node_modules" / "@types")
-            if not type_roots_present and default_root not in existing_type_roots:
+            if default_root not in existing_type_roots:
                 existing_type_roots.append(default_root)
             compiler_options["typeRoots"] = existing_type_roots
 
