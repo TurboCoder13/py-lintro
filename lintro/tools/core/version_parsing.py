@@ -1,12 +1,9 @@
 """Version parsing utilities for tool version checking and validation."""
 
-import os
 import re
 import subprocess  # nosec B404 - used safely with shell disabled
-import tempfile
 from dataclasses import dataclass, field
 from functools import lru_cache
-from pathlib import Path
 
 from loguru import logger
 from packaging.version import InvalidVersion, Version
@@ -24,6 +21,7 @@ from lintro.tools.core.version_checking import (
 from lintro.tools.core.version_checking import (
     get_minimum_versions as _get_minimum_versions_impl,
 )
+from lintro.utils.env import get_subprocess_env
 
 # Sentinel value for unknown/unspecified version requirements
 VERSION_UNKNOWN: str = "unknown"
@@ -227,12 +225,7 @@ def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
         # Run the tool with --version flag
         version_cmd = command + ["--version"]
 
-        # Ensure HOME is writable for tools that need cache/config dirs
-        # (e.g., semgrep in Docker with mapped --user)
-        run_env = os.environ.copy()
-        home = run_env.get("HOME", "")
-        if not home or not Path(home).is_dir() or not os.access(home, os.W_OK):
-            run_env["HOME"] = tempfile.gettempdir()
+        run_env = get_subprocess_env()
 
         result = subprocess.run(  # nosec B603 - args list, shell=False
             version_cmd,
