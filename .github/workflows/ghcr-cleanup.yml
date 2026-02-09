@@ -47,6 +47,8 @@ jobs:
             codeload.github.com:443
             release-assets.githubusercontent.com:443
             objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
