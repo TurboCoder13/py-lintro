@@ -32,6 +32,12 @@ ASTRO_SIMPLE_PATTERN = re.compile(
     r"^(?P<file>.+?):(?P<line>\d+):(?P<col>\d+)\s+(?P<message>.+)$",
 )
 
+# Astro-check stderr timestamp prefix: HH:MM:SS
+# e.g. "15:19:56 [content] Syncing content"
+# These must be filtered before regex matching because the HH:MM:SS format
+# is indistinguishable from a file:line:col triplet.
+_TIMESTAMP_PREFIX = re.compile(r"^\d{1,2}:\d{2}:\d{2}\s")
+
 
 def _parse_line(line: str) -> AstroCheckIssue | None:
     """Parse a single astro check output line into an AstroCheckIssue.
@@ -48,6 +54,15 @@ def _parse_line(line: str) -> AstroCheckIssue | None:
 
     # Skip summary lines and noise
     if line.startswith(("Result", "Found", "Checking", "...")):
+        return None
+
+    # Skip astro-check stderr timestamp lines (HH:MM:SS prefix).
+    # These are informational log messages like:
+    #   15:19:56 [WARN] Missing pages directory: src/pages
+    #   15:19:56 [content] Syncing content
+    # Without this filter the HH:MM:SS prefix is misinterpreted as
+    # file:line:col by the fallback ASTRO_SIMPLE_PATTERN.
+    if _TIMESTAMP_PREFIX.match(line):
         return None
 
     match = ASTRO_ISSUE_PATTERN.match(line)

@@ -115,3 +115,59 @@ def test_astro_check_issue_type() -> None:
 
     assert_that(issues).is_length(1)
     assert_that(issues[0]).is_instance_of(AstroCheckIssue)
+
+
+def test_parse_astro_check_output_skips_timestamp_lines() -> None:
+    """Skip astro-check stderr lines with HH:MM:SS timestamp prefix.
+
+    astro-check emits informational messages to stderr with a timestamp
+    prefix (e.g. "15:19:56 [content] Syncing content").  The HH:MM:SS
+    format matches the fallback file:line:col regex, producing phantom
+    issues on a non-existent file named after the hour.
+    """
+    output = (
+        "15:19:56 [WARN] Missing pages directory: src/pages\n"
+        "15:19:56 [content] Syncing content\n"
+        "15:19:56 [content] Synced content\n"
+        "15:19:56 [types] Generated 177ms\n"
+        "15:19:56 [check] Getting diagnostics for Astro files in /workspace/src...\n"
+        "Result (15 files):\n"
+        "- 0 errors\n"
+        "- 0 warnings\n"
+        "- 0 hints\n"
+    )
+    assert_that(parse_astro_check_output(output)).is_empty()
+
+
+def test_parse_astro_check_output_skips_timestamps_keeps_real_errors() -> None:
+    """Timestamp noise is filtered while real diagnostics are preserved."""
+    output = (
+        "16:25:27 [content] Syncing content\n"
+        "16:25:27 [content] Synced content\n"
+        "16:25:27 [types] Generated 836ms\n"
+        "16:25:27 [check] Getting diagnostics for Astro files in /code...\n"
+        "src/pages/index.astro:10:5 - error ts2322: Type 'string' is not assignable to type 'number'.\n"
+        "Result (52 files):\n"
+        "- 1 error\n"
+        "- 0 warnings\n"
+        "- 0 hints\n"
+    )
+    issues = parse_astro_check_output(output)
+
+    assert_that(issues).is_length(1)
+    assert_that(issues[0].file).is_equal_to("src/pages/index.astro")
+    assert_that(issues[0].code).is_equal_to("TS2322")
+
+
+def test_parse_astro_check_output_skips_docker_warn_lines() -> None:
+    """Skip [WARN] lines from astro-check running in degraded mode in Docker."""
+    output = (
+        "15:19:56 [WARN] Missing pages directory: src/pages\n"
+        "15:19:56 [WARN] [vite] Failed to resolve dependency: astro > cssesc, "
+        "present in client 'optimizeDeps.include'\n"
+        "15:19:56 [WARN] [vite] Failed to resolve dependency: astro > aria-query, "
+        "present in client 'optimizeDeps.include'\n"
+        "15:19:56 [WARN] [vite] Failed to resolve dependency: astro > axobject-query, "
+        "present in client 'optimizeDeps.include'\n"
+    )
+    assert_that(parse_astro_check_output(output)).is_empty()
