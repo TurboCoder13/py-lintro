@@ -144,6 +144,60 @@ def test_create_temp_tsconfig_filters_non_string_type_roots(
         temp_path.unlink(missing_ok=True)
 
 
+def test_create_temp_tsconfig_fallback_honours_empty_typeroots(
+    vue_tsc_plugin: VueTscPlugin,
+    tmp_path: Path,
+) -> None:
+    """Verify fallback preserves explicit empty typeRoots.
+
+    When the base tsconfig explicitly sets ``typeRoots: []`` to disable
+    automatic global type discovery, the fallback path must honour that
+    intent and NOT inject the default ``node_modules/@types`` root.
+
+    Args:
+        vue_tsc_plugin: Plugin instance fixture.
+        tmp_path: Pytest temporary directory.
+    """
+    import tempfile
+    from typing import Any
+    from unittest.mock import patch
+
+    base_tsconfig = tmp_path / "tsconfig.json"
+    base_tsconfig.write_text(
+        json.dumps(
+            {
+                "compilerOptions": {
+                    "typeRoots": [],
+                },
+            },
+        ),
+    )
+
+    original_mkstemp = tempfile.mkstemp
+    call_count = 0
+
+    def mock_mkstemp(**kwargs: Any) -> tuple[int, str]:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise OSError("Read-only filesystem")
+        return original_mkstemp(**kwargs)
+
+    with patch("tempfile.mkstemp", side_effect=mock_mkstemp):
+        temp_path = vue_tsc_plugin._create_temp_tsconfig(
+            base_tsconfig=base_tsconfig,
+            files=["src/App.vue"],
+            cwd=tmp_path,
+        )
+
+    try:
+        content = json.loads(temp_path.read_text())
+        type_roots = content["compilerOptions"]["typeRoots"]
+        assert_that(type_roots).is_empty()
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+
 def test_create_temp_tsconfig_ignores_non_dict_compiler_options(
     vue_tsc_plugin: VueTscPlugin,
     tmp_path: Path,
