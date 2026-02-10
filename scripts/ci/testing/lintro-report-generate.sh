@@ -58,7 +58,7 @@ mkdir -p lintro-report
 	echo ""
 	echo "### 🔍 Analysis Results"
 	echo ""
-	# Drop the report title/blank line to keep summary heading hierarchy clean
+	# Drop the first two lines (title and blank line) to keep summary heading hierarchy clean
 	tail -n +3 lintro-report/report.md
 } >>"$GITHUB_STEP_SUMMARY"
 
