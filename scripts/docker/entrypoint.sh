@@ -51,6 +51,19 @@ if [ -n "${CARGO_HOME:-}" ] && [ ! -w "${CARGO_HOME}" ]; then
 	fi
 fi
 
+# Bun needs a writable BUN_INSTALL for cache and temp files during install
+# Keep original bin dir in PATH so pre-installed bun binaries are still found
+if [ -n "${BUN_INSTALL:-}" ] && [ ! -w "${BUN_INSTALL}" ]; then
+	BUN_BIN="${BUN_INSTALL}/bin"
+	export BUN_INSTALL="/tmp/.bun"
+	mkdir -p "${BUN_INSTALL}/bin"
+	if [ -d "$BUN_BIN" ]; then
+		export PATH="${BUN_INSTALL}/bin:${BUN_BIN}:${PATH}"
+	else
+		export PATH="${BUN_INSTALL}/bin:${PATH}"
+	fi
+fi
+
 # Handle --help
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 	cat <<'EOF'
