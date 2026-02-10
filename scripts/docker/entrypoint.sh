@@ -10,9 +10,29 @@
 
 set -e
 
+# Auto-detect volume owner and drop root privileges.
+# When running as root (the default after removing USER from the Dockerfile),
+# detect the UID/GID that owns /code and re-exec as that user via gosu.
+# This ensures the container can write node_modules into the mounted volume
+# without consumers needing --user flags.
+# If /code doesn't exist (no volume mount), fall back to the built-in lintro user.
+if [ "$(id -u)" = '0' ]; then
+	if [ -d "/code" ]; then
+		CODE_UID=$(stat -c '%u' /code 2>/dev/null || echo "1000")
+		CODE_GID=$(stat -c '%g' /code 2>/dev/null || echo "1000")
+	else
+		# No volume mount — fall back to the lintro user
+		CODE_UID=$(id -u lintro 2>/dev/null || echo "1000")
+		CODE_GID=$(id -g lintro 2>/dev/null || echo "1000")
+	fi
+	exec gosu "$CODE_UID:$CODE_GID" "$0" "$@"
+fi
+
 # Ensure writable directories for mapped users (e.g., --user "$(id -u):$(id -g)")
 # When Docker runs with a mapped host user, tool-specific directories may not be
 # writable. Redirect them to /tmp to avoid permission errors.
+# This also handles the post-gosu re-exec, where the matched UID typically
+# won't have a home directory.
 if [ ! -d "$HOME" ] || [ ! -w "$HOME" ]; then
 	export HOME="/tmp"
 fi

@@ -60,14 +60,30 @@ WSL provides a Linux environment with better tool compatibility.
 
 ### Docker permission issues
 
-**Cause**: Your user is not in the docker group.
+**Cause**: Permission errors when running lintro in Docker.
 
-**Solution**: Add your user to the docker group:
+**Solution**: Lintro's Docker image automatically detects the volume owner's UID and
+runs as that user. No extra flags are needed:
+
+```bash
+docker run --rm -v "$(pwd):/code" ghcr.io/lgtm-hq/py-lintro:latest check
+```
+
+If you're in a restricted environment (e.g., Kubernetes with `runAsNonRoot`), pass your
+user explicitly:
+
+```bash
+docker run --rm -v "$(pwd):/code" --user "$(id -u):$(id -g)" lintro:latest check
+```
+
+If you can't run `docker` at all, add your user to the docker group:
 
 ```bash
 sudo usermod -aG docker $USER
 # Log out and back in for changes to take effect
 ```
+
+See [Docker Volume Permissions](docker.md#volume-permissions) for details.
 
 ---
 

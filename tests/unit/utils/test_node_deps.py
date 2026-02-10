@@ -81,6 +81,18 @@ def test_should_install_deps_returns_true_when_node_modules_only_has_bin(
     assert_that(result).is_true()
 
 
+def test_should_install_deps_returns_false_when_cwd_not_writable(
+    tmp_path: Path,
+) -> None:
+    """Return False when package.json exists but directory is not writable."""
+    (tmp_path / "package.json").write_text("{}")
+
+    with patch("lintro.utils.node_deps.os.access", return_value=False):
+        result = should_install_deps(tmp_path)
+
+    assert_that(result).is_false()
+
+
 # =============================================================================
 # Tests for get_package_manager_command
 # =============================================================================

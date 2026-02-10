@@ -6,6 +6,7 @@ primarily used by tools that depend on node_modules (like tsc).
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess  # nosec B404 - used safely with shell disabled
 import time
@@ -43,6 +44,16 @@ def should_install_deps(cwd: Path) -> bool:
         return False
 
     if not node_modules.exists():
+        # Check if the directory is writable before claiming deps are needed.
+        # On read-only mounts (e.g., -v "...:/code:ro"), bun install would
+        # fail with EACCES.  Return False with a clear message instead.
+        if not os.access(cwd, os.W_OK):
+            logger.warning(
+                "[node_deps] Cannot install dependencies: {} is not writable "
+                "(read-only mount?)",
+                cwd,
+            )
+            return False
         logger.debug("[node_deps] node_modules missing in {}", cwd)
         return True
 
