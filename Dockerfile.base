@@ -29,10 +29,13 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /app
 
 # Install minimal system dependencies for uv + HTTPS downloads
+# gosu is used by the entrypoint for secure privilege dropping
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    ca-certificates && \
+    ca-certificates \
+    gosu && \
+    gosu nobody true && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -62,10 +65,9 @@ COPY lintro/ /app/lintro/
 # Install Python dependencies (no dev deps, no external tools)
 RUN uv sync --no-dev --no-progress && (uv cache clean || true)
 
-# Copy entrypoint scripts
+# Copy entrypoint script
 COPY scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY scripts/docker/fix-permissions.sh /usr/local/bin/fix-permissions.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/fix-permissions.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Create non-root user and directories
 RUN getent group tools >/dev/null || groupadd -r tools && \
@@ -77,8 +79,7 @@ RUN getent group tools >/dev/null || groupadd -r tools && \
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD /app/.venv/bin/python -m lintro --version || exit 1
 
-# Default to lintro user for security
-USER lintro
+# The entrypoint handles dropping to non-root via gosu at runtime.
 
 # Use the flexible entrypoint
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

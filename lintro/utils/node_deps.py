@@ -6,6 +6,7 @@ primarily used by tools that depend on node_modules (like tsc).
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess  # nosec B404 - used safely with shell disabled
 import time
@@ -29,6 +30,10 @@ def should_install_deps(cwd: Path) -> bool:
     Returns:
         True if dependencies should be installed, False otherwise.
 
+    Raises:
+        PermissionError: If the directory is not writable+executable
+            (e.g., read-only mount).
+
     Examples:
         >>> from pathlib import Path
         >>> # In a directory with package.json but no node_modules
@@ -43,6 +48,16 @@ def should_install_deps(cwd: Path) -> bool:
         return False
 
     if not node_modules.exists():
+        # Check if the directory is writable and executable before claiming
+        # deps are needed.  On read-only mounts (e.g., -v "...:/code:ro"),
+        # bun install would fail with EACCES.
+        if not os.access(cwd, os.W_OK | os.X_OK):
+            msg = (
+                f"Cannot install dependencies: {cwd} is not writable "
+                f"(read-only mount?)"
+            )
+            logger.warning("[node_deps] {}", msg)
+            raise PermissionError(msg)
         logger.debug("[node_deps] node_modules missing in {}", cwd)
         return True
 
@@ -116,8 +131,11 @@ def install_node_deps(
         True
     """
     # First check if we should install
-    if not should_install_deps(cwd):
-        return True, "Dependencies already installed"
+    try:
+        if not should_install_deps(cwd):
+            return True, "Dependencies already installed"
+    except PermissionError as e:
+        return False, str(e)
 
     # Get the package manager command
     base_cmd = get_package_manager_command()

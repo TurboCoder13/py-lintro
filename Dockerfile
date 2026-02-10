@@ -43,10 +43,15 @@ COPY lintro/ /app/lintro/
 # Install Python dependencies
 RUN uv sync --dev --extra tools --no-progress && (uv cache clean || true)
 
-# Copy entrypoint scripts
+# Install gosu for secure privilege dropping in the entrypoint
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends gosu && \
+    rm -rf /var/lib/apt/lists/* && \
+    gosu nobody true
+
+# Copy entrypoint script
 COPY scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY scripts/docker/fix-permissions.sh /usr/local/bin/fix-permissions.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/fix-permissions.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Create non-root user and directories
 RUN getent group tools >/dev/null || groupadd -r tools && \
@@ -87,23 +92,21 @@ RUN echo "Verifying tools..." && \
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD /app/.venv/bin/python -m lintro --version || exit 1
 
-# Default to lintro user for security
-USER lintro
-
 # Verify tools work as non-root user (catches permission issues early)
+# The entrypoint handles dropping to non-root via gosu at runtime.
 RUN echo "Verifying tools as non-root user..." && \
-    prettier --version && \
-    markdownlint-cli2 --version && \
-    tsc --version && \
-    astro --version && \
-    vue-tsc --version && \
-    oxlint --version && \
-    oxfmt --version && \
-    rustfmt --version && \
-    cargo clippy --version && \
-    cargo audit --version && \
-    cargo deny --version && \
-    semgrep --version && \
+    gosu lintro prettier --version && \
+    gosu lintro markdownlint-cli2 --version && \
+    gosu lintro tsc --version && \
+    gosu lintro astro --version && \
+    gosu lintro vue-tsc --version && \
+    gosu lintro oxlint --version && \
+    gosu lintro oxfmt --version && \
+    gosu lintro rustfmt --version && \
+    gosu lintro cargo clippy --version && \
+    gosu lintro cargo audit --version && \
+    gosu lintro cargo deny --version && \
+    gosu lintro semgrep --version && \
     echo "All tools verified for non-root user!"
 
 # Use the flexible entrypoint

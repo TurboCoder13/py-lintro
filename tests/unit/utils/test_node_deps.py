@@ -81,6 +81,19 @@ def test_should_install_deps_returns_true_when_node_modules_only_has_bin(
     assert_that(result).is_true()
 
 
+def test_should_install_deps_raises_permission_error_when_cwd_not_writable(
+    tmp_path: Path,
+) -> None:
+    """Raise PermissionError when package.json exists but directory is not writable."""
+    (tmp_path / "package.json").write_text("{}")
+
+    with (
+        patch("lintro.utils.node_deps.os.access", return_value=False),
+        pytest.raises(PermissionError, match="not writable"),
+    ):
+        should_install_deps(tmp_path)
+
+
 # =============================================================================
 # Tests for get_package_manager_command
 # =============================================================================
@@ -132,6 +145,19 @@ def test_install_node_deps_returns_success_when_deps_already_installed(
 
     assert_that(success).is_true()
     assert_that(output).contains("already installed")
+
+
+def test_install_node_deps_returns_failure_when_cwd_not_writable(
+    tmp_path: Path,
+) -> None:
+    """Return failure when directory is not writable (PermissionError from should_install_deps)."""
+    (tmp_path / "package.json").write_text("{}")
+
+    with patch("lintro.utils.node_deps.os.access", return_value=False):
+        success, output = install_node_deps(tmp_path)
+
+    assert_that(success).is_false()
+    assert_that(output).contains("not writable")
 
 
 def test_install_node_deps_returns_failure_when_no_package_manager(

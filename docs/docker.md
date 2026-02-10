@@ -366,16 +366,58 @@ When using the `--output` option, files are created in your current directory:
 ./scripts/docker/docker-lintro.sh check --output-format grid
 ```
 
+## Volume Permissions
+
+Lintro's Docker image automatically handles volume permission mismatches. When the
+container starts as root (the default), the entrypoint detects the UID/GID that owns the
+mounted `/code` directory and re-executes as that user via
+[gosu](https://github.com/tianon/gosu). This means:
+
+- `docker run --rm -v "$(pwd):/code" lintro check` **just works** — no `--user` flag
+  needed
+- The container process runs as the same UID that owns your project files
+- `bun install` (auto-install) can write `node_modules` into the project directory
+- No files on the host have their ownership changed
+
+### How it works
+
+1. Container starts as root (entrypoint runs as PID 1)
+2. Entrypoint reads the volume owner's UID and GID separately (`stat -c '%u' /code` and
+   `stat -c '%g' /code`)
+3. If the detected UID/GID differs from the current user, the entrypoint re-execs itself
+   as that UID:GID via `gosu`
+4. HOME, CARGO_HOME, and BUN_INSTALL are redirected to `/tmp` (the mapped UID won't have
+   a home directory inside the container)
+5. Lintro runs as the matched UID:GID — full read/write access to `/code`
+
+### Restricted environments
+
+In some environments, the UID auto-detection cannot be used:
+
+| Environment                          | Why                                               | Workaround                                                                 |
+| ------------------------------------ | ------------------------------------------------- | -------------------------------------------------------------------------- |
+| Kubernetes with `runAsNonRoot: true` | Pod is rejected before entrypoint runs            | Set `securityContext.runAsUser` to match the volume owner and use `--user` |
+| Read-only mounts (`-v ...:/code:ro`) | Correct UID but writes still fail                 | Pre-install `node_modules` or remove `:ro`                                 |
+| Rootless Docker / Podman             | Usually works, but UID namespace remapping varies | Use `--user "$(id -u):$(id -g)"` if auto-detection fails                   |
+
+When using `--user` explicitly, Lintro detects the non-root context and automatically
+redirects HOME, CARGO_HOME, and BUN_INSTALL to writable locations (`/tmp`).
+
 ## Troubleshooting
 
 ### Permission Issues
 
-If you encounter permission issues with output files:
+Volume permissions are handled automatically (see
+[Volume Permissions](#volume-permissions) above). If you still encounter permission
+errors:
 
 ```bash
-# Run with your user ID
+# Fallback: explicitly pass your user ID
 docker run --rm -v "$(pwd):/code" --user "$(id -u):$(id -g)" lintro:latest check
 ```
+
+This is typically only needed in restricted environments like Kubernetes with
+`runAsNonRoot` pod security policies.
 
 ### Volume Mounting Issues
 

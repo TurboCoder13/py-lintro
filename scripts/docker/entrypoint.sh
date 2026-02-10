@@ -10,9 +10,35 @@
 
 set -e
 
+# Auto-detect volume owner and drop root privileges.
+# When running as root (the default after removing USER from the Dockerfile),
+# detect the UID/GID that owns /code and re-exec as that user via gosu.
+# This ensures the container can write node_modules into the mounted volume
+# without consumers needing --user flags.
+# If /code doesn't exist (no volume mount), fall back to the built-in lintro user.
+if [ "$(id -u)" = '0' ]; then
+	if [ -d "/code" ]; then
+		CODE_UID=$(stat -c '%u' /code 2>/dev/null || echo "1000")
+		CODE_GID=$(stat -c '%g' /code 2>/dev/null || echo "1000")
+	else
+		# No volume mount — fall back to the lintro user
+		CODE_UID=$(id -u lintro 2>/dev/null || echo "1000")
+		CODE_GID=$(id -g lintro 2>/dev/null || echo "1000")
+	fi
+	# Only re-exec when the target UID/GID differs from current.
+	# This prevents an infinite loop when /code is owned by root (0:0).
+	CUR_UID=$(id -u)
+	CUR_GID=$(id -g)
+	if [ "$CODE_UID" != "$CUR_UID" ] || [ "$CODE_GID" != "$CUR_GID" ]; then
+		exec gosu "$CODE_UID:$CODE_GID" "$0" "$@"
+	fi
+fi
+
 # Ensure writable directories for mapped users (e.g., --user "$(id -u):$(id -g)")
 # When Docker runs with a mapped host user, tool-specific directories may not be
 # writable. Redirect them to /tmp to avoid permission errors.
+# This also handles the post-gosu re-exec, where the matched UID typically
+# won't have a home directory.
 if [ ! -d "$HOME" ] || [ ! -w "$HOME" ]; then
 	export HOME="/tmp"
 fi
@@ -28,6 +54,19 @@ if [ -n "${CARGO_HOME:-}" ] && [ ! -w "${CARGO_HOME}" ]; then
 		export PATH="${CARGO_HOME}/bin:${CARGO_BIN}:${PATH}"
 	else
 		export PATH="${CARGO_HOME}/bin:${PATH}"
+	fi
+fi
+
+# Bun needs a writable BUN_INSTALL for cache and temp files during install
+# Keep original bin dir in PATH so pre-installed bun binaries are still found
+if [ -n "${BUN_INSTALL:-}" ] && [ ! -w "${BUN_INSTALL}" ]; then
+	BUN_BIN="${BUN_INSTALL}/bin"
+	export BUN_INSTALL="/tmp/.bun"
+	mkdir -p "${BUN_INSTALL}/bin"
+	if [ -d "$BUN_BIN" ]; then
+		export PATH="${BUN_INSTALL}/bin:${BUN_BIN}:${PATH}"
+	else
+		export PATH="${BUN_INSTALL}/bin:${PATH}"
 	fi
 fi
 

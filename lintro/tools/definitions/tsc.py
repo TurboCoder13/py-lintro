@@ -450,7 +450,20 @@ class TscPlugin(BaseToolPlugin):
         # Check if dependencies need installing
         from lintro.utils.node_deps import install_node_deps, should_install_deps
 
-        if should_install_deps(cwd_path):
+        try:
+            needs_install = should_install_deps(cwd_path)
+        except PermissionError as e:
+            logger.warning("[tsc] {}", e)
+            return ToolResult(
+                name=self.definition.name,
+                success=True,
+                output=f"Skipping tsc: {e}",
+                issues_count=0,
+                skipped=True,
+                skip_reason="directory not writable",
+            )
+
+        if needs_install:
             auto_install = merged_options.get("auto_install", False)
             if auto_install:
                 logger.info("[tsc] Auto-installing Node.js dependencies...")
