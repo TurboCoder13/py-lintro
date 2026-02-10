@@ -13,6 +13,8 @@ from pathlib import Path
 
 from loguru import logger
 
+from lintro.utils.env import get_subprocess_env
+
 
 def should_install_deps(cwd: Path) -> bool:
     """Check if Node.js dependencies should be installed.
@@ -129,6 +131,8 @@ def install_node_deps(
     manager_name = base_cmd[0]
     logger.info("[node_deps] Installing dependencies with {} in {}", manager_name, cwd)
 
+    run_env = get_subprocess_env()
+
     # Try with frozen lockfile first (for CI reproducibility)
     frozen_cmd = _get_frozen_install_cmd(base_cmd)
     start_time = time.monotonic()
@@ -141,6 +145,7 @@ def install_node_deps(
             text=True,
             timeout=timeout,
             shell=False,
+            env=run_env,
         )
 
         if result.returncode == 0:
@@ -175,6 +180,7 @@ def install_node_deps(
             text=True,
             timeout=remaining_timeout,
             shell=False,
+            env=run_env,
         )
 
         output = result.stdout + result.stderr

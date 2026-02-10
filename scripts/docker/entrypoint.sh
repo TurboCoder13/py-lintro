@@ -10,6 +10,27 @@
 
 set -e
 
+# Ensure writable directories for mapped users (e.g., --user "$(id -u):$(id -g)")
+# When Docker runs with a mapped host user, tool-specific directories may not be
+# writable. Redirect them to /tmp to avoid permission errors.
+if [ ! -d "$HOME" ] || [ ! -w "$HOME" ]; then
+	export HOME="/tmp"
+fi
+
+# Cargo needs a writable CARGO_HOME for registry cache and index
+# Keep original bin dir in PATH so cargo/clippy/rustfmt binaries are still found
+if [ -n "${CARGO_HOME:-}" ] && [ ! -w "${CARGO_HOME}" ]; then
+	CARGO_BIN="${CARGO_HOME}/bin"
+	export CARGO_HOME="/tmp/.cargo"
+	mkdir -p "${CARGO_HOME}/bin"
+	# Preserve access to pre-installed cargo binaries and new CARGO_HOME/bin
+	if [ -d "$CARGO_BIN" ]; then
+		export PATH="${CARGO_HOME}/bin:${CARGO_BIN}:${PATH}"
+	else
+		export PATH="${CARGO_HOME}/bin:${PATH}"
+	fi
+fi
+
 # Handle --help
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
 	cat <<'EOF'

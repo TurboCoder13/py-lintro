@@ -21,6 +21,7 @@ from lintro.tools.core.version_checking import (
 from lintro.tools.core.version_checking import (
     get_minimum_versions as _get_minimum_versions_impl,
 )
+from lintro.utils.env import get_subprocess_env
 
 # Sentinel value for unknown/unspecified version requirements
 VERSION_UNKNOWN: str = "unknown"
@@ -223,11 +224,15 @@ def check_tool_version(tool_name: str, command: list[str]) -> ToolVersionInfo:
     try:
         # Run the tool with --version flag
         version_cmd = command + ["--version"]
+
+        run_env = get_subprocess_env()
+
         result = subprocess.run(  # nosec B603 - args list, shell=False
             version_cmd,
             capture_output=True,
             text=True,
             timeout=VERSION_CHECK_TIMEOUT,  # Configurable version check timeout
+            env=run_env,
         )
 
         if result.returncode != 0:
