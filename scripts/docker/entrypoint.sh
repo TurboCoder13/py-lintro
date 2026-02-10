@@ -22,10 +22,12 @@ fi
 if [ -n "${CARGO_HOME:-}" ] && [ ! -w "${CARGO_HOME}" ]; then
 	CARGO_BIN="${CARGO_HOME}/bin"
 	export CARGO_HOME="/tmp/.cargo"
-	mkdir -p "$CARGO_HOME"
-	# Preserve access to pre-installed cargo binaries
+	mkdir -p "${CARGO_HOME}/bin"
+	# Preserve access to pre-installed cargo binaries and new CARGO_HOME/bin
 	if [ -d "$CARGO_BIN" ]; then
-		export PATH="${CARGO_BIN}:${PATH}"
+		export PATH="${CARGO_HOME}/bin:${CARGO_BIN}:${PATH}"
+	else
+		export PATH="${CARGO_HOME}/bin:${PATH}"
 	fi
 fi
 
