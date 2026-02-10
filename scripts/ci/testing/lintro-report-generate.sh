@@ -38,16 +38,18 @@ DOCKER_RUN=(docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/co
 mkdir -p lintro-report
 
 # Capture the lintro check output and exit code separately so we can
-# distinguish Docker/runtime failures (no output) from lint issues (non-zero
-# exit but valid report content).
+# distinguish Docker/runtime failures from lint issues (non-zero exit but
+# valid report content). Docker reserves exit codes 125 (daemon error),
+# 126 (container command cannot be invoked), and 127 (command not found).
 LINTRO_OUTPUT=$(mktemp)
 LINTRO_RC=0
 "${DOCKER_RUN[@]}" lintro check . --output-format markdown \
 	--exclude "$EXCLUDE_DIRS" \
 	--tool-options pydoclint:timeout=120 >"$LINTRO_OUTPUT" 2>&1 || LINTRO_RC=$?
 
-if [ "$LINTRO_RC" -ne 0 ] && [ ! -s "$LINTRO_OUTPUT" ]; then
-	# Container or runtime failure — no report produced
+if [ "$LINTRO_RC" -ne 0 ] && { [ ! -s "$LINTRO_OUTPUT" ] ||
+	[ "$LINTRO_RC" -eq 125 ] || [ "$LINTRO_RC" -eq 126 ] || [ "$LINTRO_RC" -eq 127 ]; }; then
+	# Container or runtime failure
 	echo "::error::Docker/runtime failure running lintro check (exit code $LINTRO_RC):" >&2
 	cat "$LINTRO_OUTPUT" >&2
 	rm -f "$LINTRO_OUTPUT"
