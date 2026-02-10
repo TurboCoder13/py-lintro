@@ -382,11 +382,13 @@ mounted `/code` directory and re-executes as that user via
 ### How it works
 
 1. Container starts as root (entrypoint runs as PID 1)
-2. Entrypoint runs `stat -c '%u' /code` to detect the volume owner's UID/GID
-3. Entrypoint re-execs itself as that UID/GID via `gosu`
-4. HOME and CARGO_HOME are redirected to `/tmp` (the mapped UID won't have a home
-   directory inside the container)
-5. Lintro runs as the matched UID — full read/write access to `/code`
+2. Entrypoint reads the volume owner's UID and GID separately (`stat -c '%u' /code` and
+   `stat -c '%g' /code`)
+3. If the detected UID/GID differs from the current user, the entrypoint re-execs itself
+   as that UID:GID via `gosu`
+4. HOME, CARGO_HOME, and BUN_INSTALL are redirected to `/tmp` (the mapped UID won't have
+   a home directory inside the container)
+5. Lintro runs as the matched UID:GID — full read/write access to `/code`
 
 ### Restricted environments
 
@@ -399,7 +401,7 @@ In some environments, the UID auto-detection cannot be used:
 | Rootless Docker / Podman             | Usually works, but UID namespace remapping varies | Use `--user "$(id -u):$(id -g)"` if auto-detection fails                   |
 
 When using `--user` explicitly, Lintro detects the non-root context and automatically
-redirects HOME and CARGO_HOME to writable locations (`/tmp`).
+redirects HOME, CARGO_HOME, and BUN_INSTALL to writable locations (`/tmp`).
 
 ## Troubleshooting
 

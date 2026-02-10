@@ -30,6 +30,10 @@ def should_install_deps(cwd: Path) -> bool:
     Returns:
         True if dependencies should be installed, False otherwise.
 
+    Raises:
+        PermissionError: If the directory is not writable+executable
+            (e.g., read-only mount).
+
     Examples:
         >>> from pathlib import Path
         >>> # In a directory with package.json but no node_modules
@@ -44,16 +48,16 @@ def should_install_deps(cwd: Path) -> bool:
         return False
 
     if not node_modules.exists():
-        # Check if the directory is writable before claiming deps are needed.
-        # On read-only mounts (e.g., -v "...:/code:ro"), bun install would
-        # fail with EACCES.  Return False with a clear message instead.
-        if not os.access(cwd, os.W_OK):
-            logger.warning(
-                "[node_deps] Cannot install dependencies: {} is not writable "
-                "(read-only mount?)",
-                cwd,
+        # Check if the directory is writable and executable before claiming
+        # deps are needed.  On read-only mounts (e.g., -v "...:/code:ro"),
+        # bun install would fail with EACCES.
+        if not os.access(cwd, os.W_OK | os.X_OK):
+            msg = (
+                f"Cannot install dependencies: {cwd} is not writable "
+                f"(read-only mount?)"
             )
-            return False
+            logger.warning("[node_deps] {}", msg)
+            raise PermissionError(msg)
         logger.debug("[node_deps] node_modules missing in {}", cwd)
         return True
 
@@ -127,8 +131,11 @@ def install_node_deps(
         True
     """
     # First check if we should install
-    if not should_install_deps(cwd):
-        return True, "Dependencies already installed"
+    try:
+        if not should_install_deps(cwd):
+            return True, "Dependencies already installed"
+    except PermissionError as e:
+        return False, str(e)
 
     # Get the package manager command
     base_cmd = get_package_manager_command()

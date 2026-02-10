@@ -73,14 +73,15 @@ If you're in a restricted environment (e.g., Kubernetes with `runAsNonRoot`), pa
 user explicitly:
 
 ```bash
-docker run --rm -v "$(pwd):/code" --user "$(id -u):$(id -g)" lintro:latest check
+docker run --rm -v "$(pwd):/code" --user "$(id -u):$(id -g)" ghcr.io/lgtm-hq/py-lintro:latest check
 ```
 
-If you can't run `docker` at all, add your user to the docker group:
+If you get "permission denied" errors accessing the Docker socket
+(`/var/run/docker.sock`), add your user to the docker group:
 
 ```bash
 sudo usermod -aG docker $USER
-# Log out and back in for changes to take effect
+# Log out and back in for the group change to take effect
 ```
 
 See [Docker Volume Permissions](docker.md#volume-permissions) for details.

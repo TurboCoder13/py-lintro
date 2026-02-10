@@ -25,7 +25,13 @@ if [ "$(id -u)" = '0' ]; then
 		CODE_UID=$(id -u lintro 2>/dev/null || echo "1000")
 		CODE_GID=$(id -g lintro 2>/dev/null || echo "1000")
 	fi
-	exec gosu "$CODE_UID:$CODE_GID" "$0" "$@"
+	# Only re-exec when the target UID/GID differs from current.
+	# This prevents an infinite loop when /code is owned by root (0:0).
+	CUR_UID=$(id -u)
+	CUR_GID=$(id -g)
+	if [ "$CODE_UID" != "$CUR_UID" ] || [ "$CODE_GID" != "$CUR_GID" ]; then
+		exec gosu "$CODE_UID:$CODE_GID" "$0" "$@"
+	fi
 fi
 
 # Ensure writable directories for mapped users (e.g., --user "$(id -u):$(id -g)")
