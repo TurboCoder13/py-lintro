@@ -6,6 +6,8 @@ import os
 import tempfile
 from pathlib import Path
 
+from loguru import logger
+
 
 def get_subprocess_env() -> dict[str, str]:
     """Build an environment dict suitable for subprocess calls.
@@ -23,4 +25,9 @@ def get_subprocess_env() -> dict[str, str]:
     home = env.get("HOME", "")
     if not home or not Path(home).is_dir() or not os.access(home, os.W_OK):
         env["HOME"] = tempfile.gettempdir()
+        logger.debug(
+            "[env] HOME '{}' is unwritable, redirecting to {}",
+            home,
+            env["HOME"],
+        )
     return env
