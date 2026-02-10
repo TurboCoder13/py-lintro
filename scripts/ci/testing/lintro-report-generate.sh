@@ -36,13 +36,30 @@ DOCKER_RUN=(docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/co
 # Run analysis once in markdown format, reuse for both summary and artifact.
 # This halves peak memory usage and runtime vs running lintro check twice.
 mkdir -p lintro-report
+
+# Capture the lintro check output and exit code separately so we can
+# distinguish Docker/runtime failures (no output) from lint issues (non-zero
+# exit but valid report content).
+LINTRO_OUTPUT=$(mktemp)
+LINTRO_RC=0
+"${DOCKER_RUN[@]}" lintro check . --output-format markdown \
+	--exclude "$EXCLUDE_DIRS" \
+	--tool-options pydoclint:timeout=120 >"$LINTRO_OUTPUT" 2>&1 || LINTRO_RC=$?
+
+if [ "$LINTRO_RC" -ne 0 ] && [ ! -s "$LINTRO_OUTPUT" ]; then
+	# Container or runtime failure — no report produced
+	echo "::error::Docker/runtime failure running lintro check (exit code $LINTRO_RC):" >&2
+	cat "$LINTRO_OUTPUT" >&2
+	rm -f "$LINTRO_OUTPUT"
+	exit 1
+fi
+
 {
 	echo "# Lintro Report - $(date)"
 	echo ""
-	"${DOCKER_RUN[@]}" lintro check . --output-format markdown \
-		--exclude "$EXCLUDE_DIRS" \
-		--tool-options pydoclint:timeout=120 || true
+	cat "$LINTRO_OUTPUT"
 } >lintro-report/report.md
+rm -f "$LINTRO_OUTPUT"
 
 # Build step summary from the single analysis run
 {
