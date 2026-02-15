@@ -9,7 +9,7 @@ name: Maintenance - Renovate Dependencies
   schedule:
     # Run daily at 22:00 UTC
     - cron: '0 22 * * *'
-  workflow_dispatch: # Allow manual triggering
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -20,15 +20,17 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      issues: write
       pull-requests: write
     concurrency:
       group: renovate-${{ github.ref }}
-      cancel-in-progress: false # Don't cancel renovate runs
+      cancel-in-progress: false
     steps:
       - name: Harden Runner
+        # yamllint disable-line rule:line-length
         uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9
         with:
-          egress-policy: 'block'
+          egress-policy: block
           allowed-endpoints: >
             github.com:443
             api.github.com:443
@@ -37,13 +39,16 @@ jobs:
             pkg-containers.githubusercontent.com:443
             release-assets.githubusercontent.com:443
             objects.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
-          fetch-depth: 0
-          fetch-tags: true
+          fetch-depth: 1
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Self-hosted Renovate
         # yamllint disable-line rule:line-length
         uses: renovatebot/github-action@eaf12548c13069dcc28bb75c4ee4610cdbe400c5 # v44.2.6
@@ -51,4 +56,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           configurationFile: renovate.json
         env:
-          LOG_LEVEL: debug
+          # yamllint disable-line rule:line-length
+          LOG_LEVEL: ${{ github.event_name == 'workflow_dispatch' && 'debug' || 'info' }}
