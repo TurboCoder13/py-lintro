@@ -56,4 +56,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           configurationFile: renovate.json
         env:
+          # yamllint disable-line rule:line-length
           LOG_LEVEL: ${{ github.event_name == 'workflow_dispatch' && 'debug' || 'info' }}
