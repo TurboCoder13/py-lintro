@@ -98,12 +98,10 @@ class BaseIssue:
 
         # Resolve each mapped field
         code_attr = field_map.get("code", "code")
-        severity_attr = field_map.get("severity", "severity")
         fixable_attr = field_map.get("fixable", "fixable")
         message_attr = field_map.get("message", "message")
 
         code_val = getattr(self, code_attr, None) or ""
-        severity_val = getattr(self, severity_attr, None) or ""
         fixable_val = getattr(self, fixable_attr, False)
         message_val = getattr(self, message_attr, "") or ""
 
@@ -113,6 +111,6 @@ class BaseIssue:
             "column": str(self.column) if self.column else "-",
             "code": str(code_val) if code_val else "",
             "message": message_val,
-            "severity": str(severity_val) if severity_val else "",
+            "severity": str(self.get_severity()),
             "fixable": "Yes" if fixable_val else "",
         }

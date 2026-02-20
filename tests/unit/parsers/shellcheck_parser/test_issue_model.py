@@ -31,4 +31,4 @@ def test_to_display_row() -> None:
     assert_that(display_row["column"]).is_equal_to("5")
     assert_that(display_row["code"]).is_equal_to("SC2086")
     assert_that(display_row["message"]).is_equal_to("Test message")
-    assert_that(display_row["severity"]).is_equal_to("warning")
+    assert_that(display_row["severity"]).is_equal_to("WARNING")

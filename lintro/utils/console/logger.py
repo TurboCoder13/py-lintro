@@ -16,6 +16,7 @@ import click
 from loguru import logger
 
 from lintro.enums.action import Action, normalize_action
+from lintro.enums.severity_level import SeverityLevel
 from lintro.enums.tool_name import ToolName
 from lintro.utils.console.constants import (
     BORDER_LENGTH,
@@ -234,10 +235,32 @@ class ThreadSafeConsoleLogger:
             total_for_art: int = (
                 total_issues if not any_failed else max(1, total_issues)
             )
+
+            # Tally severity breakdown across all issues
+            sev_errors = 0
+            sev_warnings = 0
+            sev_info = 0
+            for result in tool_results:
+                issues = getattr(result, "issues", None)
+                if issues:
+                    for issue in issues:
+                        get_sev = getattr(issue, "get_severity", None)
+                        if get_sev:
+                            level = get_sev()
+                            if level == SeverityLevel.ERROR:
+                                sev_errors += 1
+                            elif level == SeverityLevel.WARNING:
+                                sev_warnings += 1
+                            else:
+                                sev_info += 1
+
             self._print_totals_table(
                 action=action,
                 total_issues=total_issues,
                 affected_files=affected_files,
+                severity_errors=sev_errors,
+                severity_warnings=sev_warnings,
+                severity_info=sev_info,
             )
             self._print_ascii_art(total_issues=total_for_art)
             logger.debug(
@@ -272,6 +295,9 @@ class ThreadSafeConsoleLogger:
         total_fixed: int = 0,
         total_remaining: int = 0,
         affected_files: int = 0,
+        severity_errors: int = 0,
+        severity_warnings: int = 0,
+        severity_info: int = 0,
     ) -> None:
         """Print the totals summary table for the run.
 
@@ -281,6 +307,9 @@ class ThreadSafeConsoleLogger:
             total_fixed: Total number of issues fixed (FIX mode).
             total_remaining: Total number of remaining issues (FIX mode).
             affected_files: Number of unique files with issues.
+            severity_errors: Number of issues at ERROR severity.
+            severity_warnings: Number of issues at WARNING severity.
+            severity_info: Number of issues at INFO severity.
         """
         from lintro.utils.summary_tables import print_totals_table
 
@@ -291,6 +320,9 @@ class ThreadSafeConsoleLogger:
             total_fixed=total_fixed,
             total_remaining=total_remaining,
             affected_files=affected_files,
+            severity_errors=severity_errors,
+            severity_warnings=severity_warnings,
+            severity_info=severity_info,
         )
 
     def _print_final_status(

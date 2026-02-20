@@ -147,7 +147,7 @@ def test_format_issues_shows_severity() -> None:
     result = format_issues(issues, output_format="grid")
 
     assert_that(result).contains("Severity")
-    assert_that(result).contains("HIGH")
+    assert_that(result).contains("ERROR")
 
 
 # =============================================================================
@@ -257,7 +257,7 @@ def test_format_issues_with_bandit_issue_shows_severity() -> None:
     result = format_issues(issues, output_format="grid")
 
     assert_that(result).contains("Severity")
-    assert_that(result).contains("HIGH")
+    assert_that(result).contains("ERROR")
 
 
 # =============================================================================

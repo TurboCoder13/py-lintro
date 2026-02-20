@@ -53,7 +53,7 @@ def test_to_display_row_missing_optional_fields() -> None:
     issue = BaseIssue()
     result = issue.to_display_row()
     assert_that(result["code"]).is_equal_to("")
-    assert_that(result["severity"]).is_equal_to("")
+    assert_that(result["severity"]).is_equal_to("WARNING")
     assert_that(result["fixable"]).is_equal_to("")
 
 
@@ -83,7 +83,7 @@ def test_subclass_with_custom_fields() -> None:
     )
     result = issue.to_display_row()
     assert_that(result["code"]).is_equal_to("E001")
-    assert_that(result["severity"]).is_equal_to("error")
+    assert_that(result["severity"]).is_equal_to("ERROR")
 
 
 def test_subclass_with_custom_field_map() -> None:
@@ -110,7 +110,7 @@ def test_subclass_with_custom_field_map() -> None:
     )
     result = issue.to_display_row()
     assert_that(result["code"]).is_equal_to("RULE001")
-    assert_that(result["severity"]).is_equal_to("warning")
+    assert_that(result["severity"]).is_equal_to("WARNING")
 
 
 def test_to_display_row_fixable_true() -> None:
