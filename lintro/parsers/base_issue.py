@@ -6,12 +6,15 @@ duplication across the 14+ different issue dataclasses.
 The base class includes:
 - Common fields (file, line, column, message)
 - A to_display_row() method for unified formatting with configurable field mapping
+- A get_severity() method for normalized severity access
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import ClassVar
+
+from lintro.enums.severity_level import SeverityLevel, normalize_severity_level
 
 
 @dataclass
@@ -30,6 +33,8 @@ class BaseIssue:
         DISPLAY_FIELD_MAP: Maps display keys to attribute names for custom fields.
             Default mappings: code->code, severity->severity, fixable->fixable.
             Example: {"severity": "level"} to map self.level to severity output.
+        DEFAULT_SEVERITY: Fallback severity when the issue has no native value.
+            Override in subclasses (e.g. INFO for pure-formatting tools).
         file: File path where the issue was found.
         line: Line number where the issue was found (1-based, 0 means unknown).
         column: Column number where the issue was found (1-based, 0 means unknown).
@@ -44,10 +49,37 @@ class BaseIssue:
         "message": "message",
     }
 
+    DEFAULT_SEVERITY: ClassVar[SeverityLevel] = SeverityLevel.WARNING
+
     file: str = field(default="")
     line: int = field(default=0)
     column: int = field(default=0)
     message: str = field(default="")
+
+    def get_severity(self) -> SeverityLevel:
+        """Return the normalized severity for this issue.
+
+        Reads the native severity value via DISPLAY_FIELD_MAP (handles
+        tools that store it as ``level``, ``issue_severity``, etc.),
+        passes it through ``normalize_severity_level()``, and falls back
+        to ``DEFAULT_SEVERITY`` when the value is empty/None.
+
+        Returns:
+            SeverityLevel: Normalized severity enum value.
+        """
+        attr_name = self.DISPLAY_FIELD_MAP.get("severity", "severity")
+        raw = getattr(self, attr_name, None)
+
+        if not raw:
+            return self.DEFAULT_SEVERITY
+
+        if isinstance(raw, SeverityLevel):
+            return raw
+
+        try:
+            return normalize_severity_level(str(raw))
+        except ValueError:
+            return self.DEFAULT_SEVERITY
 
     def to_display_row(self) -> dict[str, str]:
         """Convert issue to unified display format.
