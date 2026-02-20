@@ -22,6 +22,7 @@ class OutputFormat(StrEnum):
     HTML = auto()
     JSON = auto()
     CSV = auto()
+    GITHUB = auto()
 
 
 def normalize_output_format(value: str | OutputFormat) -> OutputFormat:

@@ -49,7 +49,7 @@ DEFAULT_ACTION: str = "fmt"
 @click.option(
     "--output-format",
     default="grid",
-    type=click.Choice(["plain", "grid", "markdown", "html", "json", "csv"]),
+    type=click.Choice(["plain", "grid", "markdown", "html", "json", "csv", "github"]),
     help="Output format for displaying results.",
 )
 @click.option(
