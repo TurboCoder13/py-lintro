@@ -1,7 +1,6 @@
 """Tests for the resizer module."""
 
 import numpy as np
-import pytest
 
 from ascii_resizer.resizer import (
     ArtType,

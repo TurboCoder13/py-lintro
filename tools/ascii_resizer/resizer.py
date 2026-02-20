@@ -1,7 +1,6 @@
 """ASCII art resizing using image processing techniques."""
 
 from enum import StrEnum, auto
-from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -48,6 +47,7 @@ class AsciiResizer:
         Args:
             method: Interpolation method for resizing.
             threshold: Pixel value threshold for binarization (0-255).
+
         """
         self.method = method
         self.threshold = threshold
@@ -61,6 +61,7 @@ class AsciiResizer:
 
         Returns:
             Detected art type, or None if unknown.
+
         """
         braille_count = 0
         total_printable = 0
@@ -96,6 +97,7 @@ class AsciiResizer:
 
         Returns:
             Resized bitmap.
+
         """
         if pixels.size == 0:
             return np.zeros((target_height, target_width), dtype=np.uint8)
@@ -137,6 +139,7 @@ class AsciiResizer:
 
         Returns:
             Resized Braille art lines.
+
         """
         # Decode to pixels
         pixels = BrailleCodec.decode_art(lines)
@@ -181,13 +184,20 @@ class AsciiResizer:
             canvas[offset_y:y_end, offset_x:x_end] = resized
 
             # Encode back to Braille
-            return BrailleCodec.encode_art(canvas, threshold=1)
+            result: list[str] = BrailleCodec.encode_art(canvas, threshold=1)
+            return result
         else:
             # Stretch to fill (original behavior)
             resized = self.resize_bitmap(
-                pixels, target_pixel_width, target_pixel_height
+                pixels,
+                target_pixel_width,
+                target_pixel_height,
             )
-            return BrailleCodec.encode_art(resized, threshold=1)
+            result_stretched: list[str] = BrailleCodec.encode_art(
+                resized,
+                threshold=1,
+            )
+            return result_stretched
 
     def resize(
         self,
@@ -208,13 +218,17 @@ class AsciiResizer:
 
         Returns:
             Resized ASCII art lines.
+
         """
         if art_type is None:
             art_type = self.detect_art_type(lines)
 
         if art_type == ArtType.BRAILLE:
             return self.resize_braille(
-                lines, target_width, target_height, preserve_aspect
+                lines,
+                target_width,
+                target_height,
+                preserve_aspect,
             )
 
         # Fallback: pad/truncate (no actual resizing)
@@ -241,6 +255,7 @@ def parse_sections(content: str) -> list[list[str]]:
 
     Returns:
         List of sections, each section is a list of lines.
+
     """
     sections: list[list[str]] = []
     current: list[str] = []
@@ -268,5 +283,6 @@ def format_sections(sections: list[list[str]]) -> str:
 
     Returns:
         File content with sections separated by blank lines.
+
     """
     return "\n\n".join("\n".join(section) for section in sections) + "\n"

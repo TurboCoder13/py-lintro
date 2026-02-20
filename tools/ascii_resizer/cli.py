@@ -165,7 +165,7 @@ def show(input_file: Path, section: int | None) -> None:
     else:
         indices = list(range(1, len(sections) + 1))
 
-    for idx, sec in zip(indices, sections):
+    for idx, sec in zip(indices, sections, strict=False):
         click.echo(f"=== Section {idx} ===")
         for line in sec:
             click.echo(line)

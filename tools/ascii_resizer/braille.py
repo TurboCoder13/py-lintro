@@ -66,6 +66,7 @@ class BrailleCodec:
 
         Returns:
             4x2 numpy array where 1 = dot present, 0 = no dot.
+
         """
         pixels = np.zeros((4, 2), dtype=np.uint8)
         dots = BrailleCodec.char_to_dots(char)
@@ -87,12 +88,16 @@ class BrailleCodec:
 
         Returns:
             A single Braille Unicode character.
+
         """
         dots = 0
         for (row, col), bit in DOT_BITS.items():
-            if row < pixels.shape[0] and col < pixels.shape[1]:
-                if pixels[row, col] >= threshold:
-                    dots |= bit
+            if (
+                row < pixels.shape[0]
+                and col < pixels.shape[1]
+                and pixels[row, col] >= threshold
+            ):
+                dots |= bit
 
         return BrailleCodec.dots_to_char(dots)
 
@@ -105,6 +110,7 @@ class BrailleCodec:
 
         Returns:
             2D numpy array (height, width) of pixel values (0 or 1).
+
         """
         if not lines:
             return np.zeros((0, 0), dtype=np.uint8)
@@ -145,6 +151,7 @@ class BrailleCodec:
 
         Returns:
             List of strings containing Braille art.
+
         """
         if pixels.size == 0:
             return []

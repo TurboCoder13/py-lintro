@@ -4,10 +4,14 @@ Resize and standardize ASCII art to consistent dimensions.
 
 ## Features
 
-- **Braille art support**: Properly decodes Braille Unicode characters to pixels, resizes, and re-encodes
-- **Aspect ratio preservation**: By default, scales content to fit while maintaining proportions
-- **Multiple resize methods**: Nearest neighbor, bilinear, bicubic, and Lanczos interpolation
-- **Multi-section files**: Handle files with multiple ASCII art pieces separated by blank lines
+- **Braille art support**: Properly decodes Braille Unicode characters to pixels,
+  resizes, and re-encodes
+- **Aspect ratio preservation**: By default, scales content to fit while maintaining
+  proportions
+- **Multiple resize methods**: Nearest neighbor, bilinear, bicubic, and Lanczos
+  interpolation
+- **Multi-section files**: Handle files with multiple ASCII art pieces separated by
+  blank lines
 - **Auto-detection**: Automatically detects Braille art
 
 ## Installation
@@ -48,7 +52,7 @@ uv run ascii-resizer info input.txt
 
 Example output:
 
-```
+```text
 File: input.txt
 Sections: 3
   Section 1: 40x20 chars (braille)
@@ -70,15 +74,19 @@ uv run ascii-resizer show input.txt -n 3
 
 For Braille art (U+2800-U+28FF):
 
-1. **Decode**: Each Braille character represents a 2×4 pixel grid. The tool decodes the entire art to a bitmap.
+1. **Decode**: Each Braille character represents a 2×4 pixel grid. The tool decodes the
+   entire art to a bitmap.
 2. **Resize**: Uses PIL/Pillow's image resizing with the selected interpolation method.
 3. **Re-encode**: Converts the resized bitmap back to Braille characters.
 
-This approach gives reliable, predictable results because it treats ASCII art as what it really is: a rasterized image.
+This approach gives reliable, predictable results because it treats ASCII art as what it
+really is: a rasterized image.
 
 ### Aspect ratio preservation
 
-By default, content is scaled to fit within the target dimensions while maintaining its original proportions. The resized content is then centered on the canvas. Use `--stretch` to fill the entire target area (may distort the image).
+By default, content is scaled to fit within the target dimensions while maintaining its
+original proportions. The resized content is then centered on the canvas. Use
+`--stretch` to fill the entire target area (may distort the image).
 
 ## CLI Reference
 

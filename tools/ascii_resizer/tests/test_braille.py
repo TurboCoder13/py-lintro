@@ -1,9 +1,8 @@
 """Tests for Braille encoding/decoding."""
 
 import numpy as np
-import pytest
 
-from ascii_resizer.braille import BRAILLE_BASE, BrailleCodec
+from ascii_resizer.braille import BrailleCodec
 
 
 class TestBrailleCodec:
