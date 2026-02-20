@@ -23,7 +23,8 @@ jobs:
     uses: ./.github/workflows/reusable-sbom.yml
     permissions:
       contents: read
-      actions: read
+      actions: write
+      id-token: write
     with:
       use-release-token: true
     secrets:
