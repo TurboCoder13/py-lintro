@@ -13,14 +13,15 @@ name: Maintenance - PR Comment Cleanup
         required: true
         type: string
 
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
+permissions: {}
 
 jobs:
   cleanup:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     timeout-minutes: 10
     defaults:
       run:

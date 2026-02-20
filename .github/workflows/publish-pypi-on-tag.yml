@@ -19,8 +19,7 @@ name: Publish - PyPI Production
       - v*.*.*rc*
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   quality:

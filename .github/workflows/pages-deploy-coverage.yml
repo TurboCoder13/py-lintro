@@ -13,15 +13,16 @@ name: Deploy - Coverage Reports to Pages
     branches:
       - main
   workflow_dispatch:
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 concurrency:
   group: pages-deploy-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   deploy:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -13,12 +13,13 @@ name: Reusable - Quality Gate & Version Export
         description: Project version from pyproject.toml
         value: ${{ jobs.quality.outputs.version }}
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   quality:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 20
     outputs:
       version: ${{ steps.version.outputs.version }}

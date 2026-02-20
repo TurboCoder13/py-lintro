@@ -10,8 +10,7 @@ name: Release - Automated PR Creation
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   open-release-pr:

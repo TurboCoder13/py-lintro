@@ -27,15 +27,13 @@ name: Build - Docker Image & Registry
         required: false
         default: ''
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   build-and-test:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      packages: write
     timeout-minutes: 30
     defaults:
       run:

@@ -10,8 +10,7 @@ name: Security - OpenSSF Scorecard Analysis
     - cron: '0 6 * * 1' # Weekly on Monday 06:00 UTC
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   analysis:

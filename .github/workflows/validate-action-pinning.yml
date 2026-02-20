@@ -10,12 +10,13 @@ name: Quality Check - Action Pinning Validation
   pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   check-pinning:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 5
     concurrency:
       group: validate-pinning-${{ github.ref }}

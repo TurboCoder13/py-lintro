@@ -9,13 +9,14 @@ name: Quality Check - PR Title Validation
   pull_request:
     types: [opened, edited, synchronize, reopened, ready_for_review]
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: {}
 
 jobs:
   check:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
     timeout-minutes: 5
     concurrency:
       group: semantic-pr-title-${{ github.ref }}

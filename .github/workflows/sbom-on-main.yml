@@ -12,8 +12,7 @@ name: Security - SBOM Generation
       - main
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: sbom-main-${{ github.ref }}
