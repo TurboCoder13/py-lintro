@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image
 
-from ascii_resizer.braille import BrailleCodec
+from ascii_resizer import braille
 
 
 class ResizeMethod(StrEnum):
@@ -70,7 +70,7 @@ class AsciiResizer:
             for char in line:
                 if char.strip():
                     total_printable += 1
-                    if BrailleCodec.is_braille(char):
+                    if braille.is_braille(char):
                         braille_count += 1
 
         if total_printable == 0:
@@ -142,17 +142,17 @@ class AsciiResizer:
 
         """
         # Decode to pixels
-        pixels = BrailleCodec.decode_art(lines)
+        pixels = braille.decode_art(lines)
 
-        empty_char = BrailleCodec.dots_to_char(0)
+        empty_char = braille.dots_to_char(0)
 
         if pixels.size == 0:
             # Return empty art at target size
             return [empty_char * target_chars_wide] * target_chars_tall
 
         # Calculate target pixel dimensions
-        target_pixel_width = target_chars_wide * BrailleCodec.CHAR_WIDTH
-        target_pixel_height = target_chars_tall * BrailleCodec.CHAR_HEIGHT
+        target_pixel_width = target_chars_wide * braille.CHAR_WIDTH
+        target_pixel_height = target_chars_tall * braille.CHAR_HEIGHT
 
         src_height, src_width = pixels.shape
 
@@ -167,8 +167,8 @@ class AsciiResizer:
             scaled_height = int(src_height * scale)
 
             # Ensure dimensions are multiples of Braille char size for clean encoding
-            char_w = BrailleCodec.CHAR_WIDTH
-            char_h = BrailleCodec.CHAR_HEIGHT
+            char_w = braille.CHAR_WIDTH
+            char_h = braille.CHAR_HEIGHT
             scaled_width = max(char_w, (scaled_width // char_w) * char_w)
             scaled_height = max(char_h, (scaled_height // char_h) * char_h)
 
@@ -184,7 +184,7 @@ class AsciiResizer:
             canvas[offset_y:y_end, offset_x:x_end] = resized
 
             # Encode back to Braille
-            result: list[str] = BrailleCodec.encode_art(canvas, threshold=1)
+            result: list[str] = braille.encode_art(canvas, threshold=1)
             return result
         else:
             # Stretch to fill (original behavior)
@@ -193,7 +193,7 @@ class AsciiResizer:
                 target_pixel_width,
                 target_pixel_height,
             )
-            result_stretched: list[str] = BrailleCodec.encode_art(
+            result_stretched: list[str] = braille.encode_art(
                 resized,
                 threshold=1,
             )
