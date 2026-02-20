@@ -31,7 +31,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      actions: read
+      actions: write
+      id-token: write
     timeout-minutes: 20
     env:
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache
