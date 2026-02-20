@@ -143,7 +143,7 @@ def test_tsc_issue_to_display_row() -> None:
     assert_that(row["column"]).is_equal_to("5")
     assert_that(row["code"]).is_equal_to("TS2322")
     assert_that(row["message"]).is_equal_to("Type error")
-    assert_that(row["severity"]).is_equal_to("error")
+    assert_that(row["severity"]).is_equal_to("ERROR")
 
 
 def test_tsc_issue_to_display_row_minimal() -> None:
@@ -153,7 +153,7 @@ def test_tsc_issue_to_display_row_minimal() -> None:
 
     assert_that(row["file"]).is_equal_to("main.ts")
     assert_that(row["code"]).is_equal_to("")
-    assert_that(row["severity"]).is_equal_to("")
+    assert_that(row["severity"]).is_equal_to("WARNING")
 
 
 def test_parse_tsc_output_ansi_codes_stripped() -> None:

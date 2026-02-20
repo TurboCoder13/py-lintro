@@ -8,6 +8,7 @@ from typing import ClassVar
 import pytest
 from assertpy import assert_that
 
+from lintro.enums.severity_level import SeverityLevel
 from lintro.parsers.base_issue import BaseIssue
 
 
@@ -52,7 +53,7 @@ def test_to_display_row_missing_optional_fields() -> None:
     issue = BaseIssue()
     result = issue.to_display_row()
     assert_that(result["code"]).is_equal_to("")
-    assert_that(result["severity"]).is_equal_to("")
+    assert_that(result["severity"]).is_equal_to("WARNING")
     assert_that(result["fixable"]).is_equal_to("")
 
 
@@ -82,7 +83,7 @@ def test_subclass_with_custom_fields() -> None:
     )
     result = issue.to_display_row()
     assert_that(result["code"]).is_equal_to("E001")
-    assert_that(result["severity"]).is_equal_to("error")
+    assert_that(result["severity"]).is_equal_to("ERROR")
 
 
 def test_subclass_with_custom_field_map() -> None:
@@ -109,7 +110,7 @@ def test_subclass_with_custom_field_map() -> None:
     )
     result = issue.to_display_row()
     assert_that(result["code"]).is_equal_to("RULE001")
-    assert_that(result["severity"]).is_equal_to("warning")
+    assert_that(result["severity"]).is_equal_to("WARNING")
 
 
 def test_to_display_row_fixable_true() -> None:
@@ -163,3 +164,84 @@ def test_to_display_row_line_column_formatting(
     result = issue.to_display_row()
     assert_that(result["line"]).is_equal_to(expected_line)
     assert_that(result["column"]).is_equal_to(expected_column)
+
+
+# =============================================================================
+# Tests for get_severity()
+# =============================================================================
+
+
+def test_get_severity_returns_default_when_no_severity_field() -> None:
+    """get_severity returns DEFAULT_SEVERITY when issue has no severity attr."""
+    issue = BaseIssue(file="test.py", line=1)
+    assert_that(issue.get_severity()).is_equal_to(SeverityLevel.WARNING)
+
+
+def test_get_severity_normalizes_string_field() -> None:
+    """get_severity normalizes a native severity string."""
+
+    @dataclass
+    class SeverityIssue(BaseIssue):
+        severity: str = ""
+
+    issue = SeverityIssue(file="test.py", line=1, severity="error")
+    assert_that(issue.get_severity()).is_equal_to(SeverityLevel.ERROR)
+
+
+def test_get_severity_uses_display_field_map() -> None:
+    """get_severity resolves the attribute via DISPLAY_FIELD_MAP."""
+
+    @dataclass
+    class MappedIssue(BaseIssue):
+        DISPLAY_FIELD_MAP: ClassVar[dict[str, str]] = {
+            **BaseIssue.DISPLAY_FIELD_MAP,
+            "severity": "level",
+        }
+        level: str = ""
+
+    issue = MappedIssue(file="test.py", line=1, level="warning")
+    assert_that(issue.get_severity()).is_equal_to(SeverityLevel.WARNING)
+
+
+def test_get_severity_falls_back_on_empty_string() -> None:
+    """get_severity falls back to DEFAULT_SEVERITY for empty string."""
+
+    @dataclass
+    class SeverityIssue(BaseIssue):
+        severity: str = ""
+
+    issue = SeverityIssue(file="test.py", line=1, severity="")
+    assert_that(issue.get_severity()).is_equal_to(SeverityLevel.WARNING)
+
+
+def test_get_severity_falls_back_on_unknown_value() -> None:
+    """get_severity falls back to DEFAULT_SEVERITY for unrecognized strings."""
+
+    @dataclass
+    class SeverityIssue(BaseIssue):
+        severity: str = ""
+
+    issue = SeverityIssue(file="test.py", line=1, severity="banana")
+    assert_that(issue.get_severity()).is_equal_to(SeverityLevel.WARNING)
+
+
+def test_get_severity_respects_custom_default() -> None:
+    """get_severity uses subclass DEFAULT_SEVERITY."""
+
+    @dataclass
+    class InfoIssue(BaseIssue):
+        DEFAULT_SEVERITY: ClassVar[SeverityLevel] = SeverityLevel.INFO
+
+    issue = InfoIssue(file="test.py", line=1)
+    assert_that(issue.get_severity()).is_equal_to(SeverityLevel.INFO)
+
+
+def test_get_severity_passes_through_enum_instance() -> None:
+    """get_severity returns SeverityLevel instances unchanged."""
+
+    @dataclass
+    class EnumIssue(BaseIssue):
+        severity: SeverityLevel = SeverityLevel.ERROR
+
+    issue = EnumIssue(file="test.py", line=1)
+    assert_that(issue.get_severity()).is_equal_to(SeverityLevel.ERROR)

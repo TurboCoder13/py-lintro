@@ -9,6 +9,7 @@ from __future__ import annotations
 import pytest
 
 from lintro.formatters.styles.csv import CsvStyle
+from lintro.formatters.styles.github import GitHubStyle
 from lintro.formatters.styles.grid import GridStyle
 from lintro.formatters.styles.html import HtmlStyle
 from lintro.formatters.styles.json import JsonStyle
@@ -76,6 +77,16 @@ def csv_style() -> CsvStyle:
         A CsvStyle instance for testing.
     """
     return CsvStyle()
+
+
+@pytest.fixture
+def github_style() -> GitHubStyle:
+    """Create GitHubStyle instance.
+
+    Returns:
+        A GitHubStyle instance for testing.
+    """
+    return GitHubStyle()
 
 
 # --- Common test data ---

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import ClassVar
 
+from lintro.enums.severity_level import SeverityLevel
 from lintro.parsers.base_issue import BaseIssue
 
 
@@ -14,6 +15,7 @@ class GitleaksIssue(BaseIssue):
 
     Attributes:
         DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
+        DEFAULT_SEVERITY: Defaults to ERROR (security tool).
         rule_id: The rule ID that triggered the detection (e.g., aws-access-key-id).
         description: Description of the secret type detected.
         secret: The detected secret value (should be redacted for display).
@@ -35,6 +37,8 @@ class GitleaksIssue(BaseIssue):
         "code": "rule_id",
         # message uses the computed value from __post_init__ (default mapping)
     }
+
+    DEFAULT_SEVERITY: ClassVar[SeverityLevel] = SeverityLevel.ERROR
 
     rule_id: str = field(default="")
     description: str = field(default="")

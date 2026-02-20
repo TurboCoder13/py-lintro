@@ -167,8 +167,11 @@ def format_issues_with_sections(
 
     normalized_format = normalize_output_format(output_format)
 
-    # JSON format: return single table for compatibility
-    if normalized_format == OutputFormat.JSON or not group_by_fixable:
+    # JSON/GITHUB format: return single table for compatibility
+    if (
+        normalized_format in {OutputFormat.JSON, OutputFormat.GITHUB}
+        or not group_by_fixable
+    ):
         return format_issues(
             issues,
             output_format=normalized_format,

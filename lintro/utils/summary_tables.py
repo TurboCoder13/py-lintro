@@ -463,6 +463,9 @@ def print_totals_table(
     total_fixed: int = 0,
     total_remaining: int = 0,
     affected_files: int = 0,
+    severity_errors: int = 0,
+    severity_warnings: int = 0,
+    severity_info: int = 0,
 ) -> None:
     """Print a totals summary table for the run.
 
@@ -473,6 +476,9 @@ def print_totals_table(
         total_fixed: Total number of issues fixed (FIX mode).
         total_remaining: Total number of remaining issues (FIX mode).
         affected_files: Number of unique files with issues.
+        severity_errors: Number of issues at ERROR severity.
+        severity_warnings: Number of issues at WARNING severity.
+        severity_info: Number of issues at INFO severity.
     """
     try:
         import click
@@ -490,8 +496,12 @@ def print_totals_table(
         else:
             rows = [
                 ["Total Issues", total_issues],
-                ["Affected Files", affected_files],
             ]
+            if total_issues > 0:
+                rows.append(["  Errors", severity_errors])
+                rows.append(["  Warnings", severity_warnings])
+                rows.append(["  Info", severity_info])
+            rows.append(["Affected Files", affected_files])
 
         headers: list[str] = ["Metric", "Count"]
         table: str = tabulate(

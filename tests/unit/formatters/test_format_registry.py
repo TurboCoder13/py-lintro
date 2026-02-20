@@ -11,6 +11,7 @@ from lintro.formatters.core.format_registry import (
     get_style,
 )
 from lintro.formatters.styles.csv import CsvStyle
+from lintro.formatters.styles.github import GitHubStyle
 from lintro.formatters.styles.grid import GridStyle
 from lintro.formatters.styles.html import HtmlStyle
 from lintro.formatters.styles.json import JsonStyle
@@ -31,6 +32,7 @@ from lintro.formatters.styles.plain import PlainStyle
         pytest.param(OutputFormat.HTML, HtmlStyle, id="enum-html"),
         pytest.param(OutputFormat.JSON, JsonStyle, id="enum-json"),
         pytest.param(OutputFormat.CSV, CsvStyle, id="enum-csv"),
+        pytest.param(OutputFormat.GITHUB, GitHubStyle, id="enum-github"),
     ],
 )
 def test_get_style_with_enum(output_format: OutputFormat, expected_style: type) -> None:
@@ -53,6 +55,7 @@ def test_get_style_with_enum(output_format: OutputFormat, expected_style: type) 
         pytest.param("html", HtmlStyle, id="string-html"),
         pytest.param("json", JsonStyle, id="string-json"),
         pytest.param("csv", CsvStyle, id="string-csv"),
+        pytest.param("github", GitHubStyle, id="string-github"),
     ],
 )
 def test_get_style_with_string(format_string: str, expected_style: type) -> None:
@@ -125,6 +128,7 @@ def test_get_format_map_returns_all_formats() -> None:
     assert_that(format_map).contains_key(OutputFormat.HTML)
     assert_that(format_map).contains_key(OutputFormat.JSON)
     assert_that(format_map).contains_key(OutputFormat.CSV)
+    assert_that(format_map).contains_key(OutputFormat.GITHUB)
 
 
 def test_get_format_map_values_are_correct_styles() -> None:
@@ -137,12 +141,13 @@ def test_get_format_map_values_are_correct_styles() -> None:
     assert_that(format_map[OutputFormat.HTML]).is_instance_of(HtmlStyle)
     assert_that(format_map[OutputFormat.JSON]).is_instance_of(JsonStyle)
     assert_that(format_map[OutputFormat.CSV]).is_instance_of(CsvStyle)
+    assert_that(format_map[OutputFormat.GITHUB]).is_instance_of(GitHubStyle)
 
 
 def test_get_format_map_length() -> None:
-    """Test that format_map contains exactly 6 formats."""
+    """Test that format_map contains exactly 7 formats."""
     format_map = get_format_map()
-    assert_that(format_map).is_length(6)
+    assert_that(format_map).is_length(7)
 
 
 # =============================================================================
@@ -160,6 +165,7 @@ def test_get_string_format_map_returns_string_keys() -> None:
     assert_that(string_map).contains_key("html")
     assert_that(string_map).contains_key("json")
     assert_that(string_map).contains_key("csv")
+    assert_that(string_map).contains_key("github")
 
 
 def test_get_string_format_map_values_are_correct_styles() -> None:
@@ -172,12 +178,13 @@ def test_get_string_format_map_values_are_correct_styles() -> None:
     assert_that(string_map["html"]).is_instance_of(HtmlStyle)
     assert_that(string_map["json"]).is_instance_of(JsonStyle)
     assert_that(string_map["csv"]).is_instance_of(CsvStyle)
+    assert_that(string_map["github"]).is_instance_of(GitHubStyle)
 
 
 def test_get_string_format_map_length() -> None:
-    """Test that string_map contains exactly 6 formats."""
+    """Test that string_map contains exactly 7 formats."""
     string_map = get_string_format_map()
-    assert_that(string_map).is_length(6)
+    assert_that(string_map).is_length(7)
 
 
 # =============================================================================

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import ClassVar
 
+from lintro.enums.severity_level import SeverityLevel
 from lintro.parsers.base_issue import BaseIssue
 
 
@@ -17,11 +18,14 @@ class RustfmtIssue(BaseIssue):
 
     Attributes:
         DISPLAY_FIELD_MAP: Mapping of display field names to attribute names.
+        DEFAULT_SEVERITY: Defaults to INFO (pure formatter).
         fixable: Whether the issue can be auto-fixed (always True for rustfmt).
     """
 
     DISPLAY_FIELD_MAP: ClassVar[dict[str, str]] = {
         **BaseIssue.DISPLAY_FIELD_MAP,
     }
+
+    DEFAULT_SEVERITY: ClassVar[SeverityLevel] = SeverityLevel.INFO
 
     fixable: bool = field(default=True)

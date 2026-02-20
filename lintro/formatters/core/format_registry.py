@@ -96,6 +96,7 @@ def _create_style_instances() -> dict[OutputFormat, OutputStyle]:
         dict[OutputFormat, OutputStyle]: Mapping of format to style instance.
     """
     from lintro.formatters.styles.csv import CsvStyle
+    from lintro.formatters.styles.github import GitHubStyle
     from lintro.formatters.styles.grid import GridStyle
     from lintro.formatters.styles.html import HtmlStyle
     from lintro.formatters.styles.json import JsonStyle
@@ -109,6 +110,7 @@ def _create_style_instances() -> dict[OutputFormat, OutputStyle]:
         OutputFormat.HTML: HtmlStyle(),
         OutputFormat.JSON: JsonStyle(),
         OutputFormat.CSV: CsvStyle(),
+        OutputFormat.GITHUB: GitHubStyle(),
     }
 
 
