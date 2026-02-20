@@ -11,6 +11,7 @@ import pytest
 from assertpy import assert_that
 
 from lintro.formatters.styles.csv import CsvStyle
+from lintro.formatters.styles.github import GitHubStyle
 from lintro.formatters.styles.grid import GridStyle
 from lintro.formatters.styles.html import HtmlStyle
 from lintro.formatters.styles.markdown import MarkdownStyle
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
         pytest.param(HtmlStyle, "<p>No issues found.</p>", id="html"),
         pytest.param(MarkdownStyle, "No issues found.", id="markdown"),
         pytest.param(CsvStyle, "", id="csv"),
+        pytest.param(GitHubStyle, "", id="github"),
     ],
 )
 def test_empty_rows_returns_expected_output(
