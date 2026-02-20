@@ -26,15 +26,15 @@ def main() -> None:
     "-w",
     "--width",
     type=int,
-    required=True,
-    help="Target width in characters.",
+    default=65,
+    help="Target width in characters (default: 65).",
 )
 @click.option(
     "-h",
     "--height",
     type=int,
-    required=True,
-    help="Target height in characters (lines).",
+    default=30,
+    help="Target height in characters/lines (default: 30).",
 )
 @click.option(
     "-m",

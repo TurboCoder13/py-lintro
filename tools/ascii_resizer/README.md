@@ -27,21 +27,14 @@ Run commands with `uv run ascii-resizer` or activate the virtual environment fir
 ### Resize ASCII art
 
 ```bash
-# Resize all sections to 65 characters wide by 30 lines tall
-# (preserves aspect ratio, centers content)
-uv run ascii-resizer resize input.txt output.txt -w 65 -h 30
-
-# Stretch to fill (ignore aspect ratio)
-uv run ascii-resizer resize input.txt output.txt -w 65 -h 30 --stretch
-
-# Use bilinear interpolation for smoother results
-uv run ascii-resizer resize input.txt output.txt -w 65 -h 30 -m bilinear
+# Resize all sections to default 65x30 and write to file
+uv run ascii-resizer resize input.txt output.txt
 
 # Modify file in place
-uv run ascii-resizer resize input.txt -w 65 -h 30 --in-place
+uv run ascii-resizer resize input.txt --in-place
 
 # Output to stdout
-uv run ascii-resizer resize input.txt -w 65 -h 30
+uv run ascii-resizer resize input.txt
 ```
 
 ### View file information
@@ -94,14 +87,15 @@ original proportions. The resized content is then centered on the canvas. Use
 
 Resize ASCII art to target dimensions.
 
-| Option            | Description                                                |
-| ----------------- | ---------------------------------------------------------- |
-| `-w, --width`     | Target width in characters (required)                      |
-| `-h, --height`    | Target height in lines (required)                          |
-| `-m, --method`    | Interpolation: `nearest`, `bilinear`, `bicubic`, `lanczos` |
-| `-t, --threshold` | Binarization threshold 0-255 (default: 128)                |
-| `-i, --in-place`  | Modify input file in place                                 |
-| `--stretch`       | Stretch to fill (don't preserve aspect ratio)              |
+| Option            | Default   | Description                                      |
+| ----------------- | --------- | ------------------------------------------------ |
+| `-w, --width`     | `65`      | Target width in characters                       |
+| `-h, --height`    | `30`      | Target height in lines                           |
+| `-m, --method`    | `nearest` | Interpolation: `nearest`, `bilinear`, `bicubic`, |
+|                   |           | `lanczos`                                        |
+| `-t, --threshold` | `128`     | Binarization threshold (0-255)                   |
+| `-i, --in-place`  |           | Modify input file in place                       |
+| `--stretch`       |           | Stretch to fill (don't preserve aspect ratio)    |
 
 ### `info`
 
