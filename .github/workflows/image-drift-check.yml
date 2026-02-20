@@ -9,8 +9,7 @@ name: Image Drift Check
     - cron: '0 2 * * 1'
   workflow_dispatch: {}
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   verify-images:

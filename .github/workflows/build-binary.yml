@@ -17,13 +17,14 @@ name: Build Binary
           - x86_64
           - universal
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   get-release-info:
     name: Get Release Info
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     # Only run on workflow_dispatch or successful workflow_run (skip actions-v* tags)
     if: >-
       github.event_name == 'workflow_dispatch' ||
@@ -51,6 +52,8 @@ jobs:
     name: Build macOS Binary
     needs: get-release-info
     runs-on: macos-latest
+    permissions:
+      contents: write
     strategy:
       matrix:
         arch: >-
@@ -154,6 +157,8 @@ jobs:
     name: Create Universal Binary
     needs: [get-release-info, build-macos]
     runs-on: macos-latest
+    permissions:
+      contents: write
     if: >-
       github.event_name == 'workflow_run' ||
       (github.event_name == 'workflow_dispatch' &&
@@ -216,6 +221,8 @@ jobs:
     name: Update Homebrew Formula
     needs: [get-release-info, build-macos]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     if: >-
       github.event_name == 'workflow_run' &&
       needs.get-release-info.outputs.release_tag != ''

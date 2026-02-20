@@ -23,14 +23,15 @@ name: Reusable - SBOM Generation & Verification
         description: Optional release token for elevated permissions
         required: false
 
-permissions:
-  contents: read
-  actions: read
+permissions: {}
 
 jobs:
   sbom:
     name: Generate and verify SBOM
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
     timeout-minutes: 20
     env:
       XDG_CACHE_HOME: ${{ github.workspace }}/.bomctl-cache

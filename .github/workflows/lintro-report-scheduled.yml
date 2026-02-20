@@ -24,12 +24,13 @@ name: Reporting - Scheduled Lintro Analysis
     - cron: '0 0 * * 0'
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   lintro-report:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 20
     concurrency:
       group: report-${{ github.ref }}
@@ -70,6 +71,8 @@ jobs:
   notify:
     needs: lintro-report
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 5
     if: success()
 

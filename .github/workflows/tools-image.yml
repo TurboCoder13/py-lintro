@@ -49,8 +49,7 @@ name: Build - Tools Image
         description: 'The tools image tag to use'
         value: ${{ jobs.resolve-tag.outputs.tag }}
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   # Detect if tool files changed (for workflow_call only, path filters don't apply)

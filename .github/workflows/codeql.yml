@@ -16,8 +16,7 @@ name: Security - CodeQL Code Scanning
     - cron: '0 5 * * 1'
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   analyze:

@@ -24,13 +24,14 @@ name: Testing - Built Package Validation
       - scripts/ci/test-*.sh
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   test-package-install:
     name: Validate ${{ matrix.package-type }} installation
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 15
     strategy:
       fail-fast: false

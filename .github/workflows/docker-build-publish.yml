@@ -27,8 +27,7 @@ name: Build - Docker Image & Registry
         required: false
         default: ''
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   build-and-test:

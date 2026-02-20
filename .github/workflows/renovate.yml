@@ -11,8 +11,7 @@ name: Maintenance - Renovate Dependencies
     - cron: '0 22 * * *'
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   renovate:

@@ -14,8 +14,7 @@ name: Release - Auto Tag Creation
     # This avoids random tagging on pyproject edits
     # GitHub does not support commit message filters here; enforce in a guard step
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   auto-tag:

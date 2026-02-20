@@ -8,16 +8,19 @@ name: Publish - TestPyPI Staging
 'on':
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   quality:
     uses: ./.github/workflows/reusable-quality.yml
+    permissions:
+      contents: read
 
   build:
     needs: quality
     uses: ./.github/workflows/reusable-build.yml
+    permissions:
+      contents: read
 
   publish:
     name: Upload to TestPyPI
