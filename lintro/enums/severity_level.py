@@ -40,6 +40,8 @@ _SEVERITY_ALIASES: dict[str, SeverityLevel] = {
     "MEDIUM": SeverityLevel.WARNING,
     "UNKNOWN": SeverityLevel.WARNING,
     "LOW": SeverityLevel.INFO,
+    # Semgrep / Svelte-check
+    "WARN": SeverityLevel.WARNING,
     # Pytest outcomes
     "FAILED": SeverityLevel.ERROR,
     "SKIPPED": SeverityLevel.INFO,

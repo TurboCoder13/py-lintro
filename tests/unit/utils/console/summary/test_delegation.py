@@ -128,6 +128,9 @@ def test_print_totals_table_delegates_to_module_function() -> None:
             total_fixed=0,
             total_remaining=0,
             affected_files=2,
+            severity_errors=0,
+            severity_warnings=0,
+            severity_info=0,
         )
 
 
@@ -153,6 +156,9 @@ def test_print_totals_table_delegates_fix_mode() -> None:
             total_fixed=10,
             total_remaining=3,
             affected_files=5,
+            severity_errors=0,
+            severity_warnings=0,
+            severity_info=0,
         )
 
 

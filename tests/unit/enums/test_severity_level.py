@@ -6,7 +6,6 @@ import pytest
 from assertpy import assert_that
 
 from lintro.enums.severity_level import (
-    _SEVERITY_ALIASES,
     SeverityLevel,
     normalize_severity_level,
 )
@@ -31,6 +30,9 @@ from lintro.enums.severity_level import (
         pytest.param("hint", SeverityLevel.INFO, id="hint"),
         pytest.param("style", SeverityLevel.INFO, id="style"),
         pytest.param("help", SeverityLevel.INFO, id="help"),
+        # Semgrep / Svelte-check
+        pytest.param("warn", SeverityLevel.WARNING, id="warn-lower"),
+        pytest.param("WARN", SeverityLevel.WARNING, id="warn-upper"),
         # Bandit / cargo-audit levels
         pytest.param("HIGH", SeverityLevel.ERROR, id="high"),
         pytest.param("CRITICAL", SeverityLevel.ERROR, id="critical"),
@@ -107,6 +109,6 @@ def test_normalize_raises_for_unknown_value() -> None:
 
 
 def test_alias_table_covers_all_enum_members() -> None:
-    """Every SeverityLevel member name appears in the alias table."""
+    """Every SeverityLevel member name can be normalized via the public API."""
     for member in SeverityLevel:
-        assert_that(_SEVERITY_ALIASES).contains_key(member.name)
+        assert_that(normalize_severity_level(member.name)).is_equal_to(member)

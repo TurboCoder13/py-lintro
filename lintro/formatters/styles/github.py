@@ -122,6 +122,9 @@ class GitHubStyle(OutputStyle):
             props_str = ",".join(props)
             escaped_msg = _escape(message_val)
 
-            lines.append(f"::{level} {props_str}::{escaped_msg}")
+            if props_str:
+                lines.append(f"::{level} {props_str}::{escaped_msg}")
+            else:
+                lines.append(f"::{level}::{escaped_msg}")
 
         return "\n".join(lines)

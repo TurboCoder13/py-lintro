@@ -251,7 +251,7 @@ class ThreadSafeConsoleLogger:
                                 sev_errors += 1
                             elif level == SeverityLevel.WARNING:
                                 sev_warnings += 1
-                            else:
+                            elif level == SeverityLevel.INFO:
                                 sev_info += 1
 
             self._print_totals_table(
