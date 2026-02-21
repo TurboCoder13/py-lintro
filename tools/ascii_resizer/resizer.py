@@ -98,6 +98,9 @@ class AsciiResizer:
         Returns:
             Resized bitmap.
 
+        Raises:
+            ValueError: If target dimensions are not positive.
+
         """
         if target_width < 1 or target_height < 1:
             msg = (
@@ -146,6 +149,9 @@ class AsciiResizer:
 
         Returns:
             Resized Braille art lines.
+
+        Raises:
+            ValueError: If target dimensions are not positive.
 
         """
         if target_chars_wide < 1 or target_chars_tall < 1:
@@ -233,6 +239,9 @@ class AsciiResizer:
 
         Returns:
             Resized ASCII art lines.
+
+        Raises:
+            ValueError: If target dimensions are not positive.
 
         """
         if target_width < 1 or target_height < 1:
