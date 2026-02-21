@@ -141,6 +141,13 @@ class AsciiResizer:
             Resized Braille art lines.
 
         """
+        if target_chars_wide < 1 or target_chars_tall < 1:
+            msg = (
+                f"Target dimensions must be positive, "
+                f"got {target_chars_wide}x{target_chars_tall}"
+            )
+            raise ValueError(msg)
+
         # Decode to pixels
         pixels = braille.decode_art(lines)
 
@@ -221,6 +228,13 @@ class AsciiResizer:
             Resized ASCII art lines.
 
         """
+        if target_width < 1 or target_height < 1:
+            msg = (
+                f"Target dimensions must be positive, "
+                f"got {target_width}x{target_height}"
+            )
+            raise ValueError(msg)
+
         if art_type is None:
             art_type = self.detect_art_type(lines)
 

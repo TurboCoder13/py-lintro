@@ -46,7 +46,7 @@ def main() -> None:
 @click.option(
     "-t",
     "--threshold",
-    type=int,
+    type=click.IntRange(0, 255),
     default=128,
     help="Binarization threshold (0-255). Default: 128.",
 )
