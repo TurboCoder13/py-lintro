@@ -90,7 +90,7 @@ Resize ASCII art to target dimensions.
 | Option            | Default   | Description                                      |
 | ----------------- | --------- | ------------------------------------------------ |
 | `-w, --width`     | `65`      | Target width in characters                       |
-| `-h, --height`    | `30`      | Target height in lines                           |
+| `-H, --height`    | `30`      | Target height in lines                           |
 | `-m, --method`    | `nearest` | Interpolation: `nearest`, `bilinear`, `bicubic`, |
 |                   |           | `lanczos`                                        |
 | `-t, --threshold` | `128`     | Binarization threshold (0-255)                   |

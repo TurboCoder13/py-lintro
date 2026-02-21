@@ -30,7 +30,7 @@ def main() -> None:
     help="Target width in characters (default: 65).",
 )
 @click.option(
-    "-h",
+    "-H",
     "--height",
     type=int,
     default=30,
@@ -165,7 +165,7 @@ def show(input_file: Path, section: int | None) -> None:
     else:
         indices = list(range(1, len(sections) + 1))
 
-    for idx, sec in zip(indices, sections, strict=False):
+    for idx, sec in zip(indices, sections, strict=True):
         click.echo(f"=== Section {idx} ===")
         for line in sec:
             click.echo(line)
