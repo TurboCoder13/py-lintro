@@ -5,7 +5,7 @@ from pathlib import Path
 
 import click
 
-from ascii_resizer.resizer import (
+from .resizer import (
     AsciiResizer,
     ResizeMethod,
     format_sections,

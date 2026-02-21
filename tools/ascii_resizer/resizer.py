@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image
 
-from ascii_resizer import braille
+from . import braille
 
 
 class ResizeMethod(StrEnum):
@@ -229,6 +229,13 @@ class AsciiResizer:
         preserve_aspect: bool = True,
     ) -> list[str]:
         """Resize ASCII art to target dimensions.
+
+        For Braille art, performs true pixel-level resizing via bitmap
+        interpolation. For non-Braille or unknown art types, falls back to
+        simple pad/truncate: lines are padded with spaces or truncated to
+        ``target_width``, and missing rows are filled with spaces to reach
+        ``target_height``. No resampling or proportional scaling is applied
+        in the fallback path.
 
         Args:
             lines: Source ASCII art lines.
