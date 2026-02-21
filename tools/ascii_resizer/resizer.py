@@ -176,9 +176,10 @@ class AsciiResizer:
             resized = self.resize_bitmap(pixels, scaled_width, scaled_height)
 
             # Create target canvas and center the resized content
+            # Snap offsets to character boundaries for clean Braille encoding
             canvas = np.zeros((target_pixel_height, target_pixel_width), dtype=np.uint8)
-            offset_x = (target_pixel_width - scaled_width) // 2
-            offset_y = (target_pixel_height - scaled_height) // 2
+            offset_x = ((target_pixel_width - scaled_width) // 2 // char_w) * char_w
+            offset_y = ((target_pixel_height - scaled_height) // 2 // char_h) * char_h
             y_end = offset_y + scaled_height
             x_end = offset_x + scaled_width
             canvas[offset_y:y_end, offset_x:x_end] = resized
