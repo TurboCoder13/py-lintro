@@ -99,6 +99,13 @@ class AsciiResizer:
             Resized bitmap.
 
         """
+        if target_width < 1 or target_height < 1:
+            msg = (
+                f"Invalid target size for resize_bitmap: "
+                f"width={target_width} height={target_height}"
+            )
+            raise ValueError(msg)
+
         if pixels.size == 0:
             return np.zeros((target_height, target_width), dtype=np.uint8)
 

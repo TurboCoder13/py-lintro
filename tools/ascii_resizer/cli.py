@@ -25,14 +25,14 @@ def main() -> None:
 @click.option(
     "-w",
     "--width",
-    type=int,
+    type=click.IntRange(1),
     default=65,
     help="Target width in characters (default: 65).",
 )
 @click.option(
     "-H",
     "--height",
-    type=int,
+    type=click.IntRange(1),
     default=30,
     help="Target height in characters/lines (default: 30).",
 )
